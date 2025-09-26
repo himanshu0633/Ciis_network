@@ -1,0 +1,291 @@
+/* General Styles */
+
+
+.addons_container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* Section Title */
+.addons_section-title {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.addons_section-title h2 {
+  font-size: 2.8rem;
+  font-weight: 800;
+  color: #2c3e50;
+  position: relative;
+  display: inline-block;
+  font-family: 'Inter', sans-serif;
+  margin-bottom: 15px;
+  background: linear-gradient(90deg, #3a7bd5, #00d2ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.addons_section-title .subtitle {
+  font-size: 1.2rem;
+  color: #7f8c8d;
+  max-width: 700px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.addons_section-title h2::after {
+  content: '';
+  position: absolute;
+  width: 80px;
+  height: 4px;
+  bottom: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, #3a7bd5, #00d2ff);
+  border-radius: 2px;
+}
+
+/* Addons Grid */
+.addons-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 25px;
+  justify-content: center;
+}
+
+/* Addon Card Styles */
+.addon-card {
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  perspective: 1000px;
+}
+
+.addon-card .addons_card-body {
+  padding: 30px;
+  border-radius: 16px;
+  height: 100%;
+  transition: all 0.3s ease;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  position: relative;
+  overflow: hidden;
+  transform-style: preserve-3d;
+}
+
+.addon-card:hover {
+  transform: translateY(-8px);
+}
+
+.addon-card:hover .addons_card-body {
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+}
+
+.addon-icon {
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+  transition: transform 0.3s ease;
+}
+
+.addon-card:hover .addon-icon {
+  transform: scale(1.1) rotate(5deg);
+}
+
+.addon-card h4 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 15px;
+  position: relative;
+  display: inline-block;
+}
+
+.addon-card h4::after {
+  content: '';
+  position: absolute;
+  width: 40px;
+  height: 3px;
+  bottom: -8px;
+  left: 0;
+  background-color: currentColor;
+  opacity: 0.7;
+  transition: width 0.3s ease;
+}
+
+.addon-card:hover h4::after {
+  width: 60px;
+}
+
+.addon-card p {
+  color: #5a6a7a;
+  font-size: 1.05rem;
+  margin-bottom: 25px;
+  line-height: 1.7;
+}
+
+.addon-button {
+  background: rgba(255, 255, 255, 0.3);
+  border: 2px solid currentColor;
+  color: inherit;
+  padding: 8px 20px;
+  border-radius: 50px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  --backdrop-filter: blur(5px);
+}
+
+.addon-button:hover {
+  background: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+}
+
+/* Individual card styles */
+.addon-card.whatsapp .addons_card-body {
+  background-color: #f1ecff;
+  border: 2px solid #c6b7f4;
+  color: #6a4cdf;
+}
+
+.addon-card.ai-chat .addons_card-body {
+  background-color: #e9f3ff;
+  border: 2px solid #b4d6ff;
+  color: #3a7bd5;
+}
+
+.addon-card.storage .addons_card-body {
+  background-color: #ffe9e2;
+  border: 2px solid #f6c3b5;
+  color: #e74c3c;
+}
+
+.addon-card.ai-call .addons_card-body {
+  background-color: #eaffea;
+  border: 2px solid #b3ecb3;
+  color: #27ae60;
+}
+
+.addon-card.onboarding .addons_card-body {
+  background-color: #ffe9f9;
+  border: 2px solid #f5b9e6;
+  color: #e84393;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 1024px) {
+  .addons-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .addons-section {
+    padding: 60px 0;
+  }
+
+  .addons_section-title h2 {
+    font-size: 2.2rem;
+  }
+
+  .addons_section-title .subtitle {
+    font-size: 1rem;
+    padding: 0 20px;
+  }
+
+  .addon-card h4 {
+    font-size: 1.3rem;
+  }
+
+  .addon-card p {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .addons-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .addons_section-title h2 {
+    font-size: 1.8rem;
+  }
+}
+
+
+/* Reset potential overlap causes */
+.addons-section * {
+  box-sizing: border-box;
+
+  padding: 0;
+}
+
+.addons-section {
+  padding: 80px 0;
+  margin: 0 auto;
+  background-color: #fefcf8;
+  width: 80%;
+  overflow: hidden;
+  /* Prevent any potential overflow */
+}
+
+.addons_container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  position: relative;
+  /* Establish positioning context */
+}
+
+/* Grid Layout Fixes */
+.addons-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+  width: 100%;
+}
+
+.addon-card {
+  position: relative;
+  transition: transform 0.3s ease;
+  min-height: 300px;
+  /* Ensure consistent height */
+}
+
+.addons_card-body {
+  padding: 30px;
+  border-radius: 16px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 1;
+}
+
+/* Ensure content stays within bounds */
+.addon-card h3 {
+  margin: 15px 0;
+  font-size: 1.5rem;
+}
+
+.addon-card p {
+  margin-bottom: 20px;
+  flex-grow: 1;
+  /* Allows description to take available space */
+}
+
+.addon-button {
+  align-self: flex-start;
+  /* Keep button at bottom */
+  margin-top: auto;
+}
+
+/* Responsive Fixes */
+@media (max-width: 768px) {
+  .addons-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .addon-card {
+    min-height: auto;
+  }
+}

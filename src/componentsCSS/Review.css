@@ -1,0 +1,385 @@
+/* Hero Section */
+.hero-section-review {
+  font-family: 'Inter', sans-serif;
+  background-color: #ffffff;
+  color: #333;
+  padding: 3.75rem 1.25rem;
+  max-width: 75rem;
+  margin: 0 auto;
+}
+
+/* Security Section */
+.security-container {
+  display: flex;
+  align-items: center;
+  gap: 2.5rem;
+  margin-bottom: 3.75rem;
+  padding: 0 1.25rem;
+}
+
+.security-content {
+  flex: 1;
+}
+
+.security-content h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1.25rem;
+  color: #2c3e50;
+  line-height: 1.2;
+}
+
+.security-content p {
+  font-size: 1.0625rem;
+  color: #5a6a7a;
+  margin-bottom: 1.875rem;
+  line-height: 1.6;
+}
+
+.security-image {
+  flex: 1;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  box-shadow: 0 0.9375rem 1.875rem rgba(0, 0, 0, 0.1);
+}
+
+.security-image img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.security-features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15.625rem, 1fr));
+  gap: 1.25rem;
+  margin-top: 2.5rem;
+}
+
+.feature {
+  background: white;
+  padding: 1.5625rem;
+  border-radius: 0.625rem;
+  box-shadow: 0 0.3125rem 0.9375rem rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s ease;
+}
+
+.feature:hover {
+  transform: translateY(-0.3125rem);
+}
+
+.feature-icon {
+  font-size: 2rem;
+  color: #3498db;
+  margin-bottom: 0.9375rem;
+}
+
+.feature h3 {
+  font-size: 1.25rem;
+  margin-bottom: 0.625rem;
+  color: #2c3e50;
+}
+
+.feature p {
+  font-size: 0.9375rem;
+  color: #7f8c8d;
+}
+
+/* Testimonial Header */
+.testimonial-header {
+  text-align: center;
+  margin: 3.75rem 0 2.5rem;
+  padding: 0 1.25rem;
+}
+
+.testimonial-header h2 {
+  font-size: 2rem;
+  color: #2c3e50;
+  position: relative;
+  display: inline-block;
+}
+
+.testimonial-header h2::after {
+  content: '';
+  position: absolute;
+  width: 5rem;
+  height: 0.25rem;
+  background: linear-gradient(90deg, #3498db, #2ecc71);
+  bottom: -0.9375rem;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 0.125rem;
+}
+
+/* Testimonials */
+.testimonial-slider {
+  padding: 0 1.25rem;
+}
+
+.slides {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18.75rem, 1fr));
+  gap: 1.875rem;
+}
+
+.slide {
+  background: white;
+  border-radius: 0.75rem;
+  padding: 1.875rem;
+  box-shadow: 0 0.625rem 1.875rem rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s ease;
+}
+
+.slide:hover {
+  transform: translateY(-0.3125rem);
+  box-shadow: 0 0.9375rem 2.1875rem rgba(0, 0, 0, 0.1);
+}
+
+.testimonial-text {
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  color: #5a6a7a;
+  margin-bottom: 1.5625rem;
+  position: relative;
+}
+
+.testimonial-text::before {
+  content: '"';
+  font-size: 3rem;
+  color: #3498db;
+  opacity: 0.2;
+  position: absolute;
+  top: -0.9375rem;
+  left: -0.625rem;
+}
+
+.testimonial-author {
+  display: flex;
+  align-items: center;
+  gap: 0.9375rem;
+}
+
+.testimonial-author img {
+  width: 3.75rem;
+  height: 3.75rem;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.author-info h4 {
+  font-size: 1.0625rem;
+  margin-bottom: 0.3125rem;
+  color: #2c3e50;
+}
+
+.author-info p {
+  font-size: 0.875rem;
+  color: #7f8c8d;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .hero-section-review {
+    padding: 3rem 1rem;
+    max-width: 90%;
+  }
+
+  .security-container {
+    gap: 2rem;
+    margin-bottom: 3rem;
+  }
+
+  .security-content h1 {
+    font-size: 2.25rem;
+  }
+
+  .security-content p {
+    font-size: 1rem;
+  }
+
+  .security-features {
+    grid-template-columns: repeat(auto-fit, minmax(13.75rem, 1fr));
+    gap: 1rem;
+  }
+
+  .feature {
+    padding: 1.25rem;
+  }
+
+  .testimonial-header {
+    margin: 3rem 0 2rem;
+  }
+
+  .testimonial-header h2 {
+    font-size: 1.875rem;
+  }
+
+  .slides {
+    gap: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-section-review {
+    padding: 2.5rem 0.75rem;
+  }
+
+  .security-container {
+    flex-direction: column;
+    padding: 0 0.75rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .security-content,
+  .security-image {
+    width: 100%;
+  }
+
+  .security-content h1 {
+    font-size: 2rem;
+  }
+
+  .security-content p {
+    font-size: 0.9375rem;
+  }
+
+  .security-features {
+    grid-template-columns: 1fr;
+    margin-top: 2rem;
+  }
+
+  .feature {
+    padding: 1rem;
+  }
+
+  .feature h3 {
+    font-size: 1.125rem;
+  }
+
+  .feature p {
+    font-size: 0.875rem;
+  }
+
+  .testimonial-header {
+    margin: 2.5rem 0 1.5rem;
+  }
+
+  .testimonial-header h2 {
+    font-size: 1.625rem;
+  }
+
+  .testimonial-header h2::after {
+    width: 4rem;
+  }
+
+  .slides {
+    grid-template-columns: 1fr;
+  }
+
+  .slide {
+    padding: 1.5rem;
+  }
+
+  .testimonial-text {
+    font-size: 0.9375rem;
+  }
+
+  .testimonial-author img {
+    width: 3rem;
+    height: 3rem;
+  }
+
+  .author-info h4 {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-section-review {
+    padding: 2rem 0.5rem;
+  }
+
+  .security-container {
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .security-content h1 {
+    font-size: 1.75rem;
+  }
+
+  .security-content p {
+    font-size: 0.875rem;
+  }
+
+  .security-image {
+    border-radius: 0.5rem;
+  }
+
+  .security-features {
+    margin-top: 1.5rem;
+  }
+
+  .feature {
+    padding: 0.75rem;
+  }
+
+  .feature-icon {
+    font-size: 1.75rem;
+  }
+
+  .feature h3 {
+    font-size: 1rem;
+  }
+
+  .feature p {
+    font-size: 0.8125rem;
+  }
+
+  .testimonial-header {
+    margin: 2rem 0 1rem;
+  }
+
+  .testimonial-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .testimonial-header h2::after {
+    width: 3rem;
+    height: 0.1875rem;
+  }
+
+  .testimonial-slider {
+    padding: 0 0.5rem;
+  }
+
+  .slides {
+    gap: 1rem;
+  }
+
+  .slide {
+    padding: 1.25rem;
+  }
+
+  .testimonial-text {
+    font-size: 0.875rem;
+  }
+
+  .testimonial-text::before {
+    font-size: 2.5rem;
+    top: -0.75rem;
+    left: -0.5rem;
+  }
+
+  .testimonial-author img {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .author-info h4 {
+    font-size: 0.9375rem;
+  }
+
+  .author-info p {
+    font-size: 0.8125rem;
+  }
+}

@@ -1,0 +1,99 @@
+/* MUI Input Override */
+.css-12tjcea-MuiInputBase-input-MuiOutlinedInput-input {
+  padding: 0.75rem 0.875rem;
+  font-size: 0.875rem !important;
+}
+
+/* MUI Grid Overrides */
+.css-i6o5lg-MuiGrid-root {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  flex-direction: row !important;
+}
+
+.css-1m5tqqe {
+  width: 100% !important;
+}
+
+.css-i6o5lg-MuiGrid-root>* {
+  width: 48% !important;
+}
+
+/* Hero Section Grid */
+.css-oq3wmw-MuiGrid-root {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  flex-direction: row !important;
+}
+
+.css-17fpwt7-MuiGrid-root {
+  width: 48% !important;
+}
+
+/* Integration Container (Merged with Previous) */
+.integration-container {
+  background-image: url(/src/image/home-integration.webp);
+  height: 31.25rem;
+  max-width: 62.5rem;
+  background-size: contain !important;
+  background-repeat: no-repeat;
+  background-position: center;
+  margin: 0 auto !important;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 1024px) {
+  .css-12tjcea-MuiInputBase-input-MuiOutlinedInput-input {
+    padding: 0.625rem 0.75rem;
+    font-size: 0.8125rem !important;
+  }
+
+  .css-i6o5lg-MuiGrid-root>* {
+    width: 47% !important;
+  }
+
+  .css-17fpwt7-MuiGrid-root {
+    width: 47% !important;
+  }
+
+  .integration-container {
+    max-width: 90%;
+    height: 25rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .css-i6o5lg-MuiGrid-root {
+    flex-direction: column !important;
+  }
+
+  .css-i6o5lg-MuiGrid-root>* {
+    width: 100% !important;
+  }
+
+  .css-oq3wmw-MuiGrid-root {
+    flex-direction: column !important;
+  }
+
+  .css-17fpwt7-MuiGrid-root {
+    width: 100% !important;
+  }
+
+  .integration-container {
+    height: 20rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .css-12tjcea-MuiInputBase-input-MuiOutlinedInput-input {
+    padding: 0.5rem 0.625rem;
+    font-size: 0.75rem !important;
+  }
+
+  .integration-container {
+    height: 15rem;
+  }
+}
+
+
+

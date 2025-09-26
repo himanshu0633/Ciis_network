@@ -1,0 +1,312 @@
+/* Footer Styles */
+.footer {
+  background-color: #191919;
+  padding: 3rem 0 1.5rem;
+  font-family: 'Segoe UI', sans-serif;
+  color: white;
+}
+
+.footer-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  max-width: 75rem;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  gap: 1.5rem;
+}
+
+.footer-logo-section {
+  flex: 1;
+  min-width: 15rem;
+}
+
+.footer-logo {
+  width: 7.5rem;
+  height: auto;
+  margin-bottom: 1.25rem;
+}
+
+.footer-section {
+  flex: 1;
+  min-width: 9rem;
+  margin-bottom: 1.5rem;
+}
+
+.footer-section h3 {
+  font-size: 1.125rem;
+  margin-bottom: 1.25rem;
+  color: white;
+  font-weight: 600;
+}
+
+.get-app-title {
+  margin-top: 1.5rem;
+}
+
+.footer-section ul {
+  list-style: none;
+  padding: 0;
+}
+
+.footer-section li {
+  margin-bottom: 0.75rem;
+}
+
+.footer-section a {
+  color: #666;
+  text-decoration: none;
+  transition: color 0.3s;
+  font-size: 0.9375rem;
+}
+
+.footer-section a:hover {
+  color: white;
+}
+
+.footer-contact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.contact-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #666;
+  text-decoration: none;
+}
+
+.contact-link:hover {
+  color: white;
+}
+
+.contact-icon {
+  font-size: 1rem;
+}
+
+.social-icons {
+  display: flex;
+  gap: 0.9375rem;
+  margin-top: 0.625rem;
+}
+
+.social-icons a {
+  color: #666;
+  font-size: 1.25rem;
+  transition: color 0.3s;
+}
+
+.social-icons a:hover {
+  color: white;
+}
+
+.app-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  margin-top: 0.9375rem;
+}
+
+.app-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.9375rem;
+  background-color: #fff;
+  border-radius: 0.3125rem;
+  border: 1px solid #ddd;
+  transition: all 0.3s;
+}
+
+.app-button:hover {
+  background-color: #f0f0f0;
+  border-color: #ccc;
+  color: black !important;
+}
+
+.app-icon {
+  font-size: 1.125rem;
+}
+
+.footer-bottom {
+  text-align: center;
+  padding-top: 1.5rem;
+  border-top: 1px solid #ddd;
+  margin-top: 1.5rem;
+}
+
+.footer-bottom p {
+  color: #666;
+  margin-bottom: 0.9375rem;
+  font-size: 0.875rem;
+}
+
+.legal-links {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.9375rem;
+}
+
+.legal-links a {
+  color: #666;
+  text-decoration: none;
+  font-size: 0.8125rem;
+}
+
+.legal-links a:hover {
+  text-decoration: underline;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 1024px) {
+  .footer-container {
+    padding: 0 1rem;
+    gap: 1rem;
+  }
+
+  .footer-logo-section {
+    min-width: 12rem;
+  }
+
+  .footer-section {
+    min-width: 8rem;
+  }
+
+  .footer-logo {
+    width: 6.5rem;
+  }
+
+  .footer-section h3 {
+    font-size: 1rem;
+  }
+
+  .footer-section a {
+    font-size: 0.875rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .footer {
+    padding: 2rem 0 1rem;
+  }
+
+  .footer-logo-section {
+    min-width: 100%;
+    text-align: center;
+  }
+
+  .footer-logo {
+    width: 6rem;
+    margin: 0 auto 1rem;
+  }
+
+  .footer-section {
+    min-width: 45%;
+    text-align: left;
+  }
+
+  .footer-section h3 {
+    font-size: 0.9375rem;
+  }
+
+  .footer-section a {
+    font-size: 0.8125rem;
+  }
+
+  .footer-contact {
+    align-items: flex-start;
+  }
+
+  .social-icons {
+    justify-content: flex-start;
+  }
+
+  .app-button {
+    padding: 0.4rem 0.75rem;
+  }
+
+  .app-icon {
+    font-size: 1rem;
+  }
+
+  .footer-bottom p {
+    font-size: 0.8125rem;
+  }
+
+  .legal-links a {
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .footer {
+    padding: 1.5rem 0 0.75rem;
+  }
+
+  .footer-container {
+    flex-direction: column;
+    align-items: center;
+    padding: 0 0.75rem;
+  }
+
+  .footer-section {
+    min-width: 100%;
+    text-align: center;
+  }
+
+  .footer-contact {
+    align-items: center;
+  }
+
+  .social-icons {
+    justify-content: center;
+  }
+
+  .footer-logo {
+    width: 5.5rem;
+  }
+
+  .footer-section h3 {
+    font-size: 0.875rem;
+  }
+
+  .footer-section a {
+    font-size: 0.75rem;
+  }
+
+  .contact-icon {
+    font-size: 0.875rem;
+  }
+
+  .social-icons a {
+    font-size: 1.125rem;
+  }
+
+  .app-button {
+    padding: 0.3rem 0.625rem;
+  }
+
+  .app-icon {
+    font-size: 0.9375rem;
+  }
+
+  .footer-bottom {
+    padding-top: 1rem;
+    margin-top: 1rem;
+  }
+
+  .footer-bottom p {
+    font-size: 0.75rem;
+  }
+
+  .legal-links {
+    gap: 0.5rem;
+  }
+
+  .legal-links a {
+    font-size: 0.6875rem;
+  }
+}

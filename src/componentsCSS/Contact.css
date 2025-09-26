@@ -1,0 +1,475 @@
+/* Contact Page */
+.contact-page {
+    background-color: #ffffff;
+    font-family: 'Poppins', sans-serif;
+    color: #333;
+    padding: 0;
+    margin: 0;
+}
+
+/* Hero Section */
+.hero-section {
+    background: linear-gradient(135deg, #FF7A5A 0%, #FF6B47 100%);
+    padding: 5rem 0;
+    text-align: center;
+    color: white;
+}
+
+.hero-container {
+    max-width: 75rem;
+    margin: 0 auto;
+    padding: 0 1.25rem;
+}
+
+.contact-button {
+    background: transparent;
+    border: 0.125rem solid white;
+    color: white;
+    border-radius: 1.5625rem;
+    padding: 0.75rem 1.875rem;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 2.5rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.contact-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.hero-title {
+    font-size: 3.5rem;
+    font-weight: 700;
+    margin-bottom: 1.25rem;
+    line-height: 1.2;
+    margin-top: 0;
+}
+
+.hero-description {
+    font-size: 1.125rem;
+    font-weight: 400;
+    max-width: 37.5rem;
+    margin: 0 auto;
+    opacity: 0.9;
+    line-height: 1.6;
+}
+
+/* Contact Section */
+.contact-section {
+    padding: 5rem 0;
+    background-color: #ffffff;
+}
+
+.contact-container {
+    max-width: 75rem;
+    margin: 0 auto;
+    padding: 0 1.25rem;
+    display: flex;
+    gap: 3.75rem;
+    align-items: flex-start;
+}
+
+/* Left Side - Contact Info */
+.contact-info {
+    flex: 1;
+    padding-right: 2.5rem;
+}
+
+.contact-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 1.25rem;
+    margin-top: 0;
+    line-height: 1.3;
+}
+
+.contact-description {
+    font-size: 1.0625rem;
+    color: #666;
+    margin-bottom: 2.5rem;
+    line-height: 1.6;
+}
+
+.company-info {
+    margin-top: 2.5rem;
+}
+
+.info-item {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 1.5625rem;
+}
+
+.info-icon {
+    font-size: 1.5rem;
+    margin-right: 0.9375rem;
+    margin-top: 0.3125rem;
+    min-width: 1.875rem;
+}
+
+.info-content h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #333;
+    margin: 0 0 0.5rem 0;
+}
+
+.info-content p {
+    color: #666;
+    margin: 0;
+    line-height: 1.6;
+    font-size: 0.9375rem;
+}
+
+/* Right Side - Contact Form */
+.contact-form-wrapper {
+    flex: 1;
+    background: white;
+    padding: 2.5rem;
+    border-radius: 1rem;
+    box-shadow: 0 0.625rem 1.875rem rgba(0, 0, 0, 0.1);
+}
+
+.contact-form {
+    width: 100%;
+}
+
+.form-row {
+    display: flex;
+    gap: 1.25rem;
+    margin-bottom: 1.25rem;
+}
+
+.form-group {
+    margin-bottom: 1.25rem;
+}
+
+.form-group.half {
+    flex: 1;
+}
+
+.form-group label {
+    display: block;
+    color: #666;
+    margin-bottom: 0.625rem;
+    font-weight: 500;
+    font-size: 0.9375rem;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 0.9375rem;
+    border: 0.0625rem solid #e0e0e0;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    box-sizing: border-box;
+    transition: border-color 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #FF7A5A;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+    color: #aaa;
+}
+
+.phone-input {
+    display: flex;
+    align-items: center;
+    border: 0.0625rem solid #e0e0e0;
+    border-radius: 0.5rem;
+    transition: border-color 0.3s ease;
+}
+
+.phone-input:focus-within {
+    border-color: #FF7A5A;
+}
+
+.country-code {
+    display: flex;
+    align-items: center;
+    padding: 0.9375rem;
+    background-color: #f8f9fa;
+    border-right: 0.0625rem solid #e0e0e0;
+    gap: 0.5rem;
+}
+
+.flag {
+    font-size: 1rem;
+}
+
+.phone-input input {
+    border: none;
+    border-radius: 0;
+    flex: 1;
+}
+
+.phone-input input:focus {
+    border: none;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 7.5rem;
+}
+
+.form-footer {
+    margin-top: 1.875rem;
+}
+
+.privacy-text {
+    color: #666;
+    margin-bottom: 1.25rem;
+    font-size: 0.875rem;
+}
+
+.privacy-link {
+    color: #FF7A5A;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.privacy-link:hover {
+    text-decoration: underline;
+}
+
+.submit-button {
+    color: white;
+    border: none;
+    border-radius: 1.5625rem;
+    padding: 0.9375rem 2.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    background-image: linear-gradient(to right top, #03009f, #4a00b3, #7500c6, #9d00d9, #c400ea, #dd00db, #f000cd, #ff00bf, #ff0095, #ff0069, #ff003d, #ff0000);
+}
+
+.submit-button:hover {
+    background-image: linear-gradient(to right top, #03009f, #4a00b3, #7500c6, #9d00d9, #c400ea, #dd00db, #f000cd, #ff00bf, #ff0095, #ff0069, #ff003d, #ff0000);
+    opacity: 0.9;
+}
+
+/* Floating Chat Icon */
+.floating-chat {
+    position: fixed;
+    bottom: 1.875rem;
+    right: 1.875rem;
+    background-color: #FF7A5A;
+    color: white;
+    width: 3.75rem;
+    height: 3.75rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    cursor: pointer;
+    z-index: 1000;
+    transition: background-color 0.3s ease;
+    box-shadow: 0 0.25rem 0.75rem rgba(255, 122, 90, 0.3);
+}
+
+.floating-chat:hover {
+    background-color: #001eff;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .hero-section {
+        padding: 4rem 0;
+    }
+
+    .hero-container,
+    .contact-container {
+        max-width: 90%;
+        padding: 0 1rem;
+    }
+
+    .hero-title {
+        font-size: 3rem;
+    }
+
+    .hero-description {
+        font-size: 1rem;
+        max-width: 90%;
+    }
+
+    .contact-title {
+        font-size: 2.25rem;
+    }
+
+    .contact-info {
+        padding-right: 1.5rem;
+    }
+
+    .contact-form-wrapper {
+        padding: 2rem;
+    }
+
+    .info-content h3 {
+        font-size: 1.0625rem;
+    }
+
+    .info-content p {
+        font-size: 0.875rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .hero-section {
+        padding: 3rem 0;
+    }
+
+    .hero-title {
+        font-size: 2.5rem;
+    }
+
+    .hero-description {
+        font-size: 0.9375rem;
+    }
+
+    .contact-section {
+        padding: 3rem 0;
+    }
+
+    .contact-container {
+        flex-direction: column;
+        gap: 2.5rem;
+    }
+
+    .contact-info {
+        padding-right: 0;
+    }
+
+    .contact-title {
+        font-size: 2rem;
+    }
+
+    .contact-description {
+        font-size: 1rem;
+    }
+
+    .form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .form-group.half {
+        margin-bottom: 1.25rem;
+    }
+
+    .contact-form-wrapper {
+        padding: 1.875rem 1.25rem;
+    }
+
+    .form-group input,
+    .form-group textarea {
+        padding: 0.75rem;
+        font-size: 0.9375rem;
+    }
+
+    .form-group label {
+        font-size: 0.875rem;
+    }
+
+    .info-icon {
+        font-size: 1.25rem;
+    }
+
+    .floating-chat {
+        width: 3rem;
+        height: 3rem;
+        font-size: 1.25rem;
+        bottom: 1.25rem;
+        right: 1.25rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero-section {
+        padding: 2rem 0;
+    }
+
+    .hero-container,
+    .contact-container {
+        padding: 0 0.9375rem;
+    }
+
+    .hero-title {
+        font-size: 2rem;
+    }
+
+    .hero-description {
+        font-size: 0.875rem;
+        max-width: 95%;
+    }
+
+    .contact-button {
+        padding: 1rem 1.5rem;
+        margin-top: 20px;
+        font-size: 0.9375rem;
+    }
+
+    .contact-section {
+        padding: 2rem 0;
+    }
+
+    .contact-title {
+        font-size: 1.75rem;
+    }
+
+    .contact-description {
+        font-size: 0.9375rem;
+    }
+
+    .contact-form-wrapper {
+        padding: 1.25rem 0.9375rem;
+    }
+
+    .form-group input,
+    .form-group textarea {
+        padding: 0.625rem;
+        font-size: 0.875rem;
+    }
+
+    .form-group label {
+        font-size: 0.8125rem;
+    }
+
+    .info-icon {
+        font-size: 1.125rem;
+        margin-right: 0.75rem;
+    }
+
+    .info-content h3 {
+        font-size: 1rem;
+    }
+
+    .info-content p {
+        font-size: 0.8125rem;
+    }
+
+    .submit-button {
+        padding: 0.75rem 2rem;
+        font-size: 0.9375rem;
+    }
+
+    .privacy-text {
+        font-size: 0.8125rem;
+    }
+
+    .floating-chat {
+        width: 2.5rem;
+        height: 2.5rem;
+        font-size: 1.125rem;
+        bottom: 1rem;
+        right: 1rem;
+    }
+}
