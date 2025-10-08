@@ -58,7 +58,7 @@ function RunoHeader() {
 
             <div className="header-buttons">
                 <NavLink to="/login" className="header-login-btn">Login</NavLink>
-                {/* <NavLink to="/register" className="header-login-btn">Register</NavLink> */}
+                <NavLink to="/register" className="header-login-btn">Register</NavLink>
                 {/* <button className="header-demo-btn">Request A Demo</button> */}
             </div>
         </header>

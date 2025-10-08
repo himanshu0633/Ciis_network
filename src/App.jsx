@@ -90,7 +90,7 @@ function App() {
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        <Route path="/register" element={<CreateUser />} />
         <Route path="/autodialer" element={<AutoDialer />} />
         <Route path="/callmanagement" element={<CallManagement />} />
         <Route path="/leadmanagement" element={<LeadManagement />} />
