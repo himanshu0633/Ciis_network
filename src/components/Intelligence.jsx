@@ -43,7 +43,7 @@ const Intelligence = () => {
   return (
     <div className="intelligence-app">
       <div className="intelligence-hero">
-        <h1>Make Smarter Calls With <span className="intelligence-highlight">Runo's AI Powered</span> Tools</h1>
+        <h1>Make Smarter Calls With <span className="intelligence-highlight"> CIIS Network's AI Powered</span> Tools</h1>
         <p className="intelligence-subtitle">Power up your team with real-time call intelligence and actionable insights</p>
         <p className="intelligence-subtitle">Turn talk into insight</p>
       </div>

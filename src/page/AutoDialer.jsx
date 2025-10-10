@@ -101,7 +101,7 @@ function AutoDialer() {
             SIM-Based Auto <br />Dialer That Ends <br />Manual Calling for<br /> Good
           </h1>
           <p className="call-subtitle">
-            Integrated with Runo’s Call Management CRM, it speeds up outreach and helps your team stay on track with every lead.
+            Integrated with CiisNetwork Call Management CRM, it speeds up outreach and helps your team stay on track with every lead.
           </p>
           <ul className="call-features">
             <li>Auto Dial 100+ leads/ day</li>
@@ -144,7 +144,8 @@ team today"
       <section class="ai-tools-section">
         <div class="ai-tools-container">
           <h1 class="ai-tools-title">
-            Make Smarter Calls With <span class="ai-gradient">Runo’s <span class="blue">AI</span></span> Tools
+            Make Smarter Calls With <span class="ai-gradient">CiisNetwork <span class="blue">AI</span></span> Tools
+
           </h1>
           <p class="ai-tools-subtitle">Power up your team with real call intelligence</p>
 
@@ -189,7 +190,8 @@ team today"
       </section>
       <FeaturesSection />
       <Bannerbtn
-        title="Take a closer look at how Runo
+        title="Take a closer look at how CiisNetwork
+
 works for real teams like yours"
         buttonText="Book A Demo"
         backgroundImage="/src/image/runo/background-cta.webp"
@@ -224,7 +226,8 @@ works for real teams like yours"
 
           {/* Description */}
           <p className="telecalling-description">
-            Streamline your telecalling workflow. Runo simplifies call management,
+            Streamline your telecalling workflow. CiisNetwork
+             simplifies call management,
             lead tracking, and team monitoring in one app.
           </p>
 

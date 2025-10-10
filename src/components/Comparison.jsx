@@ -4,17 +4,17 @@ import '../componentsCSS/Comparison.css';
 const Comparison = () => {
   const features = [ 
     // {label: '', runo: 'RUNO', rest: 'The Rest' },
-    { label: 'Setup Time', runo: '<30 minutes', rest: '>30 days' },
-    { label: 'Call Connect Rate', runo: '>78%', rest: '<30%' },
-    { label: 'Customization', runo: 'Flexible', rest: 'Rigid' },
-    { label: 'Lead Allocation', runo: 'Auto-Assigned', rest: 'Manual' },
-    { label: 'Price', runo: 'ROI-Friendly', rest: 'Expensive' },
-    { label: 'Reliability', runo: 'Zero Downtime', rest: 'Unstable' },
+    { label: 'Setup Time', CiisNetwork: '<30 minutes', rest: '>30 days' },
+    { label: 'Call Connect Rate', CiisNetwork: '>78%', rest: '<30%' },
+    { label: 'Customization', CiisNetwork: 'Flexible', rest: 'Rigid' },
+    { label: 'Lead Allocation', CiisNetwork: 'Auto-Assigned', rest: 'Manual' },
+    { label: 'Price', CiisNetwork: 'ROI-Friendly', rest: 'Expensive' },
+    { label: 'Reliability', CiisNetwork: 'Zero Downtime', rest: 'Unstable' },
   ];
 
   return (
     <div className="comparison-section">
-      <h2 className="title">Upgrade Your Workflow: Runo vs The Rest</h2>
+      <h2 className="title">Upgrade Your Workflow: CiisNetwork vs The Rest</h2>
 
       <div className="comparison-container">
         
@@ -26,9 +26,9 @@ const Comparison = () => {
         </div>
 
         <div className="column runo-column">
-          <div className="runo-header">runo</div>
+          <div className="runo-header">Ciis Network</div>
           {features.map((item, index) => (
-            <div className="cell runo" key={index}>{item.runo}</div>
+            <div className="cell runo" key={index}>{item.CiisNetwork}</div>
           ))}
         </div>
 

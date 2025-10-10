@@ -14,7 +14,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../src/context/useAuth';
 import { ColorModeContext } from '../../src/Theme/ThemeContext';
-
+import logo from '/logoo.png'
 const Header = ({ toggleSidebar }) => {
   const { user } = useAuth();
   const theme = useTheme();
@@ -57,18 +57,27 @@ const Header = ({ toggleSidebar }) => {
           <IconButton onClick={toggleSidebar} edge="start" size={isMobile ? 'small' : 'medium'}>
             <MenuIcon fontSize={isMobile ? 'small' : 'medium'} />
           </IconButton>
-          <Typography
-            variant="h6"
-            noWrap
-            onClick={() => navigate('/user/dashboard')}
-            sx={{
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              fontSize: isMobile ? '1.4rem' : '2rem',
-            }}
-          >
-            RUNO
-          </Typography>
+        <Typography
+  variant="h6"
+  noWrap
+  component="img"              // 👈 Typography ko image bana diya
+  src={logo}             // 👈 Apna logo yahan daalo
+  alt="Logo"
+  onClick={() => navigate('/user/dashboard')}
+  sx={{
+    height: isMobile ? 35 : 50,  // 👈 Responsive height
+    width: 'auto',
+    cursor: 'pointer',
+    display: 'block',
+    objectFit: 'contain',
+    '&:hover': {
+      opacity: 0.9,
+      transform: 'scale(1.05)',
+      transition: 'all 0.3s ease',
+    },
+  }}
+/>
+
         </Box>
 
         {/* Center: Welcome (hidden on mobile), Name (shown always) */}

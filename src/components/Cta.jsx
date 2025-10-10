@@ -34,7 +34,7 @@ const Cta = () => {
             fontSize: { xs: '1rem', md: '1.2rem' } // Responsive font size
           }}
         >
-          Runo Integrates with all available lead sources and top CRMs
+           CIIS Network Integrates with all available lead sources and top CRMs
         </Typography>
 
         {/* Placeholder for logos or integrations */}

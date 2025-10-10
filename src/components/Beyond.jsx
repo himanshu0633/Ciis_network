@@ -77,7 +77,7 @@ const Beyond = () => {
               px: 1,
             }}
           >
-            Runo bridges this gap. It combines SIM-based calling with a powerful CRM that's built for modern sales
+             CIIS Network bridges this gap. It combines SIM-based calling with a powerful CRM that's built for modern sales
             teams. You get better call connect rates, clear visibility, and a sales process your team will actually
             follow, without needing cloud telephony. This isn't a workaround. It's a new category built for how sales
             should work today.

@@ -2,14 +2,14 @@ import React from 'react';
 import { FaApple, FaGooglePlay, FaEnvelope, FaPhone } from 'react-icons/fa';
 import { FaXTwitter, FaInstagram, FaLinkedin, FaFacebookF } from 'react-icons/fa6';
 import '../componentsCSS/Footer.css'; 
-import logo from '../image/logo.png'
+import logo from '/logoo.png'
 const Footer = () => {
   return (
       <footer className="footer">
       <div className="footer-container">
         {/* Logo Section */}
         <div className="footer-logo-section">
-          <img src={logo} alt="Runo Logo" className="footer-logo" />
+          <img src={logo} alt=" CIIS Network Logo" className="footer-logo" />
           <div className="footer-contact">
             <a href="mailto:cars@tuno.ai" className="contact-link">
               <FaEnvelope className="contact-icon" /> cars@tuno.ai
@@ -71,7 +71,7 @@ const Footer = () => {
       </div>
 
       <div className="footer-bottom">
-        <p>© 2025 Runo, All Rights Reserved.</p>
+        <p>© 2025 CIIS Network, All Rights Reserved.</p>
         <div className="legal-links">
           <a href="/terms">Terms & Conditions</a>
           <a href="/privacy">Privacy Policy</a>

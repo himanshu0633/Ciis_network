@@ -9,21 +9,21 @@ const Review = () => {
         const testimonials = [
     {
       id: 1,
-      text: "Our calling process was fairly straightforward, but we felt there was room to improve how we tracked calls and follow-ups. Runo helped us bring in that extra layer of structure without complicating anything.",
+      text: "Our calling process was fairly straightforward, but we felt there was room to improve how we tracked calls and follow-ups.  CIIS Network helped us bring in that extra layer of structure without complicating anything.",
       author: "Anas Rahman Junaid",
       role: "Founder & Chief Researcher, Hurun India",
       image: upstox1
     },
     {
       id: 2,
-      text: "Runo has transformed the way we manage our sales operations. The live dashboard and real-time tracking have made our processes more efficient and customer-focused.",
+      text: " CIIS Network has transformed the way we manage our sales operations. The live dashboard and real-time tracking have made our processes more efficient and customer-focused.",
       author: "Manish Patel",
       role: "Founder And MD, MSwipe",
       image:  upstox2
     },
     {
       id: 3,
-      text: "Since implementing Runo, our team productivity has increased by 40%. The intuitive interface and powerful analytics have been game-changers for our business.",
+      text: "Since implementing CIIS Network, our team productivity has increased by 40%. The intuitive interface and powerful analytics have been game-changers for our business.",
       author: "Sarah Williams",
       role: "CEO, TechSolutions Inc.",
       image:  upstox3
@@ -37,7 +37,7 @@ const Review = () => {
 
       {/* Testimonial Header */}
       <div className="testimonial-header">
-        <h2><strong>We're Not Saying Runo's Magic... But People Think It Is</strong></h2>
+        <h2><strong>We're Not Saying  CIIS Network's Magic... But People Think It Is</strong></h2>
       </div>
 
       {/* Testimonials */}

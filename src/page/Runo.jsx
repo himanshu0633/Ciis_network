@@ -125,7 +125,9 @@ function Runo() {
             />
             {/*  */}
             <Bannerbtn
-                title="Get a personalized walkthrough of Runo in action"
+                title="Get a personalized walkthrough of CiisNetwork
+                
+                in action"
                 buttonText="Schedule Your Demo"
                 backgroundImage="/src/image/runo/background-cta.webp"
                 onClick={() => alert("Demo scheduled")}

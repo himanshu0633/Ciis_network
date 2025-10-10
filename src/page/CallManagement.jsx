@@ -145,7 +145,7 @@ team today"
       <section class="ai-tools-section">
         <div class="ai-tools-container">
           <h1 class="ai-tools-title">
-            Make Smarter Calls With <span class="ai-gradient">Runo’s <span class="blue">AI</span></span> Tools
+            Make Smarter Calls With <span class="ai-gradient">CiisNetwork <span class="blue">AI</span></span> Tools
           </h1>
           <p class="ai-tools-subtitle">Power up your team with real call intelligence</p>
 
@@ -190,7 +190,7 @@ team today"
       </section>
       <FeaturesSection />
       <Bannerbtn
-        title="Take a closer look at how Runo
+        title="Take a closer look at how CiisNetwork
 works for real teams like yours"
         buttonText="Book A Demo"
         backgroundImage="/src/image/runo/background-cta.webp"
