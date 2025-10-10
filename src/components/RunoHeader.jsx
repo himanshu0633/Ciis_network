@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import Logo from '../image/logo.png';
+import Logo from '/logoo.png';
 import '../componentsCSS/RunoHeader.css';
 
 function RunoHeader() {
@@ -25,7 +25,7 @@ function RunoHeader() {
     return (
         <header>
             <div className="header-logo">
-                <img src={Logo} alt="Runo Logo" />
+                <img src={Logo} alt=" CIIS Network Logo" />
             </div>
 
             <button className="nav-toggle" onClick={handleMobileToggle}>

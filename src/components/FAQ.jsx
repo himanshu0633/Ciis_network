@@ -11,12 +11,12 @@ const FAQ = () => {
 
   const faqItems = [
     {
-      question: "What are the billing cycles available for Runo?",
+      question: "What are the billing cycles available for  CIIS Network?",
       answer: "You can choose from quarterly, half-yearly, or annual billing. The longer the cycle, the more you save."
     },
     {
-      question: "How much does Runo cost per user?",
-      answer: "Runo starts at ₹599 per user per month when billed annually. If you prefer shorter billing cycles, it's ₹699 per user per month for 6 months and ₹899 per user per month for 3 months. All plans come with a 10-day free trial and no setup cost."
+      question: "How much does  CIIS Network cost per user?",
+      answer: " CIIS Network starts at ₹599 per user per month when billed annually. If you prefer shorter billing cycles, it's ₹699 per user per month for 6 months and ₹899 per user per month for 3 months. All plans come with a 10-day free trial and no setup cost."
     },
     {
       question: "Is there a free trial available?",
@@ -28,7 +28,7 @@ const FAQ = () => {
     },
     {
       question: "Are there any setup or implementation fees?",
-      answer: "No. Runo setup is completely free and takes less than 30 minutes. If your team needs personalised help with setup, CRM customisation, or training, we offer an optional guided onboarding."
+      answer: "No. CIIS Network setup is completely free and takes less than 30 minutes. If your team needs personalised help with setup, CRM customisation, or training, we offer an optional guided onboarding."
     },
     {
       question: "Can I change my billing cycle later?",

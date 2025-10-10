@@ -6,7 +6,7 @@ const AddOnsSection = () => {
    {
       id: 1,
       title: "WhatsApp Business",
-      description: "Send bulk WhatsApp messages directly from Runo, track delivery and replies, and manage all conversations.",
+      description: "Send bulk WhatsApp messages directly from CIIS Network, track delivery and replies, and manage all conversations.",
       icon: "💬",
       className: "whatsapp"
     },
@@ -44,7 +44,7 @@ const AddOnsSection = () => {
     <section className="addons-section">
       <div className="addons_container">
         <div className="addons_section-title">
-          <h2>Add-Ons to Power Up Your Runo Plan</h2>
+          <h2>Add-Ons to Power Up Your  CIIS Network Plan</h2>
           <p className="subtitle">Enhance your experience with these powerful extensions</p>
         </div>
         <div className="addons-grid">

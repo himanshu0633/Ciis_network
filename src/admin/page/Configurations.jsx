@@ -77,7 +77,7 @@ function Configurations() {
               />
             </Box>
             <Typography variant="caption" color="text.secondary">
-              Note: By disabling this Runo will stop tracking internal team calls.
+              Note: By disabling this CIIS Network will stop tracking internal team calls.
             </Typography>
           </Box>
 
@@ -91,7 +91,7 @@ function Configurations() {
               />
             </Box>
             <Typography variant="caption" color="text.secondary">
-              Note: By enabling this Runo will stop tracking unknown calls.
+              Note: By enabling this  CIIS Network will stop tracking unknown calls.
             </Typography>
           </Box>
         </AccordionDetails>

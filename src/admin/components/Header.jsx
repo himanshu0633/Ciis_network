@@ -37,7 +37,7 @@ import { useNavigate } from 'react-router-dom';
 import SearchBar from './SearchBar';
 import { ColorModeContext } from '../../Theme/ThemeContext';
 import { useAuth } from '../../context/useAuth';
-
+import logo from '/logoo.png'
 const StyledAppBar = styled(AppBar)(({ theme }) => ({
   transition: theme.transitions.create(['margin', 'width']),
   flexDirection: 'row',
@@ -134,21 +134,34 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
             {isSidebarOpen ? <CloseIcon /> : <MenuIcon />}
           </IconButton>
 
-          <Typography
-            variant="h6"
-            noWrap
-            component="div"
-            sx={{
-              fontSize: isMobile ? '1.2rem' : '1.5rem',
-              fontWeight: 700,
-             
-              cursor: 'pointer',
-              '&:hover': { opacity: 0.9 },
-            }}
-            onClick={() => navigate('/user/dashboard')}
-          >
-            RUNO
-          </Typography>
+        <Typography
+  variant="h6"
+  noWrap
+  component="div"
+  sx={{
+    display: 'flex',
+    alignItems: 'center',
+    cursor: 'pointer',
+    '&:hover img': {
+      opacity: 0.9,
+      transform: 'scale(1.05)',
+      transition: 'all 0.3s ease',
+    },
+  }}
+  onClick={() => navigate('/user/dashboard')}
+>
+  <img
+    src={logo}
+    alt="Logo"
+    style={{
+      height: isMobile ? '35px' : '45px',
+      width: 'auto',
+      objectFit: 'contain',
+      display: 'block',
+    }}
+  />
+</Typography>
+
 
           {!isMobile && <SearchBar />}
         </Box>

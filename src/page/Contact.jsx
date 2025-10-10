@@ -34,7 +34,7 @@ function Contact() {
             <button className="contact-button">CONTACT US</button>
             <h1 className="hero-title">We're Here to Help — Let's Connect</h1>
             <p className="hero-description">
-              Whether you have questions, need support, or want to explore a partnership, the Runo
+              Whether you have questions, need support, or want to explore a partnership, the CiisNetwork
               team is ready to assist you. Reach out and let's start the conversation.
             </p>
           </div>
@@ -47,7 +47,7 @@ function Contact() {
             <div className="contact-info">
               <h2 className="contact-title">We'd Always Love to Hear From You</h2>
               <p className="contact-description">
-                Have any questions about RUNO, product demo or support? Shoot them away here.
+                Have any questions about CiisNetwork, product demo or support? Shoot them away here.
               </p>
 
               <div className="company-info">
@@ -73,7 +73,7 @@ function Contact() {
                 <div className="info-item">
                   <div className="info-icon"></div>
                   <div className="info-content">
-                    <p><strong>Email:</strong> care@runo.ai</p>
+                    <p><strong>Email:</strong> care@CiisNetwork.ai</p>
                   </div>
                 </div>
               </div>

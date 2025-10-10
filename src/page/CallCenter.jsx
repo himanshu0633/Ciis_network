@@ -135,7 +135,7 @@ without the clutter"
       <section class="ai-tools-section">
         <div class="ai-tools-container">
           <h1 class="ai-tools-title">
-            Make Smarter Calls With <span class="ai-gradient">Runo’s <span class="blue">AI</span></span> Tools
+            Make Smarter Calls With <span class="ai-gradient">CiisNetwork <span class="blue">AI</span></span> Tools
           </h1>
           <p class="ai-tools-subtitle">Power up your team with real call intelligence</p>
 
@@ -215,7 +215,8 @@ calling actually feels like?"
 
           {/* Description */}
           <p className="telecalling-description">
-            Stay connected to every call and every rep, whether you're in the office or on the move. Track lead activity, assign follow-ups, and monitor team performance directly from your phone using Runo’s SIM-based call center app. No desktops, no delays.
+            Stay connected to every call and every rep, whether you're in the office or on the move. Track lead activity, assign follow-ups, and monitor team performance directly from your phone using CiisNetwork
+             SIM-based call center app. No desktops, no delays.
           </p>
 
           {/* Download Buttons */}

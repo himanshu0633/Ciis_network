@@ -145,7 +145,9 @@ team today"
       <section class="ai-tools-section">
         <div class="ai-tools-container">
           <h1 class="ai-tools-title">
-            Make Smarter Calls With <span class="ai-gradient">Runo’s <span class="blue">AI</span></span> Tools
+            Make Smarter Calls With <span class="ai-gradient">Ciis Network
+              
+               <span class="blue">AI</span></span> Tools
           </h1>
           <p class="ai-tools-subtitle">Power up your team with real call intelligence</p>
 
@@ -190,7 +192,10 @@ team today"
       </section>
       <FeaturesSection />
       <Bannerbtn
-        title="Take a closer look at how Runo
+        title="Take a closer look at how Ciis Network
+
+
+        
 works for real teams like yours"
         buttonText="Book A Demo"
         backgroundImage="/src/image/runo/background-cta.webp"
@@ -253,7 +258,7 @@ works for real teams like yours"
 
           {/* Description */}
           <p className="telecalling-description">
-            Streamline your telecalling workflow. Runo simplifies call management,
+            Streamline your telecalling workflow. Ciis Network simplifies call management,
             lead tracking, and team monitoring in one app.
           </p>
 
