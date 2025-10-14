@@ -231,7 +231,6 @@ const UserDashboard = () => {
   const fetchData = async () => {
     setLoading(true);
     const token = localStorage.getItem('token');
-    setLoading(true);
     try {
       const [statusRes, listRes] = await Promise.all([
         axios.get('/attendance/status', { 
@@ -263,10 +262,8 @@ const UserDashboard = () => {
         const d = new Date(e.date);
         const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
         dates.push(key);
-        if (entry.totalTime) timeMap[key] = entry.totalTime;
-        if (date.getMonth() === currentMonth && entry.status === 'PRESENT') {
-          countPresent++;
-        }
+        if (e.totalTime) timeMap[key] = e.totalTime;
+        if (d.getMonth() === thisMonth && e.status === 'PRESENT') countPresent++;
       });
       
       setMarkedDates([...new Set(dates)]);
@@ -295,7 +292,7 @@ const UserDashboard = () => {
   // Timer effect - separate from data fetching
   useEffect(() => {
     if (isRunning) {
-      const id = setInterval(() => setTimer(prev => prev + 1), 1000);
+      const id = setInterval(() => setTimer(t => t + 1), 1000);
       setIntervalId(id);
       return () => clearInterval(id);
     } else if (intervalId) {
@@ -332,7 +329,7 @@ const UserDashboard = () => {
     }
   };
 
-  const handleClockOut = async () => {
+  const handleOut = async () => {
     try {
       const token = localStorage.getItem('token');
       const res = await axios.post('/attendance/out', {}, { 
@@ -385,9 +382,6 @@ const UserDashboard = () => {
 
   const calendarDays = getCalendarGrid(calendarYear, calendarMonth);
   const today = new Date();
-  const currentDay = today.getDate();
-  const currentMonth = today.getMonth();
-  const currentYear = today.getFullYear();
 
   const isMarked = day => markedDates.includes(`${calendarYear}-${calendarMonth}-${day}`);
   const isToday = day => day === today.getDate() && 
@@ -875,13 +869,6 @@ const UserDashboard = () => {
         </DialogActions>
       </Dialog>
     </Box>
-  </CardContent>
-</StatCard>
-        </Grid>
-
- 
-      </Box>
-    </Fade>
   );
 };
 
