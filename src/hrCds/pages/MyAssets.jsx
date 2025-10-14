@@ -11,7 +11,8 @@ import {
 import {
   FiRefreshCw, FiPackage, FiSmartphone, 
   FiHeadphones, FiCpu, FiCheckCircle, FiClock,
-  FiXCircle, FiPlus, FiSearch, FiUser, FiSettings
+  FiXCircle, FiPlus, FiSearch, FiUser, FiSettings,
+  FiMonitor // Added FiMonitor for laptop icon
 } from 'react-icons/fi';
 import axios from '../../utils/axiosConfig';
 import { styled } from '@mui/material/styles';
@@ -124,10 +125,11 @@ const PropertyItem = styled(ListItem)(({ theme }) => ({
   },
 }));
 
+// FIXED: Added missing icons for all assets
 const allowedAssets = [
   { value: 'phone', label: 'Phone', icon: FiSmartphone },
   { value: 'sim', label: 'SIM Card', icon: FiCpu },
-  { value: 'laptop', label: 'Laptop' },
+  { value: 'laptop', label: 'Laptop', icon: FiMonitor }, // Added FiMonitor
   { value: 'desktop', label: 'Desktop', icon: FiSettings },
   { value: 'headphone', label: 'Headphone', icon: FiHeadphones }
 ];
@@ -240,11 +242,15 @@ const MyAssets = () => {
     }
   };
 
+  // FIXED: Added safe icon rendering with fallback
   const getAssetIcon = (assetType) => {
     const asset = allowedAssets.find(a => a.value === assetType);
-    return asset ? React.createElement(asset.icon, { 
-      color: theme.palette.primary.main 
-    }) : <FiPackage />;
+    if (asset && asset.icon) {
+      return React.createElement(asset.icon, { 
+        color: theme.palette.primary.main 
+      });
+    }
+    return <FiPackage color={theme.palette.primary.main} />;
   };
 
   const formatDate = (dateStr) => {

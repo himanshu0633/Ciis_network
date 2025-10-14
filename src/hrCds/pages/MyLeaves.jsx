@@ -8,14 +8,15 @@ import {
 } from '@mui/material';
 import {
   FiCalendar, FiPlus, FiClock, FiCheckCircle, FiXCircle,
-  FiAlertCircle, FiInfo, FiDownload, FiFilter
+  FiAlertCircle, FiInfo, FiDownload, FiFilter, FiRefreshCw, FiUser
 } from 'react-icons/fi';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import axios from '../../utils/axiosConfig';
 import { styled } from '@mui/material/styles';
-import { FiRefreshCw } from 'react-icons/fi';
+import { FiChevronRight } from 'react-icons/fi';
+
 // Enhanced Styled Components
 const StatCard = styled(Card)(({ theme, color = 'primary' }) => ({
   background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
@@ -326,10 +327,9 @@ const MyLeaves = () => {
 
               <Stack direction="row" spacing={2}>
                 <Tooltip title="Refresh">
-               <IconButton onClick={fetchLeaves}>
-  <FiRefreshCw />
-</IconButton>
-
+                  <IconButton onClick={fetchLeaves}>
+                    <FiRefreshCw />
+                  </IconButton>
                 </Tooltip>
                 <Button
                   variant="contained"
