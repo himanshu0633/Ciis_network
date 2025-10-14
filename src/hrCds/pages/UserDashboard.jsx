@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Box, Typography, Button, Paper, IconButton,
   Stack, Grid, Tooltip, Avatar, useTheme, useMediaQuery,
-  Card, CardContent, Chip, LinearProgress, Fade
+  Card, CardContent, Chip, LinearProgress, Fade, Badge
 } from '@mui/material';
 import axios from '../../utils/axiosConfig';
 import { ToastContainer, toast } from 'react-toastify';
@@ -11,7 +11,8 @@ import { styled } from '@mui/material/styles';
 import {
   FiClock, FiUser, FiCalendar, FiTrendingUp,
   FiChevronLeft, FiChevronRight, FiPlay, FiSquare,
-  FiClock as FiClockIcon
+  FiClock as FiClockIcon, FiCheckCircle, FiAlertCircle,
+  FiList, FiArrowRight
 } from 'react-icons/fi';
 import {
   MdAccessTime, MdToday, MdDateRange,
@@ -146,6 +147,25 @@ const TimerDisplay = styled(Box)(({ theme }) => ({
   }
 }));
 
+const TaskCard = styled(Card)(({ theme, status }) => ({
+  background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
+  borderRadius: theme.shape.borderRadius * 2,
+  boxShadow: theme.shadows[2],
+  transition: theme.transitions.create(['all'], {
+    duration: theme.transitions.duration.standard,
+  }),
+  borderLeft: `4px solid ${
+    status === 'completed' ? theme.palette.success.main :
+    status === 'in-progress' ? theme.palette.info.main :
+    status === 'pending' ? theme.palette.warning.main :
+    theme.palette.error.main
+  }`,
+  '&:hover': {
+    boxShadow: theme.shadows[6],
+    transform: 'translateY(-2px)',
+  },
+}));
+
 const formatTime = seconds => {
   const h = String(Math.floor(seconds / 3600)).padStart(2, '0');
   const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
@@ -192,6 +212,14 @@ const UserDashboard = () => {
   const [todayStatus, setTodayStatus] = useState(null);
   const [stats, setStats] = useState({ totalDays: 0, presentDays: 0, averageTime: '00:00:00' });
   const [loading, setLoading] = useState(true);
+  const [taskStats, setTaskStats] = useState({
+    total: 0,
+    pending: 0,
+    inProgress: 0,
+    completed: 0,
+    overdue: 0
+  });
+  const [recentTasks, setRecentTasks] = useState([]);
 
   const fetchStats = async () => {
     const token = localStorage.getItem('token');
@@ -214,6 +242,34 @@ const UserDashboard = () => {
       setUserData(res.data);
     } catch (error) {
       console.error('Error fetching user:', error);
+    }
+  };
+
+  const fetchTaskSummary = async () => {
+    const token = localStorage.getItem('token');
+    try {
+      const res = await axios.get('/task/summary', { 
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setTaskStats(res.data.stats || {
+        total: 0,
+        pending: 0,
+        inProgress: 0,
+        completed: 0,
+        overdue: 0
+      });
+      setRecentTasks(res.data.recentTasks || []);
+    } catch (error) {
+      console.error('Error fetching task summary:', error);
+      // Set default values if API fails
+      setTaskStats({
+        total: 0,
+        pending: 0,
+        inProgress: 0,
+        completed: 0,
+        overdue: 0
+      });
+      setRecentTasks([]);
     }
   };
 
@@ -270,6 +326,7 @@ const UserDashboard = () => {
     fetchUser();
     fetchStats();
     fetchData();
+    fetchTaskSummary();
   }, []);
 
   useEffect(() => {
@@ -363,6 +420,32 @@ const UserDashboard = () => {
 
   const totalDaysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
   const attendancePercentage = Math.round((monthlyPresentCount / totalDaysInMonth) * 100);
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'completed':
+        return <FiCheckCircle color={theme.palette.success.main} />;
+      case 'in-progress':
+        return <FiAlertCircle color={theme.palette.info.main} />;
+      case 'pending':
+        return <FiClock color={theme.palette.warning.main} />;
+      default:
+        return <FiClock color={theme.palette.text.secondary} />;
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'completed':
+        return 'success';
+      case 'in-progress':
+        return 'info';
+      case 'pending':
+        return 'warning';
+      default:
+        return 'default';
+    }
+  };
 
   if (loading) {
     return (
@@ -553,6 +636,105 @@ const UserDashboard = () => {
                   </Box>
                 </Stack>
               </TimerDisplay>
+
+              {/* Task Summary Section */}
+              <StatCard>
+                <CardContent>
+                  <Stack 
+                    direction="row" 
+                    alignItems="center" 
+                    justifyContent="space-between" 
+                    sx={{ mb: 2 }}
+                  >
+                    <Typography variant="h6" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <FiList />
+                      My Tasks
+                    </Typography>
+                    <Button 
+                      endIcon={<FiArrowRight />} 
+                      size="small"
+                      sx={{ textTransform: 'none', fontWeight: 600 }}
+                    >
+                      View All
+                    </Button>
+                  </Stack>
+
+                  {/* Task Stats */}
+                  <Grid container spacing={2} sx={{ mb: 3 }}>
+                    {[
+                      { label: 'Total', value: taskStats.total, color: 'primary' },
+                      { label: 'Pending', value: taskStats.pending, color: 'warning' },
+                      { label: 'In Progress', value: taskStats.inProgress, color: 'info' },
+                      { label: 'Completed', value: taskStats.completed, color: 'success' },
+                    ].map((stat, index) => (
+                      <Grid item xs={3} key={index}>
+                        <Box sx={{ textAlign: 'center' }}>
+                          <Typography variant="h4" sx={{ fontWeight: 800, color: `${theme.palette[stat.color].main}` }}>
+                            {stat.value}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {stat.label}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    ))}
+                  </Grid>
+
+                  {/* Recent Tasks */}
+                  <Stack spacing={2}>
+                    <Typography variant="subtitle2" color="text.secondary" sx={{ fontWeight: 600 }}>
+                      RECENT TASKS
+                    </Typography>
+                    {recentTasks.length > 0 ? (
+                      recentTasks.slice(0, 3).map((task, index) => (
+                        <TaskCard key={index} status={task.status}>
+                          <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                            <Stack direction="row" alignItems="flex-start" spacing={2}>
+                              <Box sx={{ pt: 0.5 }}>
+                                {getStatusIcon(task.status)}
+                              </Box>
+                              <Box sx={{ flex: 1 }}>
+                                <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                                  {task.title}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.2 }}>
+                                  {task.description && task.description.length > 60 
+                                    ? `${task.description.substring(0, 60)}...` 
+                                    : task.description
+                                  }
+                                </Typography>
+                                <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+                                  <Chip 
+                                    label={task.status} 
+                                    size="small"
+                                    color={getStatusColor(task.status)}
+                                    variant="outlined"
+                                  />
+                                  {task.dueDate && (
+                                    <Chip 
+                                      icon={<FiCalendar size={12} />}
+                                      label={new Date(task.dueDate).toLocaleDateString()} 
+                                      size="small"
+                                      variant="outlined"
+                                    />
+                                  )}
+                                </Stack>
+                              </Box>
+                            </Stack>
+                          </CardContent>
+                        </TaskCard>
+                      ))
+                    ) : (
+                      <Box sx={{ textAlign: 'center', py: 3 }}>
+                        <FiList size={32} color={theme.palette.text.secondary} />
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                          No tasks assigned
+                        </Typography>
+                      </Box>
+                    )}
+                  </Stack>
+                </CardContent>
+              </StatCard>
             </Stack>
           </Grid>
 
@@ -580,12 +762,12 @@ const UserDashboard = () => {
                       progress: stats.totalDays ? Math.round((stats.presentDays / stats.totalDays) * 100) : 0,
                       color: 'success'
                     },
-                    {
-                      label: 'Average Time',
-                      value: stats.averageTime,
-                      icon: <MdAccessTime />,
-                      color: 'info'
-                    }
+                    // {
+                    //   label: 'Average Time',
+                    //   value: stats.averageTime,
+                    //   icon: <MdAccessTime />,
+                    //   color: 'info'
+                    // }
                   ].map((item, index) => (
                     <Box key={index}>
                       <Stack direction="row" alignItems="center" spacing={2}>
@@ -624,137 +806,164 @@ const UserDashboard = () => {
                 </Stack>
               </CardContent>
             </StatCard>
+           
           </Grid>
-        </Grid>
-
-        {/* Calendar Section */}
-        <StatCard>
-          <CardContent sx={{ p: 3 }}>
-           <Stack 
-  direction={isSmallMobile ? 'column' : 'row'} 
-  alignItems={isSmallMobile ? 'flex-start' : 'center'} 
-  justifyContent="space-between" 
-  spacing={2}
-  sx={{ mb: 3 }}
->
-  <Typography 
-    variant="h6" 
-    sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}
-  >
-    <FiCalendar />
-    {monthNames[calendarMonth]} {calendarYear}
-  </Typography>
-  
-  <Stack direction="row" spacing={1} alignItems="center">
-    <Tooltip title="Previous Month">
-      <IconButton 
-        onClick={handlePrevMonth}
-        sx={{ 
-          border: `1px solid ${theme.palette.divider}`,
-          '&:hover': { bgcolor: theme.palette.action.hover }
-        }}
-      >
-        <FiChevronLeft />
-      </IconButton>
-    </Tooltip>
-    
-    <Button 
-      variant="outlined" 
-      onClick={handleToday}
-      size="small"
+           <StatCard sx={{ maxWidth: 400, mx: 'auto' }}>
+  <CardContent sx={{ p: 2 }}>
+    <Stack 
+      direction="row" 
+      alignItems="center" 
+      justifyContent="space-between" 
+      spacing={1}
+      sx={{ mb: 2 }}
     >
-      Today
-    </Button>
-    
-    <Tooltip title="Next Month">
-      <IconButton 
-        onClick={handleNextMonth}
+      <Typography 
+        variant="h6" 
         sx={{ 
-          border: `1px solid ${theme.palette.divider}`,
-          '&:hover': { bgcolor: theme.palette.action.hover }
+          fontWeight: 700, 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: 1,
+          fontSize: '1rem'
         }}
       >
-        <FiChevronRight />
-      </IconButton>
-    </Tooltip>
-  </Stack>
-</Stack>
-
-
-            {/* Calendar Grid */}
-            <Box sx={{ overflowX: 'auto' }}>
-              <Box 
-                component="table" 
-                sx={{ 
-                  width: '100%', 
-                  borderCollapse: 'collapse',
-                  minWidth: isSmallMobile ? 400 : 'auto'
-                }}
-              >
-                <thead>
-                  <tr>
-                    {daysOfWeek.map(day => (
-                      <th 
-                        key={day} 
-                        style={{ 
-                          background: theme.palette.primary.main,
-                          color: theme.palette.primary.contrastText,
-                          padding: '16px 8px',
-                          fontWeight: 600,
-                          textAlign: 'center',
-                          fontSize: '0.875rem',
-                          borderRadius: theme.shape.borderRadius,
-                          margin: '2px'
-                        }}
-                      >
-                        {day}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-          <tbody>
-  {calendarDays.map((week, weekIndex) => (
-    <tr key={weekIndex}>
-      {week.map((day, dayIndex) => {
-        const dayKey = `${calendarYear}-${calendarMonth}-${day}`;
-        const workedTime = dailyTimeMap?.[dayKey];
-
-        return (
-          <td
-            key={dayIndex}
-            style={{
-              height: 80,
-              textAlign: 'center',
-              padding: '8px 4px',
+        <FiCalendar size={18} />
+        {monthNames[calendarMonth]} {calendarYear}
+      </Typography>
+      
+      <Stack direction="row" spacing={0.5} alignItems="center">
+        <Tooltip title="Previous Month">
+          <IconButton 
+            onClick={handlePrevMonth}
+            size="small"
+            sx={{ 
               border: `1px solid ${theme.palette.divider}`,
-              background: theme.palette.background.paper
+              '&:hover': { bgcolor: theme.palette.action.hover }
             }}
           >
-            {day && (
-              <Tooltip
-                title={workedTime ? `Worked: ${workedTime}` : 'No attendance'}
-                placement="top"
+            <FiChevronLeft size={16} />
+          </IconButton>
+        </Tooltip>
+        
+        <Button 
+          variant="outlined" 
+          onClick={handleToday}
+          size="small"
+          sx={{ 
+            minWidth: 'auto',
+            px: 1,
+            fontSize: '0.75rem'
+          }}
+        >
+          Today
+        </Button>
+        
+        <Tooltip title="Next Month">
+          <IconButton 
+            onClick={handleNextMonth}
+            size="small"
+            sx={{ 
+              border: `1px solid ${theme.palette.divider}`,
+              '&:hover': { bgcolor: theme.palette.action.hover }
+            }}
+          >
+            <FiChevronRight size={16} />
+          </IconButton>
+        </Tooltip>
+      </Stack>
+    </Stack>
+
+    {/* Calendar Grid */}
+    <Box sx={{ overflowX: 'auto' }}>
+      <Box 
+        component="table" 
+        sx={{ 
+          width: '100%', 
+          borderCollapse: 'collapse',
+          minWidth: 300
+        }}
+      >
+        <thead>
+          <tr>
+            {daysOfWeek.map(day => (
+              <th 
+                key={day} 
+                style={{ 
+                  background: theme.palette.primary.main,
+                  color: theme.palette.primary.contrastText,
+                  padding: '8px 4px',
+                  fontWeight: 600,
+                  textAlign: 'center',
+                  fontSize: '0.75rem',
+                  borderRadius: theme.shape.borderRadius,
+                }}
               >
-                <StyledDay marked={isMarked(day)} istoday={isToday(day)}>
-                  {day}
-                  {workedTime && (
-                    <TimeBadge>
-                      {workedTime.split(':').slice(0, 2).join(':')}
-                    </TimeBadge>
-                  )}
-                </StyledDay>
-              </Tooltip>
-            )}
-          </td>
-        );
-      })}
-    </tr>
-  ))}
-</tbody>
-              </Box>
-            </Box>
-          </CardContent>
-        </StatCard>
+                {day}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {calendarDays.map((week, weekIndex) => (
+            <tr key={weekIndex}>
+              {week.map((day, dayIndex) => {
+                const dayKey = `${calendarYear}-${calendarMonth}-${day}`;
+                const workedTime = dailyTimeMap?.[dayKey];
+
+                return (
+                  <td
+                    key={dayIndex}
+                    style={{
+                      height: 45,
+                      textAlign: 'center',
+                      padding: '2px 1px',
+                      border: `1px solid ${theme.palette.divider}`,
+                      background: theme.palette.background.paper
+                    }}
+                  >
+                    {day && (
+                      <Tooltip
+                        title={workedTime ? `Worked: ${workedTime}` : 'No attendance'}
+                        placement="top"
+                      >
+                        <StyledDay 
+                          marked={isMarked(day)} 
+                          istoday={isToday(day)}
+                          sx={{
+                            width: 32,
+                            height: 32,
+                            fontSize: '0.75rem'
+                          }}
+                        >
+                          {day}
+                          {workedTime && (
+                            <TimeBadge
+                              sx={{
+                                bottom: -10,
+                                fontSize: '0.5rem',
+                                padding: '0px 4px',
+                                maxWidth: '85%'
+                              }}
+                            >
+                              {workedTime.split(':').slice(0, 2).join(':')}
+                            </TimeBadge>
+                          )}
+                        </StyledDay>
+                      </Tooltip>
+                    )}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </Box>
+    </Box>
+  </CardContent>
+</StatCard>
+        </Grid>
+
+ 
       </Box>
     </Fade>
   );

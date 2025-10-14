@@ -287,6 +287,8 @@ import EmppAsset from './hrCds/pages/hr/EmppAssets';
 import EmppAttendence from './hrCds/pages/hr/EmppAttendence';
 import TaskDeatils from './hrCds/pages/hr/TaskDetails';
 
+import AdminProjects from './hrCds/pages/AdminProjects'
+import EmployeeProjects from './hrCds/pages/EmployeeProjects'
 function App() {
   const user = JSON.parse(localStorage.getItem('user'));
   const userRole = user?.role;
@@ -401,6 +403,8 @@ function App() {
           <Route path="emp-attendance" element={<EmppAttendence />} />
           <Route path="emp-task-management" element={<EmppTask />} />
           <Route path="emp-task-details" element={<TaskDeatils />} />
+          <Route path="adminp" element={<AdminProjects />} />
+          <Route path="emp" element={<EmployeeProjects />} />
         </Route>
         {/* Catch-all route */}
         <Route path="*" element={<Navigate to="/" replace />} />

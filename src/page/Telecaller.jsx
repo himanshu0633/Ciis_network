@@ -8,7 +8,6 @@ import FeaturesSection from '../components/FeaturesSection';
 import FAQ from '../components/FAQ'; // Assuming you have a FAQ component
 import '../componentsCSS/telecaller.css'; // Assuming \
 import Review from '../components/Review'
-// 
 import Bannerbtn from '../components/Bannerbtn';
 import icon1 from '../image/runo/1.png';
 import icon2 from '../image/runo/2.png';
