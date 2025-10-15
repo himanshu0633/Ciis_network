@@ -529,7 +529,7 @@ const UserDashboard = () => {
                   )}
                 </Box>
 
-                <Stack direction="row" spacing={1} justifyContent="center">
+                {/* <Stack direction="row" spacing={1} justifyContent="center">
                   <Button 
                     variant="outlined" 
                     onClick={handleResetTimer}
@@ -545,7 +545,7 @@ const UserDashboard = () => {
                   >
                     History
                   </Button>
-                </Stack>
+                </Stack> */}
               </CardContent>
             </StatCard>
 
@@ -757,28 +757,22 @@ const UserDashboard = () => {
                 Quick Actions
               </Typography>
               <Stack spacing={1}>
+              
                 <Button 
                   variant="outlined" 
-                  startIcon={<MdAnalytics />}
-                  onClick={() => setShowHistory(true)}
-                  fullWidth
-                >
-                  View Detailed History
-                </Button>
-                <Button 
-                  variant="outlined" 
+                    onClick={handleOut} 
                   startIcon={<MdWork />}
                   fullWidth
                 >
                   Request Time Off
                 </Button>
-                <Button 
+                {/* <Button 
                   variant="outlined" 
                   startIcon={<MdLocationOn />}
                   fullWidth
                 >
                   Location Settings
-                </Button>
+                </Button> */}
               </Stack>
             </Paper>
 

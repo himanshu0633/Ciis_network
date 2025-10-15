@@ -1,293 +1,757 @@
-import React from 'react'
-import RunoHeader from '../components/RunoHeader'
-import Footer from '../components/Footer'
-import { FaPhone, FaPlay, FaChartBar } from 'react-icons/fa';
-import callImage from '../image/runo/call-management.webp'; // Assuming you have an image for the call management section
-import '../componentsCSS/callManagement.css'; // Assuming you have a CSS file for styling
+import React from 'react';
+import {
+  Box,
+  Container,
+  Typography,
+  Button,
+  Grid,
+  Card,
+  CardContent,
+  Chip,
+  Paper,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Avatar,
+  useTheme,
+  useMediaQuery,
+  Fade,
+  Slide,
+  Zoom,
+  Divider,
+  Rating,
+  Stack,
+  Tab,
+  Tabs
+} from '@mui/material';
+import {
+  Phone,
+  PlayArrow,
+  Analytics,
+  Security,
+  Download,
+  Star,
+  CheckCircle,
+  People,
+  RecordVoiceOver,
+  Notifications,
+  Dashboard,
+  IntegrationInstructions,
+  WhatsApp,
+  Assignment,
+  TrackChanges,
+  AutoAwesome,
+  Insights,
+  Group
+} from '@mui/icons-material';
+import RunoHeader from '../components/RunoHeader';
+import Footer from '../components/Footer';
 import FeaturesSection from '../components/FeaturesSection';
-import FAQ from '../components/FAQ'; // Assuming you have a FAQ component
-import '../componentsCSS/telecaller.css'; // Assuming \
-import Review from '../components/Review'
-// 
-import Security from '../image/security.webp';
-
+import FAQ from '../components/FAQ';
+import Review from '../components/Review';
 import Bannerbtn from '../components/Bannerbtn';
-import icon1 from '../image/runo/1.png';
-import icon2 from '../image/runo/2.png';
-import icon3 from '../image/runo/3.png';
-import icon4 from '../image/runo/4.png';
-import icon5 from '../image/runo/5.png';
-import icon6 from '../image/runo/6.png';
-import icon7 from '../image/runo/7.png';
-import icon8 from '../image/runo/8.png';
-import icon9 from '../image/runo/9.png';
-import icon10 from '../image/runo/10.png'; // Add if needed
+import Logo from '../components/Logo';
 
-import Logo from '../components/Logo'
 function LeadManagement() {
-  // Define your features here
-  // You can replace these with actual icons or images as needed
-  const myFeatures = [
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const [tabValue, setTabValue] = React.useState(0);
+
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
+  };
+
+  const leadFeatures = [
     {
-      title: 'Auto Dialer',
-      description: 'Call leads back-to-back without dialing manually. Boost call speed and focus.',
-      icon: icon1,
+      title: 'Smart Lead Capture',
+      description: 'Automatically capture leads from multiple sources and centralize them in one dashboard.',
+      icon: <Assignment sx={{ fontSize: 40 }} />,
+      color: '#2196f3'
     },
     {
-      title: 'Advanced Caller ID',
-      description: 'See the lead’s name, last interaction, and notes before every call',
-      icon: icon2,
+      title: 'Lead Scoring & Prioritization',
+      description: 'AI-powered lead scoring to focus on high-potential prospects first.',
+      icon: <Analytics sx={{ fontSize: 40 }} />,
+      color: '#4caf50'
     },
     {
-      title: 'Call Recording',
-      description: 'Record every call automatically for training, compliance, and audit purposes.',
-      icon: icon3,
+      title: 'Automated Lead Distribution',
+      description: 'Smart routing of leads to the right agents based on skills and availability.',
+      icon: <AutoAwesome sx={{ fontSize: 40 }} />,
+      color: '#ff9800'
     },
     {
-      title: 'Live Performance Dashboard',
-      description: 'Track daily calling metrics, follow-ups, and lead movement with visual reports.',
-      icon: icon4,
+      title: 'Real-Time Lead Tracking',
+      description: 'Track every lead through the entire sales pipeline with visual progress indicators.',
+      icon: <TrackChanges sx={{ fontSize: 40 }} />,
+      color: '#9c27b0'
     },
     {
-      title: 'Follow-Up Notifications',
-      description: 'Get automatic reminders for pending follow-ups to avoid losing hot leads.',
-      icon: icon5,
+      title: 'Follow-Up Automation',
+      description: 'Never miss a follow-up with automated reminders and scheduling.',
+      icon: <Notifications sx={{ fontSize: 40 }} />,
+      color: '#f44336'
     },
     {
-      title: 'Lead Management',
-      description: 'Capture, track, and update every lead in real time from a single dashboard.',
-      icon: icon6,
+      title: 'Performance Analytics',
+      description: 'Comprehensive analytics on lead conversion rates and agent performance.',
+      icon: <Insights sx={{ fontSize: 40 }} />,
+      color: '#00bcd4'
     },
     {
-      title: 'Auto Lead Allocation',
-      description: 'Distribute leads instantly to the right agent based on pre-set rules.',
-      icon: icon7,
+      title: 'Multi-Channel Lead Management',
+      description: 'Manage leads from calls, emails, web forms, and social media in one place.',
+      icon: <Group sx={{ fontSize: 40 }} />,
+      color: '#673ab7'
     },
     {
       title: 'CRM Integration',
-      description: 'Access lead details, call notes, and previous interactions without leaving the app.',
-      icon: icon8,
-    },
-    {
-      title: 'Real-Time Team Tracking',
-      description: 'Monitor agent activity live. See who is calling, who is idle, and who is behind on follow-ups.',
-      icon: icon9,
-    },
-    {
-      title: 'WhatsApp Templates',
-      description: 'Send pre-approved WhatsApp templates directly from the app after each call.',
-      icon: icon10,
-    },
+      description: 'Seamless integration with your existing CRM systems and tools.',
+      icon: <IntegrationInstructions sx={{ fontSize: 40 }} />,
+      color: '#009688'
+    }
   ];
 
+  const pipelineStages = [
+    { stage: 'New Lead', count: '1,234', color: '#ff6b6b' },
+    { stage: 'Contacted', count: '856', color: '#4ecdc4' },
+    { stage: 'Qualified', count: '432', color: '#45b7d1' },
+    { stage: 'Proposal Sent', count: '289', color: '#96ceb4' },
+    { stage: 'Negotiation', count: '156', color: '#feca57' },
+    { stage: 'Won', count: '98', color: '#ff9ff3' }
+  ];
 
-
-
-
+  const aiFeatures = [
+    {
+      title: 'AI-Powered Lead Scoring',
+      description: 'Intelligent lead scoring based on behavior, engagement, and demographic data.',
+      icon: <Analytics sx={{ fontSize: 40 }} />
+    },
+    {
+      title: 'Predictive Analytics',
+      description: 'Forecast lead conversion probabilities and identify promising opportunities.',
+      icon: <Insights sx={{ fontSize: 40 }} />
+    },
+    {
+      title: 'Automated Lead Nurturing',
+      description: 'Smart follow-up sequences and personalized communication based on lead behavior.',
+      icon: <AutoAwesome sx={{ fontSize: 40 }} />
+    }
+  ];
 
   return (
     <>
       <RunoHeader />
+      
       {/* Hero Section */}
-      <div className="call-hero-section">
-        {/* Text Section */}
-        <div className="call-text">
-          <nav className="call-breadcrumb">
-            <span className="call-highlight">Home</span> &gt;
-            <span className="call-highlight">Product</span> &gt;
-            <span>Lead Management CRM</span>
-          </nav>
-          <h1 className="call-title">
-            Lead Management <br /> App That Tracks<br />  Every Lead, Every Step
+      <Box
+        sx={{
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          color: 'white',
+          py: { xs: 6, md: 10 },
+          position: 'relative',
+          overflow: 'hidden'
+        }}
+      >
+        <Container maxWidth="lg">
+          <Grid container spacing={4} alignItems="center">
+            <Grid item xs={12} md={6}>
+              <Fade in timeout={800}>
+                <Box>
+                  {/* Breadcrumb */}
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      mb: 3,
+                      opacity: 0.9,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1
+                    }}
+                  >
+                    <Chip
+                      label="Home"
+                      size="small"
+                      sx={{
+                        bgcolor: 'rgba(255,255,255,0.2)',
+                        color: 'white',
+                        fontSize: '0.75rem'
+                      }}
+                    />
+                    <span>&gt;</span>
+                    <Chip
+                      label="Product"
+                      size="small"
+                      sx={{
+                        bgcolor: 'rgba(255,255,255,0.2)',
+                        color: 'white',
+                        fontSize: '0.75rem'
+                      }}
+                    />
+                    <span>&gt;</span>
+                    <Chip
+                      label="Lead Management CRM"
+                      size="small"
+                      sx={{
+                        bgcolor: 'rgba(255,255,255,0.3)',
+                        color: 'white',
+                        fontSize: '0.75rem'
+                      }}
+                    />
+                  </Typography>
 
-          </h1>
-          <p className="call-subtitle">
-            our dialer, CRM, and live call tracker, rolled into one app
-          </p>
-          <ul className="call-features">
-            <li>SIM-based calling for higher call connection rates</li>
-            <li>Designed for businesses with 5 to 500+ agents</li>
-            <li>Monitor team activity, follow-ups, and call status in one view
-            </li>
-          </ul>
-          <div className="call-buttons">
-            <button className="call-demo-btn">Book A Demo</button>
-            <button className="call-trial-btn">Start 10-Day Free Trial</button>
-          </div>
-          <p className="call-note">No Credit Card Required</p>
-        </div>
+                  {/* Main Title */}
+                  <Typography
+                    variant="h2"
+                    component="h1"
+                    sx={{
+                      fontWeight: 700,
+                      mb: 2,
+                      fontSize: { xs: '2.5rem', md: '3.5rem' },
+                      lineHeight: 1.1
+                    }}
+                  >
+                    Lead Management App <br />
+                    That Tracks Every Lead, <br />
+                    Every Step
+                  </Typography>
 
-        {/* Image Section */}
-        <div className="call-image">
-          <img src={callImage} alt="Call Management" />
-        </div>
+                  {/* Subtitle */}
+                  <Typography
+                    variant="h5"
+                    sx={{
+                      mb: 3,
+                      opacity: 0.9,
+                      fontWeight: 400
+                    }}
+                  >
+                    Our dialer, CRM, and live call tracker, rolled into one app
+                  </Typography>
 
+                  {/* Features List */}
+                  <List sx={{ mb: 4 }}>
+                    {[
+                      'Smart lead capture from multiple channels',
+                      'AI-powered lead scoring and prioritization',
+                      'Real-time pipeline tracking and analytics'
+                    ].map((feature, index) => (
+                      <ListItem key={index} sx={{ px: 0, py: 0.5 }}>
+                        <ListItemIcon sx={{ minWidth: 32 }}>
+                          <CheckCircle sx={{ color: '#4caf50', fontSize: 20 }} />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={feature}
+                          primaryTypographyProps={{
+                            sx: { fontSize: '1.1rem', opacity: 0.9 }
+                          }}
+                        />
+                      </ListItem>
+                    ))}
+                  </List>
 
-      </div>
+                  {/* Buttons */}
+                  <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
+                    <Button
+                      variant="contained"
+                      size="large"
+                      sx={{
+                        bgcolor: 'white',
+                        color: '#667eea',
+                        px: 4,
+                        py: 1.5,
+                        fontWeight: 600,
+                        borderRadius: 2,
+                        '&:hover': {
+                          bgcolor: 'grey.100',
+                          transform: 'translateY(-2px)'
+                        },
+                        transition: 'all 0.3s ease'
+                      }}
+                    >
+                      Book A Demo
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="large"
+                      sx={{
+                        borderColor: 'white',
+                        color: 'white',
+                        px: 4,
+                        py: 1.5,
+                        fontWeight: 600,
+                        borderRadius: 2,
+                        '&:hover': {
+                          bgcolor: 'rgba(255,255,255,0.1)',
+                          borderColor: 'white',
+                          transform: 'translateY(-2px)'
+                        },
+                        transition: 'all 0.3s ease'
+                      }}
+                    >
+                      Start 10-Day Free Trial
+                    </Button>
+                  </Box>
+
+                  <Typography variant="body2" sx={{ opacity: 0.8 }}>
+                    No Credit Card Required
+                  </Typography>
+                </Box>
+              </Fade>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <Slide in timeout={1000} direction="left">
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center'
+                  }}
+                >
+                  <Paper
+                    elevation={8}
+                    sx={{
+                      width: '100%',
+                      maxWidth: 400,
+                      borderRadius: 4,
+                      background: 'linear-gradient(145deg, #1e3c72 0%, #2a5298 100%)',
+                      overflow: 'hidden'
+                    }}
+                  >
+                    {/* Lead Pipeline Visualization */}
+                    <Box sx={{ p: 3, color: 'white' }}>
+                      <Typography variant="h6" fontWeight={600} gutterBottom>
+                        Lead Pipeline
+                      </Typography>
+                      
+                      {pipelineStages.map((stage, index) => (
+                        <Box key={index} sx={{ mb: 2 }}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                            <Typography variant="body2">{stage.stage}</Typography>
+                            <Typography variant="body2" fontWeight={600}>
+                              {stage.count}
+                            </Typography>
+                          </Box>
+                          <Box
+                            sx={{
+                              height: 8,
+                              bgcolor: 'rgba(255,255,255,0.2)',
+                              borderRadius: 4,
+                              overflow: 'hidden'
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                height: '100%',
+                                bgcolor: stage.color,
+                                width: `${(index + 1) * 15}%`,
+                                borderRadius: 4
+                              }}
+                            />
+                          </Box>
+                        </Box>
+                      ))}
+                      
+                      <Button
+                        fullWidth
+                        variant="contained"
+                        startIcon={<Analytics />}
+                        sx={{
+                          bgcolor: '#4caf50',
+                          mt: 2,
+                          py: 1.5,
+                          borderRadius: 3
+                        }}
+                      >
+                        View Dashboard
+                      </Button>
+                    </Box>
+                  </Paper>
+                </Box>
+              </Slide>
+            </Grid>
+          </Grid>
+        </Container>
+      </Box>
+
       <Logo />
 
-
       {/* Features Section */}
-      <FeaturesSection
-        title="Your Sales Toolkit, Simplified"
-        subheading="Speed up your sales process with our powerful tools"
-        features={myFeatures}
-      />
+      <Container sx={{ py: { xs: 6, md: 10 } }}>
+        <Fade in timeout={800}>
+          <Box sx={{ textAlign: 'center', mb: 6 }}>
+            <Typography
+              variant="h3"
+              component="h2"
+              sx={{
+                fontWeight: 700,
+                mb: 2,
+                color: 'text.primary'
+              }}
+            >
+              Complete Lead Management Solution
+            </Typography>
+            <Typography
+              variant="h6"
+              color="text.secondary"
+              sx={{ maxWidth: 600, mx: 'auto' }}
+            >
+              From capture to conversion, manage every lead with precision and intelligence
+            </Typography>
+          </Box>
+        </Fade>
+
+        <Grid container spacing={3}>
+          {leadFeatures.map((feature, index) => (
+            <Grid item xs={12} sm={6} md={4} key={index}>
+              <Zoom in timeout={800 + index * 100}>
+                <Card
+                  sx={{
+                    height: '100%',
+                    border: `2px solid ${feature.color}20`,
+                    bgcolor: `${feature.color}08`,
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      transform: 'translateY(-8px)',
+                      boxShadow: `0 12px 35px ${feature.color}20`
+                    }
+                  }}
+                >
+                  <CardContent sx={{ textAlign: 'center', p: 4 }}>
+                    <Avatar
+                      sx={{
+                        bgcolor: feature.color,
+                        width: 80,
+                        height: 80,
+                        mx: 'auto',
+                        mb: 3
+                      }}
+                    >
+                      {feature.icon}
+                    </Avatar>
+                    <Typography
+                      variant="h5"
+                      component="h3"
+                      gutterBottom
+                      sx={{ fontWeight: 600 }}
+                    >
+                      {feature.title}
+                    </Typography>
+                    <Typography variant="body1" color="text.secondary">
+                      {feature.description}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Zoom>
+            </Grid>
+          ))}
+        </Grid>
+      </Container>
 
       <Bannerbtn
-        title="Give it a spin with your
-team today"
+        title="Give it a spin with your team today"
         buttonText="Start 10-day free trial"
-        backgroundImage="/src/image/runo/background-cta.webp"
-        onClick={() => alert("Demo scheduled")}
+        onClick={() => alert("Trial started")}
       />
 
-      <section class="ai-tools-section">
-        <div class="ai-tools-container">
-          <h1 class="ai-tools-title">
-            Make Smarter Calls With <span class="ai-gradient">Ciis Network
-              
-               <span class="blue">AI</span></span> Tools
-          </h1>
-          <p class="ai-tools-subtitle">Power up your team with real call intelligence</p>
+      {/* AI Tools Section */}
+      <Box sx={{ bgcolor: 'grey.50', py: { xs: 6, md: 10 } }}>
+        <Container maxWidth="lg">
+          <Fade in timeout={800}>
+            <Box sx={{ textAlign: 'center', mb: 6 }}>
+              <Typography
+                variant="h3"
+                component="h2"
+                sx={{
+                  fontWeight: 700,
+                  mb: 2
+                }}
+              >
+                Intelligent Lead Management With{' '}
+                <Box
+                  component="span"
+                  sx={{
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    backgroundClip: 'text',
+                    WebkitBackgroundClip: 'text',
+                    color: 'transparent'
+                  }}
+                >
+                  CiisNetwork AI
+                </Box>
+              </Typography>
+              <Typography variant="h6" color="text.secondary">
+                Transform your lead management with artificial intelligence
+              </Typography>
+            </Box>
+          </Fade>
 
-          <div class="ai-tools-content">
-            <div class="ai-text-content">
-              <h3 class="ai-feature-title">AI Call Transcripts</h3>
-              <p class="ai-feature-description">
-                Get a complete, accurate text version of every call. No need to re-listen or take notes.
-              </p>
-            </div>
+          <Grid container spacing={6} alignItems="center">
+            <Grid item xs={12} md={6}>
+              <Fade in timeout={1000}>
+                <Box>
+                  {aiFeatures.map((feature, index) => (
+                    <Box key={index} sx={{ mb: 4 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 2 }}>
+                        <Avatar sx={{ bgcolor: 'primary.main', width: 60, height: 60 }}>
+                          {feature.icon}
+                        </Avatar>
+                        <Box>
+                          <Typography variant="h5" fontWeight={600} gutterBottom>
+                            {feature.title}
+                          </Typography>
+                          <Typography variant="body1" color="text.secondary">
+                            {feature.description}
+                          </Typography>
+                        </Box>
+                      </Box>
+                      {index < aiFeatures.length - 1 && <Divider sx={{ my: 3 }} />}
+                    </Box>
+                  ))}
+                </Box>
+              </Fade>
+            </Grid>
 
-            <div class="ai-card">
-              <div class="chat-item">
-                <div class="chat-header">
-                  <div class="avatar pink">👤</div>
-                  <div class="name-time">
-                    <span class="name">Navjot Kaur</span>
-                    <span class="time">00:10</span>
-                  </div>
-                  <div class="bar yellow"></div>
-                </div>
-                <p class="chat-text">Ha ji regarding the usages sir, I just wanted to know that how the usage is happening.</p>
-              </div>
-              <div class="chat-item">
-                <div class="chat-header">
-                  <div class="avatar green">👤</div>
-                  <div class="name-time">
-                    <span class="name">Vikas Tiwari</span>
-                    <span class="time">00:15</span>
-                  </div>
-                  <div class="bar green"></div>
-                </div>
-                <p class="chat-text">Apne check kiya tha apne team ka kaise use kar rahe hain. Hum bahut kam dekh rahe the…</p>
-              </div>
+            <Grid item xs={12} md={6}>
+              <Slide in timeout={1200} direction="left">
+                <Paper
+                  elevation={4}
+                  sx={{
+                    p: 4,
+                    borderRadius: 4,
+                    background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)'
+                  }}
+                >
+                  {/* AI Lead Scoring Simulation */}
+                  <Typography variant="h6" fontWeight={600} gutterBottom>
+                    AI Lead Scoring Dashboard
+                  </Typography>
+                  
+                  {[
+                    { name: 'Enterprise Corp', score: 95, status: 'Hot Lead', color: '#4caf50' },
+                    { name: 'Startup Tech', score: 78, status: 'Warm Lead', color: '#ff9800' },
+                    { name: 'Local Business', score: 45, status: 'Cold Lead', color: '#f44336' },
+                    { name: 'Global Solutions', score: 88, status: 'Warm Lead', color: '#ff9800' }
+                  ].map((lead, index) => (
+                    <Box key={index} sx={{ mb: 3 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                        <Typography variant="body1" fontWeight={600}>
+                          {lead.name}
+                        </Typography>
+                        <Chip
+                          label={lead.status}
+                          size="small"
+                          sx={{
+                            bgcolor: `${lead.color}20`,
+                            color: lead.color,
+                            fontWeight: 600
+                          }}
+                        />
+                      </Box>
+                      <Box
+                        sx={{
+                          height: 8,
+                          bgcolor: 'rgba(0,0,0,0.1)',
+                          borderRadius: 4,
+                          overflow: 'hidden'
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            height: '100%',
+                            bgcolor: lead.color,
+                            width: `${lead.score}%`,
+                            borderRadius: 4
+                          }}
+                        />
+                      </Box>
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                        AI Score: {lead.score}/100
+                      </Typography>
+                    </Box>
+                  ))}
+                </Paper>
+              </Slide>
+            </Grid>
+          </Grid>
+        </Container>
+      </Box>
 
-            </div>
-
-
-          </div>
-
-        </div>
-      </section>
-      <FeaturesSection />
       <Bannerbtn
-        title="Take a closer look at how Ciis Network
-
-
-        
-works for real teams like yours"
+        title="Take a closer look at how CiisNetwork works for real teams like yours"
         buttonText="Book A Demo"
-        backgroundImage="/src/image/runo/background-cta.webp"
         onClick={() => alert("Demo scheduled")}
       />
+
       <Review />
       <FAQ />
 
+      {/* Data Protection Section */}
+      <Container sx={{ py: { xs: 6, md: 10 } }}>
+        <Fade in timeout={800}>
+          <Box sx={{ textAlign: 'center' }}>
+            <Typography
+              variant="h3"
+              component="h2"
+              sx={{
+                fontWeight: 700,
+                mb: 3,
+                lineHeight: 1.2
+              }}
+            >
+              Enterprise-Grade Security & <br />
+              Data Protection
+            </Typography>
 
+            <Grid container spacing={3} justifyContent="center" sx={{ mt: 4 }}>
+              {[
+                { name: 'GDPR Compliant', description: 'Full compliance with data protection regulations', icon: <Security /> },
+                { name: 'ISO 27001 Certified', description: 'Enterprise-level security certification', icon: <Security /> },
+                { name: 'SOC 2 Type II', description: 'Industry-leading security standards', icon: <Security /> },
+                { name: 'End-to-End Encryption', description: 'Military-grade data encryption', icon: <Security /> }
+              ].map((item, index) => (
+                <Grid item xs={12} sm={6} md={3} key={index}>
+                  <Zoom in timeout={800 + index * 200}>
+                    <Card
+                      sx={{
+                        textAlign: 'center',
+                        p: 3,
+                        height: '100%',
+                        border: '2px solid',
+                        borderColor: 'primary.main',
+                        bgcolor: 'primary.50',
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          transform: 'translateY(-4px)',
+                          boxShadow: 4
+                        }
+                      }}
+                    >
+                      <Avatar sx={{ bgcolor: 'primary.main', mx: 'auto', mb: 2 }}>
+                        {item.icon}
+                      </Avatar>
+                      <Typography variant="h6" fontWeight={600} gutterBottom>
+                        {item.name}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {item.description}
+                      </Typography>
+                    </Card>
+                  </Zoom>
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
+        </Fade>
+      </Container>
 
-      <section className="data-protection-section">
-        <div className="data-protection-container">
-          {/* Heading */}
-          <h2 className="protection-heading">
-            Committed to the Highest <br />
-            Standards of Data Protection
-          </h2>
+      {/* Download Section */}
+      <Box
+        sx={{
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          color: 'white',
+          py: { xs: 6, md: 10 }
+        }}
+      >
+        <Container maxWidth="lg">
+          <Fade in timeout={800}>
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography
+                variant="h3"
+                component="h2"
+                sx={{
+                  fontWeight: 700,
+                  mb: 2,
+                  fontSize: { xs: '2.5rem', md: '3rem' }
+                }}
+              >
+                Start Managing Leads <br />
+                More Effectively
+              </Typography>
 
-          {/* Logos Grid */}
-          <div className="standards-grid">
-            <div className="standard-item">
-              <div className="logo-placeholder">ISO</div>
-              <span className="standard-text">27001</span>
-            </div>
+              <Typography
+                variant="h6"
+                sx={{
+                  mb: 4,
+                  opacity: 0.9,
+                  maxWidth: 600,
+                  mx: 'auto'
+                }}
+              >
+                Join thousands of sales teams using CiisNetwork to transform their lead management process
+              </Typography>
 
-            <div className="standard-item">
-              <div className="logo-placeholder">GDPR</div>
-              <span className="standard-text">Compliance</span>
-            </div>
+              {/* Download Buttons */}
+              <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                spacing={2}
+                justifyContent="center"
+                sx={{ mb: 4 }}
+              >
+                <Button
+                  variant="contained"
+                  size="large"
+                  startIcon={<Download />}
+                  sx={{
+                    bgcolor: 'white',
+                    color: '#667eea',
+                    px: 4,
+                    py: 1.5,
+                    borderRadius: 3,
+                    fontWeight: 600,
+                    '&:hover': {
+                      bgcolor: 'grey.100',
+                      transform: 'translateY(-2px)'
+                    },
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  Download on App Store
+                </Button>
 
-            <div className="standard-item">
-              <div className="logo-placeholder">AICPA</div>
-              <span className="standard-text">SOC</span>
-            </div>
-          </div>
-        </div>
-      </section>
+                <Button
+                  variant="outlined"
+                  size="large"
+                  startIcon={<PlayArrow />}
+                  sx={{
+                    borderColor: 'white',
+                    color: 'white',
+                    px: 4,
+                    py: 1.5,
+                    borderRadius: 3,
+                    fontWeight: 600,
+                    '&:hover': {
+                      bgcolor: 'rgba(255,255,255,0.1)',
+                      borderColor: 'white',
+                      transform: 'translateY(-2px)'
+                    },
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  GET IT ON Google Play
+                </Button>
+              </Stack>
 
-      <section className="data-protection-section">
-        <div className="data-protection-container">
-          {/* Heading */}
-          <h2 className="protection-heading">
-            Committed to the Highest <br />
-            Standards of Data Protection
-          </h2>
+              {/* Rating */}
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+                <Rating value={4.7} precision={0.1} readOnly sx={{ color: 'white' }} />
+                <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Star sx={{ color: '#ffeb3b' }} />
+                  4.7 Star Rating
+                </Typography>
+                <Typography variant="h6" sx={{ opacity: 0.9 }}>
+                  50K+ Downloads
+                </Typography>
+              </Box>
+            </Box>
+          </Fade>
+        </Container>
+      </Box>
 
-          {/* Logos Grid */}
-          <div className="standards-grid">
-            <img src={Security} alt="" />
-          </div>
-        </div>
-      </section>
-      <section className="telecalling-section">
-        <div className="telecalling-container">
-          {/* Heading */}
-          <h1 className="telecalling-heading">
-            Simplify Your <br />
-            Telecalling Operations
-          </h1>
-
-          {/* Description */}
-          <p className="telecalling-description">
-            Streamline your telecalling workflow. Ciis Network simplifies call management,
-            lead tracking, and team monitoring in one app.
-          </p>
-
-          {/* Download Buttons */}
-          <div className="download-buttons">
-            <button className="download-button">
-              <span className="button-icon">📱</span>
-              Download on the App Store
-            </button>
-
-            <button className="download-button">
-              <span className="button-icon">▶️</span>
-              <span className="button-text">GET IT ON <br /> Google Play</span>
-            </button>
-          </div>
-
-          {/* Rating */}
-          <div className="rating-section">
-            <div className="stars">
-              ★★★★★
-              <span className="rating-text">4.7 Star</span>
-            </div>
-            <p className="downloads-text">50K+ Downloads</p>
-          </div>
-        </div>
-      </section>
       <Footer />
     </>
-  )
+  );
 }
 
-export default LeadManagement
+export default LeadManagement;
