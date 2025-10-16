@@ -370,24 +370,7 @@ const EmppAttendence = () => {
                   }}
                 />
 
-                <TextField
-                  placeholder="Search employees..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <FiSearch color={theme.palette.text.secondary} />
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={{ 
-                    flex: 1,
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: theme.shape.borderRadius * 2,
-                    }
-                  }}
-                />
+                
 
                 <EmployeeTypeFilter
                   selected={selectedEmployeeType}
