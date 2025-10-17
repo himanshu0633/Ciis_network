@@ -107,12 +107,11 @@ const MobileTaskCard = styled(Card)(({ theme, status }) => ({
   transition: theme.transitions.create(['all'], {
     duration: theme.transitions.duration.standard,
   }),
-  borderLeft: `4px solid ${
-    status === 'completed' ? theme.palette.success.main :
+  borderLeft: `4px solid ${status === 'completed' ? theme.palette.success.main :
     status === 'in-progress' ? theme.palette.info.main :
-    status === 'pending' ? theme.palette.warning.main :
-    theme.palette.error.main
-  }`,
+      status === 'pending' ? theme.palette.warning.main :
+        theme.palette.error.main
+    }`,
   '&:hover': {
     boxShadow: theme.shadows[6],
     transform: 'translateY(-2px)',
@@ -182,10 +181,10 @@ const MyTaskManagement = () => {
       if (!userStr) {
         console.error('No user data found in localStorage');
         setAuthError(true);
-        setSnackbar({ 
-          open: true, 
-          message: 'Please log in to access task management', 
-          severity: 'error' 
+        setSnackbar({
+          open: true,
+          message: 'Please log in to access task management',
+          severity: 'error'
         });
         return;
       }
@@ -194,10 +193,10 @@ const MyTaskManagement = () => {
       if (!user || !user.role || !user.id) {
         console.error('Invalid user data structure:', user);
         setAuthError(true);
-        setSnackbar({ 
-          open: true, 
-          message: 'Invalid user data. Please log in again.', 
-          severity: 'error' 
+        setSnackbar({
+          open: true,
+          message: 'Invalid user data. Please log in again.',
+          severity: 'error'
         });
         return;
       }
@@ -208,10 +207,10 @@ const MyTaskManagement = () => {
     } catch (error) {
       console.error('Error parsing user data:', error);
       setAuthError(true);
-      setSnackbar({ 
-        open: true, 
-        message: 'Error loading user data. Please log in again.', 
-        severity: 'error' 
+      setSnackbar({
+        open: true,
+        message: 'Error loading user data. Please log in again.',
+        severity: 'error'
       });
     }
   };
@@ -228,7 +227,7 @@ const MyTaskManagement = () => {
         total++;
         const myStatusObj = task.statusByUser?.find(s => s.user === userId || s.user?._id === userId);
         const status = myStatusObj?.status || 'pending';
-        
+
         switch (status) {
           case 'pending':
             pending++;
@@ -261,17 +260,17 @@ const MyTaskManagement = () => {
         axios.get('/task/assignable-users'),
         axios.get('/groups')
       ]);
-      
+
       setUsers(Array.isArray(usersRes.data.users) ? usersRes.data.users : []);
       setGroups(Array.isArray(groupsRes.data.groups) ? groupsRes.data.groups : []);
     } catch (error) {
       console.error('Error fetching assignable data:', error);
       if (error.response?.status === 401) {
         setAuthError(true);
-        setSnackbar({ 
-          open: true, 
-          message: 'Session expired. Please log in again.', 
-          severity: 'error' 
+        setSnackbar({
+          open: true,
+          message: 'Session expired. Please log in again.',
+          severity: 'error'
         });
       }
       setUsers([]);
@@ -295,10 +294,10 @@ const MyTaskManagement = () => {
       console.error('Error fetching my tasks:', err);
       if (err.response?.status === 401) {
         setAuthError(true);
-        setSnackbar({ 
-          open: true, 
-          message: 'Session expired. Please log in again.', 
-          severity: 'error' 
+        setSnackbar({
+          open: true,
+          message: 'Session expired. Please log in again.',
+          severity: 'error'
         });
       } else {
         setSnackbar({ open: true, message: 'Failed to load tasks', severity: 'error' });
@@ -319,10 +318,10 @@ const MyTaskManagement = () => {
       console.error('Error fetching assigned tasks:', err);
       if (err.response?.status === 401) {
         setAuthError(true);
-        setSnackbar({ 
-          open: true, 
-          message: 'Session expired. Please log in again.', 
-          severity: 'error' 
+        setSnackbar({
+          open: true,
+          message: 'Session expired. Please log in again.',
+          severity: 'error'
         });
       } else {
         setSnackbar({ open: true, message: 'Failed to load assigned tasks', severity: 'error' });
@@ -332,10 +331,10 @@ const MyTaskManagement = () => {
 
   const handleStatusChange = async (taskId, newStatus) => {
     if (authError || !userId) {
-      setSnackbar({ 
-        open: true, 
-        message: 'Please log in to update task status', 
-        severity: 'error' 
+      setSnackbar({
+        open: true,
+        message: 'Please log in to update task status',
+        severity: 'error'
       });
       return;
     }
@@ -349,10 +348,10 @@ const MyTaskManagement = () => {
       console.error("❌ Error in handleStatusChange:", err.response || err);
       if (err.response?.status === 401) {
         setAuthError(true);
-        setSnackbar({ 
-          open: true, 
-          message: 'Session expired. Please log in again.', 
-          severity: 'error' 
+        setSnackbar({
+          open: true,
+          message: 'Session expired. Please log in again.',
+          severity: 'error'
         });
       } else {
         setSnackbar({ open: true, message: err?.response?.data?.error || 'Unauthorized to update status', severity: 'error' });
@@ -362,10 +361,10 @@ const MyTaskManagement = () => {
 
   const handleCreateTask = async () => {
     if (authError || !userId) {
-      setSnackbar({ 
-        open: true, 
-        message: 'Please log in to create tasks', 
-        severity: 'error' 
+      setSnackbar({
+        open: true,
+        message: 'Please log in to create tasks',
+        severity: 'error'
       });
       return;
     }
@@ -409,10 +408,10 @@ const MyTaskManagement = () => {
       console.error('Error creating task:', err);
       if (err.response?.status === 401) {
         setAuthError(true);
-        setSnackbar({ 
-          open: true, 
-          message: 'Session expired. Please log in again.', 
-          severity: 'error' 
+        setSnackbar({
+          open: true,
+          message: 'Session expired. Please log in again.',
+          severity: 'error'
         });
       } else {
         setSnackbar({ open: true, message: err?.response?.data?.error || 'Task creation failed', severity: 'error' });
@@ -422,10 +421,10 @@ const MyTaskManagement = () => {
 
   const handleCreateGroup = async () => {
     if (authError || !userId) {
-      setSnackbar({ 
-        open: true, 
-        message: 'Please log in to manage groups', 
-        severity: 'error' 
+      setSnackbar({
+        open: true,
+        message: 'Please log in to manage groups',
+        severity: 'error'
       });
       return;
     }
@@ -446,10 +445,10 @@ const MyTaskManagement = () => {
       console.error('Error in group operation:', err);
       if (err.response?.status === 401) {
         setAuthError(true);
-        setSnackbar({ 
-          open: true, 
-          message: 'Session expired. Please log in again.', 
-          severity: 'error' 
+        setSnackbar({
+          open: true,
+          message: 'Session expired. Please log in again.',
+          severity: 'error'
         });
       } else {
         setSnackbar({ open: true, message: err?.response?.data?.error || 'Group operation failed', severity: 'error' });
@@ -459,10 +458,10 @@ const MyTaskManagement = () => {
 
   const handleDeleteGroup = async (groupId) => {
     if (authError || !userId) {
-      setSnackbar({ 
-        open: true, 
-        message: 'Please log in to manage groups', 
-        severity: 'error' 
+      setSnackbar({
+        open: true,
+        message: 'Please log in to manage groups',
+        severity: 'error'
       });
       return;
     }
@@ -475,10 +474,10 @@ const MyTaskManagement = () => {
       console.error('Error deleting group:', err);
       if (err.response?.status === 401) {
         setAuthError(true);
-        setSnackbar({ 
-          open: true, 
-          message: 'Session expired. Please log in again.', 
-          severity: 'error' 
+        setSnackbar({
+          open: true,
+          message: 'Session expired. Please log in again.',
+          severity: 'error'
         });
       } else {
         setSnackbar({ open: true, message: err?.response?.data?.error || 'Group deletion failed', severity: 'error' });
@@ -548,10 +547,10 @@ const MyTaskManagement = () => {
   // Show authentication error message
   if (authError) {
     return (
-      <Box sx={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
+      <Box sx={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
         minHeight: '50vh',
         flexDirection: 'column',
         gap: 3
@@ -565,8 +564,8 @@ const MyTaskManagement = () => {
             <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
               Please log in to access the Task Management system.
             </Typography>
-            <Button 
-              variant="contained" 
+            <Button
+              variant="contained"
               onClick={handleLogout}
               startIcon={<FiLogOut />}
             >
@@ -581,7 +580,7 @@ const MyTaskManagement = () => {
   const renderDesktopTable = (groupedTasks) => {
     return Object.entries(groupedTasks).map(([dateKey, tasks]) => (
       <Box key={dateKey} sx={{ mt: 3 }}>
-        <Typography variant="h6" fontWeight={600} gutterBottom sx={{ 
+        <Typography variant="h6" fontWeight={600} gutterBottom sx={{
           color: 'text.primary',
           borderBottom: `2px solid ${theme.palette.primary.main}20`,
           pb: 1
@@ -618,7 +617,7 @@ const MyTaskManagement = () => {
                     </TableCell>
                     <TableCell>
                       <Tooltip title={task.description}>
-                        <Typography variant="body2" sx={{ 
+                        <Typography variant="body2" sx={{
                           maxWidth: 200,
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
@@ -678,11 +677,11 @@ const MyTaskManagement = () => {
                     <TableCell>
                       {task.files?.length ? task.files.map((file, i) => (
                         <Tooltip title="Download" key={i}>
-                          <IconButton 
+                          <IconButton
                             size="small"
-                            href={`http://localhost:5000/${file}`} 
+                            href={`http://localhost:5000/${file}`}
                             target="_blank"
-                            sx={{ 
+                            sx={{
                               color: theme.palette.primary.main,
                               '&:hover': { bgcolor: `${theme.palette.primary.main}10` }
                             }}
@@ -709,7 +708,7 @@ const MyTaskManagement = () => {
                           <Select
                             value={myStatus}
                             onChange={(e) => handleStatusChange(task._id, e.target.value)}
-                            sx={{ 
+                            sx={{
                               borderRadius: theme.shape.borderRadius,
                               minWidth: 120
                             }}
@@ -755,7 +754,7 @@ const MyTaskManagement = () => {
   const renderMobileCards = (groupedTasks) => {
     return Object.entries(groupedTasks).map(([dateKey, tasks]) => (
       <Box key={dateKey} sx={{ mt: 3 }}>
-        <Typography variant="h6" fontWeight={600} gutterBottom sx={{ 
+        <Typography variant="h6" fontWeight={600} gutterBottom sx={{
           color: 'text.primary',
           borderBottom: `2px solid ${theme.palette.primary.main}20`,
           pb: 1
@@ -934,7 +933,7 @@ const MyTaskManagement = () => {
                     </Box>
                     <Stack direction="row" spacing={1}>
                       <Tooltip title="Edit Group">
-                        <IconButton 
+                        <IconButton
                           size="small"
                           onClick={() => handleEditGroup(group)}
                           sx={{ color: theme.palette.primary.main }}
@@ -943,7 +942,7 @@ const MyTaskManagement = () => {
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Delete Group">
-                        <IconButton 
+                        <IconButton
                           size="small"
                           onClick={() => handleDeleteGroup(group._id)}
                           sx={{ color: theme.palette.error.main }}
@@ -1004,10 +1003,10 @@ const MyTaskManagement = () => {
 
   if (loading) {
     return (
-      <Box sx={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
+      <Box sx={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
         minHeight: '50vh'
       }}>
         <LinearProgress sx={{ width: '100px' }} />
@@ -1020,17 +1019,17 @@ const MyTaskManagement = () => {
       <Fade in={!loading} timeout={500}>
         <Box sx={{ p: { xs: 2, md: 3 } }}>
           {/* Header Section */}
-          <Paper sx={{ 
-            p: 3, 
-            mb: 3, 
+          <Paper sx={{
+            p: 3,
+            mb: 3,
             borderRadius: theme.shape.borderRadius * 2,
             background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
             boxShadow: theme.shadows[4]
           }}>
-            <Stack 
-              direction={{ xs: 'column', sm: 'row' }} 
-              spacing={3} 
-              justifyContent="space-between" 
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              spacing={3}
+              justifyContent="space-between"
               alignItems={{ xs: 'flex-start', sm: 'center' }}
             >
               <Box>
@@ -1049,7 +1048,7 @@ const MyTaskManagement = () => {
 
               <Stack direction="row" spacing={2}>
                 <Tooltip title="Refresh">
-                  <IconButton 
+                  <IconButton
                     onClick={tab === 0 ? fetchMyTasks : fetchAssignedTasks}
                     sx={{
                       border: `1px solid ${theme.palette.divider}`,
@@ -1102,9 +1101,9 @@ const MyTaskManagement = () => {
                   <StatCard color="primary">
                     <CardContent>
                       <Stack direction="row" alignItems="center" spacing={2}>
-                        <Avatar sx={{ 
-                          bgcolor: `${theme.palette.primary.main}20`, 
-                          color: theme.palette.primary.main 
+                        <Avatar sx={{
+                          bgcolor: `${theme.palette.primary.main}20`,
+                          color: theme.palette.primary.main
                         }}>
                           <FiCalendar />
                         </Avatar>
@@ -1125,9 +1124,9 @@ const MyTaskManagement = () => {
                   <StatCard color="warning">
                     <CardContent>
                       <Stack direction="row" alignItems="center" spacing={2}>
-                        <Avatar sx={{ 
-                          bgcolor: `${theme.palette.warning.main}20`, 
-                          color: theme.palette.warning.main 
+                        <Avatar sx={{
+                          bgcolor: `${theme.palette.warning.main}20`,
+                          color: theme.palette.warning.main
                         }}>
                           <FiClock />
                         </Avatar>
@@ -1148,9 +1147,9 @@ const MyTaskManagement = () => {
                   <StatCard color="info">
                     <CardContent>
                       <Stack direction="row" alignItems="center" spacing={2}>
-                        <Avatar sx={{ 
-                          bgcolor: `${theme.palette.info.main}20`, 
-                          color: theme.palette.info.main 
+                        <Avatar sx={{
+                          bgcolor: `${theme.palette.info.main}20`,
+                          color: theme.palette.info.main
                         }}>
                           <FiAlertCircle />
                         </Avatar>
@@ -1171,9 +1170,9 @@ const MyTaskManagement = () => {
                   <StatCard color="success">
                     <CardContent>
                       <Stack direction="row" alignItems="center" spacing={2}>
-                        <Avatar sx={{ 
-                          bgcolor: `${theme.palette.success.main}20`, 
-                          color: theme.palette.success.main 
+                        <Avatar sx={{
+                          bgcolor: `${theme.palette.success.main}20`,
+                          color: theme.palette.success.main
                         }}>
                           <FiCheckCircle />
                         </Avatar>
@@ -1192,13 +1191,13 @@ const MyTaskManagement = () => {
               </Grid>
 
               {/* Tabs Section */}
-              <Paper sx={{ 
+              <Paper sx={{
                 borderRadius: theme.shape.borderRadius * 2,
                 boxShadow: theme.shadows[2],
                 overflow: 'hidden'
               }}>
-                <Tabs 
-                  value={tab} 
+                <Tabs
+                  value={tab}
                   onChange={(_, v) => setTab(v)}
                   sx={{
                     borderBottom: `1px solid ${theme.palette.divider}`,
@@ -1210,38 +1209,38 @@ const MyTaskManagement = () => {
                     }
                   }}
                 >
-                  <Tab 
+                  <Tab
                     label={
                       <Stack direction="row" alignItems="center" spacing={1}>
                         <FiUser />
                         <Typography>My Tasks</Typography>
                         {stats.total > 0 && (
-                          <Badge 
-                            badgeContent={stats.total} 
-                            color="primary" 
+                          <Badge
+                            badgeContent={stats.total}
+                            color="primary"
                             sx={{ ml: 1 }}
                           />
                         )}
                       </Stack>
-                    } 
+                    }
                   />
-                  <Tab 
+                  <Tab
                     label={
                       <Stack direction="row" alignItems="center" spacing={1}>
                         <FiUsers />
                         <Typography>Assigned by Me</Typography>
                       </Stack>
-                    } 
+                    }
                   />
                 </Tabs>
 
                 {/* Tab Content */}
                 <Box sx={{ p: 3 }}>
                   {/* Filter Section */}
-                  <Stack 
-                    direction={{ xs: 'column', sm: 'row' }} 
-                    spacing={2} 
-                    justifyContent="space-between" 
+                  <Stack
+                    direction={{ xs: 'column', sm: 'row' }}
+                    spacing={2}
+                    justifyContent="space-between"
                     alignItems={{ xs: 'flex-start', sm: 'center' }}
                     sx={{ mb: 3 }}
                   >
@@ -1274,8 +1273,8 @@ const MyTaskManagement = () => {
           )}
 
           {/* Create Task Dialog */}
-          <Dialog 
-            open={openDialog} 
+          <Dialog
+            open={openDialog}
             onClose={() => setOpenDialog(false)}
             maxWidth="md"
             fullWidth
@@ -1287,22 +1286,22 @@ const MyTaskManagement = () => {
             </DialogTitle>
             <DialogContent>
               <Stack spacing={3} sx={{ mt: 1 }}>
-                <TextField 
-                  fullWidth 
-                  label="Task Title" 
-                  value={newTask.title} 
+                <TextField
+                  fullWidth
+                  label="Task Title"
+                  value={newTask.title}
                   onChange={e => setNewTask({ ...newTask, title: e.target.value })}
                   sx={{ borderRadius: theme.shape.borderRadius * 2 }}
                 />
-                <TextField 
-                  fullWidth 
-                  label="Description" 
+                <TextField
+                  fullWidth
+                  label="Description"
                   multiline
                   rows={3}
-                  value={newTask.description} 
+                  value={newTask.description}
                   onChange={e => setNewTask({ ...newTask, description: e.target.value })}
                 />
-                
+
                 <Grid container spacing={2}>
                   <Grid item xs={12} sm={6}>
                     <DatePicker
@@ -1324,6 +1323,7 @@ const MyTaskManagement = () => {
                         <MenuItem value="medium">Medium</MenuItem>
                         <MenuItem value="high">High</MenuItem>
                       </Select>
+
                     </FormControl>
                   </Grid>
                 </Grid>
@@ -1345,10 +1345,10 @@ const MyTaskManagement = () => {
                     />
                   </Grid> */}
                   <Grid item xs={12} sm={6}>
-                    <TextField 
-                      fullWidth 
-                      label="Priority Days" 
-                      value={newTask.priorityDays} 
+                    <TextField
+                      fullWidth
+                      label="Priority Days"
+                      value={newTask.priorityDays}
                       onChange={e => setNewTask({ ...newTask, priorityDays: e.target.value })}
                     />
                   </Grid>
@@ -1424,8 +1424,8 @@ const MyTaskManagement = () => {
                         {groups.map(group => (
                           <MenuItem key={group._id} value={group._id}>
                             <Checkbox checked={newTask.assignedGroups.includes(group._id)} />
-                            <ListItemText 
-                              primary={`${group.name} (${group.members.length} members)`} 
+                            <ListItemText
+                              primary={`${group.name} (${group.members.length} members)`}
                             />
                           </MenuItem>
                         ))}
@@ -1433,25 +1433,25 @@ const MyTaskManagement = () => {
                     </FormControl>
                   </>
                 ) :
-                 (
-                  <Box sx={{ p: 2, bgcolor: `${theme.palette.primary.main}10`, borderRadius: 2 }}>
-                    <Typography variant="body2">
-                      <strong>Assigned To:</strong> You (Self)
-                    </Typography>
-                  </Box>
-                )
+                  (
+                    <Box sx={{ p: 2, bgcolor: `${theme.palette.primary.main}10`, borderRadius: 2 }}>
+                      <Typography variant="body2">
+                        <strong>Assigned To:</strong> You (Self)
+                      </Typography>
+                    </Box>
+                  )
                 }
               </Stack>
             </DialogContent>
             <DialogActions sx={{ p: 3 }}>
-              <Button 
+              <Button
                 onClick={() => setOpenDialog(false)}
                 sx={{ borderRadius: theme.shape.borderRadius * 2 }}
               >
                 Cancel
               </Button>
-              <Button 
-                onClick={handleCreateTask} 
+              <Button
+                onClick={handleCreateTask}
                 variant="contained"
                 disabled={!newTask.title || !newTask.description || !newTask.dueDate}
                 sx={{ borderRadius: theme.shape.borderRadius * 2 }}
@@ -1462,420 +1462,420 @@ const MyTaskManagement = () => {
           </Dialog>
 
           {/* Group Management Dialog */}
-          <Dialog 
-  open={openGroupDialog} 
-  onClose={() => setOpenGroupDialog(false)}
-  maxWidth="md"
-  fullWidth
-  PaperProps={{
-    sx: {
-      borderRadius: theme.shape.borderRadius * 3,
-      background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
-    }
-  }}
->
-  <DialogTitle sx={{ 
-    pb: 2,
-    background: `linear-gradient(135deg, ${theme.palette.primary.main}10 0%, transparent 100%)`,
-    borderBottom: `1px solid ${theme.palette.divider}`
-  }}>
-    <Stack direction="row" alignItems="center" spacing={2}>
-      <Avatar sx={{ 
-        bgcolor: theme.palette.primary.main,
-        width: 40, 
-        height: 40 
-      }}>
-        <FiUsers size={20} />
-      </Avatar>
-      <Box>
-        <Typography variant="h5" fontWeight={800} color="primary.main">
-          {editingGroup ? 'Edit Group' : 'Create New Group'}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {editingGroup ? 'Update group details and members' : 'Create a new group to assign tasks efficiently'}
-        </Typography>
-      </Box>
-    </Stack>
-  </DialogTitle>
-
-  <DialogContent sx={{ p: 4 }}>
-    <Stack spacing={4}>
-      {/* Group Basic Info */}
-      <Card variant="outlined" sx={{ borderRadius: theme.shape.borderRadius * 2, p: 3 }}>
-        <Typography variant="h6" fontWeight={700} gutterBottom sx={{ 
-          color: 'primary.main',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1
-        }}>
-          <FiUser size={20} />
-          Basic Information
-        </Typography>
-        
-        <Stack spacing={3}>
-          <TextField 
-            fullWidth 
-            label="Group Name" 
-            value={newGroup.name} 
-            onChange={e => setNewGroup({ ...newGroup, name: e.target.value })}
-            placeholder="Enter a descriptive group name"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <FiUsers color={theme.palette.primary.main} />
-                </InputAdornment>
-              ),
-            }}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                borderRadius: theme.shape.borderRadius * 2,
-              }
-            }}
-          />
-          <TextField 
-            fullWidth 
-            label="Description" 
-            multiline
-            rows={3}
-            value={newGroup.description} 
-            onChange={e => setNewGroup({ ...newGroup, description: e.target.value })}
-            placeholder="Describe the purpose of this group..."
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start" sx={{ alignSelf: 'flex-start', mt: 1 }}>
-                  <FiFileText color={theme.palette.primary.main} />
-                </InputAdornment>
-              ),
-            }}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                borderRadius: theme.shape.borderRadius * 2,
-              }
-            }}
-          />
-        </Stack>
-      </Card>
-
-      {/* Group Members Selection */}
-      <Card variant="outlined" sx={{ borderRadius: theme.shape.borderRadius * 2, p: 3 }}>
-        <Typography variant="h6" fontWeight={700} gutterBottom sx={{ 
-          color: 'primary.main',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1
-        }}>
-          <FiUserPlus size={20} />
-          Group Members
-        </Typography>
-
-        <FormControl fullWidth sx={{ mb: 3 }}>
-          <InputLabel>Select Members</InputLabel>
-          <Select
-            multiple
-            value={newGroup.members}
-            onChange={(e) => setNewGroup({ ...newGroup, members: e.target.value })}
-            input={<OutlinedInput label="Select Members" />}
-            renderValue={(selected) => (
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                {selected.map((value) => {
-                  const user = users.find(u => u._id === value);
-                  return user ? (
-                    <Chip
-                      key={value}
-                      label={user.name}
-                      size="small"
-                      variant="outlined"
-                      avatar={
-                        <Avatar sx={{ width: 24, height: 24, fontSize: '0.75rem' }}>
-                          {user.name.charAt(0).toUpperCase()}
-                        </Avatar>
-                      }
-                    />
-                  ) : null;
-                })}
-              </Box>
-            )}
-            sx={{
-              borderRadius: theme.shape.borderRadius * 2,
-              '& .MuiOutlinedInput-notchedOutline': {
-                borderColor: theme.palette.divider,
+          <Dialog
+            open={openGroupDialog}
+            onClose={() => setOpenGroupDialog(false)}
+            maxWidth="md"
+            fullWidth
+            PaperProps={{
+              sx: {
+                borderRadius: theme.shape.borderRadius * 3,
+                background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
               }
             }}
           >
-            {users.map((user) => (
-              <MenuItem 
-                key={user._id} 
-                value={user._id}
-                sx={{
-                  py: 1,
-                  borderRadius: theme.shape.borderRadius,
-                  '&:hover': {
-                    backgroundColor: `${theme.palette.primary.main}10`,
-                  }
-                }}
-              >
-                <Checkbox 
-                  checked={newGroup.members.includes(user._id)} 
-                  sx={{
-                    color: theme.palette.primary.main,
-                    '&.Mui-checked': {
-                      color: theme.palette.primary.main,
-                    }
-                  }}
-                />
-                <ListItemText 
-                  primary={
-                    <Typography variant="body1" fontWeight={600}>
-                      {user.name}
-                    </Typography>
-                  }
-                  secondary={
-                    <Typography variant="caption" color="text.secondary">
-                      {user.role} • {user.email || 'No email'}
-                    </Typography>
-                  }
-                />
-                <Avatar 
-                  sx={{ 
-                    width: 32, 
-                    height: 32, 
-                    fontSize: '0.875rem',
-                    bgcolor: theme.palette.primary.main 
-                  }}
-                >
-                  {user.name.charAt(0).toUpperCase()}
+            <DialogTitle sx={{
+              pb: 2,
+              background: `linear-gradient(135deg, ${theme.palette.primary.main}10 0%, transparent 100%)`,
+              borderBottom: `1px solid ${theme.palette.divider}`
+            }}>
+              <Stack direction="row" alignItems="center" spacing={2}>
+                <Avatar sx={{
+                  bgcolor: theme.palette.primary.main,
+                  width: 40,
+                  height: 40
+                }}>
+                  <FiUsers size={20} />
                 </Avatar>
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+                <Box>
+                  <Typography variant="h5" fontWeight={800} color="primary.main">
+                    {editingGroup ? 'Edit Group' : 'Create New Group'}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {editingGroup ? 'Update group details and members' : 'Create a new group to assign tasks efficiently'}
+                  </Typography>
+                </Box>
+              </Stack>
+            </DialogTitle>
 
-        {/* Selected Members Preview */}
-        {newGroup.members.length > 0 ? (
-          <Box>
-            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-              <Typography variant="subtitle1" fontWeight={600} color="primary.main">
-                Selected Members ({newGroup.members.length})
-              </Typography>
-              <Chip 
-                label={`${newGroup.members.length} selected`}
-                size="small"
-                color="primary"
-                variant="outlined"
-              />
-            </Stack>
-            
-            <Paper 
-              variant="outlined" 
-              sx={{ 
-                borderRadius: theme.shape.borderRadius * 2,
-                maxHeight: 300,
-                overflow: 'auto',
-                background: theme.palette.background.default
-              }}
-            >
-              <List dense>
-                {newGroup.members.map((memberId) => {
-                  const member = users.find(u => u._id === memberId);
-                  return member ? (
-                    <ListItem 
-                      key={memberId}
+            <DialogContent sx={{ p: 4 }}>
+              <Stack spacing={4}>
+                {/* Group Basic Info */}
+                <Card variant="outlined" sx={{ borderRadius: theme.shape.borderRadius * 2, p: 3 }}>
+                  <Typography variant="h6" fontWeight={700} gutterBottom sx={{
+                    color: 'primary.main',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1
+                  }}>
+                    <FiUser size={20} />
+                    Basic Information
+                  </Typography>
+
+                  <Stack spacing={3}>
+                    <TextField
+                      fullWidth
+                      label="Group Name"
+                      value={newGroup.name}
+                      onChange={e => setNewGroup({ ...newGroup, name: e.target.value })}
+                      placeholder="Enter a descriptive group name"
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <FiUsers color={theme.palette.primary.main} />
+                          </InputAdornment>
+                        ),
+                      }}
                       sx={{
-                        py: 2,
-                        borderBottom: `1px solid ${theme.palette.divider}`,
-                        '&:last-child': { borderBottom: 'none' },
-                        '&:hover': {
-                          backgroundColor: theme.palette.action.hover,
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: theme.shape.borderRadius * 2,
+                        }
+                      }}
+                    />
+                    <TextField
+                      fullWidth
+                      label="Description"
+                      multiline
+                      rows={3}
+                      value={newGroup.description}
+                      onChange={e => setNewGroup({ ...newGroup, description: e.target.value })}
+                      placeholder="Describe the purpose of this group..."
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start" sx={{ alignSelf: 'flex-start', mt: 1 }}>
+                            <FiFileText color={theme.palette.primary.main} />
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: theme.shape.borderRadius * 2,
+                        }
+                      }}
+                    />
+                  </Stack>
+                </Card>
+
+                {/* Group Members Selection */}
+                <Card variant="outlined" sx={{ borderRadius: theme.shape.borderRadius * 2, p: 3 }}>
+                  <Typography variant="h6" fontWeight={700} gutterBottom sx={{
+                    color: 'primary.main',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1
+                  }}>
+                    <FiUserPlus size={20} />
+                    Group Members
+                  </Typography>
+
+                  <FormControl fullWidth sx={{ mb: 3 }}>
+                    <InputLabel>Select Members</InputLabel>
+                    <Select
+                      multiple
+                      value={newGroup.members}
+                      onChange={(e) => setNewGroup({ ...newGroup, members: e.target.value })}
+                      input={<OutlinedInput label="Select Members" />}
+                      renderValue={(selected) => (
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                          {selected.map((value) => {
+                            const user = users.find(u => u._id === value);
+                            return user ? (
+                              <Chip
+                                key={value}
+                                label={user.name}
+                                size="small"
+                                variant="outlined"
+                                avatar={
+                                  <Avatar sx={{ width: 24, height: 24, fontSize: '0.75rem' }}>
+                                    {user.name.charAt(0).toUpperCase()}
+                                  </Avatar>
+                                }
+                              />
+                            ) : null;
+                          })}
+                        </Box>
+                      )}
+                      sx={{
+                        borderRadius: theme.shape.borderRadius * 2,
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          borderColor: theme.palette.divider,
                         }
                       }}
                     >
-                      <ListItemIcon>
-                        <Avatar 
-                          sx={{ 
-                            width: 40, 
-                            height: 40,
-                            bgcolor: theme.palette.primary.main,
-                            fontSize: '1rem'
+                      {users.map((user) => (
+                        <MenuItem
+                          key={user._id}
+                          value={user._id}
+                          sx={{
+                            py: 1,
+                            borderRadius: theme.shape.borderRadius,
+                            '&:hover': {
+                              backgroundColor: `${theme.palette.primary.main}10`,
+                            }
                           }}
                         >
-                          {member.name.charAt(0).toUpperCase()}
-                        </Avatar>
-                      </ListItemIcon>
-                      <ListItemText 
-                        primary={
-                          <Typography variant="body1" fontWeight={600}>
-                            {member.name}
-                          </Typography>
-                        }
-                        secondary={
-                          <Stack direction="row" spacing={2} alignItems="center">
-                            <Chip
-                              label={member.role}
-                              size="small"
-                              variant="filled"
-                              sx={{ 
-                                height: 20,
-                                fontSize: '0.7rem',
-                                bgcolor: `${theme.palette.secondary.main}20`,
-                                color: theme.palette.secondary.dark
-                              }}
-                            />
-                            <Typography variant="caption" color="text.secondary">
-                              {member.email || 'No email provided'}
-                            </Typography>
-                          </Stack>
-                        }
-                      />
-                      <ListItemSecondaryAction>
-                        <Tooltip title="Remove member">
-                          <IconButton 
-                            edge="end"
-                            onClick={() => setNewGroup({
-                              ...newGroup,
-                              members: newGroup.members.filter(id => id !== memberId)
-                            })}
+                          <Checkbox
+                            checked={newGroup.members.includes(user._id)}
                             sx={{
-                              color: theme.palette.error.main,
-                              '&:hover': {
-                                backgroundColor: `${theme.palette.error.main}10`,
+                              color: theme.palette.primary.main,
+                              '&.Mui-checked': {
+                                color: theme.palette.primary.main,
                               }
                             }}
+                          />
+                          <ListItemText
+                            primary={
+                              <Typography variant="body1" fontWeight={600}>
+                                {user.name}
+                              </Typography>
+                            }
+                            secondary={
+                              <Typography variant="caption" color="text.secondary">
+                                {user.role} • {user.email || 'No email'}
+                              </Typography>
+                            }
+                          />
+                          <Avatar
+                            sx={{
+                              width: 32,
+                              height: 32,
+                              fontSize: '0.875rem',
+                              bgcolor: theme.palette.primary.main
+                            }}
                           >
-                            <FiUserMinus size={18} />
-                          </IconButton>
-                        </Tooltip>
-                      </ListItemSecondaryAction>
-                    </ListItem>
-                  ) : null;
-                })}
-              </List>
-            </Paper>
-          </Box>
-        ) : (
-          <Paper 
-            variant="outlined" 
-            sx={{ 
-              p: 4, 
-              textAlign: 'center',
-              borderRadius: theme.shape.borderRadius * 2,
+                            {user.name.charAt(0).toUpperCase()}
+                          </Avatar>
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+
+                  {/* Selected Members Preview */}
+                  {newGroup.members.length > 0 ? (
+                    <Box>
+                      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+                        <Typography variant="subtitle1" fontWeight={600} color="primary.main">
+                          Selected Members ({newGroup.members.length})
+                        </Typography>
+                        <Chip
+                          label={`${newGroup.members.length} selected`}
+                          size="small"
+                          color="primary"
+                          variant="outlined"
+                        />
+                      </Stack>
+
+                      <Paper
+                        variant="outlined"
+                        sx={{
+                          borderRadius: theme.shape.borderRadius * 2,
+                          maxHeight: 300,
+                          overflow: 'auto',
+                          background: theme.palette.background.default
+                        }}
+                      >
+                        <List dense>
+                          {newGroup.members.map((memberId) => {
+                            const member = users.find(u => u._id === memberId);
+                            return member ? (
+                              <ListItem
+                                key={memberId}
+                                sx={{
+                                  py: 2,
+                                  borderBottom: `1px solid ${theme.palette.divider}`,
+                                  '&:last-child': { borderBottom: 'none' },
+                                  '&:hover': {
+                                    backgroundColor: theme.palette.action.hover,
+                                  }
+                                }}
+                              >
+                                <ListItemIcon>
+                                  <Avatar
+                                    sx={{
+                                      width: 40,
+                                      height: 40,
+                                      bgcolor: theme.palette.primary.main,
+                                      fontSize: '1rem'
+                                    }}
+                                  >
+                                    {member.name.charAt(0).toUpperCase()}
+                                  </Avatar>
+                                </ListItemIcon>
+                                <ListItemText
+                                  primary={
+                                    <Typography variant="body1" fontWeight={600}>
+                                      {member.name}
+                                    </Typography>
+                                  }
+                                  secondary={
+                                    <Stack direction="row" spacing={2} alignItems="center">
+                                      <Chip
+                                        label={member.role}
+                                        size="small"
+                                        variant="filled"
+                                        sx={{
+                                          height: 20,
+                                          fontSize: '0.7rem',
+                                          bgcolor: `${theme.palette.secondary.main}20`,
+                                          color: theme.palette.secondary.dark
+                                        }}
+                                      />
+                                      <Typography variant="caption" color="text.secondary">
+                                        {member.email || 'No email provided'}
+                                      </Typography>
+                                    </Stack>
+                                  }
+                                />
+                                <ListItemSecondaryAction>
+                                  <Tooltip title="Remove member">
+                                    <IconButton
+                                      edge="end"
+                                      onClick={() => setNewGroup({
+                                        ...newGroup,
+                                        members: newGroup.members.filter(id => id !== memberId)
+                                      })}
+                                      sx={{
+                                        color: theme.palette.error.main,
+                                        '&:hover': {
+                                          backgroundColor: `${theme.palette.error.main}10`,
+                                        }
+                                      }}
+                                    >
+                                      <FiUserMinus size={18} />
+                                    </IconButton>
+                                  </Tooltip>
+                                </ListItemSecondaryAction>
+                              </ListItem>
+                            ) : null;
+                          })}
+                        </List>
+                      </Paper>
+                    </Box>
+                  ) : (
+                    <Paper
+                      variant="outlined"
+                      sx={{
+                        p: 4,
+                        textAlign: 'center',
+                        borderRadius: theme.shape.borderRadius * 2,
+                        background: theme.palette.background.default
+                      }}
+                    >
+                      <FiUsers size={48} color={theme.palette.text.secondary} style={{ marginBottom: 16, opacity: 0.5 }} />
+                      <Typography variant="body1" color="text.secondary" gutterBottom>
+                        No members selected
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Select team members from the dropdown above to add them to this group
+                      </Typography>
+                    </Paper>
+                  )}
+                </Card>
+
+                {/* Quick Stats */}
+                {newGroup.members.length > 0 && (
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} sm={4}>
+                      <Card sx={{
+                        p: 2,
+                        textAlign: 'center',
+                        bgcolor: `${theme.palette.primary.main}05`,
+                        border: `1px solid ${theme.palette.primary.main}20`,
+                        borderRadius: theme.shape.borderRadius * 2
+                      }}>
+                        <Typography variant="h4" fontWeight={800} color="primary.main">
+                          {newGroup.members.length}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Total Members
+                        </Typography>
+                      </Card>
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                      <Card sx={{
+                        p: 2,
+                        textAlign: 'center',
+                        bgcolor: `${theme.palette.success.main}05`,
+                        border: `1px solid ${theme.palette.success.main}20`,
+                        borderRadius: theme.shape.borderRadius * 2
+                      }}>
+                        <Typography variant="h4" fontWeight={800} color="success.main">
+                          {[...new Set(users.filter(u => newGroup.members.includes(u._id)).map(u => u.role))].length}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Unique Roles
+                        </Typography>
+                      </Card>
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                      <Card sx={{
+                        p: 2,
+                        textAlign: 'center',
+                        bgcolor: `${theme.palette.info.main}05`,
+                        border: `1px solid ${theme.palette.info.main}20`,
+                        borderRadius: theme.shape.borderRadius * 2
+                      }}>
+                        <Typography variant="h4" fontWeight={800} color="info.main">
+                          {Math.ceil(newGroup.members.length / 5)}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Estimated Teams
+                        </Typography>
+                      </Card>
+                    </Grid>
+                  </Grid>
+                )}
+              </Stack>
+            </DialogContent>
+
+            <DialogActions sx={{
+              p: 4,
+              pt: 2,
+              borderTop: `1px solid ${theme.palette.divider}`,
               background: theme.palette.background.default
-            }}
-          >
-            <FiUsers size={48} color={theme.palette.text.secondary} style={{ marginBottom: 16, opacity: 0.5 }} />
-            <Typography variant="body1" color="text.secondary" gutterBottom>
-              No members selected
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Select team members from the dropdown above to add them to this group
-            </Typography>
-          </Paper>
-        )}
-      </Card>
-
-      {/* Quick Stats */}
-      {newGroup.members.length > 0 && (
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={4}>
-            <Card sx={{ 
-              p: 2, 
-              textAlign: 'center',
-              bgcolor: `${theme.palette.primary.main}05`,
-              border: `1px solid ${theme.palette.primary.main}20`,
-              borderRadius: theme.shape.borderRadius * 2
             }}>
-              <Typography variant="h4" fontWeight={800} color="primary.main">
-                {newGroup.members.length}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Total Members
-              </Typography>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <Card sx={{ 
-              p: 2, 
-              textAlign: 'center',
-              bgcolor: `${theme.palette.success.main}05`,
-              border: `1px solid ${theme.palette.success.main}20`,
-              borderRadius: theme.shape.borderRadius * 2
-            }}>
-              <Typography variant="h4" fontWeight={800} color="success.main">
-                {[...new Set(users.filter(u => newGroup.members.includes(u._id)).map(u => u.role))].length}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Unique Roles
-              </Typography>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <Card sx={{ 
-              p: 2, 
-              textAlign: 'center',
-              bgcolor: `${theme.palette.info.main}05`,
-              border: `1px solid ${theme.palette.info.main}20`,
-              borderRadius: theme.shape.borderRadius * 2
-            }}>
-              <Typography variant="h4" fontWeight={800} color="info.main">
-                {Math.ceil(newGroup.members.length / 5)}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Estimated Teams
-              </Typography>
-            </Card>
-          </Grid>
-        </Grid>
-      )}
-    </Stack>
-  </DialogContent>
-
-  <DialogActions sx={{ 
-    p: 4, 
-    pt: 2,
-    borderTop: `1px solid ${theme.palette.divider}`,
-    background: theme.palette.background.default
-  }}>
-    <Button 
-      onClick={() => {
-        setOpenGroupDialog(false);
-        setEditingGroup(null);
-      }}
-      variant="outlined"
-      startIcon={<FiX size={18} />}
-      sx={{ 
-        borderRadius: theme.shape.borderRadius * 2,
-        px: 4,
-        fontWeight: 600,
-        borderColor: theme.palette.divider,
-        color: theme.palette.text.secondary
-      }}
-    >
-      Cancel
-    </Button>
-    <Button 
-      onClick={handleCreateGroup} 
-      variant="contained"
-      disabled={!newGroup.name || newGroup.members.length === 0}
-      startIcon={editingGroup ? <FiEdit2 size={18} /> : <FiPlus size={18} />}
-      sx={{ 
-        borderRadius: theme.shape.borderRadius * 2,
-        px: 4,
-        fontWeight: 600,
-        background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-        boxShadow: `0 4px 12px ${theme.palette.primary.main}30`,
-        '&:hover': {
-          boxShadow: `0 6px 16px ${theme.palette.primary.main}40`,
-          transform: 'translateY(-1px)',
-        },
-        '&:disabled': {
-          background: theme.palette.action.disabled,
-          boxShadow: 'none',
-        }
-      }}
-    >
-      {editingGroup ? 'Update Group' : 'Create Group'}
-    </Button>
-  </DialogActions>
-</Dialog>
+              <Button
+                onClick={() => {
+                  setOpenGroupDialog(false);
+                  setEditingGroup(null);
+                }}
+                variant="outlined"
+                startIcon={<FiX size={18} />}
+                sx={{
+                  borderRadius: theme.shape.borderRadius * 2,
+                  px: 4,
+                  fontWeight: 600,
+                  borderColor: theme.palette.divider,
+                  color: theme.palette.text.secondary
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCreateGroup}
+                variant="contained"
+                disabled={!newGroup.name || newGroup.members.length === 0}
+                startIcon={editingGroup ? <FiEdit2 size={18} /> : <FiPlus size={18} />}
+                sx={{
+                  borderRadius: theme.shape.borderRadius * 2,
+                  px: 4,
+                  fontWeight: 600,
+                  background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                  boxShadow: `0 4px 12px ${theme.palette.primary.main}30`,
+                  '&:hover': {
+                    boxShadow: `0 6px 16px ${theme.palette.primary.main}40`,
+                    transform: 'translateY(-1px)',
+                  },
+                  '&:disabled': {
+                    background: theme.palette.action.disabled,
+                    boxShadow: 'none',
+                  }
+                }}
+              >
+                {editingGroup ? 'Update Group' : 'Create Group'}
+              </Button>
+            </DialogActions>
+          </Dialog>
 
           {/* Enhanced Snackbar */}
           <Snackbar
@@ -1884,17 +1884,17 @@ const MyTaskManagement = () => {
             onClose={() => setSnackbar({ ...snackbar, open: false })}
             anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
           >
-            <Card sx={{ 
+            <Card sx={{
               minWidth: 300,
-              background: snackbar.severity === 'error' 
-                ? theme.palette.error.main 
+              background: snackbar.severity === 'error'
+                ? theme.palette.error.main
                 : theme.palette.success.main,
               color: 'white'
             }}>
               <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
                 <Stack direction="row" alignItems="center" spacing={2}>
-                  {snackbar.severity === 'error' ? 
-                    <FiXCircle size={20} /> : 
+                  {snackbar.severity === 'error' ?
+                    <FiXCircle size={20} /> :
                     <FiCheckCircle size={20} />
                   }
                   <Typography variant="body2" fontWeight={500}>
