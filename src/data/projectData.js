@@ -20,4 +20,14 @@ export const initialProjects = [
     startDate: '05-10-2025',
     endDate: '',
   },
+   {
+    id: 'CA-13',
+    projectName: 'Tech Nexus',
+    owner: 'John Doe',
+    status: 'Pending',
+    progress: 20,
+    tasks: 5,
+    startDate: '05-10-2025',
+    endDate: '',
+  },
 ];

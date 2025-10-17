@@ -23,8 +23,8 @@ const AdminProjects = () => {
     projectName: '',
     owner: '',
     status: 'Active',
-    progress: 0,
-    tasks: 0,
+    progress: '0',
+    totaltask: '',
     startDate: '',
     endDate: '',
   });
@@ -43,8 +43,8 @@ const AdminProjects = () => {
       projectName: '',
       owner: '',
       status: 'Active',
-      progress: 0,
-      tasks: 0,
+      progress: '0',
+      totaltask: '',
       startDate: '',
       endDate: '',
     });
@@ -81,7 +81,7 @@ const AdminProjects = () => {
       editable: true,
       renderCell: (params) => `${params.value}%`,
     },
-    { field: 'tasks', headerName: 'Tasks', flex: 0.5, editable: true },
+    { field: 'totaltask', headerName: 'Total task', flex: 0.5, editable: true },
     { field: 'startDate', headerName: 'Start Date', flex: 0.7, editable: true },
     { field: 'endDate', headerName: 'End Date', flex: 0.7, editable: true },
     {
@@ -143,10 +143,20 @@ const AdminProjects = () => {
             value={newProject.owner}
             onChange={(e) => setNewProject({ ...newProject, owner: e.target.value })}
           />
+             <TextField
+            label="Total Task"
+            value={newProject.totaltask}
+            onChange={(e) => setNewProject({ ...newProject, totaltask: e.target.value })}
+          />
           <TextField
             label="Start Date"
             value={newProject.startDate}
             onChange={(e) => setNewProject({ ...newProject, startDate: e.target.value })}
+          />
+            <TextField
+            label="End Date"
+            value={newProject.endDate}
+            onChange={(e) => setNewProject({ ...newProject, endDate: e.target.value })}
           />
         </DialogContent>
         <DialogActions>

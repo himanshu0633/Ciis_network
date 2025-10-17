@@ -1,89 +1,95 @@
 import React from 'react';
-import { Box, Typography, Button } from '@mui/material';
-import img from '../image/home-integration.webp';
+import {
+  Box,
+  Container,
+  Typography,
+  Button,
+  Grid,
+  Paper,
+  useTheme
+} from '@mui/material';
+import { Download, PlayArrow } from '@mui/icons-material';
 
-const Cta = () => {
+function Cta() {
+  const theme = useTheme();
+
   return (
-    <Box>
-      {/* CTA Section */}
-
-
-      {/* Integration Section */}
-      <Box
-        sx={{
-          backgroundColor: '#fff',
-          py: { xs: 6, md: 8 },
-          px: 2,
-          textAlign: 'center',
-        }}
-      >
-        <Typography
-          variant="h5"
-          fontWeight="bold"
-          sx={{ 
-            mb: 2, 
-            fontSize: { xs: '1.5rem', md: '1.75rem' } // Responsive font size
-          }}
-        >
-          Multiple Lead Sources? Or Existing CRM? Worry Not!
-        </Typography>
-        <Typography 
-          variant="subtitle1" 
-          sx={{ 
-            mb: 4, 
-            fontSize: { xs: '1rem', md: '1.2rem' } // Responsive font size
-          }}
-        >
-           CIIS Network Integrates with all available lead sources and top CRMs
-        </Typography>
-
-        {/* Placeholder for logos or integrations */}
-        <Box
-          className="integration-container"
-          sx={{
-            height: { xs: '300px', md: '400px' }, // Responsive height
-            backgroundImage: `url(${img})`, // Use imported image
-            backgroundSize: 'contain',
-            backgroundRepeat: 'no-repeat',
-            borderRadius: '12px',
-            mb: 4,
-          }}
-        >
-          {/* Insert logos/partners here later */}
-        </Box>
-
-        <Button
-          variant="contained"
-          sx={{
-            background: 'linear-gradient(90deg, #FF6F61 0%, #FFC837 100%)',
-            color: '#000',
-            px: 4,
-            py: 1.5,
-            borderRadius: '16px',
-            fontSize: { xs: '0.9rem', md: '1rem' }, // Responsive font size
-            fontWeight: 500,
-            mb: 1,
-            '&:hover': {
-              background: 'linear-gradient(90deg, #FF3C00 0%, #FFB300 100%)',
-            },
-          }}
-        >
-          Start Your 10-Day Free Trial
-        </Button>
-
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          sx={{ 
-            mt: 1, 
-            fontSize: { xs: '0.8rem', md: '1rem' } // Responsive font size
-          }}
-        >
-          No Credit Card Required
-        </Typography>
-      </Box>
+    <Box
+      sx={{
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        color: 'white',
+        py: { xs: 6, md: 10 }
+      }}
+    >
+      <Container maxWidth="lg">
+        <Grid container spacing={4} alignItems="center">
+          <Grid item xs={12} md={8}>
+            <Typography
+              variant="h3"
+              component="h2"
+              sx={{
+                fontWeight: 700,
+                mb: 2
+              }}
+            >
+              Ready to Transform Your Calling Operations?
+            </Typography>
+            <Typography
+              variant="h6"
+              sx={{
+                mb: 3,
+                opacity: 0.9
+              }}
+            >
+              Join thousands of sales teams using CiisNetwork to boost productivity and close more deals
+            </Typography>
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Button
+                variant="contained"
+                size="large"
+                startIcon={<Download />}
+                sx={{
+                  bgcolor: 'white',
+                  color: '#667eea',
+                  py: 1.5,
+                  fontWeight: 600,
+                  borderRadius: 2,
+                  '&:hover': {
+                    bgcolor: 'grey.100',
+                    transform: 'translateY(-2px)'
+                  },
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                Download App
+              </Button>
+              <Button
+                variant="outlined"
+                size="large"
+                startIcon={<PlayArrow />}
+                sx={{
+                  borderColor: 'white',
+                  color: 'white',
+                  py: 1.5,
+                  fontWeight: 600,
+                  borderRadius: 2,
+                  '&:hover': {
+                    bgcolor: 'rgba(255,255,255,0.1)',
+                    transform: 'translateY(-2px)'
+                  },
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                Watch Demo
+              </Button>
+            </Box>
+          </Grid>
+        </Grid>
+      </Container>
     </Box>
   );
-};
+}
 
 export default Cta;
