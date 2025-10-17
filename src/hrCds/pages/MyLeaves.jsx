@@ -1,50 +1,90 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
-  Box, Typography, Tabs, Tab, Button, Dialog, DialogTitle, DialogContent,
-  DialogActions, TextField, Select, MenuItem, Snackbar, Chip, Table, TableBody,
-  TableCell, TableContainer, TableHead, TableRow, Paper, Card, CardContent,
-  Grid, Stack, Avatar, LinearProgress, Fade, Tooltip, IconButton,
-  InputAdornment, useTheme, useMediaQuery, Divider, Badge
-} from '@mui/material';
+  Box,
+  Typography,
+  Tabs,
+  Tab,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Select,
+  MenuItem,
+  Snackbar,
+  Chip,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Card,
+  CardContent,
+  Grid,
+  Stack,
+  Avatar,
+  LinearProgress,
+  Fade,
+  Tooltip,
+  IconButton,
+  InputAdornment,
+  useTheme,
+  useMediaQuery,
+  Divider,
+  Badge,
+} from "@mui/material";
 import {
-  FiCalendar, FiPlus, FiClock, FiCheckCircle, FiXCircle,
-  FiAlertCircle, FiInfo, FiDownload, FiFilter, FiRefreshCw, FiUser
-} from 'react-icons/fi';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import axios from '../../utils/axiosConfig';
-import { styled } from '@mui/material/styles';
-import { FiChevronRight } from 'react-icons/fi';
+  FiCalendar,
+  FiPlus,
+  FiClock,
+  FiCheckCircle,
+  FiXCircle,
+  FiAlertCircle,
+  FiInfo,
+  FiDownload,
+  FiFilter,
+  FiRefreshCw,
+  FiUser,
+} from "react-icons/fi";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import axios from "../../utils/axiosConfig";
+import { styled } from "@mui/material/styles";
+import { FiChevronRight } from "react-icons/fi";
+import { id } from "date-fns/locale";
 
 // Enhanced Styled Components
-const StatCard = styled(Card)(({ theme, color = 'primary' }) => ({
+const StatCard = styled(Card)(({ theme, color = "primary" }) => ({
   background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
   borderRadius: theme.shape.borderRadius * 2,
   boxShadow: theme.shadows[2],
-  transition: theme.transitions.create(['all'], {
+  transition: theme.transitions.create(["all"], {
     duration: theme.transitions.duration.standard,
   }),
   borderLeft: `4px solid ${theme.palette[color].main}`,
-  '&:hover': {
+  "&:hover": {
     boxShadow: theme.shadows[6],
-    transform: 'translateY(-2px)',
+    transform: "translateY(-2px)",
   },
 }));
 
 const StatusChip = styled(Chip)(({ theme, status }) => ({
   fontWeight: 600,
-  ...(status === 'Approved' && {
+  ...(status === "Approved" && {
     background: `${theme.palette.success.main}20`,
     color: theme.palette.success.dark,
     border: `1px solid ${theme.palette.success.main}40`,
   }),
-  ...(status === 'Pending' && {
+  ...(status === "Pending" && {
     background: `${theme.palette.warning.main}20`,
     color: theme.palette.warning.dark,
     border: `1px solid ${theme.palette.warning.main}40`,
   }),
-  ...(status === 'Rejected' && {
+  ...(status === "Rejected" && {
     background: `${theme.palette.error.main}20`,
     color: theme.palette.error.dark,
     border: `1px solid ${theme.palette.error.main}40`,
@@ -53,43 +93,43 @@ const StatusChip = styled(Chip)(({ theme, status }) => ({
 
 const LeaveTypeChip = styled(Chip)(({ theme, type }) => ({
   fontWeight: 500,
-  ...(type === 'Casual' && {
+  ...(type === "Casual" && {
     background: `${theme.palette.info.main}20`,
     color: theme.palette.info.dark,
   }),
-  ...(type === 'Sick' && {
+  ...(type === "Sick" && {
     background: `${theme.palette.secondary.main}20`,
     color: theme.palette.secondary.dark,
   }),
-  ...(type === 'Paid' && {
+  ...(type === "Paid" && {
     background: `${theme.palette.success.main}20`,
     color: theme.palette.success.dark,
   }),
-  ...(type === 'Unpaid' && {
+  ...(type === "Unpaid" && {
     background: `${theme.palette.warning.main}20`,
     color: theme.palette.warning.dark,
   }),
-  ...(type === 'Other' && {
+  ...(type === "Other" && {
     background: `${theme.palette.grey[500]}20`,
     color: theme.palette.grey[700],
   }),
 }));
 
 const StyledTableRow = styled(TableRow)(({ theme, status }) => ({
-  cursor: 'pointer',
-  transition: theme.transitions.create(['all'], {
+  cursor: "pointer",
+  transition: theme.transitions.create(["all"], {
     duration: theme.transitions.duration.short,
   }),
-  '&:hover': {
+  "&:hover": {
     backgroundColor: theme.palette.action.hover,
   },
-  ...(status === 'Approved' && {
+  ...(status === "Approved" && {
     borderLeft: `4px solid ${theme.palette.success.main}`,
   }),
-  ...(status === 'Pending' && {
+  ...(status === "Pending" && {
     borderLeft: `4px solid ${theme.palette.warning.main}`,
   }),
-  ...(status === 'Rejected' && {
+  ...(status === "Rejected" && {
     borderLeft: `4px solid ${theme.palette.error.main}`,
   }),
 }));
@@ -97,18 +137,20 @@ const StyledTableRow = styled(TableRow)(({ theme, status }) => ({
 const MobileLeaveCard = styled(Card)(({ theme, status }) => ({
   borderRadius: theme.shape.borderRadius * 2,
   boxShadow: theme.shadows[2],
-  cursor: 'pointer',
-  transition: theme.transitions.create(['all'], {
+  cursor: "pointer",
+  transition: theme.transitions.create(["all"], {
     duration: theme.transitions.duration.standard,
   }),
   borderLeft: `4px solid ${
-    status === 'Approved' ? theme.palette.success.main :
-    status === 'Pending' ? theme.palette.warning.main :
-    theme.palette.error.main
+    status === "Approved"
+      ? theme.palette.success.main
+      : status === "Pending"
+      ? theme.palette.warning.main
+      : theme.palette.error.main
   }`,
-  '&:hover': {
+  "&:hover": {
     boxShadow: theme.shadows[6],
-    transform: 'translateY(-2px)',
+    transform: "translateY(-2px)",
   },
 }));
 
@@ -122,30 +164,30 @@ const MyLeaves = () => {
     total: 0,
     approved: 0,
     pending: 0,
-    rejected: 0
+    rejected: 0,
   });
   const [form, setForm] = useState({
-    type: 'Casual',
+    type: "Casual",
     startDate: null,
     endDate: null,
-    reason: ''
+    reason: "",
   });
 
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const isSmallMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const fetchLeaves = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/leaves/status');
+      const res = await axios.get("/leaves/status");
       setLeaves(res.data.leaves || []);
       calculateStats(res.data.leaves || []);
     } catch (err) {
-      console.error('❌ Failed to fetch leaves:', err.message);
-      setNotification({ 
-        message: err?.response?.data?.message || 'Failed to fetch leaves', 
-        severity: 'error' 
+      console.error("❌ Failed to fetch leaves:", err.message);
+      setNotification({
+        message: err?.response?.data?.message || "Failed to fetch leaves",
+        severity: "error",
       });
     } finally {
       setLoading(false);
@@ -153,31 +195,37 @@ const MyLeaves = () => {
   };
 
   const calculateStats = (leavesData) => {
-    const approved = leavesData.filter(leave => leave.status === 'Approved').length;
-    const pending = leavesData.filter(leave => leave.status === 'Pending').length;
-    const rejected = leavesData.filter(leave => leave.status === 'Rejected').length;
-    
+    const approved = leavesData.filter(
+      (leave) => leave.status === "Approved"
+    ).length;
+    const pending = leavesData.filter(
+      (leave) => leave.status === "Pending"
+    ).length;
+    const rejected = leavesData.filter(
+      (leave) => leave.status === "Rejected"
+    ).length;
+
     setStats({
       total: leavesData.length,
       approved,
       pending,
-      rejected
+      rejected,
     });
   };
 
   const applyLeave = async (leaveData) => {
     try {
-      const res = await axios.post('/leaves/apply', leaveData);
-      setNotification({ 
-        message: res.data.message || 'Leave applied successfully', 
-        severity: 'success' 
+      const res = await axios.post("/leaves/apply", leaveData);
+      setNotification({
+        message: res.data.message || "Leave applied successfully",
+        severity: "success",
       });
       fetchLeaves(); // refresh list
     } catch (err) {
-      console.error('❌ Failed to apply leave:', err.message);
-      setNotification({ 
-        message: err?.response?.data?.message || 'Failed to apply leave', 
-        severity: 'error' 
+      console.error("❌ Failed to apply leave:", err.message);
+      setNotification({
+        message: err?.response?.data?.message || "Failed to apply leave",
+        severity: "error",
       });
     }
   };
@@ -194,53 +242,53 @@ const MyLeaves = () => {
     // Validate form
     if (!form.startDate || !form.endDate || !form.reason.trim()) {
       setNotification({
-        message: 'Please fill in all required fields',
-        severity: 'error'
+        message: "Please fill in all required fields",
+        severity: "error",
       });
       return;
     }
 
     if (new Date(form.startDate) > new Date(form.endDate)) {
       setNotification({
-        message: 'End date cannot be before start date',
-        severity: 'error'
+        message: "End date cannot be before start date",
+        severity: "error",
       });
       return;
     }
 
     const submitData = {
       ...form,
-      startDate: form.startDate.toISOString().split('T')[0],
-      endDate: form.endDate.toISOString().split('T')[0]
+      startDate: form.startDate.toISOString().split("T")[0],
+      endDate: form.endDate.toISOString().split("T")[0],
     };
 
     applyLeave(submitData);
     setOpen(false);
     setForm({
-      type: 'Casual',
+      type: "Casual",
       startDate: null,
       endDate: null,
-      reason: ''
+      reason: "",
     });
   };
 
   const handleClose = () => {
     setOpen(false);
     setForm({
-      type: 'Casual',
+      type: "Casual",
       startDate: null,
       endDate: null,
-      reason: ''
+      reason: "",
     });
   };
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'Approved':
+      case "Approved":
         return <FiCheckCircle color={theme.palette.success.main} />;
-      case 'Pending':
+      case "Pending":
         return <FiClock color={theme.palette.warning.main} />;
-      case 'Rejected':
+      case "Rejected":
         return <FiXCircle color={theme.palette.error.main} />;
       default:
         return <FiInfo color={theme.palette.text.secondary} />;
@@ -249,13 +297,13 @@ const MyLeaves = () => {
 
   const getLeaveTypeIcon = (type) => {
     switch (type) {
-      case 'Casual':
+      case "Casual":
         return <FiUser color={theme.palette.info.main} />;
-      case 'Sick':
+      case "Sick":
         return <FiAlertCircle color={theme.palette.secondary.main} />;
-      case 'Paid':
+      case "Paid":
         return <FiCheckCircle color={theme.palette.success.main} />;
-      case 'Unpaid':
+      case "Unpaid":
         return <FiClock color={theme.palette.warning.main} />;
       default:
         return <FiInfo color={theme.palette.grey[500]} />;
@@ -263,13 +311,13 @@ const MyLeaves = () => {
   };
 
   const formatDate = (dateStr) => {
-    if (!dateStr) return '--';
+    if (!dateStr) return "--";
     const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
+    return date.toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
     });
   };
 
@@ -287,13 +335,15 @@ const MyLeaves = () => {
 
   if (loading) {
     return (
-      <Box sx={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        minHeight: '50vh'
-      }}>
-        <LinearProgress sx={{ width: '100px' }} />
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "50vh",
+        }}
+      >
+        <LinearProgress sx={{ width: "100px" }} />
       </Box>
     );
   }
@@ -303,18 +353,20 @@ const MyLeaves = () => {
       <Fade in={!loading} timeout={500}>
         <Box sx={{ p: { xs: 2, md: 3 } }}>
           {/* Header Section */}
-          <Paper sx={{ 
-            p: 3, 
-            mb: 3, 
-            borderRadius: theme.shape.borderRadius * 2,
-            background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
-            boxShadow: theme.shadows[4]
-          }}>
-            <Stack 
-              direction={{ xs: 'column', sm: 'row' }} 
-              spacing={3} 
-              justifyContent="space-between" 
-              alignItems={{ xs: 'flex-start', sm: 'center' }}
+          <Paper
+            sx={{
+              p: 3,
+              mb: 3,
+              borderRadius: theme.shape.borderRadius * 2,
+              background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
+              boxShadow: theme.shadows[4],
+            }}
+          >
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={3}
+              justifyContent="space-between"
+              alignItems={{ xs: "flex-start", sm: "center" }}
             >
               <Box>
                 <Typography variant="h4" fontWeight={800} gutterBottom>
@@ -331,19 +383,23 @@ const MyLeaves = () => {
                     <FiRefreshCw />
                   </IconButton>
                 </Tooltip>
-                <Button
+                {/* <Button
                   variant="contained"
                   startIcon={<FiPlus />}
-                  onClick={() => setOpen(true)}
+                  onClick={() => {
+                    if (tab === 1) {
+                      setOpen(true);
+                    }
+                  }}
                   sx={{
                     borderRadius: theme.shape.borderRadius * 2,
-                    textTransform: 'none',
+                    textTransform: "none",
                     fontWeight: 600,
-                    px: 3
+                    px: 3,
                   }}
                 >
                   Apply Leave
-                </Button>
+                </Button> */}
               </Stack>
             </Stack>
           </Paper>
@@ -354,10 +410,12 @@ const MyLeaves = () => {
               <StatCard color="primary">
                 <CardContent>
                   <Stack direction="row" alignItems="center" spacing={2}>
-                    <Avatar sx={{ 
-                      bgcolor: `${theme.palette.primary.main}20`, 
-                      color: theme.palette.primary.main 
-                    }}>
+                    <Avatar
+                      sx={{
+                        bgcolor: `${theme.palette.primary.main}20`,
+                        color: theme.palette.primary.main,
+                      }}
+                    >
                       <FiCalendar />
                     </Avatar>
                     <Box>
@@ -377,10 +435,12 @@ const MyLeaves = () => {
               <StatCard color="success">
                 <CardContent>
                   <Stack direction="row" alignItems="center" spacing={2}>
-                    <Avatar sx={{ 
-                      bgcolor: `${theme.palette.success.main}20`, 
-                      color: theme.palette.success.main 
-                    }}>
+                    <Avatar
+                      sx={{
+                        bgcolor: `${theme.palette.success.main}20`,
+                        color: theme.palette.success.main,
+                      }}
+                    >
                       <FiCheckCircle />
                     </Avatar>
                     <Box>
@@ -400,10 +460,12 @@ const MyLeaves = () => {
               <StatCard color="warning">
                 <CardContent>
                   <Stack direction="row" alignItems="center" spacing={2}>
-                    <Avatar sx={{ 
-                      bgcolor: `${theme.palette.warning.main}20`, 
-                      color: theme.palette.warning.main 
-                    }}>
+                    <Avatar
+                      sx={{
+                        bgcolor: `${theme.palette.warning.main}20`,
+                        color: theme.palette.warning.main,
+                      }}
+                    >
                       <FiClock />
                     </Avatar>
                     <Box>
@@ -423,10 +485,12 @@ const MyLeaves = () => {
               <StatCard color="error">
                 <CardContent>
                   <Stack direction="row" alignItems="center" spacing={2}>
-                    <Avatar sx={{ 
-                      bgcolor: `${theme.palette.error.main}20`, 
-                      color: theme.palette.error.main 
-                    }}>
+                    <Avatar
+                      sx={{
+                        bgcolor: `${theme.palette.error.main}20`,
+                        color: theme.palette.error.main,
+                      }}
+                    >
                       <FiXCircle />
                     </Avatar>
                     <Box>
@@ -444,46 +508,48 @@ const MyLeaves = () => {
           </Grid>
 
           {/* Tabs Section */}
-          <Paper sx={{ 
-            borderRadius: theme.shape.borderRadius * 2,
-            boxShadow: theme.shadows[2],
-            overflow: 'hidden'
-          }}>
-            <Tabs 
-              value={tab} 
+          <Paper
+            sx={{
+              borderRadius: theme.shape.borderRadius * 2,
+              boxShadow: theme.shadows[2],
+              overflow: "hidden",
+            }}
+          >
+            <Tabs
+              value={tab}
               onChange={(_, v) => setTab(v)}
               sx={{
                 borderBottom: `1px solid ${theme.palette.divider}`,
-                '& .MuiTab-root': {
-                  textTransform: 'none',
+                "& .MuiTab-root": {
+                  textTransform: "none",
                   fontWeight: 600,
-                  fontSize: '1rem',
-                  py: 2
-                }
+                  fontSize: "1rem",
+                  py: 2,
+                },
               }}
             >
-              <Tab 
+              <Tab
                 label={
                   <Stack direction="row" alignItems="center" spacing={1}>
                     <FiCalendar />
                     <Typography>Leave Requests</Typography>
                     {stats.total > 0 && (
-                      <Badge 
-                        badgeContent={stats.total} 
-                        color="primary" 
+                      <Badge
+                        badgeContent={stats.total}
+                        color="primary"
                         sx={{ ml: 1 }}
                       />
                     )}
                   </Stack>
-                } 
+                }
               />
-              <Tab 
+              <Tab
                 label={
                   <Stack direction="row" alignItems="center" spacing={1}>
                     <FiPlus />
-                    <Typography>Apply Leave</Typography>
+                    <Typography id="box">Apply Leave</Typography>
                   </Stack>
-                } 
+                }
               />
             </Tabs>
 
@@ -497,8 +563,12 @@ const MyLeaves = () => {
                       <TableHead>
                         <TableRow>
                           <TableCell sx={{ fontWeight: 700 }}>Type</TableCell>
-                          <TableCell sx={{ fontWeight: 700 }}>Start Date</TableCell>
-                          <TableCell sx={{ fontWeight: 700 }}>End Date</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>
+                            Start Date
+                          </TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>
+                            End Date
+                          </TableCell>
                           <TableCell sx={{ fontWeight: 700 }}>Days</TableCell>
                           <TableCell sx={{ fontWeight: 700 }}>Reason</TableCell>
                           <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
@@ -507,7 +577,10 @@ const MyLeaves = () => {
                       <TableBody>
                         {leaves.length > 0 ? (
                           leaves.map((leave) => (
-                            <StyledTableRow key={leave._id} status={leave.status}>
+                            <StyledTableRow
+                              key={leave._id}
+                              status={leave.status}
+                            >
                               <TableCell>
                                 <LeaveTypeChip
                                   label={leave.type}
@@ -527,19 +600,23 @@ const MyLeaves = () => {
                                 </Typography>
                               </TableCell>
                               <TableCell>
-                                <Typography variant="body2" fontWeight={600} color="primary.main">
+                                <Typography
+                                  variant="body2"
+                                  fontWeight={600}
+                                  color="primary.main"
+                                >
                                   {leave.days}
                                 </Typography>
                               </TableCell>
                               <TableCell>
                                 <Tooltip title={leave.reason}>
-                                  <Typography 
-                                    variant="body2" 
-                                    sx={{ 
+                                  <Typography
+                                    variant="body2"
+                                    sx={{
                                       maxWidth: 200,
-                                      overflow: 'hidden',
-                                      textOverflow: 'ellipsis',
-                                      whiteSpace: 'nowrap'
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
+                                      whiteSpace: "nowrap",
                                     }}
                                   >
                                     {leave.reason}
@@ -557,13 +634,27 @@ const MyLeaves = () => {
                           ))
                         ) : (
                           <TableRow>
-                            <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                              <Box sx={{ textAlign: 'center' }}>
-                                <FiCalendar size={48} color={theme.palette.text.secondary} />
-                                <Typography variant="h6" color="text.secondary" sx={{ mt: 1 }}>
+                            <TableCell
+                              colSpan={6}
+                              align="center"
+                              sx={{ py: 4 }}
+                            >
+                              <Box sx={{ textAlign: "center" }}>
+                                <FiCalendar
+                                  size={48}
+                                  color={theme.palette.text.secondary}
+                                />
+                                <Typography
+                                  variant="h6"
+                                  color="text.secondary"
+                                  sx={{ mt: 1 }}
+                                >
                                   No leave requests found
                                 </Typography>
-                                <Typography variant="body2" color="text.secondary">
+                                <Typography
+                                  variant="body2"
+                                  color="text.secondary"
+                                >
                                   Apply for your first leave to get started
                                 </Typography>
                               </Box>
@@ -581,13 +672,25 @@ const MyLeaves = () => {
                         <MobileLeaveCard key={leave._id} status={leave.status}>
                           <CardContent>
                             <Stack spacing={2}>
-                              <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                              <Stack
+                                direction="row"
+                                justifyContent="space-between"
+                                alignItems="flex-start"
+                              >
                                 <Box>
-                                  <Typography variant="h6" fontWeight={600} gutterBottom>
+                                  <Typography
+                                    variant="h6"
+                                    fontWeight={600}
+                                    gutterBottom
+                                  >
                                     {leave.type} Leave
                                   </Typography>
-                                  <Typography variant="body2" color="text.secondary">
-                                    {formatDate(leave.startDate)} - {formatDate(leave.endDate)}
+                                  <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                  >
+                                    {formatDate(leave.startDate)} -{" "}
+                                    {formatDate(leave.endDate)}
                                   </Typography>
                                 </Box>
                                 <StatusChip
@@ -596,22 +699,32 @@ const MyLeaves = () => {
                                   size="small"
                                 />
                               </Stack>
-                              
-                              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                <Typography variant="body2" fontWeight={600} color="primary.main">
-                                  {leave.days} day{leave.days > 1 ? 's' : ''}
+
+                              <Stack
+                                direction="row"
+                                justifyContent="space-between"
+                                alignItems="center"
+                              >
+                                <Typography
+                                  variant="body2"
+                                  fontWeight={600}
+                                  color="primary.main"
+                                >
+                                  {leave.days} day{leave.days > 1 ? "s" : ""}
                                 </Typography>
-                                <FiChevronRight color={theme.palette.text.secondary} />
+                                <FiChevronRight
+                                  color={theme.palette.text.secondary}
+                                />
                               </Stack>
 
-                              <Typography 
-                                variant="body2" 
-                                sx={{ 
-                                  color: 'text.secondary',
-                                  display: '-webkit-box',
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  color: "text.secondary",
+                                  display: "-webkit-box",
                                   WebkitLineClamp: 2,
-                                  WebkitBoxOrient: 'vertical',
-                                  overflow: 'hidden'
+                                  WebkitBoxOrient: "vertical",
+                                  overflow: "hidden",
                                 }}
                               >
                                 {leave.reason}
@@ -621,9 +734,16 @@ const MyLeaves = () => {
                         </MobileLeaveCard>
                       ))
                     ) : (
-                      <Box sx={{ textAlign: 'center', py: 4 }}>
-                        <FiCalendar size={48} color={theme.palette.text.secondary} />
-                        <Typography variant="h6" color="text.secondary" sx={{ mt: 1 }}>
+                      <Box sx={{ textAlign: "center", py: 4 }}>
+                        <FiCalendar
+                          size={48}
+                          color={theme.palette.text.secondary}
+                        />
+                        <Typography
+                          variant="h6"
+                          color="text.secondary"
+                          sx={{ mt: 1 }}
+                        >
                           No leave requests
                         </Typography>
                       </Box>
@@ -636,12 +756,16 @@ const MyLeaves = () => {
             {/* Apply Leave Tab */}
             {tab === 1 && (
               <Box sx={{ p: 3 }}>
-                <Card sx={{ maxWidth: 600, mx: 'auto' }}>
+                <Card sx={{ maxWidth: 600, mx: "auto" }}>
                   <CardContent>
                     <Typography variant="h6" fontWeight={600} gutterBottom>
                       New Leave Application
                     </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ mb: 3 }}
+                    >
                       Fill in the details to apply for leave
                     </Typography>
 
@@ -653,20 +777,26 @@ const MyLeaves = () => {
                         onChange={handleChange}
                         sx={{ borderRadius: theme.shape.borderRadius * 2 }}
                       >
-                        {['Casual', 'Sick', 'Paid', 'Unpaid', 'Other'].map((type) => (
-                          <MenuItem key={type} value={type}>
-                            <Stack direction="row" alignItems="center" spacing={1}>
-                              {getLeaveTypeIcon(type)}
-                              <Typography>{type}</Typography>
-                            </Stack>
-                          </MenuItem>
-                        ))}
+                        {["Casual", "Sick", "Paid", "Unpaid", "Other"].map(
+                          (type) => (
+                            <MenuItem key={type} value={type}>
+                              <Stack
+                                direction="row"
+                                alignItems="center"
+                                spacing={1}
+                              >
+                                {getLeaveTypeIcon(type)}
+                                <Typography>{type}</Typography>
+                              </Stack>
+                            </MenuItem>
+                          )
+                        )}
                       </Select>
 
                       <DatePicker
                         label="Start Date"
                         value={form.startDate}
-                        onChange={(date) => handleDateChange('startDate', date)}
+                        onChange={(date) => handleDateChange("startDate", date)}
                         renderInput={(params) => (
                           <TextField
                             {...params}
@@ -679,7 +809,7 @@ const MyLeaves = () => {
                       <DatePicker
                         label="End Date"
                         value={form.endDate}
-                        onChange={(date) => handleDateChange('endDate', date)}
+                        onChange={(date) => handleDateChange("endDate", date)}
                         renderInput={(params) => (
                           <TextField
                             {...params}
@@ -690,13 +820,20 @@ const MyLeaves = () => {
                       />
 
                       {form.startDate && form.endDate && (
-                        <Box sx={{ 
-                          p: 2, 
-                          bgcolor: `${theme.palette.primary.main}10`,
-                          borderRadius: theme.shape.borderRadius
-                        }}>
-                          <Typography variant="body2" fontWeight={600} color="primary.main">
-                            Total Days: {calculateDays(form.startDate, form.endDate)}
+                        <Box
+                          sx={{
+                            p: 2,
+                            bgcolor: `${theme.palette.primary.main}10`,
+                            borderRadius: theme.shape.borderRadius,
+                          }}
+                        >
+                          <Typography
+                            variant="body2"
+                            fontWeight={600}
+                            color="primary.main"
+                          >
+                            Total Days:{" "}
+                            {calculateDays(form.startDate, form.endDate)}
                           </Typography>
                         </Box>
                       )}
@@ -717,12 +854,16 @@ const MyLeaves = () => {
                         fullWidth
                         variant="contained"
                         onClick={handleSubmit}
-                        disabled={!form.startDate || !form.endDate || !form.reason.trim()}
+                        disabled={
+                          !form.startDate ||
+                          !form.endDate ||
+                          !form.reason.trim()
+                        }
                         sx={{
                           borderRadius: theme.shape.borderRadius * 2,
                           py: 1.5,
                           fontWeight: 600,
-                          textTransform: 'none'
+                          textTransform: "none",
                         }}
                       >
                         Submit Leave Application
@@ -739,21 +880,25 @@ const MyLeaves = () => {
             open={!!notification?.message}
             autoHideDuration={5000}
             onClose={() => setNotification(null)}
-            anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+            anchorOrigin={{ vertical: "top", horizontal: "center" }}
           >
-            <Card sx={{ 
-              minWidth: 300,
-              background: notification?.severity === 'error' 
-                ? theme.palette.error.main 
-                : theme.palette.success.main,
-              color: 'white'
-            }}>
-              <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+            <Card
+              sx={{
+                minWidth: 300,
+                background:
+                  notification?.severity === "error"
+                    ? theme.palette.error.main
+                    : theme.palette.success.main,
+                color: "white",
+              }}
+            >
+              <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
                 <Stack direction="row" alignItems="center" spacing={2}>
-                  {notification?.severity === 'error' ? 
-                    <FiXCircle size={20} /> : 
+                  {notification?.severity === "error" ? (
+                    <FiXCircle size={20} />
+                  ) : (
                     <FiCheckCircle size={20} />
-                  }
+                  )}
                   <Typography variant="body2" fontWeight={500}>
                     {notification?.message}
                   </Typography>

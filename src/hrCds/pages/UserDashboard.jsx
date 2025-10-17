@@ -579,7 +579,7 @@ const UserDashboard = () => {
                 </StatCard>
               </Grid>
               
-              <Grid item xs={12} sm={6} md={3}>
+              {/* <Grid item xs={12} sm={6} md={3}>
                 <StatCard>
                   <CardContent sx={{ textAlign: 'center', p: 2 }}>
                     <FiAward size={24} color={theme.palette.warning.main} />
@@ -591,9 +591,9 @@ const UserDashboard = () => {
                     </Typography>
                   </CardContent>
                 </StatCard>
-              </Grid>
+              </Grid> */}
               
-              <Grid item xs={12} sm={6} md={3}>
+              {/* <Grid item xs={12} sm={6} md={3}>
                 <StatCard>
                   <CardContent sx={{ textAlign: 'center', p: 2 }}>
                     <MdAccessTime size={24} color={theme.palette.info.main} />
@@ -605,7 +605,7 @@ const UserDashboard = () => {
                     </Typography>
                   </CardContent>
                 </StatCard>
-              </Grid>
+              </Grid> */}
             </Grid>
 
             {/* Calendar Section */}
@@ -662,11 +662,11 @@ const UserDashboard = () => {
                       <Grid item xs key={di} sx={{ display: 'flex', justifyContent: 'center' }}>
                         {day ? (
                           <Tooltip 
-                            title={
-                              dailyTimeMap[`${calendarYear}-${calendarMonth}-${day}`] 
-                                ? `Worked: ${dailyTimeMap[`${calendarYear}-${calendarMonth}-${day}`]}` 
-                                : 'No attendance'
-                            }
+                            // title={
+                            //   dailyTimeMap[`${calendarYear}-${calendarMonth}-${day}`] 
+                            //     ? `Worked: ${dailyTimeMap[`${calendarYear}-${calendarMonth}-${day}`]}` 
+                            //     : 'No attendance'
+                            // }
                           >
                             <StyledDay 
                               marked={isMarked(day)} 
@@ -674,11 +674,11 @@ const UserDashboard = () => {
                               iscurrentmonth={isCurrentMonth}
                             >
                               {day}
-                              {dailyTimeMap[`${calendarYear}-${calendarMonth}-${day}`] && (
+                              {/* {dailyTimeMap[`${calendarYear}-${calendarMonth}-${day}`] && (
                                 <TimeBadge>
                                   {dailyTimeMap[`${calendarYear}-${calendarMonth}-${day}`].split(':').slice(0, 2).join(':')}
                                 </TimeBadge>
-                              )}
+                              )} */}
                             </StyledDay>
                           </Tooltip>
                         ) : (
@@ -692,18 +692,18 @@ const UserDashboard = () => {
 
               {/* Calendar Legend */}
               <Stack direction="row" spacing={2} justifyContent="center" sx={{ mt: 2, flexWrap: 'wrap' }}>
-                <Stack direction="row" alignItems="center" spacing={1}>
+                {/* <Stack direction="row" alignItems="center" spacing={1}>
                   <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: 'primary.main' }} />
                   <Typography variant="caption">Today</Typography>
-                </Stack>
+                </Stack> */}
                 <Stack direction="row" alignItems="center" spacing={1}>
                   <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: 'success.main' }} />
                   <Typography variant="caption">Present</Typography>
                 </Stack>
-                <Stack direction="row" alignItems="center" spacing={1}>
+                {/* <Stack direction="row" alignItems="center" spacing={1}>
                   <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: 'action.hover' }} />
                   <Typography variant="caption">Future</Typography>
-                </Stack>
+                </Stack> */}
               </Stack>
             </Paper>
           </Stack>
@@ -780,6 +780,9 @@ const UserDashboard = () => {
             <Paper sx={{ p: 3, borderRadius: 4 }}>
               <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
                 Recent Activity
+
+                {/* task/assignable-users */}
+                {/* task/assigned */}
               </Typography>
               <Stack spacing={2}>
                 {attendanceHistory.slice(0, 3).map((record, index) => (

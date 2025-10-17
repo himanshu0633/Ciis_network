@@ -7,18 +7,21 @@ import {
   DialogTitle, DialogContent, TextField, DialogActions, InputLabel,
   OutlinedInput, Checkbox, ListItemText, Snackbar, Card, CardContent,
   Grid, Stack, Avatar, LinearProgress, Fade, Badge, Divider,
-  useTheme, useMediaQuery, InputAdornment
+  useTheme, useMediaQuery, InputAdornment, List, ListItem,
+  ListItemIcon, ListItemSecondaryAction, ListItemButton
 } from '@mui/material';
 import {
   FiRefreshCw, FiPlus, FiCalendar, FiUser, FiFileText,
   FiMic, FiMessageCircle, FiAlertCircle, FiCheckCircle,
   FiClock, FiXCircle, FiDownload, FiFilter, FiSearch,
-  FiChevronRight, FiUsers, FiFlag
+  FiChevronRight, FiUsers, FiFlag, FiEdit2, FiTrash2,
+  FiSave, FiX, FiUserPlus, FiUserMinus, FiLogOut
 } from 'react-icons/fi';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { styled } from '@mui/material/styles';
+import { useNavigate } from 'react-router-dom';
 
 // Enhanced Styled Components
 const StatCard = styled(Card)(({ theme, color = 'primary' }) => ({
@@ -116,6 +119,13 @@ const MobileTaskCard = styled(Card)(({ theme, status }) => ({
   },
 }));
 
+const GroupChip = styled(Chip)(({ theme }) => ({
+  background: `${theme.palette.secondary.main}20`,
+  color: theme.palette.secondary.dark,
+  border: `1px solid ${theme.palette.secondary.main}40`,
+  fontWeight: 500,
+}));
+
 const statusColors = {
   pending: 'warning',
   'in-progress': 'info',
@@ -136,15 +146,22 @@ const MyTaskManagement = () => {
   const [assignedTasksGrouped, setAssignedTasksGrouped] = useState({});
   const [statusFilter, setStatusFilter] = useState('');
   const [openDialog, setOpenDialog] = useState(false);
+  const [openGroupDialog, setOpenGroupDialog] = useState(false);
   const [users, setUsers] = useState([]);
+  const [groups, setGroups] = useState([]);
   const [newTask, setNewTask] = useState({
     title: '', description: '', dueDate: null, assignedUsers: [],
-    whatsappNumber: '', priorityDays: '', priority: 'medium', files: null, voiceNote: null
+    assignedGroups: [], whatsappNumber: '', priorityDays: '', priority: 'medium', files: null, voiceNote: null
   });
+  const [newGroup, setNewGroup] = useState({
+    name: '', description: '', members: []
+  });
+  const [editingGroup, setEditingGroup] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [userRole, setUserRole] = useState('');
   const [userId, setUserId] = useState('');
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState(false);
   const [stats, setStats] = useState({
     total: 0,
     pending: 0,
@@ -156,6 +173,48 @@ const MyTaskManagement = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const navigate = useNavigate();
+
+  // Fixed: Proper user data fetching with error handling
+  const fetchUserRole = () => {
+    try {
+      const userStr = localStorage.getItem('user');
+      if (!userStr) {
+        console.error('No user data found in localStorage');
+        setAuthError(true);
+        setSnackbar({ 
+          open: true, 
+          message: 'Please log in to access task management', 
+          severity: 'error' 
+        });
+        return;
+      }
+
+      const user = JSON.parse(userStr);
+      if (!user || !user.role || !user.id) {
+        console.error('Invalid user data structure:', user);
+        setAuthError(true);
+        setSnackbar({ 
+          open: true, 
+          message: 'Invalid user data. Please log in again.', 
+          severity: 'error' 
+        });
+        return;
+      }
+
+      setUserRole(user.role);
+      setUserId(user.id);
+      setAuthError(false);
+    } catch (error) {
+      console.error('Error parsing user data:', error);
+      setAuthError(true);
+      setSnackbar({ 
+        open: true, 
+        message: 'Error loading user data. Please log in again.', 
+        severity: 'error' 
+      });
+    }
+  };
 
   const calculateStats = (tasks) => {
     let total = 0;
@@ -190,7 +249,42 @@ const MyTaskManagement = () => {
     setStats({ total, pending, inProgress, completed, rejected });
   };
 
+  // Fixed: Combined data fetching with proper authentication check
+  const fetchAssignableData = async () => {
+    if (authError || !userId) {
+      console.log('Skipping data fetch due to authentication issues');
+      return;
+    }
+
+    try {
+      const [usersRes, groupsRes] = await Promise.all([
+        axios.get('/task/assignable-users'),
+        axios.get('/groups')
+      ]);
+      
+      setUsers(Array.isArray(usersRes.data.users) ? usersRes.data.users : []);
+      setGroups(Array.isArray(groupsRes.data.groups) ? groupsRes.data.groups : []);
+    } catch (error) {
+      console.error('Error fetching assignable data:', error);
+      if (error.response?.status === 401) {
+        setAuthError(true);
+        setSnackbar({ 
+          open: true, 
+          message: 'Session expired. Please log in again.', 
+          severity: 'error' 
+        });
+      }
+      setUsers([]);
+      setGroups([]);
+    }
+  };
+
   const fetchMyTasks = async () => {
+    if (authError || !userId) {
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       const url = statusFilter ? `/task?status=${statusFilter}` : '/task/my';
@@ -198,38 +292,54 @@ const MyTaskManagement = () => {
       setMyTasksGrouped(res.data.groupedTasks || {});
       if (tab === 0) calculateStats(res.data.groupedTasks || {});
     } catch (err) {
-      setSnackbar({ open: true, message: 'Failed to load tasks', severity: 'error' });
+      console.error('Error fetching my tasks:', err);
+      if (err.response?.status === 401) {
+        setAuthError(true);
+        setSnackbar({ 
+          open: true, 
+          message: 'Session expired. Please log in again.', 
+          severity: 'error' 
+        });
+      } else {
+        setSnackbar({ open: true, message: 'Failed to load tasks', severity: 'error' });
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const fetchAssignedTasks = async () => {
+    if (authError || !userId) return;
+
     try {
       const res = await axios.get('/task/assigned');
       setAssignedTasksGrouped(res.data.groupedTasks || {});
       if (tab === 1) calculateStats(res.data.groupedTasks || {});
     } catch (err) {
-      setSnackbar({ open: true, message: 'Failed to load assigned tasks', severity: 'error' });
+      console.error('Error fetching assigned tasks:', err);
+      if (err.response?.status === 401) {
+        setAuthError(true);
+        setSnackbar({ 
+          open: true, 
+          message: 'Session expired. Please log in again.', 
+          severity: 'error' 
+        });
+      } else {
+        setSnackbar({ open: true, message: 'Failed to load assigned tasks', severity: 'error' });
+      }
     }
-  };
-
-  const fetchAssignableUsers = async () => {
-    try {
-      const res = await axios.get('/task/assignable-users');
-      setUsers(Array.isArray(res.data.users) ? res.data.users : []);
-    } catch (error) {
-      setUsers([]);
-    }
-  };
-
-  const fetchUserRole = () => {
-    const user = JSON.parse(localStorage.getItem('user'));
-    setUserRole(user.role);
-    setUserId(user.id);
   };
 
   const handleStatusChange = async (taskId, newStatus) => {
+    if (authError || !userId) {
+      setSnackbar({ 
+        open: true, 
+        message: 'Please log in to update task status', 
+        severity: 'error' 
+      });
+      return;
+    }
+
     try {
       await axios.patch(`/task/${taskId}/status`, { status: newStatus });
       fetchMyTasks();
@@ -237,11 +347,29 @@ const MyTaskManagement = () => {
       setSnackbar({ open: true, message: 'Status updated successfully', severity: 'success' });
     } catch (err) {
       console.error("❌ Error in handleStatusChange:", err.response || err);
-      setSnackbar({ open: true, message: err?.response?.data?.error || 'Unauthorized to update status', severity: 'error' });
+      if (err.response?.status === 401) {
+        setAuthError(true);
+        setSnackbar({ 
+          open: true, 
+          message: 'Session expired. Please log in again.', 
+          severity: 'error' 
+        });
+      } else {
+        setSnackbar({ open: true, message: err?.response?.data?.error || 'Unauthorized to update status', severity: 'error' });
+      }
     }
   };
 
   const handleCreateTask = async () => {
+    if (authError || !userId) {
+      setSnackbar({ 
+        open: true, 
+        message: 'Please log in to create tasks', 
+        severity: 'error' 
+      });
+      return;
+    }
+
     const formData = new FormData();
     const finalAssignedUsers =
       userRole === 'employee' || userRole === 'staff'
@@ -255,6 +383,7 @@ const MyTaskManagement = () => {
     formData.append('priorityDays', newTask.priorityDays);
     formData.append('priority', newTask.priority);
     formData.append('assignedUsers', JSON.stringify(finalAssignedUsers));
+    formData.append('assignedGroups', JSON.stringify(newTask.assignedGroups));
 
     if (newTask.files) {
       for (let i = 0; i < newTask.files.length; i++) {
@@ -274,11 +403,103 @@ const MyTaskManagement = () => {
       setSnackbar({ open: true, message: 'Task created successfully', severity: 'success' });
       setNewTask({
         title: '', description: '', dueDate: null, assignedUsers: [],
-        whatsappNumber: '', priorityDays: '', priority: 'medium', files: null, voiceNote: null
+        assignedGroups: [], whatsappNumber: '', priorityDays: '', priority: 'medium', files: null, voiceNote: null
       });
     } catch (err) {
-      setSnackbar({ open: true, message: err?.response?.data?.error || 'Task creation failed', severity: 'error' });
+      console.error('Error creating task:', err);
+      if (err.response?.status === 401) {
+        setAuthError(true);
+        setSnackbar({ 
+          open: true, 
+          message: 'Session expired. Please log in again.', 
+          severity: 'error' 
+        });
+      } else {
+        setSnackbar({ open: true, message: err?.response?.data?.error || 'Task creation failed', severity: 'error' });
+      }
     }
+  };
+
+  const handleCreateGroup = async () => {
+    if (authError || !userId) {
+      setSnackbar({ 
+        open: true, 
+        message: 'Please log in to manage groups', 
+        severity: 'error' 
+      });
+      return;
+    }
+
+    try {
+      if (editingGroup) {
+        await axios.put(`/groups/${editingGroup._id}`, newGroup);
+        setSnackbar({ open: true, message: 'Group updated successfully', severity: 'success' });
+      } else {
+        await axios.post('/groups', newGroup);
+        setSnackbar({ open: true, message: 'Group created successfully', severity: 'success' });
+      }
+      fetchAssignableData();
+      setOpenGroupDialog(false);
+      setNewGroup({ name: '', description: '', members: [] });
+      setEditingGroup(null);
+    } catch (err) {
+      console.error('Error in group operation:', err);
+      if (err.response?.status === 401) {
+        setAuthError(true);
+        setSnackbar({ 
+          open: true, 
+          message: 'Session expired. Please log in again.', 
+          severity: 'error' 
+        });
+      } else {
+        setSnackbar({ open: true, message: err?.response?.data?.error || 'Group operation failed', severity: 'error' });
+      }
+    }
+  };
+
+  const handleDeleteGroup = async (groupId) => {
+    if (authError || !userId) {
+      setSnackbar({ 
+        open: true, 
+        message: 'Please log in to manage groups', 
+        severity: 'error' 
+      });
+      return;
+    }
+
+    try {
+      await axios.delete(`/groups/${groupId}`);
+      fetchAssignableData();
+      setSnackbar({ open: true, message: 'Group deleted successfully', severity: 'success' });
+    } catch (err) {
+      console.error('Error deleting group:', err);
+      if (err.response?.status === 401) {
+        setAuthError(true);
+        setSnackbar({ 
+          open: true, 
+          message: 'Session expired. Please log in again.', 
+          severity: 'error' 
+        });
+      } else {
+        setSnackbar({ open: true, message: err?.response?.data?.error || 'Group deletion failed', severity: 'error' });
+      }
+    }
+  };
+
+  const handleEditGroup = (group) => {
+    setEditingGroup(group);
+    setNewGroup({
+      name: group.name,
+      description: group.description,
+      members: group.members.map(m => m._id || m)
+    });
+    setOpenGroupDialog(true);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    navigate('/login');
   };
 
   const getStatusIcon = (status) => {
@@ -302,15 +523,60 @@ const MyTaskManagement = () => {
     return new Date(dueDate) < new Date();
   };
 
+  const getUserName = (userId) => {
+    const user = users.find(u => u._id === userId);
+    return user ? user.name : 'Unknown User';
+  };
+
+  const getGroupName = (groupId) => {
+    const group = groups.find(g => g._id === groupId);
+    return group ? group.name : 'Unknown Group';
+  };
+
   useEffect(() => {
     fetchUserRole();
   }, []);
 
   useEffect(() => {
-    fetchMyTasks();
-    fetchAssignedTasks();
-    fetchAssignableUsers();
-  }, [statusFilter, tab]);
+    if (!authError && userId) {
+      fetchMyTasks();
+      fetchAssignedTasks();
+      fetchAssignableData();
+    }
+  }, [statusFilter, tab, authError, userId]);
+
+  // Show authentication error message
+  if (authError) {
+    return (
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        minHeight: '50vh',
+        flexDirection: 'column',
+        gap: 3
+      }}>
+        <Card sx={{ p: 4, textAlign: 'center', maxWidth: 400 }}>
+          <CardContent>
+            <FiAlertCircle size={48} color={theme.palette.error.main} style={{ marginBottom: 16 }} />
+            <Typography variant="h5" color="error" gutterBottom>
+              Authentication Required
+            </Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+              Please log in to access the Task Management system.
+            </Typography>
+            <Button 
+              variant="contained" 
+              onClick={handleLogout}
+              startIcon={<FiLogOut />}
+            >
+              Go to Login
+            </Button>
+          </CardContent>
+        </Card>
+      </Box>
+    );
+  }
 
   const renderDesktopTable = (groupedTasks) => {
     return Object.entries(groupedTasks).map(([dateKey, tasks]) => (
@@ -331,6 +597,7 @@ const MyTaskManagement = () => {
                 <TableCell sx={{ fontWeight: 700 }}>Due Date</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Priority</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                {/* <TableCell sx={{ fontWeight: 700 }}>Assigned To</TableCell> */}
                 <TableCell sx={{ fontWeight: 700 }}>Files</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Voice</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Change Status</TableCell>
@@ -387,6 +654,27 @@ const MyTaskManagement = () => {
                         icon={getStatusIcon(myStatus)}
                       />
                     </TableCell>
+                    {/* <TableCell>
+                      <Stack spacing={0.5}>
+                        {task.assignedUsers?.map(userId => (
+                          <Chip
+                            key={userId}
+                            label={getUserName(userId)}
+                            size="small"
+                            variant="outlined"
+                            sx={{ mb: 0.5 }}
+                          />
+                        ))}
+                        {task.assignedGroups?.map(groupId => (
+                          <GroupChip
+                            key={groupId}
+                            label={getGroupName(groupId)}
+                            size="small"
+                            sx={{ mb: 0.5 }}
+                          />
+                        ))}
+                      </Stack>
+                    </TableCell> */}
                     <TableCell>
                       {task.files?.length ? task.files.map((file, i) => (
                         <Tooltip title="Download" key={i}>
@@ -514,6 +802,31 @@ const MyTaskManagement = () => {
                       />
                     </Stack>
 
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        Assigned To:
+                      </Typography>
+                      <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+                        {task.assignedUsers?.map(userId => (
+                          <Chip
+                            key={userId}
+                            label={getUserName(userId)}
+                            size="small"
+                            variant="outlined"
+                            sx={{ mb: 0.5 }}
+                          />
+                        ))}
+                        {task.assignedGroups?.map(groupId => (
+                          <GroupChip
+                            key={groupId}
+                            label={getGroupName(groupId)}
+                            size="small"
+                            sx={{ mb: 0.5 }}
+                          />
+                        ))}
+                      </Stack>
+                    </Box>
+
                     <Stack direction="row" spacing={1} alignItems="center">
                       {task.files?.length > 0 && (
                         <Tooltip title={`${task.files.length} files`}>
@@ -580,6 +893,115 @@ const MyTaskManagement = () => {
     return isMobile ? renderMobileCards(groupedTasks) : renderDesktopTable(groupedTasks);
   };
 
+  const renderGroupsManagement = () => (
+    <Box sx={{ mt: 3 }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
+        <Typography variant="h5" fontWeight={700}>
+          Group Management
+        </Typography>
+        <Button
+          variant="contained"
+          startIcon={<FiPlus />}
+          onClick={() => {
+            setEditingGroup(null);
+            setNewGroup({ name: '', description: '', members: [] });
+            setOpenGroupDialog(true);
+          }}
+          sx={{
+            borderRadius: theme.shape.borderRadius * 2,
+            textTransform: 'none',
+            fontWeight: 600,
+          }}
+        >
+          Create Group
+        </Button>
+      </Stack>
+
+      <Grid container spacing={3}>
+        {groups.map((group) => (
+          <Grid item xs={12} md={6} lg={4} key={group._id}>
+            <Card sx={{ borderRadius: theme.shape.borderRadius * 2 }}>
+              <CardContent>
+                <Stack spacing={2}>
+                  <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="h6" fontWeight={600}>
+                        {group.name}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {group.description}
+                      </Typography>
+                    </Box>
+                    <Stack direction="row" spacing={1}>
+                      <Tooltip title="Edit Group">
+                        <IconButton 
+                          size="small"
+                          onClick={() => handleEditGroup(group)}
+                          sx={{ color: theme.palette.primary.main }}
+                        >
+                          <FiEdit2 size={16} />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Delete Group">
+                        <IconButton 
+                          size="small"
+                          onClick={() => handleDeleteGroup(group._id)}
+                          sx={{ color: theme.palette.error.main }}
+                        >
+                          <FiTrash2 size={16} />
+                        </IconButton>
+                      </Tooltip>
+                    </Stack>
+                  </Stack>
+
+                  <Divider />
+
+                  <Box>
+                    <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
+                      Members ({group.members.length})
+                    </Typography>
+                    <Stack spacing={1}>
+                      {group.members.map(memberId => {
+                        const member = users.find(u => u._id === memberId);
+                        return member ? (
+                          <Stack key={memberId} direction="row" alignItems="center" spacing={1}>
+                            <Avatar sx={{ width: 32, height: 32, fontSize: '0.875rem' }}>
+                              {member.name.charAt(0).toUpperCase()}
+                            </Avatar>
+                            <Box sx={{ flex: 1 }}>
+                              <Typography variant="body2" fontWeight={500}>
+                                {member.name}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                {member.role}
+                              </Typography>
+                            </Box>
+                          </Stack>
+                        ) : null;
+                      })}
+                    </Stack>
+                  </Box>
+                </Stack>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+
+      {groups.length === 0 && (
+        <Box sx={{ textAlign: 'center', py: 4 }}>
+          <FiUsers size={48} color={theme.palette.text.secondary} />
+          <Typography variant="h6" color="text.secondary" sx={{ mt: 1 }}>
+            No groups created yet
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Create your first group to assign tasks to multiple users at once
+          </Typography>
+        </Box>
+      )}
+    </Box>
+  );
+
   if (loading) {
     return (
       <Box sx={{ 
@@ -618,6 +1040,11 @@ const MyTaskManagement = () => {
                 <Typography variant="body1" color="text.secondary">
                   Manage and track your tasks efficiently
                 </Typography>
+                {/* {userId && (
+                  <Typography variant="caption" color="primary.main" sx={{ mt: 1, display: 'block' }}>
+                    Logged in as: {userRole} (ID: {userId})
+                  </Typography>
+                )} */}
               </Box>
 
               <Stack direction="row" spacing={2}>
@@ -633,198 +1060,218 @@ const MyTaskManagement = () => {
                   </IconButton>
                 </Tooltip>
                 {tab === 1 && (
-                  <Button
-                    variant="contained"
-                    startIcon={<FiPlus />}
-                    onClick={() => setOpenDialog(true)}
-                    sx={{
-                      borderRadius: theme.shape.borderRadius * 2,
-                      textTransform: 'none',
-                      fontWeight: 600,
-                      px: 3
-                    }}
-                  >
-                    Create Task
-                  </Button>
+                  <>
+                    <Button
+                      variant="outlined"
+                      startIcon={<FiUsers />}
+                      onClick={() => setTab(2)}
+                      sx={{
+                        borderRadius: theme.shape.borderRadius * 2,
+                        textTransform: 'none',
+                        fontWeight: 600,
+                      }}
+                    >
+                      Manage Groups
+                    </Button>
+                    <Button
+                      variant="contained"
+                      startIcon={<FiPlus />}
+                      onClick={() => setOpenDialog(true)}
+                      sx={{
+                        borderRadius: theme.shape.borderRadius * 2,
+                        textTransform: 'none',
+                        fontWeight: 600,
+                        px: 3
+                      }}
+                    >
+                      Create Task
+                    </Button>
+                  </>
                 )}
               </Stack>
             </Stack>
           </Paper>
 
-          {/* Statistics Cards */}
-          <Grid container spacing={3} sx={{ mb: 4 }}>
-            <Grid item xs={6} md={3}>
-              <StatCard color="primary">
-                <CardContent>
-                  <Stack direction="row" alignItems="center" spacing={2}>
-                    <Avatar sx={{ 
-                      bgcolor: `${theme.palette.primary.main}20`, 
-                      color: theme.palette.primary.main 
-                    }}>
-                      <FiCalendar />
-                    </Avatar>
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        Total Tasks
-                      </Typography>
-                      <Typography variant="h4" fontWeight={700}>
-                        {stats.total}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                </CardContent>
-              </StatCard>
-            </Grid>
+          {tab === 2 ? (
+            renderGroupsManagement()
+          ) : (
+            <>
+              {/* Statistics Cards */}
+              <Grid container spacing={3} sx={{ mb: 4 }}>
+                <Grid item xs={6} md={3}>
+                  <StatCard color="primary">
+                    <CardContent>
+                      <Stack direction="row" alignItems="center" spacing={2}>
+                        <Avatar sx={{ 
+                          bgcolor: `${theme.palette.primary.main}20`, 
+                          color: theme.palette.primary.main 
+                        }}>
+                          <FiCalendar />
+                        </Avatar>
+                        <Box>
+                          <Typography variant="body2" color="text.secondary">
+                            Total Tasks
+                          </Typography>
+                          <Typography variant="h4" fontWeight={700}>
+                            {stats.total}
+                          </Typography>
+                        </Box>
+                      </Stack>
+                    </CardContent>
+                  </StatCard>
+                </Grid>
 
-            <Grid item xs={6} md={3}>
-              <StatCard color="warning">
-                <CardContent>
-                  <Stack direction="row" alignItems="center" spacing={2}>
-                    <Avatar sx={{ 
-                      bgcolor: `${theme.palette.warning.main}20`, 
-                      color: theme.palette.warning.main 
-                    }}>
-                      <FiClock />
-                    </Avatar>
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        Pending
-                      </Typography>
-                      <Typography variant="h4" fontWeight={700}>
-                        {stats.pending}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                </CardContent>
-              </StatCard>
-            </Grid>
+                <Grid item xs={6} md={3}>
+                  <StatCard color="warning">
+                    <CardContent>
+                      <Stack direction="row" alignItems="center" spacing={2}>
+                        <Avatar sx={{ 
+                          bgcolor: `${theme.palette.warning.main}20`, 
+                          color: theme.palette.warning.main 
+                        }}>
+                          <FiClock />
+                        </Avatar>
+                        <Box>
+                          <Typography variant="body2" color="text.secondary">
+                            Pending
+                          </Typography>
+                          <Typography variant="h4" fontWeight={700}>
+                            {stats.pending}
+                          </Typography>
+                        </Box>
+                      </Stack>
+                    </CardContent>
+                  </StatCard>
+                </Grid>
 
-            <Grid item xs={6} md={3}>
-              <StatCard color="info">
-                <CardContent>
-                  <Stack direction="row" alignItems="center" spacing={2}>
-                    <Avatar sx={{ 
-                      bgcolor: `${theme.palette.info.main}20`, 
-                      color: theme.palette.info.main 
-                    }}>
-                      <FiAlertCircle />
-                    </Avatar>
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        In Progress
-                      </Typography>
-                      <Typography variant="h4" fontWeight={700}>
-                        {stats.inProgress}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                </CardContent>
-              </StatCard>
-            </Grid>
+                <Grid item xs={6} md={3}>
+                  <StatCard color="info">
+                    <CardContent>
+                      <Stack direction="row" alignItems="center" spacing={2}>
+                        <Avatar sx={{ 
+                          bgcolor: `${theme.palette.info.main}20`, 
+                          color: theme.palette.info.main 
+                        }}>
+                          <FiAlertCircle />
+                        </Avatar>
+                        <Box>
+                          <Typography variant="body2" color="text.secondary">
+                            In Progress
+                          </Typography>
+                          <Typography variant="h4" fontWeight={700}>
+                            {stats.inProgress}
+                          </Typography>
+                        </Box>
+                      </Stack>
+                    </CardContent>
+                  </StatCard>
+                </Grid>
 
-            <Grid item xs={6} md={3}>
-              <StatCard color="success">
-                <CardContent>
-                  <Stack direction="row" alignItems="center" spacing={2}>
-                    <Avatar sx={{ 
-                      bgcolor: `${theme.palette.success.main}20`, 
-                      color: theme.palette.success.main 
-                    }}>
-                      <FiCheckCircle />
-                    </Avatar>
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        Completed
-                      </Typography>
-                      <Typography variant="h4" fontWeight={700}>
-                        {stats.completed}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                </CardContent>
-              </StatCard>
-            </Grid>
-          </Grid>
+                <Grid item xs={6} md={3}>
+                  <StatCard color="success">
+                    <CardContent>
+                      <Stack direction="row" alignItems="center" spacing={2}>
+                        <Avatar sx={{ 
+                          bgcolor: `${theme.palette.success.main}20`, 
+                          color: theme.palette.success.main 
+                        }}>
+                          <FiCheckCircle />
+                        </Avatar>
+                        <Box>
+                          <Typography variant="body2" color="text.secondary">
+                            Completed
+                          </Typography>
+                          <Typography variant="h4" fontWeight={700}>
+                            {stats.completed}
+                          </Typography>
+                        </Box>
+                      </Stack>
+                    </CardContent>
+                  </StatCard>
+                </Grid>
+              </Grid>
 
-          {/* Tabs Section */}
-          <Paper sx={{ 
-            borderRadius: theme.shape.borderRadius * 2,
-            boxShadow: theme.shadows[2],
-            overflow: 'hidden'
-          }}>
-            <Tabs 
-              value={tab} 
-              onChange={(_, v) => setTab(v)}
-              sx={{
-                borderBottom: `1px solid ${theme.palette.divider}`,
-                '& .MuiTab-root': {
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  fontSize: '1rem',
-                  py: 2
-                }
-              }}
-            >
-              <Tab 
-                label={
-                  <Stack direction="row" alignItems="center" spacing={1}>
-                    <FiUser />
-                    <Typography>My Tasks</Typography>
-                    {stats.total > 0 && (
-                      <Badge 
-                        badgeContent={stats.total} 
-                        color="primary" 
-                        sx={{ ml: 1 }}
-                      />
-                    )}
-                  </Stack>
-                } 
-              />
-              <Tab 
-                label={
-                  <Stack direction="row" alignItems="center" spacing={1}>
-                    <FiUsers />
-                    <Typography>Assigned by Me</Typography>
-                  </Stack>
-                } 
-              />
-            </Tabs>
+              {/* Tabs Section */}
+              <Paper sx={{ 
+                borderRadius: theme.shape.borderRadius * 2,
+                boxShadow: theme.shadows[2],
+                overflow: 'hidden'
+              }}>
+                <Tabs 
+                  value={tab} 
+                  onChange={(_, v) => setTab(v)}
+                  sx={{
+                    borderBottom: `1px solid ${theme.palette.divider}`,
+                    '& .MuiTab-root': {
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      fontSize: '1rem',
+                      py: 2
+                    }
+                  }}
+                >
+                  <Tab 
+                    label={
+                      <Stack direction="row" alignItems="center" spacing={1}>
+                        <FiUser />
+                        <Typography>My Tasks</Typography>
+                        {stats.total > 0 && (
+                          <Badge 
+                            badgeContent={stats.total} 
+                            color="primary" 
+                            sx={{ ml: 1 }}
+                          />
+                        )}
+                      </Stack>
+                    } 
+                  />
+                  <Tab 
+                    label={
+                      <Stack direction="row" alignItems="center" spacing={1}>
+                        <FiUsers />
+                        <Typography>Assigned by Me</Typography>
+                      </Stack>
+                    } 
+                  />
+                </Tabs>
 
-            {/* Tab Content */}
-            <Box sx={{ p: 3 }}>
-              {/* Filter Section */}
-              <Stack 
-                direction={{ xs: 'column', sm: 'row' }} 
-                spacing={2} 
-                justifyContent="space-between" 
-                alignItems={{ xs: 'flex-start', sm: 'center' }}
-                sx={{ mb: 3 }}
-              >
-                <FormControl size="small" sx={{ minWidth: 150 }}>
-                  <InputLabel>Status Filter</InputLabel>
-                  <Select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    input={<OutlinedInput label="Status Filter" />}
-                    sx={{ borderRadius: theme.shape.borderRadius * 2 }}
+                {/* Tab Content */}
+                <Box sx={{ p: 3 }}>
+                  {/* Filter Section */}
+                  <Stack 
+                    direction={{ xs: 'column', sm: 'row' }} 
+                    spacing={2} 
+                    justifyContent="space-between" 
+                    alignItems={{ xs: 'flex-start', sm: 'center' }}
+                    sx={{ mb: 3 }}
                   >
-                    <MenuItem value="">All Status</MenuItem>
-                    <MenuItem value="pending">Pending</MenuItem>
-                    <MenuItem value="in-progress">In Progress</MenuItem>
-                    <MenuItem value="completed">Completed</MenuItem>
-                    <MenuItem value="rejected">Rejected</MenuItem>
-                  </Select>
-                </FormControl>
+                    <FormControl size="small" sx={{ minWidth: 150 }}>
+                      <InputLabel>Status Filter</InputLabel>
+                      <Select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        input={<OutlinedInput label="Status Filter" />}
+                        sx={{ borderRadius: theme.shape.borderRadius * 2 }}
+                      >
+                        <MenuItem value="">All Status</MenuItem>
+                        <MenuItem value="pending">Pending</MenuItem>
+                        <MenuItem value="in-progress">In Progress</MenuItem>
+                        <MenuItem value="completed">Completed</MenuItem>
+                        <MenuItem value="rejected">Rejected</MenuItem>
+                      </Select>
+                    </FormControl>
 
-                <Typography variant="body2" color="text.secondary">
-                  Showing {stats.total} tasks
-                </Typography>
-              </Stack>
+                    <Typography variant="body2" color="text.secondary">
+                      Showing {stats.total} tasks
+                    </Typography>
+                  </Stack>
 
-              {/* Tasks Content */}
-              {renderGroupedTasks(tab === 0 ? myTasksGrouped : assignedTasksGrouped)}
-            </Box>
-          </Paper>
+                  {/* Tasks Content */}
+                  {renderGroupedTasks(tab === 0 ? myTasksGrouped : assignedTasksGrouped)}
+                </Box>
+              </Paper>
+            </>
+          )}
 
           {/* Create Task Dialog */}
           <Dialog 
@@ -882,7 +1329,7 @@ const MyTaskManagement = () => {
                 </Grid>
 
                 <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
+                  {/* <Grid item xs={12} sm={6}>
                     <TextField 
                       fullWidth 
                       label="WhatsApp Number" 
@@ -896,7 +1343,7 @@ const MyTaskManagement = () => {
                         ),
                       }}
                     />
-                  </Grid>
+                  </Grid> */}
                   <Grid item xs={12} sm={6}>
                     <TextField 
                       fullWidth 
@@ -942,32 +1389,58 @@ const MyTaskManagement = () => {
                 </Box>
 
                 {userRole !== 'employee' && userRole !== 'staff' ? (
-                  <FormControl fullWidth>
-                    <InputLabel>Assign To</InputLabel>
-                    <Select
-                      multiple
-                      value={newTask.assignedUsers}
-                      onChange={(e) => setNewTask({ ...newTask, assignedUsers: e.target.value })}
-                      input={<OutlinedInput label="Assign To" />}
-                      renderValue={(selected) =>
-                        users.filter(u => selected.includes(u._id)).map(u => u.name).join(', ')
-                      }
-                    >
-                      {users.map(user => (
-                        <MenuItem key={user._id} value={user._id}>
-                          <Checkbox checked={newTask.assignedUsers.includes(user._id)} />
-                          <ListItemText primary={`${user.name} (${user.role})`} />
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                ) : (
+                  <>
+                    <FormControl fullWidth>
+                      <InputLabel>Assign To Users</InputLabel>
+                      <Select
+                        multiple
+                        value={newTask.assignedUsers}
+                        onChange={(e) => setNewTask({ ...newTask, assignedUsers: e.target.value })}
+                        input={<OutlinedInput label="Assign To Users" />}
+                        renderValue={(selected) =>
+                          users.filter(u => selected.includes(u._id)).map(u => u.name).join(', ')
+                        }
+                      >
+                        {users.map(user => (
+                          <MenuItem key={user._id} value={user._id}>
+                            <Checkbox checked={newTask.assignedUsers.includes(user._id)} />
+                            <ListItemText primary={`${user.name} (${user.role})`} />
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+
+                    <FormControl fullWidth>
+                      <InputLabel>Assign To Groups</InputLabel>
+                      <Select
+                        multiple
+                        value={newTask.assignedGroups}
+                        onChange={(e) => setNewTask({ ...newTask, assignedGroups: e.target.value })}
+                        input={<OutlinedInput label="Assign To Groups" />}
+                        renderValue={(selected) =>
+                          groups.filter(g => selected.includes(g._id)).map(g => g.name).join(', ')
+                        }
+                      >
+                        {groups.map(group => (
+                          <MenuItem key={group._id} value={group._id}>
+                            <Checkbox checked={newTask.assignedGroups.includes(group._id)} />
+                            <ListItemText 
+                              primary={`${group.name} (${group.members.length} members)`} 
+                            />
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </>
+                ) :
+                 (
                   <Box sx={{ p: 2, bgcolor: `${theme.palette.primary.main}10`, borderRadius: 2 }}>
                     <Typography variant="body2">
                       <strong>Assigned To:</strong> You (Self)
                     </Typography>
                   </Box>
-                )}
+                )
+                }
               </Stack>
             </DialogContent>
             <DialogActions sx={{ p: 3 }}>
@@ -987,6 +1460,422 @@ const MyTaskManagement = () => {
               </Button>
             </DialogActions>
           </Dialog>
+
+          {/* Group Management Dialog */}
+          <Dialog 
+  open={openGroupDialog} 
+  onClose={() => setOpenGroupDialog(false)}
+  maxWidth="md"
+  fullWidth
+  PaperProps={{
+    sx: {
+      borderRadius: theme.shape.borderRadius * 3,
+      background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
+    }
+  }}
+>
+  <DialogTitle sx={{ 
+    pb: 2,
+    background: `linear-gradient(135deg, ${theme.palette.primary.main}10 0%, transparent 100%)`,
+    borderBottom: `1px solid ${theme.palette.divider}`
+  }}>
+    <Stack direction="row" alignItems="center" spacing={2}>
+      <Avatar sx={{ 
+        bgcolor: theme.palette.primary.main,
+        width: 40, 
+        height: 40 
+      }}>
+        <FiUsers size={20} />
+      </Avatar>
+      <Box>
+        <Typography variant="h5" fontWeight={800} color="primary.main">
+          {editingGroup ? 'Edit Group' : 'Create New Group'}
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          {editingGroup ? 'Update group details and members' : 'Create a new group to assign tasks efficiently'}
+        </Typography>
+      </Box>
+    </Stack>
+  </DialogTitle>
+
+  <DialogContent sx={{ p: 4 }}>
+    <Stack spacing={4}>
+      {/* Group Basic Info */}
+      <Card variant="outlined" sx={{ borderRadius: theme.shape.borderRadius * 2, p: 3 }}>
+        <Typography variant="h6" fontWeight={700} gutterBottom sx={{ 
+          color: 'primary.main',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1
+        }}>
+          <FiUser size={20} />
+          Basic Information
+        </Typography>
+        
+        <Stack spacing={3}>
+          <TextField 
+            fullWidth 
+            label="Group Name" 
+            value={newGroup.name} 
+            onChange={e => setNewGroup({ ...newGroup, name: e.target.value })}
+            placeholder="Enter a descriptive group name"
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <FiUsers color={theme.palette.primary.main} />
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: theme.shape.borderRadius * 2,
+              }
+            }}
+          />
+          <TextField 
+            fullWidth 
+            label="Description" 
+            multiline
+            rows={3}
+            value={newGroup.description} 
+            onChange={e => setNewGroup({ ...newGroup, description: e.target.value })}
+            placeholder="Describe the purpose of this group..."
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start" sx={{ alignSelf: 'flex-start', mt: 1 }}>
+                  <FiFileText color={theme.palette.primary.main} />
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: theme.shape.borderRadius * 2,
+              }
+            }}
+          />
+        </Stack>
+      </Card>
+
+      {/* Group Members Selection */}
+      <Card variant="outlined" sx={{ borderRadius: theme.shape.borderRadius * 2, p: 3 }}>
+        <Typography variant="h6" fontWeight={700} gutterBottom sx={{ 
+          color: 'primary.main',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1
+        }}>
+          <FiUserPlus size={20} />
+          Group Members
+        </Typography>
+
+        <FormControl fullWidth sx={{ mb: 3 }}>
+          <InputLabel>Select Members</InputLabel>
+          <Select
+            multiple
+            value={newGroup.members}
+            onChange={(e) => setNewGroup({ ...newGroup, members: e.target.value })}
+            input={<OutlinedInput label="Select Members" />}
+            renderValue={(selected) => (
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                {selected.map((value) => {
+                  const user = users.find(u => u._id === value);
+                  return user ? (
+                    <Chip
+                      key={value}
+                      label={user.name}
+                      size="small"
+                      variant="outlined"
+                      avatar={
+                        <Avatar sx={{ width: 24, height: 24, fontSize: '0.75rem' }}>
+                          {user.name.charAt(0).toUpperCase()}
+                        </Avatar>
+                      }
+                    />
+                  ) : null;
+                })}
+              </Box>
+            )}
+            sx={{
+              borderRadius: theme.shape.borderRadius * 2,
+              '& .MuiOutlinedInput-notchedOutline': {
+                borderColor: theme.palette.divider,
+              }
+            }}
+          >
+            {users.map((user) => (
+              <MenuItem 
+                key={user._id} 
+                value={user._id}
+                sx={{
+                  py: 1,
+                  borderRadius: theme.shape.borderRadius,
+                  '&:hover': {
+                    backgroundColor: `${theme.palette.primary.main}10`,
+                  }
+                }}
+              >
+                <Checkbox 
+                  checked={newGroup.members.includes(user._id)} 
+                  sx={{
+                    color: theme.palette.primary.main,
+                    '&.Mui-checked': {
+                      color: theme.palette.primary.main,
+                    }
+                  }}
+                />
+                <ListItemText 
+                  primary={
+                    <Typography variant="body1" fontWeight={600}>
+                      {user.name}
+                    </Typography>
+                  }
+                  secondary={
+                    <Typography variant="caption" color="text.secondary">
+                      {user.role} • {user.email || 'No email'}
+                    </Typography>
+                  }
+                />
+                <Avatar 
+                  sx={{ 
+                    width: 32, 
+                    height: 32, 
+                    fontSize: '0.875rem',
+                    bgcolor: theme.palette.primary.main 
+                  }}
+                >
+                  {user.name.charAt(0).toUpperCase()}
+                </Avatar>
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        {/* Selected Members Preview */}
+        {newGroup.members.length > 0 ? (
+          <Box>
+            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+              <Typography variant="subtitle1" fontWeight={600} color="primary.main">
+                Selected Members ({newGroup.members.length})
+              </Typography>
+              <Chip 
+                label={`${newGroup.members.length} selected`}
+                size="small"
+                color="primary"
+                variant="outlined"
+              />
+            </Stack>
+            
+            <Paper 
+              variant="outlined" 
+              sx={{ 
+                borderRadius: theme.shape.borderRadius * 2,
+                maxHeight: 300,
+                overflow: 'auto',
+                background: theme.palette.background.default
+              }}
+            >
+              <List dense>
+                {newGroup.members.map((memberId) => {
+                  const member = users.find(u => u._id === memberId);
+                  return member ? (
+                    <ListItem 
+                      key={memberId}
+                      sx={{
+                        py: 2,
+                        borderBottom: `1px solid ${theme.palette.divider}`,
+                        '&:last-child': { borderBottom: 'none' },
+                        '&:hover': {
+                          backgroundColor: theme.palette.action.hover,
+                        }
+                      }}
+                    >
+                      <ListItemIcon>
+                        <Avatar 
+                          sx={{ 
+                            width: 40, 
+                            height: 40,
+                            bgcolor: theme.palette.primary.main,
+                            fontSize: '1rem'
+                          }}
+                        >
+                          {member.name.charAt(0).toUpperCase()}
+                        </Avatar>
+                      </ListItemIcon>
+                      <ListItemText 
+                        primary={
+                          <Typography variant="body1" fontWeight={600}>
+                            {member.name}
+                          </Typography>
+                        }
+                        secondary={
+                          <Stack direction="row" spacing={2} alignItems="center">
+                            <Chip
+                              label={member.role}
+                              size="small"
+                              variant="filled"
+                              sx={{ 
+                                height: 20,
+                                fontSize: '0.7rem',
+                                bgcolor: `${theme.palette.secondary.main}20`,
+                                color: theme.palette.secondary.dark
+                              }}
+                            />
+                            <Typography variant="caption" color="text.secondary">
+                              {member.email || 'No email provided'}
+                            </Typography>
+                          </Stack>
+                        }
+                      />
+                      <ListItemSecondaryAction>
+                        <Tooltip title="Remove member">
+                          <IconButton 
+                            edge="end"
+                            onClick={() => setNewGroup({
+                              ...newGroup,
+                              members: newGroup.members.filter(id => id !== memberId)
+                            })}
+                            sx={{
+                              color: theme.palette.error.main,
+                              '&:hover': {
+                                backgroundColor: `${theme.palette.error.main}10`,
+                              }
+                            }}
+                          >
+                            <FiUserMinus size={18} />
+                          </IconButton>
+                        </Tooltip>
+                      </ListItemSecondaryAction>
+                    </ListItem>
+                  ) : null;
+                })}
+              </List>
+            </Paper>
+          </Box>
+        ) : (
+          <Paper 
+            variant="outlined" 
+            sx={{ 
+              p: 4, 
+              textAlign: 'center',
+              borderRadius: theme.shape.borderRadius * 2,
+              background: theme.palette.background.default
+            }}
+          >
+            <FiUsers size={48} color={theme.palette.text.secondary} style={{ marginBottom: 16, opacity: 0.5 }} />
+            <Typography variant="body1" color="text.secondary" gutterBottom>
+              No members selected
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Select team members from the dropdown above to add them to this group
+            </Typography>
+          </Paper>
+        )}
+      </Card>
+
+      {/* Quick Stats */}
+      {newGroup.members.length > 0 && (
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={4}>
+            <Card sx={{ 
+              p: 2, 
+              textAlign: 'center',
+              bgcolor: `${theme.palette.primary.main}05`,
+              border: `1px solid ${theme.palette.primary.main}20`,
+              borderRadius: theme.shape.borderRadius * 2
+            }}>
+              <Typography variant="h4" fontWeight={800} color="primary.main">
+                {newGroup.members.length}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Total Members
+              </Typography>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <Card sx={{ 
+              p: 2, 
+              textAlign: 'center',
+              bgcolor: `${theme.palette.success.main}05`,
+              border: `1px solid ${theme.palette.success.main}20`,
+              borderRadius: theme.shape.borderRadius * 2
+            }}>
+              <Typography variant="h4" fontWeight={800} color="success.main">
+                {[...new Set(users.filter(u => newGroup.members.includes(u._id)).map(u => u.role))].length}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Unique Roles
+              </Typography>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <Card sx={{ 
+              p: 2, 
+              textAlign: 'center',
+              bgcolor: `${theme.palette.info.main}05`,
+              border: `1px solid ${theme.palette.info.main}20`,
+              borderRadius: theme.shape.borderRadius * 2
+            }}>
+              <Typography variant="h4" fontWeight={800} color="info.main">
+                {Math.ceil(newGroup.members.length / 5)}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Estimated Teams
+              </Typography>
+            </Card>
+          </Grid>
+        </Grid>
+      )}
+    </Stack>
+  </DialogContent>
+
+  <DialogActions sx={{ 
+    p: 4, 
+    pt: 2,
+    borderTop: `1px solid ${theme.palette.divider}`,
+    background: theme.palette.background.default
+  }}>
+    <Button 
+      onClick={() => {
+        setOpenGroupDialog(false);
+        setEditingGroup(null);
+      }}
+      variant="outlined"
+      startIcon={<FiX size={18} />}
+      sx={{ 
+        borderRadius: theme.shape.borderRadius * 2,
+        px: 4,
+        fontWeight: 600,
+        borderColor: theme.palette.divider,
+        color: theme.palette.text.secondary
+      }}
+    >
+      Cancel
+    </Button>
+    <Button 
+      onClick={handleCreateGroup} 
+      variant="contained"
+      disabled={!newGroup.name || newGroup.members.length === 0}
+      startIcon={editingGroup ? <FiEdit2 size={18} /> : <FiPlus size={18} />}
+      sx={{ 
+        borderRadius: theme.shape.borderRadius * 2,
+        px: 4,
+        fontWeight: 600,
+        background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+        boxShadow: `0 4px 12px ${theme.palette.primary.main}30`,
+        '&:hover': {
+          boxShadow: `0 6px 16px ${theme.palette.primary.main}40`,
+          transform: 'translateY(-1px)',
+        },
+        '&:disabled': {
+          background: theme.palette.action.disabled,
+          boxShadow: 'none',
+        }
+      }}
+    >
+      {editingGroup ? 'Update Group' : 'Create Group'}
+    </Button>
+  </DialogActions>
+</Dialog>
 
           {/* Enhanced Snackbar */}
           <Snackbar

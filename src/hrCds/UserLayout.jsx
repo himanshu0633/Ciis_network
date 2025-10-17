@@ -56,7 +56,7 @@ const UserLayout = () => {
       {!isMobile && (
         <Sidebar
           isOpen={sidebarOpen}
-          closeSidebar={() => setSidebarOpen(false)}
+          closeSidebar={() => setSidebarOpen(true)}
         />
       )}
 
