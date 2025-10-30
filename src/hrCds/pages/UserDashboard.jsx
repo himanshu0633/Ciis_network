@@ -190,7 +190,17 @@ const UserDashboard = () => {
   const [attendanceHistory, setAttendanceHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [recentTasks, setRecentTasks] = useState([]);
 
+
+  useEffect(() => {
+    axios.get('http://localhost:3000/api/task/my')
+      .then(res => {
+        setRecentTasks(res.data || []);
+        setLoading(false);
+      })
+      .catch(err => console.error('Error fetching tasks:', err));
+  }, []);
   // Stable functions that don't change
   const fetchStats = async () => {
     const token = localStorage.getItem('token');
@@ -463,14 +473,16 @@ const UserDashboard = () => {
                  sx={{ width: isMobile ? '100%' : 'auto' }}>
             <Tooltip title={isRunning ? "Already clocked in" : "Start your work day"}>
               <span>
-                <ClockButton 
-                  onClick={handleIn} 
-                  isactive={(!isRunning).toString()} 
-                  disabled={isRunning || loading}
-                  startIcon={<FiPlay size={20} />}
-                >
-                  Clock In
-                </ClockButton>
+              <ClockButton
+  onClick={handleIn}
+  isactive={(!isRunning).toString()}
+  disabled={isRunning || loading}
+  startIcon={<FiPlay size={20} />}
+  style={{ color: 'white' }}
+>
+  Clock In
+</ClockButton>
+
               </span>
             </Tooltip>
             <Tooltip title={!isRunning ? "Clock in first" : "End your work day"}>
@@ -480,6 +492,7 @@ const UserDashboard = () => {
                   isactive={isRunning.toString()} 
                   disabled={!isRunning || loading}
                   startIcon={<FiSquare size={20} />}
+                   style={{ color: 'white' }}
                 >
                   Clock Out
                 </ClockButton>
@@ -750,66 +763,56 @@ const UserDashboard = () => {
                 </Box>
               </Stack>
             </Paper>
-
-            {/* Quick Actions */}
-            <Paper sx={{ p: 3, borderRadius: 4 }}>
-              <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
-                Quick Actions
-              </Typography>
-              <Stack spacing={1}>
-              
-                <Button 
-                  variant="outlined" 
-                    onClick={handleOut} 
-                  startIcon={<MdWork />}
-                  fullWidth
-                >
-                  Request Time Off
-                </Button>
-                {/* <Button 
-                  variant="outlined" 
-                  startIcon={<MdLocationOn />}
-                  fullWidth
-                >
-                  Location Settings
-                </Button> */}
-              </Stack>
-            </Paper>
-
+    
             {/* Recent Activity */}
-            <Paper sx={{ p: 3, borderRadius: 4 }}>
-              <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
-                Recent Activity
+           <Paper sx={{ p: 3, borderRadius: 4 }}>
+      <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
+        Recent Activity
+      </Typography>
 
-                {/* task/assignable-users */}
-                {/* task/assigned */}
-              </Typography>
-              <Stack spacing={2}>
-                {attendanceHistory.slice(0, 3).map((record, index) => (
-                  <Box key={index}>
-                    <Stack direction="row" justifyContent="space-between" alignItems="center">
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {new Date(record.date).toLocaleDateString()}
-                      </Typography>
-                      <Chip 
-                        label={record.status} 
-                        color={record.status === 'PRESENT' ? 'success' : 'error'}
-                        size="small"
-                      />
-                    </Stack>
-                    <Typography variant="caption" color="text.secondary">
-                      {record.totalTime || 'No time recorded'}
-                    </Typography>
-                    <Divider sx={{ mt: 1 }} />
-                  </Box>
-                ))}
-                {attendanceHistory.length === 0 && (
-                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
-                    No recent activity
-                  </Typography>
-                )}
+      <Stack spacing={2}>
+        {loading ? (
+          <Typography variant="body2" color="text.secondary">
+            Loading...
+          </Typography>
+        ) : recentTasks.length > 0 ? (
+          recentTasks.map((task, index) => (
+            <Box key={index}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  {new Date(task.createdAt).toLocaleDateString()}
+                </Typography>
+                <Chip
+                  label={task.status || 'Pending'}
+                  color={
+                    task.status === 'Completed'
+                      ? 'success'
+                      : task.status === 'In Progress'
+                      ? 'warning'
+                      : 'error'
+                  }
+                  size="small"
+                />
               </Stack>
-            </Paper>
+
+              <Typography variant="caption" color="text.secondary">
+                {task.title || 'Untitled task'}
+              </Typography>
+
+              <Divider sx={{ mt: 1 }} />
+            </Box>
+          ))
+        ) : (
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ textAlign: 'center', py: 2 }}
+          >
+            No recent activity
+          </Typography>
+        )}
+      </Stack>
+    </Paper>
           </Stack>
         </Grid>
       </Grid>

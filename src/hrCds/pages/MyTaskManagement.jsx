@@ -1211,7 +1211,7 @@ const MyTaskManagement = () => {
                 >
                   <Tab
                     label={
-                      <Stack direction="row" alignItems="center" spacing={1}>
+                      <Stack direction="row" alignItems="center" spacing={3}>
                         <FiUser />
                         <Typography>My Tasks</Typography>
                         {stats.total > 0 && (

@@ -530,7 +530,7 @@ const MyLeaves = () => {
             >
               <Tab
                 label={
-                  <Stack direction="row" alignItems="center" spacing={1}>
+                  <Stack direction="row" alignItems="center" spacing={2}>
                     <FiCalendar />
                     <Typography>Leave Requests</Typography>
                     {stats.total > 0 && (

@@ -531,11 +531,11 @@ const EmmpTask = () => {
                 <Typography variant="body1" color="text.secondary">
                   Track progress and status of all assigned tasks
                 </Typography>
-                {userId && (
+                {/* {userId && (
                   <Typography variant="caption" color="primary.main" sx={{ mt: 1, display: 'block' }}>
-                    Logged in as: {userRole} (ID: {userId})
+                    Logged in as:  (Name:{name}){userRole}
                   </Typography>
-                )}
+                )} */}
               </Box>
 
               <Stack direction="row" spacing={2}>
@@ -802,7 +802,7 @@ const EmmpTask = () => {
                       </Stack>
 
                       {/* Individual Users */}
-                      {task.assignedUsers && task.assignedUsers.length > 0 && (
+                      {/* {task.assignedUsers && task.assignedUsers.length > 0 && (
                         <Box sx={{ mb: 2 }}>
                           <Typography variant="body2" fontWeight={600} gutterBottom>
                             Individual Users:
@@ -819,7 +819,7 @@ const EmmpTask = () => {
                             ))}
                           </Stack>
                         </Box>
-                      )}
+                      )} */}
 
                       {/* Groups */}
                       {task.assignedGroups && task.assignedGroups.length > 0 && (
