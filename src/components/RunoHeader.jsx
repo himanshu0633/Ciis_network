@@ -55,13 +55,14 @@ function RunoHeader() {
 
                 <NavLink to="/pricing" className="header-active" onClick={closeMobileMenu}>Pricing</NavLink>
                 <NavLink to="/contact" className="header-active" onClick={closeMobileMenu}>Contact Us</NavLink>
+               
+                <NavLink to="/login" className="header-login-btn ">Login</NavLink>
+                {/* <NavLink to="/register" className="header-login-btn">Register</NavLink>
+                <button className="header-demo-btn">Request A Demo</button> */}
+       
             </nav>
 
-            <div className="header-buttons">
-                <NavLink to="/login" className="header-login-btn">Login</NavLink>
-                {/* <NavLink to="/register" className="header-login-btn">Register</NavLink> */}
-                {/* <button className="header-demo-btn">Request A Demo</button> */}
-            </div>
+         
         </header>
     );
 }
