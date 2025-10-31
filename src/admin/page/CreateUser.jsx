@@ -40,9 +40,7 @@ const CreateUser = () => {
     if (form.password !== form.confirmPassword) return toast.error('Passwords do not match');
     if (!roleOptions.includes(form.role)) return toast.error('Select a valid role');
 
-    if (form.role === 'user') {
-      if (!form.phone || !form.dob || !form.salary) return toast.error('Please fill all required user fields');
-    }
+   
 
     return true;
   };
