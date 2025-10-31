@@ -868,6 +868,7 @@ const UserDashboard = () => {
           <Button onClick={() => setShowHistory(false)}>Close</Button>
         </DialogActions>
       </Dialog>
+      
     </Box>
   );
 };
