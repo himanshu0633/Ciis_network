@@ -406,7 +406,7 @@ const UserDashboard = () => {
   return (
     <Box sx={{ 
       p: isMobile ? 1 : 3, 
-      background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+      // background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
       minHeight: '100vh'
     }}>
       <ToastContainer 
