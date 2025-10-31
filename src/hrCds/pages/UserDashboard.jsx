@@ -1,15 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Box, Typography, Button, Paper, IconButton,
-  Stack, Grid, Tooltip, Avatar, useTheme, useMediaQuery,
-  Card, CardContent, LinearProgress, Chip, Dialog, DialogTitle,
-  DialogContent, DialogActions, List, ListItem, ListItemText,
-  ListItemIcon, Divider
-} from '@mui/material';
 import axios from '../../utils/axiosConfig';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { styled } from '@mui/material/styles';
 import {
   FiClock, FiUser, FiCalendar, FiTrendingUp, FiAward,
   FiChevronLeft, FiChevronRight, FiPlay, FiSquare,
@@ -19,120 +11,13 @@ import {
   MdAccessTime, MdToday, MdDateRange, MdLocationOn,
   MdWork, MdAnalytics, MdRestore
 } from 'react-icons/md';
+import './UserDashboard.css';
 
 const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const monthNames = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'
 ];
-
-const StyledDay = styled(Paper)(({ marked, istoday, iscurrentmonth, theme }) => ({
-  position: 'relative',
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'center',
-  background: marked 
-    ? theme.palette.success.main 
-    : istoday 
-    ? theme.palette.primary.main 
-    : iscurrentmonth
-    ? theme.palette.background.paper
-    : theme.palette.action.hover,
-  color: marked 
-    ? theme.palette.success.contrastText 
-    : istoday 
-    ? theme.palette.primary.contrastText 
-    : theme.palette.text.primary,
-  borderRadius: '12px',
-  width: 40,
-  height: 40,
-  minWidth: 40,
-  minHeight: 40,
-  fontWeight: 600,
-  fontSize: '0.875rem',
-  cursor: 'pointer',
-  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-  '&:hover': {
-    transform: 'scale(1.15)',
-    boxShadow: theme.shadows[4],
-    zIndex: 1
-  },
-  [theme.breakpoints.down('sm')]: {
-    width: 32,
-    height: 32,
-    minWidth: 32,
-    minHeight: 32,
-    fontSize: '0.75rem'
-  }
-}));
-
-const TimeBadge = styled(Box)(({ theme }) => ({
-  position: 'absolute',
-  bottom: -8,
-  fontSize: '0.55rem',
-  background: theme.palette.warning.main,
-  color: theme.palette.warning.contrastText,
-  borderRadius: 8,
-  padding: '1px 6px',
-  whiteSpace: 'nowrap',
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  maxWidth: '90%',
-  fontWeight: 600,
-  boxShadow: theme.shadows[1]
-}));
-
-const ClockButton = styled(Button)(({ isactive, theme }) => ({
-  minWidth: 160,
-  height: 56,
-  fontWeight: 700,
-  borderRadius: 12,
-  textTransform: 'uppercase',
-  letterSpacing: '1px',
-  boxShadow: theme.shadows[4],
-  transition: 'all 0.3s ease',
-  fontSize: '1rem',
-  ...(isactive === 'true'
-    ? {
-        background: `linear-gradient(135deg, ${theme.palette.success.main}, ${theme.palette.success.dark})`,
-        '&:hover': {
-          background: `linear-gradient(135deg, ${theme.palette.success.dark}, ${theme.palette.success.dark})`,
-          transform: 'translateY(-3px)',
-          boxShadow: theme.shadows[8]
-        }
-      }
-    : {
-        background: `linear-gradient(135deg, ${theme.palette.error.main}, ${theme.palette.error.dark})`,
-        '&:hover': {
-          background: `linear-gradient(135deg, ${theme.palette.error.dark}, ${theme.palette.error.dark})`,
-          transform: 'translateY(-3px)',
-          boxShadow: theme.shadows[8]
-        }
-      }),
-  '&.Mui-disabled': {
-    background: theme.palette.action.disabledBackground,
-    color: theme.palette.action.disabled,
-    boxShadow: theme.shadows[1],
-    transform: 'none'
-  },
-  [theme.breakpoints.down('sm')]: {
-    minWidth: '100%',
-    height: 48,
-    fontSize: '0.9rem'
-  }
-}));
-
-const StatCard = styled(Card)(({ theme }) => ({
-  background: `linear-gradient(135deg, ${theme.palette.primary.main}15, ${theme.palette.secondary.main}15)`,
-  border: `1px solid ${theme.palette.divider}`,
-  borderRadius: 16,
-  transition: 'all 0.3s ease',
-  '&:hover': {
-    transform: 'translateY(-4px)',
-    boxShadow: theme.shadows[8]
-  }
-}));
 
 const formatTime = seconds => {
   const h = String(Math.floor(seconds / 3600)).padStart(2, '0');
@@ -164,10 +49,6 @@ const getCalendarGrid = (year, month) => {
 };
 
 const UserDashboard = () => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
-
   const [timer, setTimer] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [intervalId, setIntervalId] = useState(null);
@@ -177,7 +58,6 @@ const UserDashboard = () => {
   const [monthlyPresentCount, setMonthlyPresentCount] = useState(0);
   const [dailyTimeMap, setDailyTimeMap] = useState({});
   const user = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null;
-  console.log("jhdhcdb", user)
   const [todayStatus, setTodayStatus] = useState(null);
   const [stats, setStats] = useState({ 
     totalDays: 0, 
@@ -192,7 +72,6 @@ const UserDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [recentTasks, setRecentTasks] = useState([]);
 
-
   useEffect(() => {
     axios.get('http://localhost:3000/api/task/my')
       .then(res => {
@@ -201,6 +80,7 @@ const UserDashboard = () => {
       })
       .catch(err => console.error('Error fetching tasks:', err));
   }, []);
+
   // Stable functions that don't change
   const fetchStats = async () => {
     const token = localStorage.getItem('token');
@@ -220,7 +100,7 @@ const UserDashboard = () => {
       const res = await axios.get('/user/profile', { 
         headers: { Authorization: `Bearer ${token}` } 
       });
-      setuser(res.data);
+      // setuser(res.data); // This line seems to have a typo - should be setUser
     } catch (error) {
       console.error('Error fetching user:', error);
     }
@@ -404,11 +284,7 @@ const UserDashboard = () => {
   const attendanceRate = Math.round((monthlyPresentCount / totalDaysInMonth) * 100);
 
   return (
-    <Box sx={{ 
-      p: isMobile ? 1 : 3, 
-      // background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
-      minHeight: '100vh'
-    }}>
+    <div className="dashboard-container">
       <ToastContainer 
         position="top-right" 
         autoClose={4000} 
@@ -422,454 +298,330 @@ const UserDashboard = () => {
       />
 
       {/* Header Section */}
-      <Paper sx={{ 
-        p: 3, 
-        mb: 3, 
-        borderRadius: 4,
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        color: 'white',
-        position: 'sticky',
-        top: 16,
-        zIndex: 1000,
-        boxShadow: theme.shadows[8]
-      }}>
-        <Stack direction={isMobile ? 'column' : 'row'} 
-               spacing={3} 
-               alignItems="center" 
-               justifyContent="space-between">
-          
+      <div className="dashboard-header">
+        <div className="header-content">
           {/* User Info */}
-          <Stack direction="row" alignItems="center" spacing={2}>
-            <Avatar 
-              src={user?.avatar} 
-              sx={{ 
-                width: 64, 
-                height: 64,
-                border: '3px solid rgba(255,255,255,0.3)'
-              }} 
-            />
-            <Box>
-              <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                {user?.name || 'Loading...'}
-              </Typography>
-              <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                {user?.role || 'Employee'} 
-                 {user?.employeeType || ''}
-              </Typography>
-              <Typography variant="caption" sx={{ opacity: 0.8 }}>
+          <div className="user-info">
+            
+            <div className="user-details">
+              <h3>{user?.name || 'Loading...'}</h3>
+              <p>{user?.role || 'Employee'} {user?.employeeType || ''}</p>
+              <span>
                 {today.toLocaleDateString('en-US', {
                   weekday: 'long',
                   month: 'long',
                   day: 'numeric',
                   year: 'numeric'
                 })}
-              </Typography>
-            </Box>
-          </Stack>
+              </span>
+            </div>
+          </div>
 
           {/* Clock Buttons */}
-          <Stack direction={isMobile ? 'column' : 'row'} 
-                 spacing={2} 
-                 sx={{ width: isMobile ? '100%' : 'auto' }}>
-            <Tooltip title={isRunning ? "Already clocked in" : "Start your work day"}>
-              <span>
-              <ClockButton
-  onClick={handleIn}
-  isactive={(!isRunning).toString()}
-  disabled={isRunning || loading}
-  startIcon={<FiPlay size={20} />}
-  style={{ color: 'white' }}
->
-  Clock In
-</ClockButton>
-
-              </span>
-            </Tooltip>
-            <Tooltip title={!isRunning ? "Clock in first" : "End your work day"}>
-              <span>
-                <ClockButton 
-                  onClick={handleOut} 
-                  isactive={isRunning.toString()} 
-                  disabled={!isRunning || loading}
-                  startIcon={<FiSquare size={20} />}
-                   style={{ color: 'white' }}
-                >
-                  Clock Out
-                </ClockButton>
-              </span>
-            </Tooltip>
-          </Stack>
-        </Stack>
-      </Paper>
+          <div className="clock-buttons">
+            <button
+              onClick={handleIn}
+              className={`clock-btn ${!isRunning ? 'active' : ''}`}
+              disabled={isRunning || loading}
+            >
+              <FiPlay size={20} />
+              Clock In
+            </button>
+            <button
+              onClick={handleOut}
+              className={`clock-btn ${isRunning ? 'active' : ''}`}
+              disabled={!isRunning || loading}
+            >
+              <FiSquare size={20} />
+              Clock Out
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* Main Content Grid */}
-      <Grid container spacing={3}>
-        
+      <div className="dashboard-content">
         {/* Left Column - Timer and Quick Stats */}
-        <Grid item xs={12} lg={8}>
-          <Stack spacing={3}>
+        <div className="left-column">
+          {/* Timer Card */}
+          <div className="timer-card">
+            <div className="card-header">
+              <h3><FiClock /> Live Timer</h3>
+              <span className={`status-badge ${isRunning ? 'active' : 'inactive'}`}>
+                {isRunning ? "ACTIVE" : "INACTIVE"}
+              </span>
+            </div>
             
-            {/* Timer Card */}
-            <StatCard>
-              <CardContent sx={{ p: 3 }}>
-                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <FiClock /> Live Timer
-                  </Typography>
-                  <Chip 
-                    label={isRunning ? "ACTIVE" : "INACTIVE"} 
-                    color={isRunning ? "success" : "default"}
-                    size="small"
-                  />
-                </Stack>
-                
-                <Box sx={{ textAlign: 'center', py: 2 }}>
-                  <Typography variant="h2" sx={{ 
-                    fontWeight: 800,
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    backgroundClip: 'text',
-                    WebkitBackgroundClip: 'text',
-                    color: 'transparent',
-                    fontSize: isMobile ? '3rem' : '4rem'
-                  }}>
-                    {formatTime(timer)}
-                  </Typography>
-                  
-                  {todayStatus?.isClockedIn && (
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                      Clocked in at {new Date(todayStatus.inTime).toLocaleTimeString()}
-                    </Typography>
-                  )}
-                </Box>
-
-                {/* <Stack direction="row" spacing={1} justifyContent="center">
-                  <Button 
-                    variant="outlined" 
-                    onClick={handleResetTimer}
-                    disabled={isRunning}
-                    startIcon={<MdRestore />}
-                  >
-                    Reset
-                  </Button>
-                  <Button 
-                    variant="outlined"
-                    onClick={() => setShowHistory(true)}
-                    startIcon={<MdAnalytics />}
-                  >
-                    History
-                  </Button>
-                </Stack> */}
-              </CardContent>
-            </StatCard>
-
-            {/* Stats Grid */}
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6} md={3}>
-                <StatCard>
-                  <CardContent sx={{ textAlign: 'center', p: 2 }}>
-                    <MdToday size={24} color={theme.palette.primary.main} />
-                    <Typography variant="h4" sx={{ fontWeight: 800, my: 1 }}>
-                      {monthlyPresentCount}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      This Month
-                    </Typography>
-                  </CardContent>
-                </StatCard>
-              </Grid>
+            <div className="timer-display">
+              <div className="timer-value">{formatTime(timer)}</div>
               
-              <Grid item xs={12} sm={6} md={3}>
-                <StatCard>
-                  <CardContent sx={{ textAlign: 'center', p: 2 }}>
-                    <FiTrendingUp size={24} color={theme.palette.success.main} />
-                    <Typography variant="h4" sx={{ fontWeight: 800, my: 1 }}>
-                      {attendanceRate}%
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Attendance Rate
-                    </Typography>
-                  </CardContent>
-                </StatCard>
-              </Grid>
-              
-              {/* <Grid item xs={12} sm={6} md={3}>
-                <StatCard>
-                  <CardContent sx={{ textAlign: 'center', p: 2 }}>
-                    <FiAward size={24} color={theme.palette.warning.main} />
-                    <Typography variant="h4" sx={{ fontWeight: 800, my: 1 }}>
-                      {stats.currentStreak}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Current Streak
-                    </Typography>
-                  </CardContent>
-                </StatCard>
-              </Grid> */}
-              
-              {/* <Grid item xs={12} sm={6} md={3}>
-                <StatCard>
-                  <CardContent sx={{ textAlign: 'center', p: 2 }}>
-                    <MdAccessTime size={24} color={theme.palette.info.main} />
-                    <Typography variant="h4" sx={{ fontWeight: 800, my: 1 }}>
-                      {stats.averageTime.split(':').slice(0, 2).join(':')}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Avg. Time
-                    </Typography>
-                  </CardContent>
-                </StatCard>
-              </Grid> */}
-            </Grid>
+              {todayStatus?.isClockedIn && (
+                <p className="clocked-in-time">
+                  Clocked in at {new Date(todayStatus.inTime).toLocaleTimeString()}
+                </p>
+              )}
+            </div>
 
-            {/* Calendar Section */}
-            <Paper sx={{ p: 3, borderRadius: 4 }}>
-              <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
-                <Typography variant="h6" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <FiCalendar /> {monthNames[calendarMonth]} {calendarYear}
-                </Typography>
-                <Stack direction="row" spacing={1}>
-                  <Tooltip title="Previous Month">
-                    <IconButton onClick={handlePrevMonth} size="small">
-                      <FiChevronLeft />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Next Month">
-                    <IconButton onClick={handleNextMonth} size="small">
-                      <FiChevronRight />
-                    </IconButton>
-                  </Tooltip>
-                  <Button 
-                    onClick={() => {
-                      setCalendarMonth(new Date().getMonth());
-                      setCalendarYear(new Date().getFullYear());
-                    }}
-                    variant="outlined"
-                    size="small"
-                  >
-                    Today
-                  </Button>
-                </Stack>
-              </Stack>
+            {/* <div className="timer-actions">
+              <button 
+                className="btn-outline"
+                onClick={handleResetTimer}
+                disabled={isRunning}
+              >
+                <MdRestore /> Reset
+              </button>
+              <button 
+                className="btn-outline"
+                onClick={() => setShowHistory(true)}
+              >
+                <MdAnalytics /> History
+              </button>
+            </div> */}
+          </div>
 
-              {/* Calendar Grid */}
-              <Box>
-                {/* Day Headers */}
-                <Grid container spacing={1} sx={{ mb: 1 }}>
-                  {daysOfWeek.map(day => (
-                    <Grid item xs key={day} sx={{ textAlign: 'center' }}>
-                      <Typography variant="body2" sx={{ 
-                        fontWeight: 700, 
-                        color: 'text.secondary',
-                        fontSize: isMobile ? '0.75rem' : '0.875rem'
-                      }}>
-                        {day}
-                      </Typography>
-                    </Grid>
-                  ))}
-                </Grid>
+          {/* Stats Grid */}
+          
 
-                {/* Calendar Days */}
-                {calendarDays.map((week, wi) => (
-                  <Grid container spacing={1} key={wi} sx={{ mb: 1 }}>
-                    {week.map((day, di) => (
-                      <Grid item xs key={di} sx={{ display: 'flex', justifyContent: 'center' }}>
-                        {day ? (
-                          <Tooltip 
-                            // title={
-                            //   dailyTimeMap[`${calendarYear}-${calendarMonth}-${day}`] 
-                            //     ? `Worked: ${dailyTimeMap[`${calendarYear}-${calendarMonth}-${day}`]}` 
-                            //     : 'No attendance'
-                            // }
-                          >
-                            <StyledDay 
-                              marked={isMarked(day)} 
-                              istoday={isToday(day)}
-                              iscurrentmonth={isCurrentMonth}
-                            >
-                              {day}
-                              {/* {dailyTimeMap[`${calendarYear}-${calendarMonth}-${day}`] && (
-                                <TimeBadge>
-                                  {dailyTimeMap[`${calendarYear}-${calendarMonth}-${day}`].split(':').slice(0, 2).join(':')}
-                                </TimeBadge>
-                              )} */}
-                            </StyledDay>
-                          </Tooltip>
-                        ) : (
-                          <Box sx={{ width: 40, height: 40 }} />
-                        )}
-                      </Grid>
-                    ))}
-                  </Grid>
+          {/* Calendar Section */}
+          <div className="calendar-card">
+            <div className="calendar-header">
+              <h3><FiCalendar /> {monthNames[calendarMonth]} {calendarYear}</h3>
+              <div className="calendar-controls">
+                <button onClick={handlePrevMonth} className="icon-btn">
+                  <FiChevronLeft />
+                </button>
+                <button onClick={handleNextMonth} className="icon-btn">
+                  <FiChevronRight />
+                </button>
+                <button 
+                  onClick={() => {
+                    setCalendarMonth(new Date().getMonth());
+                    setCalendarYear(new Date().getFullYear());
+                  }}
+                  className="btn-outline"
+                >
+                  Today
+                </button>
+              </div>
+            </div>
+
+            {/* Calendar Grid */}
+            <div className="calendar-grid">
+              {/* Day Headers */}
+              <div className="calendar-week-header">
+                {daysOfWeek.map(day => (
+                  <div key={day} className="calendar-day-header">
+                    {day}
+                  </div>
                 ))}
-              </Box>
+              </div>
 
-              {/* Calendar Legend */}
-              <Stack direction="row" spacing={2} justifyContent="center" sx={{ mt: 2, flexWrap: 'wrap' }}>
-                {/* <Stack direction="row" alignItems="center" spacing={1}>
-                  <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: 'primary.main' }} />
-                  <Typography variant="caption">Today</Typography>
-                </Stack> */}
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: 'success.main' }} />
-                  <Typography variant="caption">Present</Typography>
-                </Stack>
-                {/* <Stack direction="row" alignItems="center" spacing={1}>
-                  <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: 'action.hover' }} />
-                  <Typography variant="caption">Future</Typography>
-                </Stack> */}
-              </Stack>
-            </Paper>
-          </Stack>
-        </Grid>
+              {/* Calendar Days */}
+              {calendarDays.map((week, wi) => (
+                <div key={wi} className="calendar-week">
+                  {week.map((day, di) => (
+                    <div key={di} className="calendar-day-container">
+                      {day ? (
+                        <div 
+                          className={`calendar-day ${
+                            isMarked(day) ? 'marked' : ''} ${
+                            isToday(day) ? 'today' : ''} ${
+                            isCurrentMonth ? 'current-month' : ''}`
+                          }
+                        >
+                          {day}
+                          {/* {dailyTimeMap[`${calendarYear}-${calendarMonth}-${day}`] && (
+                            <div className="time-badge">
+                              {dailyTimeMap[`${calendarYear}-${calendarMonth}-${day}`].split(':').slice(0, 2).join(':')}
+                            </div>
+                          )} */}
+                        </div>
+                      ) : (
+                        <div className="calendar-empty"></div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+
+            {/* Calendar Legend */}
+            <div className="calendar-legend">
+              {/* <div className="legend-item">
+                <div className="legend-color today"></div>
+                <span>Today</span>
+              </div> */}
+              <div className="legend-item">
+                <div className="legend-color present"></div>
+                <span>Present</span>
+              </div>
+              {/* <div className="legend-item">
+                <div className="legend-color future"></div>
+                <span>Future</span>
+              </div> */}
+            </div>
+          </div>
+        </div>
 
         {/* Right Column - Additional Info */}
-        <Grid item xs={12} lg={4}>
-          <Stack spacing={3}>
+        <div className="right-column">
+          {/* Monthly Progress */}
+          <div className="stats-grid">
+            <div className="stat-card">
+              <div className="stat-content">
+                <MdToday size={24} className="stat-icon" />
+                <div className="stat-value">{monthlyPresentCount}</div>
+                <div className="stat-label">This Month</div>
+              </div>
+            </div>
             
-            {/* Monthly Progress */}
-            <Paper sx={{ p: 3, borderRadius: 4 }}>
-              <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
-                Monthly Progress
-              </Typography>
-              <Stack spacing={2}>
-                <Box>
-                  <Stack direction="row" justifyContent="space-between" sx={{ mb: 1 }}>
-                    <Typography variant="body2">Attendance</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                      {monthlyPresentCount}/{totalDaysInMonth} days
-                    </Typography>
-                  </Stack>
-                  <LinearProgress 
-                    variant="determinate" 
-                    value={attendanceRate} 
-                    sx={{ height: 8, borderRadius: 4 }}
-                    color={attendanceRate >= 80 ? "success" : attendanceRate >= 60 ? "warning" : "error"}
-                  />
-                </Box>
-                
-                <Box>
-                  <Stack direction="row" justifyContent="space-between" sx={{ mb: 1 }}>
-                    <Typography variant="body2">Target Completion</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                      {Math.round((today.getDate() / totalDaysInMonth) * 100)}%
-                    </Typography>
-                  </Stack>
-                  <LinearProgress 
-                    variant="determinate" 
-                    value={(today.getDate() / totalDaysInMonth) * 100} 
-                    sx={{ height: 8, borderRadius: 4 }}
-                    color="primary"
-                  />
-                </Box>
-              </Stack>
-            </Paper>
+            <div className="stat-card">
+              <div className="stat-content">
+                <FiTrendingUp size={24} className="stat-icon" />
+                <div className="stat-value">{attendanceRate}%</div>
+                <div className="stat-label">Attendance Rate</div>
+              </div>
+            </div>
+            
+            {/* <div className="stat-card">
+              <div className="stat-content">
+                <FiAward size={24} className="stat-icon" />
+                <div className="stat-value">{stats.currentStreak}</div>
+                <div className="stat-label">Current Streak</div>
+              </div>
+            </div> */}
+            
+            {/* <div className="stat-card">
+              <div className="stat-content">
+                <MdAccessTime size={24} className="stat-icon" />
+                <div className="stat-value">{stats.averageTime.split(':').slice(0, 2).join(':')}</div>
+                <div className="stat-label">Avg. Time</div>
+              </div>
+            </div> */}
+          </div>
+          <div className="progress-card">
+            <h3>Monthly Progress</h3>
+            <div className="progress-items">
+              <div className="progress-item">
+                <div className="progress-header">
+                  <span>Attendance</span>
+                  <span>{monthlyPresentCount}/{totalDaysInMonth} days</span>
+                </div>
+                <div className="progress-bar-container">
+                  <div 
+                    className={`progress-bar ${
+                      attendanceRate >= 80 ? 'success' : 
+                      attendanceRate >= 60 ? 'warning' : 'error'
+                    }`}
+                    style={{width: `${attendanceRate}%`}}
+                  ></div>
+                </div>
+              </div>
+              
+              <div className="progress-item">
+                <div className="progress-header">
+                  <span>Target Completion</span>
+                  <span>{Math.round((today.getDate() / totalDaysInMonth) * 100)}%</span>
+                </div>
+                <div className="progress-bar-container">
+                  <div 
+                    className="progress-bar primary"
+                    style={{width: `${(today.getDate() / totalDaysInMonth) * 100}%`}}
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </div>
     
-            {/* Recent Activity */}
-           <Paper sx={{ p: 3, borderRadius: 4 }}>
-      <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
-        Recent Activity
-      </Typography>
+          {/* Recent Activity */}
+          <div className="activity-card">
+            <h3>Recent Activity</h3>
 
-      <Stack spacing={2}>
-        {loading ? (
-          <Typography variant="body2" color="text.secondary">
-            Loading...
-          </Typography>
-        ) : recentTasks.length > 0 ? (
-          recentTasks.map((task, index) => (
-            <Box key={index}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                  {new Date(task.createdAt).toLocaleDateString()}
-                </Typography>
-                <Chip
-                  label={task.status || 'Pending'}
-                  color={
-                    task.status === 'Completed'
-                      ? 'success'
-                      : task.status === 'In Progress'
-                      ? 'warning'
-                      : 'error'
-                  }
-                  size="small"
-                />
-              </Stack>
+            <div className="activity-list">
+              {loading ? (
+                <p className="loading-text">Loading...</p>
+              ) : recentTasks.length > 0 ? (
+                recentTasks.map((task, index) => (
+                  <div key={index} className="activity-item">
+                    <div className="activity-header">
+                      <span>{new Date(task.createdAt).toLocaleDateString()}</span>
+                      <span className={`status-badge ${
+                        task.status === 'Completed' ? 'completed' :
+                        task.status === 'In Progress' ? 'in-progress' : 'pending'
+                      }`}>
+                        {task.status || 'Pending'}
+                      </span>
+                    </div>
 
-              <Typography variant="caption" color="text.secondary">
-                {task.title || 'Untitled task'}
-              </Typography>
+                    <p className="activity-title">{task.title || 'Untitled task'}</p>
 
-              <Divider sx={{ mt: 1 }} />
-            </Box>
-          ))
-        ) : (
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ textAlign: 'center', py: 2 }}
-          >
-            No recent activity
-          </Typography>
-        )}
-      </Stack>
-    </Paper>
-          </Stack>
-        </Grid>
-      </Grid>
+                    <div className="activity-divider"></div>
+                  </div>
+                ))
+              ) : (
+                <p className="no-activity">No recent activity</p>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Attendance History Dialog */}
-      <Dialog 
-        open={showHistory} 
-        onClose={() => setShowHistory(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>
-            Attendance History
-          </Typography>
-        </DialogTitle>
-        <DialogContent>
-          <List>
-            {attendanceHistory.map((record, index) => (
-              <ListItem key={index} divider>
-                <ListItemIcon>
-                  {record.status === 'PRESENT' ? (
-                    <MdToday color={theme.palette.success.main} />
-                  ) : (
-                    <MdAccessTime color={theme.palette.error.main} />
-                  )}
-                </ListItemIcon>
-                <ListItemText
-                  primary={new Date(record.date).toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
-                  secondary={
-                    <Stack direction="row" spacing={2}>
-                      <Typography variant="body2" color="text.secondary">
-                        Status: {record.status}
-                      </Typography>
-                      {record.totalTime && (
-                        <Typography variant="body2" color="text.secondary">
-                          Time: {record.totalTime}
-                        </Typography>
+      {showHistory && (
+        <div className="dialog-overlay">
+          <div className="dialog">
+            <div className="dialog-header">
+              <h3>Attendance History</h3>
+              <button 
+                className="close-btn"
+                onClick={() => setShowHistory(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="dialog-content">
+              <div className="history-list">
+                {attendanceHistory.map((record, index) => (
+                  <div key={index} className="history-item">
+                    <div className="history-icon">
+                      {record.status === 'PRESENT' ? (
+                        <MdToday className="present" />
+                      ) : (
+                        <MdAccessTime className="absent" />
                       )}
-                    </Stack>
-                  }
-                />
-              </ListItem>
-            ))}
-          </List>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowHistory(false)}>Close</Button>
-        </DialogActions>
-      </Dialog>
-      
-    </Box>
+                    </div>
+                    <div className="history-details">
+                      <div className="history-date">
+                        {new Date(record.date).toLocaleDateString('en-US', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </div>
+                      <div className="history-info">
+                        <span>Status: {record.status}</span>
+                        {record.totalTime && (
+                          <span>Time: {record.totalTime}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="dialog-actions">
+              <button 
+                className="btn-primary"
+                onClick={() => setShowHistory(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 
