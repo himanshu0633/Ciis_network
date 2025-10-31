@@ -1,7 +1,7 @@
 import React from 'react';
 
 // page components
-import RunoHeader from '../components/RunoHeader';
+import CiisHeader from '../components/CiisHeader';
 import FeaturesSection from '../components/FeaturesSection';
 import Logo from '../components/Logo';
 import Crm from '../components/Crm';
@@ -16,25 +16,25 @@ import Bannerbtn from '../components/Bannerbtn';
 import Applinks from '../components/Applinks';
 
 // styles
-import '../componentsCSS/Runo.css';
+import '../componentsCSS/ciis.css';
 
 // image imports (used in features)
-import icon1 from '../image/runo/1.png';
-import icon2 from '../image/runo/2.png';
-import icon3 from '../image/runo/3.png';
-import icon4 from '../image/runo/4.png';
-import icon5 from '../image/runo/5.png';
-import icon6 from '../image/runo/6.png';
-import icon7 from '../image/runo/7.png';
-import icon8 from '../image/runo/8.png';
-import icon9 from '../image/runo/9.png';
-import icon10 from '../image/runo/10.png';
-import icon11 from '../image/runo/11.png';
-import icon12 from '../image/runo/111.png';
-import icon13 from '../image/runo/13.png';
-import icon14 from '../image/runo/14.png';
+import icon1 from '../image/ciis/1.png';
+import icon2 from '../image/ciis/2.png';
+import icon3 from '../image/ciis/3.png';
+import icon4 from '../image/ciis/4.png';
+import icon5 from '../image/ciis/5.png';
+import icon6 from '../image/ciis/6.png';
+import icon7 from '../image/ciis/7.png';
+import icon8 from '../image/ciis/8.png';
+import icon9 from '../image/ciis/9.png';
+import icon10 from '../image/ciis/10.png';
+import icon11 from '../image/ciis/11.png';
+import icon12 from '../image/ciis/111.png';
+import icon13 from '../image/ciis/13.png';
+import icon14 from '../image/ciis/14.png';
 
-function Runo() {
+function Ciis() {
     const myFeatures = [
         {
             title: 'Live Team Status',
@@ -110,7 +110,7 @@ function Runo() {
 
     return (
         <>
-            <RunoHeader />
+            <CiisHeader />
             <HeroSection />
             {/*  */}
             <Comparison />
@@ -129,7 +129,7 @@ function Runo() {
                 
                 in action"
                 buttonText="Schedule Your Demo"
-                backgroundImage="/src/image/runo/background-cta.webp"
+                backgroundImage="/src/image/ciis/background-cta.webp"
                 onClick={() => alert("Demo scheduled")}
             />
             {/*  */}
@@ -148,4 +148,4 @@ function Runo() {
     );
 }
 
-export default Runo
+export default Ciis

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import Logo from '/logoo.png';
-import '../componentsCSS/RunoHeader.css';
+import '../componentsCSS/ciisHeader.css';
 
-function RunoHeader() {
+function CiisHeader() {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -67,4 +67,4 @@ function RunoHeader() {
     );
 }
 
-export default RunoHeader;
+export default CiisHeader;

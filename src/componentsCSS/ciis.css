@@ -6,7 +6,7 @@ body {
 }
 
 .hero-section {
-  background-image: url('../image/runo/banner.jpg');
+  background-image: url('../image/ciis/banner.jpg');
   background-size: cover;
   background-position: center;
   padding: 3.125rem 0;
@@ -144,7 +144,7 @@ button.feature-button.green:hover {
   text-align: center;
   padding: 2.5rem 1.25rem;
   background-color: #f8f9fa;
-  background-image: url('../image/runo/background-cta.webp');
+  background-image: url('../image/ciis/background-cta.webp');
   background-size: cover;
 }
 

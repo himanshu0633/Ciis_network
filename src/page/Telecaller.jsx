@@ -1,24 +1,24 @@
 import React from 'react'
-import RunoHeader from '../components/RunoHeader'
+import ciisHeader from '../components/CiisHeader'
 import Footer from '../components/Footer'
 import { FaPhone, FaPlay, FaChartBar } from 'react-icons/fa';
-import callImage from '../image/runo/call-management.webp'; // Assuming you have an image for the call management section
+import callImage from '../image/ciis/call-management.webp'; // Assuming you have an image for the call management section
 import '../componentsCSS/callManagement.css'; // Assuming you have a CSS file for styling
 import FeaturesSection from '../components/FeaturesSection';
 import FAQ from '../components/FAQ'; // Assuming you have a FAQ component
 import '../componentsCSS/telecaller.css'; // Assuming \
 import Review from '../components/Review'
 import Bannerbtn from '../components/Bannerbtn';
-import icon1 from '../image/runo/1.png';
-import icon2 from '../image/runo/2.png';
-import icon3 from '../image/runo/3.png';
-import icon4 from '../image/runo/4.png';
-import icon5 from '../image/runo/5.png';
-import icon6 from '../image/runo/6.png';
-import icon7 from '../image/runo/7.png';
-import icon8 from '../image/runo/8.png';
-import icon9 from '../image/runo/9.png';
-import icon10 from '../image/runo/10.png'; // Add if needed
+import icon1 from '../image/ciis/1.png';
+import icon2 from '../image/ciis/2.png';
+import icon3 from '../image/ciis/3.png';
+import icon4 from '../image/ciis/4.png';
+import icon5 from '../image/ciis/5.png';
+import icon6 from '../image/ciis/6.png';
+import icon7 from '../image/ciis/7.png';
+import icon8 from '../image/ciis/8.png';
+import icon9 from '../image/ciis/9.png';
+import icon10 from '../image/ciis/10.png'; // Add if needed
 import Security from '../image/security.webp';
 import Logo from '../components/Logo'
 function Telecaller() {
@@ -84,7 +84,7 @@ function Telecaller() {
 
   return (
     <>
-      <RunoHeader />
+      <ciisHeader />
       {/* Hero Section */}
       <div className="call-hero-section">
         {/* Text Section */}
@@ -135,7 +135,7 @@ function Telecaller() {
         title="Give it a spin with your
 team today"
         buttonText="Start 10-day free trial"
-        backgroundImage="/src/image/runo/background-cta.webp"
+        backgroundImage="/src/image/ciis/background-cta.webp"
         onClick={() => alert("Demo scheduled")}
       />
 
@@ -190,7 +190,7 @@ team today"
         title="Take a closer look at how Ciis Network
 works for real teams like yours"
         buttonText="Book A Demo"
-        backgroundImage="/src/image/runo/background-cta.webp"
+        backgroundImage="/src/image/ciis/background-cta.webp"
         onClick={() => alert("Demo scheduled")}
       />
       <Review />

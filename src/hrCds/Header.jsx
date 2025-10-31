@@ -52,7 +52,7 @@ const Header = ({ toggleSidebar }) => {
           width: '100%',
         }}
       >
-        {/* Left: Menu + RUNO */}
+        {/* Left: Menu + ciis */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: isMobile ? 1 : 2 }}>
           <IconButton onClick={toggleSidebar} edge="start" size={isMobile ? 'small' : 'medium'}>
             <MenuIcon fontSize={isMobile ? 'small' : 'medium'} />

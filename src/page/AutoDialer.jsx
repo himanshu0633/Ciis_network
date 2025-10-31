@@ -46,7 +46,7 @@ import {
   CallMade,
   CallReceived
 } from '@mui/icons-material';
-import RunoHeader from '../components/RunoHeader';
+import ciisHeader from '../components/CiisHeader';
 import Footer from '../components/Footer';
 import FeaturesSection from '../components/FeaturesSection';
 import FAQ from '../components/FAQ';
@@ -148,7 +148,7 @@ function AutoDialer() {
 
   return (
     <>
-      <RunoHeader />
+      <ciisHeader />
       
       {/* Hero Section */}
       <Box

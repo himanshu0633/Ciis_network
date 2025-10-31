@@ -3,7 +3,7 @@ import '../componentsCSS/Comparison.css';
 
 const Comparison = () => {
   const features = [ 
-    // {label: '', runo: 'RUNO', rest: 'The Rest' },
+    // {label: '', ciis: 'ciis', rest: 'The Rest' },
     { label: 'Setup Time', CiisNetwork: '<30 minutes', rest: '>30 days' },
     { label: 'Call Connect Rate', CiisNetwork: '>78%', rest: '<30%' },
     { label: 'Customization', CiisNetwork: 'Flexible', rest: 'Rigid' },
@@ -25,10 +25,10 @@ const Comparison = () => {
           ))}
         </div>
 
-        <div className="column runo-column">
-          <div className="runo-header">Ciis Network</div>
+        <div className="column ciis-column">
+          <div className="ciis-header">Ciis Network</div>
           {features.map((item, index) => (
-            <div className="cell runo" key={index}>{item.CiisNetwork}</div>
+            <div className="cell ciis" key={index}>{item.CiisNetwork}</div>
           ))}
         </div>
 

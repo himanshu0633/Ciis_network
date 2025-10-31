@@ -38,7 +38,7 @@ import {
   PrivacyTip
 } from '@mui/icons-material';
 import Footer from '../components/Footer';
-import RunoHeader from '../components/RunoHeader';
+import ciisHeader from '../components/CiisHeader';
 
 function Contact() {
   const theme = useTheme();
@@ -113,7 +113,7 @@ function Contact() {
 
   return (
     <>
-      <RunoHeader />
+      <ciisHeader />
       
       {/* Hero Section */}
       <Box
