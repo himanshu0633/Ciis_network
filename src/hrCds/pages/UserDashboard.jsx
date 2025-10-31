@@ -177,7 +177,7 @@ const UserDashboard = () => {
   const [monthlyPresentCount, setMonthlyPresentCount] = useState(0);
   const [dailyTimeMap, setDailyTimeMap] = useState({});
   const user = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null;
-  console.log("jhdhcdb", user)
+
   const [todayStatus, setTodayStatus] = useState(null);
   const [stats, setStats] = useState({ 
     totalDays: 0, 
