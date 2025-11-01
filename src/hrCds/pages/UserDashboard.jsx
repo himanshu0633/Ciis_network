@@ -1,15 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from '../../utils/axiosConfig';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import {
-  FiClock, FiUser, FiCalendar, FiTrendingUp, FiAward,
-  FiChevronLeft, FiChevronRight, FiPlay, FiSquare,
-  FiMapPin, FiBriefcase, FiBarChart2
+  FiClock, FiCalendar, FiTrendingUp, FiAward,
+  FiChevronLeft, FiChevronRight, FiPlay, FiSquare
 } from 'react-icons/fi';
 import {
-  MdAccessTime, MdToday, MdDateRange, MdLocationOn,
-  MdWork, MdAnalytics, MdRestore
+  MdToday, MdAccessTime
 } from 'react-icons/md';
 import './UserDashboard.css';
 
@@ -57,6 +55,8 @@ const UserDashboard = () => {
   const [markedDates, setMarkedDates] = useState([]);
   const [monthlyPresentCount, setMonthlyPresentCount] = useState(0);
   const [dailyTimeMap, setDailyTimeMap] = useState({});
+  const [leaveDates, setLeaveDates] = useState([]);
+  const [absentDates, setAbsentDates] = useState([]);
   const user = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null;
   const [todayStatus, setTodayStatus] = useState(null);
   const [stats, setStats] = useState({ 
@@ -72,37 +72,33 @@ const UserDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [recentTasks, setRecentTasks] = useState([]);
 
+  // Debug function to check data
+  const debugData = () => {
+    console.log('🔍 DEBUG DATA:');
+    console.log('Marked Dates (Present):', markedDates);
+    console.log('Leave Dates:', leaveDates);
+    console.log('Absent Dates:', absentDates);
+    console.log('Monthly Present Count:', monthlyPresentCount);
+  };
+
   useEffect(() => {
     axios.get('http://localhost:3000/api/task/my')
       .then(res => {
         setRecentTasks(res.data || []);
-        setLoading(false);
       })
       .catch(err => console.error('Error fetching tasks:', err));
   }, []);
 
-  // Stable functions that don't change
   const fetchStats = async () => {
     const token = localStorage.getItem('token');
     try {
       const res = await axios.get('/attendance/stats', { 
         headers: { Authorization: `Bearer ${token}` } 
       });
+      console.log('📊 Stats:', res.data);
       setStats(prev => ({ ...prev, ...res.data }));
     } catch (error) {
-      console.error('Error fetching stats:', error);
-    }
-  };
-
-  const fetchUser = async () => {
-    const token = localStorage.getItem('token');
-    try {
-      const res = await axios.get('/user/profile', { 
-        headers: { Authorization: `Bearer ${token}` } 
-      });
-      // setuser(res.data); // This line seems to have a typo - should be setUser
-    } catch (error) {
-      console.error('Error fetching user:', error);
+      console.error('❌ Error fetching stats:', error);
     }
   };
 
@@ -112,9 +108,64 @@ const UserDashboard = () => {
       const res = await axios.get('/attendance/history', {
         headers: { Authorization: `Bearer ${token}` }
       });
+      console.log('📅 Attendance History:', res.data);
       setAttendanceHistory(res.data || []);
     } catch (error) {
-      console.error('Error fetching history:', error);
+      console.error('❌ Error fetching history:', error);
+    }
+  };
+
+  // Fetch leaves data - UPDATED VERSION
+  const fetchLeaves = async () => {
+    const token = localStorage.getItem('token');
+    try {
+      console.log('🔄 Fetching leaves...');
+      const res = await axios.get('http://localhost:3000/api/leaves/status', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      console.log('✅ Leaves API Response:', res.data);
+      
+      if (res.data.leaves && Array.isArray(res.data.leaves)) {
+        const approvedLeaves = res.data.leaves.filter(leave => 
+          leave.status === 'Approved' || leave.status === 'APPROVED'
+        );
+        
+        console.log('✅ Approved Leaves:', approvedLeaves);
+        
+        const leaveDatesArray = [];
+        
+        approvedLeaves.forEach(leave => {
+          try {
+            const startDate = new Date(leave.startDate);
+            const endDate = new Date(leave.endDate);
+            
+            console.log(`📅 Processing approved leave from ${startDate.toDateString()} to ${endDate.toDateString()}`);
+            
+            // Add all dates in the leave range
+            const currentDate = new Date(startDate);
+            while (currentDate <= endDate) {
+              const dateKey = `${currentDate.getFullYear()}-${currentDate.getMonth()}-${currentDate.getDate()}`;
+              leaveDatesArray.push(dateKey);
+              console.log(`   Added leave date: ${dateKey}`);
+              currentDate.setDate(currentDate.getDate() + 1);
+            }
+          } catch (err) {
+            console.error('❌ Error processing leave date:', err);
+          }
+        });
+        
+        console.log('✅ Final Leave Dates Array:', leaveDatesArray);
+        setLeaveDates(leaveDatesArray);
+      } else {
+        console.log('ℹ️ No leaves data found');
+        setLeaveDates([]);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching leaves:', error);
+      console.log('Error details:', error.response?.data || error.message);
+      toast.error('Failed to load leave data');
+      setLeaveDates([]);
     }
   };
 
@@ -122,6 +173,8 @@ const UserDashboard = () => {
     setLoading(true);
     const token = localStorage.getItem('token');
     try {
+      console.log('🔄 Fetching attendance data...');
+      
       const [statusRes, listRes] = await Promise.all([
         axios.get('/attendance/status', { 
           headers: { Authorization: `Bearer ${token}` } 
@@ -131,8 +184,12 @@ const UserDashboard = () => {
         })
       ]);
 
+      console.log('✅ Status Response:', statusRes.data);
+      console.log('✅ List Response:', listRes.data);
+
       setTodayStatus(statusRes.data);
       
+      // Timer setup
       if (statusRes.data.isClockedIn) {
         const inTime = new Date(statusRes.data.inTime);
         setTimer(Math.floor((Date.now() - inTime.getTime()) / 1000));
@@ -143,43 +200,70 @@ const UserDashboard = () => {
         setTimer(secs);
       }
 
+      // Process attendance data
       const dates = []; 
       const timeMap = {}; 
+      const absentDatesArray = [];
       let countPresent = 0;
       const thisMonth = new Date().getMonth();
+      const today = new Date();
       
-      listRes.data.data.forEach(e => {
-        const d = new Date(e.date);
-        const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-        dates.push(key);
-        if (e.totalTime) timeMap[key] = e.totalTime;
-        if (d.getMonth() === thisMonth && e.status === 'PRESENT') countPresent++;
-      });
+      if (listRes.data && listRes.data.data && Array.isArray(listRes.data.data)) {
+        listRes.data.data.forEach(e => {
+          try {
+            const d = new Date(e.date);
+            const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+            
+            if (e.status === 'PRESENT') {
+              dates.push(key);
+              if (e.totalTime) timeMap[key] = e.totalTime;
+              if (d.getMonth() === thisMonth) countPresent++;
+            } else if (e.status === 'ABSENT') {
+              absentDatesArray.push(key);
+            }
+          } catch (err) {
+            console.error('❌ Error processing attendance record:', err);
+          }
+        });
+      }
+      
+      console.log('✅ Processed Present Dates:', dates);
+      console.log('✅ Processed Absent Dates:', absentDatesArray);
+      console.log('✅ Monthly Present Count:', countPresent);
       
       setMarkedDates([...new Set(dates)]);
       setDailyTimeMap(timeMap);
+      setAbsentDates(absentDatesArray);
       setMonthlyPresentCount(countPresent);
+      
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error('❌ Error fetching data:', error);
+      console.log('Error details:', error.response?.data || error.message);
       toast.error('Failed to load attendance data');
     } finally {
       setLoading(false);
     }
   };
 
-  // Initialize data - only run once on mount
   useEffect(() => {
     const initializeData = async () => {
-      await fetchUser();
-      await fetchStats();
-      await fetchData();
-      await fetchAttendanceHistory();
+      console.log('🚀 Initializing dashboard data...');
+      try {
+        await fetchData();
+        await fetchStats();
+        await fetchAttendanceHistory();
+        await fetchLeaves();
+        
+        // Debug after all data is loaded
+        setTimeout(debugData, 1000);
+      } catch (error) {
+        console.error('❌ Error initializing data:', error);
+      }
     };
     
     initializeData();
-  }, []); // Empty dependency array - runs only once
+  }, []);
 
-  // Timer effect - separate from data fetching
   useEffect(() => {
     if (isRunning) {
       const id = setInterval(() => setTimer(t => t + 1), 1000);
@@ -189,7 +273,7 @@ const UserDashboard = () => {
       clearInterval(intervalId);
       setIntervalId(null);
     }
-  }, [isRunning]); // Only depend on isRunning
+  }, [isRunning]);
 
   const handleIn = async () => {
     const today = new Date();
@@ -210,7 +294,6 @@ const UserDashboard = () => {
       setMarkedDates(prev => [...prev, key]);
       toast.success("🟢 Clocked IN successfully!");
       
-      // Refresh data after successful clock-in
       await fetchData();
       await fetchStats();
     } catch (error) {
@@ -231,7 +314,6 @@ const UserDashboard = () => {
       setTimer(secs);
       toast.success(`✅ Attendance Recorded: ${res.data.data.totalTime}`);
       
-      // Refresh data after successful clock-out
       await fetchData();
       await fetchStats();
       await fetchAttendanceHistory();
@@ -261,23 +343,49 @@ const UserDashboard = () => {
     });
   };
 
-  const handleResetTimer = () => {
-    setTimer(0);
-    setIsRunning(false);
-    if (intervalId) {
-      clearInterval(intervalId);
-      setIntervalId(null);
-    }
-  };
-
   const calendarDays = getCalendarGrid(calendarYear, calendarMonth);
   const today = new Date();
 
-  const isMarked = day => markedDates.includes(`${calendarYear}-${calendarMonth}-${day}`);
+  // Check different statuses for a day - IMPROVED VERSION
+  const getDayStatus = (day) => {
+    if (!day) return null;
+    
+    try {
+      const dateKey = `${calendarYear}-${calendarMonth}-${day}`;
+      const dateObj = new Date(calendarYear, calendarMonth, day);
+      const dayOfWeek = dateObj.getDay(); // 0 = Sunday, 6 = Saturday
+      
+      // Check if it's weekend
+      if (dayOfWeek === 0 || dayOfWeek === 6) {
+        return 'weekend';
+      }
+      
+      // Check if present (attendance marked)
+      if (markedDates.includes(dateKey)) {
+        return 'present';
+      }
+      
+      // Check if on approved leave
+      if (leaveDates.includes(dateKey)) {
+        return 'leave';
+      }
+      
+      // Check if absent (only for past dates that are not weekends and not on leave)
+      if (dateObj < today && !leaveDates.includes(dateKey) && dayOfWeek !== 0 && dayOfWeek !== 6) {
+        if (absentDates.includes(dateKey)) {
+          return 'absent';
+        }
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('❌ Error in getDayStatus:', error);
+      return null;
+    }
+  };
+
   const isToday = day => day === today.getDate() && 
     calendarMonth === today.getMonth() && 
-    calendarYear === today.getFullYear();
-  const isCurrentMonth = calendarMonth === today.getMonth() && 
     calendarYear === today.getFullYear();
 
   const totalDaysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
@@ -297,12 +405,29 @@ const UserDashboard = () => {
         pauseOnHover
       />
 
+      {/* Debug Button - Remove in production */}
+      <button 
+        onClick={debugData}
+        style={{
+          position: 'fixed',
+          top: '10px',
+          right: '10px',
+          zIndex: 1000,
+          background: '#ff4444',
+          color: 'white',
+          border: 'none',
+          padding: '5px 10px',
+          borderRadius: '5px',
+          fontSize: '12px'
+        }}
+      >
+        Debug Data
+      </button>
+
       {/* Header Section */}
       <div className="dashboard-header">
         <div className="header-content">
-          {/* User Info */}
           <div className="user-info">
-            
             <div className="user-details">
               <h3>{user?.name || 'Loading...'}</h3>
               <p>{user?.role || 'Employee'} {user?.employeeType || ''}</p>
@@ -317,7 +442,6 @@ const UserDashboard = () => {
             </div>
           </div>
 
-          {/* Clock Buttons */}
           <div className="clock-buttons">
             <button
               onClick={handleIn}
@@ -339,11 +463,8 @@ const UserDashboard = () => {
         </div>
       </div>
 
-      {/* Main Content Grid */}
       <div className="dashboard-content">
-        {/* Left Column - Timer and Quick Stats */}
         <div className="left-column">
-          {/* Timer Card */}
           <div className="timer-card">
             <div className="card-header">
               <h3><FiClock /> Live Timer</h3>
@@ -361,28 +482,8 @@ const UserDashboard = () => {
                 </p>
               )}
             </div>
-
-            {/* <div className="timer-actions">
-              <button 
-                className="btn-outline"
-                onClick={handleResetTimer}
-                disabled={isRunning}
-              >
-                <MdRestore /> Reset
-              </button>
-              <button 
-                className="btn-outline"
-                onClick={() => setShowHistory(true)}
-              >
-                <MdAnalytics /> History
-              </button>
-            </div> */}
           </div>
 
-          {/* Stats Grid */}
-          
-
-          {/* Calendar Section */}
           <div className="calendar-card">
             <div className="calendar-header">
               <h3><FiCalendar /> {monthNames[calendarMonth]} {calendarYear}</h3>
@@ -405,9 +506,7 @@ const UserDashboard = () => {
               </div>
             </div>
 
-            {/* Calendar Grid */}
             <div className="calendar-grid">
-              {/* Day Headers */}
               <div className="calendar-week-header">
                 {daysOfWeek.map(day => (
                   <div key={day} className="calendar-day-header">
@@ -416,62 +515,67 @@ const UserDashboard = () => {
                 ))}
               </div>
 
-              {/* Calendar Days */}
               {calendarDays.map((week, wi) => (
                 <div key={wi} className="calendar-week">
-                  {week.map((day, di) => (
-                    <div key={di} className="calendar-day-container">
-                      {day ? (
-                        <div 
-                          className={`calendar-day ${
-                            isMarked(day) ? 'marked' : ''} ${
-                            isToday(day) ? 'today' : ''} ${
-                            isCurrentMonth ? 'current-month' : ''}`
-                          }
-                        >
-                          {day}
-                          {/* {dailyTimeMap[`${calendarYear}-${calendarMonth}-${day}`] && (
-                            <div className="time-badge">
-                              {dailyTimeMap[`${calendarYear}-${calendarMonth}-${day}`].split(':').slice(0, 2).join(':')}
-                            </div>
-                          )} */}
-                        </div>
-                      ) : (
-                        <div className="calendar-empty"></div>
-                      )}
-                    </div>
-                  ))}
+                  {week.map((day, di) => {
+                    const dayStatus = getDayStatus(day);
+                    return (
+                      <div key={di} className="calendar-day-container">
+                        {day ? (
+                          <div 
+                            className={`calendar-day ${dayStatus || ''} ${isToday(day) ? 'today' : ''}`}
+                            title={dayStatus ? 
+                              dayStatus.charAt(0).toUpperCase() + dayStatus.slice(1) : 
+                              'No Record'
+                            }
+                          >
+                            {day}
+                            {dayStatus === 'leave' && (
+                              <div className="leave-indicator" title="On Leave"></div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="calendar-empty"></div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               ))}
             </div>
 
-            {/* Calendar Legend */}
             <div className="calendar-legend">
-              {/* <div className="legend-item">
-                <div className="legend-color today"></div>
-                <span>Today</span>
-              </div> */}
               <div className="legend-item">
                 <div className="legend-color present"></div>
                 <span>Present</span>
               </div>
-              {/* <div className="legend-item">
-                <div className="legend-color future"></div>
-                <span>Future</span>
-              </div> */}
+              <div className="legend-item">
+                <div className="legend-color leave"></div>
+                <span>Leave</span>
+              </div>
+              <div className="legend-item">
+                <div className="legend-color absent"></div>
+                <span>Absent</span>
+              </div>
+              <div className="legend-item">
+                <div className="legend-color weekend"></div>
+                <span>Weekend</span>
+              </div>
+              <div className="legend-item">
+                <div className="legend-color today"></div>
+                <span>Today</span>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Right Column - Additional Info */}
         <div className="right-column">
-          {/* Monthly Progress */}
           <div className="stats-grid">
             <div className="stat-card">
               <div className="stat-content">
                 <MdToday size={24} className="stat-icon" />
                 <div className="stat-value">{monthlyPresentCount}</div>
-                <div className="stat-label">This Month</div>
+                <div className="stat-label">Present</div>
               </div>
             </div>
             
@@ -479,26 +583,27 @@ const UserDashboard = () => {
               <div className="stat-content">
                 <FiTrendingUp size={24} className="stat-icon" />
                 <div className="stat-value">{attendanceRate}%</div>
-                <div className="stat-label">Attendance Rate</div>
+                <div className="stat-label">Attendance</div>
               </div>
             </div>
             
-            {/* <div className="stat-card">
+            <div className="stat-card">
               <div className="stat-content">
                 <FiAward size={24} className="stat-icon" />
-                <div className="stat-value">{stats.currentStreak}</div>
-                <div className="stat-label">Current Streak</div>
+                <div className="stat-value">{leaveDates.length}</div>
+                <div className="stat-label">Leaves</div>
               </div>
-            </div> */}
+            </div>
             
-            {/* <div className="stat-card">
+            <div className="stat-card">
               <div className="stat-content">
                 <MdAccessTime size={24} className="stat-icon" />
-                <div className="stat-value">{stats.averageTime.split(':').slice(0, 2).join(':')}</div>
-                <div className="stat-label">Avg. Time</div>
+                <div className="stat-value">{absentDates.length}</div>
+                <div className="stat-label">Absent</div>
               </div>
-            </div> */}
+            </div>
           </div>
+          
           <div className="progress-card">
             <h3>Monthly Progress</h3>
             <div className="progress-items">
@@ -517,31 +622,16 @@ const UserDashboard = () => {
                   ></div>
                 </div>
               </div>
-              
-              <div className="progress-item">
-                <div className="progress-header">
-                  <span>Target Completion</span>
-                  <span>{Math.round((today.getDate() / totalDaysInMonth) * 100)}%</span>
-                </div>
-                <div className="progress-bar-container">
-                  <div 
-                    className="progress-bar primary"
-                    style={{width: `${(today.getDate() / totalDaysInMonth) * 100}%`}}
-                  ></div>
-                </div>
-              </div>
             </div>
           </div>
     
-          {/* Recent Activity */}
           <div className="activity-card">
             <h3>Recent Activity</h3>
-
             <div className="activity-list">
               {loading ? (
                 <p className="loading-text">Loading...</p>
               ) : recentTasks.length > 0 ? (
-                recentTasks.map((task, index) => (
+                recentTasks.slice(0, 3).map((task, index) => (
                   <div key={index} className="activity-item">
                     <div className="activity-header">
                       <span>{new Date(task.createdAt).toLocaleDateString()}</span>
@@ -552,9 +642,7 @@ const UserDashboard = () => {
                         {task.status || 'Pending'}
                       </span>
                     </div>
-
                     <p className="activity-title">{task.title || 'Untitled task'}</p>
-
                     <div className="activity-divider"></div>
                   </div>
                 ))
@@ -565,62 +653,6 @@ const UserDashboard = () => {
           </div>
         </div>
       </div>
-
-      {/* Attendance History Dialog */}
-      {showHistory && (
-        <div className="dialog-overlay">
-          <div className="dialog">
-            <div className="dialog-header">
-              <h3>Attendance History</h3>
-              <button 
-                className="close-btn"
-                onClick={() => setShowHistory(false)}
-              >
-                ×
-              </button>
-            </div>
-            <div className="dialog-content">
-              <div className="history-list">
-                {attendanceHistory.map((record, index) => (
-                  <div key={index} className="history-item">
-                    <div className="history-icon">
-                      {record.status === 'PRESENT' ? (
-                        <MdToday className="present" />
-                      ) : (
-                        <MdAccessTime className="absent" />
-                      )}
-                    </div>
-                    <div className="history-details">
-                      <div className="history-date">
-                        {new Date(record.date).toLocaleDateString('en-US', {
-                          weekday: 'long',
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })}
-                      </div>
-                      <div className="history-info">
-                        <span>Status: {record.status}</span>
-                        {record.totalTime && (
-                          <span>Time: {record.totalTime}</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="dialog-actions">
-              <button 
-                className="btn-primary"
-                onClick={() => setShowHistory(false)}
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

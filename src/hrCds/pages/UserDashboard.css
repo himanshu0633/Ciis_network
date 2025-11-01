@@ -725,3 +725,16 @@ body {
     height: 40px;
   }
 }
+.leave-indicator {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 6px;
+  height: 6px;
+  background-color: #ffa500;
+  border-radius: 50%;
+}
+
+.calendar-day {
+  position: relative;
+}
