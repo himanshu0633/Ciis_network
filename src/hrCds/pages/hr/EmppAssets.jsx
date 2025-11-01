@@ -299,7 +299,7 @@ const EmppAssets = () => {
               </Box>
 
               <Stack direction="row" spacing={2}>
-                <Tooltip title="Refresh">
+                {/* <Tooltip title="Refresh">
                   <IconButton 
                     onClick={fetchRequests}
                     sx={{
@@ -309,7 +309,7 @@ const EmppAssets = () => {
                   >
                     <FiRefreshCw />
                   </IconButton>
-                </Tooltip>
+                </Tooltip> */}
               </Stack>
             </Stack>
 
