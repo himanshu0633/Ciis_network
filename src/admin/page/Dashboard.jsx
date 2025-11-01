@@ -138,11 +138,11 @@ const Dashboard = () => {
           CIIS Dashboard
         </Typography>
         <Box>
-          <Tooltip title="Refresh data">
+          {/* <Tooltip title="Refresh data">
             <IconButton color="primary">
               <Refresh />
             </IconButton>
-          </Tooltip>
+          </Tooltip> */}
           <IconButton color="primary">
             <MoreVert />
           </IconButton>

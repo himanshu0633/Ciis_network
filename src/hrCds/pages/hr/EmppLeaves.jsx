@@ -313,7 +313,7 @@ const EmppLeaves = () => {
                 </Box>
 
                 <Stack direction="row" spacing={2}>
-                  <Tooltip title="Refresh">
+                  {/* <Tooltip title="Refresh">
                     <IconButton 
                       onClick={fetchLeaves}
                       sx={{
@@ -323,7 +323,7 @@ const EmppLeaves = () => {
                     >
                       <FiRefreshCw />
                     </IconButton>
-                  </Tooltip>
+                  </Tooltip> */}
                   <Badge 
                     badgeContent={
                       (filterDate || statusFilter !== 'All' || searchTerm) ? 1 : 0

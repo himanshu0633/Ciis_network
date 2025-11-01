@@ -6,7 +6,7 @@ const Beyond = () => {
   return (
     <Box
       sx={{
-        backgroundImage: 'url(/src/image/runo/cloud-back.webp)', // Adjust path if needed
+        backgroundImage: 'url(/src/image/ciis/cloud-back.webp)', // Adjust path if needed
         backgroundRepeat: 'no-repeat',
         backgroundPosition: 'center',
         backgroundSize: 'cover', // Changed to cover for better responsiveness

@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import Runo from './page/Runo';
+import Ciis from './page/Ciis';
 import Pricing from './page/Pricing';
 import Contact from './page/Contact';
 import Login from './page/Login';
@@ -88,7 +88,7 @@ function App() {
     <>
       <Routes>
         {/* Public Routes */}
-        <Route index element={<Runo />} />
+        <Route index element={<Ciis />} />
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/login" element={<Login />} />

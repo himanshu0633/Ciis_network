@@ -896,7 +896,7 @@ const MyTaskManagement = () => {
     <Box sx={{ mt: 3 }}>
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
         <Typography variant="h5" fontWeight={700}>
-          Group Management
+          {/* Group Management */}
         </Typography>
         <Button
           variant="contained"
@@ -954,7 +954,7 @@ const MyTaskManagement = () => {
                   </Stack>
 
                   <Divider />
-
+ 
                   <Box>
                     <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
                       Members ({group.members.length})
@@ -1019,77 +1019,74 @@ const MyTaskManagement = () => {
       <Fade in={!loading} timeout={500}>
         <Box sx={{ p: { xs: 2, md: 3 } }}>
           {/* Header Section */}
-          <Paper sx={{
-            p: 3,
-            mb: 3,
-            borderRadius: theme.shape.borderRadius * 2,
-            background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
-            boxShadow: theme.shadows[4]
-          }}>
-            <Stack
-              direction={{ xs: 'column', sm: 'row' }}
-              spacing={3}
-              justifyContent="space-between"
-              alignItems={{ xs: 'flex-start', sm: 'center' }}
-            >
-              <Box>
-                <Typography variant="h4" fontWeight={800} gutterBottom>
-                  Task Management
-                </Typography>
-                <Typography variant="body1" color="text.secondary">
-                  Manage and track your tasks efficiently
-                </Typography>
-                {/* {userId && (
-                  <Typography variant="caption" color="primary.main" sx={{ mt: 1, display: 'block' }}>
-                    Logged in as: {userRole} (ID: {userId})
-                  </Typography>
-                )} */}
-              </Box>
+        <Paper
+  sx={{
+    p: 3,
+    mb: 3,
+    borderRadius: theme.shape.borderRadius * 2,
+    background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
+    boxShadow: theme.shadows[4],
+    position: "sticky",
+    top: 0,
+    zIndex: 20,
+  }}
+>
+  <Stack
+    direction={{ xs: "column", sm: "row" }}
+    spacing={3}
+    justifyContent="space-between"
+    alignItems={{ xs: "flex-start", sm: "center" }}
+  >
+    {/* ---------- Left Section: Title & Info ---------- */}
+    <Box>
+      <Typography variant="h4" fontWeight={800} gutterBottom>
+        {tab === 2 ? "Group Management" : "Task Management"}
+      </Typography>
+      <Typography variant="body1" color="text.secondary">
+        {tab === 2
+          ? "Create and manage user groups easily"
+          : "Manage and track your tasks efficiently"}
+      </Typography>
+    </Box>
 
-              <Stack direction="row" spacing={2}>
-                <Tooltip title="Refresh">
-                  <IconButton
-                    onClick={tab === 0 ? fetchMyTasks : fetchAssignedTasks}
-                    sx={{
-                      border: `1px solid ${theme.palette.divider}`,
-                      '&:hover': { bgcolor: theme.palette.action.hover }
-                    }}
-                  >
-                    <FiRefreshCw />
-                  </IconButton>
-                </Tooltip>
-                {tab === 1 && (
-                  <>
-                    <Button
-                      variant="outlined"
-                      startIcon={<FiUsers />}
-                      onClick={() => setTab(2)}
-                      sx={{
-                        borderRadius: theme.shape.borderRadius * 2,
-                        textTransform: 'none',
-                        fontWeight: 600,
-                      }}
-                    >
-                      Manage Groups
-                    </Button>
-                    <Button
-                      variant="contained"
-                      startIcon={<FiPlus />}
-                      onClick={() => setOpenDialog(true)}
-                      sx={{
-                        borderRadius: theme.shape.borderRadius * 2,
-                        textTransform: 'none',
-                        fontWeight: 600,
-                        px: 3
-                      }}
-                    >
-                      Create Task
-                    </Button>
-                  </>
-                )}
-              </Stack>
-            </Stack>
-          </Paper>
+    {/* ---------- Right Section: Buttons ---------- */}
+    <Stack direction="row" spacing={2}>
+      {/* Show Manage Groups only when NOT already on tab 2 */}
+      {tab !== 2 &&
+        (userRole === "hr" ||
+          userRole === "manager" ||
+          userRole === "admin") && (
+          <Button
+            variant="outlined"
+            startIcon={<FiUsers />}
+            onClick={() => setTab(2)}
+            sx={{
+              borderRadius: theme.shape.borderRadius * 2,
+              textTransform: "none",
+              fontWeight: 600,
+            }}
+          >
+            Manage Groups
+          </Button>
+        )}
+
+      {/* ✅ Create Task is always visible on all tabs */}
+      <Button
+        variant="contained"
+        startIcon={<FiPlus />}
+        onClick={() => setOpenDialog(true)}
+        sx={{
+          borderRadius: theme.shape.borderRadius * 2,
+          textTransform: "none",
+          fontWeight: 600,
+          px: 3,
+        }}
+      >
+        Create Task
+      </Button>
+    </Stack>
+  </Stack>
+</Paper>
 
           {tab === 2 ? (
             renderGroupsManagement()
@@ -1273,193 +1270,192 @@ const MyTaskManagement = () => {
           )}
 
           {/* Create Task Dialog */}
-          <Dialog
-            open={openDialog}
-            onClose={() => setOpenDialog(false)}
-            maxWidth="md"
+       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="md" fullWidth>
+  <DialogTitle>
+    <Typography variant="h5" fontWeight={700}>
+      Create New Task
+    </Typography>
+  </DialogTitle>
+
+  <DialogContent>
+    <Stack spacing={3} sx={{ mt: 1 }}>
+      {/* Basic Fields */}
+      <TextField
+        fullWidth
+        label="Task Title"
+        value={newTask.title}
+        onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+      />
+
+      <TextField
+        fullWidth
+        label="Description"
+        multiline
+        rows={3}
+        value={newTask.description}
+        onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+      />
+
+      <Grid container spacing={2}>
+        <Grid item xs={12} sm={6}>
+          <DatePicker
+            label="Due Date"
+            value={newTask.dueDate}
+            onChange={(date) => setNewTask({ ...newTask, dueDate: date })}
+            renderInput={(params) => <TextField {...params} fullWidth />}
+          />
+        </Grid>
+
+        <Grid item xs={12} sm={6}>
+          <FormControl fullWidth>
+            <InputLabel>Priority</InputLabel>
+            <Select
+              value={newTask.priority}
+              onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
+              label="Priority"
+            >
+              <MenuItem value="low">Low</MenuItem>
+              <MenuItem value="medium">Medium</MenuItem>
+              <MenuItem value="high">High</MenuItem>
+            </Select>
+          </FormControl>
+        </Grid>
+      </Grid>
+
+      <Grid container spacing={2}>
+        <Grid item xs={12} sm={6}>
+          <TextField
             fullWidth
-          >
-            <DialogTitle>
-              <Typography variant="h5" fontWeight={700}>
-                Create New Task
-              </Typography>
-            </DialogTitle>
-            <DialogContent>
-              <Stack spacing={3} sx={{ mt: 1 }}>
-                <TextField
-                  fullWidth
-                  label="Task Title"
-                  value={newTask.title}
-                  onChange={e => setNewTask({ ...newTask, title: e.target.value })}
-                  sx={{ borderRadius: theme.shape.borderRadius * 2 }}
-                />
-                <TextField
-                  fullWidth
-                  label="Description"
-                  multiline
-                  rows={3}
-                  value={newTask.description}
-                  onChange={e => setNewTask({ ...newTask, description: e.target.value })}
-                />
+            label="Priority Days"
+            value={newTask.priorityDays}
+            onChange={(e) => setNewTask({ ...newTask, priorityDays: e.target.value })}
+          />
+        </Grid>
+      </Grid>
 
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
-                    <DatePicker
-                      label="Due Date"
-                      value={newTask.dueDate}
-                      onChange={(date) => setNewTask({ ...newTask, dueDate: date })}
-                      renderInput={(params) => <TextField {...params} fullWidth />}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <FormControl fullWidth>
-                      <InputLabel>Priority</InputLabel>
-                      <Select
-                        value={newTask.priority}
-                        onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
-                        label="Priority"
-                      >
-                        <MenuItem value="low">Low</MenuItem>
-                        <MenuItem value="medium">Medium</MenuItem>
-                        <MenuItem value="high">High</MenuItem>
-                      </Select>
+      {/* File Uploads */}
+      <Box>
+        <Typography variant="body2" fontWeight={600} gutterBottom>
+          Attachments
+        </Typography>
+        <Stack direction="row" spacing={2}>
+          <Button variant="outlined" component="label" startIcon={<FiFileText />}>
+            Upload Files
+            <input
+              type="file"
+              multiple
+              hidden
+              onChange={(e) => setNewTask({ ...newTask, files: e.target.files })}
+            />
+          </Button>
 
-                    </FormControl>
-                  </Grid>
-                </Grid>
+          <Button variant="outlined" component="label" startIcon={<FiMic />}>
+            Voice Note
+            <input
+              type="file"
+              accept="audio/*"
+              hidden
+              onChange={(e) => setNewTask({ ...newTask, voiceNote: e.target.files[0] })}
+            />
+          </Button>
+        </Stack>
+      </Box>
 
-                <Grid container spacing={2}>
-                  {/* <Grid item xs={12} sm={6}>
-                    <TextField 
-                      fullWidth 
-                      label="WhatsApp Number" 
-                      value={newTask.whatsappNumber} 
-                      onChange={e => setNewTask({ ...newTask, whatsappNumber: e.target.value })}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <FiMessageCircle color={theme.palette.text.secondary} />
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                  </Grid> */}
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="Priority Days"
-                      value={newTask.priorityDays}
-                      onChange={e => setNewTask({ ...newTask, priorityDays: e.target.value })}
-                    />
-                  </Grid>
-                </Grid>
+      {/* Role-based Assign Sections */}
+      {userRole === "user" ? (
+        // Automatic self-assignment for normal users
+        <Box sx={{ p: 2, bgcolor: `${theme.palette.primary.main}10`, borderRadius: 2 }}>
+          <Typography variant="body2">
+            <strong>Assigned To:</strong> You (Self)
+          </Typography>
+        </Box>
+      ) : (
+        <>
+          {/* Assign To Users */}
+          <FormControl fullWidth>
+            <InputLabel>Assign To Users</InputLabel>
+            <Select
+              multiple
+              value={newTask.assignedUsers}
+              onChange={(e) => setNewTask({ ...newTask, assignedUsers: e.target.value })}
+              input={<OutlinedInput label="Assign To Users" />}
+              renderValue={(selected) =>
+                users
+                  .filter((u) => selected.includes(u._id))
+                  .map((u) => u.name)
+                  .join(", ")
+              }
+            >
+              {users.map((user) => (
+                <MenuItem key={user._id} value={user._id}>
+                  <Checkbox checked={newTask.assignedUsers.includes(user._id)} />
+                  <ListItemText primary={`${user.name} (${user.role})`} />
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
 
-                <Box>
-                  <Typography variant="body2" fontWeight={600} gutterBottom>
-                    Attachments
-                  </Typography>
-                  <Stack direction="row" spacing={2}>
-                    <Button
-                      variant="outlined"
-                      component="label"
-                      startIcon={<FiFileText />}
-                    >
-                      Upload Files
-                      <input
-                        type="file"
-                        multiple
-                        hidden
-                        onChange={(e) => setNewTask({ ...newTask, files: e.target.files })}
-                      />
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      component="label"
-                      startIcon={<FiMic />}
-                    >
-                      Voice Note
-                      <input
-                        type="file"
-                        accept="audio/*"
-                        hidden
-                        onChange={(e) => setNewTask({ ...newTask, voiceNote: e.target.files[0] })}
-                      />
-                    </Button>
-                  </Stack>
-                </Box>
-
-                {userRole !== 'employee' && userRole !== 'staff' ? (
-                  <>
-                    <FormControl fullWidth>
-                      <InputLabel>Assign To Users</InputLabel>
-                      <Select
-                        multiple
-                        value={newTask.assignedUsers}
-                        onChange={(e) => setNewTask({ ...newTask, assignedUsers: e.target.value })}
-                        input={<OutlinedInput label="Assign To Users" />}
-                        renderValue={(selected) =>
-                          users.filter(u => selected.includes(u._id)).map(u => u.name).join(', ')
-                        }
-                      >
-                        {users.map(user => (
-                          <MenuItem key={user._id} value={user._id}>
-                            <Checkbox checked={newTask.assignedUsers.includes(user._id)} />
-                            <ListItemText primary={`${user.name} (${user.role})`} />
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-
-                    <FormControl fullWidth>
-                      <InputLabel>Assign To Groups</InputLabel>
-                      <Select
-                        multiple
-                        value={newTask.assignedGroups}
-                        onChange={(e) => setNewTask({ ...newTask, assignedGroups: e.target.value })}
-                        input={<OutlinedInput label="Assign To Groups" />}
-                        renderValue={(selected) =>
-                          groups.filter(g => selected.includes(g._id)).map(g => g.name).join(', ')
-                        }
-                      >
-                        {groups.map(group => (
-                          <MenuItem key={group._id} value={group._id}>
-                            <Checkbox checked={newTask.assignedGroups.includes(group._id)} />
-                            <ListItemText
-                              primary={`${group.name} (${group.members.length} members)`}
-                            />
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </>
-                ) :
-                  (
-                    <Box sx={{ p: 2, bgcolor: `${theme.palette.primary.main}10`, borderRadius: 2 }}>
-                      <Typography variant="body2">
-                        <strong>Assigned To:</strong> You (Self)
-                      </Typography>
-                    </Box>
-                  )
+          {/* Assign To Groups - only for hr, manager, admin */}
+          {(userRole === "hr" || userRole === "manager" || userRole === "admin") && (
+            <FormControl fullWidth>
+              <InputLabel>Assign To Groups</InputLabel>
+              <Select
+                multiple
+                value={newTask.assignedGroups}
+                onChange={(e) => setNewTask({ ...newTask, assignedGroups: e.target.value })}
+                input={<OutlinedInput label="Assign To Groups" />}
+                renderValue={(selected) =>
+                  groups
+                    .filter((g) => selected.includes(g._id))
+                    .map((g) => g.name)
+                    .join(", ")
                 }
-              </Stack>
-            </DialogContent>
-            <DialogActions sx={{ p: 3 }}>
-              <Button
-                onClick={() => setOpenDialog(false)}
-                sx={{ borderRadius: theme.shape.borderRadius * 2 }}
               >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleCreateTask}
-                variant="contained"
-                disabled={!newTask.title || !newTask.description || !newTask.dueDate}
-                sx={{ borderRadius: theme.shape.borderRadius * 2 }}
-              >
-                Create Task
-              </Button>
-            </DialogActions>
-          </Dialog>
+                {groups.map((group) => (
+                  <MenuItem key={group._id} value={group._id}>
+                    <Checkbox checked={newTask.assignedGroups.includes(group._id)} />
+                    <ListItemText
+                      primary={`${group.name} (${group.members.length} members)`}
+                    />
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
+        </>
+      )}
+    </Stack>
+  </DialogContent>
+
+  <DialogActions sx={{ p: 3 }}>
+    <Button
+      onClick={() => setOpenDialog(false)}
+      sx={{ borderRadius: theme.shape.borderRadius * 2 }}
+    >
+      Cancel
+    </Button>
+
+    <Button
+      onClick={() => {
+        if (userRole === "user") {
+          // Auto-assign to self
+          handleCreateTask({
+            ...newTask,
+            assignedUsers: [userId],
+            assignedGroups: [],
+          });
+        } else {
+          handleCreateTask(newTask);
+        }
+      }}
+      variant="contained"
+      disabled={!newTask.title || !newTask.description || !newTask.dueDate}
+      sx={{ borderRadius: theme.shape.borderRadius * 2 }}
+    >
+      Create Task
+    </Button>
+  </DialogActions>
+</Dialog>
 
           {/* Group Management Dialog */}
           <Dialog
@@ -1635,16 +1631,17 @@ const MyTaskManagement = () => {
                               </Typography>
                             }
                           />
-                          <Avatar
-                            sx={{
-                              width: 32,
-                              height: 32,
-                              fontSize: '0.875rem',
-                              bgcolor: theme.palette.primary.main
-                            }}
-                          >
-                            {user.name.charAt(0).toUpperCase()}
-                          </Avatar>
+                         <Avatar
+  sx={{
+    width: 32,
+    height: 32,
+    fontSize: "0.875rem",
+    bgcolor: theme.palette.primary.main,
+  }}
+>
+  {(user?.name?.charAt(0)?.toUpperCase() || "U")}
+</Avatar>
+
                         </MenuItem>
                       ))}
                     </Select>

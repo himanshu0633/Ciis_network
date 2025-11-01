@@ -539,7 +539,7 @@ const EmmpTask = () => {
               </Box>
 
               <Stack direction="row" spacing={2}>
-                <Tooltip title="Refresh">
+                {/* <Tooltip title="Refresh">
                   <Button
                     variant="outlined"
                     startIcon={<FiRefreshCw />}
@@ -552,7 +552,7 @@ const EmmpTask = () => {
                   >
                     Refresh
                   </Button>
-                </Tooltip>
+                </Tooltip> */}
                 {userRole !== 'employee' && userRole !== 'staff' && (
                   <Button
                     variant="contained"

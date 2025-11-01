@@ -1,5 +1,5 @@
 import React from 'react'
-import RunoHeader from '../components/RunoHeader'
+import ciisHeader from '../components/CiisHeader'
 import FeaturesSection from '../components/FeaturesSection'
 import Footer from '../components/Footer'
 import Logo from '../components/Logo'
@@ -12,7 +12,7 @@ function Pricing() {
   return (
     <>
       {/*  */}
-      <RunoHeader />
+      <ciisHeader />
       {/*  */}
 
       <div className='p-section'>
@@ -48,7 +48,7 @@ function Pricing() {
                         <li>10GB storage per user</li>
                       </ul>
 
-                      <a className="btn btn-runo track-btn" href="#">Start 10-Day Free Trial</a>
+                      <a className="btn btn-ciis track-btn" href="#">Start 10-Day Free Trial</a>
                     </div>
                   </div>
                 </div>
@@ -75,7 +75,7 @@ function Pricing() {
                         <li>Free onboarding session</li>
                       </ul>
 
-                      <a className="btn btn-runo track-btn" href="#">Start 10-Day Free Trial</a>
+                      <a className="btn btn-ciis track-btn" href="#">Start 10-Day Free Trial</a>
                     </div>
                   </div>
                 </div>
@@ -101,7 +101,7 @@ function Pricing() {
                         <li>Quarterly strategy reviews</li>
                       </ul>
 
-                      <a className="btn btn-runo track-btn" href="#">Start 10-Day Free Trial</a>
+                      <a className="btn btn-ciis track-btn" href="#">Start 10-Day Free Trial</a>
                     </div>
                   </div>
                 </div>

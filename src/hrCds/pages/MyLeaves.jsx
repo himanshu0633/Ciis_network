@@ -378,11 +378,11 @@ const MyLeaves = () => {
               </Box>
 
               <Stack direction="row" spacing={2}>
-                <Tooltip title="Refresh">
+                {/* <Tooltip title="Refresh">
                   <IconButton onClick={fetchLeaves}>
                     <FiRefreshCw />
                   </IconButton>
-                </Tooltip>
+                </Tooltip> */}
                 {/* <Button
                   variant="contained"
                   startIcon={<FiPlus />}

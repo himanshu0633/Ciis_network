@@ -311,7 +311,7 @@ const MyAssets = () => {
             </Box>
 
             <Stack direction="row" spacing={2}>
-              <Tooltip title="Refresh">
+              {/* <Tooltip title="Refresh">
                 <IconButton 
                   onClick={fetchRequests} 
                   disabled={fetching}
@@ -322,7 +322,7 @@ const MyAssets = () => {
                 >
                   {fetching ? <CircularProgress size={20} /> : <FiRefreshCw />}
                 </IconButton>
-              </Tooltip>
+              </Tooltip> */}
             </Stack>
           </Stack>
         </Paper>

@@ -335,7 +335,7 @@ const EmppAttendence = () => {
                 </Box>
 
                 <Stack direction="row" spacing={2}>
-                  <Tooltip title="Refresh">
+                  {/* <Tooltip title="Refresh">
                     <IconButton 
                       onClick={() => fetchData(selectedDate)}
                       sx={{
@@ -345,7 +345,7 @@ const EmppAttendence = () => {
                     >
                       <FiRefreshCw />
                     </IconButton>
-                  </Tooltip>
+                  </Tooltip> */}
                 </Stack>
               </Stack>
 

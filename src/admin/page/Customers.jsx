@@ -160,11 +160,11 @@ function Customers() {
                 <SortByAlphaIcon />
               </IconButton>
             </Tooltip>
-            <Tooltip title="Refresh">
+            {/* <Tooltip title="Refresh">
               <IconButton>
                 <Refresh />
               </IconButton>
-            </Tooltip>
+            </Tooltip> */}
           </Box>
         </Box>
 

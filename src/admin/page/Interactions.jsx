@@ -312,11 +312,11 @@ const Interactions = () => {
                 <SortByAlphaIcon />
               </IconButton>
             </Tooltip>
-            <Tooltip title="Refresh">
+            {/* <Tooltip title="Refresh">
               <IconButton>
                 <RefreshIcon />
               </IconButton>
-            </Tooltip>
+            </Tooltip> */}
           </Stack>
         </Stack>
       </Paper>
