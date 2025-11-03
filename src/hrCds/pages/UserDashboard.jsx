@@ -4,7 +4,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import {
   FiClock, FiCalendar, FiTrendingUp, FiAward,
-  FiChevronLeft, FiChevronRight, FiPlay, FiSquare
+  FiChevronLeft, FiChevronRight, FiPlay, FiSquare, FiRefreshCw
 } from 'react-icons/fi';
 import {
   MdToday, MdAccessTime
@@ -71,6 +71,8 @@ const UserDashboard = () => {
   const [showHistory, setShowHistory] = useState(false);
   const [loading, setLoading] = useState(false);
   const [recentTasks, setRecentTasks] = useState([]);
+  const [error, setError] = useState(null);
+  const [tasksLoading, setTasksLoading] = useState(false);
 
   // Debug function to check data
   const debugData = () => {
@@ -79,14 +81,69 @@ const UserDashboard = () => {
     console.log('Leave Dates:', leaveDates);
     console.log('Absent Dates:', absentDates);
     console.log('Monthly Present Count:', monthlyPresentCount);
+    console.log('Recent Tasks:', recentTasks);
+  };
+
+  // ✅ CORRECTED: Recent tasks fetch करने का function
+  const fetchRecentTasks = async () => {
+    try {
+      setTasksLoading(true);
+      setError(null);
+      
+      const token = localStorage.getItem('token');
+      
+      const response = await axios.get('/task/my', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      console.log('📝 Tasks API Response:', response.data);
+
+      // ✅ FIXED: API response structure के according data extract करें
+      let tasksData = [];
+      
+      if (response.data.groupedTasks) {
+        // groupedTasks से सभी tasks को एक array में combine करें
+        Object.values(response.data.groupedTasks).forEach(dateGroup => {
+          if (Array.isArray(dateGroup)) {
+            tasksData = tasksData.concat(dateGroup);
+          }
+        });
+      } else if (response.data.tasks) {
+        tasksData = response.data.tasks;
+      } else if (response.data.data) {
+        tasksData = response.data.data;
+      } else if (Array.isArray(response.data)) {
+        tasksData = response.data;
+      }
+
+      console.log('📝 Processed Tasks Data:', tasksData);
+
+      // Tasks को created date के descending order में sort करें और latest 3 tasks लें
+      const sortedTasks = tasksData
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(0, 3);
+
+      setRecentTasks(sortedTasks);
+      
+    } catch (err) {
+      console.error('❌ Error fetching recent tasks:', err);
+      setError('Failed to load recent activities');
+      toast.error('Failed to load recent activities');
+    } finally {
+      setTasksLoading(false);
+    }
+  };
+
+  // ✅ Refresh button handler
+  const handleRefreshTasks = () => {
+    fetchRecentTasks();
   };
 
   useEffect(() => {
-    axios.get('http://localhost:3000/api/task/my')
-      .then(res => {
-        setRecentTasks(res.data || []);
-      })
-      .catch(err => console.error('Error fetching tasks:', err));
+    fetchRecentTasks();
   }, []);
 
   const fetchStats = async () => {
@@ -115,7 +172,7 @@ const UserDashboard = () => {
     }
   };
 
-  // Fetch leaves data - UPDATED VERSION
+  // Fetch leaves data
   const fetchLeaves = async () => {
     const token = localStorage.getItem('token');
     try {
@@ -346,7 +403,7 @@ const UserDashboard = () => {
   const calendarDays = getCalendarGrid(calendarYear, calendarMonth);
   const today = new Date();
 
-  // Check different statuses for a day - IMPROVED VERSION
+  // Check different statuses for a day
   const getDayStatus = (day) => {
     if (!day) return null;
     
@@ -390,6 +447,27 @@ const UserDashboard = () => {
 
   const totalDaysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
   const attendanceRate = Math.round((monthlyPresentCount / totalDaysInMonth) * 100);
+
+  // ✅ Task status check function
+  const getTaskStatus = (task) => {
+    // Check if task has statusInfo array
+    if (task.statusInfo && Array.isArray(task.statusInfo)) {
+      const userStatus = task.statusInfo.find(status => 
+        status.userId === user?._id || status.userId === user?.id
+      );
+      return userStatus?.status || 'pending';
+    }
+    
+    // Fallback to statusByUser array
+    if (task.statusByUser && Array.isArray(task.statusByUser)) {
+      const userStatus = task.statusByUser.find(status => 
+        status.user === user?._id || status.user === user?.id
+      );
+      return userStatus?.status || 'pending';
+    }
+    
+    return 'pending';
+  };
 
   return (
     <div className="dashboard-container">
@@ -625,29 +703,70 @@ const UserDashboard = () => {
             </div>
           </div>
     
+          {/* ✅ CORRECTED Recent Activity Section */}
           <div className="activity-card">
-            <h3>Recent Activity</h3>
+            <div className="activity-header">
+              <h3>Recent Activities</h3>
+              <button 
+                onClick={handleRefreshTasks}
+                className="refresh-btn"
+                disabled={tasksLoading}
+              >
+                <FiRefreshCw size={16} className={tasksLoading ? 'spinning' : ''} />
+                {tasksLoading ? 'Refreshing...' : 'Refresh'}
+              </button>
+            </div>
+            
             <div className="activity-list">
-              {loading ? (
-                <p className="loading-text">Loading...</p>
+              {tasksLoading ? (
+                <div className="loading-state">
+                  <p>Loading activities...</p>
+                </div>
+              ) : error ? (
+                <div className="error-state">
+                  <p>{error}</p>
+                  <button onClick={handleRefreshTasks} className="retry-btn">
+                    Try Again
+                  </button>
+                </div>
               ) : recentTasks.length > 0 ? (
-                recentTasks.slice(0, 3).map((task, index) => (
-                  <div key={index} className="activity-item">
-                    <div className="activity-header">
-                      <span>{new Date(task.createdAt).toLocaleDateString()}</span>
-                      <span className={`status-badge ${
-                        task.status === 'Completed' ? 'completed' :
-                        task.status === 'In Progress' ? 'in-progress' : 'pending'
-                      }`}>
-                        {task.status || 'Pending'}
-                      </span>
+                recentTasks.map((task, index) => {
+                  const taskStatus = getTaskStatus(task);
+                  return (
+                    <div key={task._id || index} className="activity-item">
+                      <div className="activity-item-header">
+                        <span className="activity-date">
+                          {new Date(task.createdAt).toLocaleDateString('en-US', {
+                            day: 'numeric',
+                            month: 'short'
+                          })}
+                        </span>
+                        <span className={`task-status ${taskStatus}`}>
+                          {taskStatus.charAt(0).toUpperCase() + taskStatus.slice(1)}
+                        </span>
+                      </div>
+                      <p className="activity-title">{task.title || 'Untitled Task'}</p>
+                      {task.description && (
+                        <p className="activity-description">
+                          {task.description.length > 50 
+                            ? `${task.description.substring(0, 50)}...` 
+                            : task.description
+                          }
+                        </p>
+                      )}
+                      {index < recentTasks.length - 1 && (
+                        <div className="activity-divider"></div>
+                      )}
                     </div>
-                    <p className="activity-title">{task.title || 'Untitled task'}</p>
-                    <div className="activity-divider"></div>
-                  </div>
-                ))
+                  );
+                })
               ) : (
-                <p className="no-activity">No recent activity</p>
+                <div className="empty-state">
+                  <p>No recent activities found</p>
+                  <button onClick={handleRefreshTasks} className="retry-btn">
+                    Refresh
+                  </button>
+                </div>
               )}
             </div>
           </div>
