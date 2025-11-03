@@ -1,48 +1,48 @@
-import React, { useEffect, useState } from 'react';
-import axios from '../../utils/axiosConfig';
+import React, { useEffect, useState } from "react";
+import axios from "../../utils/axiosConfig";
 import {
   Box, Typography, Paper, Button, Dialog, DialogActions,
   DialogContent, DialogTitle, TextField, IconButton, Snackbar,
   MenuItem, Stack, Card, CardContent, Grid, Avatar, Fade,
-  Tooltip, Chip, useTheme, useMediaQuery, Divider, Badge, FormControl,
-  Select, InputLabel, Checkbox, ListItemText
-} from '@mui/material';
+  Tooltip, Chip, useTheme, FormControl, Select, InputLabel,
+  Checkbox, ListItemText
+} from "@mui/material";
 import {
   FiAlertCircle, FiAlertTriangle, FiInfo, FiPlus,
-  FiEdit, FiTrash2, FiBell, FiClock, FiUser, FiUserPlus,
-} from 'react-icons/fi';
-import { styled } from '@mui/material/styles';
+  FiEdit, FiTrash2, FiBell, FiClock,
+} from "react-icons/fi";
+import { styled } from "@mui/material/styles";
 
-// Enhanced Styled Components
 const AlertCard = styled(Card)(({ theme, type }) => ({
   borderRadius: theme.shape.borderRadius * 2,
   boxShadow: theme.shadows[2],
-  transition: theme.transitions.create(['all'], {
-    duration: theme.transitions.duration.standard,
-  }),
-  borderLeft: `6px solid ${type === 'info' ? theme.palette.info.main :
-      type === 'warning' ? theme.palette.warning.main :
-        theme.palette.error.main
-    }`,
-  '&:hover': {
+  transition: theme.transitions.create(["all"]),
+  borderLeft: `6px solid ${
+    type === "info"
+      ? theme.palette.info.main
+      : type === "warning"
+      ? theme.palette.warning.main
+      : theme.palette.error.main
+  }`,
+  "&:hover": {
     boxShadow: theme.shadows[6],
-    transform: 'translateY(-2px)',
+    transform: "translateY(-2px)",
   },
 }));
 
 const TypeChip = styled(Chip)(({ theme, type }) => ({
   fontWeight: 600,
-  ...(type === 'info' && {
+  ...(type === "info" && {
     background: `${theme.palette.info.main}20`,
     color: theme.palette.info.dark,
     border: `1px solid ${theme.palette.info.main}40`,
   }),
-  ...(type === 'warning' && {
+  ...(type === "warning" && {
     background: `${theme.palette.warning.main}20`,
     color: theme.palette.warning.dark,
     border: `1px solid ${theme.palette.warning.main}40`,
   }),
-  ...(type === 'error' && {
+  ...(type === "error" && {
     background: `${theme.palette.error.main}20`,
     color: theme.palette.error.dark,
     border: `1px solid ${theme.palette.error.main}40`,
@@ -50,77 +50,78 @@ const TypeChip = styled(Chip)(({ theme, type }) => ({
 }));
 
 const alertTypes = [
-  { value: 'info', label: 'Information', icon: FiInfo, color: 'info' },
-  { value: 'warning', label: 'Warning', icon: FiAlertTriangle, color: 'warning' },
-  { value: 'error', label: 'Error', icon: FiAlertCircle, color: 'error' }
+  { value: "info", label: "Information", icon: FiInfo },
+  { value: "warning", label: "Warning", icon: FiAlertTriangle },
+  { value: "error", label: "Error", icon: FiAlertCircle },
 ];
 
-const defaultForm = { type: 'info', message: '', assignedUsers: [], assignedGroups: [] };
+const defaultForm = { type: "info", message: "", assignedUsers: [], assignedGroups: [] };
 
 const Alerts = () => {
   const [alerts, setAlerts] = useState([]);
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState(null);
   const [form, setForm] = useState(defaultForm);
-  const [notification, setNotification] = useState({ open: false, message: '', severity: 'success' });
+  const [notification, setNotification] = useState({ open: false, message: "", severity: "success" });
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    total: 0,
-    info: 0,
-    warning: 0,
-    error: 0
-  });
+  const [stats, setStats] = useState({ total: 0, info: 0, warning: 0, error: 0 });
   const [users, setUsers] = useState([]);
   const [groups, setGroups] = useState([]);
-  const [currentUserRole, setCurrentUserRole] = useState('');
-  const canManage = currentUserRole === 'hr' || currentUserRole === 'manager';
+  const [currentUserRole, setCurrentUserRole] = useState("");
 
+  const canManage = currentUserRole === "hr" || currentUserRole === "manager";
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  // Fetch alerts, token and role from localStorage
+  const authHeaders = () => ({
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const storedToken = localStorage.getItem('token');
+        const storedToken = localStorage.getItem("token");
         if (storedToken) setToken(storedToken);
 
-        // Read role like your other page
-        const storedUser = localStorage.getItem('user');
+        const storedUser = localStorage.getItem("user");
         if (storedUser) {
           try {
             const parsedUser = JSON.parse(storedUser);
-            const role = (parsedUser?.role || parsedUser?.user?.role || '')
-              .toString()
-              .trim()
-              .toLowerCase();
+            const role = (parsedUser?.role || parsedUser?.user?.role || "").toLowerCase();
             setCurrentUserRole(role);
           } catch (e) {
-            console.error('Failed to parse user from localStorage:', e);
-            setCurrentUserRole('');
+            console.error("Failed to parse user:", e);
           }
         }
 
-        // Fetching users and groups
+        // ✅ Updated Safe API Calls
         const [usersRes, groupsRes, alertsRes] = await Promise.all([
-          axios.get('/users'),
-          axios.get('/groups'),
-          axios.get('/alerts')
+          axios.get("/task/assignable-users", authHeaders()),
+          axios.get("/groups", authHeaders()),
+          axios.get("/alerts", authHeaders())
         ]);
 
-        setUsers(usersRes.data);
-        setGroups(groupsRes.data);
-        setAlerts(alertsRes.data);
-        calculateStats(alertsRes.data);
+        // ✅ Safe Array Extraction
+        const fetchedUsers = Array.isArray(usersRes.data)
+          ? usersRes.data
+          : usersRes.data?.users || usersRes.data?.data || [];
+
+        const fetchedGroups = Array.isArray(groupsRes.data)
+          ? groupsRes.data
+          : groupsRes.data?.groups || groupsRes.data?.data || [];
+
+        const fetchedAlerts = Array.isArray(alertsRes.data)
+          ? alertsRes.data
+          : alertsRes.data?.alerts || alertsRes.data?.data || [];
+
+        setUsers(fetchedUsers);
+        setGroups(fetchedGroups);
+        setAlerts(fetchedAlerts);
+        calculateStats(fetchedAlerts);
       } catch (err) {
         console.error(err);
-        setNotification({
-          open: true,
-          message: 'Failed to load alerts',
-          severity: 'error'
-        });
+        setNotification({ open: true, message: "Failed to load alerts", severity: "error" });
       } finally {
         setLoading(false);
       }
@@ -129,35 +130,21 @@ const Alerts = () => {
   }, []);
 
   const calculateStats = (alertsData) => {
-    const info = alertsData.filter(alert => alert.type === 'info').length;
-    const warning = alertsData.filter(alert => alert.type === 'warning').length;
-    const error = alertsData.filter(alert => alert.type === 'error').length;
-
-    setStats({
-      total: alertsData.length,
-      info,
-      warning,
-      error
-    });
+    const info = alertsData.filter((a) => a.type === "info").length;
+    const warning = alertsData.filter((a) => a.type === "warning").length;
+    const error = alertsData.filter((a) => a.type === "error").length;
+    setStats({ total: alertsData.length, info, warning, error });
   };
-  const StatCard = styled(Card)(({ theme, color = 'primary' }) => ({
-    background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
-    borderRadius: theme.shape.borderRadius * 2,
-    boxShadow: theme.shadows[2],
-    transition: theme.transitions.create(['all'], {
-      duration: theme.transitions.duration.standard,
-    }),
-    borderLeft: `4px solid ${theme.palette[color].main}`,
-    '&:hover': {
-      boxShadow: theme.shadows[6],
-      transform: 'translateY(-2px)',
-    },
-  }));
 
   const handleOpen = (alert = null) => {
     if (alert) {
       setEditId(alert._id);
-      setForm({ type: alert.type, message: alert.message, assignedUsers: alert.assignedUsers, assignedGroups: alert.assignedGroups });
+      setForm({
+        type: alert.type,
+        message: alert.message,
+        assignedUsers: alert.assignedUsers || [],
+        assignedGroups: alert.assignedGroups || [],
+      });
     } else {
       setEditId(null);
       setForm(defaultForm);
@@ -167,52 +154,30 @@ const Alerts = () => {
 
   const handleClose = () => setOpen(false);
 
-  const handleChange = e => {
-    setForm(f => ({ ...f, [e.target.name]: e.target.value }));
+  const handleChange = (e) => {
+    setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
   };
 
-  const authHeaders = () => ({
-    headers: { Authorization: `Bearer ${token}` }
-  });
-
-  const handleSubmit = async e => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.message.trim()) {
-      setNotification({
-        open: true,
-        message: 'Please enter a message',
-        severity: 'error'
-      });
+      setNotification({ open: true, message: "Please enter a message", severity: "error" });
       return;
     }
-
-    // Guard: only admin/manager can add/edit
     if (!canManage) {
-      setNotification({
-        open: true,
-        message: 'Not authorized to add/update alerts.',
-        severity: 'error'
-      });
+      setNotification({ open: true, message: "Not authorized", severity: "error" });
       return;
     }
 
     try {
       if (editId) {
         const res = await axios.put(`/alerts/${editId}`, form, authHeaders());
-        setAlerts(prev => prev.map(a => (a._id === editId ? res.data.alert : a)));
-        setNotification({
-          open: true,
-          message: 'Alert updated successfully!',
-          severity: 'success'
-        });
+        setAlerts((prev) => prev.map((a) => (a._id === editId ? res.data.alert : a)));
+        setNotification({ open: true, message: "Alert updated!", severity: "success" });
       } else {
-        const res = await axios.post('/alerts', form, authHeaders());
-        setAlerts(prev => [res.data.alert, ...prev]);
-        setNotification({
-          open: true,
-          message: 'Alert added successfully!',
-          severity: 'success'
-        });
+        const res = await axios.post("/alerts", form, authHeaders());
+        setAlerts((prev) => [res.data.alert, ...prev]);
+        setNotification({ open: true, message: "Alert created!", severity: "success" });
       }
       setOpen(false);
       calculateStats(alerts);
@@ -220,69 +185,56 @@ const Alerts = () => {
       console.error(err);
       setNotification({
         open: true,
-        message: 'Error: ' + (err.response?.data?.message || 'Something went wrong'),
-        severity: 'error'
+        message: err.response?.data?.message || "Something went wrong",
+        severity: "error",
       });
     }
   };
 
-  const handleDelete = async id => {
-    // Guard: only admin/manager can delete
+  const handleDelete = async (id) => {
     if (!canManage) {
-      setNotification({
-        open: true,
-        message: 'Not authorized to delete alerts.',
-        severity: 'error'
-      });
+      setNotification({ open: true, message: "Not authorized", severity: "error" });
       return;
     }
 
     try {
       await axios.delete(`/alerts/${id}`, authHeaders());
-      setAlerts(prev => prev.filter(a => a._id !== id));
-      setNotification({
-        open: true,
-        message: 'Alert deleted successfully!',
-        severity: 'success'
-      });
-      calculateStats(alerts.filter(a => a._id !== id));
+      const newAlerts = alerts.filter((a) => a._id !== id);
+      setAlerts(newAlerts);
+      calculateStats(newAlerts);
+      setNotification({ open: true, message: "Alert deleted", severity: "success" });
     } catch (err) {
       console.error(err);
       setNotification({
         open: true,
-        message: 'Error: ' + (err.response?.data?.message || 'Something went wrong'),
-        severity: 'error'
+        message: err.response?.data?.message || "Something went wrong",
+        severity: "error",
       });
     }
   };
 
   const getAlertIcon = (type) => {
-    const alertType = alertTypes.find(t => t.value === type);
+    const alertType = alertTypes.find((t) => t.value === type);
     const IconComponent = alertType ? alertType.icon : FiInfo;
     return <IconComponent size={20} />;
   };
 
   const formatDate = (dateStr) => {
-    if (!dateStr) return '--';
+    if (!dateStr) return "--";
     const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return date.toLocaleString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   if (loading) {
     return (
-      <Box sx={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '50vh'
-      }}>
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "50vh" }}>
         <Typography>Loading alerts...</Typography>
       </Box>
     );
@@ -291,413 +243,175 @@ const Alerts = () => {
   return (
     <Fade in={!loading} timeout={500}>
       <Box sx={{ p: { xs: 2, md: 3 } }}>
-        {/* Header Section */}
-        <Paper sx={{
-          p: 3,
-          mb: 3,
-          borderRadius: theme.shape.borderRadius * 2,
-          background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
-          boxShadow: theme.shadows[4]
-        }}>
-          <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            spacing={3}
-            justifyContent="space-between"
-            alignItems={{ xs: 'flex-start', sm: 'center' }}
-          >
+        {/* Header */}
+        <Paper sx={{ p: 3, mb: 3, borderRadius: theme.shape.borderRadius * 2 }}>
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={3} justifyContent="space-between">
             <Box>
-              <Typography variant="h4" fontWeight={800} gutterBottom>
+              <Typography variant="h4" fontWeight={800}>
                 System Alerts
               </Typography>
               <Typography variant="body1" color="text.secondary">
                 Important notifications and announcements
               </Typography>
             </Box>
-
-            {/* Show Add button only to admin/manager */}
             {canManage && (
-              <Button
-                variant="contained"
-                startIcon={<FiPlus />}
-                onClick={() => handleOpen()}
-                sx={{
-                  borderRadius: theme.shape.borderRadius * 2,
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  px: 3
-                }}
-              >
+              <Button variant="contained" startIcon={<FiPlus />} onClick={() => handleOpen()} sx={{ borderRadius: 6 }}>
                 New Alert
               </Button>
             )}
           </Stack>
         </Paper>
 
-        {/* Statistics Cards */}
+        {/* Stats */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={6} md={3}>
-            <StatCard color="primary">
-              <CardContent>
-                <Stack direction="row" alignItems="center" spacing={2}>
-                  <Avatar sx={{
-                    bgcolor: `${theme.palette.primary.main}20`,
-                    color: theme.palette.primary.main
-                  }}>
-                    <FiBell />
-                  </Avatar>
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">
-                      Total Alerts
-                    </Typography>
-                    <Typography variant="h4" fontWeight={700}>
-                      {stats.total}
-                    </Typography>
-                  </Box>
-                </Stack>
-              </CardContent>
-            </StatCard>
-          </Grid>
-
-          <Grid item xs={6} md={3}>
-            <StatCard color="info">
-              <CardContent>
-                <Stack direction="row" alignItems="center" spacing={2}>
-                  <Avatar sx={{
-                    bgcolor: `${theme.palette.info.main}20`,
-                    color: theme.palette.info.main
-                  }}>
-                    <FiInfo />
-                  </Avatar>
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">
-                      Information
-                    </Typography>
-                    <Typography variant="h4" fontWeight={700}>
-                      {stats.info}
-                    </Typography>
-                  </Box>
-                </Stack>
-              </CardContent>
-            </StatCard>
-          </Grid>
-
-          <Grid item xs={6} md={3}>
-            <StatCard color="warning">
-              <CardContent>
-                <Stack direction="row" alignItems="center" spacing={2}>
-                  <Avatar sx={{
-                    bgcolor: `${theme.palette.warning.main}20`,
-                    color: theme.palette.warning.main
-                  }}>
-                    <FiAlertTriangle />
-                  </Avatar>
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">
-                      Warnings
-                    </Typography>
-                    <Typography variant="h4" fontWeight={700}>
-                      {stats.warning}
-                    </Typography>
-                  </Box>
-                </Stack>
-              </CardContent>
-            </StatCard>
-          </Grid>
-
-          <Grid item xs={6} md={3}>
-            <StatCard color="error">
-              <CardContent>
-                <Stack direction="row" alignItems="center" spacing={2}>
-                  <Avatar sx={{
-                    bgcolor: `${theme.palette.error.main}20`,
-                    color: theme.palette.error.main
-                  }}>
-                    <FiAlertCircle />
-                  </Avatar>
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">
-                      Errors
-                    </Typography>
-                    <Typography variant="h4" fontWeight={700}>
-                      {stats.error}
-                    </Typography>
-                  </Box>
-                </Stack>
-              </CardContent>
-            </StatCard>
-          </Grid>
+          {[
+            { label: "Total Alerts", count: stats.total, icon: <FiBell />, color: "primary" },
+            { label: "Information", count: stats.info, icon: <FiInfo />, color: "info" },
+            { label: "Warnings", count: stats.warning, icon: <FiAlertTriangle />, color: "warning" },
+            { label: "Errors", count: stats.error, icon: <FiAlertCircle />, color: "error" },
+          ].map((item) => (
+            <Grid item xs={6} md={3} key={item.label}>
+              <Card sx={{ borderLeft: `4px solid ${theme.palette[item.color].main}` }}>
+                <CardContent>
+                  <Stack direction="row" alignItems="center" spacing={2}>
+                    <Avatar sx={{ bgcolor: `${theme.palette[item.color].main}20`, color: theme.palette[item.color].main }}>
+                      {item.icon}
+                    </Avatar>
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">
+                        {item.label}
+                      </Typography>
+                      <Typography variant="h4" fontWeight={700}>
+                        {item.count}
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
         </Grid>
 
         {/* Alerts List */}
-        <Paper sx={{
-          borderRadius: theme.shape.borderRadius * 2,
-          boxShadow: theme.shadows[2],
-          overflow: 'hidden'
-        }}>
-          <Box sx={{ p: 3 }}>
-            <Stack
-              direction="row"
-              justifyContent="space-between"
-              alignItems="center"
-              sx={{ mb: 3 }}
-            >
-              <Typography variant="h6" fontWeight={700}>
-                Active Alerts
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {stats.total} alert{stats.total !== 1 ? 's' : ''} total
-              </Typography>
+        <Paper sx={{ borderRadius: 4, p: 3 }}>
+          {alerts.length === 0 ? (
+            <Box textAlign="center" py={6}>
+              <FiBell size={48} />
+              <Typography variant="h6">No Alerts</Typography>
+            </Box>
+          ) : (
+            <Stack spacing={2}>
+              {alerts.map((alert) => (
+                <AlertCard key={alert._id} type={alert.type}>
+                  <CardContent>
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={2} justifyContent="space-between">
+                      <Box>
+                        <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 1 }}>
+                          {getAlertIcon(alert.type)}
+                          <TypeChip label={alert.type} type={alert.type} size="small" />
+                        </Stack>
+                        <Typography variant="body1" fontWeight={500}>
+                          {alert.message}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          <FiClock size={12} /> {formatDate(alert.createdAt)}
+                        </Typography>
+                      </Box>
+                      {canManage && (
+                        <Stack direction="row" spacing={1}>
+                          <Tooltip title="Edit">
+                            <IconButton onClick={() => handleOpen(alert)} color="primary" size="small">
+                              <FiEdit />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Delete">
+                            <IconButton onClick={() => handleDelete(alert._id)} color="error" size="small">
+                              <FiTrash2 />
+                            </IconButton>
+                          </Tooltip>
+                        </Stack>
+                      )}
+                    </Stack>
+                  </CardContent>
+                </AlertCard>
+              ))}
             </Stack>
-
-            {alerts.length === 0 ? (
-              <Box sx={{
-                textAlign: 'center',
-                py: 6,
-                color: theme.palette.text.secondary
-              }}>
-                <FiBell size={48} style={{ marginBottom: 16 }} />
-                <Typography variant="h6" gutterBottom>
-                  No Alerts
-                </Typography>
-                <Typography variant="body2">
-                  {canManage
-                    ? 'Create your first alert to get started'
-                    : 'No alerts at this time'
-                  }
-                </Typography>
-              </Box>
-            ) : (
-              <Stack spacing={2}>
-                {alerts.map(alert => (
-                  <AlertCard key={alert._id} type={alert.type}>
-                    <CardContent>
-                      <Stack
-                        direction={{ xs: 'column', sm: 'row' }}
-                        spacing={2}
-                        alignItems={{ xs: 'flex-start', sm: 'center' }}
-                        justifyContent="space-between"
-                      >
-                        <Box sx={{ flex: 1 }}>
-                          <Stack
-                            direction="row"
-                            spacing={2}
-                            alignItems="center"
-                            sx={{ mb: 1 }}
-                          >
-                            {getAlertIcon(alert.type)}
-                            <TypeChip
-                              label={alert.type.charAt(0).toUpperCase() + alert.type.slice(1)}
-                              type={alert.type}
-                              size="small"
-                            />
-                          </Stack>
-                          <Typography
-                            variant="body1"
-                            sx={{
-                              mb: 1,
-                              fontWeight: 500
-                            }}
-                          >
-                            {alert.message}
-                          </Typography>
-                          <Stack
-                            direction="row"
-                            spacing={2}
-                            alignItems="center"
-                          >
-                            <Stack direction="row" spacing={1} alignItems="center">
-                              <FiClock size={14} color={theme.palette.text.secondary} />
-                              <Typography variant="caption" color="text.secondary">
-                                {formatDate(alert.timestamp || alert.createdAt)}
-                              </Typography>
-                            </Stack>
-                            {alert.createdBy && (
-                              <Stack direction="row" spacing={1} alignItems="center">
-                                <FiUser size={14} color={theme.palette.text.secondary} />
-                                <Typography variant="caption" color="text.secondary">
-                                  By {alert.createdBy.name || 'System'}
-                                </Typography>
-                              </Stack>
-                            )}
-                          </Stack>
-                        </Box>
-
-                        {/* Edit/Delete only for admin/manager */}
-                        {canManage && (
-                          <Stack direction="row" spacing={1}>
-                            <Tooltip title="Edit Alert">
-                              <IconButton
-                                onClick={() => handleOpen(alert)}
-                                size="small"
-                                sx={{
-                                  color: theme.palette.primary.main,
-                                  '&:hover': {
-                                    bgcolor: `${theme.palette.primary.main}10`
-                                  }
-                                }}
-                              >
-                                <FiEdit size={16} />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Delete Alert">
-                              <IconButton
-                                onClick={() => handleDelete(alert._id)}
-                                size="small"
-                                sx={{
-                                  color: theme.palette.error.main,
-                                  '&:hover': {
-                                    bgcolor: `${theme.palette.error.main}10`
-                                  }
-                                }}
-                              >
-                                <FiTrash2 size={16} />
-                              </IconButton>
-                            </Tooltip>
-                          </Stack>
-                        )}
-                      </Stack>
-                    </CardContent>
-                  </AlertCard>
-                ))}
-              </Stack>
-            )}
-          </Box>
+          )}
         </Paper>
 
-        {/* Enhanced Dialog */}
-        <Dialog
-          open={open}
-          onClose={handleClose}
-          maxWidth="sm"
-          fullWidth
-        >
-          <DialogTitle>
-            <Typography variant="h5" fontWeight={700}>
-              {editId ? 'Edit Alert' : 'Create New Alert'}
-            </Typography>
-          </DialogTitle>
+        {/* Dialog */}
+        <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
+          <DialogTitle>{editId ? "Edit Alert" : "New Alert"}</DialogTitle>
           <DialogContent>
-            <Stack spacing={3} sx={{ mt: 1 }}>
-              <TextField
-                select
-                label="Alert Type"
-                name="type"
-                value={form.type}
-                onChange={handleChange}
-                fullWidth
-                disabled={!canManage}
-                sx={{ borderRadius: theme.shape.borderRadius * 2 }}
-              >
-                {alertTypes.map(type => (
+            <Stack spacing={3} mt={1}>
+              <TextField select name="type" label="Alert Type" value={form.type} onChange={handleChange}>
+                {alertTypes.map((type) => (
                   <MenuItem key={type.value} value={type.value}>
-                    <Stack direction="row" alignItems="center" spacing={2}>
-                      {React.createElement(type.icon, {
-                        color: theme.palette[type.color].main
-                      })}
-                      <Typography>{type.label}</Typography>
-                    </Stack>
+                    {React.createElement(type.icon)} {type.label}
                   </MenuItem>
                 ))}
               </TextField>
               <TextField
-                label="Alert Message"
                 name="message"
+                label="Alert Message"
                 value={form.message}
                 onChange={handleChange}
-                fullWidth
                 multiline
-                rows={4}
-                placeholder="Enter the alert message here..."
-                disabled={!canManage}
-                sx={{ borderRadius: theme.shape.borderRadius * 2 }}
+                rows={3}
               />
               <FormControl fullWidth>
                 <InputLabel>Assign Users</InputLabel>
-                <Select
-                  multiple
-                  name="assignedUsers"
-                  value={form.assignedUsers}
-                  onChange={handleChange}
-                  label="Assign Users"
-                >
-                  {users.map(user => (
-                    <MenuItem key={user.id} value={user.id}>
-                      <Checkbox checked={form.assignedUsers.includes(user.id)} />
-                      <ListItemText primary={user.name} />
-                    </MenuItem>
-                  ))}
+                <Select multiple name="assignedUsers" value={form.assignedUsers} onChange={handleChange}>
+                  {Array.isArray(users) &&
+                    users.map((user) => (
+                      <MenuItem key={user._id || user.id} value={user._id || user.id}>
+                        <Checkbox checked={form.assignedUsers.includes(user._id || user.id)} />
+                        <ListItemText primary={user.name || user.fullName || user.email} />
+                      </MenuItem>
+                    ))}
                 </Select>
               </FormControl>
-
               <FormControl fullWidth>
                 <InputLabel>Assign Groups</InputLabel>
-                <Select
-                  multiple
-                  name="assignedGroups"
-                  value={form.assignedGroups}
-                  onChange={handleChange}
-                  label="Assign Groups"
-                >
-                  {groups.map(group => (
-                    <MenuItem key={group.id} value={group.id}>
-                      <Checkbox checked={form.assignedGroups.includes(group.id)} />
-                      <ListItemText primary={group.name} />
-                    </MenuItem>
-                  ))}
+                <Select multiple name="assignedGroups" value={form.assignedGroups} onChange={handleChange}>
+                  {Array.isArray(groups) &&
+                    groups.map((group) => (
+                      <MenuItem key={group._id || group.id} value={group._id || group.id}>
+                        <Checkbox checked={form.assignedGroups.includes(group._id || group.id)} />
+                        <ListItemText primary={group.name || group.title} />
+                      </MenuItem>
+                    ))}
                 </Select>
               </FormControl>
             </Stack>
           </DialogContent>
-          <DialogActions sx={{ p: 3 }}>
-            <Button
-              onClick={handleClose}
-              sx={{
-                borderRadius: theme.shape.borderRadius * 2,
-                px: 3
-              }}
-            >
-              Cancel
+          <DialogActions>
+            <Button onClick={handleClose}>Cancel</Button>
+            <Button variant="contained" onClick={handleSubmit}>
+              {editId ? "Update" : "Create"}
             </Button>
-            {canManage && (
-              <Button
-                onClick={handleSubmit}
-                variant="contained"
-                disabled={!form.message.trim()}
-                sx={{
-                  borderRadius: theme.shape.borderRadius * 2,
-                  px: 3
-                }}
-              >
-                {editId ? 'Update Alert' : 'Create Alert'}
-              </Button>
-            )}
           </DialogActions>
         </Dialog>
 
-        {/* Enhanced Snackbar */}
+        {/* Snackbar */}
         <Snackbar
           open={notification.open}
-          autoHideDuration={5000}
+          autoHideDuration={4000}
           onClose={() => setNotification({ ...notification, open: false })}
-          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+          anchorOrigin={{ vertical: "top", horizontal: "center" }}
         >
-          <Card sx={{
-            minWidth: 300,
-            background: notification.severity === 'error'
-              ? theme.palette.error.main
-              : theme.palette.success.main,
-            color: 'white'
-          }}>
-            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-              <Stack direction="row" alignItems="center" spacing={2}>
-                {notification.severity === 'error' ?
-                  <FiAlertCircle size={20} /> :
-                  <FiInfo size={20} />
-                }
-                <Typography variant="body2" fontWeight={500}>
-                  {notification.message}
-                </Typography>
-              </Stack>
+          <Card
+            sx={{
+              background:
+                notification.severity === "error"
+                  ? theme.palette.error.main
+                  : theme.palette.success.main,
+              color: "white",
+            }}
+          >
+            <CardContent sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              {notification.severity === "error" ? <FiAlertCircle /> : <FiInfo />}
+              <Typography>{notification.message}</Typography>
             </CardContent>
           </Card>
         </Snackbar>
@@ -705,4 +419,5 @@ const Alerts = () => {
     </Fade>
   );
 };
+
 export default Alerts;
