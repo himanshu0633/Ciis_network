@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useState } from 'react';
 import {
   AppBar,
   Toolbar,
@@ -30,9 +30,15 @@ const Header = ({ toggleSidebar }) => {
   const colorMode = useContext(ColorModeContext);
 
   const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0); // ✅ Track unread notifications
   const [anchorEl, setAnchorEl] = useState(null);
 
-  const handleNotificationClick = (e) => setAnchorEl(e.currentTarget);
+  const handleNotificationClick = async (e) => {
+    setAnchorEl(e.currentTarget);
+    await fetchNotifications();
+    setUnreadCount(0); // ✅ Reset count when user opens the menu
+  };
+
   const handleNotificationClose = () => setAnchorEl(null);
 
   const handleLogout = () => {
@@ -41,26 +47,24 @@ const Header = ({ toggleSidebar }) => {
     navigate('/login');
   };
 
-useEffect(() => {
-  const token = localStorage.getItem('token');
-  if (!token) return;
-
-  const headers = { Authorization: `Bearer ${token}` };
-
-  // Format Indian date/time
-  const formatDateTime = (dateStr) => {
-    if (!dateStr) return '';
-    const d = new Date(dateStr);
-    return d.toLocaleString('en-IN', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
   const fetchNotifications = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    const headers = { Authorization: `Bearer ${token}` };
+
+    const formatDateTime = (dateStr) => {
+      if (!dateStr) return '';
+      const d = new Date(dateStr);
+      return d.toLocaleString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    };
+
     try {
       const [
         attendanceRes,
@@ -90,7 +94,7 @@ useEffect(() => {
         return d >= last24h;
       };
 
-      // ✅ Attendance (same as before)
+      // ✅ Attendance
       const attendanceData = Array.isArray(attendanceRes.data)
         ? attendanceRes.data
         : attendanceRes.data?.data || [];
@@ -102,7 +106,7 @@ useEffect(() => {
           all.push('⚡ You are currently logged in');
       });
 
-      // ✅ Leaves (actual structure)
+      // ✅ Leaves
       const leavesData = leavesRes.data?.leaves || [];
       leavesData.forEach((l) => {
         if (!isRecent(l.updatedAt || l.createdAt)) return;
@@ -119,7 +123,7 @@ useEffect(() => {
         );
       });
 
-      // ✅ Assets (actual structure)
+      // ✅ Assets
       const assetsData = assetsRes.data?.requests || [];
       assetsData.forEach((a) => {
         if (!isRecent(a.updatedAt || a.createdAt)) return;
@@ -135,12 +139,16 @@ useEffect(() => {
       });
 
       // ✅ My Tasks
-      const myTaskData = Array.isArray(myTasksRes.data)
-        ? myTasksRes.data
-        : myTasksRes.data?.data || [];
-      myTaskData.forEach((t) => {
-        if (!isRecent(t.updatedAt || t.createdAt)) return;
-        all.push(`🧾 My Task: ${t.title || 'Untitled'} (${t.status || 'N/A'})`);
+      const groupedTasks = myTasksRes.data?.groupedTasks || {};
+      Object.keys(groupedTasks).forEach((dateKey) => {
+        groupedTasks[dateKey].forEach((t) => {
+          if (!isRecent(t.updatedAt || t.createdAt)) return;
+          const taskStatus =
+            t.statusInfo?.find(
+              (s) => s.userId === user?._id || s.user === user?._id
+            )?.status || 'N/A';
+          all.push(`🧾 My Task: ${t.title || 'Untitled'} (${taskStatus})`);
+        });
       });
 
       // ✅ Assigned Tasks
@@ -170,16 +178,13 @@ useEffect(() => {
         all.push(`🚨 ${a.message || 'New alert received'}`);
       });
 
+      // ✅ Update notifications + badge count
       setNotifications(all);
+      setUnreadCount(all.length); // update badge count with new notifications
     } catch (err) {
       console.error('Error fetching notifications:', err);
     }
   };
-
-  fetchNotifications();
-}, []);
-
-
 
   return (
     <AppBar
@@ -269,11 +274,7 @@ useEffect(() => {
           {/* Notifications */}
           <Tooltip title="Notifications">
             <IconButton onClick={handleNotificationClick}>
-              <Badge
-                badgeContent={notifications.length}
-                color="error"
-                overlap="circular"
-              >
+              <Badge badgeContent={unreadCount} color="error" overlap="circular">
                 <NotificationsIcon />
               </Badge>
             </IconButton>
