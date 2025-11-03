@@ -175,7 +175,7 @@ body {
   background: var(--card-bg);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 20px;
+  padding: 10px;
   transition: all 0.3s ease;
 }
 
@@ -190,7 +190,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 1px;
 }
 
 .card-header h3 {
@@ -198,7 +198,7 @@ body {
   font-weight: 700;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
 }
 
 .status-badge {
@@ -240,20 +240,22 @@ body {
 /* Stats Grid */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(10px, 1fr));
   gap: 16px;
 }
 
 .stat-card {
   text-align: center;
-  padding: 20px;
+  padding: 5px;
 }
 
 .stat-content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 2px;
+  padding-top: 30px;
+  padding-bottom: 30px;
 }
 
 .stat-icon {
@@ -261,7 +263,7 @@ body {
 }
 
 .stat-value {
-  font-size: 2rem;
+  font-size: 3rem;
   font-weight: 800;
   color: var(--text-primary);
 }
@@ -269,6 +271,7 @@ body {
 .stat-label {
   color: var(--text-secondary);
   font-size: 0.875rem;
+  font-weight: 600;
 }
 
 /* Calendar */
@@ -522,7 +525,7 @@ body {
 
 /* Activity Card */
 .activity-card {
-  min-height: 300px;
+  height: 415px;
   display: flex;
   flex-direction: column;
 }

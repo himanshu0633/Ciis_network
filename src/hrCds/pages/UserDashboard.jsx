@@ -682,26 +682,7 @@ const UserDashboard = () => {
             </div>
           </div>
           
-          <div className="progress-card">
-            <h3>Monthly Progress</h3>
-            <div className="progress-items">
-              <div className="progress-item">
-                <div className="progress-header">
-                  <span>Attendance</span>
-                  <span>{monthlyPresentCount}/{totalDaysInMonth} days</span>
-                </div>
-                <div className="progress-bar-container">
-                  <div 
-                    className={`progress-bar ${
-                      attendanceRate >= 80 ? 'success' : 
-                      attendanceRate >= 60 ? 'warning' : 'error'
-                    }`}
-                    style={{width: `${attendanceRate}%`}}
-                  ></div>
-                </div>
-              </div>
-            </div>
-          </div>
+          
     
           {/* ✅ CORRECTED Recent Activity Section */}
           <div className="activity-card">
