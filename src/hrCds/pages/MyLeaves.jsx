@@ -71,7 +71,25 @@ const StatCard = styled(Card)(({ theme, color = "primary" }) => ({
     transform: "translateY(-2px)",
   },
 }));
+// Disable past dates function
+const disablePastDates = (date) => {
+  return date < new Date().setHours(0, 0, 0, 0);
+};
 
+// DatePicker में use करें
+<DatePicker
+  label="Start Date"
+  value={form.startDate}
+  onChange={(date) => handleDateChange("startDate", date)}
+  shouldDisableDate={disablePastDates}
+  renderInput={(params) => (
+    <TextField
+      {...params}
+      fullWidth
+      sx={{ borderRadius: theme.shape.borderRadius * 2 }}
+    />
+  )}
+/>
 const StatusChip = styled(Chip)(({ theme, status }) => ({
   fontWeight: 600,
   ...(status === "Approved" && {
@@ -755,124 +773,126 @@ const MyLeaves = () => {
 
             {/* Apply Leave Tab */}
             {tab === 1 && (
-              <Box sx={{ p: 3 }}>
-                <Card sx={{ maxWidth: 600, mx: "auto" }}>
-                  <CardContent>
-                    <Typography variant="h6" fontWeight={600} gutterBottom>
-                      New Leave Application
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ mb: 3 }}
-                    >
-                      Fill in the details to apply for leave
-                    </Typography>
+  <Box sx={{ p: 3 }}>
+    <Card sx={{ maxWidth: 600, mx: "auto" }}>
+      <CardContent>
+        <Typography variant="h6" fontWeight={600} gutterBottom>
+          New Leave Application
+        </Typography>
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{ mb: 3 }}
+        >
+          Fill in the details to apply for leave
+        </Typography>
 
-                    <Stack spacing={3}>
-                      <Select
-                        fullWidth
-                        name="type"
-                        value={form.type}
-                        onChange={handleChange}
-                        sx={{ borderRadius: theme.shape.borderRadius * 2 }}
-                      >
-                        {["Casual", "Sick", "Paid", "Unpaid", "Other"].map(
-                          (type) => (
-                            <MenuItem key={type} value={type}>
-                              <Stack
-                                direction="row"
-                                alignItems="center"
-                                spacing={1}
-                              >
-                                {getLeaveTypeIcon(type)}
-                                <Typography>{type}</Typography>
-                              </Stack>
-                            </MenuItem>
-                          )
-                        )}
-                      </Select>
-
-                      <DatePicker
-                        label="Start Date"
-                        value={form.startDate}
-                        onChange={(date) => handleDateChange("startDate", date)}
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            fullWidth
-                            sx={{ borderRadius: theme.shape.borderRadius * 2 }}
-                          />
-                        )}
-                      />
-
-                      <DatePicker
-                        label="End Date"
-                        value={form.endDate}
-                        onChange={(date) => handleDateChange("endDate", date)}
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            fullWidth
-                            sx={{ borderRadius: theme.shape.borderRadius * 2 }}
-                          />
-                        )}
-                      />
-
-                      {form.startDate && form.endDate && (
-                        <Box
-                          sx={{
-                            p: 2,
-                            bgcolor: `${theme.palette.primary.main}10`,
-                            borderRadius: theme.shape.borderRadius,
-                          }}
-                        >
-                          <Typography
-                            variant="body2"
-                            fontWeight={600}
-                            color="primary.main"
-                          >
-                            Total Days:{" "}
-                            {calculateDays(form.startDate, form.endDate)}
-                          </Typography>
-                        </Box>
-                      )}
-
-                      <TextField
-                        fullWidth
-                        multiline
-                        rows={4}
-                        name="reason"
-                        label="Reason for Leave"
-                        value={form.reason}
-                        onChange={handleChange}
-                        placeholder="Please provide a detailed reason for your leave application..."
-                        sx={{ borderRadius: theme.shape.borderRadius * 2 }}
-                      />
-
-                      <Button
-                        fullWidth
-                        variant="contained"
-                        onClick={handleSubmit}
-                        disabled={
-                          !form.startDate ||
-                          !form.endDate ||
-                          !form.reason.trim()
-                        }
-                        sx={{
-                          borderRadius: theme.shape.borderRadius * 2,
-                          py: 1.5,
-                          fontWeight: 600,
-                          textTransform: "none",
-                        }}
-                      >
-                        Submit Leave Application
-                      </Button>
-                    </Stack>
-                  </CardContent>
-                </Card>
-              </Box>
+        <Stack spacing={3}>
+          <Select
+            fullWidth
+            name="type"
+            value={form.type}
+            onChange={handleChange}
+            sx={{ borderRadius: theme.shape.borderRadius * 2 }}
+          >
+            {["Casual", "Sick", "Paid", "Unpaid", "Other"].map(
+              (type) => (
+                <MenuItem key={type} value={type}>
+                  <Stack
+                    direction="row"
+                    alignItems="center"
+                    spacing={1}
+                  >
+                    {getLeaveTypeIcon(type)}
+                    <Typography>{type}</Typography>
+                  </Stack>
+                </MenuItem>
+              )
             )}
+          </Select>
+
+          <DatePicker
+            label="Start Date"
+            value={form.startDate}
+            onChange={(date) => handleDateChange("startDate", date)}
+            minDate={new Date()} // Backdate prevent करने के लिए
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                fullWidth
+                sx={{ borderRadius: theme.shape.borderRadius * 2 }}
+              />
+            )}
+          />
+
+          <DatePicker
+            label="End Date"
+            value={form.endDate}
+            onChange={(date) => handleDateChange("endDate", date)}
+            minDate={form.startDate || new Date()} // Start date से पहले की date select नहीं होगी
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                fullWidth
+                sx={{ borderRadius: theme.shape.borderRadius * 2 }}
+              />
+            )}
+          />
+
+          {form.startDate && form.endDate && (
+            <Box
+              sx={{
+                p: 2,
+                bgcolor: `${theme.palette.primary.main}10`,
+                borderRadius: theme.shape.borderRadius,
+              }}
+            >
+              <Typography
+                variant="body2"
+                fontWeight={600}
+                color="primary.main"
+              >
+                Total Days:{" "}
+                {calculateDays(form.startDate, form.endDate)}
+              </Typography>
+            </Box>
+          )}
+
+          <TextField
+            fullWidth
+            multiline
+            rows={4}
+            name="reason"
+            label="Reason for Leave"
+            value={form.reason}
+            onChange={handleChange}
+            placeholder="Please provide a detailed reason for your leave application..."
+            sx={{ borderRadius: theme.shape.borderRadius * 2 }}
+          />
+
+          <Button
+            fullWidth
+            variant="contained"
+            onClick={handleSubmit}
+            disabled={
+              !form.startDate ||
+              !form.endDate ||
+              !form.reason.trim()
+            }
+            sx={{
+              borderRadius: theme.shape.borderRadius * 2,
+              py: 1.5,
+              fontWeight: 600,
+              textTransform: "none",
+            }}
+          >
+            Submit Leave Application
+          </Button>
+        </Stack>
+      </CardContent>
+    </Card>
+  </Box>
+)}
           </Paper>
 
           {/* Enhanced Snackbar */}

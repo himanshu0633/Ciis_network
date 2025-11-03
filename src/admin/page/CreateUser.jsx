@@ -8,6 +8,10 @@ import axios from '../../utils/axiosConfig';
 
 const roleOptions = ['admin', 'user', 'hr', 'manager'];
 const propertyOptions = ['phone', 'sim', 'laptop', 'desktop', 'headphone'];
+const genderOptions = ['male', 'female', 'other'];
+const maritalStatusOptions = ['single', 'married', 'divorced', 'widowed'];
+const employeeTypeOptions = ['intern', 'technical', 'non-technical', 'sales'];
+const emergencyRelationOptions = ['father', 'mother', 'spouse', 'sibling', 'friend', 'other'];
 
 const CreateUser = () => {
   const [form, setForm] = useState({
@@ -20,7 +24,36 @@ const CreateUser = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e) => {
+  // Handle text input with validation
+  const handleTextChange = (e) => {
+    const { name, value } = e.target;
+    
+    // Allow only letters and spaces for name fields
+    if (['name', 'fatherName', 'motherName', 'emergencyName', 'bankHolderName'].includes(name)) {
+      if (/^[a-zA-Z\s]*$/.test(value) || value === '') {
+        setForm(prev => ({ ...prev, [name]: value }));
+      }
+    }
+    // Allow only numbers for phone, salary, account number
+    else if (['phone', 'salary', 'accountNumber', 'emergencyPhone'].includes(name)) {
+      if (/^\d*$/.test(value) || value === '') {
+        setForm(prev => ({ ...prev, [name]: value }));
+      }
+    }
+    // Allow alphanumeric for IFSC (usually alphanumeric)
+    else if (name === 'ifsc') {
+      if (/^[a-zA-Z0-9]*$/.test(value) || value === '') {
+        setForm(prev => ({ ...prev, [name]: value }));
+      }
+    }
+    // Default case for other fields
+    else {
+      setForm(prev => ({ ...prev, [name]: value }));
+    }
+  };
+
+  // Handle select dropdown changes
+  const handleSelectChange = (e) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
   };
@@ -40,7 +73,12 @@ const CreateUser = () => {
     if (form.password !== form.confirmPassword) return toast.error('Passwords do not match');
     if (!roleOptions.includes(form.role)) return toast.error('Select a valid role');
 
-   
+    // Additional validations for user role
+    if (form.role === 'user') {
+      if (form.phone && form.phone.length !== 10) return toast.error('Phone number must be 10 digits');
+      if (form.emergencyPhone && form.emergencyPhone.length !== 10) return toast.error('Emergency phone must be 10 digits');
+      if (form.accountNumber && form.accountNumber.length < 8) return toast.error('Account number must be at least 8 digits');
+    }
 
     return true;
   };
@@ -76,16 +114,39 @@ const CreateUser = () => {
       <Paper sx={{ p: 4, borderRadius: 3 }} elevation={6}>
         <Typography variant="h5" fontWeight={600} gutterBottom>Create New User</Typography>
         <form onSubmit={handleSubmit}>
-          <TextField label="Full Name" name="name" fullWidth required margin="normal" value={form.name} onChange={handleChange} />
-          <TextField label="Email Address" name="email" type="email" fullWidth required margin="normal" value={form.email} onChange={handleChange} />
+          {/* Basic Information */}
+          <TextField 
+            label="Full Name" 
+            name="name" 
+            fullWidth 
+            required 
+            margin="normal" 
+            value={form.name} 
+            onChange={handleTextChange}
+            inputProps={{ pattern: "[a-zA-Z\\s]*" }}
+            helperText="Only letters and spaces allowed"
+          />
+          
+          <TextField 
+            label="Email Address" 
+            name="email" 
+            type="email" 
+            fullWidth 
+            required 
+            margin="normal" 
+            value={form.email} 
+            onChange={handleTextChange} 
+          />
           
           <TextField
             label="Password"
             name="password"
             type={showPassword ? 'text' : 'password'}
-            fullWidth required margin="normal"
+            fullWidth 
+            required 
+            margin="normal"
             value={form.password}
-            onChange={handleChange}
+            onChange={handleTextChange}
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
@@ -96,44 +157,179 @@ const CreateUser = () => {
               )
             }}
           />
+          
           <TextField
             label="Confirm Password"
             name="confirmPassword"
             type={showPassword ? 'text' : 'password'}
-            fullWidth required margin="normal"
+            fullWidth 
+            required 
+            margin="normal"
             value={form.confirmPassword}
-            onChange={handleChange}
+            onChange={handleTextChange}
           />
 
-          <TextField label="Role" name="role" fullWidth select required margin="normal" value={form.role} onChange={handleChange}>
+          <TextField 
+            label="Role" 
+            name="role" 
+            fullWidth 
+            select 
+            required 
+            margin="normal" 
+            value={form.role} 
+            onChange={handleSelectChange}
+          >
             {roleOptions.map(role => <MenuItem key={role} value={role}>{role.toUpperCase()}</MenuItem>)}
           </TextField>
 
           {form.role === 'user' && (
             <>
               <Typography variant="h6" mt={2}>Basic Details</Typography>
-              <TextField label="Phone Number" name="phone" fullWidth margin="normal" value={form.phone} onChange={handleChange} />
-              <TextField label="Address" name="address" fullWidth margin="normal" value={form.address} onChange={handleChange} />
-              <TextField label="Gender" name="gender" fullWidth margin="normal" value={form.gender} onChange={handleChange} />
-              <TextField label="Marital Status" name="maritalStatus" fullWidth margin="normal" value={form.maritalStatus} onChange={handleChange} />
-              <TextField label="Date of Birth" name="dob" type="date" fullWidth margin="normal" InputLabelProps={{ shrink: true }} value={form.dob} onChange={handleChange} />
-              <TextField label="Salary" name="salary" fullWidth margin="normal" value={form.salary} onChange={handleChange} />
+              
+              <TextField 
+                label="Phone Number" 
+                name="phone" 
+                fullWidth 
+                margin="normal" 
+                value={form.phone} 
+                onChange={handleTextChange}
+                inputProps={{ maxLength: 10, pattern: "\\d*" }}
+                helperText="10 digits only"
+              />
+              
+              <TextField 
+                label="Address" 
+                name="address" 
+                fullWidth 
+                margin="normal" 
+                value={form.address} 
+                onChange={handleTextChange} 
+              />
+              
+              <TextField 
+                label="Gender" 
+                name="gender" 
+                fullWidth 
+                select 
+                margin="normal" 
+                value={form.gender} 
+                onChange={handleSelectChange}
+              >
+                {genderOptions.map(option => (
+                  <MenuItem key={option} value={option}>
+                    {option.charAt(0).toUpperCase() + option.slice(1)}
+                  </MenuItem>
+                ))}
+              </TextField>
+              
+              <TextField 
+                label="Marital Status" 
+                name="maritalStatus" 
+                fullWidth 
+                select 
+                margin="normal" 
+                value={form.maritalStatus} 
+                onChange={handleSelectChange}
+              >
+                {maritalStatusOptions.map(option => (
+                  <MenuItem key={option} value={option}>
+                    {option.charAt(0).toUpperCase() + option.slice(1)}
+                  </MenuItem>
+                ))}
+              </TextField>
+              
+              <TextField 
+                label="Date of Birth" 
+                name="dob" 
+                type="date" 
+                fullWidth 
+                margin="normal" 
+                InputLabelProps={{ shrink: true }} 
+                value={form.dob} 
+                onChange={handleTextChange} 
+              />
+              
+              <TextField 
+                label="Salary" 
+                name="salary" 
+                fullWidth 
+                margin="normal" 
+                value={form.salary} 
+                onChange={handleTextChange}
+                inputProps={{ pattern: "\\d*" }}
+                helperText="Numbers only"
+              />
 
               <Typography variant="h6" mt={2}>Bank Details</Typography>
-              <TextField label="Account Number" name="accountNumber" fullWidth margin="normal" value={form.accountNumber} onChange={handleChange} />
-              <TextField label="IFSC Code" name="ifsc" fullWidth margin="normal" value={form.ifsc} onChange={handleChange} />
-              <TextField label="Bank Name" name="bankName" fullWidth margin="normal" value={form.bankName} onChange={handleChange} />
-              <TextField label="Bank Holder Name" name="bankHolderName" fullWidth margin="normal" value={form.bankHolderName} onChange={handleChange} />
+              
+              <TextField 
+                label="Account Number" 
+                name="accountNumber" 
+                fullWidth 
+                margin="normal" 
+                value={form.accountNumber} 
+                onChange={handleTextChange}
+                inputProps={{ pattern: "\\d*" }}
+                helperText="Numbers only"
+              />
+              
+              <TextField 
+                label="IFSC Code" 
+                name="ifsc" 
+                fullWidth 
+                margin="normal" 
+                value={form.ifsc} 
+                onChange={handleTextChange}
+                inputProps={{ pattern: "[a-zA-Z0-9]*" }}
+                helperText="Alphanumeric only"
+              />
+              
+              <TextField 
+                label="Bank Name" 
+                name="bankName" 
+                fullWidth 
+                margin="normal" 
+                value={form.bankName} 
+                onChange={handleTextChange} 
+              />
+              
+              <TextField 
+                label="Bank Holder Name" 
+                name="bankHolderName" 
+                fullWidth 
+                margin="normal" 
+                value={form.bankHolderName} 
+                onChange={handleTextChange}
+                inputProps={{ pattern: "[a-zA-Z\\s]*" }}
+                helperText="Only letters and spaces allowed"
+              />
 
-             
-              <TextField label="Employee Type" name="employeeType" select fullWidth margin="normal" value={form.employeeType} onChange={handleChange}>
-                <MenuItem value="intern">Intern</MenuItem>
-                <MenuItem value="technical">Technical</MenuItem>
-                <MenuItem value="non-technical">Non-Technical</MenuItem>
-                <MenuItem value="sales">Sales</MenuItem>
+              <TextField 
+                label="Employee Type" 
+                name="employeeType" 
+                select 
+                fullWidth 
+                margin="normal" 
+                value={form.employeeType} 
+                onChange={handleSelectChange}
+              >
+                {employeeTypeOptions.map(option => (
+                  <MenuItem key={option} value={option}>
+                    {option.charAt(0).toUpperCase() + option.slice(1)}
+                  </MenuItem>
+                ))}
               </TextField>
-              <TextField label="Job Role" name="jobRole" fullWidth margin="normal" value={form.jobRole} onChange={handleChange} />
-               <Typography variant="h6" mt={2}>Assets</Typography>
+              
+              <TextField 
+                label="Job Role" 
+                name="jobRole" 
+                fullWidth 
+                margin="normal" 
+                value={form.jobRole} 
+                onChange={handleTextChange} 
+              />
+              
+              <Typography variant="h6" mt={2}>Assets</Typography>
               <Box mt={1}>
                 <Typography>Select Properties:</Typography>
                 {propertyOptions.map(item => (
@@ -142,18 +338,97 @@ const CreateUser = () => {
                   </label>
                 ))}
               </Box>
-              <TextField label="Property Owned" name="propertyOwned" fullWidth margin="normal" value={form.propertyOwned} onChange={handleChange} />
-              <TextField label="Additional Details" name="additionalDetails" fullWidth margin="normal" value={form.additionalDetails} onChange={handleChange} />
+              
+              <TextField 
+                label="Property Owned" 
+                name="propertyOwned" 
+                fullWidth 
+                margin="normal" 
+                value={form.propertyOwned} 
+                onChange={handleTextChange} 
+              />
+              
+              <TextField 
+                label="Additional Details" 
+                name="additionalDetails" 
+                fullWidth 
+                margin="normal" 
+                value={form.additionalDetails} 
+                onChange={handleTextChange} 
+              />
 
               <Typography variant="h6" mt={2}>Family Details</Typography>
-              <TextField label="Father's Name" name="fatherName" fullWidth margin="normal" value={form.fatherName} onChange={handleChange} />
-              <TextField label="Mother's Name" name="motherName" fullWidth margin="normal" value={form.motherName} onChange={handleChange} />
+              
+              <TextField 
+                label="Father's Name" 
+                name="fatherName" 
+                fullWidth 
+                margin="normal" 
+                value={form.fatherName} 
+                onChange={handleTextChange}
+                inputProps={{ pattern: "[a-zA-Z\\s]*" }}
+                helperText="Only letters and spaces allowed"
+              />
+              
+              <TextField 
+                label="Mother's Name" 
+                name="motherName" 
+                fullWidth 
+                margin="normal" 
+                value={form.motherName} 
+                onChange={handleTextChange}
+                inputProps={{ pattern: "[a-zA-Z\\s]*" }}
+                helperText="Only letters and spaces allowed"
+              />
 
               <Typography variant="h6" mt={2}>Emergency Contact</Typography>
-              <TextField label="Name" name="emergencyName" fullWidth margin="normal" value={form.emergencyName} onChange={handleChange} />
-              <TextField label="Phone" name="emergencyPhone" fullWidth margin="normal" value={form.emergencyPhone} onChange={handleChange} />
-              <TextField label="Relationship" name="emergencyRelation" fullWidth margin="normal" value={form.emergencyRelation} onChange={handleChange} />
-              <TextField label="Present Address" name="emergencyAddress" fullWidth margin="normal" value={form.emergencyAddress} onChange={handleChange} />
+              
+              <TextField 
+                label="Name" 
+                name="emergencyName" 
+                fullWidth 
+                margin="normal" 
+                value={form.emergencyName} 
+                onChange={handleTextChange}
+                inputProps={{ pattern: "[a-zA-Z\\s]*" }}
+                helperText="Only letters and spaces allowed"
+              />
+              
+              <TextField 
+                label="Phone" 
+                name="emergencyPhone" 
+                fullWidth 
+                margin="normal" 
+                value={form.emergencyPhone} 
+                onChange={handleTextChange}
+                inputProps={{ maxLength: 10, pattern: "\\d*" }}
+                helperText="10 digits only"
+              />
+              
+              <TextField 
+                label="Relationship" 
+                name="emergencyRelation" 
+                fullWidth 
+                select 
+                margin="normal" 
+                value={form.emergencyRelation} 
+                onChange={handleSelectChange}
+              >
+                {emergencyRelationOptions.map(option => (
+                  <MenuItem key={option} value={option}>
+                    {option.charAt(0).toUpperCase() + option.slice(1)}
+                  </MenuItem>
+                ))}
+              </TextField>
+              
+              <TextField 
+                label="Present Address" 
+                name="emergencyAddress" 
+                fullWidth 
+                margin="normal" 
+                value={form.emergencyAddress} 
+                onChange={handleTextChange} 
+              />
             </>
           )}
 

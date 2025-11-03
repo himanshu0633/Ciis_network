@@ -1298,12 +1298,13 @@ const MyTaskManagement = () => {
 
       <Grid container spacing={2}>
         <Grid item xs={12} sm={6}>
-          <DatePicker
-            label="Due Date"
-            value={newTask.dueDate}
-            onChange={(date) => setNewTask({ ...newTask, dueDate: date })}
-            renderInput={(params) => <TextField {...params} fullWidth />}
-          />
+        <DatePicker
+  label="Due Date"
+  value={newTask.dueDate}
+  onChange={(date) => setNewTask({ ...newTask, dueDate: date })}
+  minDate={new Date()} // This prevents selecting past dates
+  renderInput={(params) => <TextField {...params} fullWidth />}
+/>
         </Grid>
 
         <Grid item xs={12} sm={6}>
