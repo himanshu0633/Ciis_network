@@ -21,7 +21,14 @@ import {
   useTheme,
   useMediaQuery,
   Divider,
-  Paper
+  Paper,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+  Snackbar,
+  Alert,
+  CircularProgress
 } from "@mui/material";
 import {
   FiMail,
@@ -36,9 +43,13 @@ import {
   FiAlertTriangle,
   FiSearch,
   FiX,
-  FiClock ,
+  FiClock,
   FiEdit,
-  FiDownload
+  FiDownload,
+  FiMoreVertical,
+  FiTrash2,
+  FiSave,
+  FiEye
 } from "react-icons/fi";
 import axios from "../../../utils/axiosConfig";
 import EmployeeTypeFilter from "../../Filter/EmployeeTypeFilter";
@@ -87,17 +98,17 @@ const DetailItem = styled(Box)(({ theme }) => ({
 
 const EmployeeTypeChip = styled(Chip)(({ theme, type }) => ({
   fontWeight: 600,
-  ...(type === 'full-time' && {
+  ...(type === 'technical' && {
     background: `${theme.palette.success.main}20`,
     color: theme.palette.success.dark,
     border: `1px solid ${theme.palette.success.main}40`,
   }),
-  ...(type === 'part-time' && {
+  ...(type === 'non-technical' && {
     background: `${theme.palette.warning.main}20`,
     color: theme.palette.warning.dark,
     border: `1px solid ${theme.palette.warning.main}40`,
   }),
-  ...(type === 'contract' && {
+  ...(type === 'sales' && {
     background: `${theme.palette.info.main}20`,
     color: theme.palette.info.dark,
     border: `1px solid ${theme.palette.info.main}40`,
@@ -115,57 +126,127 @@ const EmployeeDirectory = () => {
   const [selectedEmployeeType, setSelectedEmployeeType] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    total: 0,
-    fullTime: 0,
-    partTime: 0,
-    contract: 0,
-    intern: 0
-  });
+  const [editingUser, setEditingUser] = useState(null);
+  const [editFormData, setEditFormData] = useState({});
+  const [menuAnchorEl, setMenuAnchorEl] = useState(null);
+  const [selectedMenuUser, setSelectedMenuUser] = useState(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  // Corrected stats calculation based on your model's enum values
+  const stats = useMemo(() => ({
+    total: employees.length,
+    technical: employees.filter(emp => emp.employeeType?.toLowerCase() === 'technical').length,
+    nonTechnical: employees.filter(emp => emp.employeeType?.toLowerCase() === 'non-technical').length,
+    sales: employees.filter(emp => emp.employeeType?.toLowerCase() === 'sales').length,
+    intern: employees.filter(emp => emp.employeeType?.toLowerCase() === 'intern').length
+  }), [employees]);
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   useEffect(() => {
-    const fetchEmployees = async () => {
-      setLoading(true);
-      try {
-        const res = await axios.get("/users/all-users");
-        setEmployees(res.data);
-        calculateStats(res.data);
-      } catch (err) {
-        console.error("❌ Failed to fetch users:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchEmployees();
   }, []);
 
-  const calculateStats = (employeesData) => {
-    const fullTime = employeesData.filter(emp => emp.employeeType?.toLowerCase() === 'full-time').length;
-    const partTime = employeesData.filter(emp => emp.employeeType?.toLowerCase() === 'part-time').length;
-    const contract = employeesData.filter(emp => emp.employeeType?.toLowerCase() === 'contract').length;
-    const intern = employeesData.filter(emp => emp.employeeType?.toLowerCase() === 'intern').length;
-    
-    setStats({
-      total: employeesData.length,
-      fullTime,
-      partTime,
-      contract,
-      intern
-    });
+  const fetchEmployees = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get("/users/all-users");
+      setEmployees(res.data);
+    } catch (err) {
+      console.error("❌ Failed to fetch users:", err);
+      showSnackbar('Failed to fetch employees', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const showSnackbar = (message, severity = 'success') => {
+    setSnackbar({ open: true, message, severity });
   };
 
   const handleOpenUser = (user) => setSelectedUser(user);
   const handleCloseUser = () => setSelectedUser(null);
 
-  // Filter logic with search
+  const handleMenuOpen = (event, user) => {
+    setMenuAnchorEl(event.currentTarget);
+    setSelectedMenuUser(user);
+  };
+
+  const handleMenuClose = () => {
+    setMenuAnchorEl(null);
+    setSelectedMenuUser(null);
+  };
+
+  const handleEdit = (user) => {
+    setEditingUser(user);
+    setEditFormData({ ...user });
+    handleMenuClose();
+  };
+
+  const handleCancelEdit = () => {
+    setEditingUser(null);
+    setEditFormData({});
+  };
+
+  const handleSaveEdit = async () => {
+    setSaving(true);
+    try {
+      const res = await axios.put(`/users/update-user/${editingUser._id}`, editFormData);
+      setEmployees(prev => prev.map(emp => 
+        emp._id === editingUser._id ? res.data : emp
+      ));
+      setEditingUser(null);
+      setEditFormData({});
+      showSnackbar('Employee updated successfully');
+    } catch (err) {
+      console.error("❌ Failed to update user:", err);
+      showSnackbar('Failed to update employee', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteClick = (user) => {
+    setUserToDelete(user);
+    setDeleteConfirmOpen(true);
+    handleMenuClose();
+  };
+
+  const handleDeleteConfirm = async () => {
+    setDeleting(true);
+    try {
+      await axios.delete(`/users/delete-user/${userToDelete._id}`);
+      setEmployees(prev => prev.filter(emp => emp._id !== userToDelete._id));
+      setDeleteConfirmOpen(false);
+      setUserToDelete(null);
+      showSnackbar('Employee deleted successfully');
+    } catch (err) {
+      console.error("❌ Failed to delete user:", err);
+      // Show detailed error message
+      const errorMessage = err.response?.data?.error || 'Failed to delete employee';
+      showSnackbar(errorMessage, 'error');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleInputChange = (field, value) => {
+    setEditFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  // Filter logic with search - using phone instead of mobile
   const filteredEmployees = useMemo(() => {
     let filtered = employees;
     
-    // Filter by employee type
     if (selectedEmployeeType !== "all") {
       filtered = filtered.filter(
         (u) =>
@@ -174,15 +255,13 @@ const EmployeeDirectory = () => {
       );
     }
     
-    // Filter by search term
     if (searchTerm) {
       filtered = filtered.filter(
         (u) =>
           u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           u.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           u.jobRole?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          u.mobile?.includes(searchTerm) ||
-          u.phone?.includes(searchTerm)
+          u.phone?.includes(searchTerm) // Using phone instead of mobile
       );
     }
     
@@ -201,16 +280,9 @@ const EmployeeDirectory = () => {
 
   const formatPhoneNumber = (phone) => {
     if (!phone) return 'Not provided';
-    return phone.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3');
-  };
-
-  const getEmployeeTypeColor = (type) => {
-    if (!type) return 'default';
-    const typeLower = type.toLowerCase();
-    return typeLower === 'full-time' ? 'success' :
-           typeLower === 'part-time' ? 'warning' :
-           typeLower === 'contract' ? 'info' :
-           typeLower === 'intern' ? 'secondary' : 'default';
+    // Handle both string and number types
+    const phoneStr = phone.toString();
+    return phoneStr.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3');
   };
 
   if (loading) {
@@ -287,7 +359,7 @@ const EmployeeDirectory = () => {
           </Stack>
         </Paper>
 
-        {/* Statistics Cards */}
+        {/* Statistics Cards - Corrected labels */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
           <Grid item xs={6} md={3}>
             <StatCard color="primary">
@@ -324,10 +396,10 @@ const EmployeeDirectory = () => {
                   </Avatar>
                   <Box>
                     <Typography variant="body2" color="text.secondary">
-                      Full Time
+                      Technical
                     </Typography>
                     <Typography variant="h4" fontWeight={700}>
-                      {stats.fullTime}
+                      {stats.technical}
                     </Typography>
                   </Box>
                 </Stack>
@@ -347,10 +419,10 @@ const EmployeeDirectory = () => {
                   </Avatar>
                   <Box>
                     <Typography variant="body2" color="text.secondary">
-                      Part Time
+                      Non-Technical
                     </Typography>
                     <Typography variant="h4" fontWeight={700}>
-                      {stats.partTime}
+                      {stats.nonTechnical}
                     </Typography>
                   </Box>
                 </Stack>
@@ -370,10 +442,10 @@ const EmployeeDirectory = () => {
                   </Avatar>
                   <Box>
                     <Typography variant="body2" color="text.secondary">
-                      Contract
+                      Sales
                     </Typography>
                     <Typography variant="h4" fontWeight={700}>
-                      {stats.contract}
+                      {stats.sales}
                     </Typography>
                   </Box>
                 </Stack>
@@ -419,7 +491,7 @@ const EmployeeDirectory = () => {
           <Grid container spacing={3}>
             {filteredEmployees.map((emp) => (
               <Grid item xs={12} sm={6} md={4} lg={3} key={emp._id}>
-                <EmployeeCard onClick={() => handleOpenUser(emp)}>
+                <EmployeeCard>
                   <CardContent>
                     <Stack spacing={2}>
                       {/* Header with Avatar and Basic Info */}
@@ -435,18 +507,29 @@ const EmployeeDirectory = () => {
                           {getInitials(emp.name)}
                         </Avatar>
                         <Box sx={{ flex: 1 }}>
-                          <Typography variant="h6" fontWeight={600} noWrap>
-                            {emp.name}
-                          </Typography>
-                          <Typography variant="body2" color="primary.main" fontWeight={500}>
-                            {emp.jobRole || 'No role specified'}
-                          </Typography>
-                          <EmployeeTypeChip
-                            label={emp.employeeType?.toUpperCase() || 'N/A'}
-                            type={emp.employeeType?.toLowerCase()}
-                            size="small"
-                            sx={{ mt: 0.5 }}
-                          />
+                          <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                            <Box>
+                              <Typography variant="h6" fontWeight={600} noWrap>
+                                {emp.name}
+                              </Typography>
+                              <Typography variant="body2" color="primary.main" fontWeight={500}>
+                                {emp.jobRole || 'No role specified'}
+                              </Typography>
+                              <EmployeeTypeChip
+                                label={emp.employeeType?.toUpperCase() || 'N/A'}
+                                type={emp.employeeType?.toLowerCase()}
+                                size="small"
+                                sx={{ mt: 0.5 }}
+                              />
+                            </Box>
+                            <IconButton 
+                              size="small" 
+                              onClick={(e) => handleMenuOpen(e, emp)}
+                              sx={{ mt: -0.5, mr: -0.5 }}
+                            >
+                              <FiMoreVertical size={16} />
+                            </IconButton>
+                          </Stack>
                         </Box>
                       </Stack>
 
@@ -464,7 +547,7 @@ const EmployeeDirectory = () => {
                         <Stack direction="row" spacing={1} alignItems="center">
                           <FiPhone size={14} color={theme.palette.text.secondary} />
                           <Typography variant="body2">
-                            {formatPhoneNumber(emp.mobile || emp.phone)}
+                            {formatPhoneNumber(emp.phone)} {/* Using phone instead of mobile */}
                           </Typography>
                         </Stack>
                       </Stack>
@@ -474,7 +557,8 @@ const EmployeeDirectory = () => {
                         variant="outlined" 
                         fullWidth
                         size="small"
-                        startIcon={<FiUser size={14} />}
+                        startIcon={<FiEye size={14} />}
+                        onClick={() => handleOpenUser(emp)}
                         sx={{ 
                           borderRadius: theme.shape.borderRadius * 2,
                           mt: 1
@@ -523,9 +607,16 @@ const EmployeeDirectory = () => {
                       />
                     </Stack>
                   </Box>
-                  <IconButton onClick={handleCloseUser}>
-                    <FiX />
-                  </IconButton>
+                  <Stack direction="row" spacing={1}>
+                    <Tooltip title="Edit Employee">
+                      <IconButton onClick={() => handleEdit(selectedUser)}>
+                        <FiEdit />
+                      </IconButton>
+                    </Tooltip>
+                    <IconButton onClick={handleCloseUser}>
+                      <FiX />
+                    </IconButton>
+                  </Stack>
                 </Stack>
               </DialogTitle>
               
@@ -612,7 +703,7 @@ const EmployeeDirectory = () => {
                               Phone Number
                             </Typography>
                             <Typography variant="body1" fontWeight={500}>
-                              {formatPhoneNumber(selectedUser.mobile || selectedUser.phone)}
+                              {formatPhoneNumber(selectedUser.phone)} {/* Using phone instead of mobile */}
                             </Typography>
                           </Box>
                         </DetailItem>
@@ -757,15 +848,255 @@ const EmployeeDirectory = () => {
                 </Button>
                 <Button 
                   variant="contained"
-                  startIcon={<FiMail />}
+                  startIcon={<FiEdit />}
+                  onClick={() => handleEdit(selectedUser)}
                   sx={{ borderRadius: theme.shape.borderRadius * 2 }}
                 >
-                  Send Message
+                  Edit Profile
                 </Button>
               </DialogActions>
             </>
           )}
         </Dialog>
+
+        {/* Edit Employee Dialog */}
+        <Dialog 
+          open={Boolean(editingUser)} 
+          onClose={handleCancelEdit} 
+          maxWidth="md" 
+          fullWidth
+          scroll="paper"
+        >
+          {editingUser && (
+            <>
+              <DialogTitle>
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <FiEdit />
+                  <Typography variant="h5" fontWeight={600}>
+                    Edit Employee
+                  </Typography>
+                </Stack>
+              </DialogTitle>
+              
+              <DialogContent dividers>
+                <Stack spacing={3}>
+                  {/* Personal Information */}
+                  <Box>
+                    <Typography variant="h6" fontWeight={600} gutterBottom>
+                      Personal Information
+                    </Typography>
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          label="Full Name"
+                          value={editFormData.name || ''}
+                          onChange={(e) => handleInputChange('name', e.target.value)}
+                          fullWidth
+                          margin="normal"
+                        />
+                        <TextField
+                          label="Date of Birth"
+                          type="date"
+                          value={editFormData.dob ? new Date(editFormData.dob).toISOString().split('T')[0] : ''}
+                          onChange={(e) => handleInputChange('dob', e.target.value)}
+                          fullWidth
+                          margin="normal"
+                          InputLabelProps={{ shrink: true }}
+                        />
+                        <TextField
+                          label="Gender"
+                          value={editFormData.gender || ''}
+                          onChange={(e) => handleInputChange('gender', e.target.value)}
+                          fullWidth
+                          margin="normal"
+                          select
+                        >
+                          <MenuItem value="male">Male</MenuItem>
+                          <MenuItem value="female">Female</MenuItem>
+                          <MenuItem value="other">Other</MenuItem>
+                        </TextField>
+                      </Grid>
+                      
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          label="Email Address"
+                          type="email"
+                          value={editFormData.email || ''}
+                          onChange={(e) => handleInputChange('email', e.target.value)}
+                          fullWidth
+                          margin="normal"
+                        />
+                        <TextField
+                          label="Phone Number"
+                          value={editFormData.phone || ''} 
+                          onChange={(e) => handleInputChange('phone', e.target.value)}
+                          fullWidth
+                          margin="normal"
+                        />
+                        <TextField
+                          label="Address"
+                          multiline
+                          rows={2}
+                          value={editFormData.address || ''}
+                          onChange={(e) => handleInputChange('address', e.target.value)}
+                          fullWidth
+                          margin="normal"
+                        />
+                      </Grid>
+                    </Grid>
+                  </Box>
+
+                  <Divider />
+
+                  {/* Job Information */}
+                  <Box>
+                    <Typography variant="h6" fontWeight={600} gutterBottom>
+                      Job Information
+                    </Typography>
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          label="Job Role"
+                          value={editFormData.jobRole || ''}
+                          onChange={(e) => handleInputChange('jobRole', e.target.value)}
+                          fullWidth
+                          margin="normal"
+                        />
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          label="Employee Type"
+                          value={editFormData.employeeType || ''}
+                          onChange={(e) => handleInputChange('employeeType', e.target.value)}
+                          fullWidth
+                          margin="normal"
+                          select
+                        >
+                          <MenuItem value="technical">Technical</MenuItem>
+                          <MenuItem value="non-technical">Non-technical</MenuItem>
+                          <MenuItem value="sales">Sales</MenuItem>
+                          <MenuItem value="intern">Intern</MenuItem>
+                        </TextField>
+                      </Grid>
+                    </Grid>
+                  </Box>
+                </Stack>
+              </DialogContent>
+              
+              <DialogActions sx={{ p: 3, gap: 1 }}>
+                <Button 
+                  onClick={handleCancelEdit}
+                  disabled={saving}
+                  sx={{ borderRadius: theme.shape.borderRadius * 2 }}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  variant="contained"
+                  startIcon={saving ? <CircularProgress size={16} /> : <FiSave />}
+                  onClick={handleSaveEdit}
+                  disabled={saving}
+                  sx={{ borderRadius: theme.shape.borderRadius * 2 }}
+                >
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </DialogActions>
+            </>
+          )}
+        </Dialog>
+
+        {/* Context Menu */}
+        <Menu
+          anchorEl={menuAnchorEl}
+          open={Boolean(menuAnchorEl)}
+          onClose={handleMenuClose}
+          PaperProps={{
+            sx: { 
+              borderRadius: theme.shape.borderRadius * 2,
+              minWidth: 140
+            }
+          }}
+        >
+          <MenuItem onClick={() => handleOpenUser(selectedMenuUser)}>
+            <ListItemIcon>
+              <FiEye size={16} />
+            </ListItemIcon>
+            <ListItemText>View</ListItemText>
+          </MenuItem>
+          <MenuItem onClick={() => handleEdit(selectedMenuUser)}>
+            <ListItemIcon>
+              <FiEdit size={16} />
+            </ListItemIcon>
+            <ListItemText>Edit</ListItemText>
+          </MenuItem>
+          <MenuItem 
+            onClick={() => handleDeleteClick(selectedMenuUser)}
+            sx={{ color: 'error.main' }}
+          >
+            <ListItemIcon>
+              <FiTrash2 size={16} color={theme.palette.error.main} />
+            </ListItemIcon>
+            <ListItemText>Delete</ListItemText>
+          </MenuItem>
+        </Menu>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog 
+          open={deleteConfirmOpen} 
+          onClose={() => setDeleteConfirmOpen(false)}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>
+            <Stack direction="row" alignItems="center" spacing={1} color="error.main">
+              <FiTrash2 />
+              <Typography variant="h6" fontWeight={600}>
+                Confirm Delete
+              </Typography>
+            </Stack>
+          </DialogTitle>
+          <DialogContent>
+            <Typography>
+              Are you sure you want to delete <strong>{userToDelete?.name}</strong>? 
+              This action cannot be undone.
+            </Typography>
+          </DialogContent>
+          <DialogActions sx={{ p: 3, gap: 1 }}>
+            <Button 
+              onClick={() => setDeleteConfirmOpen(false)}
+              disabled={deleting}
+              sx={{ borderRadius: theme.shape.borderRadius * 2 }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="contained"
+              color="error"
+              startIcon={deleting ? <CircularProgress size={16} /> : <FiTrash2 />}
+              onClick={handleDeleteConfirm}
+              disabled={deleting}
+              sx={{ borderRadius: theme.shape.borderRadius * 2 }}
+            >
+              {deleting ? 'Deleting...' : 'Delete Employee'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Snackbar for notifications */}
+        <Snackbar 
+          open={snackbar.open} 
+          autoHideDuration={6000} 
+          onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        >
+          <Alert 
+            severity={snackbar.severity}
+            onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+            sx={{ borderRadius: theme.shape.borderRadius * 2 }}
+          >
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
       </Box>
     </Fade>
   );
