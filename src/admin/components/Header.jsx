@@ -201,14 +201,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
               </Badge>
             </IconButton>
           </Tooltip>
-
-          <Tooltip title={`Switch to ${theme.palette.mode === 'dark' ? 'Light' : 'Dark'} Mode`}>
-            <IconButton color="inherit" onClick={colorMode.toggleColorMode}>
-              {theme.palette.mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
-            </IconButton>
-          </Tooltip>
-
-          <UserProfile onClick={handleProfileClick}>
+                    <UserProfile onClick={handleProfileClick}>
             <Avatar sx={{ bgcolor: 'primary.main' }}>
               <PersonIcon />
             </Avatar>
