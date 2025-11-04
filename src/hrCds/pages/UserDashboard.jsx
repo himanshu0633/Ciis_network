@@ -648,43 +648,8 @@ const UserDashboard = () => {
         </div>
 
         <div className="right-column">
-          <div className="stats-grid">
-            <div className="stat-card">
-              <div className="stat-content">
-                <MdToday size={24} className="stat-icon" />
-                <div className="stat-value">{monthlyPresentCount}</div>
-                <div className="stat-label">Present</div>
-              </div>
-            </div>
-            
-            <div className="stat-card">
-              <div className="stat-content">
-                <FiTrendingUp size={24} className="stat-icon" />
-                <div className="stat-value">{attendanceRate}%</div>
-                <div className="stat-label">Attendance</div>
-              </div>
-            </div>
-            
-            <div className="stat-card">
-              <div className="stat-content">
-                <FiAward size={24} className="stat-icon" />
-                <div className="stat-value">{leaveDates.length}</div>
-                <div className="stat-label">Leaves</div>
-              </div>
-            </div>
-            
-            <div className="stat-card">
-              <div className="stat-content">
-                <MdAccessTime size={24} className="stat-icon" />
-                <div className="stat-value">{absentDates.length}</div>
-                <div className="stat-label">Absent</div>
-              </div>
-            </div>
-          </div>
-          
-          
-    
-          {/* ✅ CORRECTED Recent Activity Section */}
+
+             {/* ✅ CORRECTED Recent Activity Section */}
           <div className="activity-card">
             <div className="activity-header">
               <h3>Recent Activities</h3>
@@ -751,6 +716,43 @@ const UserDashboard = () => {
               )}
             </div>
           </div>
+          <div className="stats-grid">
+            <div className="stat-card">
+              <div className="stat-content">
+                <MdToday size={15} className="stat-icon" />
+                <div className="stat-value">{monthlyPresentCount}</div>
+                <div className="stat-label">Present</div>
+              </div>
+            </div>
+            
+            <div className="stat-card">
+              <div className="stat-content">
+                <FiTrendingUp size={24} className="stat-icon" />
+                <div className="stat-value">{attendanceRate}%</div>
+                <div className="stat-label">Attendance</div>
+              </div>
+            </div>
+            
+            <div className="stat-card">
+              <div className="stat-content">
+                <FiAward size={24} className="stat-icon" />
+                <div className="stat-value">{leaveDates.length}</div>
+                <div className="stat-label">Leaves</div>
+              </div>
+            </div>
+            
+            <div className="stat-card">
+              <div className="stat-content">
+                <MdAccessTime size={24} className="stat-icon" />
+                <div className="stat-value">{absentDates.length}</div>
+                <div className="stat-label">Absent</div>
+              </div>
+            </div>
+          </div>
+          
+    
+    
+       
         </div>
       </div>
     </div>
