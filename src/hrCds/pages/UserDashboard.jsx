@@ -725,14 +725,7 @@ const UserDashboard = () => {
               </div>
             </div>
             
-            <div className="stat-card">
-              <div className="stat-content">
-                <FiTrendingUp size={24} className="stat-icon" />
-                <div className="stat-value">{attendanceRate}%</div>
-                <div className="stat-label">Attendance</div>
-              </div>
-            </div>
-            
+  
             <div className="stat-card">
               <div className="stat-content">
                 <FiAward size={24} className="stat-icon" />

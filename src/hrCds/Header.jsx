@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import {
   AppBar,
   Toolbar,
@@ -27,43 +27,42 @@ const Header = ({ toggleSidebar }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
-  const colorMode = useContext(ColorModeContext);
 
   const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0); // ✅ Track unread notifications
+  const [unreadCount, setUnreadCount] = useState(0);
   const [anchorEl, setAnchorEl] = useState(null);
 
-  const handleNotificationClick = async (e) => {
-    setAnchorEl(e.currentTarget);
-    await fetchNotifications();
-    setUnreadCount(0); // ✅ Reset count when user opens the menu
-  };
+  // ✅ Auto fetch notifications on component mount
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
 
-  const handleNotificationClose = () => setAnchorEl(null);
-
+  // ✅ Logout
   const handleLogout = () => {
     localStorage.removeItem('user');
     localStorage.removeItem('token');
     navigate('/login');
   };
 
+  // ✅ Format datetime nicely
+  const formatDateTime = (dateStr) => {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    return d.toLocaleString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  // ✅ Fetch all notifications
   const fetchNotifications = async () => {
     const token = localStorage.getItem('token');
     if (!token) return;
 
     const headers = { Authorization: `Bearer ${token}` };
-
-    const formatDateTime = (dateStr) => {
-      if (!dateStr) return '';
-      const d = new Date(dateStr);
-      return d.toLocaleString('en-IN', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    };
 
     try {
       const [
@@ -74,7 +73,7 @@ const Header = ({ toggleSidebar }) => {
         assignedTasksRes,
         groupsRes,
         alertsRes,
-      ] = await Promise.all([
+      ] = await Promise.allSettled([
         axios.get(`${API_URL}/attendance/list`, { headers }),
         axios.get(`${API_URL}/leaves/status`, { headers }),
         axios.get(`${API_URL}/assets/my-requests`, { headers }),
@@ -85,35 +84,25 @@ const Header = ({ toggleSidebar }) => {
       ]);
 
       const all = [];
-      const now = new Date();
-      const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-      const isRecent = (dateStr) => {
-        if (!dateStr) return false;
-        const d = new Date(dateStr);
-        return d >= last24h;
-      };
-
-      // ✅ Attendance
-      const attendanceData = Array.isArray(attendanceRes.data)
-        ? attendanceRes.data
-        : attendanceRes.data?.data || [];
+      // ✅ Handle attendance
+      const attendanceData = attendanceRes.value?.data?.data || attendanceRes.value?.data || [];
       attendanceData.forEach((item) => {
-        if (!isRecent(item.date || item.inTime)) return;
-        if (item.inTime) all.push(`🕒 In Time: ${formatDateTime(item.inTime)}`);
-        if (item.outTime) all.push(`🏠 Out Time: ${formatDateTime(item.outTime)}`);
+        if (item.inTime)
+          all.push(`🕒 In Time: ${formatDateTime(item.inTime)}`);
+        if (item.outTime)
+          all.push(`🏠 Out Time: ${formatDateTime(item.outTime)}`);
         if (!item.outTime && item.inTime)
           all.push('⚡ You are currently logged in');
       });
 
       // ✅ Leaves
-      const leavesData = leavesRes.data?.leaves || [];
+      const leavesData = leavesRes.value?.data?.leaves || [];
       leavesData.forEach((l) => {
-        if (!isRecent(l.updatedAt || l.createdAt)) return;
         const emoji =
-          l.status.toLowerCase() === 'approved'
+          l.status?.toLowerCase() === 'approved'
             ? '✅'
-            : l.status.toLowerCase() === 'pending'
+            : l.status?.toLowerCase() === 'pending'
             ? '⏳'
             : '❌';
         all.push(
@@ -124,11 +113,10 @@ const Header = ({ toggleSidebar }) => {
       });
 
       // ✅ Assets
-      const assetsData = assetsRes.data?.requests || [];
+      const assetsData = assetsRes.value?.data?.requests || [];
       assetsData.forEach((a) => {
-        if (!isRecent(a.updatedAt || a.createdAt)) return;
         all.push(
-          `💻 Asset: ${a.assetName} — ${
+          `💻 Asset: ${a.assetName || 'Unknown'} — ${
             a.status === 'approved'
               ? 'Approved ✅'
               : a.status === 'pending'
@@ -139,10 +127,9 @@ const Header = ({ toggleSidebar }) => {
       });
 
       // ✅ My Tasks
-      const groupedTasks = myTasksRes.data?.groupedTasks || {};
+      const groupedTasks = myTasksRes.value?.data?.groupedTasks || {};
       Object.keys(groupedTasks).forEach((dateKey) => {
         groupedTasks[dateKey].forEach((t) => {
-          if (!isRecent(t.updatedAt || t.createdAt)) return;
           const taskStatus =
             t.statusInfo?.find(
               (s) => s.userId === user?._id || s.user === user?._id
@@ -152,38 +139,50 @@ const Header = ({ toggleSidebar }) => {
       });
 
       // ✅ Assigned Tasks
-      const assignedTaskData = Array.isArray(assignedTasksRes.data)
-        ? assignedTasksRes.data
-        : assignedTasksRes.data?.data || [];
+      const assignedTaskData =
+        Array.isArray(assignedTasksRes.value?.data)
+          ? assignedTasksRes.value.data
+          : assignedTasksRes.value?.data?.data || [];
       assignedTaskData.forEach((t) => {
-        if (!isRecent(t.updatedAt || t.createdAt)) return;
         all.push(`📋 Assigned: ${t.title || 'Unnamed'} (${t.status || 'Pending'})`);
       });
 
       // ✅ Groups
-      const groupData = Array.isArray(groupsRes.data)
-        ? groupsRes.data
-        : groupsRes.data?.data || [];
+      const groupData =
+        Array.isArray(groupsRes.value?.data)
+          ? groupsRes.value.data
+          : groupsRes.value?.data?.data || [];
       groupData.forEach((g) => {
-        if (!isRecent(g.createdAt)) return;
         all.push(`👥 Group Created: ${g.groupName || g.name}`);
       });
 
       // ✅ Alerts
-      const alertData = Array.isArray(alertsRes.data)
-        ? alertsRes.data
-        : alertsRes.data?.data || [];
+      const alertData =
+        Array.isArray(alertsRes.value?.data)
+          ? alertsRes.value.data
+          : alertsRes.value?.data?.data || [];
       alertData.forEach((a) => {
-        if (!isRecent(a.createdAt)) return;
         all.push(`🚨 ${a.message || 'New alert received'}`);
       });
 
-      // ✅ Update notifications + badge count
       setNotifications(all);
-      setUnreadCount(all.length); // update badge count with new notifications
+      setUnreadCount(all.length);
     } catch (err) {
       console.error('Error fetching notifications:', err);
     }
+  };
+
+  // ✅ Handle notification bell click
+  const handleNotificationClick = (e) => {
+    setAnchorEl(e.currentTarget);
+  };
+
+  // ✅ Close notification menu
+  const handleNotificationClose = () => setAnchorEl(null);
+
+  // ✅ Mark all as read
+  const markAllAsRead = () => {
+    setUnreadCount(0);
   };
 
   return (
@@ -237,39 +236,20 @@ const Header = ({ toggleSidebar }) => {
           />
         </Box>
 
-        {/* Center: Welcome text */}
-        <Box
-          sx={{
-            flex: 1,
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            overflow: 'hidden',
-          }}
-        >
+        {/* Center: Welcome */}
+        <Box sx={{ flex: 1, textAlign: 'center' }}>
           {!isMobile ? (
-            <Typography
-              variant="subtitle1"
-              sx={{ fontWeight: 500, color: theme.palette.text.secondary }}
-            >
+            <Typography variant="subtitle1" sx={{ fontWeight: 500, color: theme.palette.text.secondary }}>
               Welcome, {user?.name || 'User'}
             </Typography>
           ) : (
-            <Typography
-              variant="body2"
-              noWrap
-              sx={{
-                fontWeight: 500,
-                color: theme.palette.text.secondary,
-                fontSize: '0.8rem',
-              }}
-            >
+            <Typography variant="body2" sx={{ fontWeight: 500, color: theme.palette.text.secondary }}>
               {user?.name || 'User'}
             </Typography>
           )}
         </Box>
 
-        {/* Right: Theme toggle + Notification + Logout */}
+        {/* Right Section */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: isMobile ? 1 : 2 }}>
           {/* Notifications */}
           <Tooltip title="Notifications">
@@ -289,23 +269,25 @@ const Header = ({ toggleSidebar }) => {
             }}
           >
             {notifications.length > 0 ? (
-              notifications.map((msg, i) => (
-                <MenuItem key={i} sx={{ whiteSpace: 'normal', fontSize: '0.9rem' }}>
-                  {msg}
+              <>
+                <MenuItem
+                  onClick={markAllAsRead}
+                  sx={{ justifyContent: 'center', fontWeight: 600, color: theme.palette.primary.main }}
+                >
+                  Mark all as read
                 </MenuItem>
-              ))
+                {notifications.map((msg, i) => (
+                  <MenuItem key={i} sx={{ whiteSpace: 'normal', fontSize: '0.9rem' }}>
+                    {msg}
+                  </MenuItem>
+                ))}
+              </>
             ) : (
-              <MenuItem disabled>No notifications</MenuItem>
+              <MenuItem disabled>No notifications available</MenuItem>
             )}
           </Menu>
 
-          {/* Theme Toggle */}
-          <Tooltip title="Toggle Theme">
-            <IconButton onClick={colorMode.toggleColorMode} size={isMobile ? 'small' : 'medium'}>
-              {theme.palette.mode === 'dark' ? '🌞' : '🌙'}
-            </IconButton>
-          </Tooltip>
-
+       
           {/* Logout */}
           <Tooltip title="Logout">
             <IconButton onClick={handleLogout} color="error" size={isMobile ? 'small' : 'medium'}>
