@@ -739,7 +739,7 @@ const EmmpTask = () => {
                           {task.description}
                         </Typography>
                         
-                        <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
+                        {/* <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
                           <Stack direction="row" spacing={1} alignItems="center">
                             <FiCalendar size={14} color={theme.palette.text.secondary} />
                             <Typography 
@@ -760,7 +760,7 @@ const EmmpTask = () => {
                             size="small"
                             icon={<FiFlag size={14} />}
                           />
-                        </Stack>
+                        </Stack> */}
                       </Box>
 
                       <Box sx={{ textAlign: { xs: 'left', sm: 'right' } }}>
