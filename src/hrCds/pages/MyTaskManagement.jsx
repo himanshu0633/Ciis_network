@@ -1004,11 +1004,13 @@ const MyTaskManagement = () => {
   };
 
   const renderGroupsManagement = () => (
-    <Box sx={{ mt: 3 }}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
-        <Typography variant="h5" fontWeight={700}>
-          {/* Group Management */}
-        </Typography>
+  <Box sx={{ mt: 3 }}>
+    <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
+      <Typography variant="h5" fontWeight={700}>
+        Group Management
+      </Typography>
+      
+      <Stack direction="row" spacing={2}>
         <Button
           variant="contained"
           startIcon={<FiPlus />}
@@ -1025,92 +1027,95 @@ const MyTaskManagement = () => {
         >
           Create Group
         </Button>
+
+       
       </Stack>
+    </Stack>
 
-      <Grid container spacing={3}>
-        {groups.map((group) => (
-          <Grid item xs={12} md={6} lg={4} key={group._id}>
-            <Card sx={{ borderRadius: theme.shape.borderRadius * 2 }}>
-              <CardContent>
-                <Stack spacing={2}>
-                  <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                    <Box sx={{ flex: 1 }}>
-                      <Typography variant="h6" fontWeight={600}>
-                        {group.name}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {group.description}
-                      </Typography>
-                    </Box>
-                    <Stack direction="row" spacing={1}>
-                      <Tooltip title="Edit Group">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleEditGroup(group)}
-                          sx={{ color: theme.palette.primary.main }}
-                        >
-                          <FiEdit2 size={16} />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Delete Group">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleDeleteGroup(group._id)}
-                          sx={{ color: theme.palette.error.main }}
-                        >
-                          <FiTrash2 size={16} />
-                        </IconButton>
-                      </Tooltip>
-                    </Stack>
-                  </Stack>
-
-                  <Divider />
- 
-                  <Box>
-                    <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
-                      Members ({group.members.length})
+    <Grid container spacing={3}>
+      {groups.map((group) => (
+        <Grid item xs={12} md={6} lg={4} key={group._id}>
+          <Card sx={{ borderRadius: theme.shape.borderRadius * 2 }}>
+            <CardContent>
+              <Stack spacing={2}>
+                <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="h6" fontWeight={600}>
+                      {group.name}
                     </Typography>
-                    <Stack spacing={1}>
-                      {group.members.map(memberId => {
-                        const member = users.find(u => u._id === memberId);
-                        return member ? (
-                          <Stack key={memberId} direction="row" alignItems="center" spacing={1}>
-                            <Avatar sx={{ width: 32, height: 32, fontSize: '0.875rem' }}>
-                              {member.name.charAt(0).toUpperCase()}
-                            </Avatar>
-                            <Box sx={{ flex: 1 }}>
-                              <Typography variant="body2" fontWeight={500}>
-                                {member.name}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                {member.role}
-                              </Typography>
-                            </Box>
-                          </Stack>
-                        ) : null;
-                      })}
-                    </Stack>
+                    <Typography variant="body2" color="text.secondary">
+                      {group.description}
+                    </Typography>
                   </Box>
+                  <Stack direction="row" spacing={1}>
+                    <Tooltip title="Edit Group">
+                      <IconButton
+                        size="small"
+                        onClick={() => handleEditGroup(group)}
+                        sx={{ color: theme.palette.primary.main }}
+                      >
+                        <FiEdit2 size={16} />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Delete Group">
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDeleteGroup(group._id)}
+                        sx={{ color: theme.palette.error.main }}
+                      >
+                        <FiTrash2 size={16} />
+                      </IconButton>
+                    </Tooltip>
+                  </Stack>
                 </Stack>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
 
-      {groups.length === 0 && (
-        <Box sx={{ textAlign: 'center', py: 4 }}>
-          <FiUsers size={48} color={theme.palette.text.secondary} />
-          <Typography variant="h6" color="text.secondary" sx={{ mt: 1 }}>
-            No groups created yet
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Create your first group to assign tasks to multiple users at once
-          </Typography>
-        </Box>
-      )}
-    </Box>
-  );
+                <Divider />
+  
+                <Box>
+                  <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
+                    Members ({group.members.length})
+                  </Typography>
+                  <Stack spacing={1}>
+                    {group.members.map(memberId => {
+                      const member = users.find(u => u._id === memberId);
+                      return member ? (
+                        <Stack key={memberId} direction="row" alignItems="center" spacing={1}>
+                          <Avatar sx={{ width: 32, height: 32, fontSize: '0.875rem' }}>
+                            {member.name.charAt(0).toUpperCase()}
+                          </Avatar>
+                          <Box sx={{ flex: 1 }}>
+                            <Typography variant="body2" fontWeight={500}>
+                              {member.name}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {member.role}
+                            </Typography>
+                          </Box>
+                        </Stack>
+                      ) : null;
+                    })}
+                  </Stack>
+                </Box>
+              </Stack>
+            </CardContent>
+          </Card>
+        </Grid>
+      ))}
+    </Grid>
+
+    {groups.length === 0 && (
+      <Box sx={{ textAlign: 'center', py: 4 }}>
+        <FiUsers size={48} color={theme.palette.text.secondary} />
+        <Typography variant="h6" color="text.secondary" sx={{ mt: 1 }}>
+          No groups created yet
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Create your first group to assign tasks to multiple users at once
+        </Typography>
+      </Box>
+    )}
+  </Box>
+);
 
   if (loading) {
     return (
@@ -1195,6 +1200,37 @@ const MyTaskManagement = () => {
                 >
                   Create Task
                 </Button>
+      {/* <Button
+            variant="outlined"
+            startIcon={<FiRefreshCw />}
+            onClick={async () => {
+              try {
+                await axios.post('/task/trigger-recurring');  
+                setSnackbar({
+                  open: true,
+                  message: 'Recurring tasks generation triggered',
+                  severity: 'success'
+                });
+                // Refresh tasks
+                fetchMyTasks();
+                fetchAssignedTasks();
+              } catch (error) {
+                console.error('Error triggering recurring tasks:', error);
+                setSnackbar({
+                  open: true,
+                  message: 'Failed to trigger recurring tasks',
+                  severity: 'error'
+                });
+              }
+            }}
+            sx={{
+              borderRadius: theme.shape.borderRadius * 2,
+              textTransform: 'none',
+              fontWeight: 600,
+            }}
+          >
+            Generate Recurring Tasks
+          </Button> */}
               </Stack>
             </Stack>
           </Paper>
@@ -2387,3 +2423,4 @@ const MyTaskManagement = () => {
 
 export default MyTaskManagement;
 // mail done
+// Generate Recurring Tasks

@@ -236,15 +236,31 @@ const TaskDetails = () => {
       .slice(0, 2);
   };
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return "Not set";
-    return new Date(dateStr).toLocaleDateString("en-US", {
-      weekday: "long",
+const formatDate = (dateStr) => {
+  if (!dateStr) return "Not set";
+
+  // Handle format like "04-11-2025"
+  if (/^\d{2}-\d{2}-\d{4}$/.test(dateStr)) {
+    const [day, month, year] = dateStr.split("-");
+    const date = new Date(`${year}-${month}-${day}`);
+    return date.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
       year: "numeric",
-      month: "long",
-      day: "numeric",
+      weekday: "long",
     });
-  };
+  }
+
+  // Handle ISO date like "2025-11-21T01:00:00.000Z"
+  const date = new Date(dateStr);
+  return date.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      weekday: "long",
+  });
+};
+
 
   const getTaskCount = () =>
     Object.values(tasks).reduce((a, b) => a + b.length, 0);
