@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect,  } from 'react';
 import {
   AppBar,
   Toolbar,
@@ -87,7 +87,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
-  const colorMode = useContext(ColorModeContext);
+
   const navigate = useNavigate();
   const { user } = useAuth();
 
