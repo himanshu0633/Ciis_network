@@ -122,6 +122,7 @@ const Sidebar = ({ isOpen = true, closeSidebar }) => {
     // { icon: <FaNetworkWired />, name: 'Intranet', path: '/cds/intranet' },
     // { icon: <FaGraduationCap />, name: 'My Learning', path: '/cds/my-learning' },
     { icon: <FaBell />, name: 'Alerts', path: '/cds/alert' },
+      { icon: <FaUser />, name: 'Employee Projects', path: '/cds/emp' }
     // { icon: <FaUser />, name: 'Profile', path: '/cds/profile' },
   ];
 
@@ -133,6 +134,7 @@ const Sidebar = ({ isOpen = true, closeSidebar }) => {
     { icon: <FaRocket />, name: 'Employees Assests', path: '/cds/emp-assets' },
     { icon: <FaTasks />, name: 'Employees Task Management', path: '/cds/emp-task-management' },
     { icon: <FaGraduationCap />, name: 'Employees Task Details', path: '/cds/emp-task-details' },
+    { icon: <FaUser />, name: 'Admin Projects', path: '/cds/adminp' }
   ];
 
   // const managerMenu = [
