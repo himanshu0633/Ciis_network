@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from '../../utils/axiosConfig';
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
-
+import { CircularProgress } from '@mui/material';
 import {
   Box, Typography, Paper, Chip, MenuItem, FormControl,
   Select, Table, TableBody, TableCell, TableContainer, TableHead,
@@ -63,7 +63,7 @@ const StatusChip = styled(Chip)(({ theme, status }) => ({
     border: `1px solid ${theme.palette.error.main}40`,
   }),
 }));
-
+const [isCreatingTask, setIsCreatingTask] = useState(false);
 const PriorityChip = styled(Chip)(({ theme, priority }) => ({
   fontWeight: 500,
   ...(priority === 'high' && {
@@ -389,109 +389,115 @@ const MyTaskManagement = () => {
   };
 
   const handleCreateTask = async () => {
-    if (authError || !userId) {
+  if (authError || !userId) {
+    setSnackbar({
+      open: true,
+      message: 'Please log in to create tasks',
+      severity: 'error'
+    });
+    return;
+  }
+
+  // Validate due date is not in the past
+  if (newTask.dueDateTime && newTask.dueDateTime < new Date()) {
+    setSnackbar({
+      open: true,
+      message: 'Due date cannot be in the past',
+      severity: 'error'
+    });
+    return;
+  }
+
+  // For users, validate they can only create tasks for current and upcoming dates
+  if (userRole === 'user' && newTask.dueDateTime) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dueDate = new Date(newTask.dueDateTime);
+    if (dueDate < today) {
       setSnackbar({
         open: true,
-        message: 'Please log in to create tasks',
+        message: 'You can only create tasks for current and upcoming dates',
         severity: 'error'
       });
       return;
     }
+  }
 
-    // Validate due date is not in the past
-    if (newTask.dueDateTime && newTask.dueDateTime < new Date()) {
+  // Loading state start
+  setIsCreatingTask(true);
+
+  const formData = new FormData();
+  const finalAssignedUsers =
+    userRole === 'user'
+      ? [userId]
+      : newTask.assignedUsers;
+
+  formData.append('title', newTask.title);
+  formData.append('description', newTask.description);
+  formData.append('dueDateTime', newTask.dueDateTime.toISOString());
+  formData.append('whatsappNumber', newTask.whatsappNumber);
+  formData.append('priorityDays', newTask.priorityDays);
+  formData.append('priority', newTask.priority);
+  formData.append('assignedUsers', JSON.stringify(finalAssignedUsers));
+  formData.append('assignedGroups', JSON.stringify(newTask.assignedGroups));
+  formData.append('repeatPattern', newTask.repeatPattern);
+  formData.append('repeatDays', JSON.stringify(newTask.repeatDays || []));
+
+  if (newTask.files) {
+    for (let i = 0; i < newTask.files.length; i++) {
+      formData.append('files', newTask.files[i]);
+    }
+  }
+
+  if (newTask.voiceNote) {
+    formData.append('voiceNote', newTask.voiceNote);
+  }
+
+  try {
+    await axios.post('/task/create', formData);
+    fetchAssignedTasks();
+    fetchMyTasks();
+    setOpenDialog(false);
+    setSnackbar({ 
+      open: true, 
+      message: newTask.repeatPattern !== 'none' ? 'Recurring task created successfully' : 'Task created successfully', 
+      severity: 'success' 
+    });
+    setNewTask({
+      title: '', 
+      description: '', 
+      dueDateTime: null, 
+      assignedUsers: [],
+      assignedGroups: [], 
+      whatsappNumber: '', 
+      priorityDays: '', 
+      priority: 'medium', 
+      files: null, 
+      voiceNote: null,
+      repeatPattern: 'none',
+      repeatDays: []
+    });
+  } catch (err) {
+    console.error('Error creating task:', err);
+    if (err.response?.status === 401) {
+      setAuthError(true);
       setSnackbar({
         open: true,
-        message: 'Due date cannot be in the past',
+        message: 'Session expired. Please log in again.',
         severity: 'error'
       });
-      return;
-    }
-
-    // For users, validate they can only create tasks for current and upcoming dates
-    if (userRole === 'user' && newTask.dueDateTime) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const dueDate = new Date(newTask.dueDateTime);
-      if (dueDate < today) {
-        setSnackbar({
-          open: true,
-          message: 'You can only create tasks for current and upcoming dates',
-          severity: 'error'
-        });
-        return;
-      }
-    }
-
-    const formData = new FormData();
-    const finalAssignedUsers =
-      userRole === 'user'
-        ? [userId]
-        : newTask.assignedUsers;
-
-    formData.append('title', newTask.title);
-    formData.append('description', newTask.description);
-    formData.append('dueDateTime', newTask.dueDateTime.toISOString());
-    formData.append('whatsappNumber', newTask.whatsappNumber);
-    formData.append('priorityDays', newTask.priorityDays);
-    formData.append('priority', newTask.priority);
-    formData.append('assignedUsers', JSON.stringify(finalAssignedUsers));
-    formData.append('assignedGroups', JSON.stringify(newTask.assignedGroups));
-    formData.append('repeatPattern', newTask.repeatPattern);
-    formData.append('repeatDays', JSON.stringify(newTask.repeatDays || []));
-
-    if (newTask.files) {
-      for (let i = 0; i < newTask.files.length; i++) {
-        formData.append('files', newTask.files[i]);
-      }
-    }
-
-    if (newTask.voiceNote) {
-      formData.append('voiceNote', newTask.voiceNote);
-    }
-
-    try {
-      await axios.post('/task/create', formData);
-      fetchAssignedTasks();
-      fetchMyTasks();
-      setOpenDialog(false);
+    } else {
       setSnackbar({ 
         open: true, 
-        message: newTask.repeatPattern !== 'none' ? 'Recurring task created successfully' : 'Task created successfully', 
-        severity: 'success' 
+        message: err?.response?.data?.error || 'Task creation failed', 
+        severity: 'error' 
       });
-      setNewTask({
-        title: '', 
-        description: '', 
-        dueDateTime: null, 
-        assignedUsers: [],
-        assignedGroups: [], 
-        whatsappNumber: '', 
-        priorityDays: '', 
-        priority: 'medium', 
-        files: null, 
-        voiceNote: null,
-        repeatPattern: 'none',
-        repeatDays: []
-      });
-    } catch (err) {
-      console.error('Error creating task:', err);
-      if (err.response?.status === 401) {
-        setAuthError(true);
-        setSnackbar({
-          open: true,
-          message: 'Session expired. Please log in again.',
-          severity: 'error'
-        });
-      } else {
-        setSnackbar({ 
-          open: true, 
-          message: err?.response?.data?.error || 'Task creation failed', 
-          severity: 'error' 
-        });
-      }
     }
-  };
+  } finally {
+    // Loading state end - success or error dono case me
+    setIsCreatingTask(false);
+  }
+};
 
   const handleCreateGroup = async () => {
     if (authError || !userId) {
@@ -1945,30 +1951,33 @@ const MyTaskManagement = () => {
               </Button>
 
               <Button
-                onClick={handleCreateTask}
-                variant="contained"
-                disabled={!newTask.title || !newTask.description || !newTask.dueDateTime}
-                startIcon={<FiCheck />}
-                sx={{ 
-                  borderRadius: 2,
-                  px: 3,
-                  py: 1,
-                  background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                  '&:hover': {
-                    boxShadow: '0 6px 16px rgba(0,0,0,0.15)',
-                    transform: 'translateY(-1px)',
-                  },
-                  '&:disabled': {
-                    background: theme.palette.grey[300],
-                    transform: 'none',
-                    boxShadow: 'none'
-                  },
-                  transition: 'all 0.2s ease-in-out'
-                }}
-              >
-                Create Task
-              </Button>
+  onClick={handleCreateTask}
+  variant="contained"
+  disabled={!newTask.title || !newTask.description || !newTask.dueDateTime || isCreatingTask}
+  startIcon={isCreatingTask ? <CircularProgress size={16} color="inherit" /> : <FiCheck />}
+  sx={{ 
+    borderRadius: 2,
+    px: 3,
+    py: 1,
+    background: isCreatingTask 
+      ? theme.palette.grey[400] 
+      : `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+    boxShadow: isCreatingTask ? 'none' : '0 4px 12px rgba(0,0,0,0.1)',
+    '&:hover': {
+      boxShadow: isCreatingTask ? 'none' : '0 6px 16px rgba(0,0,0,0.15)',
+      transform: isCreatingTask ? 'none' : 'translateY(-1px)',
+    },
+    '&:disabled': {
+      background: theme.palette.grey[300],
+      transform: 'none',
+      boxShadow: 'none'
+    },
+    transition: 'all 0.2s ease-in-out',
+    minWidth: '120px' // Ensure consistent width
+  }}
+>
+  {isCreatingTask ? 'Creating...' : 'Create Task'}
+</Button>
             </DialogActions>
           </Dialog>
 
@@ -2339,53 +2348,55 @@ const MyTaskManagement = () => {
               </Stack>
             </DialogContent>
 
-            <DialogActions sx={{
-              p: 4,
-              pt: 2,
-              borderTop: `1px solid ${theme.palette.divider}`,
-              background: theme.palette.background.default
-            }}>
-              <Button
-                onClick={() => {
-                  setOpenGroupDialog(false);
-                  setEditingGroup(null);
-                }}
-                variant="outlined"
-                startIcon={<FiX size={18} />}
-                sx={{
-                  borderRadius: theme.shape.borderRadius * 2,
-                  px: 4,
-                  fontWeight: 600,
-                  borderColor: theme.palette.divider,
-                  color: theme.palette.text.secondary
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleCreateGroup}
-                variant="contained"
-                disabled={!newGroup.name || newGroup.members.length === 0}
-                startIcon={editingGroup ? <FiEdit2 size={18} /> : <FiPlus size={18} />}
-                sx={{
-                  borderRadius: theme.shape.borderRadius * 2,
-                  px: 4,
-                  fontWeight: 600,
-                  background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-                  boxShadow: `0 4px 12px ${theme.palette.primary.main}30`,
-                  '&:hover': {
-                    boxShadow: `0 6px 16px ${theme.palette.primary.main}40`,
-                    transform: 'translateY(-1px)',
-                  },
-                  '&:disabled': {
-                    background: theme.palette.action.disabled,
-                    boxShadow: 'none',
-                  }
-                }}
-              >
-                {editingGroup ? 'Update Group' : 'Create Group'}
-              </Button>
-            </DialogActions>
+            <DialogActions sx={{ 
+  p: 3, 
+  borderTop: 1, 
+  borderColor: 'divider',
+  background: '#f8fafc'
+}}>
+  <Button
+    onClick={() => setOpenDialog(false)}
+    variant="outlined"
+    disabled={isCreatingTask}
+    startIcon={<FiX />}
+    sx={{ 
+      borderRadius: 2,
+      px: 3,
+      py: 1
+    }}
+  >
+    Cancel
+  </Button>
+
+  <Button
+    onClick={handleCreateTask}
+    variant="contained"
+    disabled={!newTask.title || !newTask.description || !newTask.dueDateTime || isCreatingTask}
+    startIcon={isCreatingTask ? <CircularProgress size={16} color="inherit" /> : <FiCheck />}
+    sx={{ 
+      borderRadius: 2,
+      px: 3,
+      py: 1,
+      background: isCreatingTask 
+        ? theme.palette.grey[400] 
+        : `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+      boxShadow: isCreatingTask ? 'none' : '0 4px 12px rgba(0,0,0,0.1)',
+      '&:hover': {
+        boxShadow: isCreatingTask ? 'none' : '0 6px 16px rgba(0,0,0,0.15)',
+        transform: isCreatingTask ? 'none' : 'translateY(-1px)',
+      },
+      '&:disabled': {
+        background: theme.palette.grey[300],
+        transform: 'none',
+        boxShadow: 'none'
+      },
+      transition: 'all 0.2s ease-in-out',
+      minWidth: '120px'
+    }}
+  >
+    {isCreatingTask ? 'Creating...' : 'Create Task'}
+  </Button>
+</DialogActions>
           </Dialog>
 
           {/* Enhanced Snackbar */}
