@@ -325,7 +325,7 @@ const MyLeaves = () => {
 
   useEffect(() => {
     fetchLeaves();
-  }, []);
+  }, [fetchLeaves]);
 
   const openHistoryModal = (leave) => {
     const items = Array.isArray(leave.history) ? leave.history : [];
