@@ -682,7 +682,9 @@ const MyAssets = () => {
                               <Typography variant="body2">
                                 <strong>Approved By:</strong>{' '}
                                 {req.approvedBy
-                                  ? `${req.approvedBy.name} (${req.approvedBy.role})`
+                                  ? `${req.approvedBy.name} (${req.approvedBy.role}) (${req.adminComment
+                                    ? `Comment: ${req.approvedBy.adminComment}`
+                                    : 'No comment'})`
                                   : req.status === 'pending'
                                     ? 'Pending Approval'
                                     : '--'

@@ -122,17 +122,33 @@ const Sidebar = ({ isOpen = true, closeSidebar }) => {
     // { icon: <FaNetworkWired />, name: 'Intranet', path: '/cds/intranet' },
     // { icon: <FaGraduationCap />, name: 'My Learning', path: '/cds/my-learning' },
     { icon: <FaBell />, name: 'Alerts', path: '/cds/alert' },
+   
     // { icon: <FaUser />, name: 'Profile', path: '/cds/profile' },
+
+
+
+
+
+
+      //  { icon: <FaUser />, name: 'Employee Projects', path: '/cds/emp' }
   ];
 
   const hrMenu = [
     { heading: "Employee's" },
+    
+    // { icon: <FaClipboardList />, name: 'Change Password', route: '/admin/change-password' },
     { icon: <FaClipboardList />, name: 'Employees Attendance', path: '/cds/emp-attendance' },
     { icon: <FaUser />, name: 'Employees Details', path: '/cds/emp-details' },
     { icon: <FaFileAlt />, name: 'Employees Leaves', path: '/cds/emp-leaves' },
     { icon: <FaRocket />, name: 'Employees Assests', path: '/cds/emp-assets' },
     { icon: <FaTasks />, name: 'Employees Task Management', path: '/cds/emp-task-management' },
     { icon: <FaGraduationCap />, name: 'Employees Task Details', path: '/cds/emp-task-details' },
+{ icon: <FaUser  />, name: 'Create User', route: '/admin/create-user' },
+
+
+
+
+    // { icon: <FaUser />, name: 'Admin Projects', path: '/cds/adminp' }
   ];
 
   // const managerMenu = [
@@ -240,5 +256,4 @@ const Sidebar = ({ isOpen = true, closeSidebar }) => {
     </SidebarComponent>
   );
 };
-
 export default Sidebar;

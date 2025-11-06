@@ -349,7 +349,7 @@ const UserDashboard = () => {
       setTimer(0);
       setIsRunning(true);
       setMarkedDates(prev => [...prev, key]);
-      toast.success("🟢 Clocked IN successfully!");
+      toast.success(`🟢 Clocked IN successfully! ${res.data.data.lateBy !== "00:00:00" ? `Late by ${res.data.data.lateBy}` : ""}`);
       
       await fetchData();
       await fetchStats();
