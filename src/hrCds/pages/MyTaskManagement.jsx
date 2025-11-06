@@ -17,7 +17,7 @@ import {
   FiMic, FiMessageCircle, FiAlertCircle, FiCheckCircle,
   FiClock, FiXCircle, FiDownload, FiFilter, FiSearch,
   FiChevronRight, FiUsers, FiFlag, FiEdit2, FiTrash2,
-  FiSave, FiX, FiUserPlus, FiUserMinus, FiLogOut
+  FiSave, FiX, FiUserPlus, FiUserMinus, FiLogOut, FiRepeat
 } from 'react-icons/fi';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -127,6 +127,15 @@ const GroupChip = styled(Chip)(({ theme }) => ({
   fontWeight: 500,
 }));
 
+const RecurringBadge = styled(Chip)(({ theme }) => ({
+  background: `${theme.palette.info.main}20`,
+  color: theme.palette.info.dark,
+  border: `1px solid ${theme.palette.info.main}40`,
+  fontWeight: 500,
+  fontSize: '0.7rem',
+  height: 20,
+}));
+
 const statusColors = {
   pending: 'warning',
   'in-progress': 'info',
@@ -141,6 +150,13 @@ const statusIcons = {
   rejected: FiXCircle
 };
 
+const repeatPatternLabels = {
+  none: 'No Repeat',
+  daily: 'Daily',
+  weekly: 'Weekly',
+  monthly: 'Monthly'
+};
+
 const MyTaskManagement = () => {
   const [tab, setTab] = useState(0);
   const [myTasksGrouped, setMyTasksGrouped] = useState({});
@@ -150,9 +166,20 @@ const MyTaskManagement = () => {
   const [openGroupDialog, setOpenGroupDialog] = useState(false);
   const [users, setUsers] = useState([]);
   const [groups, setGroups] = useState([]);
+
   const [newTask, setNewTask] = useState({
-    title: '', description: '', dueDateTime: null, assignedUsers: [],
-    assignedGroups: [], whatsappNumber: '', priorityDays: '', priority: 'medium', files: null, voiceNote: null
+    title: '',
+    description: '',
+    dueDateTime: null,
+    assignedUsers: [],
+    assignedGroups: [],
+    whatsappNumber: '',
+    priorityDays: '',
+    priority: 'medium',
+    files: null,
+    voiceNote: null,
+    repeatPattern: 'none',
+    repeatDays: []
   });
   const [newGroup, setNewGroup] = useState({
     name: '', description: '', members: []
@@ -371,20 +398,47 @@ const MyTaskManagement = () => {
       return;
     }
 
+    // Validate due date is not in the past
+    if (newTask.dueDateTime && newTask.dueDateTime < new Date()) {
+      setSnackbar({
+        open: true,
+        message: 'Due date cannot be in the past',
+        severity: 'error'
+      });
+      return;
+    }
+
+    // For users, validate they can only create tasks for current and upcoming dates
+    if (userRole === 'user' && newTask.dueDateTime) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const dueDate = new Date(newTask.dueDateTime);
+      if (dueDate < today) {
+        setSnackbar({
+          open: true,
+          message: 'You can only create tasks for current and upcoming dates',
+          severity: 'error'
+        });
+        return;
+      }
+    }
+
     const formData = new FormData();
     const finalAssignedUsers =
-      userRole === 'employee' || userRole === 'staff'
+      userRole === 'user'
         ? [userId]
         : newTask.assignedUsers;
 
     formData.append('title', newTask.title);
     formData.append('description', newTask.description);
-    formData.append('dueDateTime', newTask.dueDateTime.toISOString().split('T')[0]);
+    formData.append('dueDateTime', newTask.dueDateTime.toISOString());
     formData.append('whatsappNumber', newTask.whatsappNumber);
     formData.append('priorityDays', newTask.priorityDays);
     formData.append('priority', newTask.priority);
     formData.append('assignedUsers', JSON.stringify(finalAssignedUsers));
     formData.append('assignedGroups', JSON.stringify(newTask.assignedGroups));
+    formData.append('repeatPattern', newTask.repeatPattern);
+    formData.append('repeatDays', JSON.stringify(newTask.repeatDays || []));
 
     if (newTask.files) {
       for (let i = 0; i < newTask.files.length; i++) {
@@ -401,10 +455,24 @@ const MyTaskManagement = () => {
       fetchAssignedTasks();
       fetchMyTasks();
       setOpenDialog(false);
-      setSnackbar({ open: true, message: 'Task created successfully', severity: 'success' });
+      setSnackbar({ 
+        open: true, 
+        message: newTask.repeatPattern !== 'none' ? 'Recurring task created successfully' : 'Task created successfully', 
+        severity: 'success' 
+      });
       setNewTask({
-        title: '', description: '', dueDateTime: null, assignedUsers: [],
-        assignedGroups: [], whatsappNumber: '', priorityDays: '', priority: 'medium', files: null, voiceNote: null
+        title: '', 
+        description: '', 
+        dueDateTime: null, 
+        assignedUsers: [],
+        assignedGroups: [], 
+        whatsappNumber: '', 
+        priorityDays: '', 
+        priority: 'medium', 
+        files: null, 
+        voiceNote: null,
+        repeatPattern: 'none',
+        repeatDays: []
       });
     } catch (err) {
       console.error('Error creating task:', err);
@@ -416,7 +484,11 @@ const MyTaskManagement = () => {
           severity: 'error'
         });
       } else {
-        setSnackbar({ open: true, message: err?.response?.data?.error || 'Task creation failed', severity: 'error' });
+        setSnackbar({ 
+          open: true, 
+          message: err?.response?.data?.error || 'Task creation failed', 
+          severity: 'error' 
+        });
       }
     }
   };
@@ -534,6 +606,21 @@ const MyTaskManagement = () => {
     return group ? group.name : 'Unknown Group';
   };
 
+  const getRepeatInfo = (task) => {
+    if (!task.repeatPattern || task.repeatPattern === 'none') return null;
+    
+    let info = repeatPatternLabels[task.repeatPattern];
+    
+    if (task.repeatPattern === 'weekly' && task.repeatDays && task.repeatDays.length > 0) {
+      const dayLabels = task.repeatDays.map(day => 
+        day.charAt(0).toUpperCase() + day.slice(1)
+      );
+      info += ` (${dayLabels.join(', ')})`;
+    }
+    
+    return info;
+  };
+
   useEffect(() => {
     fetchUserRole();
   }, []);
@@ -598,7 +685,7 @@ const MyTaskManagement = () => {
                 <TableCell sx={{ fontWeight: 700 }}>Due Date & Time</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Priority</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
-                {/* <TableCell sx={{ fontWeight: 700 }}>Assigned To</TableCell> */}
+                <TableCell sx={{ fontWeight: 700 }}>Repeat</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Files</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Voice</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Change Status</TableCell>
@@ -609,13 +696,21 @@ const MyTaskManagement = () => {
                 const myStatusObj = task.statusByUser?.find(s => s.user === userId || s.user?._id === userId);
                 const myStatus = myStatusObj?.status || 'pending';
                 const canChangeStatus = !!myStatusObj;
+                const repeatInfo = getRepeatInfo(task);
 
                 return (
                   <StyledTableRow key={task._id} status={myStatus}>
                     <TableCell>
-                      <Typography variant="body2" fontWeight={600}>
-                        {task.title}
-                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="body2" fontWeight={600}>
+                          {task.title}
+                        </Typography>
+                        {task.isRecurring && (
+                          <Tooltip title="Recurring Task">
+                            <FiRepeat size={14} color={theme.palette.info.main} />
+                          </Tooltip>
+                        )}
+                      </Box>
                     </TableCell>
                     <TableCell>
                       <Tooltip title={task.description}>
@@ -629,25 +724,25 @@ const MyTaskManagement = () => {
                         </Typography>
                       </Tooltip>
                     </TableCell>
-                   <TableCell>
-  <Stack direction="row" alignItems="center" spacing={1}>
-    <FiCalendar size={14} color={theme.palette.text.secondary} />
-    <Typography
-      variant="body2"
-      color={isOverdue(task.dueDateTime) ? 'error' : 'text.primary'}
-    >
-      {task.dueDateTime
-        ? new Date(task.dueDateTime).toLocaleString('en-IN', {
-            dateStyle: 'medium',
-            timeStyle: 'short',
-          })
-        : '—'}
-    </Typography>
-    {isOverdue(task.dueDateTime) && (
-      <FiAlertCircle size={14} color={theme.palette.error.main} />
-    )}
-  </Stack>
-</TableCell>
+                    <TableCell>
+                      <Stack direction="row" alignItems="center" spacing={1}>
+                        <FiCalendar size={14} color={theme.palette.text.secondary} />
+                        <Typography
+                          variant="body2"
+                          color={isOverdue(task.dueDateTime) ? 'error' : 'text.primary'}
+                        >
+                          {task.dueDateTime
+                            ? new Date(task.dueDateTime).toLocaleString('en-IN', {
+                                dateStyle: 'medium',
+                                timeStyle: 'short',
+                              })
+                            : '—'}
+                        </Typography>
+                        {isOverdue(task.dueDateTime) && (
+                          <FiAlertCircle size={14} color={theme.palette.error.main} />
+                        )}
+                      </Stack>
+                    </TableCell>
 
                     <TableCell>
                       <PriorityChip
@@ -664,27 +759,17 @@ const MyTaskManagement = () => {
                         icon={getStatusIcon(myStatus)}
                       />
                     </TableCell>
-                    {/* <TableCell>
-                      <Stack spacing={0.5}>
-                        {task.assignedUsers?.map(userId => (
-                          <Chip
-                            key={userId}
-                            label={getUserName(userId)}
-                            size="small"
-                            variant="outlined"
-                            sx={{ mb: 0.5 }}
-                          />
-                        ))}
-                        {task.assignedGroups?.map(groupId => (
-                          <GroupChip
-                            key={groupId}
-                            label={getGroupName(groupId)}
-                            size="small"
-                            sx={{ mb: 0.5 }}
-                          />
-                        ))}
-                      </Stack>
-                    </TableCell> */}
+                    <TableCell>
+                      {repeatInfo ? (
+                        <RecurringBadge
+                          label={repeatInfo}
+                          size="small"
+                          icon={<FiRepeat size={12} />}
+                        />
+                      ) : (
+                        <Typography variant="body2" color="text.secondary">-</Typography>
+                      )}
+                    </TableCell>
                     <TableCell>
                       {task.files?.length ? task.files.map((file, i) => (
                         <Tooltip title="Download" key={i}>
@@ -777,6 +862,7 @@ const MyTaskManagement = () => {
             const myStatusObj = task.statusByUser?.find(s => s.user === userId || s.user?._id === userId);
             const myStatus = myStatusObj?.status || 'pending';
             const canChangeStatus = !!myStatusObj;
+            const repeatInfo = getRepeatInfo(task);
 
             return (
               <MobileTaskCard key={task._id} status={myStatus}>
@@ -784,12 +870,26 @@ const MyTaskManagement = () => {
                   <Stack spacing={2}>
                     <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
                       <Box sx={{ flex: 1 }}>
-                        <Typography variant="h6" fontWeight={600} gutterBottom>
-                          {task.title}
-                        </Typography>
+                        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+                          <Typography variant="h6" fontWeight={600}>
+                            {task.title}
+                          </Typography>
+                          {task.isRecurring && (
+                            <Tooltip title="Recurring Task">
+                              <FiRepeat size={14} color={theme.palette.info.main} />
+                            </Tooltip>
+                          )}
+                        </Stack>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                           {task.description}
                         </Typography>
+                        {repeatInfo && (
+                          <RecurringBadge
+                            label={repeatInfo}
+                            size="small"
+                            sx={{ mb: 1 }}
+                          />
+                        )}
                       </Box>
                       <StatusChip
                         label={myStatus.charAt(0).toUpperCase() + myStatus.slice(1)}
@@ -904,11 +1004,13 @@ const MyTaskManagement = () => {
   };
 
   const renderGroupsManagement = () => (
-    <Box sx={{ mt: 3 }}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
-        <Typography variant="h5" fontWeight={700}>
-          {/* Group Management */}
-        </Typography>
+  <Box sx={{ mt: 3 }}>
+    <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
+      <Typography variant="h5" fontWeight={700}>
+        Group Management
+      </Typography>
+      
+      <Stack direction="row" spacing={2}>
         <Button
           variant="contained"
           startIcon={<FiPlus />}
@@ -925,92 +1027,95 @@ const MyTaskManagement = () => {
         >
           Create Group
         </Button>
+
+       
       </Stack>
+    </Stack>
 
-      <Grid container spacing={3}>
-        {groups.map((group) => (
-          <Grid item xs={12} md={6} lg={4} key={group._id}>
-            <Card sx={{ borderRadius: theme.shape.borderRadius * 2 }}>
-              <CardContent>
-                <Stack spacing={2}>
-                  <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                    <Box sx={{ flex: 1 }}>
-                      <Typography variant="h6" fontWeight={600}>
-                        {group.name}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {group.description}
-                      </Typography>
-                    </Box>
-                    <Stack direction="row" spacing={1}>
-                      <Tooltip title="Edit Group">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleEditGroup(group)}
-                          sx={{ color: theme.palette.primary.main }}
-                        >
-                          <FiEdit2 size={16} />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Delete Group">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleDeleteGroup(group._id)}
-                          sx={{ color: theme.palette.error.main }}
-                        >
-                          <FiTrash2 size={16} />
-                        </IconButton>
-                      </Tooltip>
-                    </Stack>
-                  </Stack>
-
-                  <Divider />
- 
-                  <Box>
-                    <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
-                      Members ({group.members.length})
+    <Grid container spacing={3}>
+      {groups.map((group) => (
+        <Grid item xs={12} md={6} lg={4} key={group._id}>
+          <Card sx={{ borderRadius: theme.shape.borderRadius * 2 }}>
+            <CardContent>
+              <Stack spacing={2}>
+                <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="h6" fontWeight={600}>
+                      {group.name}
                     </Typography>
-                    <Stack spacing={1}>
-                      {group.members.map(memberId => {
-                        const member = users.find(u => u._id === memberId);
-                        return member ? (
-                          <Stack key={memberId} direction="row" alignItems="center" spacing={1}>
-                            <Avatar sx={{ width: 32, height: 32, fontSize: '0.875rem' }}>
-                              {member.name.charAt(0).toUpperCase()}
-                            </Avatar>
-                            <Box sx={{ flex: 1 }}>
-                              <Typography variant="body2" fontWeight={500}>
-                                {member.name}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                {member.role}
-                              </Typography>
-                            </Box>
-                          </Stack>
-                        ) : null;
-                      })}
-                    </Stack>
+                    <Typography variant="body2" color="text.secondary">
+                      {group.description}
+                    </Typography>
                   </Box>
+                  <Stack direction="row" spacing={1}>
+                    <Tooltip title="Edit Group">
+                      <IconButton
+                        size="small"
+                        onClick={() => handleEditGroup(group)}
+                        sx={{ color: theme.palette.primary.main }}
+                      >
+                        <FiEdit2 size={16} />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Delete Group">
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDeleteGroup(group._id)}
+                        sx={{ color: theme.palette.error.main }}
+                      >
+                        <FiTrash2 size={16} />
+                      </IconButton>
+                    </Tooltip>
+                  </Stack>
                 </Stack>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
 
-      {groups.length === 0 && (
-        <Box sx={{ textAlign: 'center', py: 4 }}>
-          <FiUsers size={48} color={theme.palette.text.secondary} />
-          <Typography variant="h6" color="text.secondary" sx={{ mt: 1 }}>
-            No groups created yet
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Create your first group to assign tasks to multiple users at once
-          </Typography>
-        </Box>
-      )}
-    </Box>
-  );
+                <Divider />
+  
+                <Box>
+                  <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
+                    Members ({group.members.length})
+                  </Typography>
+                  <Stack spacing={1}>
+                    {group.members.map(memberId => {
+                      const member = users.find(u => u._id === memberId);
+                      return member ? (
+                        <Stack key={memberId} direction="row" alignItems="center" spacing={1}>
+                          <Avatar sx={{ width: 32, height: 32, fontSize: '0.875rem' }}>
+                            {member.name.charAt(0).toUpperCase()}
+                          </Avatar>
+                          <Box sx={{ flex: 1 }}>
+                            <Typography variant="body2" fontWeight={500}>
+                              {member.name}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {member.role}
+                            </Typography>
+                          </Box>
+                        </Stack>
+                      ) : null;
+                    })}
+                  </Stack>
+                </Box>
+              </Stack>
+            </CardContent>
+          </Card>
+        </Grid>
+      ))}
+    </Grid>
+
+    {groups.length === 0 && (
+      <Box sx={{ textAlign: 'center', py: 4 }}>
+        <FiUsers size={48} color={theme.palette.text.secondary} />
+        <Typography variant="h6" color="text.secondary" sx={{ mt: 1 }}>
+          No groups created yet
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Create your first group to assign tasks to multiple users at once
+        </Typography>
+      </Box>
+    )}
+  </Box>
+);
 
   if (loading) {
     return (
@@ -1030,74 +1135,106 @@ const MyTaskManagement = () => {
       <Fade in={!loading} timeout={500}>
         <Box sx={{ p: { xs: 2, md: 3 } }}>
           {/* Header Section */}
-        <Paper
-  sx={{
-    p: 3,
-    mb: 3,
-    borderRadius: theme.shape.borderRadius * 2,
-    background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
-    boxShadow: theme.shadows[4],
-    position: "sticky",
-    top: 0,
-    zIndex: 20,
-  }}
->
-  <Stack
-    direction={{ xs: "column", sm: "row" }}
-    spacing={3}
-    justifyContent="space-between"
-    alignItems={{ xs: "flex-start", sm: "center" }}
-  >
-    {/* ---------- Left Section: Title & Info ---------- */}
-    <Box>
-      <Typography variant="h4" fontWeight={800} gutterBottom>
-        {tab === 2 ? "Group Management" : "Task Management"}
-      </Typography>
-      <Typography variant="body1" color="text.secondary">
-        {tab === 2
-          ? "Create and manage user groups easily"
-          : "Manage and track your tasks efficiently"}
-      </Typography>
-    </Box>
+          <Paper
+            sx={{
+              p: 3,
+              mb: 3,
+              borderRadius: theme.shape.borderRadius * 2,
+              background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
+              boxShadow: theme.shadows[4],
+              position: "sticky",
+              top: 0,
+              zIndex: 20,
+            }}
+          >
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={3}
+              justifyContent="space-between"
+              alignItems={{ xs: "flex-start", sm: "center" }}
+            >
+              {/* ---------- Left Section: Title & Info ---------- */}
+              <Box>
+                <Typography variant="h4" fontWeight={800} gutterBottom>
+                  {tab === 2 ? "Group Management" : "Task Management"}
+                </Typography>
+                <Typography variant="body1" color="text.secondary">
+                  {tab === 2
+                    ? "Create and manage user groups easily"
+                    : "Manage and track your tasks efficiently"}
+                </Typography>
+              </Box>
 
-    {/* ---------- Right Section: Buttons ---------- */}
-    <Stack direction="row" spacing={2}>
-      {/* Show Manage Groups only when NOT already on tab 2 */}
-      {tab !== 2 &&
-        (userRole === "hr" ||
-          userRole === "manager" ||
-          userRole === "admin") && (
-          <Button
+              {/* ---------- Right Section: Buttons ---------- */}
+              <Stack direction="row" spacing={2}>
+                {/* Show Manage Groups only when NOT already on tab 2 */}
+                {tab !== 2 &&
+                  (userRole === "hr" ||
+                    userRole === "manager" ||
+                    userRole === "SuperAdmin" ||
+                    userRole === "admin") && (
+                    <Button
+                      variant="outlined"
+                      startIcon={<FiUsers />}
+                      onClick={() => setTab(2)}
+                      sx={{
+                        borderRadius: theme.shape.borderRadius * 2,
+                        textTransform: "none",
+                        fontWeight: 600,
+                      }}
+                    >
+                      Manage Groups
+                    </Button>
+                  )}
+
+                {/* ✅ Create Task is always visible on all tabs */}
+                <Button
+                  variant="contained"
+                  startIcon={<FiPlus />}
+                  onClick={() => setOpenDialog(true)}
+                  sx={{
+                    borderRadius: theme.shape.borderRadius * 2,
+                    textTransform: "none",
+                    fontWeight: 600,
+                    px: 3,
+                  }}
+                >
+                  Create Task
+                </Button>
+      {/* <Button
             variant="outlined"
-            startIcon={<FiUsers />}
-            onClick={() => setTab(2)}
+            startIcon={<FiRefreshCw />}
+            onClick={async () => {
+              try {
+                await axios.post('/task/trigger-recurring');  
+                setSnackbar({
+                  open: true,
+                  message: 'Recurring tasks generation triggered',
+                  severity: 'success'
+                });
+                // Refresh tasks
+                fetchMyTasks();
+                fetchAssignedTasks();
+              } catch (error) {
+                console.error('Error triggering recurring tasks:', error);
+                setSnackbar({
+                  open: true,
+                  message: 'Failed to trigger recurring tasks',
+                  severity: 'error'
+                });
+              }
+            }}
             sx={{
               borderRadius: theme.shape.borderRadius * 2,
-              textTransform: "none",
+              textTransform: 'none',
               fontWeight: 600,
             }}
           >
-            Manage Groups
-          </Button>
-        )}
-
-      {/* ✅ Create Task is always visible on all tabs */}
-      <Button
-        variant="contained"
-        startIcon={<FiPlus />}
-        onClick={() => setOpenDialog(true)}
-        sx={{
-          borderRadius: theme.shape.borderRadius * 2,
-          textTransform: "none",
-          fontWeight: 600,
-          px: 3,
-        }}
-      >
-        Create Task
-      </Button>
-    </Stack>
-  </Stack>
-</Paper>
+            Generate Recurring Tasks
+          </Button> */}
+              </Stack>
+            </Stack>
+          </Paper>
 
           {tab === 2 ? (
             renderGroupsManagement()
@@ -1281,485 +1418,559 @@ const MyTaskManagement = () => {
           )}
 
           {/* Create Task Dialog */}
-      <Dialog 
-  open={openDialog} 
-  onClose={() => setOpenDialog(false)} 
-  maxWidth="md" 
-  fullWidth
-  PaperProps={{
-    sx: {
-      borderRadius: 3,
-      background: 'linear-gradient(145deg, #f8fafc 0%, #ffffff 100%)',
-    }
-  }}
->
-  {/* Enhanced Header */}
-  <DialogTitle sx={{ 
-    pb: 2, 
-    borderBottom: 1, 
-    borderColor: 'divider',
-    background: theme.palette.primary.main,
-    color: 'white',
-    position: 'relative',
-    '&::after': {
-      content: '""',
-      position: 'absolute',
-      bottom: 0,
-      left: '5%',
-      width: '90%',
-      height: '2px',
-      background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent)'
-    }
-  }}>
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-      <Box sx={{ 
-        p: 1, 
-        borderRadius: 2, 
-        background: 'rgba(255,255,255,0.2)',
-        backdropFilter: 'blur(10px)'
-      }}>
-        <FiPlus size={24} />
-      </Box>
-      <Box>
-        <Typography variant="h5" fontWeight={700}>
-          Create New Task
-        </Typography>
-        <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5 }}>
-          Fill in the details to create a new task
-        </Typography>
-      </Box>
-    </Box>
-  </DialogTitle>
-
-  <DialogContent sx={{ p: 0 }}>
-    <Box sx={{ p: 3 }}>
-      <Stack spacing={3}>
-        {/* Enhanced Basic Fields */}
-        <Box sx={{ 
-          p: 3, 
-          borderRadius: 2, 
-          border: 1, 
-          borderColor: 'divider',
-          background: 'white',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
-        }}>
-          <Typography variant="h6" fontWeight={600} sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <FiInfo size={20} color={theme.palette.primary.main} />
-            Basic Information
-          </Typography>
-          
-          <Stack spacing={2.5}>
-            <TextField
-              fullWidth
-              label="Task Title"
-              value={newTask.title}
-              onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-              variant="outlined"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                  transition: 'all 0.2s',
-                  '&:hover': {
-                    '& .MuiOutlinedInput-notchedOutline': {
-                      borderColor: theme.palette.primary.main,
-                    }
-                  }
-                }
-              }}
-              placeholder="Enter a descriptive task title"
-            />
-
-            <TextField
-              fullWidth
-              label="Description"
-              multiline
-              rows={3}
-              value={newTask.description}
-              onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-              variant="outlined"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                }
-              }}
-              placeholder="Provide detailed description of the task..."
-            />
-
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <DateTimePicker
-                  label="Due Date & Time"
-                  value={newTask.dueDateTime}
-                  onChange={(dateTime) => setNewTask({ ...newTask, dueDateTime: dateTime })}
-                  renderInput={(params) => (
-                    <TextField 
-                      {...params} 
-                      fullWidth 
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: 2,
-                        }
-                      }}
-                    />
-                  )}
-                />
-              </Grid>
-
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth>
-                  <InputLabel>Priority</InputLabel>
-                  <Select
-                    value={newTask.priority}
-                    onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
-                    label="Priority"
-                    sx={{
-                      borderRadius: 2,
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 2,
-                      }
-                    }}
-                  >
-                    <MenuItem value="low">
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Box sx={{ 
-                          width: 8, 
-                          height: 8, 
-                          borderRadius: '50%', 
-                          bgcolor: 'success.main' 
-                        }} />
-                        Low
-                      </Box>
-                    </MenuItem>
-                    <MenuItem value="medium">
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Box sx={{ 
-                          width: 8, 
-                          height: 8, 
-                          borderRadius: '50%', 
-                          bgcolor: 'warning.main' 
-                        }} />
-                        Medium
-                      </Box>
-                    </MenuItem>
-                    <MenuItem value="high">
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Box sx={{ 
-                          width: 8, 
-                          height: 8, 
-                          borderRadius: '50%', 
-                          bgcolor: 'error.main' 
-                        }} />
-                        High
-                      </Box>
-                    </MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-            </Grid>
-
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Priority Days"
-                  value={newTask.priorityDays}
-                  onChange={(e) => setNewTask({ ...newTask, priorityDays: e.target.value })}
-                  variant="outlined"
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                    }
-                  }}
-                  placeholder="Enter priority days"
-                />
-              </Grid>
-            </Grid>
-          </Stack>
-        </Box>
-
-        {/* Enhanced File Uploads */}
-        <Box sx={{ 
-          p: 3, 
-          borderRadius: 2, 
-          border: 1, 
-          borderColor: 'divider',
-          background: 'white',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
-        }}>
-          <Typography variant="h6" fontWeight={600} sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <FiPaperclip size={20} color={theme.palette.primary.main} />
-            Attachments
-          </Typography>
-          
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-            <Button 
-              variant="outlined" 
-              component="label" 
-              startIcon={<FiFileText />}
-              sx={{ 
-                borderRadius: 2,
-                py: 1.5,
-                borderStyle: 'dashed',
-                borderWidth: 2,
-                borderColor: 'primary.light',
-                color: 'primary.main',
-                '&:hover': {
-                  borderColor: 'primary.main',
-                  backgroundColor: 'primary.light10',
-                }
-              }}
-            >
-              Upload Files
-              <input
-                type="file"
-                multiple
-                hidden
-                onChange={(e) => setNewTask({ ...newTask, files: e.target.files })}
-              />
-            </Button>
-
-            <Button 
-              variant="outlined" 
-              component="label" 
-              startIcon={<FiMic />}
-              sx={{ 
-                borderRadius: 2,
-                py: 1.5,
-                borderStyle: 'dashed',
-                borderWidth: 2,
-                borderColor: 'secondary.light',
-                color: 'secondary.main',
-                '&:hover': {
-                  borderColor: 'secondary.main',
-                  backgroundColor: 'secondary.light10',
-                }
-              }}
-            >
-              Voice Note
-              <input
-                type="file"
-                accept="audio/*"
-                hidden
-                onChange={(e) => setNewTask({ ...newTask, voiceNote: e.target.files[0] })}
-              />
-            </Button>
-          </Stack>
-        </Box>
-
-        {/* Enhanced Role-based Assign Sections */}
-        {userRole === "user" ? (
-          <Box sx={{ 
-            p: 3, 
-            borderRadius: 2, 
-            border: 1, 
-            borderColor: 'divider',
-            background: `linear-gradient(135deg, ${theme.palette.primary.light}10 0%, ${theme.palette.primary.main}05 100%)`,
-            position: 'relative',
-            overflow: 'hidden',
-            '&::before': {
-              content: '""',
-              position: 'absolute',
-              left: 0,
-              top: 0,
-              bottom: 0,
-              width: 4,
-              background: theme.palette.primary.main
-            }
-          }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Box sx={{ 
-                p: 1.5, 
-                borderRadius: 2, 
-                background: theme.palette.primary.main,
-                color: 'white'
-              }}>
-                <FiUser size={20} />
-              </Box>
-              <Box>
-                <Typography variant="body1" fontWeight={600}>
-                  Assigned To You
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  This task will be automatically assigned to your account
-                </Typography>
-              </Box>
-            </Box>
-          </Box>
-        ) : (
-          <>
-            {/* Enhanced Assign To Users */}
-            <Box sx={{ 
-              p: 3, 
-              borderRadius: 2, 
-              border: 1, 
+          <Dialog 
+            open={openDialog} 
+            onClose={() => setOpenDialog(false)} 
+            maxWidth="md" 
+            fullWidth
+            PaperProps={{
+              sx: {
+                borderRadius: 3,
+                background: 'linear-gradient(145deg, #f8fafc 0%, #ffffff 100%)',
+              }
+            }}
+          >
+            {/* Enhanced Header */}
+            <DialogTitle sx={{ 
+              pb: 2, 
+              borderBottom: 1, 
               borderColor: 'divider',
-              background: 'white',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+              background: theme.palette.primary.main,
+              color: 'white',
+              position: 'relative',
+              '&::after': {
+                content: '""',
+                position: 'absolute',
+                bottom: 0,
+                left: '5%',
+                width: '90%',
+                height: '2px',
+                background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent)'
+              }
             }}>
-              <Typography variant="h6" fontWeight={600} sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                <FiUsers size={20} color={theme.palette.primary.main} />
-                Assign to Team Members
-              </Typography>
-              
-              <FormControl fullWidth>
-                <InputLabel>Select Team Members</InputLabel>
-                <Select
-                  multiple
-                  value={newTask.assignedUsers}
-                  onChange={(e) => setNewTask({ ...newTask, assignedUsers: e.target.value })}
-                  input={<OutlinedInput label="Select Team Members" />}
-                  renderValue={(selected) => (
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                      {users
-                        .filter((u) => selected.includes(u._id))
-                        .map((u) => (
-                          <Chip 
-                            key={u._id}
-                            label={u.name}
-                            size="small"
-                            sx={{ borderRadius: 1 }}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Box sx={{ 
+                  p: 1, 
+                  borderRadius: 2, 
+                  background: 'rgba(255,255,255,0.2)',
+                  backdropFilter: 'blur(10px)'
+                }}>
+                  <FiPlus size={24} />
+                </Box>
+                <Box>
+                  <Typography variant="h5" fontWeight={700}>
+                    Create New Task
+                  </Typography>
+                  <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5 }}>
+                    Fill in the details to create a new task
+                  </Typography>
+                </Box>
+              </Box>
+            </DialogTitle>
+
+            <DialogContent sx={{ p: 0 }}>
+              <Box sx={{ p: 3 }}>
+                <Stack spacing={3}>
+                  {/* Enhanced Basic Fields */}
+                  <Box sx={{ 
+                    p: 3, 
+                    borderRadius: 2, 
+                    border: 1, 
+                    borderColor: 'divider',
+                    background: 'white',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+                  }}>
+                    <Typography variant="h6" fontWeight={600} sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <FiInfo size={20} color={theme.palette.primary.main} />
+                      Basic Information
+                    </Typography>
+                    
+                    <Stack spacing={2.5}>
+                      <TextField
+                        fullWidth
+                        label="Task Title"
+                        value={newTask.title}
+                        onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                        variant="outlined"
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: 2,
+                            transition: 'all 0.2s',
+                            '&:hover': {
+                              '& .MuiOutlinedInput-notchedOutline': {
+                                borderColor: theme.palette.primary.main,
+                              }
+                            }
+                          }
+                        }}
+                        placeholder="Enter a descriptive task title"
+                      />
+
+                      <TextField
+                        fullWidth
+                        label="Description"
+                        multiline
+                        rows={3}
+                        value={newTask.description}
+                        onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                        variant="outlined"
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: 2,
+                          }
+                        }}
+                        placeholder="Provide detailed description of the task..."
+                      />
+
+                      <Grid container spacing={2}>
+                        <Grid item xs={12} sm={6}>
+                          <DateTimePicker
+                            label="Due Date & Time"
+                            value={newTask.dueDateTime}
+                            onChange={(dateTime) => setNewTask({ ...newTask, dueDateTime: dateTime })}
+                            minDate={new Date()}
+                            renderInput={(params) => (
+                              <TextField 
+                                {...params} 
+                                fullWidth 
+                                sx={{
+                                  '& .MuiOutlinedInput-root': {
+                                    borderRadius: 2,
+                                  }
+                                }}
+                              />
+                            )}
                           />
-                        ))}
+                        </Grid>
+
+                        <Grid item xs={12} sm={6}>
+                          <FormControl fullWidth>
+                            <InputLabel>Priority</InputLabel>
+                            <Select
+                              value={newTask.priority}
+                              onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
+                              label="Priority"
+                              sx={{
+                                borderRadius: 2,
+                                '& .MuiOutlinedInput-root': {
+                                  borderRadius: 2,
+                                }
+                              }}
+                            >
+                              <MenuItem value="low">
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  <Box sx={{ 
+                                    width: 8, 
+                                    height: 8, 
+                                    borderRadius: '50%', 
+                                    bgcolor: 'success.main' 
+                                  }} />
+                                  Low
+                                </Box>
+                              </MenuItem>
+                              <MenuItem value="medium">
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  <Box sx={{ 
+                                    width: 8, 
+                                    height: 8, 
+                                    borderRadius: '50%', 
+                                    bgcolor: 'warning.main' 
+                                  }} />
+                                  Medium
+                                </Box>
+                              </MenuItem>
+                              <MenuItem value="high">
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  <Box sx={{ 
+                                    width: 8, 
+                                    height: 8, 
+                                    borderRadius: '50%', 
+                                    bgcolor: 'error.main' 
+                                  }} />
+                                  High
+                                </Box>
+                              </MenuItem>
+                            </Select>
+                          </FormControl>
+                        </Grid>
+                      </Grid>
+
+                      <Grid container spacing={2}>
+                        <Grid item xs={12} sm={6}>
+                          <TextField
+                            fullWidth
+                            label="Priority Days"
+                            type="number"
+                            value={newTask.priorityDays}
+                            onChange={(e) => setNewTask({ ...newTask, priorityDays: e.target.value })}
+                            variant="outlined"
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: 2,
+                              }
+                            }}
+                            placeholder="Enter priority days"
+                          />
+                        </Grid>
+                      </Grid>
+                    </Stack>
+                  </Box>
+
+                  {/* Enhanced Repeat Section for Users */}
+                  {userRole === "user" && (
+                    <Box sx={{ 
+                      p: 3, 
+                      borderRadius: 2, 
+                      border: 1, 
+                      borderColor: 'divider',
+                      background: 'white',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+                    }}>
+                      <Typography variant="h6" fontWeight={600} sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <FiRepeat size={20} color={theme.palette.primary.main} />
+                        Repeat Task
+                      </Typography>
+                      
+                      <FormControl fullWidth>
+                        <InputLabel>Repeat Pattern</InputLabel>
+                        <Select
+                          value={newTask.repeatPattern}
+                          onChange={(e) => setNewTask({ ...newTask, repeatPattern: e.target.value })}
+                          label="Repeat Pattern"
+                          sx={{ borderRadius: 2 }}
+                        >
+                          <MenuItem value="none">No Repeat</MenuItem>
+                          <MenuItem value="daily">Daily</MenuItem>
+                          <MenuItem value="weekly">Weekly</MenuItem>
+                          <MenuItem value="monthly">Monthly</MenuItem>
+                        </Select>
+                      </FormControl>
+
+                      {newTask.repeatPattern === 'weekly' && (
+                        <Box sx={{ mt: 2 }}>
+                          <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>
+                            Select Week Days
+                          </Typography>
+                          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                            {[
+                              { value: 'monday', label: 'Mon' },
+                              { value: 'tuesday', label: 'Tue' },
+                              { value: 'wednesday', label: 'Wed' },
+                              { value: 'thursday', label: 'Thu' },
+                              { value: 'friday', label: 'Fri' },
+                              { value: 'saturday', label: 'Sat' },
+                              { value: 'sunday', label: 'Sun' }
+                            ].map((day) => (
+                              <Chip
+                                key={day.value}
+                                label={day.label}
+                                onClick={() => {
+                                  const currentDays = newTask.repeatDays || [];
+                                  if (currentDays.includes(day.value)) {
+                                    setNewTask({
+                                      ...newTask,
+                                      repeatDays: currentDays.filter(d => d !== day.value)
+                                    });
+                                  } else {
+                                    setNewTask({
+                                      ...newTask,
+                                      repeatDays: [...currentDays, day.value]
+                                    });
+                                  }
+                                }}
+                                color={newTask.repeatDays?.includes(day.value) ? 'primary' : 'default'}
+                                variant={newTask.repeatDays?.includes(day.value) ? 'filled' : 'outlined'}
+                                sx={{ borderRadius: 1 }}
+                              />
+                            ))}
+                          </Box>
+                        </Box>
+                      )}
+
+                      {newTask.repeatPattern !== 'none' && (
+                        <Box sx={{ mt: 2 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            This task will automatically repeat based on your selection.
+                            You can only create tasks for current and upcoming weeks.
+                          </Typography>
+                        </Box>
+                      )}
                     </Box>
                   )}
-                  sx={{ borderRadius: 2 }}
-                >
-                  {users.map((user) => (
-                    <MenuItem key={user._id} value={user._id}>
-                      <Checkbox checked={newTask.assignedUsers.includes(user._id)} />
-                      <ListItemText 
-                        primary={
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Typography variant="body1">{user.name}</Typography>
-                            <Chip 
-                              label={user.role} 
-                              size="small" 
-                              variant="outlined"
-                              sx={{ height: 20, fontSize: '0.7rem' }}
-                            />
-                          </Box>
-                        } 
-                      />
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Box>
 
-            {/* Enhanced Assign To Groups */}
-            {(userRole === "hr" || userRole === "manager" || userRole === "admin") && (
-              <Box sx={{ 
-                p: 3, 
-                borderRadius: 2, 
-                border: 1, 
-                borderColor: 'divider',
-                background: 'white',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
-              }}>
-                <Typography variant="h6" fontWeight={600} sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <FiFolder size={20} color={theme.palette.primary.main} />
-                  Assign to Groups
-                </Typography>
-                
-                <FormControl fullWidth>
-                  <InputLabel>Select Groups</InputLabel>
-                  <Select
-                    multiple
-                    value={newTask.assignedGroups}
-                    onChange={(e) => setNewTask({ ...newTask, assignedGroups: e.target.value })}
-                    input={<OutlinedInput label="Select Groups" />}
-                    renderValue={(selected) => (
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                        {groups
-                          .filter((g) => selected.includes(g._id))
-                          .map((g) => (
-                            <Chip 
-                              key={g._id}
-                              label={`${g.name} (${g.members.length})`}
-                              size="small"
-                              sx={{ borderRadius: 1 }}
-                            />
-                          ))}
-                      </Box>
-                    )}
-                    sx={{ borderRadius: 2 }}
-                  >
-                    {groups.map((group) => (
-                      <MenuItem key={group._id} value={group._id}>
-                        <Checkbox checked={newTask.assignedGroups.includes(group._id)} />
-                        <ListItemText
-                          primary={`${group.name}`}
-                          secondary={`${group.members.length} members`}
+                  {/* Enhanced File Uploads */}
+                  <Box sx={{ 
+                    p: 3, 
+                    borderRadius: 2, 
+                    border: 1, 
+                    borderColor: 'divider',
+                    background: 'white',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+                  }}>
+                    <Typography variant="h6" fontWeight={600} sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <FiPaperclip size={20} color={theme.palette.primary.main} />
+                      Attachments
+                    </Typography>
+                    
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                      <Button 
+                        variant="outlined" 
+                        component="label" 
+                        startIcon={<FiFileText />}
+                        sx={{ 
+                          borderRadius: 2,
+                          py: 1.5,
+                          borderStyle: 'dashed',
+                          borderWidth: 2,
+                          borderColor: 'primary.light',
+                          color: 'primary.main',
+                          '&:hover': {
+                            borderColor: 'primary.main',
+                            backgroundColor: 'primary.light10',
+                          }
+                        }}
+                      >
+                        Upload Files
+                        <input
+                          type="file"
+                          multiple
+                          hidden
+                          onChange={(e) => setNewTask({ ...newTask, files: e.target.files })}
                         />
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+                      </Button>
+
+                      <Button 
+                        variant="outlined" 
+                        component="label" 
+                        startIcon={<FiMic />}
+                        sx={{ 
+                          borderRadius: 2,
+                          py: 1.5,
+                          borderStyle: 'dashed',
+                          borderWidth: 2,
+                          borderColor: 'secondary.light',
+                          color: 'secondary.main',
+                          '&:hover': {
+                            borderColor: 'secondary.main',
+                            backgroundColor: 'secondary.light10',
+                          }
+                        }}
+                      >
+                        Voice Note
+                        <input
+                          type="file"
+                          accept="audio/*"
+                          hidden
+                          onChange={(e) => setNewTask({ ...newTask, voiceNote: e.target.files[0] })}
+                        />
+                      </Button>
+                    </Stack>
+                  </Box>
+
+                  {/* Enhanced Role-based Assign Sections */}
+                  {userRole === "user" ? (
+                    <Box sx={{ 
+                      p: 3, 
+                      borderRadius: 2, 
+                      border: 1, 
+                      borderColor: 'divider',
+                      background: `linear-gradient(135deg, ${theme.palette.primary.light}10 0%, ${theme.palette.primary.main}05 100%)`,
+                      position: 'relative',
+                      overflow: 'hidden',
+                      '&::before': {
+                        content: '""',
+                        position: 'absolute',
+                        left: 0,
+                        top: 0,
+                        bottom: 0,
+                        width: 4,
+                        background: theme.palette.primary.main
+                      }
+                    }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Box sx={{ 
+                          p: 1.5, 
+                          borderRadius: 2, 
+                          background: theme.palette.primary.main,
+                          color: 'white'
+                        }}>
+                          <FiUser size={20} />
+                        </Box>
+                        <Box>
+                          <Typography variant="body1" fontWeight={600}>
+                            Assigned To You
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            This task will be automatically assigned to your account
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Box>
+                  ) : (
+                    <>
+                      {/* Enhanced Assign To Users */}
+                      <Box sx={{ 
+                        p: 3, 
+                        borderRadius: 2, 
+                        border: 1, 
+                        borderColor: 'divider',
+                        background: 'white',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+                      }}>
+                        <Typography variant="h6" fontWeight={600} sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <FiUsers size={20} color={theme.palette.primary.main} />
+                          Assign to Team Members
+                        </Typography>
+                        
+                        <FormControl fullWidth>
+                          <InputLabel>Select Team Members</InputLabel>
+                          <Select
+                            multiple
+                            value={newTask.assignedUsers}
+                            onChange={(e) => setNewTask({ ...newTask, assignedUsers: e.target.value })}
+                            input={<OutlinedInput label="Select Team Members" />}
+                            renderValue={(selected) => (
+                              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                {users
+                                  .filter((u) => selected.includes(u._id))
+                                  .map((u) => (
+                                    <Chip 
+                                      key={u._id}
+                                      label={u.name}
+                                      size="small"
+                                      sx={{ borderRadius: 1 }}
+                                    />
+                                  ))}
+                              </Box>
+                            )}
+                            sx={{ borderRadius: 2 }}
+                          >
+                            {users.map((user) => (
+                              <MenuItem key={user._id} value={user._id}>
+                                <Checkbox checked={newTask.assignedUsers.includes(user._id)} />
+                                <ListItemText 
+                                  primary={
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                      <Typography variant="body1">{user.name}</Typography>
+                                      <Chip 
+                                        label={user.role} 
+                                        size="small" 
+                                        variant="outlined"
+                                        sx={{ height: 20, fontSize: '0.7rem' }}
+                                      />
+                                    </Box>
+                                  } 
+                                />
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      </Box>
+
+                      {/* Enhanced Assign To Groups */}
+                      {(userRole === "hr" || userRole === "manager" || userRole === "admin" || userRole === "SuperAdmin") && (
+                        <Box sx={{ 
+                          p: 3, 
+                          borderRadius: 2, 
+                          border: 1, 
+                          borderColor: 'divider',
+                          background: 'white',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+                        }}>
+                          <Typography variant="h6" fontWeight={600} sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <FiFolder size={20} color={theme.palette.primary.main} />
+                            Assign to Groups
+                          </Typography>
+                          
+                          <FormControl fullWidth>
+                            <InputLabel>Select Groups</InputLabel>
+                            <Select
+                              multiple
+                              value={newTask.assignedGroups}
+                              onChange={(e) => setNewTask({ ...newTask, assignedGroups: e.target.value })}
+                              input={<OutlinedInput label="Select Groups" />}
+                              renderValue={(selected) => (
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                  {groups
+                                    .filter((g) => selected.includes(g._id))
+                                    .map((g) => (
+                                      <Chip 
+                                        key={g._id}
+                                        label={`${g.name} (${g.members.length})`}
+                                        size="small"
+                                        sx={{ borderRadius: 1 }}
+                                      />
+                                    ))}
+                                </Box>
+                              )}
+                              sx={{ borderRadius: 2 }}
+                            >
+                              {groups.map((group) => (
+                                <MenuItem key={group._id} value={group._id}>
+                                  <Checkbox checked={newTask.assignedGroups.includes(group._id)} />
+                                  <ListItemText
+                                    primary={`${group.name}`}
+                                    secondary={`${group.members.length} members`}
+                                  />
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        </Box>
+                      )}
+                    </>
+                  )}
+                </Stack>
               </Box>
-            )}
-          </>
-        )}
-      </Stack>
-    </Box>
-  </DialogContent>
+            </DialogContent>
 
-  {/* Enhanced Footer */}
-  <DialogActions sx={{ 
-    p: 3, 
-    borderTop: 1, 
-    borderColor: 'divider',
-    background: '#f8fafc'
-  }}>
-    <Button
-      onClick={() => setOpenDialog(false)}
-      variant="outlined"
-      startIcon={<FiX />}
-      sx={{ 
-        borderRadius: 2,
-        px: 3,
-        py: 1
-      }}
-    >
-      Cancel
-    </Button>
+            {/* Enhanced Footer */}
+            <DialogActions sx={{ 
+              p: 3, 
+              borderTop: 1, 
+              borderColor: 'divider',
+              background: '#f8fafc'
+            }}>
+              <Button
+                onClick={() => setOpenDialog(false)}
+                variant="outlined"
+                startIcon={<FiX />}
+                sx={{ 
+                  borderRadius: 2,
+                  px: 3,
+                  py: 1
+                }}
+              >
+                Cancel
+              </Button>
 
-    <Button
-      onClick={() => {
-        if (userRole === "user") {
-          handleCreateTask({
-            ...newTask,
-            assignedUsers: [userId],
-            assignedGroups: [],
-          });
-        } else {
-          handleCreateTask(newTask);
-        }
-      }}
-      variant="contained"
-      disabled={!newTask.title || !newTask.description || !newTask.dueDateTime}
-      startIcon={<FiCheck />}
-      sx={{ 
-        borderRadius: 2,
-        px: 3,
-        py: 1,
-        background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-        '&:hover': {
-          boxShadow: '0 6px 16px rgba(0,0,0,0.15)',
-          transform: 'translateY(-1px)',
-        },
-        '&:disabled': {
-          background: theme.palette.grey[300],
-          transform: 'none',
-          boxShadow: 'none'
-        },
-        transition: 'all 0.2s ease-in-out'
-      }}
-    >
-      Create Task
-    </Button>
-  </DialogActions>
-</Dialog>
+              <Button
+                onClick={handleCreateTask}
+                variant="contained"
+                disabled={!newTask.title || !newTask.description || !newTask.dueDateTime}
+                startIcon={<FiCheck />}
+                sx={{ 
+                  borderRadius: 2,
+                  px: 3,
+                  py: 1,
+                  background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                  '&:hover': {
+                    boxShadow: '0 6px 16px rgba(0,0,0,0.15)',
+                    transform: 'translateY(-1px)',
+                  },
+                  '&:disabled': {
+                    background: theme.palette.grey[300],
+                    transform: 'none',
+                    boxShadow: 'none'
+                  },
+                  transition: 'all 0.2s ease-in-out'
+                }}
+              >
+                Create Task
+              </Button>
+            </DialogActions>
+          </Dialog>
 
           {/* Group Management Dialog */}
           <Dialog
@@ -1936,16 +2147,15 @@ const MyTaskManagement = () => {
                             }
                           />
                          <Avatar
-  sx={{
-    width: 32,
-    height: 32,
-    fontSize: "0.875rem",
-    bgcolor: theme.palette.primary.main,
-  }}
->
-  {(user?.name?.charAt(0)?.toUpperCase() || "U")}
-</Avatar>
-
+                            sx={{
+                              width: 32,
+                              height: 32,
+                              fontSize: "0.875rem",
+                              bgcolor: theme.palette.primary.main,
+                            }}
+                          >
+                            {(user?.name?.charAt(0)?.toUpperCase() || "U")}
+                          </Avatar>
                         </MenuItem>
                       ))}
                     </Select>
@@ -2211,4 +2421,7 @@ const MyTaskManagement = () => {
   );
 };
 
+
 export default MyTaskManagement;
+// mail done
+// Generate Recurring Tasks

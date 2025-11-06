@@ -221,7 +221,7 @@ const UserDashboard = () => {
     } catch (error) {
       console.error('❌ Error fetching leaves:', error);
       console.log('Error details:', error.response?.data || error.message);
-      toast.error('Failed to load leave data');
+      // toast.error('Failed to load leave data');
       setLeaveDates([]);
     }
   };
@@ -349,7 +349,7 @@ const UserDashboard = () => {
       setTimer(0);
       setIsRunning(true);
       setMarkedDates(prev => [...prev, key]);
-      toast.success("🟢 Clocked IN successfully!");
+      toast.success(`🟢 Clocked IN successfully! ${res.data.data.lateBy !== "00:00:00" ? `Late by ${res.data.data.lateBy}` : ""}`);
       
       await fetchData();
       await fetchStats();

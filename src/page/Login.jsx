@@ -68,7 +68,7 @@ const Login = () => {
       setIsAuthenticated(true);
       toast.success("Login successful! Redirecting...");
       setTimeout(() => {
-        navigate(location.state?.from || '/user/dashboard');
+        navigate(location.state?.from || '/cds/user-dashboard');
       }, 1500);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Login failed. Please try again.');

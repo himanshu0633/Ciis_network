@@ -214,6 +214,7 @@ const MyLeaves = () => {
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const isSmallMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const fetchLeaves = async () => {
     setLoading(true);
@@ -836,14 +837,26 @@ const MyLeaves = () => {
                         label="Start Date"
                         value={form.startDate}
                         onChange={(date) => handleDateChange("startDate", date)}
-                        slotProps={{ textField: { fullWidth: true } }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            fullWidth
+                            sx={{ borderRadius: theme.shape.borderRadius * 2 }}
+                          />
+                        )}
                       />
 
                       <DatePicker
                         label="End Date"
                         value={form.endDate}
                         onChange={(date) => handleDateChange("endDate", date)}
-                        slotProps={{ textField: { fullWidth: true } }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            fullWidth
+                            sx={{ borderRadius: theme.shape.borderRadius * 2 }}
+                          />
+                        )}
                       />
 
                       {form.startDate && form.endDate && (

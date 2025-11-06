@@ -143,7 +143,7 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
 
     { heading: 'Administration' },
 
-    ...(userRole === 'manager' || userRole === 'admin' || userRole === 'hr'
+    ...(userRole === 'manager' || userRole === 'admin' || userRole === 'hr'|| userRole === 'SuperAdmin'
       ? [
         { icon: <CreateUserIcon />, name: 'Create User', route: '/admin/create-user' },
         { icon: <PasswordIcon />, name: 'Change Password', route: '/admin/change-password' },
