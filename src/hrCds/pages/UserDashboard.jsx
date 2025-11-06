@@ -221,7 +221,7 @@ const UserDashboard = () => {
     } catch (error) {
       console.error('❌ Error fetching leaves:', error);
       console.log('Error details:', error.response?.data || error.message);
-      toast.error('Failed to load leave data');
+      // toast.error('Failed to load leave data');
       setLeaveDates([]);
     }
   };

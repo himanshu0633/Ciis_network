@@ -1171,6 +1171,7 @@ const MyTaskManagement = () => {
                 {tab !== 2 &&
                   (userRole === "hr" ||
                     userRole === "manager" ||
+                    userRole === "SuperAdmin" ||
                     userRole === "admin") && (
                     <Button
                       variant="outlined"
@@ -1867,7 +1868,7 @@ const MyTaskManagement = () => {
                       </Box>
 
                       {/* Enhanced Assign To Groups */}
-                      {(userRole === "hr" || userRole === "manager" || userRole === "admin") && (
+                      {(userRole === "hr" || userRole === "manager" || userRole === "admin" || userRole === "SuperAdmin") && (
                         <Box sx={{ 
                           p: 3, 
                           borderRadius: 2, 

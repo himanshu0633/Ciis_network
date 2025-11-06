@@ -158,7 +158,7 @@ const TaskDetails = () => {
   }, []);
 
   const canManage = useMemo(
-    () => ["admin", "manager", "hr"].includes(currentUserRole),
+    () => ["admin", "manager", "hr", "SuperAdmin"].includes(currentUserRole),
     [currentUserRole]
   );
 

@@ -6,7 +6,7 @@ import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import axios from '../../utils/axiosConfig';
 
-const roleOptions = ['admin', 'user', 'hr', 'manager'];
+const roleOptions = ['admin', 'user', 'hr', 'manager', "SuperAdmin"];
 const propertyOptions = ['phone', 'sim', 'laptop', 'desktop', 'headphone'];
 const genderOptions = ['male', 'female', 'other'];
 const maritalStatusOptions = ['single', 'married', 'divorced', 'widowed'];

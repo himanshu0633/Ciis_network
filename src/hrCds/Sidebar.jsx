@@ -146,7 +146,7 @@ const Sidebar = ({ isOpen = true, closeSidebar }) => {
 
   const userMenu = [
     ...staticMenu,
-    ...(userRole === 'hr' || userRole === 'manager' || userRole === 'admin' ? hrMenu : []),
+    ...(userRole === 'hr' || userRole === 'manager' || userRole === 'admin' || userRole === 'SuperAdmin' ? hrMenu : []),
     // ...(userRole === 'manager' || userRole === 'admin' ? managerMenu : []),
   ];
 
