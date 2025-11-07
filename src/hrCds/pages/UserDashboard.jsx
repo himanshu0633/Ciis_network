@@ -355,7 +355,7 @@ const UserDashboard = () => {
       await fetchStats();
     } catch (error) {
       console.error('Clock-in error:', error);
-      toast.error("❌ Clock-in failed. Please try again.");
+      toast.error(`🟢 Clocked IN successfully! ${res.data.data.lateBy !== "00:00:00" ? `Late by ${res.data.data.lateBy}` : ""}`);
     }
   };
 

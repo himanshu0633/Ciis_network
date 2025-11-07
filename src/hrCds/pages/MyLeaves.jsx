@@ -225,13 +225,16 @@ const MyLeaves = () => {
       calculateStats(list);
     } catch (err) {
       setNotification({
-        message: err?.response?.data?.message || "Failed to fetch leaves",
-        severity: "error",
+        // message: err?.response?.data?.message || "Failed to fetch leaves",
+        // severity: "error",
       });
     } finally {
       setLoading(false);
     }
   }, []);
+
+
+  // 
 
   const calculateStats = (leavesData) => {
     const approved = leavesData.filter((l) => l.status === "Approved").length;

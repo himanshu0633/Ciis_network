@@ -296,6 +296,7 @@ function App() {
           <Route path="emp" element={<EmployeeProjects />} />
         </Route>
         {/* Catch-all route */}
+        
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
