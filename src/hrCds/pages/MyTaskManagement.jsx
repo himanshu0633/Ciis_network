@@ -63,7 +63,6 @@ const StatusChip = styled(Chip)(({ theme, status }) => ({
     border: `1px solid ${theme.palette.error.main}40`,
   }),
 }));
-const [isCreatingTask, setIsCreatingTask] = useState(false);
 const PriorityChip = styled(Chip)(({ theme, priority }) => ({
   fontWeight: 500,
   ...(priority === 'high' && {
@@ -166,6 +165,8 @@ const MyTaskManagement = () => {
   const [openGroupDialog, setOpenGroupDialog] = useState(false);
   const [users, setUsers] = useState([]);
   const [groups, setGroups] = useState([]);
+
+const [isCreatingTask, setIsCreatingTask] = useState(false);
 
   const [newTask, setNewTask] = useState({
     title: '',
