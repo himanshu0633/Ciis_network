@@ -219,7 +219,7 @@ const Attendance = () => {
 
   const exportToCSV = () => {
     // Simple CSV export implementation
-    const headers = ['Date', 'Login', 'Logout', 'Status', 'Total Time', 'Overtime', 'Late By', 'Early Leave'];
+    const headers = ['Date', 'Login', 'Logout', 'Status', 'Total Time', 'Overtime', 'Early Leave'];
     const csvData = filteredData.map(record => [
       formatDate(record.date),
       formatTime(record.inTime),
@@ -524,9 +524,9 @@ const Attendance = () => {
                         <TableCell sx={{ fontWeight: 700 }}>Logout Time</TableCell>
                         <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
                         <TableCell sx={{ fontWeight: 700 }}>Total Time</TableCell>
-                        <TableCell sx={{ fontWeight: 700 }}>Overtime</TableCell>
+                        {/* <TableCell sx={{ fontWeight: 700 }}>Overtime</TableCell>
                         <TableCell sx={{ fontWeight: 700 }}>Late By</TableCell>
-                        <TableCell sx={{ fontWeight: 700 }}>Early Leave</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Early Leave</TableCell> */}
                         <TableCell sx={{ fontWeight: 700 }}>Actions</TableCell>
                       </TableRow>
                     </TableHead>
@@ -566,21 +566,21 @@ const Attendance = () => {
                                 {record.totalTime || '00:00:00'}
                               </Typography>
                             </TableCell>
-                            <TableCell>
+                            {/* <TableCell>
                               <Typography variant="body2">
                                 {record.overTime || '00:00:00'}
                               </Typography>
-                            </TableCell>
-                            <TableCell>
+                            </TableCell> */}
+                            {/* <TableCell>
                               <Typography variant="body2" color={record.lateBy ? 'error' : 'text.secondary'}>
                                 {record.lateBy || '00:00:00'}
                               </Typography>
-                            </TableCell>
-                            <TableCell>
+                            </TableCell> */}
+                            {/* <TableCell>
                               <Typography variant="body2" color={record.earlyLeave ? 'warning' : 'text.secondary'}>
                                 {record.earlyLeave || '00:00:00'}
                               </Typography>
-                            </TableCell>
+                            </TableCell> */}
                             <TableCell>
                               <Tooltip title="View Details">
                                 <IconButton size="small">
@@ -734,7 +734,7 @@ const Attendance = () => {
                         
                         <Divider />
                         
-                        <Stack direction="row" justifyContent="space-between" alignItems="center">
+                        {/* <Stack direction="row" justifyContent="space-between" alignItems="center">
                           <Typography variant="body2" color="text.secondary">Overtime</Typography>
                           <Typography variant="body1">
                             {selectedRecord.overTime || '00:00:00'}
@@ -753,7 +753,7 @@ const Attendance = () => {
                           <Typography variant="body1" color={selectedRecord.earlyLeave ? 'warning' : 'text.primary'}>
                             {selectedRecord.earlyLeave || '00:00:00'}
                           </Typography>
-                        </Stack>
+                        </Stack> */}
                       </Stack>
                       
                       <Button

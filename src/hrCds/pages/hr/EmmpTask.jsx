@@ -8,14 +8,14 @@ import {
   Button, FormControl, Select, MenuItem, Snackbar,
   IconButton, Dialog, DialogTitle, DialogContent, DialogActions,
   TextField, InputLabel, OutlinedInput, Checkbox, ListItemText,
-  InputAdornment  // ADD THIS IMPORT
+  InputAdornment, Modal
 } from '@mui/material';
 import {
   FiCheckCircle, FiClock, FiAlertCircle, FiXCircle,
   FiUsers, FiTrendingUp, FiCalendar, FiFilter,
   FiRefreshCw, FiArrowRight, FiUser, FiList,
   FiPlus, FiEdit2, FiTrash2, FiMessageCircle,
-  FiFileText, FiMic, FiDownload, FiFlag
+  FiFileText, FiMic, FiDownload, FiFlag, FiBell
 } from 'react-icons/fi';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -117,6 +117,15 @@ const StyledTableRow = styled(TableRow)(({ theme, status }) => ({
   }),
 }));
 
+const ActionButton = styled(IconButton)(({ theme }) => ({
+  transition: theme.transitions.create(['all'], {
+    duration: theme.transitions.duration.short,
+  }),
+  '&:hover': {
+    transform: 'scale(1.1)',
+  },
+}));
+
 const statusColors = {
   pending: 'warning',
   'in-progress': 'info',
@@ -153,10 +162,171 @@ const EmmpTask = () => {
     rejected: 0
   });
 
+  // Notifications State
+  const [notifications, setNotifications] = useState([]);
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
+
+  // Notifications Functions
+  const fetchNotifications = async () => {
+    if (authError || !userId) return;
+    
+    try {
+      const res = await axios.get('/task/notifications/all');
+      setNotifications(res.data.notifications || []);
+      setUnreadNotificationCount(res.data.unreadCount || 0);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
+
+  const markNotificationAsRead = async (notificationId) => {
+    try {
+      await axios.patch(`/task/notifications/${notificationId}/read`);
+      fetchNotifications();
+      setSnackbar({ open: true, message: 'Notification marked as read', severity: 'success' });
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  const markAllNotificationsAsRead = async () => {
+    try {
+      await axios.patch('/task/notifications/read-all');
+      fetchNotifications();
+      setSnackbar({ open: true, message: 'All notifications marked as read', severity: 'success' });
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+    }
+  };
+
+  // Enhanced Notifications Panel
+  const renderNotificationsPanel = () => (
+    <Modal
+      open={notificationsOpen}
+      onClose={() => setNotificationsOpen(false)}
+      closeAfterTransition
+    >
+      <Box sx={{
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: isSmallMobile ? '90%' : 400,
+        maxHeight: '80vh',
+        bgcolor: 'background.paper',
+        borderRadius: 2,
+        boxShadow: 24,
+        overflow: 'hidden',
+      }}>
+        <Box sx={{ 
+          p: 2, 
+          borderBottom: 1, 
+          borderColor: 'divider',
+          background: `linear-gradient(135deg, ${theme.palette.primary.main}15 0%, ${theme.palette.primary.main}05 100%)`
+        }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Typography variant="h6" fontWeight={600}>Notifications</Typography>
+            <Button 
+              onClick={markAllNotificationsAsRead} 
+              size="small"
+              disabled={unreadNotificationCount === 0}
+              sx={{ borderRadius: 1 }}
+            >
+              Mark all as read
+            </Button>
+          </Stack>
+        </Box>
+        <Box sx={{ maxHeight: '60vh', overflow: 'auto', p: 1 }}>
+          {notifications.length > 0 ? (
+            <Stack spacing={1}>
+              {notifications.map((notification) => (
+                <Card 
+                  key={notification._id} 
+                  variant="outlined"
+                  sx={{ 
+                    bgcolor: notification.isRead ? 'background.default' : 'action.hover',
+                    borderLeft: notification.isRead ? null : `4px solid ${theme.palette.primary.main}`,
+                    borderRadius: 1,
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      transform: 'translateY(-1px)',
+                      boxShadow: theme.shadows[1]
+                    }
+                  }}
+                >
+                  <CardContent sx={{ py: 1, '&:last-child': { pb: 1 } }}>
+                    <Stack spacing={1}>
+                      <Typography variant="subtitle2" fontWeight={600}>
+                        {notification.title}
+                      </Typography>
+                      <Typography variant="body2">
+                        {notification.message}
+                      </Typography>
+                      <Stack direction="row" justifyContent="space-between" alignItems="center">
+                        <Typography variant="caption" color="text.secondary">
+                          {new Date(notification.createdAt).toLocaleDateString()}
+                        </Typography>
+                        {!notification.isRead && (
+                          <Button 
+                            size="small" 
+                            onClick={() => markNotificationAsRead(notification._id)}
+                            sx={{ borderRadius: 1 }}
+                          >
+                            Mark read
+                          </Button>
+                        )}
+                      </Stack>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              ))}
+            </Stack>
+          ) : (
+            <Box sx={{ textAlign: 'center', py: 4 }}>
+              <FiBell size={32} color={theme.palette.text.secondary} />
+              <Typography variant="body1" color="text.secondary" sx={{ mt: 1, fontWeight: 600 }}>
+                No notifications
+              </Typography>
+            </Box>
+          )}
+        </Box>
+      </Box>
+    </Modal>
+  );
+
+  // Notification Bell Component
+  const NotificationBell = () => (
+    <Tooltip title="Notifications">
+      <ActionButton 
+        onClick={() => setNotificationsOpen(true)}
+        sx={{ 
+          position: 'relative',
+          '&:hover': { 
+            backgroundColor: `${theme.palette.primary.main}10`,
+          }
+        }}
+      >
+        <FiBell size={18} />
+        {unreadNotificationCount > 0 && (
+          <Badge 
+            badgeContent={unreadNotificationCount} 
+            color="error"
+            sx={{
+              position: 'absolute',
+              top: 6,
+              right: 6,
+            }}
+          />
+        )}
+      </ActionButton>
+    </Tooltip>
+  );
 
   // Fixed: Proper user data fetching with error handling
   const fetchUserRole = () => {
@@ -273,6 +443,7 @@ const EmmpTask = () => {
     try {
       await axios.patch(`/task/${taskId}/status`, { status: newStatus });
       fetchAssignedTasks();
+      fetchNotifications(); // Refresh notifications after status change
       setSnackbar({ open: true, message: 'Status updated successfully', severity: 'success' });
     } catch (err) {
       console.error("❌ Error in handleStatusChange:", err.response || err);
@@ -327,6 +498,7 @@ const EmmpTask = () => {
     try {
       await axios.post('/task/create', formData);
       fetchAssignedTasks();
+      fetchNotifications(); // Refresh notifications after creating task
       setOpenDialog(false);
       setSnackbar({ open: true, message: 'Task created successfully', severity: 'success' });
       setNewTask({
@@ -457,6 +629,7 @@ const EmmpTask = () => {
     if (!authError && userId) {
       fetchAssignedTasks();
       fetchAssignableData();
+      fetchNotifications(); // Fetch notifications when component loads
     }
   }, [authError, userId]);
 
@@ -531,28 +704,12 @@ const EmmpTask = () => {
                 <Typography variant="body1" color="text.secondary">
                   Track progress and status of all assigned tasks
                 </Typography>
-                {/* {userId && (
-                  <Typography variant="caption" color="primary.main" sx={{ mt: 1, display: 'block' }}>
-                    Logged in as:  (Name:{name}){userRole}
-                  </Typography>
-                )} */}
               </Box>
 
-              <Stack direction="row" spacing={2}>
-                {/* <Tooltip title="Refresh">
-                  <Button
-                    variant="outlined"
-                    startIcon={<FiRefreshCw />}
-                    onClick={fetchAssignedTasks}
-                    sx={{
-                      borderRadius: theme.shape.borderRadius * 2,
-                      textTransform: 'none',
-                      fontWeight: 600
-                    }}
-                  >
-                    Refresh
-                  </Button>
-                </Tooltip> */}
+              <Stack direction="row" spacing={2} alignItems="center">
+                {/* Notification Bell */}
+                <NotificationBell />
+
                 {userRole !== 'employee' && userRole !== 'staff' && (
                   <Button
                     variant="contained"
@@ -738,29 +895,6 @@ const EmmpTask = () => {
                         >
                           {task.description}
                         </Typography>
-                        
-                        {/* <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
-                          <Stack direction="row" spacing={1} alignItems="center">
-                            <FiCalendar size={14} color={theme.palette.text.secondary} />
-                            <Typography 
-                              variant="body2" 
-                              color={isOverdue(task.dueDate) ? 'error' : 'text.secondary'}
-                              fontWeight={500}
-                            >
-                              Due: {formatDate(task.dueDate)}
-                            </Typography>
-                            {isOverdue(task.dueDate) && (
-                              <FiAlertCircle size={14} color={theme.palette.error.main} />
-                            )}
-                          </Stack>
-                          
-                          <PriorityChip 
-                            label={task.priority || 'medium'} 
-                            priority={task.priority || 'medium'}
-                            size="small"
-                            icon={<FiFlag size={14} />}
-                          />
-                        </Stack> */}
                       </Box>
 
                       <Box sx={{ textAlign: { xs: 'left', sm: 'right' } }}>
@@ -800,26 +934,6 @@ const EmmpTask = () => {
                           {task.assignedUsers?.length || 0} user(s), {task.assignedGroups?.length || 0} group(s)
                         </Typography>
                       </Stack>
-
-                      {/* Individual Users */}
-                      {/* {task.assignedUsers && task.assignedUsers.length > 0 && (
-                        <Box sx={{ mb: 2 }}>
-                          <Typography variant="body2" fontWeight={600} gutterBottom>
-                            Individual Users:
-                          </Typography>
-                          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                            {task.assignedUsers.map(userId => (
-                              <Chip
-                                key={userId}
-                                label={getUserName(userId)}
-                                size="small"
-                                variant="outlined"
-                                sx={{ mb: 0.5 }}
-                              />
-                            ))}
-                          </Stack>
-                        </Box>
-                      )} */}
 
                       {/* Groups */}
                       {task.assignedGroups && task.assignedGroups.length > 0 && (
@@ -1153,6 +1267,9 @@ const EmmpTask = () => {
               </Button>
             </DialogActions>
           </Dialog>
+
+          {/* Notifications Panel */}
+          {renderNotificationsPanel()}
 
           {/* Enhanced Snackbar */}
           <Snackbar

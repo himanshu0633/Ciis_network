@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   AppBar,
   Toolbar,
@@ -11,6 +11,7 @@ import {
   MenuItem,
   useTheme,
   useMediaQuery,
+  CircularProgress
 } from "@mui/material";
 import LogoutIcon from "@mui/icons-material/Logout";
 import MenuIcon from "@mui/icons-material/Menu";
@@ -27,78 +28,18 @@ const Header = ({ toggleSidebar }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const navigate = useNavigate();
 
-  // notifications: [{ key, msg, time, removing? }]
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [anchorEl, setAnchorEl] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [hasFetched, setHasFetched] = useState(false);
 
-  // store removal timers to clear on unmount
-  const removalTimersRef = useRef({});
-
-  useEffect(() => {
-    fetchNotifications();
-
-    let interval;
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        fetchNotifications();
-        interval = setInterval(fetchNotifications, 15000); // 15s
-      } else {
-        clearInterval(interval);
-      }
-    };
-
-    if (document.visibilityState === "visible") {
-      interval = setInterval(fetchNotifications, 15000);
-    }
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
-      clearInterval(interval);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      // clear any pending removal timers
-      Object.values(removalTimersRef.current).forEach(clearTimeout);
-      removalTimersRef.current = {};
-    };
-  }, []);
-
-  // -------- Helpers --------
-  const timeOnly12h = (dateStr) =>
-    new Date(dateStr).toLocaleTimeString("en-IN", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
-
-  const isToday = (dateStr) =>
-    new Date(dateStr).toDateString() === new Date().toDateString();
-
-  const byLatest = (a, b) => new Date(b.time) - new Date(a.time);
-
-  const addIfToday = (arr, obj) => {
-    if (!obj?.time || !isToday(obj.time)) return;
-    arr.push(obj);
-  };
-
-  // stable keys per type
-  const keyFor = {
-    attendance: (type, time) => `attendance:${type}:${new Date(time).toISOString()}`,
-    leave: (idOrType, time) => `leave:${idOrType || "type"}:${new Date(time).toISOString()}`,
-    asset: (idOrName, time) => `asset:${idOrName || "unknown"}:${new Date(time).toISOString()}`,
-    taskMine: (taskId) => `task:mine:${taskId}`,
-    taskAssigned: (taskId) => `task:assigned:${taskId}`,
-    group: (idOrName, time) => `group:${idOrName || "group"}:${new Date(time).toISOString()}`,
-    alert: (idOrMsg, time) =>
-      `alert:${(idOrMsg || "").toString().slice(0, 50)}:${new Date(time).toISOString()}`,
-  };
-
-  // -------- Fetch & Build Notifications --------
+  // Remove all automatic fetching - only manual fetch on button click
   const fetchNotifications = async () => {
     const token = localStorage.getItem("token");
     if (!token) return;
 
+    setLoading(true);
     const headers = { Authorization: `Bearer ${token}` };
 
     try {
@@ -120,167 +61,136 @@ const Header = ({ toggleSidebar }) => {
         axios.get(`${API_URL}/alerts`, { headers }),
       ]);
 
-      const next = [];
+      const all = [];
+      const today = new Date().toDateString();
 
-      // Attendance
+      const formatTime = (dateStr) => {
+        if (!dateStr) return "";
+        return new Date(dateStr).toLocaleTimeString("en-IN", {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      };
+
+      // Attendance Notifications
       const attendanceData = attendanceRes.value?.data?.data || [];
       attendanceData.forEach((item) => {
-        if (item.inTime)
-          addIfToday(next, {
-            key: keyFor.attendance("in", item.inTime),
-            msg: "Punched In",
-            time: item.inTime,
-          });
-        if (item.outTime)
-          addIfToday(next, {
-            key: keyFor.attendance("out", item.outTime),
-            msg: "Punched Out",
-            time: item.outTime,
-          });
+        if (item.inTime) all.push({ 
+          msg: `🕒 Clocked In at ${formatTime(item.inTime)}`, 
+          time: item.inTime 
+        });
+        if (item.outTime) all.push({ 
+          msg: `🏠 Clocked Out at ${formatTime(item.outTime)}`, 
+          time: item.outTime 
+        });
       });
 
-      // Leaves (left as-is, always shown if today)
+      // Leaves
       const leavesData = leavesRes.value?.data?.leaves || [];
       leavesData.forEach((l) => {
-        const status = (l.status || "").toString(); // keep as-is (could be 'Approved' etc.)
-        addIfToday(next, {
-          key: keyFor.leave(l._id || l.type, l.updatedAt || l.startDate || new Date()),
-          msg: `Leave ${status}: ${l.type}`,
-          time: l.updatedAt || l.startDate || new Date(),
+        const emoji =
+          l.status?.toLowerCase() === "approved"
+            ? "✅"
+            : l.status?.toLowerCase() === "pending"
+            ? "⏳"
+            : "❌";
+        all.push({
+          msg: `${emoji} Leave ${l.status}: ${l.type}`,
+          time: l.updatedAt || l.startDate,
         });
       });
 
       // Assets
       const assetsData = assetsRes.value?.data?.requests || [];
       assetsData.forEach((a) => {
-        addIfToday(next, {
-          key: keyFor.asset(a._id || a.assetName, a.updatedAt || new Date()),
-          msg: `Asset Request: ${a.assetName} — ${(a.status || "").toUpperCase()}`,
-          time: a.updatedAt || new Date(),
+        all.push({
+          msg: `💻 Asset Request: ${a.assetName} — ${a.status.toUpperCase()}`,
+          time: a.updatedAt,
         });
       });
 
-      // My Tasks (skip "completed"; keep DB values as-is)
+      // My Tasks (Skip completed)
       const groupedTasks = myTasksRes.value?.data?.groupedTasks || {};
       Object.keys(groupedTasks).forEach((dateKey) => {
         groupedTasks[dateKey].forEach((t) => {
-          // find my status from statusInfo; fallback to t.status if present
-          const myStatusRaw =
+          const status =
             t.statusInfo?.find(
               (s) => s.userId === user?._id || s.user === user?._id
-            )?.status ?? t.status ?? "pending";
+            )?.status || "N/A";
 
-          const status = (myStatusRaw || "").toString(); // DB value e.g., 'pending', 'in-progress', 'completed', 'rejected'
-          if (status === "completed") return;
+          if (status.toLowerCase() === "completed") return;
 
-          addIfToday(next, {
-            key: keyFor.taskMine(t._id || t.id || t.title),
-            msg: `Task Update: ${t.title} (${status})`,
-            time: t.updatedAt || t.createdAt || new Date(),
+          all.push({
+            msg: `🧾 Task Update: ${t.title} (${status})`,
+            time: t.createdAt,
           });
         });
       });
 
-      // Assigned Tasks (skip "completed", show "rejected")
-      const assignedTaskData =
-        assignedTasksRes.value?.data?.data ||
-        (Array.isArray(assignedTasksRes.value?.data) ? assignedTasksRes.value?.data : []);
+      // Assigned Tasks (Skip completed)
+      const assignedTaskData = assignedTasksRes.value?.data?.data || [];
       assignedTaskData.forEach((t) => {
-        const status = (t.status || "").toString();
-        if (status === "completed") return;
+        if (t.status?.toLowerCase() === "completed") return;
 
-        addIfToday(next, {
-          key: keyFor.taskAssigned(t._id || t.id || t.title),
-          msg: `New Task Assigned: ${t.title} (${status})`,
-          time: t.updatedAt || t.createdAt || new Date(),
+        all.push({
+          msg: `📋 New Task Assigned: ${t.title} (${t.status})`,
+          time: t.createdAt,
         });
       });
 
       // Groups
-      const groupData =
-        groupsRes.value?.data?.data ||
-        (Array.isArray(groupsRes.value?.data) ? groupsRes.value?.data : []);
+      const groupData = groupsRes.value?.data?.data || [];
       groupData.forEach((g) => {
-        addIfToday(next, {
-          key: keyFor.group(g._id || g.groupName || g.name, g.createdAt || new Date()),
-          msg: `New Group Created: ${g.groupName || g.name}`,
-          time: g.createdAt || new Date(),
+        all.push({ 
+          msg: `👥 New Group Created: ${g.groupName}`, 
+          time: g.createdAt 
         });
       });
 
       // Alerts
-      const alertData =
-        alertsRes.value?.data?.data ||
-        (Array.isArray(alertsRes.value?.data) ? alertsRes.value?.data : []);
+      const alertData = alertsRes.value?.data?.data || [];
       alertData.forEach((a) => {
-        addIfToday(next, {
-          key: keyFor.alert(a._id || a.message, a.createdAt || new Date()),
-          msg: `${a.message}`,
-          time: a.createdAt || new Date(),
+        all.push({ 
+          msg: `🚨 ${a.message}`, 
+          time: a.createdAt 
         });
       });
 
-      // latest first
-      next.sort(byLatest);
+      // ✅ Sorting Latest First + Only Today's Notifications
+      const sorted = all.sort((a, b) => new Date(b.time) - new Date(a.time));
+      const todayNotifications = sorted.filter(
+        (n) => new Date(n.time).toDateString() === today
+      );
 
-      // ---- Diff with fade-remove for items that disappeared (e.g., became "completed") ----
-      setNotifications((prev) => {
-        const prevByKey = new Map(prev.map((n) => [n.key, n]));
-        const nextByKey = new Map(next.map((n) => [n.key, n]));
-
-        const result = [];
-
-        // keep/update existing items if still present
-        prev.forEach((item) => {
-          const still = nextByKey.get(item.key);
-          if (still) {
-            result.push({ ...still, removing: false });
-          } else {
-            // disappeared -> fade remove
-            if (!item.removing) {
-              const removingItem = { ...item, removing: true };
-              result.push(removingItem);
-              if (!removalTimersRef.current[item.key]) {
-                removalTimersRef.current[item.key] = setTimeout(() => {
-                  setNotifications((curr) => curr.filter((x) => x.key !== item.key));
-                  clearTimeout(removalTimersRef.current[item.key]);
-                  delete removalTimersRef.current[item.key];
-                }, 300); // 0.3s fade duration
-              }
-            } else {
-              result.push(item);
-            }
-          }
-        });
-
-        // add brand-new ones
-        next.forEach((item) => {
-          if (!prevByKey.has(item.key)) {
-            result.push({ ...item, removing: false });
-          }
-        });
-
-        result.sort(byLatest);
-
-        // unread = visible items (not removing)
-        const visibleCount = result.filter((r) => !r.removing).length;
-        setUnreadCount(visibleCount);
-
-        return result;
-      });
+      setNotifications(todayNotifications);
+      setUnreadCount(todayNotifications.length);
+      setHasFetched(true);
+      
     } catch (err) {
       console.error("Error fetching notifications:", err);
+      setNotifications([]);
+      setUnreadCount(0);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleNotificationClick = async (e) => {
     setAnchorEl(e.currentTarget);
-    // reset unread on open
-    setUnreadCount(0);
-    await fetchNotifications();
+    
+    // Fetch notifications only when button is clicked for the first time
+    if (!hasFetched) {
+      await fetchNotifications();
+    }
   };
 
-  const handleNotificationClose = () => setAnchorEl(null);
+  const handleNotificationClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleRefreshNotifications = async () => {
+    await fetchNotifications();
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -314,7 +224,11 @@ const Header = ({ toggleSidebar }) => {
       >
         {/* LEFT */}
         <Box sx={{ display: "flex", alignItems: "center", gap: isMobile ? 1 : 2 }}>
-          <IconButton onClick={toggleSidebar} edge="start" size={isMobile ? "small" : "medium"}>
+          <IconButton 
+            onClick={toggleSidebar} 
+            edge="start" 
+            size={isMobile ? "small" : "medium"}
+          >
             <MenuIcon fontSize={isMobile ? "small" : "medium"} />
           </IconButton>
 
@@ -330,7 +244,11 @@ const Header = ({ toggleSidebar }) => {
               width: "auto",
               cursor: "pointer",
               objectFit: "contain",
-              "&:hover": { opacity: 0.9, transform: "scale(1.05)", transition: "0.3s" },
+              "&:hover": { 
+                opacity: 0.9, 
+                transform: "scale(1.05)", 
+                transition: "0.3s" 
+              },
             }}
           />
         </Box>
@@ -338,11 +256,23 @@ const Header = ({ toggleSidebar }) => {
         {/* CENTER */}
         <Box sx={{ flex: 1, textAlign: "center" }}>
           {!isMobile ? (
-            <Typography variant="subtitle1" sx={{ fontWeight: 500, color: theme.palette.text.secondary }}>
+            <Typography 
+              variant="subtitle1" 
+              sx={{ 
+                fontWeight: 500, 
+                color: theme.palette.text.secondary 
+              }}
+            >
               Welcome, {user?.name || "User"}
             </Typography>
           ) : (
-            <Typography variant="body2" sx={{ fontWeight: 500, color: theme.palette.text.secondary }}>
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                fontWeight: 500, 
+                color: theme.palette.text.secondary 
+              }}
+            >
               {user?.name || "User"}
             </Typography>
           )}
@@ -353,7 +283,11 @@ const Header = ({ toggleSidebar }) => {
           {/* Notifications */}
           <Tooltip title="Notifications">
             <IconButton onClick={handleNotificationClick}>
-              <Badge badgeContent={unreadCount} color="error" overlap="circular">
+              <Badge 
+                badgeContent={unreadCount} 
+                color="error" 
+                overlap="circular"
+              >
                 <NotificationsIcon />
               </Badge>
             </IconButton>
@@ -366,55 +300,113 @@ const Header = ({ toggleSidebar }) => {
             PaperProps={{
               sx: {
                 mt: 1.5,
-                width: 330,
+                width: 350,
                 maxHeight: 500,
                 overflowY: "auto",
-                p: 1,
                 borderRadius: 2,
                 boxShadow: 4,
-                "&::-webkit-scrollbar": { width: "6px" },
-                "&::-webkit-scrollbar-thumb": { backgroundColor: "#bdbdbd", borderRadius: "3px" },
+                "&::-webkit-scrollbar": {
+                  width: "6px",
+                },
+                "&::-webkit-scrollbar-thumb": {
+                  backgroundColor: "#bdbdbd",
+                  borderRadius: "3px",
+                },
               },
             }}
           >
-            {notifications.length > 0 ? (
+            {/* Header with Refresh Button */}
+            <Box sx={{ 
+              p: 2, 
+              borderBottom: 1, 
+              borderColor: 'divider',
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center' 
+            }}>
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                Notifications
+              </Typography>
+              <Tooltip title="Refresh">
+                <IconButton 
+                  size="small" 
+                  onClick={handleRefreshNotifications}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <CircularProgress size={20} />
+                  ) : (
+                    <Typography variant="body2">🔄</Typography>
+                  )}
+                </IconButton>
+              </Tooltip>
+            </Box>
+
+            {loading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+                <CircularProgress size={24} />
+              </Box>
+            ) : notifications.length > 0 ? (
               <>
-                {notifications.map((n) => (
+                {notifications.map((n, i) => (
                   <MenuItem
-                    key={n.key}
+                    key={i}
                     sx={{
                       display: "flex",
                       flexDirection: "column",
                       alignItems: "flex-start",
                       whiteSpace: "normal",
                       gap: 0.3,
-                      p: 1,
+                      p: 1.5,
                       borderRadius: 1,
-                      mb: 0.8,
+                      mb: 0.5,
                       backgroundColor: "#fafafa",
-                      transition: "opacity .3s ease, transform .3s ease",
-                      opacity: n.removing ? 0 : 1,
-                      transform: n.removing ? "translateY(-8px)" : "translateY(0)",
-                      "&:hover": { backgroundColor: "#f0f0f0" },
+                      "&:hover": {
+                        backgroundColor: "#f0f0f0",
+                      },
+                      minHeight: '60px'
                     }}
                   >
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 500, lineHeight: 1.2 }}>
                       {n.msg}
                     </Typography>
-                    <Typography variant="caption" sx={{ color: "gray" }}>
-                      {timeOnly12h(n.time)}
+                    <Typography 
+                      variant="caption" 
+                      sx={{ 
+                        color: "gray",
+                        alignSelf: 'flex-end'
+                      }}
+                    >
+                      {new Date(n.time).toLocaleTimeString("en-IN", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </Typography>
                   </MenuItem>
                 ))}
               </>
             ) : (
-              <MenuItem disabled>No notifications for today</MenuItem>
+              <MenuItem 
+                disabled 
+                sx={{ 
+                  justifyContent: 'center',
+                  py: 2
+                }}
+              >
+                <Typography variant="body2" color="text.secondary">
+                  {hasFetched ? "No notifications for today" : "Click to load notifications"}
+                </Typography>
+              </MenuItem>
             )}
           </Menu>
 
           {/* Logout */}
           <Tooltip title="Logout">
-            <IconButton onClick={handleLogout} color="error" size={isMobile ? "small" : "medium"}>
+            <IconButton 
+              onClick={handleLogout} 
+              color="error" 
+              size={isMobile ? "small" : "medium"}
+            >
               <LogoutIcon fontSize={isMobile ? "small" : "medium"} />
             </IconButton>
           </Tooltip>

@@ -216,12 +216,11 @@ import Layout from './admin/components/Layout';
 import Layout2 from './hrCds/UserLayout';
 import ProtectedRoute from './admin/components/ProtectedRoute';
 import ThemeContextProvider from './Theme/ThemeContext';
-
-
 import CreateUser from './admin/page/CreateUser';
 import ChangePassword from './admin/page/ChangePassword';
 import EmppTask from './hrCds/pages/hr/EmmpTask';
-
+import TaskManagement from './hrCds/pages/TaskManagement';
+import EmployeeMeetingPage from './hrCds/pages/EmployeeMeetingPage';
 // HR CDS Pages
 import Alerts from './hrCds/pages/Alerts';
 import Attendance from './hrCds/pages/Attendance';
@@ -231,6 +230,8 @@ import MyPerformance from './hrCds/pages/MyPerformance';
 import MyTaskManagement from './hrCds/pages/MyTaskManagement';
 import Profile from './hrCds/pages/Profile';
 import UserDashboard from './hrCds/pages/UserDashboard';
+import AdminTaskCreate from './hrCds/pages/hr/AdminTaskCreate';
+import AdminMeetingPage from './hrCds/pages/hr/AdminMeetingPage';
 //hr
 import EmppDetail from './hrCds/pages/hr/EmppDetail';
 import EmppLeave from './hrCds/pages/hr/EmppLeaves';
@@ -248,13 +249,13 @@ function App() {
     <>
       <Routes>
         {/* Public Routes */}
-        <Route index element={<Login />} />
+        <Route index element={<Login />} /> 
         <Route
           path="/admin/*"
           element={
             <ThemeContextProvider>
               <ProtectedRoute>
-                <Layout />
+                <Layout2 />
               </ProtectedRoute>
             </ThemeContextProvider>
           }
@@ -294,6 +295,10 @@ function App() {
           <Route path="emp-task-details" element={<TaskDeatils />} />
           <Route path="adminp" element={<AdminProjects />} />
           <Route path="emp" element={<EmployeeProjects />} />
+          <Route path="task-management" element={<TaskManagement />} />
+          <Route path="admin-task-create" element={<AdminTaskCreate />} />
+          <Route path="employee-meeting" element={<EmployeeMeetingPage />} />
+          <Route path="admin-meeting" element={<AdminMeetingPage />} /> 
         </Route>
         {/* Catch-all route */}
         <Route path="*" element={<Navigate to="/" replace />} />

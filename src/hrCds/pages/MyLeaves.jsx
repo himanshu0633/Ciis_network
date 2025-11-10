@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -216,7 +216,7 @@ const MyLeaves = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const isSmallMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  const fetchLeaves = async () => {
+   const fetchLeaves = useCallback(async () => {
     setLoading(true);
     try {
       const res = await axios.get("/leaves/status");
@@ -225,13 +225,16 @@ const MyLeaves = () => {
       calculateStats(list);
     } catch (err) {
       setNotification({
-        message: err?.response?.data?.message || "Failed to fetch leaves",
-        severity: "error",
+        // message: err?.response?.data?.message || "Failed to fetch leaves",
+        // severity: "error",
       });
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+
+  // 
 
   const calculateStats = (leavesData) => {
     const approved = leavesData.filter((l) => l.status === "Approved").length;
