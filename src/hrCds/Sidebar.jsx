@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -79,14 +78,12 @@ const SectionHeading = styled(Typography)(({ theme }) => ({
   letterSpacing: '0.5px',
 }));
 
-
 const Sidebar = ({ isOpen = true, closeSidebar }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [userRole, setUserRole] = useState('');
 
   const SidebarComponent = isOpen ? SidebarContainer : CollapsedSidebar;
-
-  const [userRole, setUserRole] = useState('');
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user'));
@@ -106,121 +103,75 @@ const Sidebar = ({ isOpen = true, closeSidebar }) => {
     navigate('/');
   };
 
+  // Menu configuration
   const staticMenu = [
     { icon: <FaHome />, name: 'Dashboard', path: '/cds/user-dashboard' },
     { icon: <FaClipboardList />, name: 'Attendance', path: '/cds/attendance' },
     { icon: <FaFileAlt />, name: 'My Leaves', path: '/cds/my-leaves' },
     { icon: <FaRocket />, name: 'My Assets', path: '/cds/my-assets' },
-    // { icon: <FaClock />, name: 'Timesheet', path: '/cds/timesheet' },
-    // { icon: <FaMoneyBill />, name: 'My Compensation', path: '/cds/my-compensation' },
-    // { icon: <FaWallet />, name: 'Expense Management', path: '/cds/expense-management' },
-    // { icon: <FaBullseye />, name: 'My OKR', path: '/cds/my-okr' },
-    // { icon: <FaChartLine />, name: 'My Performance', path: '/cds/my-performance' },
-    { icon: <FaTasks />, name: 'My Task Management', path: '/cds/my-task-management' },
-    // { icon: <FaUserPlus />, name: 'Recruitment', path: '/cds/recruitment' },
-    // { icon: <FaUserTie />, name: 'External Recruiter', path: '/cds/external-recruiter' },
-    // { icon: <FaNetworkWired />, name: 'Intranet', path: '/cds/intranet' },
-    // { icon: <FaGraduationCap />, name: 'My Learning', path: '/cds/my-learning' },
+    // { icon: <FaTasks />, name: 'My Task Management', path: '/cds/my-task-management' },
+    { icon: <FaGraduationCap />, name: 'Create task', path: '/cds/task-management' },
     { icon: <FaBell />, name: 'Alerts', path: '/cds/alert' },
-   
-    // { icon: <FaUser />, name: 'Profile', path: '/cds/profile' },
-
-
-
-
-
-
-      //  { icon: <FaUser />, name: 'Employee Projects', path: '/cds/emp' }
   ];
 
   const hrMenu = [
     { heading: "Employee's" },
-    
-    // { icon: <FaClipboardList />, name: 'Change Password', route: '/admin/change-password' },
     { icon: <FaClipboardList />, name: 'Employees Attendance', path: '/cds/emp-attendance' },
     { icon: <FaUser />, name: 'Employees Details', path: '/cds/emp-details' },
     { icon: <FaFileAlt />, name: 'Employees Leaves', path: '/cds/emp-leaves' },
-    { icon: <FaRocket />, name: 'Employees Assests', path: '/cds/emp-assets' },
+    { icon: <FaRocket />, name: 'Employees Assets', path: '/cds/emp-assets' },
+       { icon: <FaTasks />, name: 'Employees Task Create', path: '/cds/admin-task-create' },
     { icon: <FaTasks />, name: 'Employees Task Management', path: '/cds/emp-task-management' },
     { icon: <FaGraduationCap />, name: 'Employees Task Details', path: '/cds/emp-task-details' },
-{ icon: <FaUser  />, name: 'Create User', route: '/admin/create-user' },
-
-
-
-
-    // { icon: <FaUser />, name: 'Admin Projects', path: '/cds/adminp' }
+ 
+    { icon: <FaUser />, name: 'Create User', path: '/admin/create-user' },
   ];
 
-  // const managerMenu = [
-  //   { heading: "HR's" },
-  //   { icon: <FaUsers />, name: 'People', path: '/cds/people' },
-  //   { icon: <FaClipboardList />, name: 'HR Attendance', path: '/cds/attendance' },
-  //   { icon: <FaUser />, name: 'HR Details', path: '/cds/emp-details' },
-  //   { icon: <FaFileAlt />, name: 'HR Leaves', path: '/cds/attendance' },
-  //   { icon: <FaRocket />, name: 'HR Assests', path: '/cds/attendance' },
-  // ];
+  // Combine menus based on user role
+  const getUserMenu = () => {
+    let menu = [...staticMenu];
+    
+    if (userRole === 'hr' || userRole === 'manager' || userRole === 'admin' || userRole === 'SuperAdmin') {
+      menu = [...menu, ...hrMenu];
+    }
+    
+    return menu;
+  };
 
-  const userMenu = [
-    ...staticMenu,
-    ...(userRole === 'hr' || userRole === 'manager' || userRole === 'admin' || userRole === 'SuperAdmin' ? hrMenu : []),
-    // ...(userRole === 'manager' || userRole === 'admin' ? managerMenu : []),
-  ];
-
+  const userMenu = getUserMenu();
 
   return (
     <SidebarComponent>
       <List>
         <SectionHeading>Menu</SectionHeading>
-        {/* {userMenu.map((item, idx) => (
-          <StyledListItem key={idx} disablePadding>
-            {isOpen ? (
-              <StyledListItemButton
-                selected={location.pathname === item.path}
-                onClick={() => handleNavigate(item.path)}
-              >
-                {item.heading}
-                <StyledListItemIcon>{item.icon}</StyledListItemIcon>
-                <ListItemText
-                  primary={item.name}
-                  primaryTypographyProps={{ variant: 'body2', fontWeight: 500 }}
-                />
-              </StyledListItemButton>
-            ) : (
-              <Tooltip title={item.name} placement="right">
-                <StyledListItemButton
-                  selected={location.pathname === item.path}
-                  onClick={() => handleNavigate(item.path)}
-                  sx={{ justifyContent: 'center' }}
-                >
-                  <StyledListItemIcon sx={{ marginRight: 0 }}>{item.icon}</StyledListItemIcon>
-                </StyledListItemButton>
-              </Tooltip>
-            )}
-          </StyledListItem>
-        ))} */}
-
+        
         {userMenu.map((item, idx) => {
+          // Render section headings
           if (item.heading) {
             return isOpen ? (
               <SectionHeading key={`heading-${idx}`}>{item.heading}</SectionHeading>
             ) : (
               <Tooltip key={`heading-${idx}`} title={item.heading} placement="right">
-                <SectionHeading
-                  sx={{
-                    textAlign: 'center',
-                    fontSize: '0.7rem',
-                    fontWeight: 600,
-                    padding: theme => theme.spacing(1.5, .5),
-                  }}
-                >
-                  {item.heading}
-                </SectionHeading>
+                <Box sx={{ padding: (theme) => theme.spacing(1, 0.5) }}>
+                  <Typography
+                    sx={{
+                      fontSize: '0.7rem',
+                      fontWeight: 600,
+                      textAlign: 'center',
+                      textTransform: 'uppercase',
+                      color: (theme) => theme.palette.text.secondary,
+                    }}
+                  >
+                    ...
+                  </Typography>
+                </Box>
               </Tooltip>
             );
           }
 
+          // Render menu items
           return (
-            <StyledListItem key={idx} disablePadding>
+            <StyledListItem key={`item-${idx}`} disablePadding>
               {isOpen ? (
                 <StyledListItemButton
                   selected={location.pathname === item.path}
@@ -246,14 +197,28 @@ const Sidebar = ({ isOpen = true, closeSidebar }) => {
             </StyledListItem>
           );
         })}
-
       </List>
 
-      <Box sx={{ flexGrow: 1 }} />
-
-      <Divider />
-
+      {/* Logout button at bottom */}
+      <Box sx={{ mt: 'auto', p: 2 }}>
+        <Divider sx={{ mb: 2 }} />
+        <Tooltip title="Logout" placement="right">
+          <IconButton 
+            onClick={handleLogout}
+            sx={{ 
+              width: '100%', 
+              justifyContent: isOpen ? 'flex-start' : 'center',
+              color: 'text.secondary',
+              '&:hover': { color: 'error.main' }
+            }}
+          >
+            <LogoutIcon sx={{ mr: isOpen ? 2 : 0 }} />
+            {isOpen && 'Logout'}
+          </IconButton>
+        </Tooltip>
+      </Box>
     </SidebarComponent>
   );
 };
+
 export default Sidebar;

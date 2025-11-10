@@ -26,21 +26,40 @@ const MainContent = styled('main', {
   flexGrow: 1,
   padding: theme.spacing(3),
   minHeight: '100vh',
+  width: '100%',
   overflow: 'auto',
   transition: theme.transitions.create(['margin', 'width'], {
     easing: theme.transitions.easing.sharp,
-    duration: theme.transitions.duration.standard,
+    duration: theme.transitions.duration.leavingScreen,
   }),
-  marginLeft: isMobile ? 0 : open ? drawerWidthOpen : drawerWidthClosed,
+  ...(open && !isMobile && {
+    width: `calc(100% - ${drawerWidthOpen}px)`,
+    marginLeft: `${drawerWidthOpen}px`,
+    transition: theme.transitions.create(['margin', 'width'], {
+      easing: theme.transitions.easing.easeOut,
+      duration: theme.transitions.duration.enteringScreen,
+    }),
+  }),
+  ...(!open && !isMobile && {
+    width: `calc(100% - ${drawerWidthClosed}px)`,
+    marginLeft: `${drawerWidthClosed}px`,
+  }),
 }));
 
 const UserLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMediaQuery(theme.breakpoints.down('md')); // Changed to 'md' for better mobile handling
 
   const toggleSidebar = () => {
     setSidebarOpen((prev) => !prev);
+  };
+
+  // Close sidebar on mobile when route changes
+  const handleCloseMobileSidebar = () => {
+    if (isMobile) {
+      setSidebarOpen(false);
+    }
   };
 
   return (
@@ -50,13 +69,16 @@ const UserLayout = () => {
       <Header
         toggleSidebar={toggleSidebar}
         isSidebarOpen={sidebarOpen}
+        isMobile={isMobile}
       />
 
       {/* Permanent Sidebar for Desktop */}
       {!isMobile && (
         <Sidebar
           isOpen={sidebarOpen}
-          closeSidebar={() => setSidebarOpen(true)}
+          closeSidebar={toggleSidebar}
+          drawerWidthOpen={drawerWidthOpen}
+          drawerWidthClosed={drawerWidthClosed}
         />
       )}
 
@@ -66,19 +88,34 @@ const UserLayout = () => {
           variant="temporary"
           anchor="left"
           open={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-          ModalProps={{ keepMounted: true }}
-          PaperProps={{ sx: { width: drawerWidthOpen } }}
+          onClose={handleCloseMobileSidebar}
+          ModalProps={{ 
+            keepMounted: true,
+            BackdropProps: { invisible: false }
+          }}
+          sx={{
+            '& .MuiDrawer-paper': {
+              boxSizing: 'border-box',
+              width: drawerWidthOpen,
+            },
+          }}
         >
           <Sidebar
-            isOpen
-            closeSidebar={() => setSidebarOpen(false)}
+            isOpen={true}
+            closeSidebar={handleCloseMobileSidebar}
+            isMobile={isMobile}
           />
         </Drawer>
       )}
 
       <MainContent open={sidebarOpen} isMobile={isMobile}>
-        <Outlet />
+        <Box sx={{ 
+          maxWidth: '100%', 
+          overflow: 'hidden',
+          padding: { xs: 1, sm: 2, md: 7 } // Responsive padding
+        }}>
+          <Outlet />
+        </Box>
       </MainContent>
     </LayoutContainer>
   );

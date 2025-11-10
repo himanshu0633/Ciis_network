@@ -11,6 +11,7 @@ import {
   MenuItem,
   useTheme,
   useMediaQuery,
+  CircularProgress
 } from "@mui/material";
 import LogoutIcon from "@mui/icons-material/Logout";
 import MenuIcon from "@mui/icons-material/Menu";
@@ -30,37 +31,15 @@ const Header = ({ toggleSidebar }) => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [anchorEl, setAnchorEl] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [hasFetched, setHasFetched] = useState(false);
 
-  useEffect(() => {
-    fetchNotifications();
-
-    let interval;
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        fetchNotifications();
-        interval = setInterval(fetchNotifications, 15000); // 15 sec
-      } else {
-        clearInterval(interval);
-      }
-    };
-
-    if (document.visibilityState === "visible") {
-      interval = setInterval(fetchNotifications, 15000); // 15 sec
-    }
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
-      clearInterval(interval);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, []);
-
+  // Remove all automatic fetching - only manual fetch on button click
   const fetchNotifications = async () => {
     const token = localStorage.getItem("token");
     if (!token) return;
 
+    setLoading(true);
     const headers = { Authorization: `Bearer ${token}` };
 
     try {
@@ -96,9 +75,14 @@ const Header = ({ toggleSidebar }) => {
       // Attendance Notifications
       const attendanceData = attendanceRes.value?.data?.data || [];
       attendanceData.forEach((item) => {
-        if (item.inTime) all.push({ msg: `🕒In`, time: item.inTime });
-        if (item.outTime) all.push({ msg: `🏠Out`, time: item.outTime });
-
+        if (item.inTime) all.push({ 
+          msg: `🕒 Clocked In at ${formatTime(item.inTime)}`, 
+          time: item.inTime 
+        });
+        if (item.outTime) all.push({ 
+          msg: `🏠 Clocked Out at ${formatTime(item.outTime)}`, 
+          time: item.outTime 
+        });
       });
 
       // Leaves
@@ -125,47 +109,51 @@ const Header = ({ toggleSidebar }) => {
         });
       });
 
-      // My Tasks
-    // My Tasks (Skip completed)
-const groupedTasks = myTasksRes.value?.data?.groupedTasks || {};
-Object.keys(groupedTasks).forEach((dateKey) => {
-  groupedTasks[dateKey].forEach((t) => {
-    const status =
-      t.statusInfo?.find(
-        (s) => s.userId === user?._id || s.user === user?._id
-      )?.status || "N/A";
+      // My Tasks (Skip completed)
+      const groupedTasks = myTasksRes.value?.data?.groupedTasks || {};
+      Object.keys(groupedTasks).forEach((dateKey) => {
+        groupedTasks[dateKey].forEach((t) => {
+          const status =
+            t.statusInfo?.find(
+              (s) => s.userId === user?._id || s.user === user?._id
+            )?.status || "N/A";
 
-    if (status.toLowerCase() === "completed") return; // 🚫 Skip completed tasks
+          if (status.toLowerCase() === "completed") return;
 
-    all.push({
-      msg: `🧾 Task Update: ${t.title} (${status})`,
-      time: t.createdAt,
-    });
-  });
-});
+          all.push({
+            msg: `🧾 Task Update: ${t.title} (${status})`,
+            time: t.createdAt,
+          });
+        });
+      });
 
-// Assigned Tasks (Skip completed)
-const assignedTaskData = assignedTasksRes.value?.data?.data || [];
-assignedTaskData.forEach((t) => {
-  if (t.status?.toLowerCase() === "completed") return; // 🚫 Skip completed tasks
+      // Assigned Tasks (Skip completed)
+      const assignedTaskData = assignedTasksRes.value?.data?.data || [];
+      assignedTaskData.forEach((t) => {
+        if (t.status?.toLowerCase() === "completed") return;
 
-  all.push({
-    msg: `📋 New Task Assigned: ${t.title} (${t.status})`,
-    time: t.createdAt,
-  });
-});
-
+        all.push({
+          msg: `📋 New Task Assigned: ${t.title} (${t.status})`,
+          time: t.createdAt,
+        });
+      });
 
       // Groups
       const groupData = groupsRes.value?.data?.data || [];
       groupData.forEach((g) => {
-        all.push({ msg: `👥 New Group Created: ${g.groupName}`, time: g.createdAt });
+        all.push({ 
+          msg: `👥 New Group Created: ${g.groupName}`, 
+          time: g.createdAt 
+        });
       });
 
       // Alerts
       const alertData = alertsRes.value?.data?.data || [];
       alertData.forEach((a) => {
-        all.push({ msg: `🚨 ${a.message}`, time: a.createdAt });
+        all.push({ 
+          msg: `🚨 ${a.message}`, 
+          time: a.createdAt 
+        });
       });
 
       // ✅ Sorting Latest First + Only Today's Notifications
@@ -176,18 +164,33 @@ assignedTaskData.forEach((t) => {
 
       setNotifications(todayNotifications);
       setUnreadCount(todayNotifications.length);
+      setHasFetched(true);
+      
     } catch (err) {
       console.error("Error fetching notifications:", err);
+      setNotifications([]);
+      setUnreadCount(0);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleNotificationClick = async (e) => {
     setAnchorEl(e.currentTarget);
-    await fetchNotifications();
+    
+    // Fetch notifications only when button is clicked for the first time
+    if (!hasFetched) {
+      await fetchNotifications();
+    }
   };
 
-  const handleNotificationClose = () => setAnchorEl(null);
-  const markAllAsRead = () => setUnreadCount(0);
+  const handleNotificationClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleRefreshNotifications = async () => {
+    await fetchNotifications();
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -221,7 +224,11 @@ assignedTaskData.forEach((t) => {
       >
         {/* LEFT */}
         <Box sx={{ display: "flex", alignItems: "center", gap: isMobile ? 1 : 2 }}>
-          <IconButton onClick={toggleSidebar} edge="start" size={isMobile ? "small" : "medium"}>
+          <IconButton 
+            onClick={toggleSidebar} 
+            edge="start" 
+            size={isMobile ? "small" : "medium"}
+          >
             <MenuIcon fontSize={isMobile ? "small" : "medium"} />
           </IconButton>
 
@@ -237,7 +244,11 @@ assignedTaskData.forEach((t) => {
               width: "auto",
               cursor: "pointer",
               objectFit: "contain",
-              "&:hover": { opacity: 0.9, transform: "scale(1.05)", transition: "0.3s" },
+              "&:hover": { 
+                opacity: 0.9, 
+                transform: "scale(1.05)", 
+                transition: "0.3s" 
+              },
             }}
           />
         </Box>
@@ -245,11 +256,23 @@ assignedTaskData.forEach((t) => {
         {/* CENTER */}
         <Box sx={{ flex: 1, textAlign: "center" }}>
           {!isMobile ? (
-            <Typography variant="subtitle1" sx={{ fontWeight: 500, color: theme.palette.text.secondary }}>
+            <Typography 
+              variant="subtitle1" 
+              sx={{ 
+                fontWeight: 500, 
+                color: theme.palette.text.secondary 
+              }}
+            >
               Welcome, {user?.name || "User"}
             </Typography>
           ) : (
-            <Typography variant="body2" sx={{ fontWeight: 500, color: theme.palette.text.secondary }}>
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                fontWeight: 500, 
+                color: theme.palette.text.secondary 
+              }}
+            >
               {user?.name || "User"}
             </Typography>
           )}
@@ -257,80 +280,133 @@ assignedTaskData.forEach((t) => {
 
         {/* RIGHT */}
         <Box sx={{ display: "flex", alignItems: "center", gap: isMobile ? 1 : 2 }}>
-
           {/* Notifications */}
-       <Tooltip title="Notifications">
-  <IconButton onClick={handleNotificationClick}>
-    <Badge badgeContent={unreadCount} color="error" overlap="circular">
-      <NotificationsIcon />
-    </Badge>
-  </IconButton>
-</Tooltip>
+          <Tooltip title="Notifications">
+            <IconButton onClick={handleNotificationClick}>
+              <Badge 
+                badgeContent={unreadCount} 
+                color="error" 
+                overlap="circular"
+              >
+                <NotificationsIcon />
+              </Badge>
+            </IconButton>
+          </Tooltip>
 
-<Menu
-  anchorEl={anchorEl}
-  open={Boolean(anchorEl)}
-  onClose={handleNotificationClose}
-  PaperProps={{
-    sx: {
-      mt: 1.5,
-      width: 330,
-      maxHeight: 500,
-      overflowY: "auto",
-      p: 1,
-      borderRadius: 2,
-      boxShadow: 4,
-      "&::-webkit-scrollbar": {
-        width: "6px",
-      },
-      "&::-webkit-scrollbar-thumb": {
-        backgroundColor: "#bdbdbd",
-        borderRadius: "3px",
-      },
-    },
-  }}
->
-  {notifications.length > 0 ? (
-    <>
-      {notifications.map((n, i) => (
-        <MenuItem
-          key={i}
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "flex-start",
-            whiteSpace: "normal",
-            gap: 0.3,
-            p: 1,
-            borderRadius: 1,
-            mb: 0.8,
-            backgroundColor: "#fafafa",
-            "&:hover": {
-              backgroundColor: "#f0f0f0",
-            },
-          }}
-        >
-          <Typography variant="body2" sx={{ fontWeight: 500 }}>
-            {n.msg}
-          </Typography>
-          <Typography variant="caption" sx={{ color: "gray" }}>
-            {new Date(n.time).toLocaleTimeString("en-IN", {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </Typography>
-        </MenuItem>
-      ))}
-    </>
-  ) : (
-    <MenuItem disabled>No notifications for today</MenuItem>
-  )}
-</Menu>
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleNotificationClose}
+            PaperProps={{
+              sx: {
+                mt: 1.5,
+                width: 350,
+                maxHeight: 500,
+                overflowY: "auto",
+                borderRadius: 2,
+                boxShadow: 4,
+                "&::-webkit-scrollbar": {
+                  width: "6px",
+                },
+                "&::-webkit-scrollbar-thumb": {
+                  backgroundColor: "#bdbdbd",
+                  borderRadius: "3px",
+                },
+              },
+            }}
+          >
+            {/* Header with Refresh Button */}
+            <Box sx={{ 
+              p: 2, 
+              borderBottom: 1, 
+              borderColor: 'divider',
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center' 
+            }}>
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                Notifications
+              </Typography>
+              <Tooltip title="Refresh">
+                <IconButton 
+                  size="small" 
+                  onClick={handleRefreshNotifications}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <CircularProgress size={20} />
+                  ) : (
+                    <Typography variant="body2">🔄</Typography>
+                  )}
+                </IconButton>
+              </Tooltip>
+            </Box>
 
+            {loading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+                <CircularProgress size={24} />
+              </Box>
+            ) : notifications.length > 0 ? (
+              <>
+                {notifications.map((n, i) => (
+                  <MenuItem
+                    key={i}
+                    sx={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "flex-start",
+                      whiteSpace: "normal",
+                      gap: 0.3,
+                      p: 1.5,
+                      borderRadius: 1,
+                      mb: 0.5,
+                      backgroundColor: "#fafafa",
+                      "&:hover": {
+                        backgroundColor: "#f0f0f0",
+                      },
+                      minHeight: '60px'
+                    }}
+                  >
+                    <Typography variant="body2" sx={{ fontWeight: 500, lineHeight: 1.2 }}>
+                      {n.msg}
+                    </Typography>
+                    <Typography 
+                      variant="caption" 
+                      sx={{ 
+                        color: "gray",
+                        alignSelf: 'flex-end'
+                      }}
+                    >
+                      {new Date(n.time).toLocaleTimeString("en-IN", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </Typography>
+                  </MenuItem>
+                ))}
+              </>
+            ) : (
+              <MenuItem 
+                disabled 
+                sx={{ 
+                  justifyContent: 'center',
+                  py: 2
+                }}
+              >
+                <Typography variant="body2" color="text.secondary">
+                  {hasFetched ? "No notifications for today" : "Click to load notifications"}
+                </Typography>
+              </MenuItem>
+            )}
+          </Menu>
 
           {/* Logout */}
           <Tooltip title="Logout">
-            <IconButton onClick={handleLogout} color="error" size={isMobile ? "small" : "medium"}>
+            <IconButton 
+              onClick={handleLogout} 
+              color="error" 
+              size={isMobile ? "small" : "medium"}
+            >
               <LogoutIcon fontSize={isMobile ? "small" : "medium"} />
             </IconButton>
           </Tooltip>

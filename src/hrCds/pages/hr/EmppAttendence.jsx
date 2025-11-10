@@ -553,7 +553,7 @@ const EmppAttendence = () => {
                     <TableCell sx={{ fontWeight: 700 }}>Check In</TableCell>
                     <TableCell sx={{ fontWeight: 700 }}>Check Out</TableCell>
                     <TableCell sx={{ fontWeight: 700 }}>Total Time</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Late By</TableCell>
+                    {/* <TableCell sx={{ fontWeight: 700 }}>Late By</TableCell> */}
                     <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
                     <TableCell sx={{ fontWeight: 700 }} align="center">Actions</TableCell>
                   </TableRow>
@@ -611,7 +611,7 @@ const EmppAttendence = () => {
                             {rec.totalTime || '00:00:00'}
                           </Typography>
                         </TableCell>
-                        <TableCell>
+                        {/* <TableCell>
                           {rec.lateBy && rec.lateBy !== '00:00:00' ? (
                             <TimeBadge type="late">
                               {rec.lateBy}
@@ -619,7 +619,7 @@ const EmppAttendence = () => {
                           ) : (
                             <Typography variant="body2" color="text.secondary">-</Typography>
                           )}
-                        </TableCell>
+                        </TableCell> */}
                         <TableCell>
                           <StatusChip
                             label={rec.status?.charAt(0).toUpperCase() + rec.status?.slice(1)}
