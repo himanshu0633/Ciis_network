@@ -165,7 +165,7 @@ const UserCreateTask = () => {
     rejected: 0
   });
 
-  // Pagination States - NEW
+  // Pagination States
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 20,
@@ -192,6 +192,7 @@ const UserCreateTask = () => {
     end: null
   });
 
+  // Task form state - REMOVED recurring fields
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
@@ -202,9 +203,7 @@ const UserCreateTask = () => {
     files: null,
     voiceNote: null,
     assignedUsers: [],
-    assignedGroups: [],
-    repeatPattern: 'none',
-    repeatDays: []
+    assignedGroups: []
   });
 
   const theme = useTheme();
@@ -260,7 +259,7 @@ const UserCreateTask = () => {
     }
   };
 
-  // Optimized fetch function with pagination - BOTH /task/my AND /task
+  // Optimized fetch function with pagination
   const fetchMyTasks = useCallback(async (page = 1, isLoadMore = false) => {
     if (authError || !userId) {
       setLoading(false);
@@ -276,7 +275,6 @@ const UserCreateTask = () => {
         ...(searchTerm && { search: searchTerm })
       });
 
-      // Use /task endpoint for all tasks with user filter
       const url = `/task?${params}`;
       const res = await axios.get(url);
       
@@ -287,7 +285,6 @@ const UserCreateTask = () => {
         const mergedTasks = { ...allTasks };
         Object.entries(newTasks).forEach(([date, tasks]) => {
           if (mergedTasks[date]) {
-            // Avoid duplicates
             const existingTaskIds = new Set(mergedTasks[date].map(task => task._id));
             const newUniqueTasks = tasks.filter(task => !existingTaskIds.has(task._id));
             mergedTasks[date] = [...mergedTasks[date], ...newUniqueTasks];
@@ -298,7 +295,6 @@ const UserCreateTask = () => {
         setMyTasksGrouped(mergedTasks);
         setAllTasks(mergedTasks);
       } else {
-        // Replace tasks for new searches/filters
         setMyTasksGrouped(newTasks);
         setAllTasks(newTasks);
       }
@@ -548,7 +544,6 @@ const UserCreateTask = () => {
         remarks: remarks || `Status changed to ${newStatus}`
       });
 
-      // Optimized refresh - only refetch current page
       fetchMyTasks(pagination.page, false);
       fetchNotifications();
       
@@ -577,7 +572,7 @@ const UserCreateTask = () => {
     }
   };
 
-  // Task creation handler
+  // Task creation handler - UPDATED: Removed recurring functionality
   const handleCreateTask = async () => {
     if (authError || !userId) {
       setSnackbar({
@@ -618,8 +613,6 @@ const UserCreateTask = () => {
       formData.append('priority', newTask.priority);
       formData.append('assignedUsers', JSON.stringify([userId]));
       formData.append('assignedGroups', JSON.stringify([]));
-      formData.append('repeatPattern', newTask.repeatPattern);
-      formData.append('repeatDays', JSON.stringify(newTask.repeatDays || []));
 
       if (newTask.files) {
         for (let i = 0; i < newTask.files.length; i++) {
@@ -655,12 +648,10 @@ const UserCreateTask = () => {
         files: null, 
         voiceNote: null,
         assignedUsers: [userId],
-        assignedGroups: [],
-        repeatPattern: 'none',
-        repeatDays: []
+        assignedGroups: []
       });
 
-      // Refresh tasks list - only first page
+      // Refresh tasks list
       fetchMyTasks(1, false);
       fetchNotifications();
 
@@ -1528,7 +1519,7 @@ const UserCreateTask = () => {
     </Dialog>
   );
 
-  // CREATE TASK DIALOG
+  // CREATE TASK DIALOG - UPDATED: Removed recurring fields
   const renderCreateTaskDialog = () => (
     <Dialog 
       open={openDialog} 

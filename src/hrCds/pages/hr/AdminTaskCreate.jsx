@@ -16,7 +16,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import {
   FiPlus, FiCalendar, FiInfo, FiPaperclip, FiMic, FiFileText,
   FiCheck, FiX, FiAlertCircle, FiUser, FiUsers, FiFolder,
-  FiRepeat, FiBell, FiEdit, FiTrash2, FiSave, FiSearch,
+  FiBell, FiEdit, FiTrash2, FiSave, FiSearch,
   FiFilter, FiDownload, FiMessageSquare, FiActivity,
   FiEye, FiClock, FiCheckCircle, FiXCircle, FiAlertTriangle,
   FiMoreVertical, FiRefreshCw, FiUserCheck, FiUserX,
@@ -146,6 +146,7 @@ const AdminTaskManagement = () => {
   const [openActivityDialog, setOpenActivityDialog] = useState(false);
   const [openStatusDialog, setOpenStatusDialog] = useState(false);
   const [openNotifications, setOpenNotifications] = useState(false);
+  const [openUserStatusDialog, setOpenUserStatusDialog] = useState(false);
   
   // Data States
   const [selectedTask, setSelectedTask] = useState(null);
@@ -155,6 +156,7 @@ const AdminTaskManagement = () => {
   const [editingGroup, setEditingGroup] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  const [taskUserStatuses, setTaskUserStatuses] = useState([]);
   
   // Filter States
   const [statusFilter, setStatusFilter] = useState('');
@@ -175,9 +177,7 @@ const AdminTaskManagement = () => {
     priorityDays: '1',
     priority: 'medium',
     files: null,
-    voiceNote: null,
-    repeatPattern: 'none',
-    repeatDays: []
+    voiceNote: null
   });
 
   const [editTask, setEditTask] = useState({
@@ -299,7 +299,7 @@ const AdminTaskManagement = () => {
     }
   };
 
-  // Fetch tasks with pagination and filters
+  // Fetch tasks with pagination and filters - UPDATED to get assigned tasks
   const fetchTasks = async (page = 0, limit = rowsPerPage, filters = {}) => {
     if (authError || !userId) return;
 
@@ -307,7 +307,7 @@ const AdminTaskManagement = () => {
     try {
       // Build query parameters
       const params = {
-        page: page + 1, // Server pages usually start from 1
+        page: page + 1,
         limit: limit
       };
 
@@ -321,13 +321,15 @@ const AdminTaskManagement = () => {
 
       const queryString = new URLSearchParams(params).toString();
       
-      const tasksResult = await apiCall('get', `/task/assigned-tasks-status?${queryString}`);
+      // Use the assigned tasks endpoint which should return tasks created by the admin
+      const tasksResult = await apiCall('get', `/task/assigned?${queryString}`);
       
-      // Handle tasks response based on your API structure
-      const tasksArray = tasksResult.tasks || tasksResult.data || [];
+      // Handle tasks response - adjust according to your API response structure
+      const tasksArray = tasksResult.tasks || tasksResult.data || tasksResult.groupedTasks ? 
+        Object.values(tasksResult.groupedTasks || {}).flat() : [];
       setTasks(tasksArray);
       
-      // Set total count for pagination - adjust according to your API response
+      // Set total count for pagination
       setTotalTasks(tasksResult.total || tasksResult.totalCount || tasksArray.length);
 
     } catch (error) {
@@ -406,8 +408,6 @@ const AdminTaskManagement = () => {
       formData.append('priority', newTask.priority);
       formData.append('assignedUsers', JSON.stringify(newTask.assignedUsers));
       formData.append('assignedGroups', JSON.stringify(newTask.assignedGroups));
-      formData.append('repeatPattern', newTask.repeatPattern);
-      formData.append('repeatDays', JSON.stringify(newTask.repeatDays || []));
 
       // Handle file uploads
       if (newTask.files) {
@@ -435,6 +435,7 @@ const AdminTaskManagement = () => {
     }
   };
 
+  // FIXED: Edit Task function
   const handleEditTask = async () => {
     if (!editTask.title || !editTask.description || !editTask.dueDateTime) {
       setSnackbar({ open: true, message: 'Please fill all required fields', severity: 'error' });
@@ -443,18 +444,19 @@ const AdminTaskManagement = () => {
 
     setIsUpdatingTask(true);
     try {
-      const taskData = {
-        title: editTask.title,
-        description: editTask.description,
-        dueDateTime: new Date(editTask.dueDateTime).toISOString(),
-        assignedUsers: editTask.assignedUsers,
-        assignedGroups: editTask.assignedGroups,
-        whatsappNumber: editTask.whatsappNumber || '',
-        priorityDays: editTask.priorityDays || '1',
-        priority: editTask.priority
-      };
+      const formData = new FormData();
+      
+      // Append basic fields
+      formData.append('title', editTask.title);
+      formData.append('description', editTask.description);
+      formData.append('dueDateTime', new Date(editTask.dueDateTime).toISOString());
+      formData.append('whatsappNumber', editTask.whatsappNumber || '');
+      formData.append('priorityDays', editTask.priorityDays || '1');
+      formData.append('priority', editTask.priority);
+      formData.append('assignedUsers', JSON.stringify(editTask.assignedUsers));
+      formData.append('assignedGroups', JSON.stringify(editTask.assignedGroups));
 
-      await apiCall('put', `/task/${selectedTask._id}`, taskData);
+      await apiCall('put', `/task/${selectedTask._id}`, formData);
       
       setOpenEditDialog(false);
       setSnackbar({ open: true, message: 'Task updated successfully', severity: 'success' });
@@ -504,6 +506,39 @@ const AdminTaskManagement = () => {
       console.error('Error updating status:', error);
       const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Failed to update status';
       setSnackbar({ open: true, message: errorMessage, severity: 'error' });
+    }
+  };
+
+  // NEW: Function to fetch and show user statuses for a task
+  const fetchUserStatuses = async (task) => {
+    try {
+      setSelectedTask(task);
+      
+      // If task has statusInfo (from enrichedStatusInfo), use that
+      if (task.statusInfo && Array.isArray(task.statusInfo)) {
+        setTaskUserStatuses(task.statusInfo);
+      } else if (task.statusByUser && Array.isArray(task.statusByUser)) {
+        // Otherwise use statusByUser and enrich with user data
+        const enrichedStatuses = task.statusByUser.map(status => {
+          const user = users.find(u => u._id === status.user || u._id === status.user?._id);
+          return {
+            userId: status.user,
+            name: user?.name || 'Unknown User',
+            role: user?.role || 'N/A',
+            email: user?.email || 'N/A',
+            status: status.status,
+            updatedAt: status.updatedAt
+          };
+        });
+        setTaskUserStatuses(enrichedStatuses);
+      } else {
+        setTaskUserStatuses([]);
+      }
+      
+      setOpenUserStatusDialog(true);
+    } catch (error) {
+      console.error('Error fetching user statuses:', error);
+      setSnackbar({ open: true, message: 'Failed to load user statuses', severity: 'error' });
     }
   };
 
@@ -663,9 +698,7 @@ const AdminTaskManagement = () => {
       priorityDays: '1',
       priority: 'medium',
       files: null,
-      voiceNote: null,
-      repeatPattern: 'none',
-      repeatDays: []
+      voiceNote: null
     });
   };
 
@@ -687,14 +720,16 @@ const AdminTaskManagement = () => {
     setEditingGroup(null);
   };
 
+  // FIXED: Open Edit Task Dialog function
   const openEditTaskDialog = (task) => {
+    console.log('Opening edit dialog for task:', task);
     setSelectedTask(task);
     setEditTask({
-      title: task.title,
-      description: task.description,
-      dueDateTime: new Date(task.dueDateTime || task.dueDate),
+      title: task.title || '',
+      description: task.description || '',
+      dueDateTime: task.dueDateTime ? new Date(task.dueDateTime) : null,
       assignedUsers: task.assignedUsers?.map(u => u._id || u) || [],
-      assignedGroups: task.assignedGroups || [],
+      assignedGroups: task.assignedGroups?.map(g => g._id || g) || [],
       whatsappNumber: task.whatsappNumber || '',
       priorityDays: task.priorityDays || '1',
       priority: task.priority || 'medium'
@@ -754,6 +789,66 @@ const AdminTaskManagement = () => {
 
   const getTaskStatus = (task) => {
     return task.overallStatus || 'pending';
+  };
+
+  // Get individual user status for a task
+  const getUserStatusForTask = (task, userId) => {
+    if (task.statusInfo && Array.isArray(task.statusInfo)) {
+      const userStatus = task.statusInfo.find(s => 
+        s.userId === userId || s.userId?._id === userId
+      );
+      return userStatus?.status || 'pending';
+    }
+    
+    if (task.statusByUser && Array.isArray(task.statusByUser)) {
+      const userStatus = task.statusByUser.find(s => 
+        s.user === userId || s.user?._id === userId
+      );
+      return userStatus?.status || 'pending';
+    }
+    
+    return 'pending';
+  };
+
+  // Get all assigned users with their status
+  const getAllAssignedUsersWithStatus = (task) => {
+    const assignedUsers = [];
+    
+    // Add direct assigned users
+    if (task.assignedUsers && Array.isArray(task.assignedUsers)) {
+      task.assignedUsers.forEach(user => {
+        const userId = user._id || user;
+        const userObj = users.find(u => u._id === userId);
+        if (userObj) {
+          assignedUsers.push({
+            user: userObj,
+            status: getUserStatusForTask(task, userId),
+            type: 'direct'
+          });
+        }
+      });
+    }
+    
+    // Add group members
+    if (task.assignedGroups && Array.isArray(task.assignedGroups)) {
+      task.assignedGroups.forEach(groupId => {
+        const group = groups.find(g => g._id === groupId);
+        if (group && group.members) {
+          group.members.forEach(memberId => {
+            const userObj = users.find(u => u._id === memberId);
+            if (userObj && !assignedUsers.some(u => u.user._id === userObj._id)) {
+              assignedUsers.push({
+                user: userObj,
+                status: getUserStatusForTask(task, memberId),
+                type: 'group'
+              });
+            }
+          });
+        }
+      });
+    }
+    
+    return assignedUsers;
   };
 
   // Stats Calculation - client side for current page
@@ -1034,6 +1129,402 @@ const AdminTaskManagement = () => {
           </Typography>
         )}
       </DialogContent>
+    </Dialog>
+  );
+
+  // NEW: User Status Dialog to show all assigned users and their status
+  const renderUserStatusDialog = () => (
+    <Dialog 
+      open={openUserStatusDialog} 
+      onClose={() => setOpenUserStatusDialog(false)} 
+      maxWidth="md" 
+      fullWidth
+      fullScreen={isSmallMobile}
+    >
+      <DialogTitle sx={{ 
+        background: `linear-gradient(135deg, ${theme.palette.info.main}15 0%, ${theme.palette.info.main}05 100%)` 
+      }}>
+        <Stack direction="row" alignItems="center" spacing={1}>
+          <FiUsers color={theme.palette.info.main} />
+          <Typography variant="h6" fontWeight={600}>
+            User Statuses for: {selectedTask?.title}
+          </Typography>
+        </Stack>
+      </DialogTitle>
+      <DialogContent>
+        <Stack spacing={2} sx={{ mt: 2 }}>
+          {taskUserStatuses.length > 0 ? (
+            taskUserStatuses.map((userStatus, index) => (
+              <Card key={index} variant="outlined" sx={{ borderRadius: 1 }}>
+                <CardContent sx={{ py: 1.5 }}>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
+                    <Stack direction="row" alignItems="center" spacing={2}>
+                      <Avatar sx={{ 
+                        width: 40, 
+                        height: 40,
+                        bgcolor: theme.palette.primary.main 
+                      }}>
+                        {userStatus.name?.charAt(0)?.toUpperCase() || 'U'}
+                      </Avatar>
+                      <Box>
+                        <Typography variant="subtitle1" fontWeight={600}>
+                          {userStatus.name}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {userStatus.role} • {userStatus.email}
+                        </Typography>
+                      </Box>
+                    </Stack>
+                    <StatusChip
+                      label={userStatus.status}
+                      status={userStatus.status}
+                    />
+                  </Stack>
+                  {userStatus.updatedAt && (
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                      Last updated: {new Date(userStatus.updatedAt).toLocaleString()}
+                    </Typography>
+                  )}
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <Box sx={{ textAlign: 'center', py: 4 }}>
+              <FiUsers size={32} color={theme.palette.text.secondary} />
+              <Typography variant="body1" color="text.secondary" sx={{ mt: 1, fontWeight: 600 }}>
+                No user status information available
+              </Typography>
+            </Box>
+          )}
+        </Stack>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => setOpenUserStatusDialog(false)}>Close</Button>
+      </DialogActions>
+    </Dialog>
+  );
+
+  // Create Task Dialog
+  const renderCreateTaskDialog = () => (
+    <Dialog
+      open={openCreateDialog}
+      onClose={() => setOpenCreateDialog(false)}
+      maxWidth="md"
+      fullWidth
+      fullScreen={isMobile}
+    >
+      <DialogTitle>
+        <Typography variant="h5" fontWeight={600}>
+          Create New Task
+        </Typography>
+      </DialogTitle>
+      <DialogContent>
+        <Stack spacing={3} sx={{ mt: 1 }}>
+          <TextField
+            fullWidth
+            label="Task Title *"
+            value={newTask.title}
+            onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+            placeholder="Enter task title"
+          />
+
+          <TextField
+            fullWidth
+            multiline
+            rows={3}
+            label="Description *"
+            value={newTask.description}
+            onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+            placeholder="Enter task description"
+          />
+
+          <DateTimePicker
+            label="Due Date & Time *"
+            value={newTask.dueDateTime}
+            onChange={(date) => setNewTask({ ...newTask, dueDateTime: date })}
+            renderInput={(params) => <TextField {...params} fullWidth />}
+          />
+
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>Priority</InputLabel>
+                <Select
+                  value={newTask.priority}
+                  onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
+                  label="Priority"
+                >
+                  <MenuItem value="low">Low</MenuItem>
+                  <MenuItem value="medium">Medium</MenuItem>
+                  <MenuItem value="high">High</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Priority Days"
+                value={newTask.priorityDays}
+                onChange={(e) => setNewTask({ ...newTask, priorityDays: e.target.value })}
+                placeholder="Enter priority days"
+              />
+            </Grid>
+          </Grid>
+
+          <FormControl fullWidth>
+            <InputLabel>Assign to Users</InputLabel>
+            <Select
+              multiple
+              value={newTask.assignedUsers}
+              onChange={(e) => setNewTask({ ...newTask, assignedUsers: e.target.value })}
+              input={<OutlinedInput label="Assign to Users" />}
+              renderValue={(selected) => (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                  {selected.map((value) => {
+                    const user = users.find(u => u._id === value);
+                    return (
+                      <Chip key={value} label={user?.name || value} size="small" />
+                    );
+                  })}
+                </Box>
+              )}
+            >
+              {users.map((user) => (
+                <MenuItem key={user._id} value={user._id}>
+                  <Checkbox checked={newTask.assignedUsers.indexOf(user._id) > -1} />
+                  <ListItemText primary={user.name} secondary={user.role} />
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <FormControl fullWidth>
+            <InputLabel>Assign to Groups</InputLabel>
+            <Select
+              multiple
+              value={newTask.assignedGroups}
+              onChange={(e) => setNewTask({ ...newTask, assignedGroups: e.target.value })}
+              input={<OutlinedInput label="Assign to Groups" />}
+              renderValue={(selected) => (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                  {selected.map((value) => {
+                    const group = groups.find(g => g._id === value);
+                    return (
+                      <Chip key={value} label={group?.name || value} size="small" color="secondary" />
+                    );
+                  })}
+                </Box>
+              )}
+            >
+              {groups.map((group) => (
+                <MenuItem key={group._id} value={group._id}>
+                  <Checkbox checked={newTask.assignedGroups.indexOf(group._id) > -1} />
+                  <ListItemText primary={group.name} secondary={`${group.members?.length || 0} members`} />
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <TextField
+            fullWidth
+            label="WhatsApp Number"
+            value={newTask.whatsappNumber}
+            onChange={(e) => setNewTask({ ...newTask, whatsappNumber: e.target.value })}
+            placeholder="Enter WhatsApp number for notifications"
+          />
+
+          <Box>
+            <Typography variant="subtitle1" gutterBottom>
+              Attachments
+            </Typography>
+            <Stack direction="row" spacing={2}>
+              <Button
+                variant="outlined"
+                component="label"
+                startIcon={<FiFileText />}
+                sx={{ borderStyle: 'dashed' }}
+              >
+                Upload Files
+                <input
+                  type="file"
+                  multiple
+                  hidden
+                  onChange={(e) => setNewTask({ ...newTask, files: e.target.files })}
+                />
+              </Button>
+              <Button
+                variant="outlined"
+                component="label"
+                startIcon={<FiMic />}
+                sx={{ borderStyle: 'dashed' }}
+              >
+                Voice Note
+                <input
+                  type="file"
+                  accept="audio/*"
+                  hidden
+                  onChange={(e) => setNewTask({ ...newTask, voiceNote: e.target.files[0] })}
+                />
+              </Button>
+            </Stack>
+          </Box>
+        </Stack>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => setOpenCreateDialog(false)}>Cancel</Button>
+        <Button
+          onClick={handleCreateTask}
+          variant="contained"
+          disabled={isCreatingTask}
+          startIcon={isCreatingTask ? <CircularProgress size={16} /> : <FiCheck />}
+        >
+          {isCreatingTask ? 'Creating...' : 'Create Task'}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+
+  // FIXED: Edit Task Dialog
+  const renderEditTaskDialog = () => (
+    <Dialog
+      open={openEditDialog}
+      onClose={() => setOpenEditDialog(false)}
+      maxWidth="md"
+      fullWidth
+      fullScreen={isMobile}
+    >
+      <DialogTitle>
+        <Typography variant="h5" fontWeight={600}>
+          Edit Task: {selectedTask?.title}
+        </Typography>
+      </DialogTitle>
+      <DialogContent>
+        <Stack spacing={3} sx={{ mt: 1 }}>
+          <TextField
+            fullWidth
+            label="Task Title *"
+            value={editTask.title}
+            onChange={(e) => setEditTask({ ...editTask, title: e.target.value })}
+            placeholder="Enter task title"
+          />
+
+          <TextField
+            fullWidth
+            multiline
+            rows={3}
+            label="Description *"
+            value={editTask.description}
+            onChange={(e) => setEditTask({ ...editTask, description: e.target.value })}
+            placeholder="Enter task description"
+          />
+
+          <DateTimePicker
+            label="Due Date & Time *"
+            value={editTask.dueDateTime}
+            onChange={(date) => setEditTask({ ...editTask, dueDateTime: date })}
+            renderInput={(params) => <TextField {...params} fullWidth />}
+          />
+
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>Priority</InputLabel>
+                <Select
+                  value={editTask.priority}
+                  onChange={(e) => setEditTask({ ...editTask, priority: e.target.value })}
+                  label="Priority"
+                >
+                  <MenuItem value="low">Low</MenuItem>
+                  <MenuItem value="medium">Medium</MenuItem>
+                  <MenuItem value="high">High</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Priority Days"
+                value={editTask.priorityDays}
+                onChange={(e) => setEditTask({ ...editTask, priorityDays: e.target.value })}
+                placeholder="Enter priority days"
+              />
+            </Grid>
+          </Grid>
+
+          <FormControl fullWidth>
+            <InputLabel>Assign to Users</InputLabel>
+            <Select
+              multiple
+              value={editTask.assignedUsers}
+              onChange={(e) => setEditTask({ ...editTask, assignedUsers: e.target.value })}
+              input={<OutlinedInput label="Assign to Users" />}
+              renderValue={(selected) => (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                  {selected.map((value) => {
+                    const user = users.find(u => u._id === value);
+                    return (
+                      <Chip key={value} label={user?.name || value} size="small" />
+                    );
+                  })}
+                </Box>
+              )}
+            >
+              {users.map((user) => (
+                <MenuItem key={user._id} value={user._id}>
+                  <Checkbox checked={editTask.assignedUsers.indexOf(user._id) > -1} />
+                  <ListItemText primary={user.name} secondary={user.role} />
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <FormControl fullWidth>
+            <InputLabel>Assign to Groups</InputLabel>
+            <Select
+              multiple
+              value={editTask.assignedGroups}
+              onChange={(e) => setEditTask({ ...editTask, assignedGroups: e.target.value })}
+              input={<OutlinedInput label="Assign to Groups" />}
+              renderValue={(selected) => (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                  {selected.map((value) => {
+                    const group = groups.find(g => g._id === value);
+                    return (
+                      <Chip key={value} label={group?.name || value} size="small" color="secondary" />
+                    );
+                  })}
+                </Box>
+              )}
+            >
+              {groups.map((group) => (
+                <MenuItem key={group._id} value={group._id}>
+                  <Checkbox checked={editTask.assignedGroups.indexOf(group._id) > -1} />
+                  <ListItemText primary={group.name} secondary={`${group.members?.length || 0} members`} />
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <TextField
+            fullWidth
+            label="WhatsApp Number"
+            value={editTask.whatsappNumber}
+            onChange={(e) => setEditTask({ ...editTask, whatsappNumber: e.target.value })}
+            placeholder="Enter WhatsApp number for notifications"
+          />
+        </Stack>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => setOpenEditDialog(false)}>Cancel</Button>
+        <Button
+          onClick={handleEditTask}
+          variant="contained"
+          disabled={isUpdatingTask}
+          startIcon={isUpdatingTask ? <CircularProgress size={16} /> : <FiSave />}
+        >
+          {isUpdatingTask ? 'Updating...' : 'Update Task'}
+        </Button>
+      </DialogActions>
     </Dialog>
   );
 
@@ -1379,27 +1870,36 @@ const AdminTaskManagement = () => {
                           </TableCell>
                           <TableCell>
                             <Stack spacing={0.5}>
-                              {task.assignedUsers?.slice(0, 2).map(user => (
-                                <Chip
-                                  key={user._id || user}
-                                  label={getUserName(user)}
-                                  size="small"
-                                  variant="outlined"
-                                />
+                              {/* Show assigned users with their status */}
+                              {getAllAssignedUsersWithStatus(task).slice(0, 3).map((assignedUser, index) => (
+                                <Tooltip 
+                                  key={index} 
+                                  title={`${assignedUser.user.name} - ${assignedUser.status} (${assignedUser.type})`}
+                                >
+                                  <Chip
+                                    label={`${assignedUser.user.name} - ${assignedUser.status}`}
+                                    size="small"
+                                    variant="outlined"
+                                    color={
+                                      assignedUser.status === 'completed' ? 'success' :
+                                      assignedUser.status === 'in-progress' ? 'info' :
+                                      assignedUser.status === 'rejected' ? 'error' : 'default'
+                                    }
+                                  />
+                                </Tooltip>
                               ))}
-                              {task.assignedGroups?.slice(0, 1).map(groupId => (
-                                <Chip
-                                  key={groupId}
-                                  label={`${getGroupName(groupId)} (Group)`}
-                                  size="small"
-                                  variant="outlined"
-                                  color="secondary"
-                                />
-                              ))}
-                              {(task.assignedUsers?.length > 2 || task.assignedGroups?.length > 1) && (
-                                <Typography variant="caption" color="text.secondary">
-                                  +{getAssignedUsersCount(task) - 2} more
-                                </Typography>
+                              {getAllAssignedUsersWithStatus(task).length > 3 && (
+                                <Tooltip title="View all user statuses">
+                                  <Button
+                                    size="small"
+                                    onClick={() => fetchUserStatuses(task)}
+                                    sx={{ p: 0, minWidth: 'auto' }}
+                                  >
+                                    <Typography variant="caption" color="primary">
+                                      +{getAllAssignedUsersWithStatus(task).length - 3} more
+                                    </Typography>
+                                  </Button>
+                                </Tooltip>
                               )}
                             </Stack>
                           </TableCell>
@@ -1416,6 +1916,15 @@ const AdminTaskManagement = () => {
                                   onClick={() => openEditTaskDialog(task)}
                                 >
                                   <FiEdit3 size={16} />
+                                </ActionButton>
+                              </Tooltip>
+                              <Tooltip title="View User Statuses">
+                                <ActionButton
+                                  size="small"
+                                  onClick={() => fetchUserStatuses(task)}
+                                  sx={{ color: 'info.main' }}
+                                >
+                                  <FiUsers size={16} />
                                 </ActionButton>
                               </Tooltip>
                               <Tooltip title="Remarks">
@@ -1597,13 +2106,13 @@ const AdminTaskManagement = () => {
           </Box>
         </Paper>
 
-        {/* Rest of the dialogs remain the same */}
-        {/* Create Task Dialog, Edit Task Dialog, Status Change Dialog, Group Management Dialog */}
-
-        {/* Enhanced Dialogs */}
+        {/* Dialogs */}
+        {renderCreateTaskDialog()}
+        {renderEditTaskDialog()}
         {renderNotificationsPanel()}
         {renderRemarksDialog()}
         {renderActivityLogsDialog()}
+        {renderUserStatusDialog()}
 
         {/* Snackbar */}
         <Snackbar
