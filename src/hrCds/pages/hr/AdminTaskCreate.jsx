@@ -163,6 +163,16 @@ const FilterSection = styled(Paper)(({ theme }) => ({
   border: `1px solid ${theme.palette.divider}`,
 }));
 
+const GroupCard = styled(Card)(({ theme }) => ({
+  borderRadius: theme.shape.borderRadius * 2,
+  transition: 'all 0.3s ease',
+  height: '100%',
+  '&:hover': {
+    transform: 'translateY(-2px)',
+    boxShadow: theme.shadows[4]
+  }
+}));
+
 const AdminTaskManagement = () => {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -212,7 +222,6 @@ const AdminTaskManagement = () => {
     dueDateTime: null,
     assignedUsers: [],
     assignedGroups: [],
-    whatsappNumber: '',
     priorityDays: '1',
     priority: 'medium',
     files: null,
@@ -225,7 +234,6 @@ const AdminTaskManagement = () => {
     dueDateTime: null,
     assignedUsers: [],
     assignedGroups: [],
-    whatsappNumber: '',
     priorityDays: '1',
     priority: 'medium'
   });
@@ -246,6 +254,7 @@ const AdminTaskManagement = () => {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [isCreatingTask, setIsCreatingTask] = useState(false);
   const [isUpdatingTask, setIsUpdatingTask] = useState(false);
+  const [isCreatingGroup, setIsCreatingGroup] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
 
   const theme = useTheme();
@@ -338,7 +347,7 @@ const AdminTaskManagement = () => {
     }
   };
 
-  // Fetch tasks with pagination and filters - UPDATED to get assigned tasks
+  // Fetch tasks with pagination and filters
   const fetchTasks = async (page = 0, limit = rowsPerPage, filters = {}) => {
     if (authError || !userId) return;
 
@@ -360,10 +369,9 @@ const AdminTaskManagement = () => {
 
       const queryString = new URLSearchParams(params).toString();
       
-      // Use the assigned tasks endpoint which should return tasks created by the admin
       const tasksResult = await apiCall('get', `/task/assigned?${queryString}`);
       
-      // Handle tasks response - adjust according to your API response structure
+      // Handle tasks response
       const tasksArray = tasksResult.tasks || tasksResult.data || tasksResult.groupedTasks ? 
         Object.values(tasksResult.groupedTasks || {}).flat() : [];
       setTasks(tasksArray);
@@ -442,7 +450,6 @@ const AdminTaskManagement = () => {
       formData.append('title', newTask.title);
       formData.append('description', newTask.description);
       formData.append('dueDateTime', new Date(newTask.dueDateTime).toISOString());
-      formData.append('whatsappNumber', newTask.whatsappNumber || '');
       formData.append('priorityDays', newTask.priorityDays || '1');
       formData.append('priority', newTask.priority);
       formData.append('assignedUsers', JSON.stringify(newTask.assignedUsers));
@@ -474,7 +481,7 @@ const AdminTaskManagement = () => {
     }
   };
 
-  // FIXED: Edit Task function
+  // Edit Task function
   const handleEditTask = async () => {
     if (!editTask.title || !editTask.description || !editTask.dueDateTime) {
       setSnackbar({ open: true, message: 'Please fill all required fields', severity: 'error' });
@@ -489,7 +496,6 @@ const AdminTaskManagement = () => {
       formData.append('title', editTask.title);
       formData.append('description', editTask.description);
       formData.append('dueDateTime', new Date(editTask.dueDateTime).toISOString());
-      formData.append('whatsappNumber', editTask.whatsappNumber || '');
       formData.append('priorityDays', editTask.priorityDays || '1');
       formData.append('priority', editTask.priority);
       formData.append('assignedUsers', JSON.stringify(editTask.assignedUsers));
@@ -523,6 +529,53 @@ const AdminTaskManagement = () => {
     }
   };
 
+  // Enhanced Group Management
+  const handleCreateGroup = async () => {
+    if (!newGroup.name || !newGroup.description) {
+      setSnackbar({ open: true, message: 'Please fill group name and description', severity: 'error' });
+      return;
+    }
+
+    if (newGroup.members.length === 0) {
+      setSnackbar({ open: true, message: 'Please select at least one member', severity: 'error' });
+      return;
+    }
+
+    setIsCreatingGroup(true);
+    try {
+      if (editingGroup) {
+        await apiCall('put', `/groups/${editingGroup._id}`, newGroup);
+        setSnackbar({ open: true, message: 'Group updated successfully', severity: 'success' });
+      } else {
+        await apiCall('post', '/groups', newGroup);
+        setSnackbar({ open: true, message: 'Group created successfully', severity: 'success' });
+      }
+      setOpenGroupDialog(false);
+      resetGroupForm();
+      fetchSupportingData(); // Refresh groups list
+    } catch (error) {
+      console.error('Error in group operation:', error);
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Group operation failed';
+      setSnackbar({ open: true, message: errorMessage, severity: 'error' });
+    } finally {
+      setIsCreatingGroup(false);
+    }
+  };
+
+  const handleDeleteGroup = async (groupId) => {
+    if (!window.confirm('Are you sure you want to delete this group?')) return;
+
+    try {
+      await apiCall('delete', `/groups/${groupId}`);
+      setSnackbar({ open: true, message: 'Group deleted successfully', severity: 'success' });
+      fetchSupportingData();
+    } catch (error) {
+      console.error('Error deleting group:', error);
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Failed to delete group';
+      setSnackbar({ open: true, message: errorMessage, severity: 'error' });
+    }
+  };
+
   // Enhanced Status Management
   const handleStatusChange = async () => {
     if (!statusChange.status) {
@@ -548,7 +601,7 @@ const AdminTaskManagement = () => {
     }
   };
 
-  // NEW: Function to fetch and show user statuses for a task
+  // Function to fetch and show user statuses for a task
   const fetchUserStatuses = async (task) => {
     try {
       setSelectedTask(task);
@@ -673,45 +726,6 @@ const AdminTaskManagement = () => {
     }
   };
 
-  // Enhanced Group Management
-  const handleCreateGroup = async () => {
-    if (!newGroup.name || !newGroup.description) {
-      setSnackbar({ open: true, message: 'Please fill group name and description', severity: 'error' });
-      return;
-    }
-
-    try {
-      if (editingGroup) {
-        await apiCall('put', `/groups/${editingGroup._id}`, newGroup);
-        setSnackbar({ open: true, message: 'Group updated successfully', severity: 'success' });
-      } else {
-        await apiCall('post', '/groups', newGroup);
-        setSnackbar({ open: true, message: 'Group created successfully', severity: 'success' });
-      }
-      setOpenGroupDialog(false);
-      resetGroupForm();
-      fetchSupportingData();
-    } catch (error) {
-      console.error('Error in group operation:', error);
-      const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Group operation failed';
-      setSnackbar({ open: true, message: errorMessage, severity: 'error' });
-    }
-  };
-
-  const handleDeleteGroup = async (groupId) => {
-    if (!window.confirm('Are you sure you want to delete this group?')) return;
-
-    try {
-      await apiCall('delete', `/groups/${groupId}`);
-      setSnackbar({ open: true, message: 'Group deleted successfully', severity: 'success' });
-      fetchSupportingData();
-    } catch (error) {
-      console.error('Error deleting group:', error);
-      const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Failed to delete group';
-      setSnackbar({ open: true, message: errorMessage, severity: 'error' });
-    }
-  };
-
   // Pagination handlers
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -733,7 +747,6 @@ const AdminTaskManagement = () => {
       dueDateTime: null,
       assignedUsers: [],
       assignedGroups: [],
-      whatsappNumber: '',
       priorityDays: '1',
       priority: 'medium',
       files: null,
@@ -759,7 +772,7 @@ const AdminTaskManagement = () => {
     setEditingGroup(null);
   };
 
-  // FIXED: Open Edit Task Dialog function
+  // Open Edit Task Dialog function
   const openEditTaskDialog = (task) => {
     console.log('Opening edit dialog for task:', task);
     setSelectedTask(task);
@@ -769,7 +782,6 @@ const AdminTaskManagement = () => {
       dueDateTime: task.dueDateTime ? new Date(task.dueDateTime) : null,
       assignedUsers: task.assignedUsers?.map(u => u._id || u) || [],
       assignedGroups: task.assignedGroups?.map(g => g._id || g) || [],
-      whatsappNumber: task.whatsappNumber || '',
       priorityDays: task.priorityDays || '1',
       priority: task.priority || 'medium'
     });
@@ -1177,7 +1189,7 @@ const AdminTaskManagement = () => {
     </Dialog>
   );
 
-  // NEW: User Status Dialog to show all assigned users and their status
+  // User Status Dialog to show all assigned users and their status
   const renderUserStatusDialog = () => (
     <Dialog 
       open={openUserStatusDialog} 
@@ -1370,14 +1382,6 @@ const AdminTaskManagement = () => {
             </Select>
           </FormControl>
 
-          <TextField
-            fullWidth
-            label="WhatsApp Number"
-            value={newTask.whatsappNumber}
-            onChange={(e) => setNewTask({ ...newTask, whatsappNumber: e.target.value })}
-            placeholder="Enter WhatsApp number for notifications"
-          />
-
           <Box>
             <Typography variant="subtitle1" gutterBottom>
               Attachments
@@ -1429,7 +1433,7 @@ const AdminTaskManagement = () => {
     </Dialog>
   );
 
-  // FIXED: Edit Task Dialog
+  // Edit Task Dialog
   const renderEditTaskDialog = () => (
     <Dialog
       open={openEditDialog}
@@ -1549,14 +1553,6 @@ const AdminTaskManagement = () => {
               ))}
             </Select>
           </FormControl>
-
-          <TextField
-            fullWidth
-            label="WhatsApp Number"
-            value={editTask.whatsappNumber}
-            onChange={(e) => setEditTask({ ...editTask, whatsappNumber: e.target.value })}
-            placeholder="Enter WhatsApp number for notifications"
-          />
         </Stack>
       </DialogContent>
       <DialogActions>
@@ -1571,6 +1567,174 @@ const AdminTaskManagement = () => {
         </Button>
       </DialogActions>
     </Dialog>
+  );
+
+  // Group Management Dialog
+  const renderGroupManagementDialog = () => (
+    <Dialog
+      open={openGroupDialog}
+      onClose={() => setOpenGroupDialog(false)}
+      maxWidth="md"
+      fullWidth
+      fullScreen={isMobile}
+    >
+      <DialogTitle>
+        <Typography variant="h5" fontWeight={600}>
+          {editingGroup ? 'Edit Group' : 'Create New Group'}
+        </Typography>
+      </DialogTitle>
+      <DialogContent>
+        <Stack spacing={3} sx={{ mt: 1 }}>
+          <TextField
+            fullWidth
+            label="Group Name *"
+            value={newGroup.name}
+            onChange={(e) => setNewGroup({ ...newGroup, name: e.target.value })}
+            placeholder="Enter group name"
+          />
+
+          <TextField
+            fullWidth
+            multiline
+            rows={3}
+            label="Description *"
+            value={newGroup.description}
+            onChange={(e) => setNewGroup({ ...newGroup, description: e.target.value })}
+            placeholder="Enter group description"
+          />
+
+          <FormControl fullWidth>
+            <InputLabel>Select Members</InputLabel>
+            <Select
+              multiple
+              value={newGroup.members}
+              onChange={(e) => setNewGroup({ ...newGroup, members: e.target.value })}
+              input={<OutlinedInput label="Select Members" />}
+              renderValue={(selected) => (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                  {selected.map((value) => {
+                    const user = users.find(u => u._id === value);
+                    return (
+                      <Chip key={value} label={user?.name || value} size="small" />
+                    );
+                  })}
+                </Box>
+              )}
+            >
+              {users.map((user) => (
+                <MenuItem key={user._id} value={user._id}>
+                  <Checkbox checked={newGroup.members.indexOf(user._id) > -1} />
+                  <ListItemText primary={user.name} secondary={user.role} />
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Stack>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => setOpenGroupDialog(false)}>Cancel</Button>
+        <Button
+          onClick={handleCreateGroup}
+          variant="contained"
+          disabled={isCreatingGroup}
+          startIcon={isCreatingGroup ? <CircularProgress size={16} /> : <FiCheck />}
+        >
+          {isCreatingGroup ? (editingGroup ? 'Updating...' : 'Creating...') : (editingGroup ? 'Update Group' : 'Create Group')}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+
+  // Group Management Tab Content
+  const renderGroupManagementTab = () => (
+    <Box>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
+        <Typography variant="h6">Group Management ({groups.length} groups)</Typography>
+        <Button
+          variant="contained"
+          startIcon={<FiPlus />}
+          onClick={() => {
+            setEditingGroup(null);
+            setNewGroup({ name: '', description: '', members: [] });
+            setOpenGroupDialog(true);
+          }}
+        >
+          Create Group
+        </Button>
+      </Stack>
+
+      <Grid container spacing={2}>
+        {groups.map(group => (
+          <Grid item xs={12} sm={6} md={4} key={group._id}>
+            <GroupCard>
+              <CardContent>
+                <Stack spacing={2}>
+                  <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                    <Box>
+                      <Typography variant="h6">{group.name}</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {group.description}
+                      </Typography>
+                    </Box>
+                    <Stack direction="row" spacing={0.5}>
+                      <IconButton
+                        size="small"
+                        onClick={() => openGroupEditDialog(group)}
+                      >
+                        <FiEdit size={16} />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDeleteGroup(group._id)}
+                        sx={{ color: 'error.main' }}
+                      >
+                        <FiTrash2 size={16} />
+                      </IconButton>
+                    </Stack>
+                  </Stack>
+                  <Divider />
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">
+                      Members ({group.members?.length || 0})
+                    </Typography>
+                    <Stack spacing={1} sx={{ mt: 1 }}>
+                      {group.members?.slice(0, 3).map(memberId => {
+                        const member = users.find(u => u._id === memberId);
+                        return member ? (
+                          <Stack key={memberId} direction="row" alignItems="center" spacing={1}>
+                            <Avatar sx={{ width: 24, height: 24, fontSize: '0.7rem' }}>
+                              {member.name.charAt(0).toUpperCase()}
+                            </Avatar>
+                            <Typography variant="body2">{member.name}</Typography>
+                          </Stack>
+                        ) : null;
+                      })}
+                      {(group.members?.length || 0) > 3 && (
+                        <Typography variant="caption" color="text.secondary">
+                          +{(group.members?.length || 0) - 3} more members
+                        </Typography>
+                      )}
+                    </Stack>
+                  </Box>
+                </Stack>
+              </CardContent>
+            </GroupCard>
+          </Grid>
+        ))}
+      </Grid>
+
+      {groups.length === 0 && (
+        <Box sx={{ textAlign: 'center', py: 6 }}>
+          <FiUsers size={48} color={theme.palette.text.secondary} />
+          <Typography variant="h6" color="text.secondary" sx={{ mt: 2 }}>
+            No groups created yet
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            Create your first group to assign tasks to multiple users at once
+          </Typography>
+        </Box>
+      )}
+    </Box>
   );
 
   useEffect(() => {
@@ -2116,90 +2280,14 @@ const AdminTaskManagement = () => {
               </Box>
             )}
 
-            {activeTab === 2 && (
-              <Box>
-                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
-                  <Typography variant="h6">Group Management ({groups.length} groups)</Typography>
-                  <Button
-                    variant="contained"
-                    startIcon={<FiPlus />}
-                    onClick={() => {
-                      setEditingGroup(null);
-                      setNewGroup({ name: '', description: '', members: [] });
-                      setOpenGroupDialog(true);
-                    }}
-                  >
-                    Create Group
-                  </Button>
-                </Stack>
-
-                <Grid container spacing={2}>
-                  {groups.map(group => (
-                    <Grid item xs={12} sm={6} md={4} key={group._id}>
-                      <Card>
-                        <CardContent>
-                          <Stack spacing={2}>
-                            <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                              <Box>
-                                <Typography variant="h6">{group.name}</Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                  {group.description}
-                                </Typography>
-                              </Box>
-                              <Stack direction="row" spacing={0.5}>
-                                <IconButton
-                                  size="small"
-                                  onClick={() => openGroupEditDialog(group)}
-                                >
-                                  <FiEdit size={16} />
-                                </IconButton>
-                                <IconButton
-                                  size="small"
-                                  onClick={() => handleDeleteGroup(group._id)}
-                                  sx={{ color: 'error.main' }}
-                                >
-                                  <FiTrash2 size={16} />
-                                </IconButton>
-                              </Stack>
-                            </Stack>
-                            <Divider />
-                            <Box>
-                              <Typography variant="caption" color="text.secondary">
-                                Members ({group.members?.length || 0})
-                              </Typography>
-                              <Stack spacing={1} sx={{ mt: 1 }}>
-                                {group.members?.slice(0, 3).map(memberId => {
-                                  const member = users.find(u => u._id === memberId);
-                                  return member ? (
-                                    <Stack key={memberId} direction="row" alignItems="center" spacing={1}>
-                                      <Avatar sx={{ width: 24, height: 24, fontSize: '0.7rem' }}>
-                                        {member.name.charAt(0).toUpperCase()}
-                                      </Avatar>
-                                      <Typography variant="body2">{member.name}</Typography>
-                                    </Stack>
-                                  ) : null;
-                                })}
-                                {(group.members?.length || 0) > 3 && (
-                                  <Typography variant="caption" color="text.secondary">
-                                    +{(group.members?.length || 0) - 3} more members
-                                  </Typography>
-                                )}
-                              </Stack>
-                            </Box>
-                          </Stack>
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                  ))}
-                </Grid>
-              </Box>
-            )}
+            {activeTab === 2 && renderGroupManagementTab()}
           </Box>
         </Paper>
 
         {/* Dialogs */}
         {renderCreateTaskDialog()}
         {renderEditTaskDialog()}
+        {renderGroupManagementDialog()}
         {renderNotificationsPanel()}
         {renderRemarksDialog()}
         {renderActivityLogsDialog()}

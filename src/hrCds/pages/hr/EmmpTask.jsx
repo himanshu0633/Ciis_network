@@ -215,7 +215,7 @@ const EmmpTask = () => {
   const [groups, setGroups] = useState([]);
   const [newTask, setNewTask] = useState({
     title: '', description: '', dueDate: null, assignedUsers: [],
-    assignedGroups: [], whatsappNumber: '', priorityDays: '', priority: 'medium', files: null, voiceNote: null
+    assignedGroups: [], priorityDays: '', priority: 'medium', files: null, voiceNote: null
   });
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [stats, setStats] = useState({
@@ -543,7 +543,7 @@ const EmmpTask = () => {
     formData.append('title', newTask.title);
     formData.append('description', newTask.description);
     formData.append('dueDate', newTask.dueDate.toISOString().split('T')[0]);
-    formData.append('whatsappNumber', newTask.whatsappNumber);
+    
     formData.append('priorityDays', newTask.priorityDays);
     formData.append('priority', newTask.priority);
     formData.append('assignedUsers', JSON.stringify(finalAssignedUsers));
@@ -567,7 +567,7 @@ const EmmpTask = () => {
       setSnackbar({ open: true, message: 'Task created successfully', severity: 'success' });
       setNewTask({
         title: '', description: '', dueDate: null, assignedUsers: [],
-        assignedGroups: [], whatsappNumber: '', priorityDays: '', priority: 'medium', files: null, voiceNote: null
+        assignedGroups: [], priorityDays: '', priority: 'medium', files: null, voiceNote: null
       });
     } catch (err) {
       console.error('Error creating task:', err);
@@ -1248,13 +1248,7 @@ const getStatusIcon = (status) => {
                             </IconButton>
                           </Tooltip>
                         )}
-                        {task.whatsappNumber && (
-                          <Tooltip title="WhatsApp connected">
-                            <IconButton size="small">
-                              <FiMessageCircle size={16} />
-                            </IconButton>
-                          </Tooltip>
-                        )}
+                        
                       </Stack>
                       
                       <Typography variant="caption" color="text.secondary">
@@ -1321,31 +1315,6 @@ const getStatusIcon = (status) => {
                   </Grid>
                 </Grid>
 
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
-                    <TextField 
-                      fullWidth 
-                      label="WhatsApp Number" 
-                      value={newTask.whatsappNumber} 
-                      onChange={e => setNewTask({ ...newTask, whatsappNumber: e.target.value })}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <FiMessageCircle color={theme.palette.text.secondary} />
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField 
-                      fullWidth 
-                      label="Priority Days" 
-                      value={newTask.priorityDays} 
-                      onChange={e => setNewTask({ ...newTask, priorityDays: e.target.value })}
-                    />
-                  </Grid>
-                </Grid>
 
                 <Box>
                   <Typography variant="body2" fontWeight={600} gutterBottom>

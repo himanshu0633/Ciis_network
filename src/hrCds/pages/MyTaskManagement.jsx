@@ -242,7 +242,6 @@ const MyTaskManagement = () => {
     dueDateTime: null,
     assignedUsers: [],
     assignedGroups: [],
-    whatsappNumber: '',
     priorityDays: '1',
     priority: 'medium',
     files: null,
@@ -896,7 +895,6 @@ const MyTaskManagement = () => {
       formData.append('title', newTask.title);
       formData.append('description', newTask.description);
       formData.append('dueDateTime', new Date(newTask.dueDateTime).toISOString());
-      formData.append('whatsappNumber', newTask.whatsappNumber || '');
       formData.append('priorityDays', newTask.priorityDays || '1');
       formData.append('priority', newTask.priority);
       formData.append('assignedUsers', JSON.stringify(finalAssignedUsers));
@@ -952,7 +950,7 @@ const MyTaskManagement = () => {
         dueDateTime: null, 
         assignedUsers: [],
         assignedGroups: [], 
-        whatsappNumber: '', 
+       
         priorityDays: '1', 
         priority: 'medium', 
         files: null, 
@@ -1251,7 +1249,6 @@ const MyTaskManagement = () => {
       dueDateTime: editTaskData.dueDateTime,
       priority: editTaskData.priority,
       priorityDays: editTaskData.priorityDays,
-      whatsappNumber: editTaskData.whatsappNumber,
       assignedUsers: editTaskData.assignedUsers || [],
       assignedGroups: editTaskData.assignedGroups || [],
     };
@@ -2188,14 +2185,6 @@ const MyTaskManagement = () => {
               sx={{ borderRadius: 1 }}
             />
 
-            <TextField
-              fullWidth
-              label="WhatsApp Number"
-              value={editTaskData?.whatsappNumber || task.whatsappNumber}
-              onChange={(e) => setEditTaskData({ ...editTaskData, whatsappNumber: e.target.value })}
-              variant="outlined"
-              sx={{ borderRadius: 1 }}
-            />
           </Stack>
         </DialogContent>
         <DialogActions sx={{ 
@@ -2357,18 +2346,7 @@ const MyTaskManagement = () => {
                       size={isSmallMobile ? "small" : "medium"}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="WhatsApp Number"
-                      value={newTask.whatsappNumber}
-                      onChange={(e) => setNewTask({ ...newTask, whatsappNumber: e.target.value })}
-                      variant="outlined"
-                      placeholder="Enter WhatsApp number"
-                      sx={{ borderRadius: 1 }}
-                      size={isSmallMobile ? "small" : "medium"}
-                    />
-                  </Grid>
+           
                 </Grid>
               </Stack>
             </Box>
