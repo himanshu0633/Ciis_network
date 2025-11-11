@@ -261,7 +261,7 @@ const TaskDetails = () => {
         const summary = counts.summary || {};
         
         stats[user._id] = {
-          total: summary.totalTasks || assigned.total || 0,
+          total: assigned.total || assigned.total || 0,
           pending: assigned.pending || 0,
           inProgress: assigned.inProgress || 0,
           completed: assigned.completed || 0,
@@ -295,7 +295,7 @@ const TaskDetails = () => {
       setUserStats(prev => ({
         ...prev,
         [userId]: {
-          total: summary.totalTasks || assigned.total || 0,
+          total: assigned.total || assigned.total || 0,
           pending: assigned.pending || 0,
           inProgress: assigned.inProgress || 0,
           completed: assigned.completed || 0,
@@ -1149,22 +1149,7 @@ const TaskDetails = () => {
                                   </Stack>
                                 </Box>
                                 
-                                <Stack direction="row" spacing={1}>
-                                  <Button
-                                    variant="outlined"
-                                    size="small"
-                                    startIcon={<FiActivity />}
-                                    onClick={() => fetchTaskDetails(task._id)}
-                                  >
-                                    Details
-                                  </Button>
-                                  <IconButton
-                                    size="small"
-                                    onClick={(e) => handleMenuOpen(e, task)}
-                                  >
-                                    <FiMoreVertical />
-                                  </IconButton>
-                                </Stack>
+  
                               </Stack>
                               
                               {/* Task Details Section */}
