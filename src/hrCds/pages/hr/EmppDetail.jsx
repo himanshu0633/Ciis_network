@@ -28,7 +28,10 @@ import {
   ListItemText,
   Snackbar,
   Alert,
-  CircularProgress
+  CircularProgress,
+  FormControl,
+  InputLabel,
+  Select
 } from "@mui/material";
 import {
   FiMail,
@@ -53,7 +56,6 @@ import {
   FiShield
 } from "react-icons/fi";
 import axios from "../../../utils/axiosConfig";
-import EmployeeTypeFilter from "../../Filter/EmployeeTypeFilter";
 import { styled } from "@mui/material/styles";
 
 // Enhanced Styled Components
@@ -152,10 +154,63 @@ const RoleChip = styled(Chip)(({ theme, role }) => ({
   }),
 }));
 
+// Role Filter Component - Employee Type Filter की जगह यही use होगा
+const RoleFilter = ({ selected, onChange, stats }) => {
+  const theme = useTheme();
+  
+  const roleOptions = [
+    { value: 'all', label: 'All Roles', count: 'all' },
+    { value: 'SuperAdmin', label: 'Super Admin', count: stats.superAdmin },
+    { value: 'admin', label: 'Admin', count: stats.admin },
+    { value: 'manager', label: 'Manager', count: stats.manager },
+    { value: 'hr', label: 'HR', count: stats.hr },
+    { value: 'user', label: 'User', count: stats.user }
+  ];
+
+  return (
+    <FormControl 
+      sx={{ 
+        minWidth: 200,
+        '& .MuiOutlinedInput-root': {
+          borderRadius: theme.shape.borderRadius * 2,
+        }
+      }} 
+      size="small"
+    >
+      <InputLabel>Filter by Role</InputLabel>
+      <Select
+        value={selected}
+        label="Filter by Role"
+        onChange={(e) => onChange(e.target.value)}
+      >
+        {roleOptions.map((option) => (
+          <MenuItem key={option.value} value={option.value}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+              <span>{option.label}</span>
+              {option.count !== 'all' && (
+                <Chip 
+                  label={option.count} 
+                  size="small" 
+                  sx={{ 
+                    ml: 1,
+                    height: 20,
+                    fontSize: '0.7rem',
+                    minWidth: 30
+                  }} 
+                />
+              )}
+            </Box>
+          </MenuItem>
+        ))}
+      </Select>
+    </FormControl>
+  );
+};
+
 const EmployeeDirectory = () => {
   const [employees, setEmployees] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [selectedEmployeeType, setSelectedEmployeeType] = useState("all");
+  const [selectedRole, setSelectedRole] = useState("all"); // Employee Type की जगह Role
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [editingUser, setEditingUser] = useState(null);
@@ -292,16 +347,13 @@ const EmployeeDirectory = () => {
     }));
   };
 
-  // Filter logic with search - including role in search
+  // Filter logic with search - Employee Type की जगह Role based filtering
   const filteredEmployees = useMemo(() => {
     let filtered = employees;
     
-    if (selectedEmployeeType !== "all") {
-      filtered = filtered.filter(
-        (u) =>
-          u.employeeType &&
-          u.employeeType.toLowerCase() === selectedEmployeeType.toLowerCase()
-      );
+    // Role-based filtering (Employee Type की जगह)
+    if (selectedRole !== "all") {
+      filtered = filtered.filter((u) => u.role === selectedRole);
     }
     
     if (searchTerm) {
@@ -316,7 +368,7 @@ const EmployeeDirectory = () => {
     }
     
     return filtered;
-  }, [employees, selectedEmployeeType, searchTerm]);
+  }, [employees, selectedRole, searchTerm]);
 
   const getInitials = (name) => {
     if (!name) return 'U';
@@ -374,7 +426,7 @@ const EmployeeDirectory = () => {
               </Typography>
             </Box>
 
-            {/* Search and Filter Section */}
+            {/* Search and Filter Section - Employee Type Filter की जगह Role Filter */}
             <Stack 
               direction={{ xs: 'column', sm: 'row' }} 
               spacing={2} 
@@ -406,15 +458,17 @@ const EmployeeDirectory = () => {
                 }}
               />
               
-              <EmployeeTypeFilter
-                selected={selectedEmployeeType}
-                onChange={setSelectedEmployeeType}
+              {/* Employee Type Filter की जगह Role Filter */}
+              <RoleFilter
+                selected={selectedRole}
+                onChange={setSelectedRole}
+                stats={stats}
               />
             </Stack>
           </Stack>
         </Paper>
 
-        {/* Enhanced Statistics Cards with Role Stats */}
+        {/* Statistics Cards - पहले जैसे ही रहेंगे */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
           <Grid item xs={6} md={2.4}>
             <StatCard color="primary">
@@ -531,15 +585,6 @@ const EmployeeDirectory = () => {
               </CardContent>
             </StatCard>
           </Grid>
-
-       
-        </Grid>
-
-        {/* Role-based Statistics */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-         
-
-         
         </Grid>
 
         {/* Results Header */}
@@ -553,11 +598,11 @@ const EmployeeDirectory = () => {
             {filteredEmployees.length} Employee{filteredEmployees.length !== 1 ? 's' : ''} Found
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            {selectedEmployeeType !== 'all' && `Filtered by: ${selectedEmployeeType}`}
+            {selectedRole !== 'all' && `Filtered by: ${getRoleLabel(selectedRole)}`}
           </Typography>
         </Stack>
 
-        {/* Employees Grid */}
+        {/* Employees Grid - यह पहले जैसा ही रहेगा */}
         {filteredEmployees.length === 0 ? (
           <Paper sx={{ 
             textAlign: 'center', 
@@ -569,7 +614,7 @@ const EmployeeDirectory = () => {
               No Employees Found
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              {searchTerm || selectedEmployeeType !== 'all' 
+              {searchTerm || selectedRole !== 'all' 
                 ? 'Try adjusting your search criteria' 
                 : 'No employees in the directory'
               }
@@ -675,7 +720,8 @@ const EmployeeDirectory = () => {
           </Grid>
         )}
 
-        {/* Enhanced User Detail Dialog with Role */}
+        {/* बाकी सभी Dialog और Components पहले जैसे ही रहेंगे */}
+        {/* User Detail Dialog */}
         <Dialog 
           open={Boolean(selectedUser)} 
           onClose={handleCloseUser} 
@@ -840,10 +886,6 @@ const EmployeeDirectory = () => {
                       </Grid>
                     </Grid>
                   </Box>
-
-                  {/* Rest of the dialog content remains the same */}
-                  {/* ... (Family & Emergency Information, Bank Information sections) ... */}
-                  
                 </Stack>
               </DialogContent>
               
@@ -867,7 +909,7 @@ const EmployeeDirectory = () => {
           )}
         </Dialog>
 
-        {/* Enhanced Edit Employee Dialog with Role Field */}
+        {/* Edit Employee Dialog */}
         <Dialog 
           open={Boolean(editingUser)} 
           onClose={handleCancelEdit} 
