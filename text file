@@ -1,0 +1,599 @@
+import React, { useEffect, useState } from "react";
+import {
+  Box,
+  Button,
+  Stack,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Typography,
+  Chip,
+  IconButton,
+  MenuItem,
+  Select,
+  InputLabel,
+  FormControl,
+  Checkbox,
+  ListItemText,
+  Drawer,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  Divider,
+  Tooltip,
+  Paper,
+} from "@mui/material";
+import { DataGrid } from "@mui/x-data-grid";
+import dayjs from "dayjs";
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
+import AddIcon from "@mui/icons-material/Add";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import UploadFileIcon from "@mui/icons-material/UploadFile";
+import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
+import axiosInstance from "../../utils/axiosConfig";
+import { toast } from "react-toastify";
+
+const AdminProjects = () => {
+  const [projects, setProjects] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const [openProjectDialog, setOpenProjectDialog] = useState(false);
+  const [editingProject, setEditingProject] = useState(null);
+  const [projectForm, setProjectForm] = useState({
+    projectName: "",
+    users: [],
+    status: "Active",
+    startDate: "",
+    endDate: "",
+  });
+
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [openTaskDialog, setOpenTaskDialog] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
+  const [taskForm, setTaskForm] = useState({
+    title: "",
+    description: "",
+    assignedTo: "",
+    dueDate: "",
+    priority: "Medium",
+    remarks: "",
+    status: "Pending",
+    pdfFile: null,
+  });
+
+  const [openDetailsDialog, setOpenDetailsDialog] = useState(false);
+  const [saveLoading, setSaveLoading] = useState(false);
+
+  // ---------------- FETCH USERS ----------------
+  const fetchUsers = async () => {
+    try {
+      const { data } = await axiosInstance.get("/users/all-users");
+      if (Array.isArray(data)) setUsers(data);
+    } catch (err) {
+      console.error("User fetch failed:", err);
+    }
+  };
+
+  // ---------------- FETCH PROJECTS ----------------
+  const fetchProjects = async () => {
+    try {
+      setLoading(true);
+      const { data } = await axiosInstance.get("/projects?page=1&limit=100");
+      setProjects(Array.isArray(data?.items) ? data.items : []);
+    } catch (err) {
+      console.error("Projects fetch failed:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProjects();
+    fetchUsers();
+  }, []);
+
+  // ---------------- PROJECT HANDLERS ----------------
+  const handleOpenAdd = () => {
+    setEditingProject(null);
+    setProjectForm({
+      projectName: "",
+      users: [],
+      status: "Active",
+      startDate: "",
+      endDate: "",
+    });
+    setOpenProjectDialog(true);
+  };
+
+  const handleOpenEdit = (project) => {
+    setEditingProject(project);
+    setProjectForm({
+      projectName: project.projectName,
+      users: project.users.map((u) => u._id),
+      status: project.status,
+      startDate: project.startDate
+        ? dayjs(project.startDate).format("YYYY-MM-DDTHH:mm")
+        : "",
+      endDate: project.endDate
+        ? dayjs(project.endDate).format("YYYY-MM-DDTHH:mm")
+        : "",
+    });
+    setOpenProjectDialog(true);
+  };
+
+  const handleSaveProject = async () => {
+    if (!projectForm.projectName.trim())
+      return toast.error("Project name is required!");
+    try {
+      setSaveLoading(true);
+      if (editingProject) {
+        await axiosInstance.put(`/projects/${editingProject._id}`, projectForm);
+        toast.success("Project updated successfully!");
+      } else {
+        await axiosInstance.post("/projects", projectForm);
+        toast.success("Project created successfully!");
+      }
+      fetchProjects();
+      setOpenProjectDialog(false);
+    } catch (err) {
+      toast.error("Failed to save project!");
+      console.error(err);
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
+  const handleDeleteProject = async (id) => {
+    try {
+      await axiosInstance.delete(`/projects/${id}`);
+      toast.success("Project deleted");
+      fetchProjects();
+    } catch {
+      toast.error("Failed to delete project");
+    }
+  };
+
+  // ---------------- TASK HANDLERS ----------------
+  const handleOpenTaskDrawer = (project) => {
+    setSelectedProject(project);
+    setDrawerOpen(true);
+  };
+
+  const handleOpenAddTask = () => {
+    setEditingTask(null);
+    setTaskForm({
+      title: "",
+      description: "",
+      assignedTo: "",
+      dueDate: "",
+      priority: "Medium",
+      remarks: "",
+      status: "Pending",
+      pdfFile: null,
+    });
+    setOpenTaskDialog(true);
+  };
+
+  const handleOpenEditTask = (task) => {
+    setEditingTask(task);
+    setTaskForm({
+      title: task.title,
+      description: task.description || "",
+      assignedTo: task.assignedTo?._id || "",
+      dueDate: task.dueDate
+        ? dayjs(task.dueDate).format("YYYY-MM-DDTHH:mm")
+        : "",
+      priority: task.priority || "Medium",
+      remarks: task.remarks || "",
+      status: task.status || "Pending",
+      pdfFile: null,
+    });
+    setOpenTaskDialog(true);
+  };
+
+  const handleSaveTask = async () => {
+    if (!taskForm.title.trim()) return toast.error("Task title required");
+    if (!taskForm.assignedTo) return toast.error("Select user to assign");
+
+    try {
+      const formData = new FormData();
+      formData.append("title", taskForm.title);
+      formData.append("description", taskForm.description);
+      formData.append("assignedTo", taskForm.assignedTo);
+      formData.append("dueDate", taskForm.dueDate);
+      formData.append("priority", taskForm.priority);
+      formData.append("remarks", taskForm.remarks);
+      formData.append("status", taskForm.status);
+      if (taskForm.pdfFile) formData.append("pdfFile", taskForm.pdfFile);
+
+      let res;
+      if (editingTask)
+        res = await axiosInstance.patch(
+          `/projects/${selectedProject._id}/tasks/${editingTask._id}`,
+          formData,
+          { headers: { "Content-Type": "multipart/form-data" } }
+        );
+      else
+        res = await axiosInstance.post(
+          `/projects/${selectedProject._id}/tasks`,
+          formData,
+          { headers: { "Content-Type": "multipart/form-data" } }
+        );
+
+      toast.success("Task saved!");
+      setSelectedProject(res.data);
+      fetchProjects();
+      setOpenTaskDialog(false);
+    } catch (err) {
+      console.error("Task save failed:", err);
+      toast.error("Failed to save task");
+    }
+  };
+
+  const handleDeleteTask = async (taskId) => {
+    try {
+      await axiosInstance.delete(
+        `/projects/${selectedProject._id}/tasks/${taskId}`
+      );
+      toast.success("Task deleted");
+      fetchProjects();
+    } catch {
+      toast.error("Failed to delete task");
+    }
+  };
+
+  const openPDF = (path) => {
+    window.open(`http://localhost:3000/${path}`, "_blank");
+  };
+
+  // ---------------- DATAGRID COLUMNS ----------------
+  const columns = [
+    { field: "projectName", headerName: "Project", flex: 1.3 },
+    {
+      field: "users",
+      headerName: "Members",
+      flex: 1,
+      renderCell: (params) => (
+        <Stack direction="row" spacing={0.5}>
+          {params.row.users.map((u) => (
+            <Chip key={u._id} label={u.name} size="small" />
+          ))}
+        </Stack>
+      ),
+    },
+    {
+      field: "status",
+      headerName: "Status",
+      width: 120,
+      renderCell: (params) => (
+        <Chip
+          label={params.row.status}
+          color={
+            params.row.status === "Active"
+              ? "primary"
+              : params.row.status === "Completed"
+              ? "success"
+              : "warning"
+          }
+          size="small"
+        />
+      ),
+    },
+    {
+      field: "actions",
+      headerName: "Actions",
+      width: 260,
+      renderCell: (params) => (
+        <Stack direction="row" spacing={1}>
+          <Tooltip title="Edit Project">
+            <IconButton onClick={() => handleOpenEdit(params.row)}>
+              <EditIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Manage Tasks">
+            <IconButton onClick={() => handleOpenTaskDrawer(params.row)}>
+              <AddIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="View Full Details">
+            <IconButton
+              color="primary"
+              onClick={() => {
+                setSelectedProject(params.row);
+                setOpenDetailsDialog(true);
+              }}
+            >
+              <VisibilityIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Delete Project">
+            <IconButton
+              color="error"
+              onClick={() => handleDeleteProject(params.row._id)}
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+      ),
+    },
+  ];
+
+  return (
+    <Box sx={{ p: 3 }}>
+      <Stack direction="row" justifyContent="space-between" mb={2}>
+        <Typography variant="h4" fontWeight={700}>
+          Admin Projects
+        </Typography>
+        <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenAdd}>
+          Add Project
+        </Button>
+      </Stack>
+
+      <Paper sx={{ height: 520 }}>
+        <DataGrid
+          rows={projects}
+          columns={columns}
+          getRowId={(r) => r._id}
+          loading={loading}
+          disableRowSelectionOnClick
+        />
+      </Paper>
+
+      {/* ✅ VIEW FULL DETAILS DIALOG */}
+      <Dialog open={openDetailsDialog} onClose={() => setOpenDetailsDialog(false)} fullWidth maxWidth="md">
+        <DialogTitle>Project Details</DialogTitle>
+        <DialogContent sx={{ mt: 1 }}>
+          {selectedProject && (
+            <>
+              <Typography variant="h6">{selectedProject.projectName}</Typography>
+              <Typography>Status: {selectedProject.status}</Typography>
+              <Typography>
+                Start: {selectedProject.startDate ? dayjs(selectedProject.startDate).format("DD MMM YYYY") : "-"}
+              </Typography>
+              <Typography>
+                End: {selectedProject.endDate ? dayjs(selectedProject.endDate).format("DD MMM YYYY") : "-"}
+              </Typography>
+
+              <Divider sx={{ my: 2 }} />
+              <Typography fontWeight={600}>Members</Typography>
+              <Stack direction="row" spacing={1} mt={1}>
+                {selectedProject.users?.map((u) => (
+                  <Chip key={u._id} label={u.name} />
+                ))}
+              </Stack>
+
+              <Divider sx={{ my: 2 }} />
+              <Typography fontWeight={600}>Tasks</Typography>
+              <Table size="small" sx={{ mt: 1 }}>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Title</TableCell>
+                    <TableCell>Assigned To</TableCell>
+                    <TableCell>Priority</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Due</TableCell>
+                    <TableCell>Remarks</TableCell>
+                    <TableCell>PDF</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {selectedProject.tasks?.map((t) => (
+                    <TableRow key={t._id}>
+                      <TableCell>{t.title}</TableCell>
+                      <TableCell>{t.assignedTo?.name || "-"}</TableCell>
+                      <TableCell>{t.priority}</TableCell>
+                      <TableCell>{t.status}</TableCell>
+                      <TableCell>
+                        {t.dueDate ? dayjs(t.dueDate).format("DD MMM YYYY") : "-"}
+                      </TableCell>
+                      <TableCell>{t.remarks || "-"}</TableCell>
+                      <TableCell>
+                        {t.pdfFile?.path && (
+                          <Tooltip title="View PDF">
+                            <IconButton onClick={() => openPDF(t.pdfFile.path)}>
+                              <PictureAsPdfIcon color="error" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDetailsDialog(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ✅ TASK DRAWER */}
+     <Drawer
+  anchor="right"
+  open={drawerOpen}
+  onClose={() => setDrawerOpen(false)}
+  PaperProps={{ sx: { width: 560, p: 3 } }}
+>
+  <Typography variant="h6" fontWeight={700}>
+    {selectedProject?.projectName}
+  </Typography>
+  <Divider sx={{ my: 2 }} />
+  <Button
+    variant="contained"
+    startIcon={<AddIcon />}
+    sx={{ mb: 2 }}
+    onClick={handleOpenAddTask}
+  >
+    Add Task
+  </Button>
+
+  <Table size="small">
+    <TableHead>
+      <TableRow>
+        <TableCell>Title</TableCell>
+        <TableCell>Assigned</TableCell>
+        <TableCell>Status</TableCell>
+        <TableCell>Remarks</TableCell>
+        <TableCell width={120}>Actions</TableCell>
+      </TableRow>
+    </TableHead>
+    <TableBody>
+      {selectedProject?.tasks?.map((t) => (
+        <TableRow key={t._id} hover>
+          <TableCell>{t.title}</TableCell>
+          <TableCell>{t.assignedTo?.name || "-"}</TableCell>
+          <TableCell>
+            <Chip label={t.status} size="small" />
+          </TableCell>
+
+          {/* 📝 Editable Remarks Field */}
+          <TableCell sx={{ minWidth: 160 }}>
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <TextField
+                size="small"
+                value={t.remarks || ""}
+                onChange={(e) => {
+                  const updatedTasks = selectedProject.tasks.map((task) =>
+                    task._id === t._id
+                      ? { ...task, remarks: e.target.value }
+                      : task
+                  );
+                  setSelectedProject({
+                    ...selectedProject,
+                    tasks: updatedTasks,
+                  });
+                }}
+                placeholder="Add remark..."
+              />
+              <Tooltip title="Save Remark">
+                <IconButton
+                  color="primary"
+                  onClick={async () => {
+                    try {
+                      await axiosInstance.patch(
+                        `/projects/${selectedProject._id}/tasks/${t._id}`,
+                        { remarks: t.remarks },
+                        { headers: { "Content-Type": "application/json" } }
+                      );
+                      toast.success("Remark updated!");
+                      fetchProjects();
+                    } catch (err) {
+                      toast.error("Failed to save remark");
+                      console.error(err);
+                    }
+                  }}
+                >
+                  <EditIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </Stack>
+          </TableCell>
+
+          {/* 🧩 Actions */}
+          <TableCell>
+            <Tooltip title="Edit Task">
+              <IconButton onClick={() => handleOpenEditTask(t)}>
+                <EditIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Delete Task">
+              <IconButton
+                color="error"
+                onClick={() => handleDeleteTask(t._id)}
+              >
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </TableCell>
+        </TableRow>
+      ))}
+    </TableBody>
+  </Table>
+</Drawer>
+
+
+      {/* ✅ TASK DIALOG */}
+      <Dialog open={openTaskDialog} onClose={() => setOpenTaskDialog(false)} fullWidth>
+        <DialogTitle>{editingTask ? "Edit Task" : "Add Task"}</DialogTitle>
+        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
+          <TextField
+            label="Task Title"
+            value={taskForm.title}
+            onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })}
+          />
+          <TextField
+            label="Description"
+            multiline
+            rows={3}
+            value={taskForm.description}
+            onChange={(e) => setTaskForm({ ...taskForm, description: e.target.value })}
+          />
+          <FormControl fullWidth>
+            <InputLabel>Assign To</InputLabel>
+            <Select
+              value={taskForm.assignedTo}
+              onChange={(e) => setTaskForm({ ...taskForm, assignedTo: e.target.value })}
+            >
+              {selectedProject?.users?.map((u) => (
+                <MenuItem key={u._id} value={u._id}>
+                  {u.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <TextField
+            type="datetime-local"
+            label="Due Date"
+            InputLabelProps={{ shrink: true }}
+            value={taskForm.dueDate}
+            onChange={(e) => setTaskForm({ ...taskForm, dueDate: e.target.value })}
+          />
+          <FormControl fullWidth>
+            <InputLabel>Priority</InputLabel>
+            <Select
+              value={taskForm.priority}
+              onChange={(e) => setTaskForm({ ...taskForm, priority: e.target.value })}
+            >
+              <MenuItem value="Low">Low</MenuItem>
+              <MenuItem value="Medium">Medium</MenuItem>
+              <MenuItem value="High">High</MenuItem>
+            </Select>
+          </FormControl>
+          <TextField
+            label="Remarks"
+            multiline
+            rows={2}
+            value={taskForm.remarks}
+            onChange={(e) => setTaskForm({ ...taskForm, remarks: e.target.value })}
+          />
+          <Button variant="outlined" component="label" startIcon={<UploadFileIcon />}>
+            Upload PDF
+            <input
+              type="file"
+              hidden
+              accept="application/pdf"
+              onChange={(e) => setTaskForm({ ...taskForm, pdfFile: e.target.files[0] })}
+            />
+          </Button>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenTaskDialog(false)}>Cancel</Button>
+          <Button variant="contained" onClick={handleSaveTask}>
+            Save Task
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
+  );
+};
+
+export default AdminProjects;

@@ -112,6 +112,8 @@ const Sidebar = ({ isOpen = true, closeSidebar }) => {
     // { icon: <FaTasks />, name: 'My Task Management', path: '/cds/my-task-management' },
     { icon: <FaGraduationCap />, name: 'Create task', path: '/cds/task-management' },
     { icon: <FaBell />, name: 'Alerts', path: '/cds/alert' },
+      { icon: <FaTasks />, name: 'Employee Meeting', path: '/cds/employee-meeting' },
+       { icon: <FaTasks />, name: 'Employee project', path: '/cds/emp' },
   ];
 
   const hrMenu = [
@@ -123,8 +125,9 @@ const Sidebar = ({ isOpen = true, closeSidebar }) => {
        { icon: <FaTasks />, name: 'Employees Task Create', path: '/cds/admin-task-create' },
     { icon: <FaTasks />, name: 'Employees Task Management', path: '/cds/emp-task-management' },
     { icon: <FaGraduationCap />, name: 'Employees Task Details', path: '/cds/emp-task-details' },
- 
+   { icon: <FaTasks />, name: 'Admin Meeting', path: '/cds/admin-meeting' },
     { icon: <FaUser />, name: 'Create User', path: '/admin/create-user' },
+      { icon: <FaUser />, name: 'AdminProjects', path: '/cds/adminp' },
   ];
 
   // Combine menus based on user role

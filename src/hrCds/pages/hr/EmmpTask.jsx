@@ -11,12 +11,33 @@ import {
   InputAdornment, Modal
 } from '@mui/material';
 import {
-  FiCheckCircle, FiClock, FiAlertCircle, FiXCircle,
-  FiUsers, FiTrendingUp, FiCalendar, FiFilter,
-  FiRefreshCw, FiArrowRight, FiUser, FiList,
-  FiPlus, FiEdit2, FiTrash2, FiMessageCircle,
-  FiFileText, FiMic, FiDownload, FiFlag, FiBell
+  FiCheckCircle,
+  FiClock,
+  FiAlertCircle,
+  FiXCircle,
+  FiUsers,
+  FiTrendingUp,
+  FiCalendar,
+  FiFilter,
+  FiRefreshCw,
+  FiArrowRight,
+  FiUser,
+  FiList,
+  FiPlus,
+  FiEdit2,
+  FiTrash2,
+  FiMessageCircle,
+  FiFileText,
+  FiMic,
+  FiDownload,
+  FiFlag,
+  FiBell,
+  FiThumbsUp,      // ✅ For Approved
+  FiPauseCircle,   // ✅ For On-Hold
+  FiRotateCw,      // ✅ For Reopen
+  FiSlash          // ✅ For Cancelled
 } from 'react-icons/fi';
+
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -57,25 +78,58 @@ const StatCard = styled(Card)(({ theme, color = 'primary' }) => ({
 
 const StatusChip = styled(Chip)(({ theme, status }) => ({
   fontWeight: 600,
+  fontSize: '0.75rem',
+  minWidth: 80,
+  textTransform: 'uppercase',
+  borderRadius: theme.shape.borderRadius * 2,
+  letterSpacing: 0.3,
+
   ...(status === 'completed' && {
     background: `${theme.palette.success.main}20`,
     color: theme.palette.success.dark,
     border: `1px solid ${theme.palette.success.main}40`,
   }),
+
+  ...(status === 'approved' && {
+    background: `${theme.palette.success.light}25`,
+    color: theme.palette.success.dark,
+    border: `1px solid ${theme.palette.success.main}40`,
+  }),
+
   ...(status === 'rejected' && {
     background: `${theme.palette.error.main}20`,
     color: theme.palette.error.dark,
     border: `1px solid ${theme.palette.error.main}40`,
   }),
+
   ...(status === 'pending' && {
     background: `${theme.palette.warning.main}20`,
     color: theme.palette.warning.dark,
     border: `1px solid ${theme.palette.warning.main}40`,
   }),
+
   ...(status === 'in-progress' && {
     background: `${theme.palette.info.main}20`,
     color: theme.palette.info.dark,
     border: `1px solid ${theme.palette.info.main}40`,
+  }),
+
+  ...(status === 'on-hold' && {
+    background: `${theme.palette.warning.light}25`,
+    color: theme.palette.warning.dark,
+    border: `1px solid ${theme.palette.warning.main}40`,
+  }),
+
+  ...(status === 'reopen' && {
+    background: `${theme.palette.secondary.main}15`,
+    color: theme.palette.secondary.dark,
+    border: `1px solid ${theme.palette.secondary.main}40`,
+  }),
+
+  ...(status === 'cancelled' && {
+    background: `${theme.palette.grey[500]}20`,
+    color: theme.palette.grey[700],
+    border: `1px solid ${theme.palette.grey[400]}40`,
   }),
 }));
 
@@ -126,18 +180,28 @@ const ActionButton = styled(IconButton)(({ theme }) => ({
   },
 }));
 
+// 🟩 Color mappings (match your StatusChip)
 const statusColors = {
   pending: 'warning',
   'in-progress': 'info',
   completed: 'success',
-  rejected: 'error'
+  approved: 'success',
+  rejected: 'error',
+  'on-hold': 'warning',
+  reopen: 'secondary',
+  cancelled: 'default',
 };
 
+// 🧩 Icon mappings (using Feather icons)
 const statusIcons = {
-  pending: FiClock,
-  'in-progress': FiAlertCircle,
-  completed: FiCheckCircle,
-  rejected: FiXCircle
+  pending: FiClock,                // 🕒 Waiting
+  'in-progress': FiAlertCircle,    // ⚙️ Working
+  completed: FiCheckCircle,        // ✅ Done
+  approved: FiThumbsUp,            // 👍 Verified
+  rejected: FiXCircle,             // ❌ Declined
+  'on-hold': FiPauseCircle,        // ⏸️ Paused
+  reopen: FiRotateCw,              // 🔁 Reopened
+  cancelled: FiSlash,              // 🚫 Cancelled
 };
 
 const EmmpTask = () => {
@@ -526,58 +590,98 @@ const EmmpTask = () => {
     navigate('/login');
   };
 
-  const calculateStats = (tasksData) => {
-    let total = 0;
-    let pending = 0;
-    let inProgress = 0;
-    let completed = 0;
-    let rejected = 0;
+const calculateStats = (tasksData) => {
+  let total = 0;
+  let pending = 0;
+  let inProgress = 0;
+  let completed = 0;
+  let approved = 0;
+  let rejected = 0;
+  let onHold = 0;
+  let reopen = 0;
+  let cancelled = 0;
 
-    tasksData.forEach(task => {
-      task.statusInfo?.forEach(status => {
-        total++;
-        const statusLower = status.status?.toLowerCase();
-        switch (statusLower) {
-          case 'pending':
-            pending++;
-            break;
-          case 'in-progress':
-            inProgress++;
-            break;
-          case 'completed':
-            completed++;
-            break;
-          case 'rejected':
-            rejected++;
-            break;
-        }
-      });
+  tasksData.forEach(task => {
+    task.statusInfo?.forEach(status => {
+      total++;
+      const statusLower = status.status?.toLowerCase();
+
+      switch (statusLower) {
+        case 'pending':
+          pending++;
+          break;
+        case 'in-progress':
+          inProgress++;
+          break;
+        case 'completed':
+          completed++;
+          break;
+        case 'approved':
+          approved++;
+          break;
+        case 'rejected':
+          rejected++;
+          break;
+        case 'on-hold':
+          onHold++;
+          break;
+        case 'reopen':
+          reopen++;
+          break;
+        case 'cancelled':
+          cancelled++;
+          break;
+        default:
+          break;
+      }
     });
+  });
 
-    setStats({
-      total,
-      pending,
-      inProgress,
-      completed,
-      rejected
-    });
-  };
+  setStats({
+    total,
+    pending,
+    inProgress,
+    completed,
+    approved,
+    rejected,
+    onHold,
+    reopen,
+    cancelled
+  });
+};
 
-  const getStatusIcon = (status) => {
-    const statusLower = status?.toLowerCase();
-    switch (statusLower) {
-      case 'completed':
-        return <FiCheckCircle color={theme.palette.success.main} />;
-      case 'rejected':
-        return <FiXCircle color={theme.palette.error.main} />;
-      case 'pending':
-        return <FiClock color={theme.palette.warning.main} />;
-      case 'in-progress':
-        return <FiAlertCircle color={theme.palette.info.main} />;
-      default:
-        return <FiClock color={theme.palette.text.secondary} />;
-    }
-  };
+const getStatusIcon = (status) => {
+  const statusLower = status?.toLowerCase();
+
+  switch (statusLower) {
+    case 'completed':
+      return <FiCheckCircle color={theme.palette.success.main} />;
+
+    case 'approved':
+      return <FiThumbsUp color={theme.palette.success.main} />;
+
+    case 'rejected':
+      return <FiXCircle color={theme.palette.error.main} />;
+
+    case 'pending':
+      return <FiClock color={theme.palette.warning.main} />;
+
+    case 'in-progress':
+      return <FiAlertCircle color={theme.palette.info.main} />;
+
+    case 'on-hold':
+      return <FiPauseCircle color={theme.palette.warning.dark} />;
+
+    case 'reopen':
+      return <FiRotateCw color={theme.palette.secondary.main} />;
+
+    case 'cancelled':
+      return <FiSlash color={theme.palette.grey[600]} />;
+
+    default:
+      return <FiClock color={theme.palette.text.secondary} />;
+  }
+};
 
   const getInitials = (name) => {
     if (!name) return 'U';
@@ -730,122 +834,197 @@ const EmmpTask = () => {
           </Paper>
 
           {/* Statistics Cards */}
-          <Grid container spacing={3} sx={{ mb: 4 }}>
-            <Grid item xs={6} md={2}>
-              <StatCard color="primary">
-                <CardContent>
-                  <Stack direction="row" alignItems="center" spacing={2}>
-                    <Avatar sx={{ 
-                      bgcolor: `${theme.palette.primary.main}20`, 
-                      color: theme.palette.primary.main 
-                    }}>
-                      <FiList />
-                    </Avatar>
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        Total Tasks
-                      </Typography>
-                      <Typography variant="h4" fontWeight={700}>
-                        {tasks.length}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                </CardContent>
-              </StatCard>
-            </Grid>
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+  {/* Total Tasks */}
+  <Grid item xs={6} md={2}>
+    <StatCard>
+      <CardContent>
+        <Stack direction="row" alignItems="center" spacing={2}>
+          <Avatar sx={{ bgcolor: "#1976d220", color: "#1976d2" }}>
+            <FiList />
+          </Avatar>
+          <Box>
+            <Typography variant="body2" color="text.secondary">
+              Total Tasks
+            </Typography>
+            <Typography variant="h4" fontWeight={700}>
+              {tasks.length}
+            </Typography>
+          </Box>
+        </Stack>
+      </CardContent>
+    </StatCard>
+  </Grid>
 
-            <Grid item xs={6} md={2}>
-              <StatCard color="warning">
-                <CardContent>
-                  <Stack direction="row" alignItems="center" spacing={2}>
-                    <Avatar sx={{ 
-                      bgcolor: `${theme.palette.warning.main}20`, 
-                      color: theme.palette.warning.main 
-                    }}>
-                      <FiClock />
-                    </Avatar>
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        Pending
-                      </Typography>
-                      <Typography variant="h4" fontWeight={700}>
-                        {stats.pending}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                </CardContent>
-              </StatCard>
-            </Grid>
+  {/* Pending */}
+  <Grid item xs={6} md={2}>
+    <StatCard>
+      <CardContent>
+        <Stack direction="row" alignItems="center" spacing={2}>
+          <Avatar sx={{ bgcolor: "#ffb74d40", color: "#f57c00" }}>
+            <FiClock />
+          </Avatar>
+          <Box>
+            <Typography variant="body2" color="text.secondary">
+              Pending
+            </Typography>
+            <Typography variant="h4" fontWeight={700}>
+              {stats.pending}
+            </Typography>
+          </Box>
+        </Stack>
+      </CardContent>
+    </StatCard>
+  </Grid>
 
-            <Grid item xs={6} md={2}>
-              <StatCard color="info">
-                <CardContent>
-                  <Stack direction="row" alignItems="center" spacing={2}>
-                    <Avatar sx={{ 
-                      bgcolor: `${theme.palette.info.main}20`, 
-                      color: theme.palette.info.main 
-                    }}>
-                      <FiAlertCircle />
-                    </Avatar>
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        In Progress
-                      </Typography>
-                      <Typography variant="h4" fontWeight={700}>
-                        {stats.inProgress}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                </CardContent>
-              </StatCard>
-            </Grid>
+  {/* In Progress */}
+  <Grid item xs={6} md={2}>
+    <StatCard>
+      <CardContent>
+        <Stack direction="row" alignItems="center" spacing={2}>
+          <Avatar sx={{ bgcolor: "#64b5f640", color: "#0288d1" }}>
+            <FiAlertCircle />
+          </Avatar>
+          <Box>
+            <Typography variant="body2" color="text.secondary">
+              In Progress
+            </Typography>
+            <Typography variant="h4" fontWeight={700}>
+              {stats.inProgress}
+            </Typography>
+          </Box>
+        </Stack>
+      </CardContent>
+    </StatCard>
+  </Grid>
 
-            <Grid item xs={6} md={2}>
-              <StatCard color="success">
-                <CardContent>
-                  <Stack direction="row" alignItems="center" spacing={2}>
-                    <Avatar sx={{ 
-                      bgcolor: `${theme.palette.success.main}20`, 
-                      color: theme.palette.success.main 
-                    }}>
-                      <FiCheckCircle />
-                    </Avatar>
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        Completed
-                      </Typography>
-                      <Typography variant="h4" fontWeight={700}>
-                        {stats.completed}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                </CardContent>
-              </StatCard>
-            </Grid>
+  {/* Completed */}
+  <Grid item xs={6} md={2}>
+    <StatCard>
+      <CardContent>
+        <Stack direction="row" alignItems="center" spacing={2}>
+          <Avatar sx={{ bgcolor: "#81c78440", color: "#2e7d32" }}>
+            <FiCheckCircle />
+          </Avatar>
+          <Box>
+            <Typography variant="body2" color="text.secondary">
+              Completed
+            </Typography>
+            <Typography variant="h4" fontWeight={700}>
+              {stats.completed}
+            </Typography>
+          </Box>
+        </Stack>
+      </CardContent>
+    </StatCard>
+  </Grid>
 
-            <Grid item xs={6} md={2}>
-              <StatCard color="error">
-                <CardContent>
-                  <Stack direction="row" alignItems="center" spacing={2}>
-                    <Avatar sx={{ 
-                      bgcolor: `${theme.palette.error.main}20`, 
-                      color: theme.palette.error.main 
-                    }}>
-                      <FiXCircle />
-                    </Avatar>
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        Rejected
-                      </Typography>
-                      <Typography variant="h4" fontWeight={700}>
-                        {stats.rejected}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                </CardContent>
-              </StatCard>
-            </Grid>
-          </Grid>
+  {/* Approved */}
+  <Grid item xs={6} md={2}>
+    <StatCard>
+      <CardContent>
+        <Stack direction="row" alignItems="center" spacing={2}>
+          <Avatar sx={{ bgcolor: "#4caf5040", color: "#388e3c" }}>
+            <FiThumbsUp />
+          </Avatar>
+          <Box>
+            <Typography variant="body2" color="text.secondary">
+              Approved
+            </Typography>
+            <Typography variant="h4" fontWeight={700}>
+              {stats.approved}
+            </Typography>
+          </Box>
+        </Stack>
+      </CardContent>
+    </StatCard>
+  </Grid>
+
+  {/* Rejected */}
+  <Grid item xs={6} md={2}>
+    <StatCard>
+      <CardContent>
+        <Stack direction="row" alignItems="center" spacing={2}>
+          <Avatar sx={{ bgcolor: "#ef535040", color: "#c62828" }}>
+            <FiXCircle />
+          </Avatar>
+          <Box>
+            <Typography variant="body2" color="text.secondary">
+              Rejected
+            </Typography>
+            <Typography variant="h4" fontWeight={700}>
+              {stats.rejected}
+            </Typography>
+          </Box>
+        </Stack>
+      </CardContent>
+    </StatCard>
+  </Grid>
+
+  {/* On-Hold */}
+  <Grid item xs={6} md={2}>
+    <StatCard>
+      <CardContent>
+        <Stack direction="row" alignItems="center" spacing={2}>
+          <Avatar sx={{ bgcolor: "#ff980040", color: "#e65100" }}>
+            <FiPauseCircle />
+          </Avatar>
+          <Box>
+            <Typography variant="body2" color="text.secondary">
+              On Hold
+            </Typography>
+            <Typography variant="h4" fontWeight={700}>
+              {stats.onHold}
+            </Typography>
+          </Box>
+        </Stack>
+      </CardContent>
+    </StatCard>
+  </Grid>
+
+  {/* Reopen */}
+  <Grid item xs={6} md={2}>
+    <StatCard>
+      <CardContent>
+        <Stack direction="row" alignItems="center" spacing={2}>
+          <Avatar sx={{ bgcolor: "#9575cd40", color: "#5e35b1" }}>
+            <FiRotateCw />
+          </Avatar>
+          <Box>
+            <Typography variant="body2" color="text.secondary">
+              Reopen
+            </Typography>
+            <Typography variant="h4" fontWeight={700}>
+              {stats.reopen}
+            </Typography>
+          </Box>
+        </Stack>
+      </CardContent>
+    </StatCard>
+  </Grid>
+
+  {/* Cancelled */}
+  <Grid item xs={6} md={2}>
+    <StatCard>
+      <CardContent>
+        <Stack direction="row" alignItems="center" spacing={2}>
+          <Avatar sx={{ bgcolor: "#bdbdbd40", color: "#616161" }}>
+            <FiSlash />
+          </Avatar>
+          <Box>
+            <Typography variant="body2" color="text.secondary">
+              Cancelled
+            </Typography>
+            <Typography variant="h4" fontWeight={700}>
+              {stats.cancelled}
+            </Typography>
+          </Box>
+        </Stack>
+      </CardContent>
+    </StatCard>
+  </Grid>
+</Grid>
+
 
           {/* Tasks List */}
           <Stack spacing={3}>
@@ -1013,26 +1192,31 @@ const EmmpTask = () => {
                                         icon={getStatusIcon(status.status)}
                                       />
                                     </TableCell>
-                                    <TableCell>
-                                      {canChangeStatus ? (
-                                        <FormControl size="small">
-                                          <Select
-                                            value={status.status || 'pending'}
-                                            onChange={(e) => handleStatusChange(task._id, e.target.value)}
-                                            sx={{ minWidth: 120 }}
-                                          >
-                                            <MenuItem value="pending">Pending</MenuItem>
-                                            <MenuItem value="in-progress">In Progress</MenuItem>
-                                            <MenuItem value="completed">Completed</MenuItem>
-                                            <MenuItem value="rejected">Rejected</MenuItem>
-                                          </Select>
-                                        </FormControl>
-                                      ) : (
-                                        <Typography variant="body2" color="text.secondary">
-                                          Read only
-                                        </Typography>
-                                      )}
-                                    </TableCell>
+                                   <TableCell>
+  {canChangeStatus ? (
+    <FormControl size="small">
+      <Select
+        value={status.status || 'pending'}
+        onChange={(e) => handleStatusChange(task._id, e.target.value)}
+        sx={{ minWidth: 130, borderRadius: 1 }}
+      >
+        <MenuItem value="pending">Pending</MenuItem>
+        <MenuItem value="in-progress">In Progress</MenuItem>
+        <MenuItem value="completed">Completed</MenuItem>
+        <MenuItem value="approved">Approved</MenuItem>
+        <MenuItem value="rejected">Rejected</MenuItem>
+        <MenuItem value="on-hold">On Hold</MenuItem>
+        <MenuItem value="reopen">Reopen</MenuItem>
+        <MenuItem value="cancelled">Cancelled</MenuItem>
+      </Select>
+    </FormControl>
+  ) : (
+    <Typography variant="body2" color="text.secondary">
+      Read only
+    </Typography>
+  )}
+</TableCell>
+
                                   </StyledTableRow>
                                 );
                               })}

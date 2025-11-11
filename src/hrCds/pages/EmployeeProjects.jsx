@@ -1,11 +1,11 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   Box,
   Typography,
-  Drawer,
   Chip,
   Stack,
   Divider,
+  Drawer,
   Table,
   TableHead,
   TableRow,
@@ -20,31 +20,59 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  TextField,
   Tooltip,
+  IconButton,
+  CircularProgress,
+  Paper,
 } from "@mui/material";
+import {
+  Edit as EditIcon,
+  Chat as ChatIcon,
+  PictureAsPdf as PictureAsPdfIcon,
+  Assignment as AssignmentIcon,
+} from "@mui/icons-material";
 import { DataGrid } from "@mui/x-data-grid";
 import dayjs from "dayjs";
-import axiosInstance from "../../utils/axiosConfig"; // ✅ auto-adds token
+import { toast } from "react-toastify";
+import axiosInstance from "../../utils/axiosConfig";
 
-// --- constants ---
-const STATUS_OPTIONS = ["Pending", "Active", "Done"];
-const statusColor = (s) =>
-  s === "Pending" ? "warning" : s === "Active" ? "primary" : "success";
+const STATUS_OPTIONS = ["Pending", "In Progress", "Completed", "Rejected"];
+
+const statusColor = (status) => {
+  switch (status) {
+    case "Pending":
+      return "warning";
+    case "In Progress":
+      return "primary";
+    case "Completed":
+      return "success";
+    case "Rejected":
+      return "error";
+    default:
+      return "default";
+  }
+};
 
 const EmployeeProjects = () => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(false);
-
-  // Drawer
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
 
-  // Status dialog
-  const [statusOpen, setStatusOpen] = useState(false);
-  const [selectedTask, setSelectedTask] = useState(null);
-  const [newStatus, setNewStatus] = useState("Pending");
+  // Dialogs
+  const [statusDialog, setStatusDialog] = useState(false);
+  const [remarkDialog, setRemarkDialog] = useState(false);
+  const [reassignDialog, setReassignDialog] = useState(false);
 
-  // Logged-in user (used to allow status change only for own tasks)
+  // Inputs
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [newStatus, setNewStatus] = useState("");
+  const [newRemark, setNewRemark] = useState("");
+  const [reassignUser, setReassignUser] = useState("");
+  const [updating, setUpdating] = useState(false);
+
+  // 🟢 Get logged in user
   const me = useMemo(() => {
     try {
       const raw = localStorage.getItem("user");
@@ -54,257 +82,275 @@ const EmployeeProjects = () => {
     }
   }, []);
 
-  // ------------------------ FETCH PROJECTS ------------------------
+  // 🟢 Fetch all projects (employee view)
   const fetchProjects = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const { data } = await axiosInstance.get("/projects?page=1&limit=100");
-      const items = Array.isArray(data?.items) ? data.items : [];
-
-      // Normalize rows so columns never read undefined
-      const normalized = items.map((p, i) => ({
-        sno: i + 1,
-        _id: p?._id,
-        projectName: p?.projectName ?? "",
-        status: p?.status ?? "Active",
-        startDate: p?.startDate ?? null,
-        endDate: p?.endDate ?? null,
-        users: Array.isArray(p?.users) ? p.users : [],
-        tasks: Array.isArray(p?.tasks) ? p.tasks : [],
-      }));
-
-      setProjects(normalized);
+      const { data } = await axiosInstance.get("/api/projects?page=1&limit=100");
+      const filtered = data.items?.filter((p) =>
+        p.users?.some((u) => String(u._id) === String(me?._id))
+      );
+      setProjects(filtered || []);
     } catch (err) {
-      console.error("Projects fetch error:", err);
-      setProjects([]);
+      toast.error("Failed to load projects");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchProjects();
-  }, []);
+    if (me?._id) fetchProjects();
+  }, [me]);
 
-  // ------------------------ DRAWER OPEN ------------------------
-  const openTaskDrawer = (project) => {
+  const openDrawer = (project) => {
     setSelectedProject(project);
     setDrawerOpen(true);
   };
 
-  // ------------------------ STATUS DIALOG ------------------------
-  const openStatusDialog = (task) => {
+  const openPDF = (path) => {
+    if (!path) return toast.error("No PDF found");
+    window.open(
+      path.startsWith("http") ? path : `/${path}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
+  };
+
+  const isMyTask = (task) =>
+    String(task.assignedTo?._id || task.assignedTo) === String(me?._id);
+
+  // 🟢 Open dialogs
+  const handleOpenStatusDialog = (task) => {
     setSelectedTask(task);
-    setNewStatus(task?.status || "Pending");
-    setStatusOpen(true);
+    setNewStatus(task.status);
+    setStatusDialog(true);
   };
 
-  const closeStatusDialog = () => {
-    setStatusOpen(false);
-    setSelectedTask(null);
+  const handleOpenRemarkDialog = (task) => {
+    setSelectedTask(task);
+    setNewRemark(task.remarks || "");
+    setRemarkDialog(true);
   };
 
-  // ------------------------ PATCH STATUS ------------------------
+  const handleOpenReassignDialog = (task) => {
+    setSelectedTask(task);
+    setReassignUser("");
+    setReassignDialog(true);
+  };
+
+  // 🟢 Update status
   const handleUpdateStatus = async () => {
     if (!selectedProject || !selectedTask) return;
+    setUpdating(true);
     try {
       const res = await axiosInstance.patch(
-        `/projects/${selectedProject._id}/tasks/${selectedTask._id}`,
+        `/api/projects/${selectedProject._id}/tasks/${selectedTask._id}`,
         { status: newStatus }
       );
-      const updatedProject = res.data;
-
-      // Update list + drawer without refetch
-      setProjects((prev) => prev.map((p) => (p._id === updatedProject._id ? updatedProject : p)));
-      setSelectedProject(updatedProject);
-
-      closeStatusDialog();
+      setSelectedProject(res.data);
+      toast.success("Task status updated");
+      fetchProjects();
+      setStatusDialog(false);
     } catch (err) {
-      console.error("Status update failed:", err);
+      toast.error("Failed to update status");
+    } finally {
+      setUpdating(false);
     }
   };
 
-  // ------------------------ OWNERSHIP CHECK ------------------------
-  const isMyTask = (task) => {
-    const myId = me?._id;
-    const assignedId = task?.assignedTo?._id || task?.assignedTo;
-    return Boolean(myId && assignedId && String(myId) === String(assignedId));
+  // 🟢 Add remark
+  const handleAddRemark = async () => {
+    if (!newRemark.trim()) return toast.error("Enter a remark");
+    setUpdating(true);
+    try {
+      const res = await axiosInstance.patch(
+        `/api/projects/${selectedProject._id}/tasks/${selectedTask._id}`,
+        { remarks: newRemark }
+      );
+      setSelectedProject(res.data);
+      toast.success("Remark added");
+      fetchProjects();
+      setRemarkDialog(false);
+    } catch (err) {
+      toast.error("Failed to add remark");
+    } finally {
+      setUpdating(false);
+    }
   };
 
-  // ------------------------ DATAGRID COLUMNS (NULL-SAFE) ------------------------
+  // 🟢 Reassign task
+  const handleReassignTask = async () => {
+    if (!reassignUser) return toast.error("Select a user to reassign");
+    setUpdating(true);
+    try {
+      const res = await axiosInstance.patch(
+        `/api/projects/${selectedProject._id}/tasks/${selectedTask._id}`,
+        { assignedTo: reassignUser }
+      );
+      setSelectedProject(res.data);
+      toast.success("Task reassigned successfully");
+      fetchProjects();
+      setReassignDialog(false);
+    } catch (err) {
+      toast.error("Failed to reassign task");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  // 🟢 Table columns
   const columns = [
-    { field: "sno", headerName: "S.No", width: 80 },
-
-    {
-      field: "projectName",
-      headerName: "Project Name",
-      flex: 1.4,
-      valueGetter: (params) => params?.row?.projectName || "Untitled",
-    },
-
+    { field: "projectName", headerName: "Project", flex: 1.5 },
     {
       field: "status",
       headerName: "Status",
-      width: 120,
+      width: 130,
       renderCell: (params) => (
-        <Chip size="small" label={params?.row?.status || "Active"} />
+        <Chip
+          label={params.row.status}
+          color={statusColor(params.row.status)}
+          size="small"
+        />
       ),
     },
-
     {
       field: "tasks",
       headerName: "Tasks",
-      width: 90,
-      valueGetter: (params) =>
-        Array.isArray(params?.row?.tasks) ? params.row.tasks.length : 0,
+      width: 80,
+      valueGetter: (params) => params.row.tasks?.length || 0,
     },
-
-    {
-      field: "startDate",
-      headerName: "Start Date",
-      flex: 1,
-      valueGetter: (params) =>
-        params?.row?.startDate
-          ? dayjs(params.row.startDate).format("DD/MM/YYYY HH:mm")
-          : "-",
-    },
-
     {
       field: "endDate",
-      headerName: "End Date",
-      flex: 1,
+      headerName: "Deadline",
+      width: 150,
       valueGetter: (params) =>
-        params?.row?.endDate
-          ? dayjs(params.row.endDate).format("DD/MM/YYYY HH:mm")
+        params.row.endDate
+          ? dayjs(params.row.endDate).format("DD MMM YYYY")
           : "-",
+    },
+    {
+      field: "actions",
+      headerName: "Actions",
+      width: 120,
+      renderCell: (params) => (
+        <Tooltip title="View Tasks">
+          <IconButton color="primary" onClick={() => openDrawer(params.row)}>
+            <AssignmentIcon />
+          </IconButton>
+        </Tooltip>
+      ),
     },
   ];
 
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h4" fontWeight={600} mb={2}>
-        Employee Projects
+      <Typography variant="h4" fontWeight={700} mb={2}>
+        My Projects
       </Typography>
 
-      {/* PROJECT LIST */}
-      <Box sx={{ height: 480, width: "100%" }}>
+      <Paper sx={{ height: 520 }}>
         <DataGrid
           rows={projects}
           columns={columns}
-          getRowId={(row) => row?._id}
+          getRowId={(r) => r._id}
           loading={loading}
           disableRowSelectionOnClick
-          onRowClick={(params) => openTaskDrawer(params.row)}
-          sx={{
-            "& .MuiDataGrid-cell": { outline: "none !important", cursor: "pointer" },
-            backgroundColor: "background.paper",
-          }}
         />
-      </Box>
+      </Paper>
 
-      {/* TASK DRAWER */}
+      {/* 🟢 Drawer */}
       <Drawer
         anchor="right"
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        PaperProps={{ sx: { width: 420, p: 2 } }}
+        PaperProps={{ sx: { width: 520, p: 3 } }}
       >
-        <Typography variant="h6" fontWeight={600} mb={2}>
-          {selectedProject?.projectName}
-        </Typography>
-
-        {/* Project Meta */}
-        <Stack direction="row" spacing={1} mb={1} alignItems="center">
-          <Chip size="small" label={`Status: ${selectedProject?.status || "Active"}`} />
-        </Stack>
-        <Typography variant="body2" color="text.secondary" mb={1}>
-          Start:{" "}
-          {selectedProject?.startDate
-            ? dayjs(selectedProject.startDate).format("DD/MM/YYYY HH:mm")
-            : "-"}
-        </Typography>
-        <Typography variant="body2" color="text.secondary" mb={2}>
-          End:&nbsp;&nbsp;
-          {selectedProject?.endDate
-            ? dayjs(selectedProject.endDate).format("DD/MM/YYYY HH:mm")
-            : "-"}
-        </Typography>
-
-        <Divider />
-
-        {/* Members */}
-        <Typography variant="subtitle2" mt={2} mb={1}>
-          Assigned Members:
-        </Typography>
-        <Stack direction="row" flexWrap="wrap" gap={1}>
-          {(selectedProject?.users || []).map((u) => (
+        {selectedProject && (
+          <>
+            <Typography variant="h6" fontWeight={700}>
+              {selectedProject.projectName}
+            </Typography>
             <Chip
-              key={u._id}
-              label={`${u.name} (${u.employeeType || "N/A"})`}
-              variant="outlined"
-              size="small"
+              label={selectedProject.status}
+              color={statusColor(selectedProject.status)}
+              sx={{ mt: 1 }}
             />
-          ))}
-        </Stack>
+            <Divider sx={{ my: 2 }} />
+            <Typography variant="subtitle1" fontWeight={600}>
+              Members
+            </Typography>
+            <Stack direction="row" flexWrap="wrap" gap={1} mt={1}>
+              {selectedProject.users.map((u) => (
+                <Chip key={u._id} label={u.name} size="small" />
+              ))}
+            </Stack>
+            <Divider sx={{ my: 2 }} />
+            <Typography variant="subtitle1" fontWeight={600}>
+              Tasks
+            </Typography>
 
-        <Divider sx={{ my: 2 }} />
-
-        {/* Tasks */}
-        <Typography variant="subtitle2" mb={1}>
-          Tasks:
-        </Typography>
-
-        {selectedProject?.tasks?.length > 0 ? (
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>Task</TableCell>
-                <TableCell>Assigned To</TableCell>
-                <TableCell>Status</TableCell>
-              </TableRow>
-            </TableHead>
-
-            <TableBody>
-              {selectedProject.tasks.map((t) => (
-                <TableRow key={t._id} hover>
-                  <TableCell>{t.taskName}</TableCell>
-                  <TableCell>
-                    {t.assignedTo?.name || "N/A"} (
-                    {t.assignedTo?.employeeType || "N/A"})
-                  </TableCell>
-                  <TableCell>
-                    <Tooltip
-                      title={
-                        isMyTask(t)
-                          ? "Click to change status"
-                          : "You can update only your assigned tasks"
-                      }
-                    >
+            <Table size="small" sx={{ mt: 1 }}>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Task</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell align="center">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {selectedProject.tasks.map((t) => (
+                  <TableRow key={t._id} hover>
+                    <TableCell>{t.title}</TableCell>
+                    <TableCell>
                       <Chip
                         label={t.status}
                         color={statusColor(t.status)}
                         size="small"
-                        onClick={() => isMyTask(t) && openStatusDialog(t)}
-                        sx={{ cursor: isMyTask(t) ? "pointer" : "not-allowed" }}
+                        onClick={() => isMyTask(t) && handleOpenStatusDialog(t)}
+                        sx={{
+                          cursor: isMyTask(t) ? "pointer" : "not-allowed",
+                        }}
                       />
-                    </Tooltip>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        ) : (
-          <Typography color="text.secondary" mt={1}>
-            No tasks assigned.
-          </Typography>
+                    </TableCell>
+                    <TableCell align="center">
+                      {t.pdfFile?.path && (
+                        <Tooltip title="View PDF">
+                          <IconButton onClick={() => openPDF(t.pdfFile.path)}>
+                            <PictureAsPdfIcon color="error" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      <Tooltip title="Add Remark">
+                        <IconButton onClick={() => handleOpenRemarkDialog(t)}>
+                          <ChatIcon color="primary" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Reassign Task">
+                        <span>
+                          <IconButton
+                            onClick={() => handleOpenReassignDialog(t)}
+                            disabled={!isMyTask(t)}
+                          >
+                            <EditIcon
+                              color={isMyTask(t) ? "secondary" : "disabled"}
+                            />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </>
         )}
       </Drawer>
 
-      {/* STATUS UPDATE DIALOG */}
-      <Dialog open={statusOpen} onClose={closeStatusDialog}>
+      {/* 🟢 Status Dialog */}
+      <Dialog open={statusDialog} onClose={() => setStatusDialog(false)}>
         <DialogTitle>Update Task Status</DialogTitle>
-        <DialogContent sx={{ minWidth: 300 }}>
-          <FormControl fullWidth sx={{ mt: 1 }}>
+        <DialogContent sx={{ minWidth: 320 }}>
+          <FormControl fullWidth sx={{ mt: 2 }}>
             <InputLabel>Status</InputLabel>
             <Select
               value={newStatus}
@@ -319,11 +365,72 @@ const EmployeeProjects = () => {
             </Select>
           </FormControl>
         </DialogContent>
-
         <DialogActions>
-          <Button onClick={closeStatusDialog}>Cancel</Button>
-          <Button variant="contained" onClick={handleUpdateStatus}>
-            Update
+          <Button onClick={() => setStatusDialog(false)}>Cancel</Button>
+          <Button
+            variant="contained"
+            onClick={handleUpdateStatus}
+            disabled={updating}
+            startIcon={updating && <CircularProgress size={18} />}
+          >
+            {updating ? "Updating..." : "Update"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 🟢 Remark Dialog */}
+      <Dialog open={remarkDialog} onClose={() => setRemarkDialog(false)}>
+        <DialogTitle>Add Remark</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Remark"
+            fullWidth
+            multiline
+            rows={3}
+            value={newRemark}
+            onChange={(e) => setNewRemark(e.target.value)}
+            sx={{ mt: 1 }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRemarkDialog(false)}>Cancel</Button>
+          <Button
+            variant="contained"
+            onClick={handleAddRemark}
+            disabled={updating}
+          >
+            {updating ? "Saving..." : "Save"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 🟢 Reassign Dialog */}
+      <Dialog open={reassignDialog} onClose={() => setReassignDialog(false)}>
+        <DialogTitle>Reassign Task</DialogTitle>
+        <DialogContent sx={{ minWidth: 360 }}>
+          <FormControl fullWidth sx={{ mt: 2 }}>
+            <InputLabel>Select User</InputLabel>
+            <Select
+              value={reassignUser}
+              onChange={(e) => setReassignUser(e.target.value)}
+            >
+              {selectedProject?.users.map((u) => (
+                <MenuItem key={u._id} value={u._id}>
+                  {u.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setReassignDialog(false)}>Cancel</Button>
+          <Button
+            variant="contained"
+            onClick={handleReassignTask}
+            disabled={updating}
+            startIcon={updating && <CircularProgress size={18} />}
+          >
+            {updating ? "Reassigning..." : "Reassign"}
           </Button>
         </DialogActions>
       </Dialog>

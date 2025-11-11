@@ -43,25 +43,64 @@ const StatusChip = styled(Chip)(({ theme, status }) => ({
   fontWeight: 600,
   fontSize: '0.7rem',
   minWidth: 80,
+  borderRadius: theme.shape.borderRadius * 2,
+  textTransform: 'uppercase',
+  letterSpacing: 0.3,
+
+  // 🟡 Pending
   ...(status === 'pending' && {
     background: `${theme.palette.warning.main}15`,
     color: theme.palette.warning.dark,
     border: `1px solid ${theme.palette.warning.main}30`,
   }),
+
+  // 🔵 In Progress
   ...(status === 'in-progress' && {
     background: `${theme.palette.info.main}15`,
     color: theme.palette.info.dark,
     border: `1px solid ${theme.palette.info.main}30`,
   }),
+
+  // 🟢 Completed
   ...(status === 'completed' && {
     background: `${theme.palette.success.main}15`,
     color: theme.palette.success.dark,
     border: `1px solid ${theme.palette.success.main}30`,
   }),
+
+  // 🟣 Approved
+  ...(status === 'approved' && {
+    background: `${theme.palette.success.light}25`,
+    color: theme.palette.success.dark,
+    border: `1px solid ${theme.palette.success.main}30`,
+  }),
+
+  // 🔴 Rejected
   ...(status === 'rejected' && {
     background: `${theme.palette.error.main}15`,
     color: theme.palette.error.dark,
     border: `1px solid ${theme.palette.error.main}30`,
+  }),
+
+  // 🟠 On-Hold
+  ...(status === 'on-hold' && {
+    background: `${theme.palette.warning.light}25`,
+    color: theme.palette.warning.dark,
+    border: `1px solid ${theme.palette.warning.main}30`,
+  }),
+
+  // 🟣 Reopen
+  ...(status === 'reopen' && {
+    background: `${theme.palette.secondary.main}15`,
+    color: theme.palette.secondary.dark,
+    border: `1px solid ${theme.palette.secondary.main}30`,
+  }),
+
+  // ⚫ Cancelled
+  ...(status === 'cancelled' && {
+    background: `${theme.palette.grey[500]}20`,
+    color: theme.palette.grey[700],
+    border: `1px solid ${theme.palette.grey[400]}30`,
   }),
 }));
 
@@ -487,37 +526,66 @@ const UserCreateTask = () => {
     return applyDateFilter(myTasksGrouped);
   }, [myTasksGrouped, applyDateFilter]);
 
-  const calculateStats = (tasks) => {
-    let total = 0;
-    let pending = 0;
-    let inProgress = 0;
-    let completed = 0;
-    let rejected = 0;
+ const calculateStats = (tasks) => {
+  let total = 0;
+  let pending = 0;
+  let inProgress = 0;
+  let completed = 0;
+  let approved = 0;
+  let rejected = 0;
+  let onHold = 0;
+  let reopen = 0;
+  let cancelled = 0;
 
-    Object.values(tasks).forEach(dateTasks => {
-      dateTasks.forEach(task => {
-        total++;
-        const myStatus = getUserStatusForTask(task, userId);
+  Object.values(tasks).forEach(dateTasks => {
+    dateTasks.forEach(task => {
+      total++;
+      const myStatus = getUserStatusForTask(task, userId);
 
-        switch (myStatus) {
-          case 'pending':
-            pending++;
-            break;
-          case 'in-progress':
-            inProgress++;
-            break;
-          case 'completed':
-            completed++;
-            break;
-          case 'rejected':
-            rejected++;
-            break;
-        }
-      });
+      switch (myStatus) {
+        case 'pending':
+          pending++;
+          break;
+        case 'in-progress':
+          inProgress++;
+          break;
+        case 'completed':
+          completed++;
+          break;
+        case 'approved':
+          approved++;
+          break;
+        case 'rejected':
+          rejected++;
+          break;
+        case 'on-hold':
+          onHold++;
+          break;
+        case 'reopen':
+          reopen++;
+          break;
+        case 'cancelled':
+          cancelled++;
+          break;
+        default:
+          break;
+      }
     });
+  });
 
-    setStats({ total, pending, inProgress, completed, rejected });
-  };
+  setStats({ 
+    total, 
+    pending, 
+    inProgress, 
+    completed, 
+    approved, 
+    rejected, 
+    onHold, 
+    reopen, 
+    cancelled 
+  });
+};
+
 
   // Get individual user status for a task
   const getUserStatusForTask = (task, userId) => {
@@ -742,24 +810,29 @@ const UserCreateTask = () => {
     const myStatus = getUserStatusForTask(task, userId);
     
     return (
-      <FormControl size="small" sx={{ minWidth: isSmallMobile ? 100 : 120 }}>
-        <Select
-          value={myStatus}
-          onChange={(e) => handleStatusChange(task._id, e.target.value)}
-          sx={{
-            borderRadius: theme.shape.borderRadius,
-            '& .MuiSelect-select': {
-              py: 1,
-              fontSize: isSmallMobile ? '0.75rem' : '0.875rem'
-            }
-          }}
-        >
-          <MenuItem value="pending">Pending</MenuItem>
-          <MenuItem value="in-progress">In Progress</MenuItem>
-          <MenuItem value="completed">Completed</MenuItem>
-          <MenuItem value="rejected">Rejected</MenuItem>
-        </Select>
-      </FormControl>
+    <FormControl size="small" sx={{ minWidth: isSmallMobile ? 100 : 120 }}>
+  <Select
+    value={myStatus}
+    onChange={(e) => handleStatusChange(task._id, e.target.value)}
+    sx={{
+      borderRadius: theme.shape.borderRadius,
+      '& .MuiSelect-select': {
+        py: 1,
+        fontSize: isSmallMobile ? '0.75rem' : '0.875rem',
+      },
+    }}
+  >
+    <MenuItem value="pending">Pending</MenuItem>
+    <MenuItem value="in-progress">In Progress</MenuItem>
+    <MenuItem value="completed">Completed</MenuItem>
+    <MenuItem value="approved">Approved</MenuItem>
+    <MenuItem value="rejected">Rejected</MenuItem>
+    <MenuItem value="on-hold">On Hold</MenuItem>
+    <MenuItem value="reopen">Reopen</MenuItem>
+    <MenuItem value="cancelled">Cancelled</MenuItem>
+  </Select>
+</FormControl>
+
     );
   };
 
@@ -2004,21 +2077,25 @@ const UserCreateTask = () => {
                   </Tooltip>
 
                   {/* Status Filter */}
-                  <FormControl size="small" sx={{ minWidth: 150 }}>
-                    <InputLabel>Status Filter</InputLabel>
-                    <Select
-                      value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value)}
-                      input={<OutlinedInput label="Status Filter" />}
-                      sx={{ borderRadius: 1 }}
-                    >
-                      <MenuItem value="">All Status</MenuItem>
-                      <MenuItem value="pending">Pending</MenuItem>
-                      <MenuItem value="in-progress">In Progress</MenuItem>
-                      <MenuItem value="completed">Completed</MenuItem>
-                      <MenuItem value="rejected">Rejected</MenuItem>
-                    </Select>
-                  </FormControl>
+                <FormControl size="small" sx={{ minWidth: 150 }}>
+  <InputLabel>Status Filter</InputLabel>
+  <Select
+    value={statusFilter}
+    onChange={(e) => setStatusFilter(e.target.value)}
+    input={<OutlinedInput label="Status Filter" />}
+    sx={{ borderRadius: 1 }}
+  >
+    <MenuItem value="">All Status</MenuItem>
+    <MenuItem value="pending">Pending</MenuItem>
+    <MenuItem value="in-progress">In Progress</MenuItem>
+    <MenuItem value="completed">Completed</MenuItem>
+    <MenuItem value="approved">Approved</MenuItem>
+    <MenuItem value="rejected">Rejected</MenuItem>
+    <MenuItem value="on-hold">On Hold</MenuItem>
+    <MenuItem value="reopen">Reopen</MenuItem>
+    <MenuItem value="cancelled">Cancelled</MenuItem>
+  </Select>
+</FormControl>
 
                   {/* Clear Date Filter Button */}
                   {(selectedDate || dateRange.start || dateRange.end) && (

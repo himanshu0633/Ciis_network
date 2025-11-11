@@ -29,25 +29,64 @@ import { useNavigate } from 'react-router-dom';
 const StatusChip = styled(Chip)(({ theme, status }) => ({
   fontWeight: 600,
   fontSize: '0.7rem',
+  minWidth: 80,
+  textTransform: 'uppercase',
+  borderRadius: theme.shape.borderRadius * 2,
+
+  // 🟡 Pending
   ...(status === 'pending' && {
     background: `${theme.palette.warning.main}15`,
     color: theme.palette.warning.dark,
     border: `1px solid ${theme.palette.warning.main}30`,
   }),
+
+  // 🔵 In Progress
   ...(status === 'in-progress' && {
     background: `${theme.palette.info.main}15`,
     color: theme.palette.info.dark,
     border: `1px solid ${theme.palette.info.main}30`,
   }),
+
+  // 🟢 Completed
   ...(status === 'completed' && {
     background: `${theme.palette.success.main}15`,
     color: theme.palette.success.dark,
     border: `1px solid ${theme.palette.success.main}30`,
   }),
+
+  // 🟣 Approved
+  ...(status === 'approved' && {
+    background: `${theme.palette.success.light}25`,
+    color: theme.palette.success.dark,
+    border: `1px solid ${theme.palette.success.main}30`,
+  }),
+
+  // 🔴 Rejected
   ...(status === 'rejected' && {
     background: `${theme.palette.error.main}15`,
     color: theme.palette.error.dark,
     border: `1px solid ${theme.palette.error.main}30`,
+  }),
+
+  // 🟠 On-Hold
+  ...(status === 'on-hold' && {
+    background: `${theme.palette.warning.light}25`,
+    color: theme.palette.warning.dark,
+    border: `1px solid ${theme.palette.warning.main}30`,
+  }),
+
+  // 🟣 Reopen
+  ...(status === 'reopen' && {
+    background: `${theme.palette.secondary.main}15`,
+    color: theme.palette.secondary.dark,
+    border: `1px solid ${theme.palette.secondary.main}30`,
+  }),
+
+  // ⚫ Cancelled
+  ...(status === 'cancelled' && {
+    background: `${theme.palette.grey[500]}20`,
+    color: theme.palette.grey[700],
+    border: `1px solid ${theme.palette.grey[400]}30`,
   }),
 }));
 
@@ -852,14 +891,20 @@ const AdminTaskManagement = () => {
   };
 
   // Stats Calculation - client side for current page
-  const stats = {
-    total: totalTasks,
-    pending: tasks.filter(t => getTaskStatus(t) === 'pending').length,
-    inProgress: tasks.filter(t => getTaskStatus(t) === 'in-progress').length,
-    completed: tasks.filter(t => getTaskStatus(t) === 'completed').length,
-    rejected: tasks.filter(t => getTaskStatus(t) === 'rejected').length,
-    overdue: tasks.filter(t => isOverdue(t)).length
-  };
+ const stats = {
+  total: totalTasks,
+
+  pending: tasks.filter(t => getTaskStatus(t) === 'pending').length,
+  inProgress: tasks.filter(t => getTaskStatus(t) === 'in-progress').length,
+  completed: tasks.filter(t => getTaskStatus(t) === 'completed').length,
+  approved: tasks.filter(t => getTaskStatus(t) === 'approved').length,
+  rejected: tasks.filter(t => getTaskStatus(t) === 'rejected').length,
+  onHold: tasks.filter(t => getTaskStatus(t) === 'on-hold').length,
+  reopen: tasks.filter(t => getTaskStatus(t) === 'reopen').length,
+  cancelled: tasks.filter(t => getTaskStatus(t) === 'cancelled').length,
+
+  overdue: tasks.filter(t => isOverdue(t)).length
+};
 
   // Enhanced Notifications Panel
   const renderNotificationsPanel = () => (
@@ -1727,20 +1772,32 @@ const AdminTaskManagement = () => {
 
                     <Grid container spacing={2}>
                       <Grid item xs={6} sm={4} md={2}>
-                        <FormControl fullWidth size="small">
-                          <InputLabel>Status</InputLabel>
-                          <Select
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                            label="Status"
-                          >
-                            <MenuItem value="">All Status</MenuItem>
-                            <MenuItem value="pending">Pending</MenuItem>
-                            <MenuItem value="in-progress">In Progress</MenuItem>
-                            <MenuItem value="completed">Completed</MenuItem>
-                            <MenuItem value="rejected">Rejected</MenuItem>
-                          </Select>
-                        </FormControl>
+                       <FormControl fullWidth size="small">
+  <InputLabel>Status</InputLabel>
+  <Select
+    value={statusFilter}
+    onChange={(e) => setStatusFilter(e.target.value)}
+    label="Status"
+    sx={{
+      borderRadius: 1,
+      '& .MuiSelect-select': {
+        py: 1,
+        fontSize: '0.875rem'
+      }
+    }}
+  >
+    <MenuItem value="">All Status</MenuItem>
+    <MenuItem value="pending">Pending</MenuItem>
+    <MenuItem value="in-progress">In Progress</MenuItem>
+    <MenuItem value="completed">Completed</MenuItem>
+    <MenuItem value="approved">Approved</MenuItem>
+    <MenuItem value="rejected">Rejected</MenuItem>
+    <MenuItem value="on-hold">On Hold</MenuItem>
+    <MenuItem value="reopen">Reopen</MenuItem>
+    <MenuItem value="cancelled">Cancelled</MenuItem>
+  </Select>
+</FormControl>
+
                       </Grid>
                       <Grid item xs={6} sm={4} md={2}>
                         <FormControl fullWidth size="small">
@@ -1868,41 +1925,75 @@ const AdminTaskManagement = () => {
                               size="small"
                             />
                           </TableCell>
-                          <TableCell>
-                            <Stack spacing={0.5}>
-                              {/* Show assigned users with their status */}
-                              {getAllAssignedUsersWithStatus(task).slice(0, 3).map((assignedUser, index) => (
-                                <Tooltip 
-                                  key={index} 
-                                  title={`${assignedUser.user.name} - ${assignedUser.status} (${assignedUser.type})`}
-                                >
-                                  <Chip
-                                    label={`${assignedUser.user.name} - ${assignedUser.status}`}
-                                    size="small"
-                                    variant="outlined"
-                                    color={
-                                      assignedUser.status === 'completed' ? 'success' :
-                                      assignedUser.status === 'in-progress' ? 'info' :
-                                      assignedUser.status === 'rejected' ? 'error' : 'default'
-                                    }
-                                  />
-                                </Tooltip>
-                              ))}
-                              {getAllAssignedUsersWithStatus(task).length > 3 && (
-                                <Tooltip title="View all user statuses">
-                                  <Button
-                                    size="small"
-                                    onClick={() => fetchUserStatuses(task)}
-                                    sx={{ p: 0, minWidth: 'auto' }}
-                                  >
-                                    <Typography variant="caption" color="primary">
-                                      +{getAllAssignedUsersWithStatus(task).length - 3} more
-                                    </Typography>
-                                  </Button>
-                                </Tooltip>
-                              )}
-                            </Stack>
-                          </TableCell>
+                       <TableCell>
+  <Stack spacing={0.5}>
+    {/* Show assigned users with their status */}
+    {getAllAssignedUsersWithStatus(task).slice(0, 3).map((assignedUser, index) => (
+      <Tooltip
+        key={index}
+        title={`${assignedUser.user.name} - ${assignedUser.status} (${assignedUser.type})`}
+      >
+        <Chip
+          label={`${assignedUser.user.name} - ${assignedUser.status}`}
+          size="small"
+          variant="outlined"
+          sx={{
+            textTransform: 'capitalize',
+            fontWeight: 600,
+            fontSize: '0.7rem',
+            borderRadius: 2,
+            borderColor:
+              assignedUser.status === 'completed' ? theme.palette.success.main :
+              assignedUser.status === 'approved' ? theme.palette.success.main :
+              assignedUser.status === 'in-progress' ? theme.palette.info.main :
+              assignedUser.status === 'pending' ? theme.palette.warning.main :
+              assignedUser.status === 'rejected' ? theme.palette.error.main :
+              assignedUser.status === 'on-hold' ? theme.palette.warning.main :
+              assignedUser.status === 'reopen' ? theme.palette.secondary.main :
+              assignedUser.status === 'cancelled' ? theme.palette.grey[400] :
+              theme.palette.divider,
+            color:
+              assignedUser.status === 'completed' ? theme.palette.success.dark :
+              assignedUser.status === 'approved' ? theme.palette.success.dark :
+              assignedUser.status === 'in-progress' ? theme.palette.info.dark :
+              assignedUser.status === 'pending' ? theme.palette.warning.dark :
+              assignedUser.status === 'rejected' ? theme.palette.error.dark :
+              assignedUser.status === 'on-hold' ? theme.palette.warning.dark :
+              assignedUser.status === 'reopen' ? theme.palette.secondary.dark :
+              assignedUser.status === 'cancelled' ? theme.palette.grey[700] :
+              theme.palette.text.primary,
+            backgroundColor:
+              assignedUser.status === 'on-hold' ? `${theme.palette.warning.light}25` :
+              assignedUser.status === 'reopen' ? `${theme.palette.secondary.main}15` :
+              assignedUser.status === 'cancelled' ? `${theme.palette.grey[500]}20` :
+              assignedUser.status === 'completed' ? `${theme.palette.success.main}15` :
+              assignedUser.status === 'approved' ? `${theme.palette.success.light}20` :
+              assignedUser.status === 'in-progress' ? `${theme.palette.info.main}15` :
+              assignedUser.status === 'pending' ? `${theme.palette.warning.main}15` :
+              assignedUser.status === 'rejected' ? `${theme.palette.error.main}15` :
+              undefined,
+          }}
+        />
+      </Tooltip>
+    ))}
+
+    {/* Show "+N more" if more than 3 users */}
+    {getAllAssignedUsersWithStatus(task).length > 3 && (
+      <Tooltip title="View all user statuses">
+        <Button
+          size="small"
+          onClick={() => fetchUserStatuses(task)}
+          sx={{ p: 0, minWidth: 'auto' }}
+        >
+          <Typography variant="caption" color="primary">
+            +{getAllAssignedUsersWithStatus(task).length - 3} more
+          </Typography>
+        </Button>
+      </Tooltip>
+    )}
+  </Stack>
+</TableCell>
+
                           <TableCell>
                             <Typography variant="body2">
                               {getUserName(task.createdBy)}

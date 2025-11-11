@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   AppBar,
   Toolbar,
@@ -233,25 +233,25 @@ const Header = ({ toggleSidebar }) => {
           </IconButton>
 
           <Typography
-            variant="h6"
-            noWrap
-            component="img"
-            src={logo}
-            alt="Logo"
-            onClick={() => navigate("/user/dashboard")}
-            sx={{
-              height: isMobile ? 35 : 50,
-              width: "auto",
-              cursor: "pointer",
-              objectFit: "contain",
-              "&:hover": { 
-                opacity: 0.9, 
-                transform: "scale(1.05)", 
-                transition: "0.3s" 
-              },
-            }}
-          />
-        </Box>
+    variant="h6"
+    noWrap
+    component="img"
+    src={logo}
+    alt="Logo"
+    sx={{
+      height: isMobile ? 35 : 50,
+      width: "auto",
+      objectFit: "contain",
+      cursor: "default", // 👈 no pointer effect
+      "&:hover": { 
+        transform: "none", // 👈 no hover zoom
+        opacity: 1,
+        transition: "none"
+      },
+    }}
+  />
+</Box>
+
 
         {/* CENTER */}
         <Box sx={{ flex: 1, textAlign: "center" }}>
@@ -279,138 +279,339 @@ const Header = ({ toggleSidebar }) => {
         </Box>
 
         {/* RIGHT */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: isMobile ? 1 : 2 }}>
-          {/* Notifications */}
-          <Tooltip title="Notifications">
-            <IconButton onClick={handleNotificationClick}>
-              <Badge 
-                badgeContent={unreadCount} 
-                color="error" 
-                overlap="circular"
-              >
-                <NotificationsIcon />
-              </Badge>
-            </IconButton>
-          </Tooltip>
+   <Box sx={{ display: "flex", alignItems: "center", gap: isMobile ? 1 : 2 }}>
+  {/* Notifications */}
+  <Tooltip title="Notifications">
+    <IconButton 
+      onClick={handleNotificationClick}
+      sx={{
+        position: 'relative',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        color: 'white',
+        '&:hover': {
+          background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
+          transform: 'translateY(-1px)',
+          boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+        },
+        transition: 'all 0.3s ease',
+        width: isMobile ? 36 : 44,
+        height: isMobile ? 36 : 44,
+      }}
+    >
+      <Badge 
+        badgeContent={unreadCount} 
+        color="error" 
+        overlap="circular"
+        sx={{
+          '& .MuiBadge-badge': {
+            fontSize: isMobile ? '0.6rem' : '0.7rem',
+            fontWeight: 'bold',
+            minWidth: isMobile ? 18 : 20,
+            height: isMobile ? 18 : 20,
+            borderRadius: '50%',
+            boxShadow: '0 2px 8px rgba(244, 67, 54, 0.4)',
+          }
+        }}
+      >
+        <NotificationsIcon 
+          sx={{ 
+            fontSize: isMobile ? 20 : 24,
+            animation: unreadCount > 0 ? 'pulse 2s infinite' : 'none',
+            '@keyframes pulse': {
+              '0%': { transform: 'scale(1)' },
+              '50%': { transform: 'scale(1.1)' },
+              '100%': { transform: 'scale(1)' },
+            }
+          }} 
+        />
+      </Badge>
+    </IconButton>
+  </Tooltip>
 
-          <Menu
-            anchorEl={anchorEl}
-            open={Boolean(anchorEl)}
-            onClose={handleNotificationClose}
-            PaperProps={{
-              sx: {
-                mt: 1.5,
-                width: 350,
-                maxHeight: 500,
-                overflowY: "auto",
-                borderRadius: 2,
-                boxShadow: 4,
-                "&::-webkit-scrollbar": {
-                  width: "6px",
-                },
-                "&::-webkit-scrollbar-thumb": {
-                  backgroundColor: "#bdbdbd",
-                  borderRadius: "3px",
-                },
+  <Menu
+    anchorEl={anchorEl}
+    open={Boolean(anchorEl)}
+    onClose={handleNotificationClose}
+    PaperProps={{
+      sx: {
+        mt: 1.5,
+        width: 380,
+        maxHeight: 500,
+        overflow: 'hidden',
+        borderRadius: 3,
+        boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
+        border: '1px solid rgba(0,0,0,0.05)',
+        background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%)',
+        "&::-webkit-scrollbar": {
+          width: "8px",
+        },
+        "&::-webkit-scrollbar-thumb": {
+          backgroundColor: "#c1c1c1",
+          borderRadius: "4px",
+          '&:hover': {
+            backgroundColor: "#a8a8a8",
+          }
+        },
+      },
+    }}
+    transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+    anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+  >
+    {/* Header with Gradient Background */}
+    <Box sx={{ 
+      p: 2, 
+      borderBottom: 1, 
+      borderColor: 'divider',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      color: 'white',
+      display: 'flex', 
+      justifyContent: 'space-between', 
+      alignItems: 'center' 
+    }}>
+      <Box>
+        <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.1rem' }}>
+          Notifications
+        </Typography>
+        <Typography variant="caption" sx={{ opacity: 0.9, fontSize: '0.75rem' }}>
+          {unreadCount > 0 ? `${unreadCount} unread` : 'All caught up!'}
+        </Typography>
+      </Box>
+      <Tooltip title="Refresh notifications">
+        <IconButton 
+          size="small" 
+          onClick={handleRefreshNotifications}
+          disabled={loading}
+          sx={{
+            color: 'white',
+            background: 'rgba(255,255,255,0.2)',
+            '&:hover': {
+              background: 'rgba(255,255,255,0.3)',
+              transform: 'rotate(45deg)',
+            },
+            transition: 'all 0.3s ease',
+            width: 32,
+            height: 32,
+          }}
+        >
+          {loading ? (
+            <CircularProgress size={16} sx={{ color: 'white' }} />
+          ) : (
+            <Box
+              component="span"
+              sx={{
+                fontSize: '1rem',
+                transition: 'transform 0.3s ease',
+                '&:hover': {
+                  transform: 'rotate(180deg)',
+                }
+              }}
+            >
+              🔄
+            </Box>
+          )}
+        </IconButton>
+      </Tooltip>
+    </Box>
+
+    {/* Notifications List */}
+    <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
+      {loading ? (
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          py: 4 
+        }}>
+          <CircularProgress size={28} sx={{ color: '#667eea' }} />
+        </Box>
+      ) : notifications.length > 0 ? (
+        notifications.map((n, i) => (
+          <MenuItem
+            key={i}
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "flex-start",
+              whiteSpace: "normal",
+              gap: 1,
+              p: 2,
+              borderBottom: i < notifications.length - 1 ? '1px solid rgba(0,0,0,0.04)' : 'none',
+              backgroundColor: "transparent",
+              position: 'relative',
+              "&:hover": {
+                backgroundColor: "rgba(102, 126, 234, 0.05)",
+                transform: 'translateX(4px)',
               },
+              transition: 'all 0.2s ease',
+              minHeight: '72px',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: '3px',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                opacity: 0,
+                transition: 'opacity 0.3s ease',
+              },
+              '&:hover::before': {
+                opacity: 1,
+              }
             }}
           >
-            {/* Header with Refresh Button */}
             <Box sx={{ 
-              p: 2, 
-              borderBottom: 1, 
-              borderColor: 'divider',
               display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'center' 
+              alignItems: 'flex-start', 
+              width: '100%',
+              gap: 1 
             }}>
-              <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                Notifications
-              </Typography>
-              <Tooltip title="Refresh">
-                <IconButton 
-                  size="small" 
-                  onClick={handleRefreshNotifications}
-                  disabled={loading}
+              <Box
+                sx={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  flexShrink: 0,
+                  mt: 0.5,
+                }}
+              />
+              <Box sx={{ flex: 1 }}>
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    fontWeight: 500, 
+                    lineHeight: 1.4,
+                    color: 'text.primary',
+                    fontSize: '0.875rem',
+                  }}
                 >
-                  {loading ? (
-                    <CircularProgress size={20} />
-                  ) : (
-                    <Typography variant="body2">🔄</Typography>
-                  )}
-                </IconButton>
-              </Tooltip>
-            </Box>
-
-            {loading ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-                <CircularProgress size={24} />
-              </Box>
-            ) : notifications.length > 0 ? (
-              <>
-                {notifications.map((n, i) => (
-                  <MenuItem
-                    key={i}
-                    sx={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "flex-start",
-                      whiteSpace: "normal",
-                      gap: 0.3,
-                      p: 1.5,
-                      borderRadius: 1,
-                      mb: 0.5,
-                      backgroundColor: "#fafafa",
-                      "&:hover": {
-                        backgroundColor: "#f0f0f0",
-                      },
-                      minHeight: '60px'
+                  {n.msg}
+                </Typography>
+                <Box sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  mt: 0.5 
+                }}>
+                  <Typography 
+                    variant="caption" 
+                    sx={{ 
+                      color: "text.secondary",
+                      fontSize: '0.7rem',
+                      fontWeight: 500,
                     }}
                   >
-                    <Typography variant="body2" sx={{ fontWeight: 500, lineHeight: 1.2 }}>
-                      {n.msg}
-                    </Typography>
-                    <Typography 
-                      variant="caption" 
-                      sx={{ 
-                        color: "gray",
-                        alignSelf: 'flex-end'
-                      }}
-                    >
-                      {new Date(n.time).toLocaleTimeString("en-IN", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </Typography>
-                  </MenuItem>
-                ))}
-              </>
-            ) : (
-              <MenuItem 
-                disabled 
-                sx={{ 
-                  justifyContent: 'center',
-                  py: 2
-                }}
-              >
-                <Typography variant="body2" color="text.secondary">
-                  {hasFetched ? "No notifications for today" : "Click to load notifications"}
-                </Typography>
-              </MenuItem>
-            )}
-          </Menu>
-
-          {/* Logout */}
-          <Tooltip title="Logout">
-            <IconButton 
-              onClick={handleLogout} 
-              color="error" 
-              size={isMobile ? "small" : "medium"}
-            >
-              <LogoutIcon fontSize={isMobile ? "small" : "medium"} />
-            </IconButton>
-          </Tooltip>
+                    {new Date(n.time).toLocaleTimeString("en-IN", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </Typography>
+                  <Typography 
+                    variant="caption" 
+                    sx={{ 
+                      color: "text.secondary",
+                      fontSize: '0.7rem',
+                    }}
+                  >
+                    {new Date(n.time).toLocaleDateString("en-IN", {
+                      day: "numeric",
+                      month: "short",
+                    })}
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
+          </MenuItem>
+        ))
+      ) : (
+        <Box 
+          sx={{ 
+            textAlign: 'center', 
+            py: 4,
+            px: 2 
+          }}
+        >
+          <Box
+            sx={{
+              fontSize: '3rem',
+              mb: 1,
+              opacity: 0.5,
+            }}
+          >
+            🔔
+          </Box>
+          <Typography 
+            variant="body2" 
+            color="text.secondary"
+            sx={{ 
+              fontWeight: 500,
+              mb: 1 
+            }}
+          >
+            {hasFetched ? "No notifications for today" : "No notifications yet"}
+          </Typography>
+          <Typography 
+            variant="caption" 
+            color="text.secondary"
+            sx={{ opacity: 0.7 }}
+          >
+            {hasFetched ? "You're all caught up!" : "Notifications will appear here"}
+          </Typography>
         </Box>
+      )}
+    </Box>
+
+    {/* Footer */}
+    {notifications.length > 0 && (
+      <Box sx={{ 
+        p: 1.5, 
+        borderTop: 1, 
+        borderColor: 'divider',
+        textAlign: 'center',
+        background: 'rgba(0,0,0,0.02)'
+      }}>
+        <Typography 
+          variant="caption" 
+          color="text.secondary"
+          sx={{ fontWeight: 500 }}
+        >
+          {notifications.length} notification{notifications.length !== 1 ? 's' : ''}
+        </Typography>
+      </Box>
+    )}
+  </Menu>
+
+  {/* Logout */}
+  <Tooltip title="Logout">
+    <IconButton 
+      onClick={handleLogout} 
+      sx={{
+        background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%)',
+        color: 'white',
+        '&:hover': {
+          background: 'linear-gradient(135deg, #ff5252 0%, #e53935 100%)',
+          transform: 'translateY(-1px)',
+          boxShadow: '0 4px 12px rgba(244, 67, 54, 0.3)',
+        },
+        transition: 'all 0.3s ease',
+        width: isMobile ? 36 : 44,
+        height: isMobile ? 36 : 44,
+      }}
+      size={isMobile ? "small" : "medium"}
+    >
+      <LogoutIcon 
+        fontSize={isMobile ? "small" : "medium"} 
+        sx={{
+          transition: 'transform 0.3s ease',
+          '&:hover': {
+            transform: 'translateX(2px)',
+          }
+        }}
+      />
+    </IconButton>
+  </Tooltip>
+</Box>
       </Toolbar>
     </AppBar>
   );
