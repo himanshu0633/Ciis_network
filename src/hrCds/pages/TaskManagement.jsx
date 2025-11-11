@@ -199,7 +199,6 @@ const UserCreateTask = () => {
     dueDateTime: null,
     priority: 'medium',
     priorityDays: '1',
-    whatsappNumber: '',
     files: null,
     voiceNote: null,
     assignedUsers: [],
@@ -608,7 +607,6 @@ const UserCreateTask = () => {
       formData.append('title', newTask.title);
       formData.append('description', newTask.description);
       formData.append('dueDateTime', new Date(newTask.dueDateTime).toISOString());
-      formData.append('whatsappNumber', newTask.whatsappNumber || '');
       formData.append('priorityDays', newTask.priorityDays || '1');
       formData.append('priority', newTask.priority);
       formData.append('assignedUsers', JSON.stringify([userId]));
@@ -644,7 +642,7 @@ const UserCreateTask = () => {
         dueDateTime: null, 
         priority: 'medium', 
         priorityDays: '1', 
-        whatsappNumber: '', 
+       
         files: null, 
         voiceNote: null,
         assignedUsers: [userId],
@@ -1656,18 +1654,7 @@ const UserCreateTask = () => {
                       size={isMobile ? "small" : "medium"}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="WhatsApp Number"
-                      value={newTask.whatsappNumber}
-                      onChange={(e) => setNewTask({ ...newTask, whatsappNumber: e.target.value })}
-                      variant="outlined"
-                      placeholder="Enter your WhatsApp number for reminders"
-                      sx={{ borderRadius: 1 }}
-                      size={isMobile ? "small" : "medium"}
-                    />
-                  </Grid>
+                 
                 </Grid>
               </Stack>
             </Box>

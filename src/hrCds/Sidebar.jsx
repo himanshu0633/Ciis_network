@@ -116,15 +116,14 @@ const Sidebar = ({ isOpen = true, closeSidebar }) => {
 
   const hrMenu = [
     { heading: "Employee's" },
-    { icon: <FaClipboardList />, name: 'Employees Attendance', path: '/cds/emp-attendance' },
-    { icon: <FaUser />, name: 'Employees Details', path: '/cds/emp-details' },
-    { icon: <FaFileAlt />, name: 'Employees Leaves', path: '/cds/emp-leaves' },
-    { icon: <FaRocket />, name: 'Employees Assets', path: '/cds/emp-assets' },
-       { icon: <FaTasks />, name: 'Employees Task Create', path: '/cds/admin-task-create' },
-    { icon: <FaTasks />, name: 'Employees Task Management', path: '/cds/emp-task-management' },
-    { icon: <FaGraduationCap />, name: 'Employees Task Details', path: '/cds/emp-task-details' },
- 
-    { icon: <FaUser />, name: 'Create User', path: '/admin/create-user' },
+    { icon: <FaClipboardList />, name: 'Employees Attendance', path: '/cds/admin/emp-attendance' },
+    { icon: <FaUser />, name: 'Employees Details', path: '/cds/admin/emp-details' },
+    { icon: <FaFileAlt />, name: 'Employees Leaves', path: '/cds/admin/emp-leaves' },
+    { icon: <FaRocket />, name: 'Employees Assets', path: '/cds/admin/emp-assets' },
+    { icon: <FaTasks />, name: 'Employees Task Create', path: '/cds/admin/admin-task-create' },
+    { icon: <FaTasks />, name: 'Employees Task Management', path: '/cds/admin/emp-task-management' },
+    { icon: <FaGraduationCap />, name: 'Employees Task Details', path: '/cds/admin/emp-task-details' },
+    { icon: <FaUser />, name: 'Create User', path: '/cds/admin/create-user' },
   ];
 
   // Combine menus based on user role

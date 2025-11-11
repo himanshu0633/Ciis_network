@@ -555,7 +555,7 @@ const EmppAttendence = () => {
                     <TableCell sx={{ fontWeight: 700 }}>Total Time</TableCell>
                     {/* <TableCell sx={{ fontWeight: 700 }}>Late By</TableCell> */}
                     <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }} align="center">Actions</TableCell>
+                    {/* <TableCell sx={{ fontWeight: 700 }} align="center">Actions</TableCell> */}
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -627,7 +627,7 @@ const EmppAttendence = () => {
                             icon={getStatusIcon(rec.status)}
                           />
                         </TableCell>
-                        <TableCell align="center">
+                        {/* <TableCell align="center">
                           <Stack direction="row" spacing={1} justifyContent="center">
                             <Tooltip title="Edit Record">
                               <IconButton 
@@ -656,7 +656,7 @@ const EmppAttendence = () => {
                               </Tooltip>
                             )}
                           </Stack>
-                        </TableCell>
+                        </TableCell> */}
                       </StyledTableRow>
                     ))
                   ) : (
