@@ -466,7 +466,7 @@ const AdminTaskManagement = () => {
         formData.append('voiceNote', newTask.voiceNote);
       }
 
-      await apiCall('post', '/task/create', formData);
+      await apiCall('post', '/task/create-for-others', formData);
 
       setOpenCreateDialog(false);
       setSnackbar({ open: true, message: 'Task created successfully', severity: 'success' });

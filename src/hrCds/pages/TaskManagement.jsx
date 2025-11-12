@@ -640,108 +640,118 @@ const UserCreateTask = () => {
   };
 
   // Task creation handler - UPDATED: Removed recurring functionality
-  const handleCreateTask = async () => {
-    if (authError || !userId) {
-      setSnackbar({
-        open: true,
-        message: 'Please log in to create tasks',
-        severity: 'error'
-      });
-      return;
+const handleCreateTask = async () => {
+  if (authError || !userId) {
+    setSnackbar({
+      open: true,
+      message: 'Please log in to create tasks',
+      severity: 'error'
+    });
+    return;
+  }
+
+  if (!newTask.title || !newTask.description || !newTask.dueDateTime) {
+    setSnackbar({
+      open: true,
+      message: 'Please fill all required fields (Title, Description, Due Date)',
+      severity: 'error'
+    });
+    return;
+  }
+
+  if (newTask.dueDateTime && new Date(newTask.dueDateTime) < new Date()) {
+    setSnackbar({
+      open: true,
+      message: 'Due date cannot be in the past',
+      severity: 'error'
+    });
+    return;
+  }
+
+  setIsCreatingTask(true);
+
+  try {
+    const formData = new FormData();
+    formData.append('title', newTask.title);
+    formData.append('description', newTask.description);
+    formData.append('dueDateTime', new Date(newTask.dueDateTime).toISOString());
+    formData.append('priorityDays', newTask.priorityDays || '1');
+    formData.append('priority', newTask.priority);
+
+    // Determine which endpoint to use based on assignment type
+    const isAssigningToOthers = newTask.assignedUsers && 
+                                newTask.assignedUsers.length > 0 && 
+                                !newTask.assignedUsers.includes(userId);
+
+    const endpoint = isAssigningToOthers ? '/task/create-for-others' : '/task/create-self';
+
+    // Only include assignment data when assigning to others
+    if (isAssigningToOthers) {
+      formData.append('assignedUsers', JSON.stringify(newTask.assignedUsers));
+      formData.append('assignedGroups', JSON.stringify(newTask.assignedGroups || []));
     }
 
-    if (!newTask.title || !newTask.description || !newTask.dueDateTime) {
-      setSnackbar({
-        open: true,
-        message: 'Please fill all required fields (Title, Description, Due Date)',
-        severity: 'error'
-      });
-      return;
-    }
-
-    if (newTask.dueDateTime && new Date(newTask.dueDateTime) < new Date()) {
-      setSnackbar({
-        open: true,
-        message: 'Due date cannot be in the past',
-        severity: 'error'
-      });
-      return;
-    }
-
-    setIsCreatingTask(true);
-
-    try {
-      const formData = new FormData();
-      formData.append('title', newTask.title);
-      formData.append('description', newTask.description);
-      formData.append('dueDateTime', new Date(newTask.dueDateTime).toISOString());
-      formData.append('priorityDays', newTask.priorityDays || '1');
-      formData.append('priority', newTask.priority);
-      formData.append('assignedUsers', JSON.stringify([userId]));
-      formData.append('assignedGroups', JSON.stringify([]));
-
-      if (newTask.files) {
-        for (let i = 0; i < newTask.files.length; i++) {
-          formData.append('files', newTask.files[i]);
-        }
+    if (newTask.files) {
+      for (let i = 0; i < newTask.files.length; i++) {
+        formData.append('files', newTask.files[i]);
       }
+    }
 
-      if (newTask.voiceNote) {
-        formData.append('voiceNote', newTask.voiceNote);
+    if (newTask.voiceNote) {
+      formData.append('voiceNote', newTask.voiceNote);
+    }
+
+    await axios.post(endpoint, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
       }
+    });
 
-      await axios.post('/task/create', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        }
+    setOpenDialog(false);
+    setSnackbar({ 
+      open: true, 
+      message: `Task ${isAssigningToOthers ? 'assigned' : 'created'} successfully`, 
+      severity: 'success' 
+    });
+    
+    // Reset form
+    setNewTask({
+      title: '', 
+      description: '', 
+      dueDateTime: null, 
+      priority: 'medium', 
+      priorityDays: '1', 
+      files: null, 
+      voiceNote: null,
+      assignedUsers: [userId], // Default to self
+      assignedGroups: []
+    });
+
+    // Refresh tasks list
+    fetchMyTasks(1, false);
+    fetchNotifications();
+
+  } catch (err) {
+    console.error('Error creating task:', err);
+    
+    if (err.response?.status === 401) {
+      setAuthError(true);
+      setSnackbar({
+        open: true,
+        message: 'Session expired. Please log in again.',
+        severity: 'error'
       });
-
-      setOpenDialog(false);
+    } else {
       setSnackbar({ 
         open: true, 
-        message: 'Task created successfully', 
-        severity: 'success' 
+        message: err?.response?.data?.error || 'Task creation failed', 
+        severity: 'error' 
       });
-      
-      // Reset form
-      setNewTask({
-        title: '', 
-        description: '', 
-        dueDateTime: null, 
-        priority: 'medium', 
-        priorityDays: '1', 
-       
-        files: null, 
-        voiceNote: null,
-        assignedUsers: [userId],
-        assignedGroups: []
-      });
-
-      // Refresh tasks list
-      fetchMyTasks(1, false);
-      fetchNotifications();
-
-    } catch (err) {
-      console.error('Error creating task:', err);
-      
-      if (err.response?.status === 401) {
-        setAuthError(true);
-        setSnackbar({
-          open: true,
-          message: 'Session expired. Please log in again.',
-          severity: 'error'
-        });
-      } else {
-        setSnackbar({ 
-          open: true, 
-          message: err?.response?.data?.error || 'Task creation failed', 
-          severity: 'error' 
-        });
-      }
-    } finally {
-      setIsCreatingTask(false);
     }
-  };
+  } finally {
+    setIsCreatingTask(false);
+  }
+};
 
   const handleLogout = () => {
     localStorage.removeItem('user');
