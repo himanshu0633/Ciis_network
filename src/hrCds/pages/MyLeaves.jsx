@@ -1,49 +1,13 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
-  Box,
-  Typography,
-  Tabs,
-  Tab,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Select,
-  MenuItem,
-  Snackbar,
-  Chip,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Card,
-  CardContent,
-  Grid,
-  Stack,
-  Avatar,
-  LinearProgress,
-  Fade,
-  Tooltip,
-  InputAdornment,
-  useTheme,
-  useMediaQuery,
-  Badge,
+  Box, Typography, Tabs, Tab, Button, Dialog, DialogTitle, DialogContent, DialogActions,
+  TextField, Select, MenuItem, Snackbar, Chip, Table, TableBody, TableCell, TableContainer,
+  TableHead, TableRow, Paper, Card, CardContent, Grid, Stack, Avatar, LinearProgress,
+  Fade, Tooltip, useTheme, useMediaQuery, Badge
 } from "@mui/material";
 import {
-  FiCalendar,
-  FiPlus,
-  FiClock,
-  FiCheckCircle,
-  FiXCircle,
-  FiAlertCircle,
-  FiInfo,
-  FiUser,
-  FiList,
+  FiCalendar, FiPlus, FiClock, FiCheckCircle, FiXCircle,
+  FiAlertCircle, FiInfo, FiUser, FiList
 } from "react-icons/fi";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
@@ -56,10 +20,11 @@ const StatCard = styled(Card)(({ theme, color = "primary" }) => ({
   background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
   borderRadius: theme.shape.borderRadius * 2,
   boxShadow: theme.shadows[2],
+  borderLeft: `4px solid ${theme.palette[color].main}`,
   transition: theme.transitions.create(["all"], {
     duration: theme.transitions.duration.standard,
   }),
-  borderLeft: `4px solid ${theme.palette[color].main}`,
+  cursor: "pointer",
   "&:hover": {
     boxShadow: theme.shadows[6],
     transform: "translateY(-2px)",
@@ -114,9 +79,7 @@ const StyledTableRow = styled(TableRow)(({ theme, status }) => ({
   transition: theme.transitions.create(["all"], {
     duration: theme.transitions.duration.short,
   }),
-  "&:hover": {
-    backgroundColor: theme.palette.action.hover,
-  },
+  "&:hover": { backgroundColor: theme.palette.action.hover },
   ...(status === "Approved" && {
     borderLeft: `4px solid ${theme.palette.success.main}`,
   }),
@@ -147,50 +110,33 @@ const MobileLeaveCard = styled(Card)(({ theme, status }) => ({
     transform: "translateY(-2px)",
   },
 }));
-
 /* Helpers */
-const formatPrettyDate = (dateStr) => {
-  if (!dateStr) return "";
-  return new Date(dateStr).toLocaleString("en-US", {
-    day: "2-digit",
+const formatDate = (dateStr) => {
+  if (!dateStr) return "--";
+  const date = new Date(dateStr);
+  return date.toLocaleDateString("en-US", {
+    weekday: "short",
     month: "short",
+    day: "numeric",
     year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
   });
 };
 
-const normalizeRole = (role) => {
-  if (!role) return "UNKNOWN";
-
-  const r = String(role).toLowerCase();
-
-  if (r === "hr") return "HR";
-  if (r === "admin") return "ADMIN";
-  if (r === "manager") return "MANAGER";
-
-  return "EMPLOYEE"; // fallback
-};
 const getHistoryLabel = (h) => {
-  const role = normalizeRole(h.role); // ✅ FIX: use h.role
-  const dateText = h.at ? ` on ${formatPrettyDate(h.at)}` : ""; // ✅ FIX: use h.at
+  if (!h) return "";
+  const dateText = h.at ? ` on ${new Date(h.at).toLocaleString()}` : "";
   const remarksText = h.remarks ? ` — "${h.remarks}"` : "";
-
-  if (h.action === "approved")
-    return `✅ Approved by ${role}${dateText}${remarksText}`;
-
-  if (h.action === "rejected")
-    return `❌ Rejected by ${role}${dateText}${remarksText}`;
-
-  if (h.action === "applied")
-    return `📝 Applied by Employee${dateText}${remarksText}`;
-
-  // default pending
-  return `⏳ Pending approval${dateText}${remarksText}`;
+  if (h.action === "approved") return `✅ Approved by ${h.role}${dateText}${remarksText}`;
+  if (h.action === "rejected") return `❌ Rejected by ${h.role}${dateText}${remarksText}`;
+  if (h.action === "applied") return `📝 Applied${dateText}${remarksText}`;
+  return `⏳ Pending${dateText}${remarksText}`;
 };
+
+/* Main Component */
 const MyLeaves = () => {
   const [tab, setTab] = useState(0);
   const [leaves, setLeaves] = useState([]);
+  const [statusFilter, setStatusFilter] = useState("ALL");
   const [notification, setNotification] = useState(null);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -205,132 +151,105 @@ const MyLeaves = () => {
     endDate: null,
     reason: "",
   });
-
-  const [historyDialog, setHistoryDialog] = useState({
-    open: false,
-    title: "",
-    items: [],
-  });
+  const [historyDialog, setHistoryDialog] = useState({ open: false, title: "", items: [] });
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const isSmallMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-   const fetchLeaves = useCallback(async () => {
+  const fetchLeaves = useCallback(async () => {
     setLoading(true);
     try {
       const res = await axios.get("/leaves/status");
       const list = res.data.leaves || [];
       setLeaves(list);
       calculateStats(list);
-    } catch (err) {
-      setNotification({
-        // message: err?.response?.data?.message || "Failed to fetch leaves",
-        // severity: "error",
-      });
+    } catch {
+      setNotification({ message: "Failed to fetch leaves", severity: "error" });
     } finally {
       setLoading(false);
     }
   }, []);
 
-
-  // 
-
-  const calculateStats = (leavesData) => {
-    const approved = leavesData.filter((l) => l.status === "Approved").length;
-    const pending = leavesData.filter((l) => l.status === "Pending").length;
-    const rejected = leavesData.filter((l) => l.status === "Rejected").length;
-    setStats({ total: leavesData.length, approved, pending, rejected });
+  const calculateStats = (data) => {
+    const approved = data.filter((l) => l.status === "Approved").length;
+    const pending = data.filter((l) => l.status === "Pending").length;
+    const rejected = data.filter((l) => l.status === "Rejected").length;
+    setStats({ total: data.length, approved, pending, rejected });
   };
 
-  const applyLeave = async (leaveData) => {
-    try {
-      const res = await axios.post("/leaves/apply", leaveData);
-      setNotification({
-        message: res.data.message || "Leave applied successfully",
-        severity: "success",
-      });
-      fetchLeaves();
-    } catch (err) {
-      setNotification({
-        message: err?.response?.data?.message || "Failed to apply leave",
-        severity: "error",
-      });
-    }
+  useEffect(() => {
+    fetchLeaves();
+  }, [fetchLeaves]);
+  /* Part 3 — Filters, Apply Leave logic, Loading UI */
+
+  // Filtered list based on statusFilter
+  const filteredLeaves = leaves.filter((l) =>
+    statusFilter === "ALL" ? true : l.status === statusFilter
+  );
+
+  // Form handlers
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
-  const handleDateChange = (field, value) => setForm({ ...form, [field]: value });
+  const handleDateChange = (field, value) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
 
-  const handleSubmit = () => {
+  // Helper to calculate number of days (inclusive)
+  const calculateDays = (startDate, endDate) => {
+    if (!startDate || !endDate) return 0;
+    const s = new Date(startDate);
+    const e = new Date(endDate);
+    // Reset time portion to avoid DST issues
+    s.setHours(0, 0, 0, 0);
+    e.setHours(0, 0, 0, 0);
+    const diff = e - s;
+    if (diff < 0) return 0;
+    return Math.floor(diff / (1000 * 60 * 60 * 24)) + 1;
+  };
+
+  // Apply leave (validate, post, refresh)
+  const applyLeave = async () => {
     if (!form.startDate || !form.endDate || !form.reason.trim()) {
-      setNotification({ message: "Please fill in all required fields", severity: "error" });
+      setNotification({ message: "Please fill all fields", severity: "error" });
       return;
     }
     if (new Date(form.startDate) > new Date(form.endDate)) {
       setNotification({ message: "End date cannot be before start date", severity: "error" });
       return;
     }
-    const submitData = {
-      ...form,
+
+    const payload = {
+      type: form.type,
       startDate: form.startDate.toISOString().split("T")[0],
       endDate: form.endDate.toISOString().split("T")[0],
+      reason: form.reason,
+      days: calculateDays(form.startDate, form.endDate),
     };
-    applyLeave(submitData);
-    setForm({ type: "Casual", startDate: null, endDate: null, reason: "" });
-  };
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case "Approved":
-        return <FiCheckCircle color={theme.palette.success.main} />;
-      case "Pending":
-        return <FiClock color={theme.palette.warning.main} />;
-      case "Rejected":
-        return <FiXCircle color={theme.palette.error.main} />;
-      default:
-        return <FiInfo color={theme.palette.text.secondary} />;
+    try {
+      setLoading(true);
+      await axios.post("/leaves/apply", payload);
+      setNotification({ message: "Leave applied successfully", severity: "success" });
+      // refresh
+      await fetchLeaves();
+      // reset
+      setForm({ type: "Casual", startDate: null, endDate: null, reason: "" });
+      // switch back to requests tab
+      setTab(0);
+    } catch (err) {
+      setNotification({
+        message: err?.response?.data?.message || "Failed to apply leave",
+        severity: "error",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getLeaveTypeIcon = (type) => {
-    switch (type) {
-      case "Casual":
-        return <FiUser color={theme.palette.info.main} />;
-      case "Sick":
-        return <FiAlertCircle color={theme.palette.secondary.main} />;
-      case "Paid":
-        return <FiCheckCircle color={theme.palette.success.main} />;
-      case "Unpaid":
-        return <FiClock color={theme.palette.warning.main} />;
-      default:
-        return <FiInfo color={theme.palette.grey[500]} />;
-    }
-  };
-
-  const formatDate = (dateStr) => {
-    if (!dateStr) return "--";
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("en-US", {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
-
-  const calculateDays = (startDate, endDate) => {
-    if (!startDate || !endDate) return 0;
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const diffTime = Math.abs(end - start);
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-  };
-
-  useEffect(() => {
-    fetchLeaves();
-  }, [fetchLeaves]);
-
+  // History modal helpers
   const openHistoryModal = (leave) => {
     const items = Array.isArray(leave.history) ? leave.history : [];
     setHistoryDialog({
@@ -339,8 +258,12 @@ const MyLeaves = () => {
       items,
     });
   };
-  const closeHistoryModal = () => setHistoryDialog({ open: false, title: "", items: [] });
 
+  const closeHistoryModal = () => {
+    setHistoryDialog({ open: false, title: "", items: [] });
+  };
+
+  // Loading UI early return
   if (loading) {
     return (
       <Box
@@ -348,18 +271,18 @@ const MyLeaves = () => {
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          minHeight: "50vh",
+          minHeight: "60vh",
         }}
       >
-        <LinearProgress sx={{ width: "100px" }} />
+        <LinearProgress sx={{ width: "150px" }} />
       </Box>
     );
   }
-
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Fade in={!loading} timeout={500}>
         <Box sx={{ p: { xs: 2, md: 3 } }}>
+          {/* Header */}
           <Paper
             sx={{
               p: 3,
@@ -369,26 +292,40 @@ const MyLeaves = () => {
               boxShadow: theme.shadows[4],
             }}
           >
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              spacing={3}
-              justifyContent="space-between"
-              alignItems={{ xs: "flex-start", sm: "center" }}
-            >
-              <Box>
-                <Typography variant="h4" fontWeight={800} gutterBottom>
-                  Leave Management
-                </Typography>
-                <Typography variant="body1" color="text.secondary">
-                  Manage your leave requests and track their status
-                </Typography>
-              </Box>
-            </Stack>
+            <Typography variant="h4" fontWeight={800} gutterBottom>
+              Leave Management
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              Manage and track all your leave requests
+            </Typography>
           </Paper>
 
+          {/* Active Filter Chip */}
+          {statusFilter !== "ALL" && (
+            <Box sx={{ mb: 2 }}>
+              <Chip
+                label={`Filter: ${statusFilter}`}
+                color="primary"
+                onDelete={() => setStatusFilter("ALL")}
+                sx={{ fontWeight: 600 }}
+              />
+            </Box>
+          )}
+
+          {/* Stats Cards */}
           <Grid container spacing={3} sx={{ mb: 4 }}>
+            {/* Total Leaves */}
             <Grid item xs={6} md={3}>
-              <StatCard color="primary">
+              <StatCard
+                color="primary"
+                onClick={() => setStatusFilter("ALL")}
+                sx={{
+                  border:
+                    statusFilter === "ALL"
+                      ? `2px solid ${theme.palette.primary.main}`
+                      : "none",
+                }}
+              >
                 <CardContent>
                   <Stack direction="row" alignItems="center" spacing={2}>
                     <Avatar
@@ -401,7 +338,7 @@ const MyLeaves = () => {
                     </Avatar>
                     <Box>
                       <Typography variant="body2" color="text.secondary">
-                        Total Leaves
+                        Total
                       </Typography>
                       <Typography variant="h4" fontWeight={700}>
                         {stats.total}
@@ -412,8 +349,18 @@ const MyLeaves = () => {
               </StatCard>
             </Grid>
 
+            {/* Approved Leaves */}
             <Grid item xs={6} md={3}>
-              <StatCard color="success">
+              <StatCard
+                color="success"
+                onClick={() => setStatusFilter("Approved")}
+                sx={{
+                  border:
+                    statusFilter === "Approved"
+                      ? `2px solid ${theme.palette.success.main}`
+                      : "none",
+                }}
+              >
                 <CardContent>
                   <Stack direction="row" alignItems="center" spacing={2}>
                     <Avatar
@@ -437,8 +384,18 @@ const MyLeaves = () => {
               </StatCard>
             </Grid>
 
+            {/* Pending Leaves */}
             <Grid item xs={6} md={3}>
-              <StatCard color="warning">
+              <StatCard
+                color="warning"
+                onClick={() => setStatusFilter("Pending")}
+                sx={{
+                  border:
+                    statusFilter === "Pending"
+                      ? `2px solid ${theme.palette.warning.main}`
+                      : "none",
+                }}
+              >
                 <CardContent>
                   <Stack direction="row" alignItems="center" spacing={2}>
                     <Avatar
@@ -462,8 +419,18 @@ const MyLeaves = () => {
               </StatCard>
             </Grid>
 
+            {/* Rejected Leaves */}
             <Grid item xs={6} md={3}>
-              <StatCard color="error">
+              <StatCard
+                color="error"
+                onClick={() => setStatusFilter("Rejected")}
+                sx={{
+                  border:
+                    statusFilter === "Rejected"
+                      ? `2px solid ${theme.palette.error.main}`
+                      : "none",
+                }}
+              >
                 <CardContent>
                   <Stack direction="row" alignItems="center" spacing={2}>
                     <Avatar
@@ -487,12 +454,12 @@ const MyLeaves = () => {
               </StatCard>
             </Grid>
           </Grid>
-
+          {/* Tabs Section */}
           <Paper
             sx={{
               borderRadius: theme.shape.borderRadius * 2,
-              boxShadow: theme.shadows[2],
               overflow: "hidden",
+              boxShadow: theme.shadows[3],
             }}
           >
             <Tabs
@@ -510,7 +477,7 @@ const MyLeaves = () => {
             >
               <Tab
                 label={
-                  <Stack direction="row" alignItems="center" spacing={2}>
+                  <Stack direction="row" alignItems="center" spacing={1}>
                     <FiCalendar />
                     <Typography>Leave Requests</Typography>
                     {stats.total > 0 && (
@@ -533,7 +500,6 @@ const MyLeaves = () => {
             {tab === 0 && (
               <Box sx={{ p: 3 }}>
                 {!isMobile ? (
-                  /* Desktop D2: Latest + Latest Remarks + Full History + Status */
                   <TableContainer>
                     <Table>
                       <TableHead>
@@ -543,157 +509,47 @@ const MyLeaves = () => {
                           <TableCell sx={{ fontWeight: 700 }}>End Date</TableCell>
                           <TableCell sx={{ fontWeight: 700 }}>Days</TableCell>
                           <TableCell sx={{ fontWeight: 700 }}>Reason</TableCell>
-                          <TableCell sx={{ fontWeight: 700 }}>Last Action</TableCell>
-                          <TableCell sx={{ fontWeight: 700 }}>Latest Remarks</TableCell>
-                          <TableCell sx={{ fontWeight: 700 }}>History (Full)</TableCell>
                           <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>History</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
-                        {leaves.length > 0 ? (
-                          leaves.map((leave) => {
-                            const history = Array.isArray(leave.history) ? leave.history : [];
-                            const latest = history.length ? history[history.length - 1] : null;
-                            const lastActionLabel = latest
-                              ? getHistoryLabel(latest).split(" — ")[0] // action + by + date only
-                              : "Awaiting approval";
-                            const latestRemarks = latest?.remarks || "No remarks";
-
-                            return (
-                              <StyledTableRow key={leave._id} status={leave.status}>
-                                <TableCell>
-                                  <LeaveTypeChip
-                                    label={leave.type}
-                                    type={leave.type}
-                                    size="small"
-                                    icon={getLeaveTypeIcon(leave.type)}
-                                  />
-                                </TableCell>
-
-                                <TableCell>
-                                  <Typography variant="body2" fontWeight={500}>
-                                    {formatDate(leave.startDate)}
-                                  </Typography>
-                                </TableCell>
-
-                                <TableCell>
-                                  <Typography variant="body2" fontWeight={500}>
-                                    {formatDate(leave.endDate)}
-                                  </Typography>
-                                </TableCell>
-
-                                <TableCell>
-                                  <Typography variant="body2" fontWeight={600} color="primary.main">
-                                    {leave.days}
-                                  </Typography>
-                                </TableCell>
-
-                                <TableCell>
-                                  <Tooltip title={leave.reason}>
-                                    <Typography
-                                      variant="body2"
-                                      sx={{
-                                        maxWidth: 220,
-                                        overflow: "hidden",
-                                        textOverflow: "ellipsis",
-                                        whiteSpace: "nowrap",
-                                      }}
-                                    >
-                                      {leave.reason}
-                                    </Typography>
-                                  </Tooltip>
-                                </TableCell>
-
-                                {/* Last Action (Latest only) */}
-                                <TableCell>
-                                  <Typography
-                                    variant="body2"
-                                    fontWeight={700}
-                                    color={
-                                      latest?.action === "approved"
-                                        ? "success.main"
-                                        : latest?.action === "rejected"
-                                        ? "error.main"
-                                        : "warning.main"
-                                    }
-                                  >
-                                    {lastActionLabel}
-                                  </Typography>
-                                </TableCell>
-
-                                {/* Latest Remarks */}
-                                <TableCell>
-                                  <Tooltip title={latestRemarks}>
-                                    <Typography
-                                      variant="body2"
-                                      sx={{
-                                        maxWidth: 220,
-                                        overflow: "hidden",
-                                        textOverflow: "ellipsis",
-                                        whiteSpace: "nowrap",
-                                      }}
-                                      color="text.secondary"
-                                    >
-                                      {latestRemarks}
-                                    </Typography>
-                                  </Tooltip>
-                                </TableCell>
-
-                                {/* Full History (S2 + HF3) + View History button */}
-                                <TableCell>
-                                  {history.length ? (
-                                    <Stack spacing={0.5}>
-                                      {history.map((h, i) => (
-                                        <Typography
-                                          key={i}
-                                          variant="body2"
-                                          fontWeight={600}
-                                          sx={{
-                                            color:
-                                              h.action === "approved"
-                                                ? "success.main"
-                                                : h.action === "rejected"
-                                                ? "error.main"
-                                                : "warning.main",
-                                          }}
-                                        >
-                                          {getHistoryLabel(h)}
-                                        </Typography>
-                                      ))}
-                                      <Button
-                                        size="small"
-                                        startIcon={<FiList />}
-                                        onClick={() => openHistoryModal(leave)}
-                                        sx={{ textTransform: "none", alignSelf: "flex-start", mt: 0.5 }}
-                                      >
-                                        View History
-                                      </Button>
-                                    </Stack>
-                                  ) : (
-                                    <Typography variant="body2" color="warning.main">
-                                      Awaiting approval
-                                    </Typography>
-                                  )}
-                                </TableCell>
-
-                                {/* Status */}
-                                <TableCell>
-                                  <Tooltip title={lastActionLabel}>
-                                    <span>
-                                      <StatusChip
-                                        label={leave.status}
-                                        status={leave.status}
-                                        icon={getStatusIcon(leave.status)}
-                                      />
-                                    </span>
-                                  </Tooltip>
-                                </TableCell>
-                              </StyledTableRow>
-                            );
-                          })
+                        {filteredLeaves.length > 0 ? (
+                          filteredLeaves.map((leave) => (
+                            <StyledTableRow key={leave._id} status={leave.status}>
+                              <TableCell>
+                                <LeaveTypeChip label={leave.type} type={leave.type} size="small" />
+                              </TableCell>
+                              <TableCell>{formatDate(leave.startDate)}</TableCell>
+                              <TableCell>{formatDate(leave.endDate)}</TableCell>
+                              <TableCell>
+                                <Typography variant="body2" fontWeight={600} color="primary.main">
+                                  {leave.days}
+                                </Typography>
+                              </TableCell>
+                              <TableCell>{leave.reason}</TableCell>
+                              <TableCell>
+                                <StatusChip
+                                  label={leave.status}
+                                  status={leave.status}
+                                  size="small"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Button
+                                  size="small"
+                                  startIcon={<FiList />}
+                                  onClick={() => openHistoryModal(leave)}
+                                  sx={{ textTransform: "none" }}
+                                >
+                                  View
+                                </Button>
+                              </TableCell>
+                            </StyledTableRow>
+                          ))
                         ) : (
                           <TableRow>
-                            <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
+                            <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
                               <Box sx={{ textAlign: "center" }}>
                                 <FiCalendar size={48} color={theme.palette.text.secondary} />
                                 <Typography variant="h6" color="text.secondary" sx={{ mt: 1 }}>
@@ -707,92 +563,47 @@ const MyLeaves = () => {
                     </Table>
                   </TableContainer>
                 ) : (
-                  /* Mobile M1: Full History inline */
+                  /* Mobile View Cards */
                   <Stack spacing={2}>
-                    {leaves.length > 0 ? (
-                      leaves.map((leave) => {
-                        const history = Array.isArray(leave.history) ? leave.history : [];
-                        const latest = history.length ? history[history.length - 1] : null;
-                        return (
-                          <MobileLeaveCard key={leave._id} status={leave.status}>
-                            <CardContent>
-                              <Stack spacing={1.5}>
-                                <Stack direction="row" justifyContent="space-between">
-                                  <Box>
-                                    <Typography variant="h6" fontWeight={600}>
-                                      {leave.type} Leave
-                                    </Typography>
-                                    <Typography variant="body2" color="text.secondary">
-                                      {formatDate(leave.startDate)} - {formatDate(leave.endDate)}
-                                    </Typography>
-                                  </Box>
-                                  <StatusChip label={leave.status} status={leave.status} size="small" />
-                                </Stack>
-
-                                <Typography variant="body2" fontWeight={600} color="primary.main">
-                                  {leave.days} day{leave.days > 1 ? "s" : ""}
+                    {filteredLeaves.length > 0 ? (
+                      filteredLeaves.map((leave) => (
+                        <MobileLeaveCard key={leave._id} status={leave.status}>
+                          <CardContent>
+                            <Stack spacing={1.5}>
+                              <Stack direction="row" justifyContent="space-between">
+                                <Typography variant="h6" fontWeight={600}>
+                                  {leave.type} Leave
                                 </Typography>
-
-                                <Typography
-                                  variant="body2"
-                                  sx={{
-                                    color: "text.secondary",
-                                    display: "-webkit-box",
-                                    WebkitLineClamp: 2,
-                                    WebkitBoxOrient: "vertical",
-                                    overflow: "hidden",
-                                  }}
-                                >
-                                  {leave.reason}
-                                </Typography>
-
-                                {/* Latest Action quick line */}
-                                <Typography
-                                  variant="body2"
-                                  fontWeight={700}
-                                  sx={{
-                                    color:
-                                      latest?.action === "approved"
-                                        ? "success.main"
-                                        : latest?.action === "rejected"
-                                        ? "error.main"
-                                        : "warning.main",
-                                  }}
-                                >
-                                  {latest ? getHistoryLabel(latest).split(" — ")[0] : "Awaiting approval"}
-                                </Typography>
-
-                                {/* Full History (S2 + HF3) */}
-                                <Stack spacing={0.5}>
-                                  {history.length ? (
-                                    history.map((h, i) => (
-                                      <Typography
-                                        key={i}
-                                        variant="body2"
-                                        fontWeight={600}
-                                        sx={{
-                                          color:
-                                            h.action === "approved"
-                                              ? "success.main"
-                                              : h.action === "rejected"
-                                              ? "error.main"
-                                              : "warning.main",
-                                        }}
-                                      >
-                                        {getHistoryLabel(h)}
-                                      </Typography>
-                                    ))
-                                  ) : (
-                                    <Typography variant="body2" color="warning.main">
-                                      Awaiting approval
-                                    </Typography>
-                                  )}
-                                </Stack>
+                                <StatusChip label={leave.status} status={leave.status} size="small" />
                               </Stack>
-                            </CardContent>
-                          </MobileLeaveCard>
-                        );
-                      })
+                              <Typography variant="body2" color="text.secondary">
+                                {formatDate(leave.startDate)} - {formatDate(leave.endDate)}
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  color: "text.secondary",
+                                  display: "-webkit-box",
+                                  WebkitLineClamp: 2,
+                                  WebkitBoxOrient: "vertical",
+                                  overflow: "hidden",
+                                }}
+                              >
+                                {leave.reason}
+                              </Typography>
+                              <Button
+                                variant="text"
+                                size="small"
+                                onClick={() => openHistoryModal(leave)}
+                                startIcon={<FiList />}
+                                sx={{ alignSelf: "flex-start", textTransform: "none" }}
+                              >
+                                View History
+                              </Button>
+                            </Stack>
+                          </CardContent>
+                        </MobileLeaveCard>
+                      ))
                     ) : (
                       <Box sx={{ textAlign: "center", py: 4 }}>
                         <FiCalendar size={48} color={theme.palette.text.secondary} />
@@ -812,13 +623,14 @@ const MyLeaves = () => {
                 <Card sx={{ maxWidth: 600, mx: "auto" }}>
                   <CardContent>
                     <Typography variant="h6" fontWeight={600} gutterBottom>
-                      New Leave Application
+                      Apply for New Leave
                     </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                      Fill in the details to apply for leave
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      Fill in the details to submit a leave request.
                     </Typography>
 
                     <Stack spacing={3}>
+                      {/* Leave Type */}
                       <Select
                         fullWidth
                         name="type"
@@ -828,40 +640,28 @@ const MyLeaves = () => {
                       >
                         {["Casual", "Sick", "Paid", "Unpaid", "Other"].map((type) => (
                           <MenuItem key={type} value={type}>
-                            <Stack direction="row" alignItems="center" spacing={1}>
-                              {getLeaveTypeIcon(type)}
-                              <Typography>{type}</Typography>
-                            </Stack>
+                            {type}
                           </MenuItem>
                         ))}
                       </Select>
 
+                      {/* Start Date */}
                       <DatePicker
                         label="Start Date"
                         value={form.startDate}
                         onChange={(date) => handleDateChange("startDate", date)}
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            fullWidth
-                            sx={{ borderRadius: theme.shape.borderRadius * 2 }}
-                          />
-                        )}
+                        renderInput={(params) => <TextField {...params} fullWidth />}
                       />
 
+                      {/* End Date */}
                       <DatePicker
                         label="End Date"
                         value={form.endDate}
                         onChange={(date) => handleDateChange("endDate", date)}
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            fullWidth
-                            sx={{ borderRadius: theme.shape.borderRadius * 2 }}
-                          />
-                        )}
+                        renderInput={(params) => <TextField {...params} fullWidth />}
                       />
 
+                      {/* Day Count */}
                       {form.startDate && form.endDate && (
                         <Box
                           sx={{
@@ -876,6 +676,7 @@ const MyLeaves = () => {
                         </Box>
                       )}
 
+                      {/* Reason */}
                       <TextField
                         fullWidth
                         multiline
@@ -884,15 +685,14 @@ const MyLeaves = () => {
                         label="Reason for Leave"
                         value={form.reason}
                         onChange={handleChange}
-                        placeholder="Please provide a detailed reason for your leave application..."
-                        sx={{ borderRadius: theme.shape.borderRadius * 2 }}
+                        placeholder="Enter the reason for your leave..."
                       />
 
+                      {/* Submit Button */}
                       <Button
                         fullWidth
                         variant="contained"
-                        onClick={handleSubmit}
-                        disabled={!form.startDate || !form.endDate || !form.reason.trim()}
+                        onClick={applyLeave}
                         sx={{
                           borderRadius: theme.shape.borderRadius * 2,
                           py: 1.5,
@@ -908,19 +708,28 @@ const MyLeaves = () => {
               </Box>
             )}
           </Paper>
-
-          {/* View History Modal */}
-          <Dialog open={historyDialog.open} onClose={closeHistoryModal} maxWidth="sm" fullWidth>
+          {/* View History Dialog */}
+          <Dialog
+            open={historyDialog.open}
+            onClose={closeHistoryModal}
+            maxWidth="sm"
+            fullWidth
+          >
             <DialogTitle>
-              <Typography variant="h6" fontWeight={700}>Action History</Typography>
-              <Typography variant="body2" color="text.secondary">{historyDialog.title}</Typography>
+              <Typography variant="h6" fontWeight={700}>
+                Action History
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {historyDialog.title}
+              </Typography>
             </DialogTitle>
+
             <DialogContent dividers>
               <Stack spacing={1}>
                 {historyDialog.items.length ? (
-                  historyDialog.items.map((h, idx) => (
+                  historyDialog.items.map((h, i) => (
                     <Typography
-                      key={idx}
+                      key={i}
                       variant="body2"
                       fontWeight={600}
                       sx={{
@@ -936,19 +745,22 @@ const MyLeaves = () => {
                     </Typography>
                   ))
                 ) : (
-                  <Typography variant="body2" color="text.secondary">No history yet.</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    No history yet.
+                  </Typography>
                 )}
               </Stack>
             </DialogContent>
+
             <DialogActions sx={{ p: 2 }}>
               <Button onClick={closeHistoryModal}>Close</Button>
             </DialogActions>
           </Dialog>
 
-          {/* Snackbar */}
+          {/* Snackbar Notification */}
           <Snackbar
             open={!!notification?.message}
-            autoHideDuration={5000}
+            autoHideDuration={4000}
             onClose={() => setNotification(null)}
             anchorOrigin={{ vertical: "top", horizontal: "center" }}
           >

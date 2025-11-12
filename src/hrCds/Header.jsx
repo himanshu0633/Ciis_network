@@ -21,7 +21,7 @@ import { useAuth } from "../../src/context/useAuth";
 import logo from "/logoo.png";
 import axios from "axios";
 import API_URL from "../../src/config";
-
+import Swal from "sweetalert2";
 const Header = ({ toggleSidebar }) => {
   const { user } = useAuth();
   const theme = useTheme();
@@ -192,11 +192,32 @@ const Header = ({ toggleSidebar }) => {
     await fetchNotifications();
   };
 
-  const handleLogout = () => {
+const handleLogout = async () => {
+  const result = await Swal.fire({
+    title: "Are you sure?",
+    text: "You will be logged out of your account.",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#3085d6",
+    cancelButtonColor: "#d33",
+    confirmButtonText: "Yes, logout",
+    cancelButtonText: "Cancel",
+  });
+
+  if (result.isConfirmed) {
     localStorage.removeItem("user");
     localStorage.removeItem("token");
     navigate("/login");
-  };
+
+    Swal.fire({
+      title: "Logged out!",
+      text: "You have successfully logged out.",
+      icon: "success",
+      timer: 2000,
+      showConfirmButton: false,
+    });
+  }
+};
 
   return (
     <AppBar

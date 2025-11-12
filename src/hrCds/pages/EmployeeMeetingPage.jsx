@@ -1,53 +1,81 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import axios from "../../utils/axiosConfig";
 import API_URL from "../../config";
+import { toast } from "react-toastify";
 
 export default function EmployeeMeetingPage() {
-  const userId = "employee-id"; // ✅ Replace with logged-in user's ID dynamically
+  const [userId, setUserId] = useState(null);
   const [meetings, setMeetings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // ✅ Fetch Meetings for the Employee
-  const fetchMeetings = async () => {
+  // 🟢 Load userId safely from localStorage
+  useEffect(() => {
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    const id = storedUser?._id || storedUser?.id || localStorage.getItem("userId");
+    if (!id) {
+      toast.error("⚠️ No user found. Please log in again.");
+      return;
+    }
+    setUserId(id);
+  }, []);
+
+  // 🟢 Fetch employee’s meetings
+  const fetchMeetings = async (id) => {
+    if (!id) return;
+    setLoading(true);
     try {
-      const res = await axios.get(`${API_URL}/meetings/user/${userId}`);
-      setMeetings(res.data);
-    } catch (error) {
-      console.error("❌ Error fetching meetings:", error);
+      const res = await axios.get(`${API_URL}/meetings/user/${id}`);
+      console.log("📩 Meeting API response:", res.data);
+      if (Array.isArray(res.data)) {
+        setMeetings(res.data);
+      } else {
+        setMeetings([]);
+      }
+    } catch (err) {
+      console.error("❌ Error fetching meetings:", err);
+      toast.error("Failed to load meetings");
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
 
+  // 🟢 Refetch when userId available
   useEffect(() => {
-    fetchMeetings();
-  }, []);
+    if (userId) fetchMeetings(userId);
+  }, [userId]);
 
-  // ✅ Mark meeting as seen
-  const markSeen = async (id) => {
+  // 🟢 Mark as Seen
+  const markSeen = async (meetingId) => {
+    if (!userId) return;
     try {
       await axios.post(`${API_URL}/meetings/mark-viewed`, {
-        meetingId: id,
+        meetingId,
         userId,
       });
-      fetchMeetings();
+      toast.success("✅ Marked as Seen");
+      fetchMeetings(userId);
     } catch (err) {
-      alert("❌ Failed to update status.");
-      console.error(err);
+      console.error("❌ Mark Seen error:", err);
+      toast.error("Failed to update");
     }
   };
 
-  // ✅ Refresh button for convenience
+  // 🟢 Manual refresh
   const handleRefresh = () => {
+    if (!userId) return;
     setRefreshing(true);
-    fetchMeetings();
+    fetchMeetings(userId);
   };
 
-  // ✅ While loading
+  // 🕒 Loading
   if (loading)
-    return <p style={{ textAlign: "center", marginTop: "50px" }}>⏳ Loading meetings...</p>;
+    return (
+      <div style={styles.container}>
+        <p style={{ textAlign: "center" }}>⏳ Loading your meetings...</p>
+      </div>
+    );
 
   return (
     <div style={styles.container}>
@@ -61,16 +89,14 @@ export default function EmployeeMeetingPage() {
       </div>
 
       {meetings.length === 0 ? (
-        <p>No meetings assigned yet.</p>
+        <p style={styles.empty}>No meetings assigned yet.</p>
       ) : (
         meetings.map((m) => (
           <div key={m._id} style={styles.card}>
-            <h3>{m.title}</h3>
-            <p>{m.description || "No description provided."}</p>
+            <h3 style={styles.title}>{m.title}</h3>
+            <p style={styles.desc}>{m.description || "No description provided."}</p>
             <p>
-              <b>📅 Date:</b> {new Date(m.date).toLocaleDateString()}
-            </p>
-            <p>
+              <b>📅 Date:</b> {new Date(m.date).toLocaleDateString()} &nbsp;
               <b>🕒 Time:</b> {m.time}
             </p>
             <p>
@@ -80,11 +106,7 @@ export default function EmployeeMeetingPage() {
               </span>
             </p>
             {!m.viewed && (
-              <button
-                onClick={() => markSeen(m._id)}
-                style={styles.btn}
-                disabled={refreshing}
-              >
+              <button onClick={() => markSeen(m._id)} style={styles.btn}>
                 Mark as Seen
               </button>
             )}
@@ -97,47 +119,62 @@ export default function EmployeeMeetingPage() {
 
 const styles = {
   container: {
-    maxWidth: "750px",
-    margin: "auto",
     padding: "20px",
-    fontFamily: "Arial, sans-serif",
+    maxWidth: "800px",
+    margin: "auto",
+    fontFamily: "'Segoe UI', sans-serif",
   },
   heading: {
     textAlign: "center",
-    marginBottom: "20px",
+    marginBottom: "15px",
   },
   topBar: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: "15px",
+    marginBottom: "10px",
   },
   meetingCount: {
-    fontSize: "16px",
     fontWeight: "500",
   },
   refreshBtn: {
     background: "#28a745",
-    color: "white",
+    color: "#fff",
     border: "none",
-    padding: "8px 14px",
-    borderRadius: "5px",
+    borderRadius: "6px",
+    padding: "6px 12px",
     cursor: "pointer",
   },
+  empty: {
+    textAlign: "center",
+    color: "#777",
+    fontStyle: "italic",
+    marginTop: "20px",
+  },
   card: {
-    border: "1px solid #ccc",
+    background: "#fff",
     borderRadius: "10px",
+    border: "1px solid #ddd",
     padding: "15px",
-    marginBottom: "15px",
-    background: "#f9f9f9",
-    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+    marginBottom: "12px",
+    boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
+  },
+  title: {
+    fontSize: "18px",
+    fontWeight: "bold",
+    color: "#222",
+  },
+  desc: {
+    fontSize: "15px",
+    color: "#555",
   },
   btn: {
     background: "#007bff",
     color: "#fff",
     border: "none",
-    borderRadius: "5px",
+    borderRadius: "6px",
     padding: "8px 12px",
     cursor: "pointer",
+    marginTop: "10px",
   },
 };

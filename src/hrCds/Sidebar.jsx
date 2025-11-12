@@ -14,7 +14,7 @@ import {
   Typography
 } from '@mui/material';
 import LogoutIcon from '@mui/icons-material/Logout';
-
+import Swal from "sweetalert2";
 import {
   FaHome, FaClipboardList, FaFileAlt, FaRocket, FaClock, FaMoneyBill, FaWallet,
   FaBullseye, FaChartLine, FaTasks, FaUserPlus, FaUserTie, FaNetworkWired,
@@ -97,10 +97,40 @@ const Sidebar = ({ isOpen = true, closeSidebar }) => {
     if (closeSidebar) closeSidebar();
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
-    navigate('/');
+  const handleLogout = async () => {
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "You’ll be logged out of your account.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, Logout",
+      cancelButtonText: "Cancel",
+      background: "#f9f9f9",
+      color: "#333",
+      customClass: {
+        popup: "rounded-xl shadow-lg",
+        title: "text-lg font-semibold",
+        confirmButton: "px-4 py-2 rounded-md",
+        cancelButton: "px-4 py-2 rounded-md",
+      },
+    });
+
+    if (result.isConfirmed) {
+      localStorage.removeItem("user");
+      localStorage.removeItem("token");
+
+      Swal.fire({
+        title: "Logged Out!",
+        text: "You have successfully logged out.",
+        icon: "success",
+        showConfirmButton: false,
+        timer: 2000,
+      });
+
+      setTimeout(() => navigate("/login"), 1800);
+    }
   };
 
   // Menu configuration
@@ -125,6 +155,8 @@ const Sidebar = ({ isOpen = true, closeSidebar }) => {
     { icon: <FaTasks />, name: 'Employees Task Create', path: '/cds/admin/admin-task-create' },
     // { icon: <FaTasks />, name: 'Employees Task Management', path: '/cds/admin/emp-task-management' },
     { icon: <FaGraduationCap />, name: 'Employees Task Details', path: '/cds/admin/emp-task-details' },
+    { icon: <FaUsers />, name: 'Admin Meeting', path: '/cds/admin/admin-meeting' },
+    { icon: <FaNetworkWired />, name: 'Admin Projects', path: '/cds/admin/adminp' },
     { icon: <FaUser />, name: 'Create User', path: '/cds/admin/create-user' },
   ];
 

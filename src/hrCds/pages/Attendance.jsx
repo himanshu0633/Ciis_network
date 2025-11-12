@@ -4,11 +4,11 @@ import {
   TableContainer, TableHead, TableRow, Paper, Chip, IconButton,
   Popover, Modal, Stack, useMediaQuery, Card, CardContent,
   InputAdornment, Button, Avatar, LinearProgress, Fade,
-  Tooltip, Badge, Divider,Grid
+  Tooltip, Divider, Grid
 } from '@mui/material';
-import { 
+import {
   FiSearch, FiCalendar, FiClock, FiUser, FiTrendingUp,
-  FiDownload, FiFilter, FiEye, FiChevronRight,
+  FiDownload, FiEye, FiChevronRight,
   FiCheckCircle, FiAlertCircle, FiMinusCircle
 } from 'react-icons/fi';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -20,7 +20,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { useTheme } from '@mui/material/styles';
 import { styled } from '@mui/material/styles';
 
-// Enhanced Styled Components
+// Styled Components
 const StatCard = styled(Card)(({ theme }) => ({
   background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
   borderRadius: theme.shape.borderRadius * 2,
@@ -114,6 +114,7 @@ const Attendance = () => {
   const [openModal, setOpenModal] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState('ALL');
   const [stats, setStats] = useState({
     present: 0,
     absent: 0,
@@ -149,7 +150,7 @@ const Attendance = () => {
     const present = data.filter(record => record.status === 'PRESENT').length;
     const absent = data.filter(record => record.status === 'ABSENT').length;
     const halfDay = data.filter(record => record.status === 'HALF_DAY').length;
-    
+
     setStats({
       present,
       absent,
@@ -202,10 +203,14 @@ const Attendance = () => {
     handleCalendarClose();
   };
 
-  const filteredData = attendance.filter(record =>
-    formatDate(record.date).toLowerCase().includes(search.toLowerCase()) ||
-    record.status.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredData = attendance.filter(record => {
+    const matchesSearch =
+      formatDate(record.date).toLowerCase().includes(search.toLowerCase()) ||
+      record.status.toLowerCase().includes(search.toLowerCase());
+    const matchesStatus =
+      statusFilter === 'ALL' || record.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   const openDetailsModal = (record) => {
     setSelectedRecord(record);
@@ -218,17 +223,13 @@ const Attendance = () => {
   };
 
   const exportToCSV = () => {
-    // Simple CSV export implementation
-    const headers = ['Date', 'Login', 'Logout', 'Status', 'Total Time', 'Overtime', 'Early Leave'];
+    const headers = ['Date', 'Login', 'Logout', 'Status', 'Total Time'];
     const csvData = filteredData.map(record => [
       formatDate(record.date),
       formatTime(record.inTime),
       formatTime(record.outTime),
       record.status,
-      record.totalTime || '00:00:00',
-      record.overTime || '00:00:00',
-      record.lateBy || '00:00:00',
-      record.earlyLeave || '00:00:00'
+      record.totalTime || '00:00:00'
     ]);
 
     const csvContent = [headers, ...csvData]
@@ -242,16 +243,15 @@ const Attendance = () => {
     link.download = `attendance-${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
     URL.revokeObjectURL(url);
-    
     toast.success('📊 CSV exported successfully!');
   };
 
   if (loading) {
     return (
-      <Box sx={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
+      <Box sx={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
         minHeight: '100vh',
         background: theme.palette.background.default
       }}>
@@ -263,38 +263,22 @@ const Attendance = () => {
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Fade in={!loading} timeout={500}>
-        <Box sx={{ 
-          px: { xs: 2, md: 4 }, 
-          py: 3, 
-          background: theme.palette.background.default, 
-          minHeight: '100vh' 
+        <Box sx={{
+          px: { xs: 2, md: 4 },
+          py: 3,
+          background: theme.palette.background.default,
+          minHeight: '100vh'
         }}>
-          <ToastContainer 
-            position="top-right" 
-            autoClose={4000} 
-            hideProgressBar={false}
-            newestOnTop
-            closeOnClick
-            rtl={false}
-            pauseOnFocusLoss
-            draggable
-            pauseOnHover
-          />
+          <ToastContainer position="top-right" autoClose={4000} />
 
-          {/* Header Section */}
-          <Paper sx={{ 
-            p: 3, 
-            mb: 3, 
+          {/* Header */}
+          <Paper sx={{
+            p: 3, mb: 3,
             borderRadius: theme.shape.borderRadius * 2,
             background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
             boxShadow: theme.shadows[4]
           }}>
-            <Stack 
-              direction={{ xs: 'column', md: 'row' }} 
-              spacing={3} 
-              justifyContent="space-between" 
-              alignItems={{ xs: 'flex-start', md: 'center' }}
-            >
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }}>
               <Box>
                 <Typography variant="h4" fontWeight={800} gutterBottom>
                   Attendance Records
@@ -329,7 +313,7 @@ const Attendance = () => {
                   }}
                   sx={{ width: { xs: '100%', sm: 280 } }}
                 />
-                
+
                 <Tooltip title="Export to CSV">
                   <Button
                     variant="outlined"
@@ -364,148 +348,108 @@ const Attendance = () => {
             </Popover>
           </Paper>
 
-          {/* Statistics Cards */}
+          {/* Active Filter */}
+          {statusFilter !== 'ALL' && (
+            <Box sx={{ mb: 2 }}>
+              <Chip
+                label={`Filter: ${statusFilter}`}
+                color="primary"
+                onDelete={() => setStatusFilter('ALL')}
+                sx={{ fontWeight: 600 }}
+              />
+            </Box>
+          )}
+
+          {/* Stat Cards */}
           <Grid container spacing={3} sx={{ mb: 4 }}>
+            {/* Present */}
             <Grid item xs={12} sm={6} md={3}>
-              <StatCard>
+              <StatCard
+                onClick={() => setStatusFilter('PRESENT')}
+                sx={{
+                  cursor: 'pointer',
+                  border: statusFilter === 'PRESENT' ? `2px solid ${theme.palette.success.main}` : 'none',
+                }}
+              >
                 <CardContent>
                   <Stack direction="row" alignItems="center" spacing={2}>
-                    <Avatar sx={{ 
-                      bgcolor: `${theme.palette.success.main}20`, 
-                      color: theme.palette.success.main 
-                    }}>
+                    <Avatar sx={{ bgcolor: `${theme.palette.success.main}20`, color: theme.palette.success.main }}>
                       <FiCheckCircle />
                     </Avatar>
                     <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        Present Days
-                      </Typography>
-                      <Typography variant="h4" fontWeight={700}>
-                        {stats.present}
-                      </Typography>
+                      <Typography variant="body2" color="text.secondary">Present Days</Typography>
+                      <Typography variant="h4" fontWeight={700}>{stats.present}</Typography>
                     </Box>
                   </Stack>
-                  <LinearProgress 
-                    variant="determinate" 
-                    value={stats.total ? (stats.present / stats.total) * 100 : 0} 
-                    sx={{ 
-                      mt: 2,
-                      height: 6,
-                      borderRadius: 3,
-                      bgcolor: theme.palette.action.hover,
-                      '& .MuiLinearProgress-bar': {
-                        bgcolor: theme.palette.success.main,
-                      }
-                    }}
-                  />
                 </CardContent>
               </StatCard>
             </Grid>
 
+            {/* Absent */}
             <Grid item xs={12} sm={6} md={3}>
-              <StatCard>
+              <StatCard
+                onClick={() => setStatusFilter('ABSENT')}
+                sx={{
+                  cursor: 'pointer',
+                  border: statusFilter === 'ABSENT' ? `2px solid ${theme.palette.error.main}` : 'none',
+                }}
+              >
                 <CardContent>
                   <Stack direction="row" alignItems="center" spacing={2}>
-                    <Avatar sx={{ 
-                      bgcolor: `${theme.palette.error.main}20`, 
-                      color: theme.palette.error.main 
-                    }}>
+                    <Avatar sx={{ bgcolor: `${theme.palette.error.main}20`, color: theme.palette.error.main }}>
                       <FiMinusCircle />
                     </Avatar>
                     <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        Absent Days
-                      </Typography>
-                      <Typography variant="h4" fontWeight={700}>
-                        {stats.absent}
-                      </Typography>
+                      <Typography variant="body2" color="text.secondary">Absent Days</Typography>
+                      <Typography variant="h4" fontWeight={700}>{stats.absent}</Typography>
                     </Box>
                   </Stack>
-                  <LinearProgress 
-                    variant="determinate" 
-                    value={stats.total ? (stats.absent / stats.total) * 100 : 0} 
-                    sx={{ 
-                      mt: 2,
-                      height: 6,
-                      borderRadius: 3,
-                      bgcolor: theme.palette.action.hover,
-                      '& .MuiLinearProgress-bar': {
-                        bgcolor: theme.palette.error.main,
-                      }
-                    }}
-                  />
                 </CardContent>
               </StatCard>
             </Grid>
 
+            {/* Half Day */}
             <Grid item xs={12} sm={6} md={3}>
-              <StatCard>
+              <StatCard
+                onClick={() => setStatusFilter('HALF_DAY')}
+                sx={{
+                  cursor: 'pointer',
+                  border: statusFilter === 'HALF_DAY' ? `2px solid ${theme.palette.warning.main}` : 'none',
+                }}
+              >
                 <CardContent>
                   <Stack direction="row" alignItems="center" spacing={2}>
-                    <Avatar sx={{ 
-                      bgcolor: `${theme.palette.warning.main}20`, 
-                      color: theme.palette.warning.main 
-                    }}>
+                    <Avatar sx={{ bgcolor: `${theme.palette.warning.main}20`, color: theme.palette.warning.main }}>
                       <FiAlertCircle />
                     </Avatar>
                     <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        Half Days
-                      </Typography>
-                      <Typography variant="h4" fontWeight={700}>
-                        {stats.halfDay}
-                      </Typography>
+                      <Typography variant="body2" color="text.secondary">Half Days</Typography>
+                      <Typography variant="h4" fontWeight={700}>{stats.halfDay}</Typography>
                     </Box>
                   </Stack>
-                  <LinearProgress 
-                    variant="determinate" 
-                    value={stats.total ? (stats.halfDay / stats.total) * 100 : 0} 
-                    sx={{ 
-                      mt: 2,
-                      height: 6,
-                      borderRadius: 3,
-                      bgcolor: theme.palette.action.hover,
-                      '& .MuiLinearProgress-bar': {
-                        bgcolor: theme.palette.warning.main,
-                      }
-                    }}
-                  />
                 </CardContent>
               </StatCard>
             </Grid>
 
+            {/* Total */}
             <Grid item xs={12} sm={6} md={3}>
-              <StatCard>
+              <StatCard
+                onClick={() => setStatusFilter('ALL')}
+                sx={{
+                  cursor: 'pointer',
+                  border: statusFilter === 'ALL' ? `2px solid ${theme.palette.info.main}` : 'none',
+                }}
+              >
                 <CardContent>
                   <Stack direction="row" alignItems="center" spacing={2}>
-                    <Avatar sx={{ 
-                      bgcolor: `${theme.palette.info.main}20`, 
-                      color: theme.palette.info.main 
-                    }}>
+                    <Avatar sx={{ bgcolor: `${theme.palette.info.main}20`, color: theme.palette.info.main }}>
                       <FiTrendingUp />
                     </Avatar>
                     <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        Total Records
-                      </Typography>
-                      <Typography variant="h4" fontWeight={700}>
-                        {stats.total}
-                      </Typography>
+                      <Typography variant="body2" color="text.secondary">Total Records</Typography>
+                      <Typography variant="h4" fontWeight={700}>{stats.total}</Typography>
                     </Box>
                   </Stack>
-                  <LinearProgress 
-                    variant="determinate" 
-                    value={100} 
-                    sx={{ 
-                      mt: 2,
-                      height: 6,
-                      borderRadius: 3,
-                      bgcolor: theme.palette.action.hover,
-                      '& .MuiLinearProgress-bar': {
-                        bgcolor: theme.palette.info.main,
-                      }
-                    }}
-                  />
                 </CardContent>
               </StatCard>
             </Grid>
@@ -519,40 +463,25 @@ const Attendance = () => {
                   <Table>
                     <TableHead>
                       <TableRow>
-                        <TableCell sx={{ fontWeight: 700, py: 3 }}>Date</TableCell>
-                        <TableCell sx={{ fontWeight: 700 }}>Login Time</TableCell>
-                        <TableCell sx={{ fontWeight: 700 }}>Logout Time</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Date</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Login</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Logout</TableCell>
                         <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
                         <TableCell sx={{ fontWeight: 700 }}>Total Time</TableCell>
-                        {/* <TableCell sx={{ fontWeight: 700 }}>Overtime</TableCell>
-                        <TableCell sx={{ fontWeight: 700 }}>Late By</TableCell>
-                        <TableCell sx={{ fontWeight: 700 }}>Early Leave</TableCell> */}
-                        <TableCell sx={{ fontWeight: 700 }}>Actions</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Action</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {filteredData.length > 0 ? (
-                        filteredData.map((record, idx) => (
-                          <StyledTableRow 
-                            key={record._id} 
+                        filteredData.map((record) => (
+                          <StyledTableRow
+                            key={record._id}
                             status={record.status}
                             onClick={() => openDetailsModal(record)}
                           >
-                            <TableCell sx={{ py: 2.5 }}>
-                              <Typography variant="body2" fontWeight={600}>
-                                {formatDate(record.date)}
-                              </Typography>
-                            </TableCell>
-                            <TableCell>
-                              <Typography variant="body2">
-                                {formatTime(record.inTime)}
-                              </Typography>
-                            </TableCell>
-                            <TableCell>
-                              <Typography variant="body2">
-                                {formatTime(record.outTime)}
-                              </Typography>
-                            </TableCell>
+                            <TableCell>{formatDate(record.date)}</TableCell>
+                            <TableCell>{formatTime(record.inTime)}</TableCell>
+                            <TableCell>{formatTime(record.outTime)}</TableCell>
                             <TableCell>
                               <StatusChip
                                 label={record.status}
@@ -561,47 +490,19 @@ const Attendance = () => {
                                 icon={getStatusIcon(record.status)}
                               />
                             </TableCell>
-                            <TableCell>
-                              <Typography variant="body2" fontWeight={500}>
-                                {record.totalTime || '00:00:00'}
-                              </Typography>
-                            </TableCell>
-                            {/* <TableCell>
-                              <Typography variant="body2">
-                                {record.overTime || '00:00:00'}
-                              </Typography>
-                            </TableCell> */}
-                            {/* <TableCell>
-                              <Typography variant="body2" color={record.lateBy ? 'error' : 'text.secondary'}>
-                                {record.lateBy || '00:00:00'}
-                              </Typography>
-                            </TableCell> */}
-                            {/* <TableCell>
-                              <Typography variant="body2" color={record.earlyLeave ? 'warning' : 'text.secondary'}>
-                                {record.earlyLeave || '00:00:00'}
-                              </Typography>
-                            </TableCell> */}
+                            <TableCell>{record.totalTime || '00:00:00'}</TableCell>
                             <TableCell>
                               <Tooltip title="View Details">
-                                <IconButton size="small">
-                                  <FiEye />
-                                </IconButton>
+                                <IconButton size="small"><FiEye /></IconButton>
                               </Tooltip>
                             </TableCell>
                           </StyledTableRow>
                         ))
                       ) : (
                         <TableRow>
-                          <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
-                            <Box sx={{ textAlign: 'center' }}>
-                              <FiUser size={48} color={theme.palette.text.secondary} />
-                              <Typography variant="h6" color="text.secondary" sx={{ mt: 1 }}>
-                                No records found
-                              </Typography>
-                              <Typography variant="body2" color="text.secondary">
-                                Try adjusting your search criteria
-                              </Typography>
-                            </Box>
+                          <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                            <FiUser size={48} color={theme.palette.text.secondary} />
+                            <Typography variant="h6" color="text.secondary">No records found</Typography>
                           </TableCell>
                         </TableRow>
                       )}
@@ -612,46 +513,31 @@ const Attendance = () => {
             </StatCard>
           )}
 
-          {/* Mobile View Card List */}
+          {/* Mobile Cards */}
           {isMobile && (
             <Stack spacing={2}>
               {filteredData.length > 0 ? (
                 filteredData.map((record) => (
-                  <MobileRecordCard 
-                    key={record._id} 
+                  <MobileRecordCard
+                    key={record._id}
                     status={record.status}
                     onClick={() => openDetailsModal(record)}
                   >
                     <CardContent>
                       <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
                         <Box sx={{ flex: 1 }}>
-                          <Typography variant="h6" fontWeight={600} gutterBottom>
-                            {formatDate(record.date)}
-                          </Typography>
-                          
+                          <Typography variant="h6" fontWeight={600}>{formatDate(record.date)}</Typography>
                           <Stack spacing={1}>
-                            <Stack direction="row" spacing={2}>
-                              <Typography variant="body2" color="text.secondary">
-                                In: {formatTime(record.inTime)}
-                              </Typography>
-                              <Typography variant="body2" color="text.secondary">
-                                Out: {formatTime(record.outTime)}
-                              </Typography>
-                            </Stack>
-                            
+                            <Typography variant="body2">In: {formatTime(record.inTime)}</Typography>
+                            <Typography variant="body2">Out: {formatTime(record.outTime)}</Typography>
                             <Stack direction="row" spacing={2} alignItems="center">
-                              <StatusChip
-                                label={record.status}
-                                status={record.status}
-                                size="small"
-                              />
+                              <StatusChip label={record.status} status={record.status} size="small" />
                               <Typography variant="body2" fontWeight={500}>
                                 {record.totalTime || '00:00:00'}
                               </Typography>
                             </Stack>
                           </Stack>
                         </Box>
-                        
                         <FiChevronRight color={theme.palette.text.secondary} />
                       </Stack>
                     </CardContent>
@@ -660,15 +546,13 @@ const Attendance = () => {
               ) : (
                 <Box sx={{ textAlign: 'center', py: 4 }}>
                   <FiUser size={48} color={theme.palette.text.secondary} />
-                  <Typography variant="h6" color="text.secondary" sx={{ mt: 1 }}>
-                    No records found
-                  </Typography>
+                  <Typography variant="h6" color="text.secondary">No records found</Typography>
                 </Box>
               )}
             </Stack>
           )}
 
-          {/* Enhanced Modal for Details */}
+          {/* Modal */}
           <Modal open={openModal} onClose={closeModal}>
             <Fade in={openModal}>
               <Box sx={{
@@ -680,95 +564,52 @@ const Attendance = () => {
                 bgcolor: 'background.paper',
                 borderRadius: theme.shape.borderRadius * 2,
                 boxShadow: theme.shadows[24],
-                p: 0,
                 overflow: 'hidden'
               }}>
                 {selectedRecord && (
                   <>
-                    <Box sx={{ 
-                      p: 3, 
+                    <Box sx={{
+                      p: 3,
                       background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
                       color: 'white'
                     }}>
-                      <Typography variant="h5" fontWeight={700} gutterBottom>
-                        Attendance Details
-                      </Typography>
-                      <Typography variant="body1">
-                        {formatDate(selectedRecord.date)}
-                      </Typography>
+                      <Typography variant="h5" fontWeight={700}>Attendance Details</Typography>
+                      <Typography variant="body1">{formatDate(selectedRecord.date)}</Typography>
                     </Box>
-                    
+
                     <Box sx={{ p: 3 }}>
-                      <Stack spacing={2.5}>
-                        <Stack direction="row" justifyContent="space-between" alignItems="center">
-                          <Typography variant="body2" color="text.secondary">Status</Typography>
-                          <StatusChip
-                            label={selectedRecord.status}
-                            status={selectedRecord.status}
-                            icon={getStatusIcon(selectedRecord.status)}
-                          />
+                      <Stack spacing={2}>
+                        <Stack direction="row" justifyContent="space-between">
+                          <Typography>Status</Typography>
+                          <StatusChip label={selectedRecord.status} status={selectedRecord.status} />
                         </Stack>
-                        
                         <Divider />
-                        
-                        <Stack direction="row" justifyContent="space-between" alignItems="center">
-                          <Typography variant="body2" color="text.secondary">Login Time</Typography>
-                          <Typography variant="body1" fontWeight={600}>
-                            {formatTime(selectedRecord.inTime)}
-                          </Typography>
+                        <Stack direction="row" justifyContent="space-between">
+                          <Typography>Login</Typography>
+                          <Typography>{formatTime(selectedRecord.inTime)}</Typography>
                         </Stack>
-                        
-                        <Stack direction="row" justifyContent="space-between" alignItems="center">
-                          <Typography variant="body2" color="text.secondary">Logout Time</Typography>
-                          <Typography variant="body1" fontWeight={600}>
-                            {formatTime(selectedRecord.outTime)}
-                          </Typography>
+                        <Stack direction="row" justifyContent="space-between">
+                          <Typography>Logout</Typography>
+                          <Typography>{formatTime(selectedRecord.outTime)}</Typography>
                         </Stack>
-                        
-                        <Stack direction="row" justifyContent="space-between" alignItems="center">
-                          <Typography variant="body2" color="text.secondary">Total Time</Typography>
-                          <Typography variant="body1" fontWeight={600} color="primary.main">
-                            {selectedRecord.totalTime || '00:00:00'}
-                          </Typography>
+                        <Stack direction="row" justifyContent="space-between">
+                          <Typography>Total Time</Typography>
+                          <Typography fontWeight={600}>{selectedRecord.totalTime || '00:00:00'}</Typography>
                         </Stack>
-                        
-                        <Divider />
-                        
-                        {/* <Stack direction="row" justifyContent="space-between" alignItems="center">
-                          <Typography variant="body2" color="text.secondary">Overtime</Typography>
-                          <Typography variant="body1">
-                            {selectedRecord.overTime || '00:00:00'}
-                          </Typography>
-                        </Stack>
-                        
-                        <Stack direction="row" justifyContent="space-between" alignItems="center">
-                          <Typography variant="body2" color="text.secondary">Late By</Typography>
-                          <Typography variant="body1" color={selectedRecord.lateBy ? 'error' : 'text.primary'}>
-                            {selectedRecord.lateBy || '00:00:00'}
-                          </Typography>
-                        </Stack>
-                        
-                        <Stack direction="row" justifyContent="space-between" alignItems="center">
-                          <Typography variant="body2" color="text.secondary">Early Leave</Typography>
-                          <Typography variant="body1" color={selectedRecord.earlyLeave ? 'warning' : 'text.primary'}>
-                            {selectedRecord.earlyLeave || '00:00:00'}
-                          </Typography>
-                        </Stack> */}
+                        <Button
+                          fullWidth
+                          variant="contained"
+                          onClick={closeModal}
+                          sx={{
+                            mt: 3,
+                            borderRadius: theme.shape.borderRadius * 2,
+                            py: 1.5,
+                            fontWeight: 600
+                          }}
+                        >
+                          Close
+                        </Button>
                       </Stack>
-                      
-                      <Button
-                        fullWidth
-                        variant="contained"
-                        onClick={closeModal}
-                        sx={{ 
-                          mt: 3,
-                          borderRadius: theme.shape.borderRadius * 2,
-                          py: 1.5,
-                          fontWeight: 600
-                        }}
-                      >
-                        Close Details
-                      </Button>
                     </Box>
                   </>
                 )}

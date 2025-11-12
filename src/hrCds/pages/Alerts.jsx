@@ -1,22 +1,91 @@
 import React, { useEffect, useState } from "react";
 import axios from "../../utils/axiosConfig";
 import {
-  Box, Typography, Paper, Button, Dialog, DialogActions,
-  DialogContent, DialogTitle, TextField, IconButton, Snackbar,
-  MenuItem, Stack, Card, CardContent, Grid, Avatar, Fade,
-  Tooltip, Chip, useTheme, FormControl, Select, InputLabel,
-  Checkbox, ListItemText
+  Box,
+  Typography,
+  Paper,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  TextField,
+  IconButton,
+  Snackbar,
+  MenuItem,
+  Stack,
+  Card,
+  CardContent,
+  Grid,
+  Avatar,
+  Fade,
+  Tooltip,
+  Chip,
+  useTheme,
+  FormControl,
+  Select,
+  InputLabel,
+  Checkbox,
+  ListItemText,
+  LinearProgress,
 } from "@mui/material";
 import {
-  FiAlertCircle, FiAlertTriangle, FiInfo, FiPlus,
-  FiEdit, FiTrash2, FiBell, FiClock,
+  FiAlertCircle,
+  FiAlertTriangle,
+  FiInfo,
+  FiPlus,
+  FiEdit,
+  FiTrash2,
+  FiBell,
+  FiClock,
+  FiTrendingUp,
 } from "react-icons/fi";
-import { styled } from "@mui/material/styles";
+import { styled, keyframes } from "@mui/material/styles";
+
+/* -----------------------------------
+ 🔹 Animations
+------------------------------------ */
+const fadeIn = keyframes`
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+`;
+const pulse = keyframes`
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+`;
+
+/* -----------------------------------
+ 🔹 Styled Components
+------------------------------------ */
+const StatCard = styled(Card)(({ theme, color = "primary" }) => ({
+  borderRadius: theme.shape.borderRadius * 3,
+  boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
+  background: `linear-gradient(135deg, ${theme.palette.background.paper}, ${theme.palette.background.default})`,
+  border: `1px solid ${theme.palette.divider}`,
+  overflow: "hidden",
+  cursor: "pointer",
+  position: "relative",
+  transition: "all 0.3s ease",
+  "&::before": {
+    content: '""',
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: "4px",
+    background: `linear-gradient(90deg, ${theme.palette[color].main}, ${theme.palette[color].light})`,
+  },
+  "&:hover": {
+    transform: "translateY(-4px)",
+    boxShadow: "0 12px 40px rgba(0,0,0,0.1)",
+  },
+}));
 
 const AlertCard = styled(Card)(({ theme, type }) => ({
   borderRadius: theme.shape.borderRadius * 2,
   boxShadow: theme.shadows[2],
-  transition: theme.transitions.create(["all"]),
+  animation: `${fadeIn} 0.5s ease-out`,
   borderLeft: `6px solid ${
     type === "info"
       ? theme.palette.info.main
@@ -25,117 +94,128 @@ const AlertCard = styled(Card)(({ theme, type }) => ({
       : theme.palette.error.main
   }`,
   "&:hover": {
+    transform: "translateY(-3px)",
     boxShadow: theme.shadows[6],
-    transform: "translateY(-2px)",
   },
 }));
 
 const TypeChip = styled(Chip)(({ theme, type }) => ({
   fontWeight: 600,
+  textTransform: "capitalize",
   ...(type === "info" && {
     background: `${theme.palette.info.main}20`,
     color: theme.palette.info.dark,
-    border: `1px solid ${theme.palette.info.main}40`,
   }),
   ...(type === "warning" && {
     background: `${theme.palette.warning.main}20`,
     color: theme.palette.warning.dark,
-    border: `1px solid ${theme.palette.warning.main}40`,
   }),
   ...(type === "error" && {
     background: `${theme.palette.error.main}20`,
     color: theme.palette.error.dark,
-    border: `1px solid ${theme.palette.error.main}40`,
   }),
 }));
 
+/* -----------------------------------
+ 🔹 Constants
+------------------------------------ */
 const alertTypes = [
   { value: "info", label: "Information", icon: FiInfo },
   { value: "warning", label: "Warning", icon: FiAlertTriangle },
   { value: "error", label: "Error", icon: FiAlertCircle },
 ];
 
-const defaultForm = { type: "info", message: "", assignedUsers: [], assignedGroups: [] };
-
+/* -----------------------------------
+ 🔹 Component
+------------------------------------ */
 const Alerts = () => {
   const [alerts, setAlerts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [form, setForm] = useState({
+    type: "info",
+    message: "",
+    assignedUsers: [],
+    assignedGroups: [],
+  });
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState(null);
-  const [form, setForm] = useState(defaultForm);
-  const [notification, setNotification] = useState({ open: false, message: "", severity: "success" });
-  const [token, setToken] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({ total: 0, info: 0, warning: 0, error: 0 });
   const [users, setUsers] = useState([]);
   const [groups, setGroups] = useState([]);
-  const [currentUserRole, setCurrentUserRole] = useState("");
-
-  const canManage = currentUserRole === "hr" || currentUserRole === "manager";
-  const theme = useTheme();
-
-  const authHeaders = () => ({
-    headers: { Authorization: `Bearer ${token}` },
+  const [notification, setNotification] = useState(null);
+  const [stats, setStats] = useState({
+    total: 0,
+    info: 0,
+    warning: 0,
+    error: 0,
   });
+  const [filterType, setFilterType] = useState("all");
+  const [role, setRole] = useState("");
+
+  const theme = useTheme();
+  const token = localStorage.getItem("token");
+  const canManage = role === "hr" || role === "manager";
+
+  const headers = { headers: { Authorization: `Bearer ${token}` } };
+
+  /* -----------------------------------
+    🔹 Fetch Data
+  ------------------------------------ */
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [alertsRes, usersRes, groupsRes] = await Promise.all([
+        axios.get("/alerts", headers),
+        axios.get("/task/assignable-users", headers),
+        axios.get("/groups", headers),
+      ]);
+      const fetchedAlerts =
+        alertsRes.data.alerts || alertsRes.data.data || alertsRes.data || [];
+      const fetchedUsers =
+        usersRes.data.users || usersRes.data.data || usersRes.data || [];
+      const fetchedGroups =
+        groupsRes.data.groups || groupsRes.data.data || groupsRes.data || [];
+
+      setAlerts(fetchedAlerts);
+      setUsers(fetchedUsers);
+      setGroups(fetchedGroups);
+      calculateStats(fetchedAlerts);
+    } catch {
+      setNotification({
+        message: "Failed to load alerts",
+        severity: "error",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const calculateStats = (data) => {
+    const info = data.filter((a) => a.type === "info").length;
+    const warning = data.filter((a) => a.type === "warning").length;
+    const error = data.filter((a) => a.type === "error").length;
+    setStats({
+      total: data.length,
+      info,
+      warning,
+      error,
+    });
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
       try {
-        const storedToken = localStorage.getItem("token");
-        if (storedToken) setToken(storedToken);
-
-        const storedUser = localStorage.getItem("user");
-        if (storedUser) {
-          try {
-            const parsedUser = JSON.parse(storedUser);
-            const role = (parsedUser?.role || parsedUser?.user?.role || "").toLowerCase();
-            setCurrentUserRole(role);
-          } catch (e) {
-            console.error("Failed to parse user:", e);
-          }
-        }
-
-        // ✅ Updated Safe API Calls
-        const [usersRes, groupsRes, alertsRes] = await Promise.all([
-          axios.get("/task/assignable-users", authHeaders()),
-          axios.get("/groups", authHeaders()),
-          axios.get("/alerts", authHeaders())
-        ]);
-
-        // ✅ Safe Array Extraction
-        const fetchedUsers = Array.isArray(usersRes.data)
-          ? usersRes.data
-          : usersRes.data?.users || usersRes.data?.data || [];
-
-        const fetchedGroups = Array.isArray(groupsRes.data)
-          ? groupsRes.data
-          : groupsRes.data?.groups || groupsRes.data?.data || [];
-
-        const fetchedAlerts = Array.isArray(alertsRes.data)
-          ? alertsRes.data
-          : alertsRes.data?.alerts || alertsRes.data?.data || [];
-
-        setUsers(fetchedUsers);
-        setGroups(fetchedGroups);
-        setAlerts(fetchedAlerts);
-        calculateStats(fetchedAlerts);
-      } catch (err) {
-        console.error(err);
-        setNotification({ open: true, message: "Failed to load alerts", severity: "error" });
-      } finally {
-        setLoading(false);
-      }
-    };
+        const parsed = JSON.parse(storedUser);
+        const userRole = parsed.role || parsed.user?.role || "";
+        setRole(userRole.toLowerCase());
+      } catch {}
+    }
     fetchData();
   }, []);
 
-  const calculateStats = (alertsData) => {
-    const info = alertsData.filter((a) => a.type === "info").length;
-    const warning = alertsData.filter((a) => a.type === "warning").length;
-    const error = alertsData.filter((a) => a.type === "error").length;
-    setStats({ total: alertsData.length, info, warning, error });
-  };
-
+  /* -----------------------------------
+    🔹 Handlers
+  ------------------------------------ */
   const handleOpen = (alert = null) => {
     if (alert) {
       setEditId(alert._id);
@@ -147,7 +227,12 @@ const Alerts = () => {
       });
     } else {
       setEditId(null);
-      setForm(defaultForm);
+      setForm({
+        type: "info",
+        message: "",
+        assignedUsers: [],
+        assignedGroups: [],
+      });
     }
     setOpen(true);
   };
@@ -155,162 +240,202 @@ const Alerts = () => {
   const handleClose = () => setOpen(false);
 
   const handleChange = (e) => {
-    setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!form.message.trim()) {
-      setNotification({ open: true, message: "Please enter a message", severity: "error" });
-      return;
-    }
-    if (!canManage) {
-      setNotification({ open: true, message: "Not authorized", severity: "error" });
-      return;
-    }
+  const handleSubmit = async () => {
+    if (!canManage)
+      return setNotification({ message: "Unauthorized", severity: "error" });
+    if (!form.message.trim())
+      return setNotification({ message: "Message required", severity: "error" });
 
     try {
       if (editId) {
-        const res = await axios.put(`/alerts/${editId}`, form, authHeaders());
-        setAlerts((prev) => prev.map((a) => (a._id === editId ? res.data.alert : a)));
-        setNotification({ open: true, message: "Alert updated!", severity: "success" });
+        const res = await axios.put(`/alerts/${editId}`, form, headers);
+        setAlerts((prev) =>
+          prev.map((a) => (a._id === editId ? res.data.alert : a))
+        );
+        setNotification({ message: "Alert updated", severity: "success" });
       } else {
-        const res = await axios.post("/alerts", form, authHeaders());
+        const res = await axios.post("/alerts", form, headers);
         setAlerts((prev) => [res.data.alert, ...prev]);
-        setNotification({ open: true, message: "Alert created!", severity: "success" });
+        setNotification({ message: "Alert created", severity: "success" });
       }
-      setOpen(false);
       calculateStats(alerts);
-    } catch (err) {
-      console.error(err);
-      setNotification({
-        open: true,
-        message: err.response?.data?.message || "Something went wrong",
-        severity: "error",
-      });
+      setOpen(false);
+    } catch {
+      setNotification({ message: "Error saving alert", severity: "error" });
     }
   };
 
   const handleDelete = async (id) => {
-    if (!canManage) {
-      setNotification({ open: true, message: "Not authorized", severity: "error" });
-      return;
-    }
-
+    if (!canManage)
+      return setNotification({ message: "Unauthorized", severity: "error" });
     try {
-      await axios.delete(`/alerts/${id}`, authHeaders());
-      const newAlerts = alerts.filter((a) => a._id !== id);
-      setAlerts(newAlerts);
-      calculateStats(newAlerts);
-      setNotification({ open: true, message: "Alert deleted", severity: "success" });
-    } catch (err) {
-      console.error(err);
-      setNotification({
-        open: true,
-        message: err.response?.data?.message || "Something went wrong",
-        severity: "error",
-      });
+      await axios.delete(`/alerts/${id}`, headers);
+      const updated = alerts.filter((a) => a._id !== id);
+      setAlerts(updated);
+      calculateStats(updated);
+      setNotification({ message: "Alert deleted", severity: "success" });
+    } catch {
+      setNotification({ message: "Delete failed", severity: "error" });
     }
   };
 
-  const getAlertIcon = (type) => {
-    const alertType = alertTypes.find((t) => t.value === type);
-    const IconComponent = alertType ? alertType.icon : FiInfo;
-    return <IconComponent size={20} />;
-  };
+  const filteredAlerts =
+    filterType === "all"
+      ? alerts
+      : alerts.filter((a) => a.type === filterType);
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return "--";
-    const date = new Date(dateStr);
-    return date.toLocaleString("en-US", {
-      weekday: "short",
+  const formatDate = (d) =>
+    new Date(d).toLocaleString("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
     });
-  };
 
-  if (loading) {
+  /* -----------------------------------
+    🔹 Render UI
+  ------------------------------------ */
+  if (loading)
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "50vh" }}>
-        <Typography>Loading alerts...</Typography>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "50vh",
+        }}
+      >
+        <LinearProgress sx={{ width: 200 }} />
       </Box>
     );
-  }
 
   return (
-    <Fade in={!loading} timeout={500}>
-      <Box sx={{ p: { xs: 2, md: 3 } }}>
+    <Fade in timeout={600}>
+      <Box sx={{ p: { xs: 2, md: 4 } }}>
         {/* Header */}
-        <Paper sx={{ p: 3, mb: 3, borderRadius: theme.shape.borderRadius * 2 }}>
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={3} justifyContent="space-between">
+        <Paper
+          sx={{
+            p: 4,
+            mb: 4,
+            borderRadius: 4,
+            background: `linear-gradient(135deg, ${theme.palette.background.paper}, ${theme.palette.background.default})`,
+            boxShadow: "0 12px 40px rgba(0,0,0,0.08)",
+          }}
+        >
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            alignItems="center"
+            justifyContent="space-between"
+          >
             <Box>
-              <Typography variant="h4" fontWeight={800}>
+              <Typography
+                variant="h4"
+                fontWeight={800}
+                sx={{
+                  background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                  WebkitBackgroundClip: "text",
+                  color: "transparent",
+                }}
+              >
                 System Alerts
               </Typography>
-              <Typography variant="body1" color="text.secondary">
-                Important notifications and announcements
+              <Typography color="text.secondary">
+                Company-wide announcements and urgent notifications
               </Typography>
             </Box>
             {canManage && (
-              <Button variant="contained" startIcon={<FiPlus />} onClick={() => handleOpen()} sx={{ borderRadius: 6 }}>
+              <Button
+                variant="contained"
+                startIcon={<FiPlus />}
+                onClick={() => handleOpen()}
+                sx={{ borderRadius: 3 }}
+              >
                 New Alert
               </Button>
             )}
           </Stack>
         </Paper>
 
-        {/* Stats */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
+        {/* Stat Cards */}
+        <Grid container spacing={2} sx={{ mb: 4 }}>
           {[
-            { label: "Total Alerts", count: stats.total, icon: <FiBell />, color: "primary" },
-            { label: "Information", count: stats.info, icon: <FiInfo />, color: "info" },
-            { label: "Warnings", count: stats.warning, icon: <FiAlertTriangle />, color: "warning" },
-            { label: "Errors", count: stats.error, icon: <FiAlertCircle />, color: "error" },
-          ].map((item) => (
-            <Grid item xs={6} md={3} key={item.label}>
-              <Card sx={{ borderLeft: `4px solid ${theme.palette[item.color].main}` }}>
+            { key: "total", label: "Total Alerts", color: "primary", icon: <FiBell /> },
+            { key: "info", label: "Information", color: "info", icon: <FiInfo /> },
+            { key: "warning", label: "Warnings", color: "warning", icon: <FiAlertTriangle /> },
+            { key: "error", label: "Errors", color: "error", icon: <FiAlertCircle /> },
+          ].map((s) => (
+            <Grid item xs={6} md={3} key={s.key}>
+              <StatCard
+                color={s.color}
+                onClick={() => setFilterType(s.key === "total" ? "all" : s.key)}
+                sx={{
+                  border:
+                    filterType === s.key ||
+                    (filterType === "all" && s.key === "total")
+                      ? `2px solid ${theme.palette[s.color].main}`
+                      : "1px solid transparent",
+                }}
+              >
                 <CardContent>
-                  <Stack direction="row" alignItems="center" spacing={2}>
-                    <Avatar sx={{ bgcolor: `${theme.palette[item.color].main}20`, color: theme.palette[item.color].main }}>
-                      {item.icon}
-                    </Avatar>
+                  <Stack
+                    direction="row"
+                    alignItems="center"
+                    justifyContent="space-between"
+                  >
                     <Box>
                       <Typography variant="body2" color="text.secondary">
-                        {item.label}
+                        {s.label}
                       </Typography>
-                      <Typography variant="h4" fontWeight={700}>
-                        {item.count}
+                      <Typography variant="h4" fontWeight={800}>
+                        {stats[s.key]}
                       </Typography>
                     </Box>
+                    <Avatar
+                      sx={{
+                        bgcolor: `${theme.palette[s.color].main}15`,
+                        color: theme.palette[s.color].main,
+                      }}
+                    >
+                      {s.icon}
+                    </Avatar>
                   </Stack>
                 </CardContent>
-              </Card>
+              </StatCard>
             </Grid>
           ))}
         </Grid>
 
         {/* Alerts List */}
         <Paper sx={{ borderRadius: 4, p: 3 }}>
-          {alerts.length === 0 ? (
+          {filteredAlerts.length === 0 ? (
             <Box textAlign="center" py={6}>
               <FiBell size={48} />
-              <Typography variant="h6">No Alerts</Typography>
+              <Typography variant="h6">No Alerts Found</Typography>
             </Box>
           ) : (
             <Stack spacing={2}>
-              {alerts.map((alert) => (
+              {filteredAlerts.map((alert) => (
                 <AlertCard key={alert._id} type={alert.type}>
                   <CardContent>
-                    <Stack direction={{ xs: "column", sm: "row" }} spacing={2} justifyContent="space-between">
+                    <Stack
+                      direction={{ xs: "column", sm: "row" }}
+                      alignItems={{ xs: "flex-start", sm: "center" }}
+                      justifyContent="space-between"
+                      spacing={2}
+                    >
                       <Box>
-                        <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 1 }}>
-                          {getAlertIcon(alert.type)}
-                          <TypeChip label={alert.type} type={alert.type} size="small" />
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <TypeChip
+                            label={alert.type}
+                            type={alert.type}
+                            size="small"
+                          />
                         </Stack>
-                        <Typography variant="body1" fontWeight={500}>
+                        <Typography variant="body1" sx={{ mt: 1 }}>
                           {alert.message}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
@@ -320,12 +445,20 @@ const Alerts = () => {
                       {canManage && (
                         <Stack direction="row" spacing={1}>
                           <Tooltip title="Edit">
-                            <IconButton onClick={() => handleOpen(alert)} color="primary" size="small">
+                            <IconButton
+                              onClick={() => handleOpen(alert)}
+                              color="primary"
+                              size="small"
+                            >
                               <FiEdit />
                             </IconButton>
                           </Tooltip>
                           <Tooltip title="Delete">
-                            <IconButton onClick={() => handleDelete(alert._id)} color="error" size="small">
+                            <IconButton
+                              onClick={() => handleDelete(alert._id)}
+                              color="error"
+                              size="small"
+                            >
                               <FiTrash2 />
                             </IconButton>
                           </Tooltip>
@@ -341,53 +474,39 @@ const Alerts = () => {
 
         {/* Dialog */}
         <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
-          <DialogTitle>{editId ? "Edit Alert" : "New Alert"}</DialogTitle>
-          <DialogContent>
-            <Stack spacing={3} mt={1}>
-              <TextField select name="type" label="Alert Type" value={form.type} onChange={handleChange}>
-                {alertTypes.map((type) => (
-                  <MenuItem key={type.value} value={type.value}>
-                    {React.createElement(type.icon)} {type.label}
+          <DialogTitle>{editId ? "Edit Alert" : "Create Alert"}</DialogTitle>
+          <DialogContent sx={{ mt: 2 }}>
+            <Stack spacing={3}>
+              <TextField
+                select
+                label="Alert Type"
+                name="type"
+                value={form.type}
+                onChange={handleChange}
+                fullWidth
+              >
+                {alertTypes.map((a) => (
+                  <MenuItem key={a.value} value={a.value}>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <a.icon /> <Typography>{a.label}</Typography>
+                    </Stack>
                   </MenuItem>
                 ))}
               </TextField>
               <TextField
+                label="Message"
                 name="message"
-                label="Alert Message"
-                value={form.message}
-                onChange={handleChange}
                 multiline
                 rows={3}
+                value={form.message}
+                onChange={handleChange}
+                fullWidth
               />
-              <FormControl fullWidth>
-                <InputLabel>Assign Users</InputLabel>
-                <Select multiple name="assignedUsers" value={form.assignedUsers} onChange={handleChange}>
-                  {Array.isArray(users) &&
-                    users.map((user) => (
-                      <MenuItem key={user._id || user.id} value={user._id || user.id}>
-                        <Checkbox checked={form.assignedUsers.includes(user._id || user.id)} />
-                        <ListItemText primary={user.name || user.fullName || user.email} />
-                      </MenuItem>
-                    ))}
-                </Select>
-              </FormControl>
-              <FormControl fullWidth>
-                <InputLabel>Assign Groups</InputLabel>
-                <Select multiple name="assignedGroups" value={form.assignedGroups} onChange={handleChange}>
-                  {Array.isArray(groups) &&
-                    groups.map((group) => (
-                      <MenuItem key={group._id || group.id} value={group._id || group.id}>
-                        <Checkbox checked={form.assignedGroups.includes(group._id || group.id)} />
-                        <ListItemText primary={group.name || group.title} />
-                      </MenuItem>
-                    ))}
-                </Select>
-              </FormControl>
             </Stack>
           </DialogContent>
           <DialogActions>
             <Button onClick={handleClose}>Cancel</Button>
-            <Button variant="contained" onClick={handleSubmit}>
+            <Button onClick={handleSubmit} variant="contained">
               {editId ? "Update" : "Create"}
             </Button>
           </DialogActions>
@@ -395,23 +514,27 @@ const Alerts = () => {
 
         {/* Snackbar */}
         <Snackbar
-          open={notification.open}
+          open={!!notification}
           autoHideDuration={4000}
-          onClose={() => setNotification({ ...notification, open: false })}
-          anchorOrigin={{ vertical: "top", horizontal: "center" }}
+          onClose={() => setNotification(null)}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         >
           <Card
             sx={{
               background:
-                notification.severity === "error"
+                notification?.severity === "error"
                   ? theme.palette.error.main
                   : theme.palette.success.main,
               color: "white",
             }}
           >
             <CardContent sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              {notification.severity === "error" ? <FiAlertCircle /> : <FiInfo />}
-              <Typography>{notification.message}</Typography>
+              {notification?.severity === "error" ? (
+                <FiAlertCircle />
+              ) : (
+                <FiTrendingUp />
+              )}
+              <Typography>{notification?.message}</Typography>
             </CardContent>
           </Card>
         </Snackbar>

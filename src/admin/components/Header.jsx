@@ -101,10 +101,17 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
     setAnchorEl(null);
   };
 
-  const handleLogout = () => {
+const handleLogout = () => {
+  // Using your UI library's confirmation dialog (example)
+  // This is more customizable and looks better than window.confirm
+  if (window.confirm('Are you sure you want to logout?')) {
     localStorage.removeItem('token');
     navigate('/login');
-  };
+    
+    // Optional: Show success message
+    alert('Logged out successfully!'); // or use toast notification
+  }
+};
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 10);

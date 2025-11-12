@@ -324,7 +324,7 @@ const MyTaskManagement = () => {
     
     try {
       const res = await axios.get('/task/notifications/all');
-      console.log('Notifications response:', res.data);
+      // console.log('Notifications response:', res.data);
       setNotifications(res.data.notifications || []);
       setUnreadNotificationCount(res.data.unreadCount || 0);
     } catch (error) {
@@ -356,7 +356,7 @@ const MyTaskManagement = () => {
   const fetchTaskRemarks = async (taskId) => {
     try {
       const res = await axios.get(`/task/${taskId}/remarks`);
-      console.log('Remarks response:', res.data);
+      // console.log('Remarks response:', res.data);
       setRemarksDialog({ 
         open: true, 
         taskId, 
@@ -389,7 +389,7 @@ const MyTaskManagement = () => {
   const fetchActivityLogs = async (taskId) => {
     try {
       const res = await axios.get(`/task/${taskId}/activity-logs`);
-      console.log('Activity logs response:', res.data);
+      // console.log('Activity logs response:', res.data);
       setActivityLogs(res.data.logs || []);
       setActivityDialog({ open: true, taskId });
     } catch (error) {
@@ -427,7 +427,7 @@ const MyTaskManagement = () => {
         formData.append('voiceNote', updateData.voiceNote);
       }
 
-      console.log('Updating task:', taskId, updateData);
+      // console.log('Updating task:', taskId, updateData);
 
       const response = await axios.put(`/task/${taskId}`, formData, {
         headers: {
@@ -435,7 +435,7 @@ const MyTaskManagement = () => {
         }
       });
 
-      console.log('Task update response:', response.data);
+      // console.log('Task update response:', response.data);
 
       setTaskManagementDialog({ open: false, task: null });
       setEditTaskData(null);

@@ -33,15 +33,15 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem('user', JSON.stringify(user));
-    } else {
-      localStorage.removeItem('user');
-      localStorage.removeItem('token');
-      setIsAuthenticated(false);
-    }
-  }, [user]);
+  // useEffect(() => {
+  //   if (user) {
+  //     localStorage.setItem('user', JSON.stringify(user));
+  //   } else {
+  //     localStorage.removeItem('user');
+  //     localStorage.removeItem('token');
+  //     setIsAuthenticated(false);
+  //   }
+  // }, [user]);
 
   return (
     <AuthContext.Provider value={{ user, setUser, isAuthenticated, setIsAuthenticated }}>
