@@ -48,7 +48,7 @@ const TaskCard = styled(Card)(({ theme, status }) => ({
   border: `1px solid ${theme.palette.divider}`,
   borderLeft: `4px solid ${
     status === 'completed' ? theme.palette.success.main :
-    status === 'in-progress' ? theme.palette.info.main :
+    status === 'inProgress' ? theme.palette.info.main :
     status === 'pending' ? theme.palette.warning.main :
     theme.palette.error.main
   }`,
@@ -93,7 +93,7 @@ const StatusChip = styled(Chip)(({ theme, status }) => ({
     color: theme.palette.warning.dark,
     border: `1px solid ${theme.palette.warning.main}30`,
   }),
-  ...(status === "in progress" || status === "in-progress" && {
+  ...(status === "inProgress" && {
     background: `${theme.palette.info.main}15`,
     color: theme.palette.info.dark,
     border: `1px solid ${theme.palette.info.main}30`,
@@ -154,10 +154,10 @@ const EMPLOYEE_TYPES = [
   { value: "sales", label: "Sales", icon: FiUser },
 ];
 
-// Task status options
+// Task status options - Updated to match API
 const TASK_STATUSES = [
   { value: 'pending', label: 'Pending', color: 'warning' },
-  { value: 'in-progress', label: 'In Progress', color: 'info' },
+  { value: 'inProgress', label: 'In Progress', color: 'info' },
   { value: 'completed', label: 'Completed', color: 'success' },
 ];
 
@@ -172,7 +172,7 @@ const TaskDetails = () => {
   const [users, setUsers] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [tasks, setTasks] = useState({});
+  const [userTasks, setUserTasks] = useState({});
   const [loading, setLoading] = useState(false);
   const [usersLoading, setUsersLoading] = useState(false);
   const [error, setError] = useState("");
@@ -234,8 +234,8 @@ const TaskDetails = () => {
         const usersData = res?.data?.users || [];
         setUsers(usersData);
         
-        // Fetch counts for all users
-        await fetchAllUserCounts(usersData);
+        // Fetch stats for all users
+        await fetchAllUserStats(usersData);
       } catch (err) {
         setError(
           err?.response?.data?.error ||
@@ -248,30 +248,30 @@ const TaskDetails = () => {
     fetchUsers();
   }, []);
 
-  // ✅ Fetch counts for all users using the counts endpoint - FIXED
-  const fetchAllUserCounts = async (usersData) => {
+  // ✅ Fetch stats for all users using the user-stats endpoint
+  const fetchAllUserStats = async (usersData) => {
     const stats = {};
     
-    // Fetch counts for each user
-    const countPromises = usersData.map(async (user) => {
+    // Fetch stats for each user
+    const statsPromises = usersData.map(async (user) => {
       try {
-        const countRes = await axios.get(`/task/user/${user._id}/counts`);
-        const counts = countRes?.data?.counts || {};
-        const assigned = counts.assigned || {};
-        const summary = counts.summary || {};
+        const statsRes = await axios.get(`/task/user-stats/${user._id}`);
+        const tasksData = statsRes?.data?.data?.tasks || {};
         
         stats[user._id] = {
-          total: assigned.total || assigned.total || 0,
-          pending: assigned.pending || 0,
-          inProgress: assigned.inProgress || 0,
-          completed: assigned.completed || 0,
-          overdue: assigned.overdue || 0
+          total: tasksData.total || 0,
+          today: tasksData.today || 0,
+          pending: tasksData.pending || 0,
+          inProgress: tasksData.inProgress || 0,
+          completed: tasksData.completed || 0,
+          overdue: 0 // You can calculate this based on due dates if needed
         };
       } catch (err) {
-        console.error(`Error fetching counts for user ${user._id}:`, err);
-        // Set default counts if API fails
+        console.error(`Error fetching stats for user ${user._id}:`, err);
+        // Set default stats if API fails
         stats[user._id] = {
           total: 0,
+          today: 0,
           pending: 0,
           inProgress: 0,
           completed: 0,
@@ -280,30 +280,29 @@ const TaskDetails = () => {
       }
     });
 
-    await Promise.all(countPromises);
+    await Promise.all(statsPromises);
     setUserStats(stats);
   };
 
-  // ✅ Fetch counts for a specific user - FIXED
-  const fetchUserCounts = async (userId) => {
+  // ✅ Fetch stats for a specific user
+  const fetchUserStats = async (userId) => {
     try {
-      const countRes = await axios.get(`/task/user/${userId}/counts`);
-      const counts = countRes?.data?.counts || {};
-      const assigned = counts.assigned || {};
-      const summary = counts.summary || {};
+      const statsRes = await axios.get(`/task/user-stats/${userId}`);
+      const tasksData = statsRes?.data?.data?.tasks || {};
       
       setUserStats(prev => ({
         ...prev,
         [userId]: {
-          total: assigned.total || assigned.total || 0,
-          pending: assigned.pending || 0,
-          inProgress: assigned.inProgress || 0,
-          completed: assigned.completed || 0,
-          overdue: assigned.overdue || 0
+          total: tasksData.total || 0,
+          today: tasksData.today || 0,
+          pending: tasksData.pending || 0,
+          inProgress: tasksData.inProgress || 0,
+          completed: tasksData.completed || 0,
+          overdue: 0
         }
       }));
     } catch (err) {
-      console.error(`Error fetching counts for user ${userId}:`, err);
+      console.error(`Error fetching stats for user ${userId}:`, err);
     }
   };
 
@@ -314,14 +313,14 @@ const TaskDetails = () => {
     try {
       const res = await axios.get(`/task/user-self-assigned/${userId}`);
       const tasksData = res?.data?.groupedTasks || {};
-      setTasks(tasksData);
+      setUserTasks(tasksData);
       
       const user = users.find((x) => x._id === userId) || null;
       setSelectedUser(user);
       setSelectedUserId(userId);
       
-      // Also fetch updated counts for this user
-      await fetchUserCounts(userId);
+      // Also fetch updated stats for this user
+      await fetchUserStats(userId);
       setOpenDialog(true);
     } catch (err) {
       setError(err?.response?.data?.error || "Error fetching tasks.");
@@ -333,7 +332,13 @@ const TaskDetails = () => {
   // Fetch task details (remarks, activity logs, files)
   const fetchTaskDetails = async (taskId) => {
     try {
-      setSelectedTask(tasks => Object.values(tasks).flat().find(t => t._id === taskId));
+      // Find the task from all user tasks
+      let foundTask = null;
+      Object.values(userTasks).forEach(dateTasks => {
+        const task = dateTasks.find(t => t._id === taskId);
+        if (task) foundTask = task;
+      });
+      setSelectedTask(foundTask);
       
       const [remarksRes, activityRes] = await Promise.allSettled([
         axios.get(`/task/${taskId}/remarks`),
@@ -372,16 +377,16 @@ const TaskDetails = () => {
 
       if (response.data.success) {
         // Update local tasks state
-        const updatedTasks = { ...tasks };
+        const updatedTasks = { ...userTasks };
         Object.keys(updatedTasks).forEach(date => {
           updatedTasks[date] = updatedTasks[date].map(task => 
             task._id === editTask._id ? { ...task, ...editTask } : task
           );
         });
-        setTasks(updatedTasks);
+        setUserTasks(updatedTasks);
         
-        // Refresh counts for the user
-        await fetchUserCounts(selectedUserId);
+        // Refresh stats for the user
+        await fetchUserStats(selectedUserId);
         
         setEditDialogOpen(false);
         setEditTask(null);
@@ -406,7 +411,7 @@ const TaskDetails = () => {
       
       if (response.data.success) {
         // Remove task from local state
-        const updatedTasks = { ...tasks };
+        const updatedTasks = { ...userTasks };
         Object.keys(updatedTasks).forEach(date => {
           updatedTasks[date] = updatedTasks[date].filter(task => task._id !== taskToDelete._id);
           // Remove empty dates
@@ -414,10 +419,10 @@ const TaskDetails = () => {
             delete updatedTasks[date];
           }
         });
-        setTasks(updatedTasks);
+        setUserTasks(updatedTasks);
         
-        // Refresh counts for the user
-        await fetchUserCounts(selectedUserId);
+        // Refresh stats for the user
+        await fetchUserStats(selectedUserId);
         
         setDeleteDialogOpen(false);
         setTaskToDelete(null);
@@ -449,11 +454,11 @@ const TaskDetails = () => {
     setSnackbar({ ...snackbar, open: false });
   };
 
-  // Refresh all user counts
-  const refreshAllCounts = async () => {
+  // Refresh all user stats
+  const refreshAllStats = async () => {
     if (users.length > 0) {
-      await fetchAllUserCounts(users);
-      showSnackbar('Counts refreshed successfully!', 'success');
+      await fetchAllUserStats(users);
+      showSnackbar('Stats refreshed successfully!', 'success');
     }
   };
 
@@ -489,7 +494,7 @@ const TaskDetails = () => {
         return <FiXCircle color={theme.palette.error.main} />;
       case "pending":
         return <FiClock color={theme.palette.warning.main} />;
-      case "in progress":
+      case "inprogress":
       case "in-progress":
         return <FiPlayCircle color={theme.palette.info.main} />;
       default:
@@ -537,11 +542,18 @@ const TaskDetails = () => {
   };
 
   const getTaskCount = () =>
-    Object.values(tasks).reduce((a, b) => a + b.length, 0);
+    Object.values(userTasks).reduce((a, b) => a + b.length, 0);
 
-  // Enhanced User Card with Statistics - FIXED
+  // Enhanced User Card with Statistics - FIXED for new API structure
   const UserCardWithStats = ({ user }) => {
-    const stats = userStats[user._id] || { total: 0, pending: 0, inProgress: 0, completed: 0, overdue: 0 };
+    const stats = userStats[user._id] || { 
+      total: 0, 
+      today: 0, 
+      pending: 0, 
+      inProgress: 0, 
+      completed: 0, 
+      overdue: 0 
+    };
     const isSelected = selectedUserId === user._id;
 
     return (
@@ -577,7 +589,7 @@ const TaskDetails = () => {
               </Box>
             </Stack>
 
-            {/* Statistics - FIXED */}
+            {/* Statistics - UPDATED for new API structure */}
             <Grid container spacing={1}>
               <Grid item xs={6}>
                 <StatCard sx={{ p: 1.5, textAlign: 'center' }}>
@@ -600,12 +612,12 @@ const TaskDetails = () => {
                 </StatCard>
               </Grid>
               <Grid item xs={6}>
-                <StatCard sx={{ p: 1.5, textAlign: 'center' }} color="error">
-                  <Typography variant="h6" fontWeight={700} color="error.main">
-                    {stats.overdue}
+                <StatCard sx={{ p: 1.5, textAlign: 'center' }} color="info">
+                  <Typography variant="h6" fontWeight={700} color="info.main">
+                    {stats.inProgress}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    Overdue
+                    In Progress
                   </Typography>
                 </StatCard>
               </Grid>
@@ -627,7 +639,7 @@ const TaskDetails = () => {
               endIcon={<FiArrowRight />}
               size="small"
             >
-              View Details
+              View Tasks
             </Button>
           </Stack>
         </CardContent>
@@ -950,9 +962,9 @@ const TaskDetails = () => {
               <Button
                 variant="outlined"
                 startIcon={<FiRefreshCw />}
-                onClick={refreshAllCounts}
+                onClick={refreshAllStats}
               >
-                Refresh Counts
+                Refresh Stats
               </Button>
               <Button
                 variant="outlined"
@@ -1065,7 +1077,7 @@ const TaskDetails = () => {
                 <Typography variant="body2" color="text.secondary">
                   {userStats[selectedUserId]?.total || 0} total tasks • 
                   {userStats[selectedUserId]?.pending || 0} pending • 
-                  {userStats[selectedUserId]?.overdue || 0} overdue
+                  {userStats[selectedUserId]?.completed || 0} completed
                 </Typography>
               </Box>
               <IconButton onClick={() => setOpenDialog(false)}>
@@ -1082,7 +1094,7 @@ const TaskDetails = () => {
                   Loading tasks...
                 </Typography>
               </Box>
-            ) : Object.keys(tasks).length === 0 ? (
+            ) : Object.keys(userTasks).length === 0 ? (
               <Box textAlign="center" py={4}>
                 <FiList size={48} color={theme.palette.text.secondary} />
                 <Typography variant="h6" color="text.secondary" sx={{ mt: 2 }}>
@@ -1094,7 +1106,7 @@ const TaskDetails = () => {
               </Box>
             ) : (
               <Stack spacing={3}>
-                {Object.keys(tasks).map((date) => (
+                {Object.keys(userTasks).map((date) => (
                   <Box key={date}>
                     <Stack direction="row" alignItems="center" spacing={1} mb={2}>
                       <FiCalendar color={theme.palette.primary.main} />
@@ -1102,7 +1114,7 @@ const TaskDetails = () => {
                         {formatDate(date)}
                       </Typography>
                       <Chip 
-                        label={`${tasks[date].length} tasks`} 
+                        label={`${userTasks[date].length} tasks`} 
                         size="small" 
                         color="primary" 
                         variant="outlined" 
@@ -1110,7 +1122,7 @@ const TaskDetails = () => {
                     </Stack>
                     
                     <Grid container spacing={2}>
-                      {tasks[date].map((task) => (
+                      {userTasks[date].map((task) => (
                         <Grid item xs={12} key={task._id}>
                           <TaskCard status={task.overallStatus}>
                             <CardContent>
@@ -1149,7 +1161,33 @@ const TaskDetails = () => {
                                   </Stack>
                                 </Box>
                                 
-  
+                                <Stack direction="row" spacing={1}>
+                                  {canManage && (
+                                    <>
+                                      <IconButton 
+                                        size="small" 
+                                        onClick={() => handleEditTask(task)}
+                                        color="primary"
+                                      >
+                                        <FiEdit />
+                                      </IconButton>
+                                      <IconButton 
+                                        size="small" 
+                                        onClick={() => handleDeleteClick(task)}
+                                        color="error"
+                                      >
+                                        <FiTrash2 />
+                                      </IconButton>
+                                    </>
+                                  )}
+                                  <IconButton 
+                                    size="small" 
+                                    onClick={() => fetchTaskDetails(task._id)}
+                                    color="info"
+                                  >
+                                    <FiActivity />
+                                  </IconButton>
+                                </Stack>
                               </Stack>
                               
                               {/* Task Details Section */}
