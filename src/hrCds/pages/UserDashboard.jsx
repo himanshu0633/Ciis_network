@@ -682,11 +682,11 @@ const UserDashboard = () => {
                     Clocked in at {new Date(todayStatus.inTime).toLocaleTimeString()}
                   </p>
                 )}
-                {isRunning && (
+                {/* {isRunning && (
                   <p className="auto-clockout-info">
                     ⏰ Auto clock-out scheduled for 8:00 PM
                   </p>
-                )}
+                )} */}
               </div>
               
               <div className="timer-stats">

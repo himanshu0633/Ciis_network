@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo,useRef } from 'react';
 import axios from '../../utils/axiosConfig';
 import {
   Box, Typography, Paper, Button, Dialog, DialogTitle, DialogContent,
@@ -142,6 +142,11 @@ const MobileTaskCard = styled(Card)(({ theme, status }) => ({
     transform: 'translateY(-2px)',
   },
 }));
+
+
+
+
+
 
 const ActionButton = styled(IconButton)(({ theme }) => ({
   transition: theme.transitions.create(['all'], {
@@ -638,6 +643,41 @@ const UserCreateTask = () => {
       }
     }
   };
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef(null);
+  const chunks = useRef([]);
+
+
+    const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorderRef.current = new MediaRecorder(stream);
+
+      mediaRecorderRef.current.ondataavailable = (e) => {
+        chunks.current.push(e.data);
+      };
+
+      mediaRecorderRef.current.onstop = () => {
+        const blob = new Blob(chunks.current, { type: "audio/webm" });
+        chunks.current = [];
+
+        const file = new File([blob], "voice-note.webm", { type: "audio/webm" });
+
+        setNewTask({ ...newTask, voiceNote: file });
+      };
+
+      mediaRecorderRef.current.start();
+      setIsRecording(true);
+    } catch (err) {
+      console.error("Error:", err);
+      alert("Microphone access denied.");
+    }
+  };
+
+  const stopRecording = () => {
+    mediaRecorderRef.current.stop();
+    setIsRecording(false);
+  };
 
   // Task creation handler - UPDATED: Removed recurring functionality
 const handleCreateTask = async () => {
@@ -798,7 +838,7 @@ const handleCreateTask = async () => {
           <Tooltip title="Download Files">
             <ActionButton
               size="small"
-              href={`http://localhost:5000/${task.files[0].path || task.files[0]}`}
+              href={`http://localhost:3000/${task.files[0].path || task.files[0]}`}
               target="_blank"
               sx={{ 
                 color: theme.palette.success.main,
@@ -984,26 +1024,56 @@ const handleCreateTask = async () => {
                       />
                     </TableCell>
                     <TableCell sx={{ py: 1.5 }}>
-                      {task.files?.length ? (
-                        <Tooltip title={`${task.files.length} file(s)`}>
-                          <ActionButton
-                            size="small"
-                            href={`http://localhost:5000/${task.files[0].path || task.files[0]}`}
-                            target="_blank"
-                            sx={{
-                              color: theme.palette.primary.main,
-                              '&:hover': { 
-                                bgcolor: `${theme.palette.primary.main}10`,
-                              }
-                            }}
-                          >
-                            <FiDownload size={16} />
-                          </ActionButton>
-                        </Tooltip>
-                      ) : (
-                        <Typography variant="body2" color="text.secondary" fontWeight={500} sx={{ fontSize: '0.8rem' }}>-</Typography>
-                      )}
-                    </TableCell>
+
+  {/* ---------------- FILES ---------------- */}
+  {task.files?.length > 0 && (
+    <Tooltip title={`${task.files.length} file(s)`}>
+      <ActionButton
+        size="small"
+        href={`http://localhost:3000/${task.files[0].path}`}
+        target="_blank"
+        sx={{
+          color: theme.palette.primary.main,
+          mr: 1,
+          '&:hover': { bgcolor: `${theme.palette.primary.main}10` }
+        }}
+      >
+        <FiDownload size={16} />
+      </ActionButton>
+    </Tooltip>
+  )}
+
+  {/* ---------------- VOICE NOTE ---------------- */}
+  {task.voiceNote?.path ? (
+    <Tooltip title="Voice Note">
+      <ActionButton
+        size="small"
+        href={`http://localhost:3000/${task.voiceNote.path}`}
+        target="_blank"
+        sx={{
+          color: theme.palette.success.main,
+          '&:hover': { bgcolor: `${theme.palette.success.main}10` }
+        }}
+      >
+        <FiMic size={16} />
+      </ActionButton>
+    </Tooltip>
+  ) : null}
+
+  {/* ---------------- NO FILE / VOICE ---------------- */}
+  {!task.files?.length && !task.voiceNote?.path && (
+    <Typography
+      variant="body2"
+      color="text.secondary"
+      fontWeight={500}
+      sx={{ fontSize: '0.8rem' }}
+    >
+      -
+    </Typography>
+  )}
+
+</TableCell>
+
                     <TableCell sx={{ py: 1.5 }}>
                       {renderActionButtons(task)}
                     </TableCell>
@@ -1100,7 +1170,7 @@ const handleCreateTask = async () => {
                             <Tooltip title="Download" key={i}>
                               <ActionButton
                                 size="small"
-                                href={`http://localhost:5000/${file.path || file}`}
+                                href={`http://localhost:3000/${file.path || file}`}
                                 target="_blank"
                                 sx={{
                                   color: theme.palette.primary.main,
@@ -1777,26 +1847,21 @@ const handleCreateTask = async () => {
                   />
                 </Button>
 
-                <Button 
-                  variant="outlined" 
-                  component="label" 
-                  startIcon={<FiMic />}
-                  sx={{ 
-                    borderRadius: 1,
-                    py: 1,
-                    borderStyle: 'dashed',
-                    fontSize: '0.875rem'
-                  }}
-                  fullWidth={isMobile}
-                >
-                  Voice Note
-                  <input
-                    type="file"
-                    accept="audio/*"
-                    hidden
-                    onChange={(e) => setNewTask({ ...newTask, voiceNote: e.target.files[0] })}
-                  />
-                </Button>
+                 <Button
+      variant={isRecording ? "contained" : "outlined"}
+      startIcon={<FiMic />}
+      onClick={isRecording ? stopRecording : startRecording}
+      sx={{
+        borderRadius: 1,
+        py: 1,
+        borderStyle: isRecording ? "solid" : "dashed",
+        fontSize: "0.875rem",
+        background: isRecording ? "rgba(255,0,0,0.2)" : "",
+      }}
+      fullWidth={isMobile}
+    >
+      {isRecording ? "Stop Recording..." : "Record Voice"}
+    </Button>
               </Stack>
             </Box>
           </Stack>

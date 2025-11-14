@@ -133,17 +133,26 @@ const Sidebar = ({ isOpen = true, closeSidebar }) => {
     }
   };
 
-  // Menu configuration
+  // -----------------------------
+  // STATIC MENU WITH ROLE CONTROL
+  // -----------------------------
   const staticMenu = [
-    { icon: <FaHome />, name: 'Dashboard', path: '/cds/user-dashboard' },
-    { icon: <FaClipboardList />, name: 'Attendance', path: '/cds/attendance' },
-    { icon: <FaFileAlt />, name: 'My Leaves', path: '/cds/my-leaves' },
-    { icon: <FaRocket />, name: 'My Assets', path: '/cds/my-assets' },
-    // { icon: <FaTasks />, name: 'My Task Management', path: '/cds/my-task-management' },
-    { icon: <FaGraduationCap />, name: 'Create task', path: '/cds/task-management' },
-    { icon: <FaBell />, name: 'Alerts', path: '/cds/alert' },
-      { icon: <FaTasks />, name: 'Employee Meeting', path: '/cds/employee-meeting' },
-       { icon: <FaTasks />, name: 'Employee project', path: '/cds/emp' },
+    { icon: <FaHome />, name: 'Dashboard', path: '/cds/user-dashboard', roles: ['user','hr','manager'] },
+    { icon: <FaClipboardList />, name: 'Attendance', path: '/cds/attendance', roles: ['user','hr','manager'] },
+    { icon: <FaFileAlt />, name: 'My Leaves', path: '/cds/my-leaves', roles: ['user','hr','manager'] },
+    { icon: <FaRocket />, name: 'My Assets', path: '/cds/my-assets', roles: ['user','hr','manager'] },
+
+    // ❌ Admin ko ye nahi dikhna
+    { icon: <FaGraduationCap />, name: 'Create task', path: '/cds/task-management', roles: ['user','hr','manager'] },
+
+    // ✅ Everyone including admin
+    { icon: <FaBell />, name: 'Alerts', path: '/cds/alert', roles: ['user','hr','manager','admin','SuperAdmin'] },
+
+    // ✅ Everyone including admin
+    { icon: <FaTasks />, name: 'Employee Meeting', path: '/cds/employee-meeting', roles: ['user','hr','manager','admin','SuperAdmin'] },
+
+    // ❌ Admin ko employee project nahi dikhna
+    { icon: <FaTasks />, name: 'Employee project', path: '/cds/emp', roles: ['user','hr','manager'] },
   ];
 
   const hrMenu = [
@@ -153,21 +162,23 @@ const Sidebar = ({ isOpen = true, closeSidebar }) => {
     { icon: <FaFileAlt />, name: 'Employees Leaves', path: '/cds/admin/emp-leaves' },
     { icon: <FaRocket />, name: 'Employees Assets', path: '/cds/admin/emp-assets' },
     { icon: <FaTasks />, name: 'Employees Task Create', path: '/cds/admin/admin-task-create' },
-    // { icon: <FaTasks />, name: 'Employees Task Management', path: '/cds/admin/emp-task-management' },
     { icon: <FaGraduationCap />, name: 'Employees Task Details', path: '/cds/admin/emp-task-details' },
     { icon: <FaUsers />, name: 'Admin Meeting', path: '/cds/admin/admin-meeting' },
     { icon: <FaNetworkWired />, name: 'Admin Projects', path: '/cds/admin/adminp' },
     { icon: <FaUser />, name: 'Create User', path: '/cds/admin/create-user' },
   ];
 
-  // Combine menus based on user role
+  // Apply Role Filtering
   const getUserMenu = () => {
-    let menu = [...staticMenu];
-    
+    let menu = staticMenu.filter(item => {
+      if (!item.roles) return true;
+      return item.roles.includes(userRole);
+    });
+
     if (userRole === 'hr' || userRole === 'manager' || userRole === 'admin' || userRole === 'SuperAdmin') {
       menu = [...menu, ...hrMenu];
     }
-    
+
     return menu;
   };
 
@@ -177,9 +188,8 @@ const Sidebar = ({ isOpen = true, closeSidebar }) => {
     <SidebarComponent>
       <List>
         <SectionHeading>Menu</SectionHeading>
-        
+
         {userMenu.map((item, idx) => {
-          // Render section headings
           if (item.heading) {
             return isOpen ? (
               <SectionHeading key={`heading-${idx}`}>{item.heading}</SectionHeading>
@@ -202,7 +212,6 @@ const Sidebar = ({ isOpen = true, closeSidebar }) => {
             );
           }
 
-          // Render menu items
           return (
             <StyledListItem key={`item-${idx}`} disablePadding>
               {isOpen ? (
@@ -232,14 +241,13 @@ const Sidebar = ({ isOpen = true, closeSidebar }) => {
         })}
       </List>
 
-      {/* Logout button at bottom */}
       <Box sx={{ mt: 'auto', p: 2 }}>
         <Divider sx={{ mb: 2 }} />
         <Tooltip title="Logout" placement="right">
-          <IconButton 
+          <IconButton
             onClick={handleLogout}
-            sx={{ 
-              width: '100%', 
+            sx={{
+              width: '100%',
               justifyContent: isOpen ? 'flex-start' : 'center',
               color: 'text.secondary',
               '&:hover': { color: 'error.main' }

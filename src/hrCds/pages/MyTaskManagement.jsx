@@ -222,7 +222,7 @@ const MyTaskManagement = () => {
   const [newRemark, setNewRemark] = useState('');
   const [activityLogs, setActivityLogs] = useState([]);
   const [activityDialog, setActivityDialog] = useState({ open: false, taskId: null });
-  const [selectedTask, setSelectedTask] = useState(null);
+
   const [taskManagementDialog, setTaskManagementDialog] = useState({ open: false, task: null });
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [editTaskData, setEditTaskData] = useState(null);
