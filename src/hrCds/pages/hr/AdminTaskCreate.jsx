@@ -148,6 +148,22 @@ const AdminTaskManagement = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalTasks, setTotalTasks] = useState(0);
   
+  // Date Range Filter State
+  const [dateRange, setDateRange] = useState({
+    startDate: null,
+    endDate: null
+  });
+
+  // Filtered Stats State
+  const [filteredStats, setFilteredStats] = useState({
+    total: 0,
+    pending: 0,
+    inProgress: 0,
+    completed: 0,
+    rejected: 0,
+    overdue: 0
+  });
+
   // Dialog States
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [openGroupDialog, setOpenGroupDialog] = useState(false);
@@ -308,7 +324,7 @@ const AdminTaskManagement = () => {
     }
   };
 
-  // Fetch tasks with pagination and filters
+  // Fetch tasks with pagination, filters and date range
   const fetchTasks = async (page = 0, limit = rowsPerPage, filters = {}) => {
     if (authError || !userId) return;
 
@@ -327,6 +343,14 @@ const AdminTaskManagement = () => {
       if (assignedToFilter) params.assignedTo = assignedToFilter;
       if (createdByFilter) params.createdBy = createdByFilter;
       if (overdueFilter) params.overdue = overdueFilter;
+      
+      // Add date range filters
+      if (dateRange.startDate) {
+        params.startDate = new Date(dateRange.startDate).toISOString();
+      }
+      if (dateRange.endDate) {
+        params.endDate = new Date(dateRange.endDate).toISOString();
+      }
 
       const queryString = new URLSearchParams(params).toString();
       
@@ -340,14 +364,38 @@ const AdminTaskManagement = () => {
       // Set total count for pagination
       setTotalTasks(tasksResult.total || tasksResult.totalCount || tasksArray.length);
 
+      // Calculate filtered stats
+      calculateFilteredStats(tasksArray);
+
     } catch (error) {
       console.error('Error fetching tasks:', error);
       setTasks([]);
       setTotalTasks(0);
+      setFilteredStats({
+        total: 0,
+        pending: 0,
+        inProgress: 0,
+        completed: 0,
+        rejected: 0,
+        overdue: 0
+      });
       setSnackbar({ open: true, message: 'Failed to load tasks', severity: 'error' });
     } finally {
       setLoading(false);
     }
+  };
+
+  // Calculate statistics based on filtered tasks
+  const calculateFilteredStats = (tasksArray) => {
+    const stats = {
+      total: tasksArray.length,
+      pending: tasksArray.filter(t => getTaskStatus(t) === 'pending').length,
+      inProgress: tasksArray.filter(t => getTaskStatus(t) === 'in-progress').length,
+      completed: tasksArray.filter(t => getTaskStatus(t) === 'completed').length,
+      rejected: tasksArray.filter(t => getTaskStatus(t) === 'rejected').length,
+      overdue: tasksArray.filter(t => isOverdue(t)).length
+    };
+    setFilteredStats(stats);
   };
 
   // Fetch all supporting data (users, groups, notifications)
@@ -604,6 +652,8 @@ const AdminTaskManagement = () => {
     if (assignedToFilter) filters.assignedTo = assignedToFilter;
     if (createdByFilter) filters.createdBy = createdByFilter;
     if (overdueFilter) filters.overdue = overdueFilter;
+    if (dateRange.startDate) filters.startDate = dateRange.startDate;
+    if (dateRange.endDate) filters.endDate = dateRange.endDate;
     return filters;
   };
 
@@ -619,6 +669,10 @@ const AdminTaskManagement = () => {
     setAssignedToFilter('');
     setCreatedByFilter('');
     setOverdueFilter('');
+    setDateRange({
+      startDate: null,
+      endDate: null
+    });
     setPage(0);
     fetchAllData(0, rowsPerPage);
   };
@@ -787,7 +841,7 @@ const AdminTaskManagement = () => {
   const isOverdue = (task) => {
     const dueDate = task.dueDateTime || task.dueDate;
     if (!dueDate) return false;
-    return new Date(dueDate) < new Date() && task.overallStatus !== 'completed';
+    return new Date(dueDate) < new Date() && getTaskStatus(task) !== 'completed';
   };
 
   const getAssignedUsersCount = (task) => {
@@ -863,15 +917,219 @@ const AdminTaskManagement = () => {
     return assignedUsers;
   };
 
-  // Stats Calculation - client side for current page
-  const stats = {
-    total: totalTasks,
-    pending: tasks.filter(t => getTaskStatus(t) === 'pending').length,
-    inProgress: tasks.filter(t => getTaskStatus(t) === 'in-progress').length,
-    completed: tasks.filter(t => getTaskStatus(t) === 'completed').length,
-    rejected: tasks.filter(t => getTaskStatus(t) === 'rejected').length,
-    overdue: tasks.filter(t => isOverdue(t)).length
-  };
+  // Enhanced Filters Section with Date Range
+  const renderEnhancedFilters = () => (
+    <FilterSection>
+      <Stack spacing={2}>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'stretch', sm: 'center' }}>
+          <TextField
+            fullWidth
+            size="small"
+            placeholder="Search tasks by title or description..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <FiSearch />
+                </InputAdornment>
+              ),
+            }}
+          />
+          <Button
+            variant="contained"
+            onClick={applyFilters}
+            startIcon={<FiFilter />}
+            sx={{ minWidth: 120 }}
+          >
+            Apply
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={clearFilters}
+            sx={{ minWidth: 120 }}
+          >
+            Clear
+          </Button>
+        </Stack>
+
+        {/* Date Range Filters */}
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={6} md={3}>
+            <DateTimePicker
+              label="From Date"
+              value={dateRange.startDate}
+              onChange={(date) => setDateRange(prev => ({ ...prev, startDate: date }))}
+              renderInput={(params) => (
+                <TextField 
+                  {...params} 
+                  fullWidth 
+                  size="small"
+                  InputProps={{
+                    ...params.InputProps,
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <FiCalendar size={16} />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              )}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <DateTimePicker
+              label="To Date"
+              value={dateRange.endDate}
+              onChange={(date) => setDateRange(prev => ({ ...prev, endDate: date }))}
+              renderInput={(params) => (
+                <TextField 
+                  {...params} 
+                  fullWidth 
+                  size="small"
+                  InputProps={{
+                    ...params.InputProps,
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <FiCalendar size={16} />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              )}
+            />
+          </Grid>
+        </Grid>
+
+        {/* Other Filters */}
+        <Grid container spacing={2}>
+          <Grid item xs={6} sm={4} md={2}>
+            <FormControl fullWidth size="small">
+              <InputLabel>Status</InputLabel>
+              <Select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                label="Status"
+              >
+                <MenuItem value="">All Status</MenuItem>
+                <MenuItem value="pending">Pending</MenuItem>
+                <MenuItem value="in-progress">In Progress</MenuItem>
+                <MenuItem value="completed">Completed</MenuItem>
+                <MenuItem value="rejected">Rejected</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={6} sm={4} md={2}>
+            <FormControl fullWidth size="small">
+              <InputLabel>Priority</InputLabel>
+              <Select
+                value={priorityFilter}
+                onChange={(e) => setPriorityFilter(e.target.value)}
+                label="Priority"
+              >
+                <MenuItem value="">All Priority</MenuItem>
+                <MenuItem value="high">High</MenuItem>
+                <MenuItem value="medium">Medium</MenuItem>
+                <MenuItem value="low">Low</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={6} sm={4} md={2}>
+            <FormControl fullWidth size="small">
+              <InputLabel>Assigned To</InputLabel>
+              <Select
+                value={assignedToFilter}
+                onChange={(e) => setAssignedToFilter(e.target.value)}
+                label="Assigned To"
+              >
+                <MenuItem value="">All Users</MenuItem>
+                {users.map(user => (
+                  <MenuItem key={user._id} value={user._id}>
+                    {user.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={6} sm={4} md={2}>
+            <FormControl fullWidth size="small">
+              <InputLabel>Created By</InputLabel>
+              <Select
+                value={createdByFilter}
+                onChange={(e) => setCreatedByFilter(e.target.value)}
+                label="Created By"
+              >
+                <MenuItem value="">All Creators</MenuItem>
+                {users.map(user => (
+                  <MenuItem key={user._id} value={user._id}>
+                    {user.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={6} sm={4} md={2}>
+            <FormControl fullWidth size="small">
+              <InputLabel>Overdue</InputLabel>
+              <Select
+                value={overdueFilter}
+                onChange={(e) => setOverdueFilter(e.target.value)}
+                label="Overdue"
+              >
+                <MenuItem value="">All Tasks</MenuItem>
+                <MenuItem value="true">Overdue Only</MenuItem>
+                <MenuItem value="false">Not Overdue</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+        </Grid>
+      </Stack>
+    </FilterSection>
+  );
+
+  // Stats Cards with Filtered Data
+  const renderFilteredStatsCards = () => (
+    <Grid container spacing={2} sx={{ mb: 3 }}>
+      {[
+        { label: 'Total Tasks', value: filteredStats.total, color: 'primary', icon: FiCalendar },
+        { label: 'Pending', value: filteredStats.pending, color: 'warning', icon: FiClock },
+        { label: 'In Progress', value: filteredStats.inProgress, color: 'info', icon: FiAlertCircle },
+        { label: 'Completed', value: filteredStats.completed, color: 'success', icon: FiCheckCircle },
+        { label: 'Rejected', value: filteredStats.rejected, color: 'error', icon: FiXCircle },
+        { label: 'Overdue', value: filteredStats.overdue, color: 'error', icon: FiAlertTriangle },
+      ].map((stat, index) => (
+        <Grid item xs={6} sm={4} md={2} key={index}>
+          <StatCard color={stat.color}>
+            <CardContent sx={{ p: 2 }}>
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <Avatar sx={{
+                  bgcolor: `${theme.palette[stat.color].main}20`,
+                  color: theme.palette[stat.color].main,
+                  width: 40,
+                  height: 40
+                }}>
+                  <stat.icon size={18} />
+                </Avatar>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography variant="body2" color="text.secondary" fontWeight={600} sx={{ 
+                    fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    {stat.label}
+                  </Typography>
+                  <Typography variant="h4" fontWeight={700} sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
+                    {stat.value}
+                  </Typography>
+                </Box>
+              </Stack>
+            </CardContent>
+          </StatCard>
+        </Grid>
+      ))}
+    </Grid>
+  );
 
   // Enhanced Notifications Panel
   const renderNotificationsPanel = () => (
@@ -1796,47 +2054,8 @@ const AdminTaskManagement = () => {
           </Stack>
         </Paper>
 
-        {/* Stats Cards */}
-        <Grid container spacing={2} sx={{ mb: 3 }}>
-          {[
-            { label: 'Total Tasks', value: stats.total, color: 'primary', icon: FiCalendar },
-            { label: 'Pending', value: stats.pending, color: 'warning', icon: FiClock },
-            { label: 'In Progress', value: stats.inProgress, color: 'info', icon: FiAlertCircle },
-            { label: 'Completed', value: stats.completed, color: 'success', icon: FiCheckCircle },
-            { label: 'Rejected', value: stats.rejected, color: 'error', icon: FiXCircle },
-            { label: 'Overdue', value: stats.overdue, color: 'error', icon: FiAlertTriangle },
-          ].map((stat, index) => (
-            <Grid item xs={6} sm={4} md={2} key={index}>
-              <StatCard color={stat.color}>
-                <CardContent sx={{ p: 2 }}>
-                  <Stack direction="row" alignItems="center" spacing={1}>
-                    <Avatar sx={{
-                      bgcolor: `${theme.palette[stat.color].main}20`,
-                      color: theme.palette[stat.color].main,
-                      width: 40,
-                      height: 40
-                    }}>
-                      <stat.icon size={18} />
-                    </Avatar>
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography variant="body2" color="text.secondary" fontWeight={600} sx={{ 
-                        fontSize: { xs: '0.7rem', sm: '0.75rem' },
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                      }}>
-                        {stat.label}
-                      </Typography>
-                      <Typography variant="h4" fontWeight={700} sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
-                        {stat.value}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                </CardContent>
-              </StatCard>
-            </Grid>
-          ))}
-        </Grid>
+        {/* Stats Cards with Filtered Data */}
+        {renderFilteredStatsCards()}
 
         {/* Tabs */}
         <Paper sx={{ borderRadius: 2, overflow: 'hidden', mb: 3 }}>
@@ -1854,124 +2073,8 @@ const AdminTaskManagement = () => {
           <Box sx={{ p: 3 }}>
             {activeTab === 0 && (
               <>
-                {/* Enhanced Filters */}
-                <FilterSection>
-                  <Stack spacing={2}>
-                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'stretch', sm: 'center' }}>
-                      <TextField
-                        fullWidth
-                        size="small"
-                        placeholder="Search tasks by title or description..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <FiSearch />
-                            </InputAdornment>
-                          ),
-                        }}
-                      />
-                      <Button
-                        variant="contained"
-                        onClick={applyFilters}
-                        startIcon={<FiFilter />}
-                        sx={{ minWidth: 120 }}
-                      >
-                        Apply
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        onClick={clearFilters}
-                        sx={{ minWidth: 120 }}
-                      >
-                        Clear
-                      </Button>
-                    </Stack>
-
-                    <Grid container spacing={2}>
-                      <Grid item xs={6} sm={4} md={2}>
-                        <FormControl fullWidth size="small">
-                          <InputLabel>Status</InputLabel>
-                          <Select
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                            label="Status"
-                          >
-                            <MenuItem value="">All Status</MenuItem>
-                            <MenuItem value="pending">Pending</MenuItem>
-                            <MenuItem value="in-progress">In Progress</MenuItem>
-                            <MenuItem value="completed">Completed</MenuItem>
-                            <MenuItem value="rejected">Rejected</MenuItem>
-                          </Select>
-                        </FormControl>
-                      </Grid>
-                      <Grid item xs={6} sm={4} md={2}>
-                        <FormControl fullWidth size="small">
-                          <InputLabel>Priority</InputLabel>
-                          <Select
-                            value={priorityFilter}
-                            onChange={(e) => setPriorityFilter(e.target.value)}
-                            label="Priority"
-                          >
-                            <MenuItem value="">All Priority</MenuItem>
-                            <MenuItem value="high">High</MenuItem>
-                            <MenuItem value="medium">Medium</MenuItem>
-                            <MenuItem value="low">Low</MenuItem>
-                          </Select>
-                        </FormControl>
-                      </Grid>
-                      <Grid item xs={6} sm={4} md={2}>
-                        <FormControl fullWidth size="small">
-                          <InputLabel>Assigned To</InputLabel>
-                          <Select
-                            value={assignedToFilter}
-                            onChange={(e) => setAssignedToFilter(e.target.value)}
-                            label="Assigned To"
-                          >
-                            <MenuItem value="">All Users</MenuItem>
-                            {users.map(user => (
-                              <MenuItem key={user._id} value={user._id}>
-                                {user.name}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
-                      </Grid>
-                      <Grid item xs={6} sm={4} md={2}>
-                        <FormControl fullWidth size="small">
-                          <InputLabel>Created By</InputLabel>
-                          <Select
-                            value={createdByFilter}
-                            onChange={(e) => setCreatedByFilter(e.target.value)}
-                            label="Created By"
-                          >
-                            <MenuItem value="">All Creators</MenuItem>
-                            {users.map(user => (
-                              <MenuItem key={user._id} value={user._id}>
-                                {user.name}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
-                      </Grid>
-                      <Grid item xs={6} sm={4} md={2}>
-                        <FormControl fullWidth size="small">
-                          <InputLabel>Overdue</InputLabel>
-                          <Select
-                            value={overdueFilter}
-                            onChange={(e) => setOverdueFilter(e.target.value)}
-                            label="Overdue"
-                          >
-                            <MenuItem value="">All Tasks</MenuItem>
-                            <MenuItem value="true">Overdue Only</MenuItem>
-                            <MenuItem value="false">Not Overdue</MenuItem>
-                          </Select>
-                        </FormControl>
-                      </Grid>
-                    </Grid>
-                  </Stack>
-                </FilterSection>
+                {/* Enhanced Filters with Date Range */}
+                {renderEnhancedFilters()}
 
                 {/* Tasks Table with Pagination */}
                 <TableContainer component={Paper}>
