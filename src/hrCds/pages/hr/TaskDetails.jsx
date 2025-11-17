@@ -31,7 +31,7 @@ const StatCard = styled(Card)(({ theme, color = 'primary' }) => ({
   transition: theme.transitions.create(['all'], {
     duration: theme.transitions.duration.standard,
   }),
-  borderLeft: `4px solid ${theme.palette[color].main}`,
+  borderLeft: `4px solid ${theme.palette[color]?.main || theme.palette.primary.main}`,
   height: '100%',
   '&:hover': {
     boxShadow: theme.shadows[6],
@@ -214,6 +214,8 @@ const UserCreateTask = () => {
 
   // Helper function to count all tasks
   const countAllTasks = (groupedTasks) => {
+    if (!groupedTasks || typeof groupedTasks !== 'object') return ;
+    
     let count = 0;
     Object.values(groupedTasks).forEach(dateTasks => {
       if (Array.isArray(dateTasks)) {
@@ -230,6 +232,8 @@ const UserCreateTask = () => {
     if (!Array.isArray(tasks)) return grouped;
     
     tasks.forEach((task) => {
+      if (!task || typeof task !== 'object') return;
+      
       let dateObj;
       
       // Try different date fields
@@ -303,9 +307,15 @@ const UserCreateTask = () => {
     let completed = 0;
     let rejected = 0;
 
+    if (!tasks || typeof tasks !== 'object') {
+      return { total, pending, inProgress, completed, rejected };
+    }
+
     Object.values(tasks).forEach(dateTasks => {
       if (Array.isArray(dateTasks)) {
         dateTasks.forEach(task => {
+          if (!task || typeof task !== 'object') return;
+          
           total++;
           const myStatus = getUserStatusForTask(task, userId);
 
@@ -401,14 +411,14 @@ const UserCreateTask = () => {
 
       // Handle different response formats
       let tasksArray = [];
-      if (Array.isArray(res.data.tasks)) {
+      if (Array.isArray(res.data?.tasks)) {
         tasksArray = res.data.tasks;
-      } else if (Array.isArray(res.data.groupedTasks)) {
+      } else if (Array.isArray(res.data?.groupedTasks)) {
         tasksArray = res.data.groupedTasks;
-      } else if (res.data.groupedTasks && typeof res.data.groupedTasks === 'object') {
+      } else if (res.data?.groupedTasks && typeof res.data.groupedTasks === 'object') {
         // If it's already grouped, flatten it
         tasksArray = Object.values(res.data.groupedTasks).flat();
-      } else if (res.data.data && Array.isArray(res.data.data)) {
+      } else if (res.data?.data && Array.isArray(res.data.data)) {
         tasksArray = res.data.data;
       }
       
@@ -420,8 +430,8 @@ const UserCreateTask = () => {
         const mergedTasks = { ...myTasksGrouped };
         Object.entries(newTasks).forEach(([date, tasks]) => {
           if (mergedTasks[date]) {
-            const existingTaskIds = new Set(mergedTasks[date].map(task => task._id));
-            const newUniqueTasks = tasks.filter(task => !existingTaskIds.has(task._id));
+            const existingTaskIds = new Set(mergedTasks[date].map(task => task?._id).filter(Boolean));
+            const newUniqueTasks = tasks.filter(task => task?._id && !existingTaskIds.has(task._id));
             mergedTasks[date] = [...mergedTasks[date], ...newUniqueTasks];
           } else {
             mergedTasks[date] = tasks;
@@ -447,9 +457,9 @@ const UserCreateTask = () => {
       setPagination(prev => ({
         ...prev,
         page,
-        total: res.data.total || 0,
-        totalPages: res.data.totalPages || 0,
-        hasMore: page < (res.data.totalPages || 0)
+        total: res.data?.total || 0,
+        totalPages: res.data?.totalPages || 0,
+        hasMore: page < (res.data?.totalPages || 0)
       }));
 
     } catch (err) {
@@ -502,8 +512,8 @@ const UserCreateTask = () => {
     
     try {
       const res = await axios.get('/task/notifications/all');
-      setNotifications(res.data.notifications || []);
-      setUnreadNotificationCount(res.data.unreadCount || 0);
+      setNotifications(res.data?.notifications || []);
+      setUnreadNotificationCount(res.data?.unreadCount || 0);
     } catch (error) {
       console.error('Error fetching notifications:', error);
     }
@@ -536,7 +546,7 @@ const UserCreateTask = () => {
       setRemarksDialog({ 
         open: true, 
         taskId, 
-        remarks: res.data.remarks || [] 
+        remarks: res.data?.remarks || [] 
       });
     } catch (error) {
       console.error('Error fetching remarks:', error);
@@ -565,7 +575,7 @@ const UserCreateTask = () => {
   const fetchActivityLogs = async (taskId) => {
     try {
       const res = await axios.get(`/task/${taskId}/activity-logs`);
-      setActivityLogs(res.data.logs || []);
+      setActivityLogs(res.data?.logs || []);
       setActivityDialog({ open: true, taskId });
     } catch (error) {
       console.error('Error fetching activity logs:', error);
@@ -585,6 +595,8 @@ const UserCreateTask = () => {
       if (!Array.isArray(dateTasks)) return;
       
       const filteredDateTasks = dateTasks.filter(task => {
+        if (!task || typeof task !== 'object') return false;
+        
         let taskDate;
         
         if (dateFilterType === 'dueDate') {
@@ -651,10 +663,12 @@ const UserCreateTask = () => {
     return applyDateFilter(myTasksGrouped);
   }, [myTasksGrouped, applyDateFilter]);
 
-  // Get individual user status for a task
+  // Get individual user status for a task - FIXED VERSION
   const getUserStatusForTask = (task, userId) => {
+    if (!task || !userId || typeof task !== 'object') return 'pending';
+    
     const userStatus = task.statusByUser?.find(s => 
-      s.user === userId || s.user?._id === userId
+      s?.user === userId || s?.user?._id === userId
     );
     return userStatus?.status || 'pending';
   };
@@ -829,8 +843,10 @@ const UserCreateTask = () => {
     return new Date(dueDateTime) < new Date();
   };
 
-  // Enhanced table cell with new action buttons
+  // Enhanced table cell with new action buttons - FIXED VERSION
   const renderActionButtons = (task) => {
+    if (!task || typeof task !== 'object') return null;
+    
     return (
       <Stack direction="row" spacing={0.5}>
         <Tooltip title="View Remarks">
@@ -863,7 +879,7 @@ const UserCreateTask = () => {
           <Tooltip title="Download Files">
             <ActionButton
               size="small"
-              href={`http://localhost:5000/${task.files[0].path || task.files[0]}`}
+              href={`http://localhost:5000/${task.files[0]?.path || task.files[0]}`}
               target="_blank"
               sx={{ 
                 color: theme.palette.success.main,
@@ -878,14 +894,16 @@ const UserCreateTask = () => {
     );
   };
 
-  // Status Select Component
+  // Status Select Component - FIXED VERSION
   const renderStatusSelect = (task) => {
+    if (!task || typeof task !== 'object') return null;
+    
     const myStatus = getUserStatusForTask(task, userId);
     
     return (
       <FormControl size="small" sx={{ minWidth: isSmallMobile ? 100 : 120 }}>
         <Select
-          value={myStatus}
+          value={myStatus || 'pending'}
           onChange={(e) => handleStatusChange(task._id, e.target.value)}
           sx={{
             borderRadius: theme.shape.borderRadius,
@@ -952,8 +970,8 @@ const UserCreateTask = () => {
             <CardContent sx={{ p: 2 }}>
               <Stack direction="row" alignItems="center" spacing={1}>
                 <Avatar sx={{
-                  bgcolor: `${theme.palette[stat.color].main}20`,
-                  color: theme.palette[stat.color].main,
+                  bgcolor: `${theme.palette[stat.color]?.main || theme.palette.primary.main}20`,
+                  color: theme.palette[stat.color]?.main || theme.palette.primary.main,
                   width: 40,
                   height: 40
                 }}>
@@ -980,7 +998,7 @@ const UserCreateTask = () => {
     </Grid>
   );
 
-  // Render Desktop Table
+  // Render Desktop Table - FIXED VERSION
   const renderDesktopTable = (groupedTasks) => {
     const tasksToRender = applyDateFilter(groupedTasks);
     
@@ -1022,13 +1040,15 @@ const UserCreateTask = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {tasks.map((task) => {
+              {tasks?.map((task) => {
+                if (!task || typeof task !== 'object') return null;
+                
                 const myStatus = getUserStatusForTask(task, userId);
 
                 return (
                   <TableRow key={task._id} sx={{ 
-                    background: `${theme.palette[statusColors[myStatus]].main}05`,
-                    borderLeft: `4px solid ${theme.palette[statusColors[myStatus]].main}`,
+                    background: `${theme.palette[statusColors[myStatus]]?.main || theme.palette.grey[300]}05`,
+                    borderLeft: `4px solid ${theme.palette[statusColors[myStatus]]?.main || theme.palette.grey[300]}`,
                     cursor: 'pointer',
                     transition: 'all 0.3s ease',
                     '&:hover': {
@@ -1037,18 +1057,18 @@ const UserCreateTask = () => {
                   }}>
                     <TableCell sx={{ py: 1.5 }}>
                       <Typography variant="body2" fontWeight={600} sx={{ fontSize: isSmallMobile ? '0.8rem' : '0.875rem' }}>
-                        {task.title}
+                        {task?.title || 'No Title'}
                       </Typography>
                     </TableCell>
                     <TableCell sx={{ py: 1.5, maxWidth: 200 }}>
-                      <Tooltip title={task.description}>
+                      <Tooltip title={task?.description || 'No description'}>
                         <Typography variant="body2" sx={{
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap',
                           fontSize: isSmallMobile ? '0.8rem' : '0.875rem'
                         }}>
-                          {task.description}
+                          {task?.description || 'No description'}
                         </Typography>
                       </Tooltip>
                     </TableCell>
@@ -1057,11 +1077,11 @@ const UserCreateTask = () => {
                         <FiCalendar size={14} color={theme.palette.text.secondary} />
                         <Typography
                           variant="body2"
-                          color={isOverdue(task.dueDateTime) ? 'error' : 'text.primary'}
+                          color={isOverdue(task?.dueDateTime) ? 'error' : 'text.primary'}
                           fontWeight={500}
                           sx={{ fontSize: isSmallMobile ? '0.8rem' : '0.875rem' }}
                         >
-                          {task.dueDateTime
+                          {task?.dueDateTime
                             ? new Date(task.dueDateTime).toLocaleDateString('en-IN', {
                                 day: 'numeric',
                                 month: 'short',
@@ -1069,31 +1089,31 @@ const UserCreateTask = () => {
                               })
                             : '—'}
                         </Typography>
-                        {isOverdue(task.dueDateTime) && (
+                        {isOverdue(task?.dueDateTime) && (
                           <FiAlertCircle size={14} color={theme.palette.error.main} />
                         )}
                       </Stack>
                     </TableCell>
                     <TableCell sx={{ py: 1.5 }}>
                       <PriorityChip
-                        label={task.priority || 'medium'}
-                        priority={task.priority || 'medium'}
+                        label={task?.priority || 'medium'}
+                        priority={task?.priority || 'medium'}
                         size="small"
                       />
                     </TableCell>
                     <TableCell sx={{ py: 1.5 }}>
                       <StatusChip
-                        label={myStatus.charAt(0).toUpperCase() + myStatus.slice(1)}
-                        status={myStatus}
+                        label={myStatus?.charAt(0)?.toUpperCase() + myStatus?.slice(1) || 'Pending'}
+                        status={myStatus || 'pending'}
                         size="small"
                       />
                     </TableCell>
                     <TableCell sx={{ py: 1.5 }}>
-                      {task.files?.length ? (
+                      {task?.files?.length ? (
                         <Tooltip title={`${task.files.length} file(s)`}>
                           <ActionButton
                             size="small"
-                            href={`http://localhost:5000/${task.files[0].path || task.files[0]}`}
+                            href={`http://localhost:5000/${task.files[0]?.path || task.files[0]}`}
                             target="_blank"
                             sx={{
                               color: theme.palette.primary.main,
@@ -1125,7 +1145,7 @@ const UserCreateTask = () => {
     ));
   };
 
-  // Enhanced mobile cards with action buttons
+  // Enhanced mobile cards with action buttons - FIXED VERSION
   const renderMobileCards = (groupedTasks) => {
     const tasksToRender = applyDateFilter(groupedTasks);
     
@@ -1144,7 +1164,9 @@ const UserCreateTask = () => {
           {dateKey}
         </Typography>
         <Stack spacing={2}>
-          {tasks.map((task) => {
+          {tasks?.map((task) => {
+            if (!task || typeof task !== 'object') return null;
+            
             const myStatus = getUserStatusForTask(task, userId);
 
             return (
@@ -1160,7 +1182,7 @@ const UserCreateTask = () => {
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap'
                         }}>
-                          {task.title}
+                          {task?.title || 'No Title'}
                         </Typography>
                         <Typography variant="body2" color="text.secondary" sx={{ 
                           mb: 1,
@@ -1169,12 +1191,12 @@ const UserCreateTask = () => {
                           WebkitBoxOrient: 'vertical',
                           overflow: 'hidden'
                         }}>
-                          {task.description}
+                          {task?.description || 'No description'}
                         </Typography>
                       </Box>
                       <StatusChip
-                        label={myStatus}
-                        status={myStatus}
+                        label={myStatus || 'pending'}
+                        status={myStatus || 'pending'}
                         size="small"
                       />
                     </Stack>
@@ -1183,19 +1205,19 @@ const UserCreateTask = () => {
                     <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
                       <Stack direction="row" alignItems="center" spacing={1}>
                         <FiCalendar size={14} color={theme.palette.text.secondary} />
-                        <Typography variant="body2" color={isOverdue(task.dueDateTime) ? 'error' : 'text.primary'} fontWeight={500}>
-                          {task.dueDateTime ? new Date(task.dueDateTime).toLocaleDateString() : 'No date'}
+                        <Typography variant="body2" color={isOverdue(task?.dueDateTime) ? 'error' : 'text.primary'} fontWeight={500}>
+                          {task?.dueDateTime ? new Date(task.dueDateTime).toLocaleDateString() : 'No date'}
                         </Typography>
                       </Stack>
                       <PriorityChip
-                        label={task.priority || 'medium'}
-                        priority={task.priority || 'medium'}
+                        label={task?.priority || 'medium'}
+                        priority={task?.priority || 'medium'}
                         size="small"
                       />
                     </Stack>
 
                     {/* Files Section */}
-                    {task.files?.length > 0 && (
+                    {task?.files?.length > 0 && (
                       <Box>
                         <Typography variant="caption" color="text.secondary" display="block" gutterBottom fontWeight={600}>
                           Files:
@@ -1205,7 +1227,7 @@ const UserCreateTask = () => {
                             <Tooltip title="Download" key={i}>
                               <ActionButton
                                 size="small"
-                                href={`http://localhost:5000/${file.path || file}`}
+                                href={`http://localhost:5000/${file?.path || file}`}
                                 target="_blank"
                                 sx={{
                                   color: theme.palette.primary.main,
