@@ -1906,20 +1906,20 @@ const handleCreateTask = async () => {
   );
 
   // Search Component
-  const renderSearch = () => (
-    <Paper sx={{ p: 2, mb: 2, borderRadius: 2 }}>
-      <TextField
-        fullWidth
-        placeholder="Search tasks by title or description..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        InputProps={{
-          startAdornment: <FiSearch style={{ marginRight: 8, color: '#666' }} />
-        }}
-        size="small"
-      />
-    </Paper>
-  );
+  // const renderSearch = () => (
+  //   <Paper sx={{ p: 2, mb: 2, borderRadius: 2 }}>
+  //     <TextField
+  //       fullWidth
+  //       placeholder="Search tasks by title or description..."
+  //       value={searchTerm}
+  //       onChange={(e) => setSearchTerm(e.target.value)}
+  //       InputProps={{
+  //         startAdornment: <FiSearch style={{ marginRight: 8, color: '#666' }} />
+  //       }}
+  //       size="small"
+  //     />
+  //   </Paper>
+  // );
 
   useEffect(() => {
     fetchUserData();
@@ -2064,49 +2064,7 @@ const handleCreateTask = async () => {
             </Stack>
           </Paper>
 
-          {/* Search Box */}
-          {renderSearch()}
-
-          {/* Statistics Cards */}
-          <Grid container spacing={2} sx={{ mb: 3 }}>
-            {[
-              { label: 'Total Tasks', value: stats.total, color: 'primary', icon: FiCalendar },
-              { label: 'Pending', value: stats.pending, color: 'warning', icon: FiClock },
-              { label: 'In Progress', value: stats.inProgress, color: 'info', icon: FiAlertCircle },
-              { label: 'Completed', value: stats.completed, color: 'success', icon: FiCheckCircle },
-              { label: 'Rejected', value: stats.rejected, color: 'error', icon: FiXCircle },
-            ].map((stat, index) => (
-              <Grid item xs={6} sm={4} md={2.4} key={index}>
-                <StatCard color={stat.color}>
-                  <CardContent sx={{ p: 2 }}>
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                      <Avatar sx={{
-                        bgcolor: `${theme.palette[stat.color].main}20`,
-                        color: theme.palette[stat.color].main,
-                        width: 40,
-                        height: 40
-                      }}>
-                        <stat.icon size={18} />
-                      </Avatar>
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography variant="body2" color="text.secondary" fontWeight={600} sx={{ 
-                          fontSize: { xs: '0.7rem', sm: '0.75rem' },
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
-                        }}>
-                          {stat.label}
-                        </Typography>
-                        <Typography variant="h4" fontWeight={700} sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
-                          {stat.value}
-                        </Typography>
-                      </Box>
-                    </Stack>
-                  </CardContent>
-                </StatCard>
-              </Grid>
-            ))}
-          </Grid>
+      
 
           {/* Tasks Section */}
           <Paper sx={{
