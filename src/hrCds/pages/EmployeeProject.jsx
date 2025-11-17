@@ -103,7 +103,7 @@ const EmployeeProject = () => {
 
   return (
     <Box p={3}>
-      <Typography variant="h5">My Projects</Typography>
+      <Typography variant="h1">My Projects</Typography>
 
       {/* PROJECT LIST */}
       <Grid container spacing={2} mt={1}>
@@ -127,7 +127,7 @@ const EmployeeProject = () => {
       {selectedProject && (
         <Card sx={{ mt: 4, p: 2 }}>
           <CardContent>
-            <Typography variant="h6">Add New Task</Typography>
+            <Typography variant="h2">Add New Task</Typography>
 
             <Stack spacing={2} mt={2}>
               {/* Title */}
@@ -232,12 +232,12 @@ const EmployeeProject = () => {
             </Stack>
 
             {/* TASK LIST */}
-            <Typography variant="h6" mt={4} mb={2}>
+            <Typography variant="h2" mt={4} mb={2}>
               Project Tasks
             </Typography>
 
             {tasks.map((t) => (
-              <Card key={t._id} sx={{ mb: 2, p: 2 }}>
+              <Card key={t._id} sx={{ mb: 3, p: 4 }}>
                 <Typography><b>{t.title}</b></Typography>
                 <Typography>Status: {t.status}</Typography>
                 <Typography>Assigned To: {t.assignedTo?.name}</Typography>
@@ -248,7 +248,7 @@ const EmployeeProject = () => {
                   <Typography variant="subtitle2">Remarks:</Typography>
                   {t.remarks?.length > 0 ? (
                     t.remarks.map((r, idx) => (
-                      <Typography key={idx} sx={{ fontSize: "14px" }}>
+                      <Typography key={idx} sx={{ fontSize: "18px" }}>
                         • {r.text}
                       </Typography>
                     ))

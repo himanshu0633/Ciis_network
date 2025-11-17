@@ -171,7 +171,7 @@ export const AdminProject = () => {
             </Typography>
           }
           sx={{
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            background: "linear-gradient(135deg, #1b6effff 0%, #86f1ffff 100%)",
             color: "white",
           }}
         />
