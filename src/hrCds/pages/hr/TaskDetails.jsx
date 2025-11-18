@@ -6,7 +6,8 @@ import {
   Chip, Stack, Card, CardContent, Avatar, CircularProgress,
   Snackbar, Grid, Alert, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, IconButton, Tooltip,
-  Badge, OutlinedInput, Fade, Modal
+  Badge, OutlinedInput, Fade, Modal, List, ListItem, ListItemText,
+  ListItemIcon, Divider
 } from '@mui/material';
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -17,7 +18,7 @@ import {
   FiCheck, FiX, FiAlertCircle, FiUser, FiBell, FiRefreshCw,
   FiMessageSquare, FiActivity, FiDownload, FiClock, FiCheckCircle,
   FiXCircle, FiFilter, FiSearch, FiLogOut, FiMessageCircle,
-  FiChevronLeft, FiChevronRight, FiX as FiClose
+  FiChevronLeft, FiChevronRight, FiX as FiClose, FiTrash2
 } from 'react-icons/fi';
 import { useTheme, useMediaQuery } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
@@ -1340,6 +1341,453 @@ const UserCreateTask = () => {
         }}
       />
     </Paper>
+  );
+
+  // ========== MISSING DIALOG FUNCTIONS ==========
+
+  // Create Task Dialog
+  const renderCreateTaskDialog = () => (
+    <Dialog
+      open={openDialog}
+      onClose={() => setOpenDialog(false)}
+      maxWidth="md"
+      fullWidth
+      PaperProps={{
+        sx: { borderRadius: 3 }
+      }}
+    >
+      <DialogTitle sx={{ 
+        background: `linear-gradient(135deg, ${theme.palette.primary.main}15 0%, ${theme.palette.primary.main}05 100%)`,
+        borderBottom: `1px solid ${theme.palette.divider}`
+      }}>
+        <Typography variant="h5" fontWeight={700}>
+          Create New Task
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Fill in the details to create a new task
+        </Typography>
+      </DialogTitle>
+      
+      <DialogContent sx={{ p: 3 }}>
+        <Stack spacing={3}>
+          <TextField
+            label="Task Title"
+            value={newTask.title}
+            onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+            fullWidth
+            required
+            placeholder="Enter task title..."
+          />
+          
+          <TextField
+            label="Description"
+            value={newTask.description}
+            onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+            fullWidth
+            required
+            multiline
+            rows={3}
+            placeholder="Enter task description..."
+          />
+          
+          <DateTimePicker
+            label="Due Date & Time"
+            value={newTask.dueDateTime}
+            onChange={(date) => setNewTask({ ...newTask, dueDateTime: date })}
+            slotProps={{
+              textField: {
+                fullWidth: true,
+                required: true,
+              }
+            }}
+          />
+          
+          <FormControl fullWidth>
+            <InputLabel>Priority</InputLabel>
+            <Select
+              value={newTask.priority}
+              onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
+              label="Priority"
+            >
+              <MenuItem value="low">Low</MenuItem>
+              <MenuItem value="medium">Medium</MenuItem>
+              <MenuItem value="high">High</MenuItem>
+            </Select>
+          </FormControl>
+
+          <Box>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              Attach Files (Optional)
+            </Typography>
+            <Button
+              variant="outlined"
+              component="label"
+              startIcon={<FiPaperclip />}
+              sx={{ borderRadius: 2 }}
+            >
+              Choose Files
+              <input
+                type="file"
+                hidden
+                multiple
+                onChange={(e) => setNewTask({ ...newTask, files: e.target.files })}
+              />
+            </Button>
+            {newTask.files && (
+              <Typography variant="caption" color="text.secondary" sx={{ ml: 2 }}>
+                {newTask.files.length} file(s) selected
+              </Typography>
+            )}
+          </Box>
+        </Stack>
+      </DialogContent>
+      
+      <DialogActions sx={{ p: 3, gap: 1 }}>
+        <Button
+          onClick={() => setOpenDialog(false)}
+          variant="outlined"
+          sx={{ borderRadius: 2 }}
+        >
+          Cancel
+        </Button>
+        <Button
+          onClick={handleCreateTask}
+          variant="contained"
+          disabled={isCreatingTask}
+          startIcon={isCreatingTask ? <CircularProgress size={16} /> : <FiPlus />}
+          sx={{ borderRadius: 2 }}
+        >
+          {isCreatingTask ? 'Creating...' : 'Create Task'}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+
+  // Calendar Filter Dialog
+  const renderCalendarFilterDialog = () => (
+    <Dialog
+      open={calendarFilterOpen}
+      onClose={() => setCalendarFilterOpen(false)}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: { borderRadius: 3 }
+      }}
+    >
+      <DialogTitle>
+        <Typography variant="h6" fontWeight={600}>
+          Filter by Date
+        </Typography>
+      </DialogTitle>
+      
+      <DialogContent>
+        <Stack spacing={3}>
+          <FormControl fullWidth>
+            <InputLabel>Filter Type</InputLabel>
+            <Select
+              value={dateFilterType}
+              onChange={(e) => setDateFilterType(e.target.value)}
+              label="Filter Type"
+            >
+              <MenuItem value="dueDate">Due Date</MenuItem>
+              <MenuItem value="createdDate">Created Date</MenuItem>
+            </Select>
+          </FormControl>
+
+          <Box>
+            <Typography variant="body2" fontWeight={600} sx={{ mb: 2 }}>
+              Single Date
+            </Typography>
+            <DatePicker
+              label="Select Date"
+              value={selectedDate}
+              onChange={(date) => {
+                setSelectedDate(date);
+                setDateRange({ start: null, end: null });
+              }}
+              slotProps={{
+                textField: { fullWidth: true }
+              }}
+            />
+          </Box>
+
+          <Box>
+            <Typography variant="body2" fontWeight={600} sx={{ mb: 2 }}>
+              Date Range
+            </Typography>
+            <Stack spacing={2}>
+              <DatePicker
+                label="Start Date"
+                value={dateRange.start}
+                onChange={(date) => setDateRange(prev => ({ ...prev, start: date }))}
+                slotProps={{
+                  textField: { fullWidth: true }
+                }}
+              />
+              <DatePicker
+                label="End Date"
+                value={dateRange.end}
+                onChange={(date) => setDateRange(prev => ({ ...prev, end: date }))}
+                slotProps={{
+                  textField: { fullWidth: true }
+                }}
+              />
+            </Stack>
+          </Box>
+        </Stack>
+      </DialogContent>
+      
+      <DialogActions sx={{ p: 3, gap: 1 }}>
+        <Button
+          onClick={clearDateFilter}
+          variant="outlined"
+          color="error"
+          sx={{ borderRadius: 2 }}
+        >
+          Clear Filter
+        </Button>
+        <Button
+          onClick={() => setCalendarFilterOpen(false)}
+          variant="contained"
+          sx={{ borderRadius: 2 }}
+        >
+          Apply Filter
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+
+  // Notifications Panel
+  const renderNotificationsPanel = () => (
+    <Modal
+      open={notificationsOpen}
+      onClose={() => setNotificationsOpen(false)}
+      sx={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        justifyContent: 'flex-end',
+        p: 2
+      }}
+    >
+      <Fade in={notificationsOpen}>
+        <Paper sx={{
+          width: { xs: '100%', sm: 400 },
+          maxHeight: '80vh',
+          overflow: 'auto',
+          borderRadius: 3,
+          boxShadow: 24
+        }}>
+          <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Typography variant="h6" fontWeight={600}>
+                Notifications
+                {unreadNotificationCount > 0 && (
+                  <Badge 
+                    badgeContent={unreadNotificationCount} 
+                    color="error" 
+                    sx={{ ml: 1 }}
+                  />
+                )}
+              </Typography>
+              <Stack direction="row" spacing={1}>
+                {unreadNotificationCount > 0 && (
+                  <Button
+                    size="small"
+                    onClick={markAllNotificationsAsRead}
+                    sx={{ borderRadius: 1 }}
+                  >
+                    Mark All Read
+                  </Button>
+                )}
+                <IconButton
+                  size="small"
+                  onClick={() => setNotificationsOpen(false)}
+                >
+                  <FiX />
+                </IconButton>
+              </Stack>
+            </Stack>
+          </Box>
+
+          <List sx={{ p: 0 }}>
+            {notifications.length === 0 ? (
+              <ListItem>
+                <ListItemText 
+                  primary="No notifications"
+                  secondary="You're all caught up!"
+                />
+              </ListItem>
+            ) : (
+              notifications.map((notification) => (
+                <ListItem
+                  key={notification._id}
+                  sx={{
+                    borderBottom: 1,
+                    borderColor: 'divider',
+                    bgcolor: notification.read ? 'transparent' : 'action.hover'
+                  }}
+                >
+                  <ListItemIcon>
+                    <FiBell />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={notification.message}
+                    secondary={new Date(notification.createdAt).toLocaleString()}
+                  />
+                  {!notification.read && (
+                    <IconButton
+                      size="small"
+                      onClick={() => markNotificationAsRead(notification._id)}
+                    >
+                      <FiCheck />
+                    </IconButton>
+                  )}
+                </ListItem>
+              ))
+            )}
+          </List>
+        </Paper>
+      </Fade>
+    </Modal>
+  );
+
+  // Remarks Dialog
+  const renderRemarksDialog = () => (
+    <Dialog
+      open={remarksDialog.open}
+      onClose={() => setRemarksDialog({ open: false, taskId: null, remarks: [] })}
+      maxWidth="md"
+      fullWidth
+      PaperProps={{
+        sx: { borderRadius: 3 }
+      }}
+    >
+      <DialogTitle>
+        <Typography variant="h6" fontWeight={600}>
+          Task Remarks
+        </Typography>
+      </DialogTitle>
+      
+      <DialogContent>
+        <Stack spacing={3}>
+          {/* Add New Remark */}
+          <Box>
+            <TextField
+              label="Add Remark"
+              value={newRemark}
+              onChange={(e) => setNewRemark(e.target.value)}
+              fullWidth
+              multiline
+              rows={2}
+              placeholder="Enter your remark..."
+            />
+            <Button
+              variant="contained"
+              onClick={() => addRemark(remarksDialog.taskId)}
+              sx={{ mt: 1, borderRadius: 2 }}
+              startIcon={<FiMessageSquare />}
+            >
+              Add Remark
+            </Button>
+          </Box>
+
+          {/* Remarks List */}
+          <Box>
+            <Typography variant="h6" gutterBottom>
+              Previous Remarks
+            </Typography>
+            {remarksDialog.remarks.length === 0 ? (
+              <Typography variant="body2" color="text.secondary">
+                No remarks yet
+              </Typography>
+            ) : (
+              <Stack spacing={2}>
+                {remarksDialog.remarks.map((remark, index) => (
+                  <Paper key={index} sx={{ p: 2, borderRadius: 2 }}>
+                    <Typography variant="body2">
+                      {remark.text}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      By {remark.user?.name || 'Unknown'} • {new Date(remark.createdAt).toLocaleString()}
+                    </Typography>
+                  </Paper>
+                ))}
+              </Stack>
+            )}
+          </Box>
+        </Stack>
+      </DialogContent>
+      
+      <DialogActions sx={{ p: 3 }}>
+        <Button
+          onClick={() => setRemarksDialog({ open: false, taskId: null, remarks: [] })}
+          variant="outlined"
+          sx={{ borderRadius: 2 }}
+        >
+          Close
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+
+  // Activity Logs Dialog
+  const renderActivityLogsDialog = () => (
+    <Dialog
+      open={activityDialog.open}
+      onClose={() => setActivityDialog({ open: false, taskId: null })}
+      maxWidth="lg"
+      fullWidth
+      PaperProps={{
+        sx: { borderRadius: 3 }
+      }}
+    >
+      <DialogTitle>
+        <Typography variant="h6" fontWeight={600}>
+          Activity Logs
+        </Typography>
+      </DialogTitle>
+      
+      <DialogContent>
+        {activityLogs.length === 0 ? (
+          <Typography variant="body2" color="text.secondary">
+            No activity logs found
+          </Typography>
+        ) : (
+          <List>
+            {activityLogs.map((log, index) => (
+              <ListItem key={index} divider>
+                <ListItemIcon>
+                  <FiActivity />
+                </ListItemIcon>
+                <ListItemText
+                  primary={log.action}
+                  secondary={
+                    <Stack direction="row" justifyContent="space-between">
+                      <Typography variant="caption">
+                        By {log.user?.name || 'System'}
+                      </Typography>
+                      <Typography variant="caption">
+                        {new Date(log.timestamp).toLocaleString()}
+                      </Typography>
+                    </Stack>
+                  }
+                />
+              </ListItem>
+            ))}
+          </List>
+        )}
+      </DialogContent>
+      
+      <DialogActions sx={{ p: 3 }}>
+        <Button
+          onClick={() => setActivityDialog({ open: false, taskId: null })}
+          variant="outlined"
+          sx={{ borderRadius: 2 }}
+        >
+          Close
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 
   useEffect(() => {

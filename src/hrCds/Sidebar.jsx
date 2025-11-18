@@ -162,6 +162,7 @@ const Sidebar = ({ isOpen = true, closeSidebar }) => {
     { icon: <FaFileAlt />, name: 'Employees Leaves', path: '/cds/admin/emp-leaves' },
     { icon: <FaRocket />, name: 'Employees Assets', path: '/cds/admin/emp-assets' },
     { icon: <FaTasks />, name: 'Employees Task Create', path: '/cds/admin/admin-task-create' },
+    { icon: <FaTasks />, name: 'Employees All Task', path: '/cds/admin/emp-all-task' },
     { icon: <FaGraduationCap />, name: 'Employees Task Details', path: '/cds/admin/emp-task-details' },
     { icon: <FaUsers />, name: 'Admin Meeting', path: '/cds/admin/admin-meeting' },
     { icon: <FaNetworkWired />, name: 'Admin Projects', path: '/cds/admin/adminp' },

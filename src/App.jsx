@@ -30,7 +30,7 @@ import EmppLeave from './hrCds/pages/hr/EmppLeaves';
 import EmppAsset from './hrCds/pages/hr/EmppAssets';
 import EmppAttendence from './hrCds/pages/hr/EmppAttendence';
 import TaskDeatils from './hrCds/pages/hr/TaskDetails';
-
+import EmpAllTask from './hrCds/pages/hr/EmpAllTask';
 import AdminProject from './hrCds/pages/AdminProject'
 import EmployeeProject from './hrCds/pages/EmployeeProject'
 function App() {
@@ -61,6 +61,7 @@ function App() {
                       <Route path="admin-task-create" element={<AdminTaskCreate />} />
                       <Route path="admin-meeting" element={<AdminMeetingPage />} /> 
                       <Route path="adminp" element={<AdminProject />} />     
+                      <Route path="emp-all-task" element={<EmpAllTask />} />  
              </Route>
             <Route
               path="/cds/*"
@@ -81,7 +82,8 @@ function App() {
                         <Route path="user-dashboard" element={<UserDashboard />} />
                         <Route path="project" element={<EmployeeProject />} />
                         <Route path="task-management" element={<TaskManagement />} />
-                        <Route path="employee-meeting" element={<EmployeeMeetingPage />} />        
+                        <Route path="employee-meeting" element={<EmployeeMeetingPage />} />     
+                         
               </Route>
         {/* Catch-all route */}
         <Route path="*" element={<Navigate to="/" replace />} />
