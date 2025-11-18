@@ -562,15 +562,15 @@ const UserCreateTask = () => {
         case 'rejected':
           rejected++;
           break;
-        case 'on-hold':
-          onHold++;
-          break;
-        case 'reopen':
-          reopen++;
-          break;
-        case 'cancelled':
-          cancelled++;
-          break;
+        // case 'on-hold':
+        //   onHold++;
+        //   break;
+        // case 'reopen':
+        //   reopen++;
+        //   break;
+        // case 'cancelled':
+        //   cancelled++;
+        //   break;
         default:
           break;
       }
@@ -875,9 +875,9 @@ const handleCreateTask = async () => {
     <MenuItem value="completed">Completed</MenuItem>
     <MenuItem value="approved">Approved</MenuItem>
     <MenuItem value="rejected">Rejected</MenuItem>
-    <MenuItem value="on-hold">On Hold</MenuItem>
+    {/* <MenuItem value="on-hold">On Hold</MenuItem>
     <MenuItem value="reopen">Reopen</MenuItem>
-    <MenuItem value="cancelled">Cancelled</MenuItem>
+    <MenuItem value="cancelled">Cancelled</MenuItem> */}
   </Select>
 </FormControl>
 
@@ -1487,26 +1487,17 @@ const handleCreateTask = async () => {
                           </Typography>
                         </Box>
                       </Stack>
-                      <Typography variant="caption" color="text.secondary">
-                        {new Date(log.createdAt).toLocaleDateString()}
-                      </Typography>
+                     <Typography variant="caption" color="text.secondary">
+  {new Date(log.createdAt).toLocaleDateString()} at {new Date(log.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+</Typography>
+
                     </Stack>
                     <Typography variant="body2" sx={{ mt: 0.5 }}>
                       {log.description}
                     </Typography>
                     <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                      <Chip 
-                        label={log.action} 
-                        size="small" 
-                        color="primary" 
-                        variant="outlined" 
-                        sx={{ fontWeight: 600 }}
-                      />
-                      {log.ipAddress && (
-                        <Typography variant="caption" color="text.secondary">
-                          IP: {log.ipAddress}
-                        </Typography>
-                      )}
+                     
+                     
                     </Stack>
                   </Stack>
                 </CardContent>
@@ -2111,9 +2102,9 @@ const handleCreateTask = async () => {
     <MenuItem value="completed">Completed</MenuItem>
     <MenuItem value="approved">Approved</MenuItem>
     <MenuItem value="rejected">Rejected</MenuItem>
-    <MenuItem value="on-hold">On Hold</MenuItem>
+    {/* <MenuItem value="on-hold">On Hold</MenuItem>
     <MenuItem value="reopen">Reopen</MenuItem>
-    <MenuItem value="cancelled">Cancelled</MenuItem>
+    <MenuItem value="cancelled">Cancelled</MenuItem> */}
   </Select>
 </FormControl>
 
