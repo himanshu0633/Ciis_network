@@ -83,7 +83,7 @@ const StatusChip = styled(Chip)(({ theme, status }) => ({
   }),
 
   // 🟠 On-Hold
-  ...(status === 'on-hold' && {
+  ...(status === 'onhold' && {
     background: `${theme.palette.warning.light}25`,
     color: theme.palette.warning.dark,
     border: `1px solid ${theme.palette.warning.main}30`,
@@ -562,15 +562,15 @@ const UserCreateTask = () => {
         case 'rejected':
           rejected++;
           break;
-        // case 'on-hold':
-        //   onHold++;
-        //   break;
-        // case 'reopen':
-        //   reopen++;
-        //   break;
-        // case 'cancelled':
-        //   cancelled++;
-        //   break;
+        case 'onhold':
+          onHold++;
+          break;
+        case 'reopen':
+          reopen++;
+          break;
+        case 'cancelled':
+          cancelled++;
+          break;
         default:
           break;
       }
@@ -875,9 +875,9 @@ const handleCreateTask = async () => {
     <MenuItem value="completed">Completed</MenuItem>
     <MenuItem value="approved">Approved</MenuItem>
     <MenuItem value="rejected">Rejected</MenuItem>
-    {/* <MenuItem value="on-hold">On Hold</MenuItem>
+    <MenuItem value="onhold">On Hold</MenuItem>
     <MenuItem value="reopen">Reopen</MenuItem>
-    <MenuItem value="cancelled">Cancelled</MenuItem> */}
+    <MenuItem value="cancelled">Cancelled</MenuItem>
   </Select>
 </FormControl>
 
@@ -2102,9 +2102,9 @@ const handleCreateTask = async () => {
     <MenuItem value="completed">Completed</MenuItem>
     <MenuItem value="approved">Approved</MenuItem>
     <MenuItem value="rejected">Rejected</MenuItem>
-    {/* <MenuItem value="on-hold">On Hold</MenuItem>
+    <MenuItem value="onhold">On Hold</MenuItem>
     <MenuItem value="reopen">Reopen</MenuItem>
-    <MenuItem value="cancelled">Cancelled</MenuItem> */}
+    <MenuItem value="cancelled">Cancelled</MenuItem>
   </Select>
 </FormControl>
 

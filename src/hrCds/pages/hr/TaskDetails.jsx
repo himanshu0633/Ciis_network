@@ -1971,21 +1971,7 @@ const UserCreateTask = () => {
       );
 
       // Search Component
-      const renderSearch = () => (
-        <Paper sx={{ p: 2, mb: 2, borderRadius: 2 }}>
-          <TextField
-            fullWidth
-            placeholder="Search tasks by title or description..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            InputProps={{
-              startAdornment: <FiSearch style={{ marginRight: 8, color: '#666' }} />
-            }}
-            size="small"
-          />
-        </Paper>
-      );
-
+    
       useEffect(() => {
         fetchUserData();
       }, []);
