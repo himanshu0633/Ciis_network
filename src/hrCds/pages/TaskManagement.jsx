@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo,useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import axios from '../../utils/axiosConfig';
 import {
   Box, Typography, Paper, Button, Dialog, DialogTitle, DialogContent,
@@ -143,11 +143,6 @@ const MobileTaskCard = styled(Card)(({ theme, status }) => ({
   },
 }));
 
-
-
-
-
-
 const ActionButton = styled(IconButton)(({ theme }) => ({
   transition: theme.transitions.create(['all'], {
     duration: theme.transitions.duration.short,
@@ -176,14 +171,22 @@ const statusColors = {
   pending: 'warning',
   'in-progress': 'info',
   completed: 'success',
-  rejected: 'error'
+  approved: 'success',
+  rejected: 'error',
+  onhold: 'warning',
+  reopen: 'secondary',
+  cancelled: 'grey'
 };
 
 const statusIcons = {
   pending: FiClock,
   'in-progress': FiAlertCircle,
   completed: FiCheckCircle,
-  rejected: FiXCircle
+  approved: FiCheckCircle,
+  rejected: FiXCircle,
+  onhold: FiClock,
+  reopen: FiRefreshCw,
+  cancelled: FiXCircle
 };
 
 const UserCreateTask = () => {
@@ -196,9 +199,8 @@ const UserCreateTask = () => {
   const [authError, setAuthError] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Task Management States - OPTIMIZED
+  // Task Management States - PAGINATION REMOVED
   const [myTasksGrouped, setMyTasksGrouped] = useState({});
-  const [allTasks, setAllTasks] = useState({});
   const [statusFilter, setStatusFilter] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [stats, setStats] = useState({
@@ -206,16 +208,11 @@ const UserCreateTask = () => {
     pending: 0,
     inProgress: 0,
     completed: 0,
-    rejected: 0
-  });
-
-  // Pagination States
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 20,
-    total: 0,
-    totalPages: 0,
-    hasMore: true
+    approved: 0,
+    rejected: 0,
+    onHold: 0,
+    reopen: 0,
+    cancelled: 0
   });
 
   // Enhanced Features States
@@ -236,7 +233,7 @@ const UserCreateTask = () => {
     end: null
   });
 
-  // Task form state - REMOVED recurring fields
+  // Task form state
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
@@ -248,6 +245,10 @@ const UserCreateTask = () => {
     assignedUsers: [],
     assignedGroups: []
   });
+
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef(null);
+  const chunks = useRef([]);
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -302,8 +303,8 @@ const UserCreateTask = () => {
     }
   };
 
-  // Optimized fetch function with pagination
-  const fetchMyTasks = useCallback(async (page = 1, isLoadMore = false) => {
+  // Fetch function WITHOUT pagination
+  const fetchMyTasks = useCallback(async () => {
     if (authError || !userId) {
       setLoading(false);
       return;
@@ -312,8 +313,6 @@ const UserCreateTask = () => {
     setLoading(true);
     try {
       const params = new URLSearchParams({
-        page: page.toString(),
-        limit: pagination.limit.toString(),
         ...(statusFilter && { status: statusFilter }),
         ...(searchTerm && { search: searchTerm })
       });
@@ -321,36 +320,10 @@ const UserCreateTask = () => {
       const url = `/task?${params}`;
       const res = await axios.get(url);
       
-      const newTasks = res.data.groupedTasks || {};
+      const tasks = res.data.groupedTasks || {};
       
-      if (isLoadMore && page > 1) {
-        // Merge new tasks with existing ones for load more
-        const mergedTasks = { ...allTasks };
-        Object.entries(newTasks).forEach(([date, tasks]) => {
-          if (mergedTasks[date]) {
-            const existingTaskIds = new Set(mergedTasks[date].map(task => task._id));
-            const newUniqueTasks = tasks.filter(task => !existingTaskIds.has(task._id));
-            mergedTasks[date] = [...mergedTasks[date], ...newUniqueTasks];
-          } else {
-            mergedTasks[date] = tasks;
-          }
-        });
-        setMyTasksGrouped(mergedTasks);
-        setAllTasks(mergedTasks);
-      } else {
-        setMyTasksGrouped(newTasks);
-        setAllTasks(newTasks);
-      }
-
-      setPagination(prev => ({
-        ...prev,
-        page,
-        total: res.data.total || 0,
-        totalPages: res.data.totalPages || 0,
-        hasMore: page < (res.data.totalPages || 0)
-      }));
-
-      calculateStats(newTasks);
+      setMyTasksGrouped(tasks);
+      calculateStats(tasks);
 
     } catch (err) {
       console.error('Error fetching tasks:', err);
@@ -367,19 +340,11 @@ const UserCreateTask = () => {
     } finally {
       setLoading(false);
     }
-  }, [authError, userId, statusFilter, searchTerm, pagination.limit, allTasks]);
+  }, [authError, userId, statusFilter, searchTerm]);
 
-  // Load more tasks function
-  const loadMoreTasks = () => {
-    if (pagination.hasMore && !loading) {
-      fetchMyTasks(pagination.page + 1, true);
-    }
-  };
-
-  // Reset to first page when filters change
+  // Reset when filters change
   useEffect(() => {
-    setPagination(prev => ({ ...prev, page: 1 }));
-    fetchMyTasks(1, false);
+    fetchMyTasks();
   }, [statusFilter, searchTerm]);
 
   // Enhanced Notifications Functions
@@ -459,7 +424,7 @@ const UserCreateTask = () => {
     }
   };
 
-  // Calendar Filter Functions - OPTIMIZED
+  // Calendar Filter Functions
   const applyDateFilter = useCallback((tasks) => {
     if (!selectedDate && !dateRange.start && !dateRange.end) {
       return tasks;
@@ -530,66 +495,65 @@ const UserCreateTask = () => {
     return applyDateFilter(myTasksGrouped);
   }, [myTasksGrouped, applyDateFilter]);
 
- const calculateStats = (tasks) => {
-  let total = 0;
-  let pending = 0;
-  let inProgress = 0;
-  let completed = 0;
-  let approved = 0;
-  let rejected = 0;
-  let onHold = 0;
-  let reopen = 0;
-  let cancelled = 0;
+  const calculateStats = (tasks) => {
+    let total = 0;
+    let pending = 0;
+    let inProgress = 0;
+    let completed = 0;
+    let approved = 0;
+    let rejected = 0;
+    let onHold = 0;
+    let reopen = 0;
+    let cancelled = 0;
 
-  Object.values(tasks).forEach(dateTasks => {
-    dateTasks.forEach(task => {
-      total++;
-      const myStatus = getUserStatusForTask(task, userId);
+    Object.values(tasks).forEach(dateTasks => {
+      dateTasks.forEach(task => {
+        total++;
+        const myStatus = getUserStatusForTask(task, userId);
 
-      switch (myStatus) {
-        case 'pending':
-          pending++;
-          break;
-        case 'in-progress':
-          inProgress++;
-          break;
-        case 'completed':
-          completed++;
-          break;
-        case 'approved':
-          approved++;
-          break;
-        case 'rejected':
-          rejected++;
-          break;
-        case 'onhold':
-          onHold++;
-          break;
-        case 'reopen':
-          reopen++;
-          break;
-        case 'cancelled':
-          cancelled++;
-          break;
-        default:
-          break;
-      }
+        switch (myStatus) {
+          case 'pending':
+            pending++;
+            break;
+          case 'in-progress':
+            inProgress++;
+            break;
+          case 'completed':
+            completed++;
+            break;
+          case 'approved':
+            approved++;
+            break;
+          case 'rejected':
+            rejected++;
+            break;
+          case 'onhold':
+            onHold++;
+            break;
+          case 'reopen':
+            reopen++;
+            break;
+          case 'cancelled':
+            cancelled++;
+            break;
+          default:
+            break;
+        }
+      });
     });
-  });
 
-  setStats({ 
-    total, 
-    pending, 
-    inProgress, 
-    completed, 
-    approved, 
-    rejected, 
-    onHold, 
-    reopen, 
-    cancelled 
-  });
-};
-
+    setStats({ 
+      total, 
+      pending, 
+      inProgress, 
+      completed, 
+      approved, 
+      rejected, 
+      onHold, 
+      reopen, 
+      cancelled 
+    });
+  };
 
   // Get individual user status for a task
   const getUserStatusForTask = (task, userId) => {
@@ -599,7 +563,7 @@ const UserCreateTask = () => {
     return userStatus?.status || 'pending';
   };
 
-  // Status Change Handler - OPTIMIZED
+  // Status Change Handler
   const handleStatusChange = async (taskId, newStatus, remarks = '') => {
     if (authError || !userId) {
       setSnackbar({
@@ -616,7 +580,7 @@ const UserCreateTask = () => {
         remarks: remarks || `Status changed to ${newStatus}`
       });
 
-      fetchMyTasks(pagination.page, false);
+      fetchMyTasks();
       fetchNotifications();
       
       setSnackbar({ 
@@ -643,12 +607,8 @@ const UserCreateTask = () => {
       }
     }
   };
-  const [isRecording, setIsRecording] = useState(false);
-  const mediaRecorderRef = useRef(null);
-  const chunks = useRef([]);
 
-
-    const startRecording = async () => {
+  const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorderRef.current = new MediaRecorder(stream);
@@ -675,123 +635,125 @@ const UserCreateTask = () => {
   };
 
   const stopRecording = () => {
-    mediaRecorderRef.current.stop();
-    setIsRecording(false);
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
   };
 
-  // Task creation handler - UPDATED: Removed recurring functionality
-const handleCreateTask = async () => {
-  if (authError || !userId) {
-    setSnackbar({
-      open: true,
-      message: 'Please log in to create tasks',
-      severity: 'error'
-    });
-    return;
-  }
-
-  if (!newTask.title || !newTask.description || !newTask.dueDateTime) {
-    setSnackbar({
-      open: true,
-      message: 'Please fill all required fields (Title, Description, Due Date)',
-      severity: 'error'
-    });
-    return;
-  }
-
-  if (newTask.dueDateTime && new Date(newTask.dueDateTime) < new Date()) {
-    setSnackbar({
-      open: true,
-      message: 'Due date cannot be in the past',
-      severity: 'error'
-    });
-    return;
-  }
-
-  setIsCreatingTask(true);
-
-  try {
-    const formData = new FormData();
-    formData.append('title', newTask.title);
-    formData.append('description', newTask.description);
-    formData.append('dueDateTime', new Date(newTask.dueDateTime).toISOString());
-    formData.append('priorityDays', newTask.priorityDays || '1');
-    formData.append('priority', newTask.priority);
-
-    // Determine which endpoint to use based on assignment type
-    const isAssigningToOthers = newTask.assignedUsers && 
-                                newTask.assignedUsers.length > 0 && 
-                                !newTask.assignedUsers.includes(userId);
-
-    const endpoint = isAssigningToOthers ? '/task/create-for-others' : '/task/create-self';
-
-    // Only include assignment data when assigning to others
-    if (isAssigningToOthers) {
-      formData.append('assignedUsers', JSON.stringify(newTask.assignedUsers));
-      formData.append('assignedGroups', JSON.stringify(newTask.assignedGroups || []));
-    }
-
-    if (newTask.files) {
-      for (let i = 0; i < newTask.files.length; i++) {
-        formData.append('files', newTask.files[i]);
-      }
-    }
-
-    if (newTask.voiceNote) {
-      formData.append('voiceNote', newTask.voiceNote);
-    }
-
-    await axios.post(endpoint, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      }
-    });
-
-    setOpenDialog(false);
-    setSnackbar({ 
-      open: true, 
-      message: `Task ${isAssigningToOthers ? 'assigned' : 'created'} successfully`, 
-      severity: 'success' 
-    });
-    
-    // Reset form
-    setNewTask({
-      title: '', 
-      description: '', 
-      dueDateTime: null, 
-      priority: 'medium', 
-      priorityDays: '1', 
-      files: null, 
-      voiceNote: null,
-      assignedUsers: [userId], // Default to self
-      assignedGroups: []
-    });
-
-    // Refresh tasks list
-    fetchMyTasks(1, false);
-    fetchNotifications();
-
-  } catch (err) {
-    console.error('Error creating task:', err);
-    
-    if (err.response?.status === 401) {
-      setAuthError(true);
+  // Task creation handler
+  const handleCreateTask = async () => {
+    if (authError || !userId) {
       setSnackbar({
         open: true,
-        message: 'Session expired. Please log in again.',
+        message: 'Please log in to create tasks',
         severity: 'error'
       });
-    } else {
+      return;
+    }
+
+    if (!newTask.title || !newTask.description || !newTask.dueDateTime) {
+      setSnackbar({
+        open: true,
+        message: 'Please fill all required fields (Title, Description, Due Date)',
+        severity: 'error'
+      });
+      return;
+    }
+
+    if (newTask.dueDateTime && new Date(newTask.dueDateTime) < new Date()) {
+      setSnackbar({
+        open: true,
+        message: 'Due date cannot be in the past',
+        severity: 'error'
+      });
+      return;
+    }
+
+    setIsCreatingTask(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('title', newTask.title);
+      formData.append('description', newTask.description);
+      formData.append('dueDateTime', new Date(newTask.dueDateTime).toISOString());
+      formData.append('priorityDays', newTask.priorityDays || '1');
+      formData.append('priority', newTask.priority);
+
+      // Determine which endpoint to use based on assignment type
+      const isAssigningToOthers = newTask.assignedUsers && 
+                                  newTask.assignedUsers.length > 0 && 
+                                  !newTask.assignedUsers.includes(userId);
+
+      const endpoint = isAssigningToOthers ? '/task/create-for-others' : '/task/create-self';
+
+      // Only include assignment data when assigning to others
+      if (isAssigningToOthers) {
+        formData.append('assignedUsers', JSON.stringify(newTask.assignedUsers));
+        formData.append('assignedGroups', JSON.stringify(newTask.assignedGroups || []));
+      }
+
+      if (newTask.files) {
+        for (let i = 0; i < newTask.files.length; i++) {
+          formData.append('files', newTask.files[i]);
+        }
+      }
+
+      if (newTask.voiceNote) {
+        formData.append('voiceNote', newTask.voiceNote);
+      }
+
+      await axios.post(endpoint, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        }
+      });
+
+      setOpenDialog(false);
       setSnackbar({ 
         open: true, 
-        message: err?.response?.data?.error || 'Task creation failed', 
-        severity: 'error' 
+        message: `Task ${isAssigningToOthers ? 'assigned' : 'created'} successfully`, 
+        severity: 'success' 
       });
+      
+      // Reset form
+      setNewTask({
+        title: '', 
+        description: '', 
+        dueDateTime: null, 
+        priority: 'medium', 
+        priorityDays: '1', 
+        files: null, 
+        voiceNote: null,
+        assignedUsers: [userId],
+        assignedGroups: []
+      });
+
+      // Refresh tasks list
+      fetchMyTasks();
+      fetchNotifications();
+
+    } catch (err) {
+      console.error('Error creating task:', err);
+      
+      if (err.response?.status === 401) {
+        setAuthError(true);
+        setSnackbar({
+          open: true,
+          message: 'Session expired. Please log in again.',
+          severity: 'error'
+        });
+      } else {
+        setSnackbar({ 
+          open: true, 
+          message: err?.response?.data?.error || 'Task creation failed', 
+          severity: 'error' 
+        });
+      }
+    } finally {
+      setIsCreatingTask(false);
     }
-  } finally {
-    setIsCreatingTask(false);
-  }
-};
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('user');
@@ -858,60 +820,28 @@ const handleCreateTask = async () => {
     const myStatus = getUserStatusForTask(task, userId);
     
     return (
-    <FormControl size="small" sx={{ minWidth: isSmallMobile ? 100 : 120 }}>
-  <Select
-    value={myStatus}
-    onChange={(e) => handleStatusChange(task._id, e.target.value)}
-    sx={{
-      borderRadius: theme.shape.borderRadius,
-      '& .MuiSelect-select': {
-        py: 1,
-        fontSize: isSmallMobile ? '0.75rem' : '0.875rem',
-      },
-    }}
-  >
-    <MenuItem value="pending">Pending</MenuItem>
-    <MenuItem value="in-progress">In Progress</MenuItem>
-    <MenuItem value="completed">Completed</MenuItem>
-    <MenuItem value="approved">Approved</MenuItem>
-    <MenuItem value="rejected">Rejected</MenuItem>
-    <MenuItem value="onhold">On Hold</MenuItem>
-    <MenuItem value="reopen">Reopen</MenuItem>
-    <MenuItem value="cancelled">Cancelled</MenuItem>
-  </Select>
-</FormControl>
-
-    );
-  };
-
-  // Load More Component
-  const renderLoadMore = () => {
-    if (!pagination.hasMore) return null;
-
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3, mb: 2 }}>
-        <Button
-          variant="outlined"
-          onClick={loadMoreTasks}
-          disabled={loading}
-          startIcon={loading ? <CircularProgress size={16} /> : <FiRefreshCw />}
-          sx={{ borderRadius: 2 }}
+      <FormControl size="small" sx={{ minWidth: isSmallMobile ? 100 : 120 }}>
+        <Select
+          value={myStatus}
+          onChange={(e) => handleStatusChange(task._id, e.target.value)}
+          sx={{
+            borderRadius: theme.shape.borderRadius,
+            '& .MuiSelect-select': {
+              py: 1,
+              fontSize: isSmallMobile ? '0.75rem' : '0.875rem',
+            },
+          }}
         >
-          {loading ? 'Loading...' : 'Load More Tasks'}
-        </Button>
-      </Box>
-    );
-  };
-
-  // Pagination Info
-  const renderPaginationInfo = () => {
-    if (pagination.total === 0) return null;
-
-    return (
-      <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ mt: 2 }}>
-        Showing {Object.values(filteredTasks).flat().length} of {pagination.total} tasks
-        {pagination.hasMore && ' • Scroll down to load more'}
-      </Typography>
+          <MenuItem value="pending">Pending</MenuItem>
+          <MenuItem value="in-progress">In Progress</MenuItem>
+          <MenuItem value="completed">Completed</MenuItem>
+          <MenuItem value="approved">Approved</MenuItem>
+          <MenuItem value="rejected">Rejected</MenuItem>
+          <MenuItem value="onhold">On Hold</MenuItem>
+          <MenuItem value="reopen">Reopen</MenuItem>
+          <MenuItem value="cancelled">Cancelled</MenuItem>
+        </Select>
+      </FormControl>
     );
   };
 
@@ -959,11 +889,13 @@ const handleCreateTask = async () => {
             <TableBody>
               {tasks.map((task) => {
                 const myStatus = getUserStatusForTask(task, userId);
+                const statusColor = statusColors[myStatus] || 'grey';
+                const statusColorMain = theme.palette[statusColor]?.main || theme.palette.grey[500];
 
                 return (
                   <TableRow key={task._id} sx={{ 
-                    background: `${theme.palette[statusColors[myStatus]].main}05`,
-                    borderLeft: `4px solid ${theme.palette[statusColors[myStatus]].main}`,
+                    background: `${statusColorMain}05`,
+                    borderLeft: `4px solid ${statusColorMain}`,
                     cursor: 'pointer',
                     transition: 'all 0.3s ease',
                     '&:hover': {
@@ -1024,55 +956,50 @@ const handleCreateTask = async () => {
                       />
                     </TableCell>
                     <TableCell sx={{ py: 1.5 }}>
+                      {task.files?.length > 0 && (
+                        <Tooltip title={`${task.files.length} file(s)`}>
+                          <ActionButton
+                            size="small"
+                            href={`http://localhost:3000/${task.files[0].path || task.files[0]}`}
+                            target="_blank"
+                            sx={{
+                              color: theme.palette.primary.main,
+                              mr: 1,
+                              '&:hover': { bgcolor: `${theme.palette.primary.main}10` }
+                            }}
+                          >
+                            <FiDownload size={16} />
+                          </ActionButton>
+                        </Tooltip>
+                      )}
 
-  {/* ---------------- FILES ---------------- */}
-  {task.files?.length > 0 && (
-    <Tooltip title={`${task.files.length} file(s)`}>
-      <ActionButton
-        size="small"
-        href={`http://localhost:3000/${task.files[0].path}`}
-        target="_blank"
-        sx={{
-          color: theme.palette.primary.main,
-          mr: 1,
-          '&:hover': { bgcolor: `${theme.palette.primary.main}10` }
-        }}
-      >
-        <FiDownload size={16} />
-      </ActionButton>
-    </Tooltip>
-  )}
+                      {task.voiceNote?.path ? (
+                        <Tooltip title="Voice Note">
+                          <ActionButton
+                            size="small"
+                            href={`http://localhost:3000/${task.voiceNote.path}`}
+                            target="_blank"
+                            sx={{
+                              color: theme.palette.success.main,
+                              '&:hover': { bgcolor: `${theme.palette.success.main}10` }
+                            }}
+                          >
+                            <FiMic size={16} />
+                          </ActionButton>
+                        </Tooltip>
+                      ) : null}
 
-  {/* ---------------- VOICE NOTE ---------------- */}
-  {task.voiceNote?.path ? (
-    <Tooltip title="Voice Note">
-      <ActionButton
-        size="small"
-        href={`http://localhost:3000/${task.voiceNote.path}`}
-        target="_blank"
-        sx={{
-          color: theme.palette.success.main,
-          '&:hover': { bgcolor: `${theme.palette.success.main}10` }
-        }}
-      >
-        <FiMic size={16} />
-      </ActionButton>
-    </Tooltip>
-  ) : null}
-
-  {/* ---------------- NO FILE / VOICE ---------------- */}
-  {!task.files?.length && !task.voiceNote?.path && (
-    <Typography
-      variant="body2"
-      color="text.secondary"
-      fontWeight={500}
-      sx={{ fontSize: '0.8rem' }}
-    >
-      -
-    </Typography>
-  )}
-
-</TableCell>
+                      {!task.files?.length && !task.voiceNote?.path && (
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          fontWeight={500}
+                          sx={{ fontSize: '0.8rem' }}
+                        >
+                          -
+                        </Typography>
+                      )}
+                    </TableCell>
 
                     <TableCell sx={{ py: 1.5 }}>
                       {renderActionButtons(task)}
@@ -1245,8 +1172,6 @@ const handleCreateTask = async () => {
     return (
       <>
         {isMobile ? renderMobileCards(groupedTasks) : renderDesktopTable(groupedTasks)}
-        {renderLoadMore()}
-        {renderPaginationInfo()}
       </>
     );
   };
@@ -1487,18 +1412,13 @@ const handleCreateTask = async () => {
                           </Typography>
                         </Box>
                       </Stack>
-                     <Typography variant="caption" color="text.secondary">
-  {new Date(log.createdAt).toLocaleDateString()} at {new Date(log.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-</Typography>
-
+                      <Typography variant="caption" color="text.secondary">
+                        {new Date(log.createdAt).toLocaleDateString()} at {new Date(log.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      </Typography>
                     </Stack>
                     <Typography variant="body2" sx={{ mt: 0.5 }}>
                       {log.description}
                     </Typography>
-                    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                     
-                     
-                    </Stack>
                   </Stack>
                 </CardContent>
               </Card>
@@ -1545,9 +1465,9 @@ const handleCreateTask = async () => {
               value={dateFilterType}
               onChange={(e) => setDateFilterType(e.target.value)}
               label="Filter By"
-            >
-              <MenuItem value="dueDate">Due Date</MenuItem>
+            > 
               <MenuItem value="createdDate">Created Date</MenuItem>
+              <MenuItem value="dueDate">Due Date</MenuItem>
             </Select>
           </FormControl>
 
@@ -1661,7 +1581,7 @@ const handleCreateTask = async () => {
     </Dialog>
   );
 
-  // CREATE TASK DIALOG - UPDATED: Removed recurring fields
+  // CREATE TASK DIALOG
   const renderCreateTaskDialog = () => (
     <Dialog 
       open={openDialog} 
@@ -1798,7 +1718,6 @@ const handleCreateTask = async () => {
                       size={isMobile ? "small" : "medium"}
                     />
                   </Grid>
-                 
                 </Grid>
               </Stack>
             </Box>
@@ -1838,21 +1757,21 @@ const handleCreateTask = async () => {
                   />
                 </Button>
 
-                 <Button
-      variant={isRecording ? "contained" : "outlined"}
-      startIcon={<FiMic />}
-      onClick={isRecording ? stopRecording : startRecording}
-      sx={{
-        borderRadius: 1,
-        py: 1,
-        borderStyle: isRecording ? "solid" : "dashed",
-        fontSize: "0.875rem",
-        background: isRecording ? "rgba(255,0,0,0.2)" : "",
-      }}
-      fullWidth={isMobile}
-    >
-      {isRecording ? "Stop Recording..." : "Record Voice"}
-    </Button>
+                <Button
+                  variant={isRecording ? "contained" : "outlined"}
+                  startIcon={<FiMic />}
+                  onClick={isRecording ? stopRecording : startRecording}
+                  sx={{
+                    borderRadius: 1,
+                    py: 1,
+                    borderStyle: isRecording ? "solid" : "dashed",
+                    fontSize: "0.875rem",
+                    background: isRecording ? "rgba(255,0,0,0.2)" : "",
+                  }}
+                  fullWidth={isMobile}
+                >
+                  {isRecording ? "Stop Recording..." : "Record Voice"}
+                </Button>
               </Stack>
             </Box>
           </Stack>
@@ -1896,29 +1815,13 @@ const handleCreateTask = async () => {
     </Dialog>
   );
 
-  // Search Component
-  // const renderSearch = () => (
-  //   <Paper sx={{ p: 2, mb: 2, borderRadius: 2 }}>
-  //     <TextField
-  //       fullWidth
-  //       placeholder="Search tasks by title or description..."
-  //       value={searchTerm}
-  //       onChange={(e) => setSearchTerm(e.target.value)}
-  //       InputProps={{
-  //         startAdornment: <FiSearch style={{ marginRight: 8, color: '#666' }} />
-  //       }}
-  //       size="small"
-  //     />
-  //   </Paper>
-  // );
-
   useEffect(() => {
     fetchUserData();
   }, []);
 
   useEffect(() => {
     if (!authError && userId) {
-      fetchMyTasks(1, false);
+      fetchMyTasks();
       fetchNotifications();
     }
   }, [authError, userId]);
@@ -1958,7 +1861,7 @@ const handleCreateTask = async () => {
     );
   }
 
-  if (loading && pagination.page === 1) {
+  if (loading) {
     return (
       <Box sx={{
         display: 'flex',
@@ -2055,8 +1958,6 @@ const handleCreateTask = async () => {
             </Stack>
           </Paper>
 
-      
-
           {/* Tasks Section */}
           <Paper sx={{
             borderRadius: { xs: 2, sm: 3 },
@@ -2088,25 +1989,25 @@ const handleCreateTask = async () => {
                   </Tooltip>
 
                   {/* Status Filter */}
-                <FormControl size="small" sx={{ minWidth: 150 }}>
-  <InputLabel>Status Filter</InputLabel>
-  <Select
-    value={statusFilter}
-    onChange={(e) => setStatusFilter(e.target.value)}
-    input={<OutlinedInput label="Status Filter" />}
-    sx={{ borderRadius: 1 }}
-  >
-    <MenuItem value="">All Status</MenuItem>
-    <MenuItem value="pending">Pending</MenuItem>
-    <MenuItem value="in-progress">In Progress</MenuItem>
-    <MenuItem value="completed">Completed</MenuItem>
-    <MenuItem value="approved">Approved</MenuItem>
-    <MenuItem value="rejected">Rejected</MenuItem>
-    <MenuItem value="onhold">On Hold</MenuItem>
-    <MenuItem value="reopen">Reopen</MenuItem>
-    <MenuItem value="cancelled">Cancelled</MenuItem>
-  </Select>
-</FormControl>
+                  <FormControl size="small" sx={{ minWidth: 150 }}>
+                    <InputLabel>Status Filter</InputLabel>
+                    <Select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                      input={<OutlinedInput label="Status Filter" />}
+                      sx={{ borderRadius: 1 }}
+                    >
+                      <MenuItem value="">All Status</MenuItem>
+                      <MenuItem value="pending">Pending</MenuItem>
+                      <MenuItem value="in-progress">In Progress</MenuItem>
+                      <MenuItem value="completed">Completed</MenuItem>
+                      <MenuItem value="approved">Approved</MenuItem>
+                      <MenuItem value="rejected">Rejected</MenuItem>
+                      <MenuItem value="onhold">On Hold</MenuItem>
+                      <MenuItem value="reopen">Reopen</MenuItem>
+                      <MenuItem value="cancelled">Cancelled</MenuItem>
+                    </Select>
+                  </FormControl>
 
                   {/* Clear Date Filter Button */}
                   {(selectedDate || dateRange.start || dateRange.end) && (
@@ -2127,7 +2028,7 @@ const handleCreateTask = async () => {
 
                   <Tooltip title="Refresh">
                     <ActionButton 
-                      onClick={() => fetchMyTasks(1, false)}
+                      onClick={() => fetchMyTasks()}
                       sx={{ 
                         '&:hover': { 
                           backgroundColor: `${theme.palette.primary.main}10`,
@@ -2156,14 +2057,6 @@ const handleCreateTask = async () => {
             {/* Tasks Content */}
             <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
               {renderGroupedTasks(myTasksGrouped)}
-              {loading && pagination.page > 1 && (
-                <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-                  <CircularProgress size={24} />
-                  <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
-                    Loading more tasks...
-                  </Typography>
-                </Box>
-              )}
             </Box>
           </Paper>
 
@@ -2212,4 +2105,4 @@ const handleCreateTask = async () => {
   );
 };
 
-export default UserCreateTask;
+export default UserCreateTask;  

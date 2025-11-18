@@ -152,7 +152,7 @@ const Sidebar = ({ isOpen = true, closeSidebar }) => {
     { icon: <FaTasks />, name: 'Employee Meeting', path: '/cds/employee-meeting', roles: ['user','hr','manager','admin','SuperAdmin'] },
 
     // ❌ Admin ko employee project nahi dikhna
-    { icon: <FaTasks />, name: 'Employee project', path: '/cds/emp', roles: ['user','hr','manager'] },
+    { icon: <FaTasks />, name: 'Employee project', path: '/cds/project', roles: ['user','hr','manager'] },
   ];
 
   const hrMenu = [

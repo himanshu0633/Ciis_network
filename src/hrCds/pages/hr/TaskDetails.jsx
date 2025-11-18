@@ -152,13 +152,13 @@ const UserCreateTask = () => {
   const [authError, setAuthError] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Task Management States - OPTIMIZED
+  // Task Management States
   const [myTasksGrouped, setMyTasksGrouped] = useState({});
   const [allTasks, setAllTasks] = useState([]);
   const [statusFilter, setStatusFilter] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
 
-  // NEW: Client-side stats calculation (API call hatake)
+  // Client-side stats calculation
   const [clientStats, setClientStats] = useState({
     total: 0,
     pending: 0,
@@ -214,7 +214,7 @@ const UserCreateTask = () => {
 
   // Helper function to count all tasks
   const countAllTasks = (groupedTasks) => {
-    if (!groupedTasks || typeof groupedTasks !== 'object') return ;
+    if (!groupedTasks || typeof groupedTasks !== 'object') return 0;
     
     let count = 0;
     Object.values(groupedTasks).forEach(dateTasks => {
@@ -225,7 +225,7 @@ const UserCreateTask = () => {
     return count;
   };
 
-  // FIXED: Proper date grouping function with correct sorting
+  // Fixed date grouping function
   const groupTasksByCreatedDate = (tasks) => {
     const grouped = {};
     
@@ -236,38 +236,22 @@ const UserCreateTask = () => {
       
       let dateObj;
       
-      // Try different date fields
+      // Try different date fields with proper fallback
       if (task.createdAt) {
         dateObj = new Date(task.createdAt);
-        if (isNaN(dateObj.getTime())) {
-          dateObj = null;
-        }
-      }
-      
-      if (!dateObj && task.createdDate) {
+      } else if (task.createdDate) {
         dateObj = new Date(task.createdDate);
-        if (isNaN(dateObj.getTime())) {
-          dateObj = null;
-        }
-      }
-      
-      if (!dateObj && task.updatedAt) {
+      } else if (task.updatedAt) {
         dateObj = new Date(task.updatedAt);
-        if (isNaN(dateObj.getTime())) {
-          dateObj = null;
-        }
-      }
-      
-      if (!dateObj && task.dueDateTime) {
+      } else if (task.dueDateTime) {
         dateObj = new Date(task.dueDateTime);
-        if (isNaN(dateObj.getTime())) {
-          dateObj = null;
-        }
+      } else {
+        dateObj = new Date(); // Final fallback
       }
-      
-      // Final fallback
-      if (!dateObj) {
-        dateObj = new Date();
+
+      // Validate date
+      if (isNaN(dateObj.getTime())) {
+        dateObj = new Date(); // Fallback to current date if invalid
       }
 
       const dateKey = dateObj.toLocaleDateString('en-IN', {
@@ -278,28 +262,25 @@ const UserCreateTask = () => {
       });
       
       if (!grouped[dateKey]) {
-        grouped[dateKey] = {
-          tasks: [],
-          date: dateObj
-        };
+        grouped[dateKey] = [];
       }
-      grouped[dateKey].tasks.push(task);
+      grouped[dateKey].push(task);
     });
     
     // Sort the groups by date (newest first)
-    const sortedEntries = Object.entries(grouped).sort(([, a], [, b]) => {
-      return b.date.getTime() - a.date.getTime();
+    const sortedEntries = Object.entries(grouped).sort(([dateA], [dateB]) => {
+      return new Date(dateB) - new Date(dateA);
     });
     
     const result = {};
-    sortedEntries.forEach(([dateKey, groupData]) => {
-      result[dateKey] = groupData.tasks;
+    sortedEntries.forEach(([dateKey, tasks]) => {
+      result[dateKey] = tasks;
     });
     
     return result;
   };
 
-  // NEW: Client-side stats calculation (API call ki jagah)
+  // Client-side stats calculation
   const calculateStatsFromTasks = useCallback((tasks) => {
     let total = 0;
     let pending = 0;
@@ -332,6 +313,8 @@ const UserCreateTask = () => {
             case 'rejected':
               rejected++;
               break;
+            default:
+              pending++;
           }
         });
       }
@@ -388,7 +371,7 @@ const UserCreateTask = () => {
     }
   };
 
-  // OPTIMIZED: Single API call for tasks with integrated stats
+  // Fetch tasks with proper error handling
   const fetchMyTasks = useCallback(async (page = 1, isLoadMore = false) => {
     if (authError || !userId) {
       setLoading(false);
@@ -416,13 +399,14 @@ const UserCreateTask = () => {
       } else if (Array.isArray(res.data?.groupedTasks)) {
         tasksArray = res.data.groupedTasks;
       } else if (res.data?.groupedTasks && typeof res.data.groupedTasks === 'object') {
-        // If it's already grouped, flatten it
         tasksArray = Object.values(res.data.groupedTasks).flat();
       } else if (res.data?.data && Array.isArray(res.data.data)) {
         tasksArray = res.data.data;
+      } else if (Array.isArray(res.data)) {
+        tasksArray = res.data;
       }
       
-      // Group tasks by creation date properly with latest first
+      // Group tasks by creation date
       const newTasks = groupTasksByCreatedDate(tasksArray);
       
       if (isLoadMore && page > 1) {
@@ -450,16 +434,16 @@ const UserCreateTask = () => {
         setAllTasks(allTasksFlat);
       }
 
-      // Calculate stats from tasks (API call hatake)
+      // Calculate stats from tasks
       const calculatedStats = calculateStatsFromTasks(newTasks);
       setClientStats(calculatedStats);
 
       setPagination(prev => ({
         ...prev,
         page,
-        total: res.data?.total || 0,
-        totalPages: res.data?.totalPages || 0,
-        hasMore: page < (res.data?.totalPages || 0)
+        total: res.data?.total || tasksArray.length,
+        totalPages: res.data?.totalPages || Math.ceil(tasksArray.length / pagination.limit),
+        hasMore: page < (res.data?.totalPages || Math.ceil(tasksArray.length / pagination.limit))
       }));
 
     } catch (err) {
@@ -583,7 +567,7 @@ const UserCreateTask = () => {
     }
   };
 
-  // Calendar Filter Functions - OPTIMIZED
+  // Calendar Filter Functions
   const applyDateFilter = useCallback((tasks) => {
     if (!selectedDate && !dateRange.start && !dateRange.end) {
       return tasks;
@@ -605,7 +589,7 @@ const UserCreateTask = () => {
           taskDate = task.createdAt ? new Date(task.createdAt) : null;
         }
 
-        if (!taskDate) return false;
+        if (!taskDate || isNaN(taskDate.getTime())) return false;
 
         // Single date filter
         if (selectedDate && !dateRange.start && !dateRange.end) {
@@ -653,7 +637,7 @@ const UserCreateTask = () => {
     return null;
   };
 
-  // OPTIMIZED: Refresh button - Ab sirf ek hi API call
+  // Refresh button
   const handleRefresh = () => {
     fetchMyTasks(1, false);
   };
@@ -667,13 +651,19 @@ const UserCreateTask = () => {
   const getUserStatusForTask = (task, userId) => {
     if (!task || !userId || typeof task !== 'object') return 'pending';
     
-    const userStatus = task.statusByUser?.find(s => 
-      s?.user === userId || s?.user?._id === userId
-    );
-    return userStatus?.status || 'pending';
+    // Check if statusByUser exists and is an array
+    if (Array.isArray(task.statusByUser)) {
+      const userStatus = task.statusByUser.find(s => 
+        s?.user === userId || s?.user?._id === userId
+      );
+      return userStatus?.status || 'pending';
+    }
+    
+    // Fallback to task status if statusByUser doesn't exist
+    return task.status || 'pending';
   };
 
-  // Status Change Handler - OPTIMIZED
+  // Status Change Handler
   const handleStatusChange = async (taskId, newStatus, remarks = '') => {
     if (authError || !userId) {
       setSnackbar({
@@ -757,18 +747,8 @@ const UserCreateTask = () => {
       formData.append('priorityDays', newTask.priorityDays || '1');
       formData.append('priority', newTask.priority);
 
-      // Determine which endpoint to use based on assignment type
-      const isAssigningToOthers = newTask.assignedUsers && 
-                                  newTask.assignedUsers.length > 0 && 
-                                  !newTask.assignedUsers.includes(userId);
-
-      const endpoint = isAssigningToOthers ? '/task/create-for-others' : '/task/create-self';
-
-      // Only include assignment data when assigning to others
-      if (isAssigningToOthers) {
-        formData.append('assignedUsers', JSON.stringify(newTask.assignedUsers));
-        formData.append('assignedGroups', JSON.stringify(newTask.assignedGroups || []));
-      }
+      // Use create-self endpoint for personal tasks
+      const endpoint = '/task/create-self';
 
       if (newTask.files) {
         for (let i = 0; i < newTask.files.length; i++) {
@@ -789,7 +769,7 @@ const UserCreateTask = () => {
       setOpenDialog(false);
       setSnackbar({ 
         open: true, 
-        message: `Task ${isAssigningToOthers ? 'assigned' : 'created'} successfully`, 
+        message: 'Task created successfully', 
         severity: 'success' 
       });
       
@@ -802,11 +782,11 @@ const UserCreateTask = () => {
         priorityDays: '1', 
         files: null, 
         voiceNote: null,
-        assignedUsers: [userId], // Default to self
+        assignedUsers: [userId],
         assignedGroups: []
       });
 
-      // Refresh tasks list (sirf ek API call)
+      // Refresh tasks list
       fetchMyTasks(1, false);
       fetchNotifications();
 
@@ -843,7 +823,7 @@ const UserCreateTask = () => {
     return new Date(dueDateTime) < new Date();
   };
 
-  // Enhanced table cell with new action buttons - FIXED VERSION
+  // Enhanced table cell with new action buttons
   const renderActionButtons = (task) => {
     if (!task || typeof task !== 'object') return null;
     
@@ -894,7 +874,7 @@ const UserCreateTask = () => {
     );
   };
 
-  // Status Select Component - FIXED VERSION
+  // Status Select Component
   const renderStatusSelect = (task) => {
     if (!task || typeof task !== 'object') return null;
     
@@ -955,8 +935,7 @@ const UserCreateTask = () => {
     );
   };
 
-  // OPTIMIZED: Statistics Cards - Ab client-side calculation se
-<<<<<<< HEAD
+  // Statistics Cards - Client-side calculation
   const renderStatsCards = () => (
     <Grid container spacing={2} sx={{ mb: 3 }}>
       {[
@@ -998,51 +977,8 @@ const UserCreateTask = () => {
       ))}
     </Grid>
   );
-=======
-  // const renderStatsCards = () => (
-  //   <Grid container spacing={2} sx={{ mb: 3 }}>
-  //     {[
-  //       { label: 'Total Tasks', value: clientStats.total, color: 'primary', icon: FiCalendar },
-  //       { label: 'Pending', value: clientStats.pending, color: 'warning', icon: FiClock },
-  //       { label: 'In Progress', value: clientStats.inProgress, color: 'info', icon: FiAlertCircle },
-  //       { label: 'Completed', value: clientStats.completed, color: 'success', icon: FiCheckCircle },
-  //       { label: 'Rejected', value: clientStats.rejected, color: 'error', icon: FiXCircle },
-  //     ].map((stat, index) => (
-  //       <Grid item xs={6} sm={4} md={2.4} key={index}>
-  //         <StatCard color={stat.color}>
-  //           <CardContent sx={{ p: 2 }}>
-  //             <Stack direction="row" alignItems="center" spacing={1}>
-  //               <Avatar sx={{
-  //                 bgcolor: `${theme.palette[stat.color].main}20`,
-  //                 color: theme.palette[stat.color].main,
-  //                 width: 40,
-  //                 height: 40
-  //               }}>
-  //                 <stat.icon size={18} />
-  //               </Avatar>
-  //               <Box sx={{ flex: 1, minWidth: 0 }}>
-  //                 <Typography variant="body2" color="text.secondary" fontWeight={600} sx={{ 
-  //                   fontSize: { xs: '0.7rem', sm: '0.75rem' },
-  //                   overflow: 'hidden',
-  //                   textOverflow: 'ellipsis',
-  //                   whiteSpace: 'nowrap'
-  //                 }}>
-  //                   {stat.label}
-  //                 </Typography>
-  //                 <Typography variant="h4" fontWeight={700} sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
-  //                   {stat.value}
-  //                 </Typography>
-  //               </Box>
-  //             </Stack>
-  //           </CardContent>
-  //         </StatCard>
-  //       </Grid>
-  //     ))}
-  //   </Grid>
-  // );
->>>>>>> 56bb9ff861abdca99c1c4a5002f5811b3a53f55b
 
-  // Render Desktop Table - FIXED VERSION
+  // FIXED: Render Desktop Table with proper data mapping
   const renderDesktopTable = (groupedTasks) => {
     const tasksToRender = applyDateFilter(groupedTasks);
     
@@ -1099,11 +1035,14 @@ const UserCreateTask = () => {
                       backgroundColor: `${theme.palette.primary.main}08`,
                     }
                   }}>
+                    {/* Title */}
                     <TableCell sx={{ py: 1.5 }}>
                       <Typography variant="body2" fontWeight={600} sx={{ fontSize: isSmallMobile ? '0.8rem' : '0.875rem' }}>
                         {task?.title || 'No Title'}
                       </Typography>
                     </TableCell>
+                    
+                    {/* Description */}
                     <TableCell sx={{ py: 1.5, maxWidth: 200 }}>
                       <Tooltip title={task?.description || 'No description'}>
                         <Typography variant="body2" sx={{
@@ -1116,6 +1055,8 @@ const UserCreateTask = () => {
                         </Typography>
                       </Tooltip>
                     </TableCell>
+                    
+                    {/* Due Date */}
                     <TableCell sx={{ py: 1.5 }}>
                       <Stack direction="row" alignItems="center" spacing={1}>
                         <FiCalendar size={14} color={theme.palette.text.secondary} />
@@ -1138,13 +1079,17 @@ const UserCreateTask = () => {
                         )}
                       </Stack>
                     </TableCell>
+                    
+                    {/* Priority */}
                     <TableCell sx={{ py: 1.5 }}>
                       <PriorityChip
-                        label={task?.priority || 'medium'}
+                        label={(task?.priority || 'medium').toUpperCase()}
                         priority={task?.priority || 'medium'}
                         size="small"
                       />
                     </TableCell>
+                    
+                    {/* Status */}
                     <TableCell sx={{ py: 1.5 }}>
                       <StatusChip
                         label={myStatus?.charAt(0)?.toUpperCase() + myStatus?.slice(1) || 'Pending'}
@@ -1152,6 +1097,8 @@ const UserCreateTask = () => {
                         size="small"
                       />
                     </TableCell>
+                    
+                    {/* Files */}
                     <TableCell sx={{ py: 1.5 }}>
                       {task?.files?.length ? (
                         <Tooltip title={`${task.files.length} file(s)`}>
@@ -1173,9 +1120,13 @@ const UserCreateTask = () => {
                         <Typography variant="body2" color="text.secondary" fontWeight={500} sx={{ fontSize: '0.8rem' }}>-</Typography>
                       )}
                     </TableCell>
+                    
+                    {/* Actions */}
                     <TableCell sx={{ py: 1.5 }}>
                       {renderActionButtons(task)}
                     </TableCell>
+                    
+                    {/* Change Status */}
                     <TableCell sx={{ py: 1.5 }}>
                       {renderStatusSelect(task)}
                     </TableCell>
@@ -1189,7 +1140,7 @@ const UserCreateTask = () => {
     ));
   };
 
-  // Enhanced mobile cards with action buttons - FIXED VERSION
+  // Enhanced mobile cards with action buttons
   const renderMobileCards = (groupedTasks) => {
     const tasksToRender = applyDateFilter(groupedTasks);
     
@@ -1362,981 +1313,334 @@ const UserCreateTask = () => {
     );
   };
 
-  // Enhanced Notifications Panel
-  const renderNotificationsPanel = () => (
-    <Modal
-      open={notificationsOpen}
-      onClose={() => setNotificationsOpen(false)}
-      closeAfterTransition
-    >
-      <Box sx={{
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        width: isSmallMobile ? '90%' : 400,
-        maxHeight: '80vh',
-        bgcolor: 'background.paper',
-        borderRadius: 2,
-        boxShadow: 24,
-        overflow: 'hidden',
-      }}>
-        <Box sx={{ 
-          p: 2, 
-          borderBottom: 1, 
-          borderColor: 'divider',
-          background: `linear-gradient(135deg, ${theme.palette.primary.main}15 0%, ${theme.palette.primary.main}05 100%)`
-        }}>
-          <Stack direction="row" justifyContent="space-between" alignItems="center">
-            <Typography variant="h6" fontWeight={600}>Notifications</Typography>
-            <Button 
-              onClick={markAllNotificationsAsRead} 
+  // Search Component
+  const renderSearch = () => (
+    <Paper sx={{ p: 2, mb: 3, borderRadius: 2 }}>
+      <TextField
+        fullWidth
+        placeholder="Search tasks by title or description..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        InputProps={{
+          startAdornment: <FiSearch style={{ marginRight: 8, color: theme.palette.text.secondary }} />,
+          endAdornment: searchTerm && (
+            <IconButton
               size="small"
-              disabled={unreadNotificationCount === 0}
-              sx={{ borderRadius: 1 }}
+              onClick={() => setSearchTerm('')}
+              sx={{ mr: -1 }}
             >
-              Mark all as read
-            </Button>
-          </Stack>
-        </Box>
-        <Box sx={{ maxHeight: '60vh', overflow: 'auto', p: 1 }}>
-          {notifications.length > 0 ? (
-            <Stack spacing={1}>
-              {notifications.map((notification) => (
-                <Card 
-                  key={notification._id} 
-                  variant="outlined"
-                  sx={{ 
-                    bgcolor: notification.isRead ? 'background.default' : 'action.hover',
-                    borderLeft: notification.isRead ? null : `4px solid ${theme.palette.primary.main}`,
-                    borderRadius: 1,
-                    transition: 'all 0.2s ease',
-                    '&:hover': {
-                      transform: 'translateY(-1px)',
-                      boxShadow: theme.shadows[1]
-                    }
-                  }}
-                >
-                  <CardContent sx={{ py: 1, '&:last-child': { pb: 1 } }}>
-                    <Stack spacing={1}>
-                      <Typography variant="subtitle2" fontWeight={600}>
-                        {notification.title}
-                      </Typography>
-                      <Typography variant="body2">
-                        {notification.message}
-                      </Typography>
-                      <Stack direction="row" justifyContent="space-between" alignItems="center">
-                        <Typography variant="caption" color="text.secondary">
-                          {new Date(notification.createdAt).toLocaleDateString()}
-                        </Typography>
-                        {!notification.isRead && (
-                          <Button 
-                            size="small" 
-                            onClick={() => markNotificationAsRead(notification._id)}
-                            sx={{ borderRadius: 1 }}
-                          >
-                            Mark read
-                          </Button>
-                        )}
-                      </Stack>
-                    </Stack>
-                  </CardContent>
-                </Card>
-              ))}
-            </Stack>
-          ) : (
-            <Box sx={{ textAlign: 'center', py: 4 }}>
-              <FiBell size={32} color={theme.palette.text.secondary} />
-              <Typography variant="body1" color="text.secondary" sx={{ mt: 1, fontWeight: 600 }}>
-                No notifications
-              </Typography>
-            </Box>
-          )}
-        </Box>
-      </Box>
-    </Modal>
+              <FiX size={16} />
+            </IconButton>
+          ),
+        }}
+        sx={{
+          '& .MuiOutlinedInput-root': {
+            borderRadius: 2,
+          }
+        }}
+      />
+    </Paper>
   );
 
-  // Enhanced Remarks Dialog
-  const renderRemarksDialog = () => (
-    <Dialog 
-      open={remarksDialog.open} 
-      onClose={() => setRemarksDialog({ open: false, taskId: null, remarks: [] })}
-      maxWidth="md"
-      fullWidth
-      fullScreen={isSmallMobile}
-      PaperProps={{ sx: { borderRadius: isSmallMobile ? 0 : 2 } }}
-    >
-      <DialogTitle sx={{ 
-        background: `linear-gradient(135deg, ${theme.palette.info.main}15 0%, ${theme.palette.info.main}05 100%)` 
+  useEffect(() => {
+    fetchUserData();
+  }, []);
+
+  // Initial load
+  useEffect(() => {
+    if (!authError && userId) {
+      fetchMyTasks(1, false);
+      fetchNotifications();
+    }
+  }, [authError, userId]);
+
+  if (authError) {
+    return (
+      <Box sx={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '50vh',
+        flexDirection: 'column',
+        gap: 3,
+        p: 2
       }}>
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <FiMessageSquare color={theme.palette.info.main} />
-          <Typography variant="h6" fontWeight={600}>Task Remarks</Typography>
-        </Stack>
-      </DialogTitle>
-      <DialogContent>
-        <Stack spacing={3} sx={{ mt: 2 }}>
-          {/* Add New Remark */}
-          <Box>
-            <Typography variant="subtitle1" gutterBottom fontWeight={600}>
-              Add New Remark
+        <Card sx={{ p: 4, textAlign: 'center', maxWidth: 400, borderRadius: 3, width: '100%' }}>
+          <CardContent>
+            <FiAlertCircle size={48} color={theme.palette.error.main} style={{ marginBottom: 16 }} />
+            <Typography variant="h5" color="error" gutterBottom>
+              Authentication Required
             </Typography>
-            <TextField
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+              Please log in to access tasks.
+            </Typography>
+            <Button
+              variant="contained"
+              onClick={handleLogout}
+              startIcon={<FiUser />}
+              sx={{ borderRadius: 2 }}
               fullWidth
-              multiline
-              rows={isSmallMobile ? 2 : 3}
-              label="Your Remark"
-              value={newRemark}
-              onChange={(e) => setNewRemark(e.target.value)}
-              placeholder="Enter your remark here..."
-              sx={{ borderRadius: 1 }}
-            />
-            <Button
-              variant="contained"
-              onClick={() => addRemark(remarksDialog.taskId)}
-              disabled={!newRemark.trim()}
-              sx={{ mt: 1, borderRadius: 1 }}
-              fullWidth={isSmallMobile}
             >
-              Add Remark
+              Go to Login
             </Button>
-          </Box>
+          </CardContent>
+        </Card>
+      </Box>
+    );
+  }
 
-          {/* Remarks List */}
-          <Box>
-            <Typography variant="h6" gutterBottom fontWeight={600}>Remarks History</Typography>
-            {remarksDialog.remarks.length > 0 ? (
-              <Stack spacing={1}>
-                {remarksDialog.remarks.map((remark, index) => (
-                  <Card key={index} variant="outlined" sx={{ borderRadius: 1 }}>
-                    <CardContent sx={{ py: 1.5 }}>
-                      <Stack spacing={1}>
-                        <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                          <Stack direction="row" alignItems="center" spacing={1}>
-                            <Avatar sx={{ 
-                              width: 32, 
-                              height: 32, 
-                              fontSize: '0.875rem',
-                              bgcolor: theme.palette.primary.main 
-                            }}>
-                              {remark.user?.name?.charAt(0)?.toUpperCase() || 'U'}
-                            </Avatar>
-                            <Box>
-                              <Typography variant="subtitle2" fontWeight={600}>
-                                {remark.user?.name || 'Unknown User'}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                {remark.user?.role || 'User'}
-                              </Typography>
-                            </Box>
-                          </Stack>
-                          <Typography variant="caption" color="text.secondary">
-                            {new Date(remark.createdAt).toLocaleDateString()}
-                          </Typography>
-                        </Stack>
-                        <Typography variant="body2" sx={{ mt: 0.5 }}>
-                          {remark.text}
-                        </Typography>
-                      </Stack>
-                    </CardContent>
-                  </Card>
-                ))}
-              </Stack>
-            ) : (
-              <Typography color="text.secondary" textAlign="center" py={3} fontWeight={500}>
-                No remarks yet. Be the first to add one!
-              </Typography>
-            )}
-          </Box>
-        </Stack>
-      </DialogContent>
-    </Dialog>
-  );
-
-  // Enhanced Activity Logs Dialog
- const renderActivityLogsDialog = () => (
-  <Dialog 
-    open={activityDialog.open} 
-    onClose={() => setActivityDialog({ open: false, taskId: null })}
-    maxWidth="lg"
-    fullWidth
-    fullScreen={isSmallMobile}
-    PaperProps={{ sx: { borderRadius: isSmallMobile ? 0 : 2 } }}
-  >
-    <DialogTitle sx={{ 
-      background: `linear-gradient(135deg, ${theme.palette.primary.main}15 0%, ${theme.palette.primary.main}05 100%)` 
-    }}>
-      <Stack direction="row" alignItems="center" spacing={1}>
-        <FiActivity color={theme.palette.primary.main} />
-        <Typography variant="h6" fontWeight={600}>Activity Logs</Typography>
-      </Stack>
-    </DialogTitle>
-
-    <DialogContent>
-      {activityLogs.length > 0 ? (
-        <Stack spacing={1}>
-          {activityLogs.map((log, index) => (
-            <Card key={index} variant="outlined" sx={{ borderRadius: 1 }}>
-              <CardContent sx={{ py: 1.5 }}>
-                <Stack spacing={1}>
-                  
-                  <Stack 
-                    direction={{ xs: 'column', sm: 'row' }} 
-                    justifyContent="space-between" 
-                    alignItems={{ xs: 'flex-start', sm: 'center' }} 
-                    spacing={1}
-                  >
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                      <Avatar sx={{ 
-                        width: 32, 
-                        height: 32, 
-                        fontSize: '0.875rem',
-                        bgcolor: theme.palette.primary.main 
-                      }}>
-                        {log.user?.name?.charAt(0)?.toUpperCase() || 'U'}
-                      </Avatar>
-
-                      <Box>
-                        <Typography variant="subtitle2" fontWeight={600}>
-                          {log.user?.name || 'Unknown User'}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {log.user?.role || 'User'}
-                        </Typography>
-                      </Box>
-                    </Stack>
-
-                    {/* ⭐ UPDATED DATE + TIME */}
-                    <Typography variant="caption" color="text.secondary">
-                      {new Date(log.createdAt).toLocaleDateString()}{" "}
-                      at{" "}
-                      {new Date(log.createdAt).toLocaleTimeString([], { 
-                        hour: "2-digit", 
-                        minute: "2-digit" 
-                      })}
-                    </Typography>
-                  </Stack>
-
-                  <Typography variant="body2" sx={{ mt: 0.5 }}>
-                    {log.description}
-                  </Typography>
-
-                  <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                    {/* <Chip 
-                      label={log.action} 
-                      size="small" 
-                      color="primary" 
-                      variant="outlined" 
-                      sx={{ fontWeight: 600 }}
-                    /> */}
-                  
-                  </Stack>
-
-                </Stack>
-              </CardContent>
-            </Card>
-          ))}
-        </Stack>
-      ) : (
-        <Typography color="text.secondary" textAlign="center" py={3} fontWeight={500}>
-          No activity logs found for this task
+  if (loading && pagination.page === 1) {
+    return (
+      <Box sx={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '50vh',
+        flexDirection: 'column',
+        gap: 2,
+        p: 2
+      }}>
+        <CircularProgress size={isMobile ? 32 : 40} />
+        <Typography variant="h6" color="text.secondary" fontWeight={600} sx={{ textAlign: 'center' }}>
+          Loading Tasks...
         </Typography>
-      )}
-    </DialogContent>
-  </Dialog>
-);
+      </Box>
+    );
+  }
 
-
-      // Calendar Filter Dialog
-      const renderCalendarFilterDialog = () => (
-        <Dialog
-          open={calendarFilterOpen}
-          onClose={() => setCalendarFilterOpen(false)}
-          maxWidth="sm"
-          fullWidth
-          PaperProps={{
-            sx: { borderRadius: 2 }
-          }}
-        >
-          <DialogTitle sx={{ 
-            pb: 2, 
-            borderBottom: 1, 
-            borderColor: 'divider',
-            background: `linear-gradient(135deg, ${theme.palette.primary.main}15 0%, ${theme.palette.primary.main}05 100%)`
-          }}>
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <FiCalendar color={theme.palette.primary.main} />
-              <Typography variant="h6" fontWeight={600}>Filter by Date</Typography>
-            </Stack>
-          </DialogTitle>
-
-          <DialogContent sx={{ p: 3 }}>
-            <Stack spacing={3}>
-              {/* Date Type Selection */}
-              <FormControl fullWidth>
-                <InputLabel>Filter By</InputLabel>
-                <Select
-                  value={dateFilterType}
-                  onChange={(e) => setDateFilterType(e.target.value)}
-                  label="Filter By"
-                >
-                  <MenuItem value="dueDate">Due Date</MenuItem>
-                  <MenuItem value="createdDate">Created Date</MenuItem>
-                </Select>
-              </FormControl>
-
-              {/* Single Date Selection */}
-              <Box>
-                <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-                  Select Specific Date
-                </Typography>
-                <DatePicker
-                  value={selectedDate}
-                  onChange={(newValue) => {
-                    setSelectedDate(newValue);
-                    setDateRange({ start: null, end: null });
-                  }}
-                  renderInput={(params) => (
-                    <TextField {...params} fullWidth />
-                  )}
-                />
-              </Box>
-
-              {/* Date Range Selection */}
-              <Box>
-                <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-                  Or Select Date Range
-                </Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={6}>
-                    <DatePicker
-                      label="Start Date"
-                      value={dateRange.start}
-                      onChange={(newValue) => setDateRange(prev => ({ ...prev, start: newValue }))}
-                      renderInput={(params) => (
-                        <TextField {...params} fullWidth />
-                      )}
-                    />
-                  </Grid>
-                  <Grid item xs={6}>
-                    <DatePicker
-                      label="End Date"
-                      value={dateRange.end}
-                      onChange={(newValue) => setDateRange(prev => ({ ...prev, end: newValue }))}
-                      renderInput={(params) => (
-                        <TextField {...params} fullWidth />
-                      )}
-                    />
-                  </Grid>
-                </Grid>
-              </Box>
-
-              {/* Quick Filters */}
-              <Box>
-                <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-                  Quick Filters
-                </Typography>
-                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                  <CalendarFilterButton
-                    onClick={() => {
-                      const today = new Date();
-                      setSelectedDate(today);
-                      setDateRange({ start: null, end: null });
-                    }}
-                    active={selectedDate && new Date(selectedDate).toDateString() === new Date().toDateString()}
-                  >
-                    Today
-                  </CalendarFilterButton>
-                  <CalendarFilterButton
-                    onClick={() => {
-                      const tomorrow = new Date();
-                      tomorrow.setDate(tomorrow.getDate() + 1);
-                      setSelectedDate(tomorrow);
-                      setDateRange({ start: null, end: null });
-                    }}
-                    active={selectedDate && new Date(selectedDate).toDateString() === new Date(new Date().setDate(new Date().getDate() + 1)).toDateString()}
-                  >
-                    Tomorrow
-                  </CalendarFilterButton>
-                  <CalendarFilterButton
-                    onClick={() => {
-                      const start = new Date();
-                      const end = new Date();
-                      end.setDate(end.getDate() + 7);
-                      setSelectedDate(null);
-                      setDateRange({ start, end });
-                    }}
-                    active={dateRange.start && dateRange.end && new Date(dateRange.start).toDateString() === new Date().toDateString()}
-                  >
-                    Next 7 Days
-                  </CalendarFilterButton>
-                </Stack>
-              </Box>
-            </Stack>
-          </DialogContent>
-
-          <DialogActions sx={{ p: 3, borderTop: 1, borderColor: 'divider' }}>
-            <Button
-              onClick={clearDateFilter}
-              variant="outlined"
-              startIcon={<FiClose />}
-              sx={{ borderRadius: 1 }}
+  return (
+    <LocalizationProvider dateAdapter={AdapterDateFns}>
+      <Fade in={!loading} timeout={500}>
+        <Box sx={{ p: { xs: 1, sm: 2, md: 3 }, maxWidth: 1400, margin: '0 auto' }}>
+          {/* Header */}
+          <Paper
+            sx={{
+              p: { xs: 2, sm: 3 },
+              mb: 3,
+              borderRadius: { xs: 2, sm: 3 },
+              background: `linear-gradient(135deg, ${theme.palette.primary.main}15 0%, ${theme.palette.primary.main}05 100%)`,
+              boxShadow: 2,
+            }}
+          >
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={2}
+              justifyContent="space-between"
+              alignItems={{ xs: "flex-start", sm: "center" }}
             >
-              Clear Filter
-            </Button>
-            <Button
-              onClick={() => setCalendarFilterOpen(false)}
-              variant="contained"
-              sx={{ borderRadius: 1 }}
-            >
-              Apply Filter
-            </Button>
-          </DialogActions>
-        </Dialog>
-      );
-
-      // CREATE TASK DIALOG
-      const renderCreateTaskDialog = () => (
-        <Dialog 
-          open={openDialog} 
-          onClose={() => setOpenDialog(false)} 
-          maxWidth="md" 
-          fullWidth
-          fullScreen={isMobile}
-          PaperProps={{
-            sx: {
-              borderRadius: isMobile ? 0 : 2,
-            }
-          }}
-        >
-          <DialogTitle sx={{ 
-            pb: 2, 
-            borderBottom: 1, 
-            borderColor: 'divider',
-            background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-            color: 'white',
-          }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Box sx={{ 
-                p: 1, 
-                borderRadius: 2, 
-                background: 'rgba(255,255,255,0.2)',
-              }}>
-                <FiPlus size={20} />
-              </Box>
-              <Box>
-                <Typography variant="h5" fontWeight={700}>
-                  Create Personal Task
+              {/* Left Section: Title & Info */}
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="h4" fontWeight={700} gutterBottom sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>
+                  My Task Management
                 </Typography>
-                <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5 }}>
-                  This task will be assigned to: {userName}
+                <Typography variant="body1" color="text.secondary" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
+                  Manage and track your personal tasks efficiently
                 </Typography>
               </Box>
-            </Box>
-          </DialogTitle>
 
-          <DialogContent sx={{ p: 0 }}>
-            <Box sx={{ p: isMobile ? 2 : 3 }}>
-              <Stack spacing={isMobile ? 2 : 3}>
-                {/* Assignment Info */}
-                <Alert severity="info" sx={{ borderRadius: 1 }}>
-                  <Typography variant="body2" fontWeight={600}>
-                    This task will be automatically assigned to you ({userName})
-                  </Typography>
-                </Alert>
-
-                {/* Basic Information */}
-                <Box sx={{ 
-                  p: isMobile ? 2 : 3, 
-                  borderRadius: 1, 
-                  border: 1, 
-                  borderColor: 'divider',
-                  background: 'white',
-                }}>
-                  <Typography variant="h6" fontWeight={600} sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <FiInfo size={18} color={theme.palette.primary.main} />
-                    Task Details
-                  </Typography>
-                  
-                  <Stack spacing={2}>
-                    <TextField
-                      fullWidth
-                      label="Task Title *"
-                      value={newTask.title}
-                      onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-                      variant="outlined"
-                      placeholder="Enter a descriptive task title"
-                      sx={{ borderRadius: 1 }}
-                      size={isMobile ? "small" : "medium"}
-                    />
-
-                    <TextField
-                      fullWidth
-                      label="Description *"
-                      multiline
-                      rows={isMobile ? 3 : 4}
-                      value={newTask.description}
-                      onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-                      variant="outlined"
-                      placeholder="Provide detailed description of the task..."
-                      sx={{ borderRadius: 1 }}
-                      size={isMobile ? "small" : "medium"}
-                    />
-
-                    <Grid container spacing={2}>
-                      <Grid item xs={12} sm={6}>
-                        <DateTimePicker
-                          label="Due Date & Time *"
-                          value={newTask.dueDateTime}
-                          onChange={(dateTime) => setNewTask({ ...newTask, dueDateTime: dateTime })}
-                          minDate={new Date()}
-                          renderInput={(params) => (
-                            <TextField 
-                              {...params} 
-                              fullWidth 
-                              sx={{ borderRadius: 1 }}
-                              size={isMobile ? "small" : "medium"}
-                            />
-                          )}
-                        />
-                      </Grid>
-
-                      <Grid item xs={12} sm={6}>
-                        <FormControl fullWidth>
-                          <InputLabel>Priority</InputLabel>
-                          <Select
-                            value={newTask.priority}
-                            onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
-                            label="Priority"
-                            sx={{ borderRadius: 1 }}
-                            size={isMobile ? "small" : "medium"}
-                          >
-                            <MenuItem value="low">Low</MenuItem>
-                            <MenuItem value="medium">Medium</MenuItem>
-                            <MenuItem value="high">High</MenuItem>
-                          </Select>
-                        </FormControl>
-                      </Grid>
-                    </Grid>
-
-                    <Grid container spacing={2}>
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          fullWidth
-                          label="Priority Days"
-                          value={newTask.priorityDays}
-                          onChange={(e) => setNewTask({ ...newTask, priorityDays: e.target.value })}
-                          variant="outlined"
-                          placeholder="Enter priority days"
-                          sx={{ borderRadius: 1 }}
-                          size={isMobile ? "small" : "medium"}
-                        />
-                      </Grid>
-                     
-                    </Grid>
-                  </Stack>
-                </Box>
-
-                {/* File Uploads */}
-                <Box sx={{ 
-                  p: isMobile ? 2 : 3, 
-                  borderRadius: 1, 
-                  border: 1, 
-                  borderColor: 'divider',
-                  background: 'white',
-                }}>
-                  <Typography variant="h6" fontWeight={600} sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <FiPaperclip size={18} color={theme.palette.primary.main} />
-                    Attachments (Optional)
-                  </Typography>
-                  
-                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-                    <Button 
-                      variant="outlined" 
-                      component="label" 
-                      startIcon={<FiFileText />}
-                      sx={{ 
-                        borderRadius: 1,
-                        py: 1,
-                        borderStyle: 'dashed',
-                        fontSize: '0.875rem'
-                      }}
-                      fullWidth={isMobile}
-                    >
-                      Upload Files
-                      <input
-                        type="file"
-                        multiple
-                        hidden
-                        onChange={(e) => setNewTask({ ...newTask, files: e.target.files })}
+              {/* Right Section: Buttons */}
+              <Stack direction="row" spacing={1} alignItems="center" sx={{ width: { xs: '100%', sm: 'auto' } }}>
+                {/* Notifications Badge */}
+                <Tooltip title="Notifications">
+                  <ActionButton 
+                    onClick={() => setNotificationsOpen(true)}
+                    sx={{ 
+                      position: 'relative',
+                      '&:hover': { 
+                        backgroundColor: `${theme.palette.primary.main}10`,
+                      }
+                    }}
+                  >
+                    <FiBell size={18} />
+                    {unreadNotificationCount > 0 && (
+                      <Badge 
+                        badgeContent={unreadNotificationCount} 
+                        color="error"
+                        sx={{
+                          position: 'absolute',
+                          top: 6,
+                          right: 6,
+                        }}
                       />
-                    </Button>
+                    )}
+                  </ActionButton>
+                </Tooltip>
 
-                    <Button 
-                      variant="outlined" 
-                      component="label" 
-                      startIcon={<FiMic />}
-                      sx={{ 
-                        borderRadius: 1,
-                        py: 1,
-                        borderStyle: 'dashed',
-                        fontSize: '0.875rem'
-                      }}
-                      fullWidth={isMobile}
-                    >
-                      Voice Note
-                      <input
-                        type="file"
-                        accept="audio/*"
-                        hidden
-                        onChange={(e) => setNewTask({ ...newTask, voiceNote: e.target.files[0] })}
-                      />
-                    </Button>
-                  </Stack>
-                </Box>
-              </Stack>
-            </Box>
-          </DialogContent>
-
-          <DialogActions sx={{ 
-            p: isMobile ? 2 : 3, 
-            borderTop: 1, 
-            borderColor: 'divider',
-            flexDirection: isMobile ? 'column' : 'row',
-            gap: isMobile ? 1 : 0
-          }}>
-            <Button
-              onClick={() => setOpenDialog(false)}
-              variant="outlined"
-              sx={{ 
-                borderRadius: 1,
-                px: 3,
-              }}
-              fullWidth={isMobile}
-            >
-              Cancel
-            </Button>
-
-            <Button
-              onClick={handleCreateTask}
-              variant="contained"
-              disabled={!newTask.title || !newTask.description || !newTask.dueDateTime || isCreatingTask}
-              startIcon={isCreatingTask ? <CircularProgress size={16} color="inherit" /> : <FiCheck />}
-              sx={{ 
-                borderRadius: 1,
-                px: 3,
-                minWidth: isMobile ? 'auto' : '120px'
-              }}
-              fullWidth={isMobile}
-            >
-              {isCreatingTask ? 'Creating...' : 'Create Task'}
-            </Button>
-          </DialogActions>
-        </Dialog>
-      );
-
-      // Search Component
-    
-      useEffect(() => {
-        fetchUserData();
-      }, []);
-
-      // OPTIMIZED: Initial load - Ab sirf ek hi API call
-      useEffect(() => {
-        if (!authError && userId) {
-          fetchMyTasks(1, false);
-          fetchNotifications();
-        }
-      }, [authError, userId]);
-
-      if (authError) {
-        return (
-          <Box sx={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            minHeight: '50vh',
-            flexDirection: 'column',
-            gap: 3,
-            p: 2
-          }}>
-            <Card sx={{ p: 4, textAlign: 'center', maxWidth: 400, borderRadius: 3, width: '100%' }}>
-              <CardContent>
-                <FiAlertCircle size={48} color={theme.palette.error.main} style={{ marginBottom: 16 }} />
-                <Typography variant="h5" color="error" gutterBottom>
-                  Authentication Required
-                </Typography>
-                <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-                  Please log in to access tasks.
-                </Typography>
+                {/* Create Task Button */}
                 <Button
                   variant="contained"
-                  onClick={handleLogout}
-                  startIcon={<FiUser />}
-                  sx={{ borderRadius: 2 }}
-                  fullWidth
+                  startIcon={<FiPlus />}
+                  onClick={() => setOpenDialog(true)}
+                  sx={{
+                    borderRadius: 2,
+                    textTransform: "none",
+                    fontWeight: 600,
+                    px: 3,
+                    py: 1,
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                  }}
                 >
-                  Go to Login
+                  Create Task
                 </Button>
-              </CardContent>
-            </Card>
-          </Box>
-        );
-      }
+              </Stack>
+            </Stack>
+          </Paper>
 
-      if (loading && pagination.page === 1) {
-        return (
-          <Box sx={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            minHeight: '50vh',
-            flexDirection: 'column',
-            gap: 2,
-            p: 2
+          {/* Search Box */}
+          {renderSearch()}
+
+          {/* Statistics Cards */}
+          {renderStatsCards()}
+
+          {/* Tasks Section */}
+          <Paper sx={{
+            borderRadius: { xs: 2, sm: 3 },
+            boxShadow: 1,
+            overflow: 'hidden'
           }}>
-            <CircularProgress size={isMobile ? 32 : 40} />
-            <Typography variant="h6" color="text.secondary" fontWeight={600} sx={{ textAlign: 'center' }}>
-              Loading Tasks...
-            </Typography>
-          </Box>
-        );
-      }
-
-      return (
-        <LocalizationProvider dateAdapter={AdapterDateFns}>
-          <Fade in={!loading} timeout={500}>
-            <Box sx={{ p: { xs: 1, sm: 2, md: 3 }, maxWidth: 1400, margin: '0 auto' }}>
-              {/* Header */}
-              <Paper
-                sx={{
-                  p: { xs: 2, sm: 3 },
-                  mb: 3,
-                  borderRadius: { xs: 2, sm: 3 },
-                  background: `linear-gradient(135deg, ${theme.palette.primary.main}15 0%, ${theme.palette.primary.main}05 100%)`,
-                  boxShadow: 2,
-                }}
+            {/* Filter Section */}
+            <Box sx={{ p: { xs: 2, sm: 3 }, borderBottom: 1, borderColor: 'divider' }}>
+              <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                spacing={2}
+                justifyContent="space-between"
+                alignItems={{ xs: 'flex-start', sm: 'center' }}
               >
-                <Stack
-                  direction={{ xs: "column", sm: "row" }}
-                  spacing={2}
-                  justifyContent="space-between"
-                  alignItems={{ xs: "flex-start", sm: "center" }}
-                >
-                  {/* Left Section: Title & Info */}
-                  <Box sx={{ flex: 1 }}>
-                    <Typography variant="h4" fontWeight={700} gutterBottom sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>
-                      My Task Management
-                    </Typography>
-                    <Typography variant="body1" color="text.secondary" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
-                      Manage and track your personal tasks efficiently
-                    </Typography>
-                  </Box>
+                <Typography variant="h5" fontWeight={700}>
+                  My Tasks
+                </Typography>
+                
+                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                  {/* Calendar Filter Button */}
+                  <Tooltip title="Filter by Date">
+                    <CalendarFilterButton
+                      onClick={() => setCalendarFilterOpen(true)}
+                      active={selectedDate || dateRange.start || dateRange.end}
+                      startIcon={<FiCalendar size={16} />}
+                    >
+                      {getDateFilterSummary() || 'Date Filter'}
+                    </CalendarFilterButton>
+                  </Tooltip>
 
-                  {/* Right Section: Buttons */}
-                  <Stack direction="row" spacing={1} alignItems="center" sx={{ width: { xs: '100%', sm: 'auto' } }}>
-                    {/* Notifications Badge */}
-                    <Tooltip title="Notifications">
+                  {/* Status Filter */}
+                  <FormControl size="small" sx={{ minWidth: 150 }}>
+                    <InputLabel>Status Filter</InputLabel>
+                    <Select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                      input={<OutlinedInput label="Status Filter" />}
+                      sx={{ borderRadius: 1 }}
+                    >
+                      <MenuItem value="">All Status</MenuItem>
+                      <MenuItem value="pending">Pending</MenuItem>
+                      <MenuItem value="in-progress">In Progress</MenuItem>
+                      <MenuItem value="completed">Completed</MenuItem>
+                      <MenuItem value="rejected">Rejected</MenuItem>
+                    </Select>
+                  </FormControl>
+
+                  {/* Clear Date Filter Button */}
+                  {(selectedDate || dateRange.start || dateRange.end) && (
+                    <Tooltip title="Clear Date Filter">
                       <ActionButton 
-                        onClick={() => setNotificationsOpen(true)}
+                        onClick={clearDateFilter}
                         sx={{ 
-                          position: 'relative',
                           '&:hover': { 
-                            backgroundColor: `${theme.palette.primary.main}10`,
+                            backgroundColor: `${theme.palette.error.main}10`,
+                            color: theme.palette.error.main
                           }
                         }}
                       >
-                        <FiBell size={18} />
-                        {unreadNotificationCount > 0 && (
-                          <Badge 
-                            badgeContent={unreadNotificationCount} 
-                            color="error"
-                            sx={{
-                              position: 'absolute',
-                              top: 6,
-                              right: 6,
-                            }}
-                          />
-                        )}
+                        <FiClose size={16} />
                       </ActionButton>
                     </Tooltip>
+                  )}
 
-                    {/* Create Task Button */}
-                    <Button
-                      variant="contained"
-                      startIcon={<FiPlus />}
-                      onClick={() => setOpenDialog(true)}
-                      sx={{
-                        borderRadius: 2,
-                        textTransform: "none",
-                        fontWeight: 600,
-                        px: 3,
-                        py: 1,
-                        fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                  <Tooltip title="Refresh">
+                    <ActionButton 
+                      onClick={handleRefresh}
+                      sx={{ 
+                        '&:hover': { 
+                          backgroundColor: `${theme.palette.primary.main}10`,
+                        }
                       }}
                     >
-                      Create Task
-                    </Button>
-                  </Stack>
+                      <FiRefreshCw size={18} />
+                    </ActionButton>
+                  </Tooltip>
                 </Stack>
-              </Paper>
+              </Stack>
 
-              {/* Search Box */}
-              {/* {renderSearch()} */}
-
-              {/* Statistics Cards - CLIENT-SIDE CALCULATION SE */}
-              {/* {renderStatsCards()} */}
-
-              {/* Tasks Section */}
-              <Paper sx={{
-                borderRadius: { xs: 2, sm: 3 },
-                boxShadow: 1,
-                overflow: 'hidden'
-              }}>
-                {/* Filter Section */}
-                <Box sx={{ p: { xs: 2, sm: 3 }, borderBottom: 1, borderColor: 'divider' }}>
-                  <Stack
-                    direction={{ xs: 'column', sm: 'row' }}
-                    spacing={2}
-                    justifyContent="space-between"
-                    alignItems={{ xs: 'flex-start', sm: 'center' }}
-                  >
-                    <Typography variant="h5" fontWeight={700}>
-                      My Tasks
+              {/* Date Filter Summary */}
+              {(selectedDate || dateRange.start || dateRange.end) && (
+                <Box sx={{ mt: 2, p: 1.5, bgcolor: 'primary.light', borderRadius: 1 }}>
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <FiFilter size={16} color={theme.palette.primary.main} />
+                    <Typography variant="body2" fontWeight={600} color="primary.main">
+                      Active Date Filter: {getDateFilterSummary()}
                     </Typography>
-                    
-                    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-                      {/* Calendar Filter Button */}
-                      <Tooltip title="Filter by Date">
-                        <CalendarFilterButton
-                          onClick={() => setCalendarFilterOpen(true)}
-                          active={selectedDate || dateRange.start || dateRange.end}
-                          startIcon={<FiCalendar size={16} />}
-                        >
-                          {getDateFilterSummary() || 'Date Filter'}
-                        </CalendarFilterButton>
-                      </Tooltip>
-
-                      {/* Status Filter */}
-                      <FormControl size="small" sx={{ minWidth: 150 }}>
-                        <InputLabel>Status Filter</InputLabel>
-                        <Select
-                          value={statusFilter}
-                          onChange={(e) => setStatusFilter(e.target.value)}
-                          input={<OutlinedInput label="Status Filter" />}
-                          sx={{ borderRadius: 1 }}
-                        >
-                          <MenuItem value="">All Status</MenuItem>
-                          <MenuItem value="pending">Pending</MenuItem>
-                          <MenuItem value="in-progress">In Progress</MenuItem>
-                          <MenuItem value="completed">Completed</MenuItem>
-                          <MenuItem value="rejected">Rejected</MenuItem>
-                        </Select>
-                      </FormControl>
-
-                      {/* Clear Date Filter Button */}
-                      {(selectedDate || dateRange.start || dateRange.end) && (
-                        <Tooltip title="Clear Date Filter">
-                          <ActionButton 
-                            onClick={clearDateFilter}
-                            sx={{ 
-                              '&:hover': { 
-                                backgroundColor: `${theme.palette.error.main}10`,
-                                color: theme.palette.error.main
-                              }
-                            }}
-                          >
-                            <FiClose size={16} />
-                          </ActionButton>
-                        </Tooltip>
-                      )}
-
-                      <Tooltip title="Refresh">
-                        <ActionButton 
-                          onClick={handleRefresh}
-                          sx={{ 
-                            '&:hover': { 
-                              backgroundColor: `${theme.palette.primary.main}10`,
-                            }
-                          }}
-                        >
-                          <FiRefreshCw size={18} />
-                        </ActionButton>
-                      </Tooltip>
-                    </Stack>
                   </Stack>
-
-                  {/* Date Filter Summary */}
-                  {(selectedDate || dateRange.start || dateRange.end) && (
-                    <Box sx={{ mt: 2, p: 1.5, bgcolor: 'primary.light', borderRadius: 1 }}>
-                      <Stack direction="row" alignItems="center" spacing={1}>
-                        <FiFilter size={16} color={theme.palette.primary.main} />
-                        <Typography variant="body2" fontWeight={600} color="primary.main">
-                          Active Date Filter: {getDateFilterSummary()}
-                        </Typography>
-                      </Stack>
-                    </Box>
-                  )}
                 </Box>
-
-                {/* Tasks Content */}
-                <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
-                  {renderGroupedTasks(myTasksGrouped)}
-                  {loading && pagination.page > 1 && (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-                      <CircularProgress size={24} />
-                      <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
-                        Loading more tasks...
-                      </Typography>
-                    </Box>
-                  )}
-                </Box>
-              </Paper>
-
-              {/* DIALOGS */}
-              {renderCreateTaskDialog()}
-              {renderCalendarFilterDialog()}
-              {renderNotificationsPanel()}
-              {renderRemarksDialog()}
-              {renderActivityLogsDialog()}
-
-              {/* Enhanced Snackbar */}
-              <Snackbar
-                open={snackbar.open}
-                autoHideDuration={4000}
-                onClose={() => setSnackbar({ ...snackbar, open: false })}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-              >
-                <Card sx={{
-                  minWidth: 280,
-                  background: snackbar.severity === 'error'
-                    ? theme.palette.error.main
-                    : snackbar.severity === 'warning'
-                    ? theme.palette.warning.main
-                    : theme.palette.success.main,
-                  color: 'white',
-                  borderRadius: 1
-                }}>
-                  <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
-                    <Stack direction="row" alignItems="center" spacing={1.5}>
-                      {snackbar.severity === 'error' ?
-                        <FiXCircle size={18} /> :
-                        snackbar.severity === 'warning' ?
-                        <FiAlertCircle size={18} /> :
-                        <FiCheckCircle size={18} />
-                      }
-                      <Typography variant="body2" fontWeight={600} sx={{ flex: 1 }}>
-                        {snackbar.message}
-                      </Typography>
-                    </Stack>
-                  </CardContent>
-                </Card>
-              </Snackbar>
+              )}
             </Box>
-          </Fade>
-        </LocalizationProvider>
-      );
-    };
 
-    export default UserCreateTask;
+            {/* Tasks Content */}
+            <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
+              {renderGroupedTasks(myTasksGrouped)}
+              {loading && pagination.page > 1 && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                  <CircularProgress size={24} />
+                  <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
+                    Loading more tasks...
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+          </Paper>
+
+          {/* DIALOGS */}
+          {renderCreateTaskDialog()}
+          {renderCalendarFilterDialog()}
+          {renderNotificationsPanel()}
+          {renderRemarksDialog()}
+          {renderActivityLogsDialog()}
+
+          {/* Enhanced Snackbar */}
+          <Snackbar
+            open={snackbar.open}
+            autoHideDuration={4000}
+            onClose={() => setSnackbar({ ...snackbar, open: false })}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          >
+            <Card sx={{
+              minWidth: 280,
+              background: snackbar.severity === 'error'
+                ? theme.palette.error.main
+                : snackbar.severity === 'warning'
+                ? theme.palette.warning.main
+                : theme.palette.success.main,
+              color: 'white',
+              borderRadius: 1
+            }}>
+              <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
+                <Stack direction="row" alignItems="center" spacing={1.5}>
+                  {snackbar.severity === 'error' ?
+                    <FiXCircle size={18} /> :
+                    snackbar.severity === 'warning' ?
+                    <FiAlertCircle size={18} /> :
+                    <FiCheckCircle size={18} />
+                  }
+                  <Typography variant="body2" fontWeight={600} sx={{ flex: 1 }}>
+                    {snackbar.message}
+                  </Typography>
+                </Stack>
+              </CardContent>
+            </Card>
+          </Snackbar>
+        </Box>
+      </Fade>
+    </LocalizationProvider>
+  );
+};
+
+export default UserCreateTask;

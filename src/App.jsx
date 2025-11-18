@@ -79,7 +79,7 @@ function App() {
                         <Route path="my-task-management" element={<MyTaskManagement />} />
                         <Route path="profile" element={<Profile />} />
                         <Route path="user-dashboard" element={<UserDashboard />} />
-                        <Route path="emp" element={<EmployeeProject />} />
+                        <Route path="project" element={<EmployeeProject />} />
                         <Route path="task-management" element={<TaskManagement />} />
                         <Route path="employee-meeting" element={<EmployeeMeetingPage />} />        
               </Route>
