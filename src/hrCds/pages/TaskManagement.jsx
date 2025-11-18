@@ -83,7 +83,7 @@ const StatusChip = styled(Chip)(({ theme, status }) => ({
   }),
 
   // 🟠 On-Hold
-  ...(status === 'on-hold' && {
+  ...(status === 'onhold' && {
     background: `${theme.palette.warning.light}25`,
     color: theme.palette.warning.dark,
     border: `1px solid ${theme.palette.warning.main}30`,
@@ -562,7 +562,7 @@ const UserCreateTask = () => {
         case 'rejected':
           rejected++;
           break;
-        case 'on-hold':
+        case 'onhold':
           onHold++;
           break;
         case 'reopen':
@@ -875,7 +875,7 @@ const handleCreateTask = async () => {
     <MenuItem value="completed">Completed</MenuItem>
     <MenuItem value="approved">Approved</MenuItem>
     <MenuItem value="rejected">Rejected</MenuItem>
-    <MenuItem value="on-hold">On Hold</MenuItem>
+    <MenuItem value="onhold">On Hold</MenuItem>
     <MenuItem value="reopen">Reopen</MenuItem>
     <MenuItem value="cancelled">Cancelled</MenuItem>
   </Select>
@@ -1487,26 +1487,17 @@ const handleCreateTask = async () => {
                           </Typography>
                         </Box>
                       </Stack>
-                      <Typography variant="caption" color="text.secondary">
-                        {new Date(log.createdAt).toLocaleDateString()}
-                      </Typography>
+                     <Typography variant="caption" color="text.secondary">
+  {new Date(log.createdAt).toLocaleDateString()} at {new Date(log.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+</Typography>
+
                     </Stack>
                     <Typography variant="body2" sx={{ mt: 0.5 }}>
                       {log.description}
                     </Typography>
                     <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                      <Chip 
-                        label={log.action} 
-                        size="small" 
-                        color="primary" 
-                        variant="outlined" 
-                        sx={{ fontWeight: 600 }}
-                      />
-                      {log.ipAddress && (
-                        <Typography variant="caption" color="text.secondary">
-                          IP: {log.ipAddress}
-                        </Typography>
-                      )}
+                     
+                     
                     </Stack>
                   </Stack>
                 </CardContent>
@@ -1906,20 +1897,20 @@ const handleCreateTask = async () => {
   );
 
   // Search Component
-  const renderSearch = () => (
-    <Paper sx={{ p: 2, mb: 2, borderRadius: 2 }}>
-      <TextField
-        fullWidth
-        placeholder="Search tasks by title or description..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        InputProps={{
-          startAdornment: <FiSearch style={{ marginRight: 8, color: '#666' }} />
-        }}
-        size="small"
-      />
-    </Paper>
-  );
+  // const renderSearch = () => (
+  //   <Paper sx={{ p: 2, mb: 2, borderRadius: 2 }}>
+  //     <TextField
+  //       fullWidth
+  //       placeholder="Search tasks by title or description..."
+  //       value={searchTerm}
+  //       onChange={(e) => setSearchTerm(e.target.value)}
+  //       InputProps={{
+  //         startAdornment: <FiSearch style={{ marginRight: 8, color: '#666' }} />
+  //       }}
+  //       size="small"
+  //     />
+  //   </Paper>
+  // );
 
   useEffect(() => {
     fetchUserData();
@@ -2064,49 +2055,7 @@ const handleCreateTask = async () => {
             </Stack>
           </Paper>
 
-          {/* Search Box */}
-          {renderSearch()}
-
-          {/* Statistics Cards */}
-          <Grid container spacing={2} sx={{ mb: 3 }}>
-            {[
-              { label: 'Total Tasks', value: stats.total, color: 'primary', icon: FiCalendar },
-              { label: 'Pending', value: stats.pending, color: 'warning', icon: FiClock },
-              { label: 'In Progress', value: stats.inProgress, color: 'info', icon: FiAlertCircle },
-              { label: 'Completed', value: stats.completed, color: 'success', icon: FiCheckCircle },
-              { label: 'Rejected', value: stats.rejected, color: 'error', icon: FiXCircle },
-            ].map((stat, index) => (
-              <Grid item xs={6} sm={4} md={2.4} key={index}>
-                <StatCard color={stat.color}>
-                  <CardContent sx={{ p: 2 }}>
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                      <Avatar sx={{
-                        bgcolor: `${theme.palette[stat.color].main}20`,
-                        color: theme.palette[stat.color].main,
-                        width: 40,
-                        height: 40
-                      }}>
-                        <stat.icon size={18} />
-                      </Avatar>
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography variant="body2" color="text.secondary" fontWeight={600} sx={{ 
-                          fontSize: { xs: '0.7rem', sm: '0.75rem' },
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
-                        }}>
-                          {stat.label}
-                        </Typography>
-                        <Typography variant="h4" fontWeight={700} sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
-                          {stat.value}
-                        </Typography>
-                      </Box>
-                    </Stack>
-                  </CardContent>
-                </StatCard>
-              </Grid>
-            ))}
-          </Grid>
+      
 
           {/* Tasks Section */}
           <Paper sx={{
@@ -2153,7 +2102,7 @@ const handleCreateTask = async () => {
     <MenuItem value="completed">Completed</MenuItem>
     <MenuItem value="approved">Approved</MenuItem>
     <MenuItem value="rejected">Rejected</MenuItem>
-    <MenuItem value="on-hold">On Hold</MenuItem>
+    <MenuItem value="onhold">On Hold</MenuItem>
     <MenuItem value="reopen">Reopen</MenuItem>
     <MenuItem value="cancelled">Cancelled</MenuItem>
   </Select>

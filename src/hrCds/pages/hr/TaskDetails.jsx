@@ -956,6 +956,7 @@ const UserCreateTask = () => {
   };
 
   // OPTIMIZED: Statistics Cards - Ab client-side calculation se
+<<<<<<< HEAD
   const renderStatsCards = () => (
     <Grid container spacing={2} sx={{ mb: 3 }}>
       {[
@@ -997,6 +998,49 @@ const UserCreateTask = () => {
       ))}
     </Grid>
   );
+=======
+  // const renderStatsCards = () => (
+  //   <Grid container spacing={2} sx={{ mb: 3 }}>
+  //     {[
+  //       { label: 'Total Tasks', value: clientStats.total, color: 'primary', icon: FiCalendar },
+  //       { label: 'Pending', value: clientStats.pending, color: 'warning', icon: FiClock },
+  //       { label: 'In Progress', value: clientStats.inProgress, color: 'info', icon: FiAlertCircle },
+  //       { label: 'Completed', value: clientStats.completed, color: 'success', icon: FiCheckCircle },
+  //       { label: 'Rejected', value: clientStats.rejected, color: 'error', icon: FiXCircle },
+  //     ].map((stat, index) => (
+  //       <Grid item xs={6} sm={4} md={2.4} key={index}>
+  //         <StatCard color={stat.color}>
+  //           <CardContent sx={{ p: 2 }}>
+  //             <Stack direction="row" alignItems="center" spacing={1}>
+  //               <Avatar sx={{
+  //                 bgcolor: `${theme.palette[stat.color].main}20`,
+  //                 color: theme.palette[stat.color].main,
+  //                 width: 40,
+  //                 height: 40
+  //               }}>
+  //                 <stat.icon size={18} />
+  //               </Avatar>
+  //               <Box sx={{ flex: 1, minWidth: 0 }}>
+  //                 <Typography variant="body2" color="text.secondary" fontWeight={600} sx={{ 
+  //                   fontSize: { xs: '0.7rem', sm: '0.75rem' },
+  //                   overflow: 'hidden',
+  //                   textOverflow: 'ellipsis',
+  //                   whiteSpace: 'nowrap'
+  //                 }}>
+  //                   {stat.label}
+  //                 </Typography>
+  //                 <Typography variant="h4" fontWeight={700} sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
+  //                   {stat.value}
+  //                 </Typography>
+  //               </Box>
+  //             </Stack>
+  //           </CardContent>
+  //         </StatCard>
+  //       </Grid>
+  //     ))}
+  //   </Grid>
+  // );
+>>>>>>> 56bb9ff861abdca99c1c4a5002f5811b3a53f55b
 
   // Render Desktop Table - FIXED VERSION
   const renderDesktopTable = (groupedTasks) => {
@@ -1511,83 +1555,98 @@ const UserCreateTask = () => {
   );
 
   // Enhanced Activity Logs Dialog
-  const renderActivityLogsDialog = () => (
-    <Dialog 
-      open={activityDialog.open} 
-      onClose={() => setActivityDialog({ open: false, taskId: null })}
-      maxWidth="lg"
-      fullWidth
-      fullScreen={isSmallMobile}
-      PaperProps={{ sx: { borderRadius: isSmallMobile ? 0 : 2 } }}
-    >
-      <DialogTitle sx={{ 
-        background: `linear-gradient(135deg, ${theme.palette.primary.main}15 0%, ${theme.palette.primary.main}05 100%)` 
-      }}>
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <FiActivity color={theme.palette.primary.main} />
-          <Typography variant="h6" fontWeight={600}>Activity Logs</Typography>
-        </Stack>
-      </DialogTitle>
-      <DialogContent>
-        {activityLogs.length > 0 ? (
-          <Stack spacing={1}>
-            {activityLogs.map((log, index) => (
-              <Card key={index} variant="outlined" sx={{ borderRadius: 1 }}>
-                <CardContent sx={{ py: 1.5 }}>
-                  <Stack spacing={1}>
-                    <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} spacing={1}>
-                      <Stack direction="row" alignItems="center" spacing={1}>
-                        <Avatar sx={{ 
-                          width: 32, 
-                          height: 32, 
-                          fontSize: '0.875rem',
-                          bgcolor: theme.palette.primary.main 
-                        }}>
-                          {log.user?.name?.charAt(0)?.toUpperCase() || 'U'}
-                        </Avatar>
-                        <Box>
-                          <Typography variant="subtitle2" fontWeight={600}>
-                                {log.user?.name || 'Unknown User'}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                {log.user?.role || 'User'}
-                              </Typography>
-                            </Box>
-                          </Stack>
-                          <Typography variant="caption" color="text.secondary">
-                            {new Date(log.createdAt).toLocaleDateString()}
-                          </Typography>
-                        </Stack>
-                        <Typography variant="body2" sx={{ mt: 0.5 }}>
-                          {log.description}
+ const renderActivityLogsDialog = () => (
+  <Dialog 
+    open={activityDialog.open} 
+    onClose={() => setActivityDialog({ open: false, taskId: null })}
+    maxWidth="lg"
+    fullWidth
+    fullScreen={isSmallMobile}
+    PaperProps={{ sx: { borderRadius: isSmallMobile ? 0 : 2 } }}
+  >
+    <DialogTitle sx={{ 
+      background: `linear-gradient(135deg, ${theme.palette.primary.main}15 0%, ${theme.palette.primary.main}05 100%)` 
+    }}>
+      <Stack direction="row" alignItems="center" spacing={1}>
+        <FiActivity color={theme.palette.primary.main} />
+        <Typography variant="h6" fontWeight={600}>Activity Logs</Typography>
+      </Stack>
+    </DialogTitle>
+
+    <DialogContent>
+      {activityLogs.length > 0 ? (
+        <Stack spacing={1}>
+          {activityLogs.map((log, index) => (
+            <Card key={index} variant="outlined" sx={{ borderRadius: 1 }}>
+              <CardContent sx={{ py: 1.5 }}>
+                <Stack spacing={1}>
+                  
+                  <Stack 
+                    direction={{ xs: 'column', sm: 'row' }} 
+                    justifyContent="space-between" 
+                    alignItems={{ xs: 'flex-start', sm: 'center' }} 
+                    spacing={1}
+                  >
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <Avatar sx={{ 
+                        width: 32, 
+                        height: 32, 
+                        fontSize: '0.875rem',
+                        bgcolor: theme.palette.primary.main 
+                      }}>
+                        {log.user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                      </Avatar>
+
+                      <Box>
+                        <Typography variant="subtitle2" fontWeight={600}>
+                          {log.user?.name || 'Unknown User'}
                         </Typography>
-                        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                          <Chip 
-                            label={log.action} 
-                            size="small" 
-                            color="primary" 
-                            variant="outlined" 
-                            sx={{ fontWeight: 600 }}
-                          />
-                          {log.ipAddress && (
-                            <Typography variant="caption" color="text.secondary">
-                              IP: {log.ipAddress}
-                            </Typography>
-                          )}
-                        </Stack>
-                      </Stack>
-                    </CardContent>
-                  </Card>
-                ))}
-              </Stack>
-            ) : (
-              <Typography color="text.secondary" textAlign="center" py={3} fontWeight={500}>
-                No activity logs found for this task
-              </Typography>
-            )}
-          </DialogContent>
-        </Dialog>
-      );
+                        <Typography variant="caption" color="text.secondary">
+                          {log.user?.role || 'User'}
+                        </Typography>
+                      </Box>
+                    </Stack>
+
+                    {/* ⭐ UPDATED DATE + TIME */}
+                    <Typography variant="caption" color="text.secondary">
+                      {new Date(log.createdAt).toLocaleDateString()}{" "}
+                      at{" "}
+                      {new Date(log.createdAt).toLocaleTimeString([], { 
+                        hour: "2-digit", 
+                        minute: "2-digit" 
+                      })}
+                    </Typography>
+                  </Stack>
+
+                  <Typography variant="body2" sx={{ mt: 0.5 }}>
+                    {log.description}
+                  </Typography>
+
+                  <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                    {/* <Chip 
+                      label={log.action} 
+                      size="small" 
+                      color="primary" 
+                      variant="outlined" 
+                      sx={{ fontWeight: 600 }}
+                    /> */}
+                  
+                  </Stack>
+
+                </Stack>
+              </CardContent>
+            </Card>
+          ))}
+        </Stack>
+      ) : (
+        <Typography color="text.secondary" textAlign="center" py={3} fontWeight={500}>
+          No activity logs found for this task
+        </Typography>
+      )}
+    </DialogContent>
+  </Dialog>
+);
+
 
       // Calendar Filter Dialog
       const renderCalendarFilterDialog = () => (
@@ -1978,21 +2037,7 @@ const UserCreateTask = () => {
       );
 
       // Search Component
-      const renderSearch = () => (
-        <Paper sx={{ p: 2, mb: 2, borderRadius: 2 }}>
-          <TextField
-            fullWidth
-            placeholder="Search tasks by title or description..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            InputProps={{
-              startAdornment: <FiSearch style={{ marginRight: 8, color: '#666' }} />
-            }}
-            size="small"
-          />
-        </Paper>
-      );
-
+    
       useEffect(() => {
         fetchUserData();
       }, []);
@@ -2138,10 +2183,10 @@ const UserCreateTask = () => {
               </Paper>
 
               {/* Search Box */}
-              {renderSearch()}
+              {/* {renderSearch()} */}
 
               {/* Statistics Cards - CLIENT-SIDE CALCULATION SE */}
-              {renderStatsCards()}
+              {/* {renderStatsCards()} */}
 
               {/* Tasks Section */}
               <Paper sx={{
