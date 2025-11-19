@@ -48,20 +48,6 @@ const TaskCard = styled(Card)(({ theme }) => ({
   },
 }));
 
-const StatCard = styled(Card)(({ theme, color = "primary" }) => ({
-  background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
-  borderRadius: theme.shape.borderRadius * 2,
-  boxShadow: theme.shadows[2],
-  transition: theme.transitions.create(["all"], {
-    duration: theme.transitions.duration.standard,
-  }),
-  borderLeft: `4px solid ${theme.palette[color].main}`,
-  "&:hover": {
-    boxShadow: theme.shadows[6],
-    transform: "translateY(-2px)",
-  },
-}));
-
 const StatusChip = styled(Chip)(({ theme, status }) => ({
   fontWeight: 600,
   ...(status === "approved" && {
@@ -119,20 +105,13 @@ const TaskDetails = () => {
   const [users, setUsers] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [tasks, setTasks] = useState({});
+  const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [usersLoading, setUsersLoading] = useState(false);
   const [error, setError] = useState("");
   const [currentUserRole, setCurrentUserRole] = useState("");
   const [selectedEmployeeType, setSelectedEmployeeType] = useState("all");
   const [openDialog, setOpenDialog] = useState(false);
-
-  const [stats, setStats] = useState({
-    totalUsers: 0,
-    totalTasks: 0,
-    completedTasks: 0,
-    pendingTasks: 0,
-  });
 
   const theme = useTheme();
 
@@ -169,7 +148,6 @@ const TaskDetails = () => {
       try {
         const res = await axios.get("/task/all-users");
         setUsers(res?.data?.users || []);
-        setStats({ totalUsers: res?.data?.users?.length || 0 });
       } catch (err) {
         setError(
           err?.response?.data?.error ||
@@ -187,14 +165,25 @@ const TaskDetails = () => {
     setLoading(true);
     setError("");
     try {
+      console.log("Fetching tasks for user:", userId);
       const res = await axios.get(`/task/user-self-assigned/${userId}`);
-      setTasks(res?.data?.groupedTasks || {});
+      console.log("API Response:", res.data);
+      
+      // Handle different response structures
+      const tasksData = res?.data?.tasks || res?.data || [];
+      setTasks(tasksData);
+      
       const u = users.find((x) => x._id === userId) || null;
       setSelectedUser(u);
       setSelectedUserId(userId);
       setOpenDialog(true);
     } catch (err) {
-      setError(err?.response?.data?.error || "Error fetching tasks.");
+      console.error("Error fetching tasks:", err);
+      setError(
+        err?.response?.data?.error || 
+        err?.message || 
+        "Error fetching tasks. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -236,34 +225,42 @@ const TaskDetails = () => {
       .slice(0, 2);
   };
 
-const formatDate = (dateStr) => {
-  if (!dateStr) return "Not set";
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "Not set";
+    
+    try {
+      // Handle different date formats
+      let date;
+      if (/^\d{2}-\d{2}-\d{4}$/.test(dateStr)) {
+        const [day, month, year] = dateStr.split("-");
+        date = new Date(`${year}-${month}-${day}`);
+      } else {
+        date = new Date(dateStr);
+      }
+      
+      return date.toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
+    } catch (error) {
+      return "Invalid date";
+    }
+  };
 
-  // Handle format like "04-11-2025"
-  if (/^\d{2}-\d{2}-\d{4}$/.test(dateStr)) {
-    const [day, month, year] = dateStr.split("-");
-    const date = new Date(`${year}-${month}-${day}`);
-    return date.toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      weekday: "long",
-    });
-  }
-
-  // Handle ISO date like "2025-11-21T01:00:00.000Z"
-  const date = new Date(dateStr);
-  return date.toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      weekday: "long",
-  });
-};
-
-
-  const getTaskCount = () =>
-    Object.values(tasks).reduce((a, b) => a + b.length, 0);
+  // Group tasks by date
+  const groupedTasks = useMemo(() => {
+    if (!Array.isArray(tasks)) return {};
+    
+    return tasks.reduce((groups, task) => {
+      const date = task.createdAt || task.date || "No Date";
+      if (!groups[date]) {
+        groups[date] = [];
+      }
+      groups[date].push(task);
+      return groups;
+    }, {});
+  }, [tasks]);
 
   if (!canManage)
     return (
@@ -273,13 +270,12 @@ const formatDate = (dateStr) => {
             Access Denied
           </Typography>
           <Typography>
-            You don’t have the required permissions to view this page.
+            You don't have the required permissions to view this page.
           </Typography>
         </Alert>
       </Box>
     );
 
-  // ---------------- JSX START ---------------- //
   return (
     <Fade in timeout={500}>
       <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 1200, mx: "auto" }}>
@@ -299,15 +295,6 @@ const formatDate = (dateStr) => {
                 Monitor and manage self-assigned tasks across your team
               </Typography>
             </Box>
-            {/* <Tooltip title="Refresh Data">
-              <Button
-                variant="outlined"
-                startIcon={<FiRefreshCw />}
-                onClick={() => window.location.reload()}
-              >
-                Refresh
-              </Button>
-            </Tooltip> */}
           </Stack>
         </Paper>
 
@@ -422,10 +409,11 @@ const formatDate = (dateStr) => {
           onClose={() => setOpenDialog(false)}
           fullWidth
           maxWidth="md"
+          scroll="paper"
         >
-          <DialogTitle sx={{ display: "flex", justifyContent: "space-between" }}>
+          <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <Typography variant="h6" fontWeight={700}>
-              {selectedUser?.name}'s Tasks
+              {selectedUser?.name}'s Self-Assigned Tasks
             </Typography>
             <IconButton onClick={() => setOpenDialog(false)}>
               <FiX />
@@ -435,56 +423,72 @@ const formatDate = (dateStr) => {
             {loading ? (
               <Box textAlign="center" py={3}>
                 <CircularProgress />
+                <Typography mt={1}>Loading tasks...</Typography>
               </Box>
-            ) : Object.keys(tasks).length === 0 ? (
+            ) : tasks.length === 0 ? (
               <Box textAlign="center" py={3} color="text.secondary">
-                <FiList size={48} />
-                <Typography>No self-assigned tasks found.</Typography>
+                <FiList size={48} style={{ marginBottom: 16, opacity: 0.5 }} />
+                <Typography variant="h6" gutterBottom>
+                  No Tasks Found
+                </Typography>
+                <Typography>
+                  {selectedUser?.name} hasn't created any self-assigned tasks yet.
+                </Typography>
               </Box>
             ) : (
               <Stack spacing={3}>
-                {Object.keys(tasks).map((date) => (
+                {Object.keys(groupedTasks).map((date) => (
                   <Box key={date}>
-                    <Stack direction="row" alignItems="center" spacing={1} mb={1}>
+                    <Stack direction="row" alignItems="center" spacing={1} mb={2}>
                       <FiCalendar color={theme.palette.primary.main} />
-                      <Typography variant="h6">{formatDate(date)}</Typography>
+                      <Typography variant="h6" fontWeight={600}>
+                        {formatDate(date)}
+                      </Typography>
+                      <Chip 
+                        label={`${groupedTasks[date].length} tasks`} 
+                        size="small" 
+                        color="primary" 
+                        variant="outlined"
+                      />
                     </Stack>
-                    {tasks[date].map((task) => (
+                    {groupedTasks[date].map((task) => (
                       <TaskCard key={task._id} sx={{ mb: 2 }}>
                         <CardContent>
-                          <Typography variant="h6" fontWeight={600}>
-                            {task.title}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {task.description}
-                          </Typography>
-                          <Divider sx={{ my: 1 }} />
-                          {Array.isArray(task.statusInfo) &&
-                            task.statusInfo.map((s, i) => (
-                              <Stack
-                                key={i}
-                                direction="row"
-                                spacing={2}
-                                alignItems="center"
-                                sx={{
-                                  bgcolor: theme.palette.action.hover,
-                                  p: 1,
-                                  borderRadius: 1,
-                                }}
-                              >
-                                <Avatar sx={{ width: 30, height: 30 }}>
-                                  {getInitials(s.name)}
-                                </Avatar>
-                                <Typography variant="body2" flex={1}>
-                                  {s.name} ({s.role})
-                                </Typography>
+                          <Stack spacing={1}>
+                            <Typography variant="h6" fontWeight={600}>
+                              {task.title || "Untitled Task"}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {task.description || "No description provided"}
+                            </Typography>
+                            
+                            {/* Task Status */}
+                            {task.status && (
+                              <Box>
                                 <StatusChip
-                                  label={s.status}
-                                  status={s.status}
-                                  icon={getStatusIcon(s.status)}
+                                  label={task.status.toUpperCase()}
+                                  status={task.status}
+                                  icon={getStatusIcon(task.status)}
                                 />
-                              </Stack>
-                            ))}
+                              </Box>
+                            )}
+                            
+                            {/* Task Metadata */}
+                            <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
+                              {task.priority && (
+                                <Chip 
+                                  label={`Priority: ${task.priority}`} 
+                                  size="small" 
+                                  variant="outlined" 
+                                />
+                              )}
+                              {task.dueDate && (
+                                <Typography variant="caption" color="text.secondary">
+                                  Due: {formatDate(task.dueDate)}
+                                </Typography>
+                              )}
+                            </Stack>
+                          </Stack>
                         </CardContent>
                       </TaskCard>
                     ))}
