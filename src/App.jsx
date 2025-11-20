@@ -40,51 +40,51 @@ function App() {
   return (
     <>
       <Routes>
-        <Route index element={<Login />} /> 
-            <Route
-              path="/cds/admin/*"
-              element={
-                <ThemeContextProvider>
-                  <ProtectedRoute>
-                    <Layout2 />
-                  </ProtectedRoute>
-                </ThemeContextProvider>
-              }>
-                      <Route path="create-user" element={<CreateUser />} />
-                      <Route path="change-password" element={<ChangePassword />} />
-                      <Route path="emp-details" element={<EmppDetail />} />
-                      <Route path="emp-leaves" element={<EmppLeave />} />
-                      <Route path="emp-assets" element={<EmppAsset />} />
-                      <Route path="emp-attendance" element={<EmppAttendence />} />
-                      <Route path="emp-task-management" element={<EmppTask />} />
-                      <Route path="emp-task-details" element={<TaskDeatils />} />
-                      <Route path="admin-task-create" element={<AdminTaskCreate />} />
-                      <Route path="admin-meeting" element={<AdminMeetingPage />} /> 
-                      <Route path="adminp" element={<AdminProject />} />     
-                      <Route path="emp-all-task" element={<EmpAllTask />} />  
-             </Route>
-            <Route
-              path="/cds/*"
-              element={
-                <ThemeContextProvider>
-                  <ProtectedRoute>
-                    <Layout2 />
-                  </ProtectedRoute>
-                </ThemeContextProvider>
-              }>
-                        <Route path="alert" element={<Alerts />} />
-                        <Route path="attendance" element={<Attendance />} />
-                        <Route path="my-assets" element={<MyAssets />} />
-                        <Route path="my-leaves" element={<MyLeaves />} />
-                        <Route path="my-performance" element={<MyPerformance />} />
-                        <Route path="my-task-management" element={<MyTaskManagement />} />
-                        <Route path="profile" element={<Profile />} />
-                        <Route path="user-dashboard" element={<UserDashboard />} />
-                        <Route path="project" element={<EmployeeProject />} />
-                        <Route path="task-management" element={<TaskManagement />} />
-                        <Route path="employee-meeting" element={<EmployeeMeetingPage />} />     
-                         
-              </Route>
+        <Route index element={<Login />} />
+        <Route
+          path="/cds/admin/*"
+          element={
+            <ThemeContextProvider>
+              <ProtectedRoute>
+                <Layout2 />
+              </ProtectedRoute>
+            </ThemeContextProvider>
+          }>
+          <Route path="create-user" element={<CreateUser />} />
+          <Route path="change-password" element={<ChangePassword />} />
+          <Route path="emp-details" element={<EmppDetail />} />
+          <Route path="emp-leaves" element={<EmppLeave />} />
+          <Route path="emp-assets" element={<EmppAsset />} />
+          <Route path="emp-attendance" element={<EmppAttendence />} />
+          <Route path="emp-task-management" element={<EmppTask />} />
+          <Route path="emp-task-details" element={<TaskDeatils />} />
+          <Route path="admin-task-create" element={<AdminTaskCreate />} />
+          <Route path="admin-meeting" element={<AdminMeetingPage />} />
+          <Route path="adminp" element={<AdminProject />} />
+          <Route path="emp-all-task" element={<EmpAllTask />} />
+        </Route>
+        <Route
+          path="/cds/*"
+          element={
+            <ThemeContextProvider>
+              <ProtectedRoute>
+                <Layout2 />
+              </ProtectedRoute>
+            </ThemeContextProvider>
+          }>
+          <Route path="alert" element={<Alerts />} />
+          <Route path="attendance" element={<Attendance />} />
+          <Route path="my-assets" element={<MyAssets />} />
+          <Route path="my-leaves" element={<MyLeaves />} />
+          <Route path="my-performance" element={<MyPerformance />} />
+          <Route path="my-task-management" element={<MyTaskManagement />} />
+          <Route path="profile" element={<Profile />} />
+          <Route path="user-dashboard" element={<UserDashboard />} />
+          <Route path="project" element={<EmployeeProject />} />
+          <Route path="task-management" element={<TaskManagement />} />
+          <Route path="employee-meeting" element={<EmployeeMeetingPage />} />
+
+        </Route>
         {/* Catch-all route */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

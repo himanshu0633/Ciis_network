@@ -31,6 +31,10 @@ import {
   InputAdornment,
   useTheme,
   useMediaQuery,
+  alpha,
+  Tabs,
+  Tab,
+  LinearProgress,
 } from "@mui/material";
 import {
   FiPackage,
@@ -46,96 +50,232 @@ import {
   FiMonitor,
   FiTrendingUp,
   FiAlertCircle,
+  FiFilter,
+  FiDownload,
+  FiRefreshCw,
+  FiUser,
+  FiCalendar,
 } from "react-icons/fi";
 import axios from "../../utils/axiosConfig";
 import { styled, keyframes } from "@mui/material/styles";
 
 /* --------------------------------
-  🔹 ANIMATIONS
+  🔥 ENHANCED ANIMATIONS
 ---------------------------------*/
-const fadeIn = keyframes`
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+const fadeInUp = keyframes`
+  from { 
+    opacity: 0; 
+    transform: translateY(30px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
 `;
-const pulse = keyframes`
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
+
+const float = keyframes`
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+`;
+
+const shimmer = keyframes`
+  0% { background-position: -200px 0; }
+  100% { background-position: 200px 0; }
+`;
+
+const gradientShift = keyframes`
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 `;
 
 /* --------------------------------
-  🔹 STYLED COMPONENTS
+  🎨 ENHANCED STYLED COMPONENTS
 ---------------------------------*/
-const StatCard = styled(Card)(({ theme, color = "primary" }) => ({
-  borderRadius: theme.shape.borderRadius * 3,
-  boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
-  background: `linear-gradient(135deg, ${theme.palette.background.paper}, ${theme.palette.background.default})`,
-  border: `1px solid ${theme.palette.divider}`,
-  overflow: "hidden",
-  position: "relative",
-  transition: "all 0.3s ease",
-  cursor: "pointer",
-  "&::before": {
+const GlassCard = styled(Card)(({ theme, color = "primary" }) => ({
+  background: `linear-gradient(135deg, 
+    ${alpha(theme.palette.background.paper, 0.9)} 0%, 
+    ${alpha(theme.palette.background.default, 0.7)} 100%)`,
+  backdropFilter: 'blur(20px)',
+  borderRadius: theme.shape.borderRadius * 4,
+  border: `1px solid ${alpha(theme.palette.common.white, 0.2)}`,
+  boxShadow: `0 15px 35px ${alpha(theme.palette.common.black, 0.1)}`,
+  position: 'relative',
+  overflow: 'hidden',
+  transition: 'all 0.4s ease',
+  animation: `${fadeInUp} 0.6s ease-out`,
+  
+  '&::before': {
     content: '""',
-    position: "absolute",
+    position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    height: "4px",
-    background: `linear-gradient(90deg, ${theme.palette[color].main}, ${theme.palette[color].light})`,
+    height: '4px',
+    background: `linear-gradient(90deg, 
+      ${theme.palette[color].main} 0%, 
+      ${theme.palette[color].light || theme.palette[color].main} 100%)`,
+    animation: `${gradientShift} 3s ease infinite`,
+    backgroundSize: '200% 200%',
   },
-  "&:hover": {
-    transform: "translateY(-5px)",
-    boxShadow: "0 12px 40px rgba(0,0,0,0.1)",
+  
+  '&:hover': {
+    transform: 'translateY(-8px)',
+    boxShadow: `0 25px 50px ${alpha(theme.palette.common.black, 0.15)}`,
+  },
+}));
+
+const StatCard = styled(GlassCard)(({ theme, color = "primary" }) => ({
+  cursor: 'pointer',
+  minHeight: 140,
+  '&:hover::before': {
+    height: '6px',
   },
 }));
 
 const StatusChip = styled(Chip)(({ theme, status }) => ({
-  fontWeight: 700,
-  fontSize: "0.75rem",
-  height: 28,
-  borderRadius: 14,
+  fontWeight: 800,
+  fontSize: '0.75rem',
+  height: 32,
+  borderRadius: 16,
+  padding: '0 12px',
+  textTransform: 'uppercase',
+  letterSpacing: '0.5px',
   ...(status === "approved" && {
-    background: `${theme.palette.success.main}`,
-    color: "white",
+    background: `linear-gradient(135deg, ${alpha(theme.palette.success.main, 0.2)} 0%, ${alpha(theme.palette.success.main, 0.3)} 100%)`,
+    color: theme.palette.success.dark,
+    border: `2px solid ${alpha(theme.palette.success.main, 0.4)}`,
+    boxShadow: `0 4px 15px ${alpha(theme.palette.success.main, 0.2)}`,
   }),
   ...(status === "pending" && {
-    background: `${theme.palette.warning.main}`,
-    color: "white",
+    background: `linear-gradient(135deg, ${alpha(theme.palette.warning.main, 0.2)} 0%, ${alpha(theme.palette.warning.main, 0.3)} 100%)`,
+    color: theme.palette.warning.dark,
+    border: `2px solid ${alpha(theme.palette.warning.main, 0.4)}`,
+    boxShadow: `0 4px 15px ${alpha(theme.palette.warning.main, 0.2)}`,
   }),
   ...(status === "rejected" && {
-    background: `${theme.palette.error.main}`,
-    color: "white",
+    background: `linear-gradient(135deg, ${alpha(theme.palette.error.main, 0.2)} 0%, ${alpha(theme.palette.error.main, 0.3)} 100%)`,
+    color: theme.palette.error.dark,
+    border: `2px solid ${alpha(theme.palette.error.main, 0.4)}`,
+    boxShadow: `0 4px 15px ${alpha(theme.palette.error.main, 0.2)}`,
   }),
 }));
 
 const GradientButton = styled(Button)(({ theme }) => ({
-  background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
-  color: "white",
-  fontWeight: 700,
-  borderRadius: theme.shape.borderRadius * 2,
-  textTransform: "none",
-  "&:hover": {
-    background: `linear-gradient(135deg, ${theme.palette.primary.dark}, ${theme.palette.primary.main})`,
-    transform: "translateY(-2px)",
+  background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+  color: 'white',
+  fontWeight: 800,
+  borderRadius: theme.shape.borderRadius * 3,
+  padding: '12px 32px',
+  textTransform: 'none',
+  fontSize: '1rem',
+  boxShadow: `0 8px 25px ${alpha(theme.palette.primary.main, 0.4)}`,
+  transition: 'all 0.3s ease',
+  position: 'relative',
+  overflow: 'hidden',
+  
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: '-100%',
+    width: '100%',
+    height: '100%',
+    background: `linear-gradient(90deg, transparent, ${alpha(theme.palette.common.white, 0.2)}, transparent)`,
+    transition: 'left 0.5s',
+  },
+  
+  '&:hover': {
+    transform: 'translateY(-3px)',
+    boxShadow: `0 12px 35px ${alpha(theme.palette.primary.main, 0.6)}`,
+    '&::before': {
+      left: '100%',
+    },
+  },
+  
+  '&:disabled': {
+    background: theme.palette.grey[400],
+    transform: 'none',
+    boxShadow: 'none',
   },
 }));
 
 const PropertyItem = styled(ListItem)(({ theme }) => ({
-  border: `1px solid ${theme.palette.divider}`,
-  borderRadius: theme.shape.borderRadius * 1.5,
-  marginBottom: theme.spacing(1),
-  padding: theme.spacing(2),
-  transition: "all 0.3s ease",
-  "&:hover": {
+  background: `linear-gradient(135deg, 
+    ${alpha(theme.palette.background.paper, 0.8)} 0%, 
+    ${alpha(theme.palette.background.default, 0.6)} 100%)`,
+  backdropFilter: 'blur(10px)',
+  borderRadius: theme.shape.borderRadius * 2,
+  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+  marginBottom: theme.spacing(2),
+  padding: theme.spacing(2.5),
+  transition: 'all 0.3s ease',
+  animation: `${fadeInUp} 0.6s ease-out`,
+  
+  '&:hover': {
     borderColor: theme.palette.primary.main,
-    transform: "translateX(5px)",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+    transform: 'translateX(8px) translateY(-2px)',
+    boxShadow: `0 8px 25px ${alpha(theme.palette.primary.main, 0.15)}`,
+    background: `linear-gradient(135deg, 
+      ${alpha(theme.palette.primary.main, 0.05)} 0%, 
+      ${alpha(theme.palette.secondary.main, 0.05)} 100%)`,
+  },
+}));
+
+const SearchField = styled(TextField)(({ theme }) => ({
+  '& .MuiOutlinedInput-root': {
+    borderRadius: theme.shape.borderRadius * 3,
+    background: `linear-gradient(135deg, 
+      ${alpha(theme.palette.common.white, 0.9)} 0%, 
+      ${alpha(theme.palette.common.white, 0.8)} 100%)`,
+    backdropFilter: 'blur(10px)',
+    transition: 'all 0.3s ease',
+    border: `2px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+    
+    '&:hover fieldset': {
+      borderColor: alpha(theme.palette.primary.main, 0.3),
+      borderWidth: 2,
+    },
+    '&.Mui-focused fieldset': {
+      borderColor: theme.palette.primary.main,
+      borderWidth: 2,
+      boxShadow: `0 0 0 4px ${alpha(theme.palette.primary.main, 0.1)}`,
+    },
+  },
+}));
+
+const StyledTableRow = styled(TableRow)(({ theme, status }) => ({
+  cursor: 'pointer',
+  transition: 'all 0.3s ease',
+  position: 'relative',
+  background: `linear-gradient(135deg, 
+    ${alpha(theme.palette.common.white, 0.9)} 0%, 
+    ${alpha(theme.palette.common.white, 0.8)} 100%)`,
+  
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    left: 0,
+    top: '50%',
+    transform: 'translateY(-50%)',
+    width: '4px',
+    height: '70%',
+    borderRadius: '0 8px 8px 0',
+    background: 
+      status === 'approved' ? `linear-gradient(180deg, ${theme.palette.success.main} 0%, ${theme.palette.success.dark} 100%)` :
+      status === 'pending' ? `linear-gradient(180deg, ${theme.palette.warning.main} 0%, ${theme.palette.warning.dark} 100%)` :
+      `linear-gradient(180deg, ${theme.palette.error.main} 0%, ${theme.palette.error.dark} 100%)`,
+  },
+  
+  '&:hover': {
+    backgroundColor: alpha(theme.palette.primary.main, 0.08),
+    transform: 'translateX(8px)',
+    boxShadow: `0 8px 25px ${alpha(theme.palette.primary.main, 0.15)}`,
   },
 }));
 
 /* --------------------------------
-  🔹 COMPONENT START
+  🔥 ENHANCED COMPONENT
 ---------------------------------*/
 const MyAssets = () => {
   const [newAsset, setNewAsset] = useState("");
@@ -144,27 +284,26 @@ const MyAssets = () => {
   const [requests, setRequests] = useState([]);
   const [properties, setProperties] = useState([]);
   const [filterStatus, setFilterStatus] = useState("all");
-  const [stats, setStats] = useState({
-    total: 0,
-    approved: 0,
-    pending: 0,
-    rejected: 0,
-  });
   const [searchTerm, setSearchTerm] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState(0);
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const isSmallMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const token = localStorage.getItem("token");
 
   const allowedAssets = [
-    { value: "phone", label: "Smartphone", icon: FiSmartphone },
-    { value: "sim", label: "SIM Card", icon: FiCpu },
-    { value: "laptop", label: "Laptop", icon: FiMonitor },
-    { value: "desktop", label: "Desktop", icon: FiSettings },
-    { value: "headphone", label: "Headphones", icon: FiHeadphones },
+    { value: "phone", label: "Smartphone", icon: FiSmartphone, color: "primary" },
+    { value: "sim", label: "SIM Card", icon: FiCpu, color: "secondary" },
+    { value: "laptop", label: "Laptop", icon: FiMonitor, color: "info" },
+    { value: "desktop", label: "Desktop", icon: FiSettings, color: "warning" },
+    { value: "headphone", label: "Headphones", icon: FiHeadphones, color: "success" },
   ];
 
-  const fetchRequests = async () => {
+  const fetchRequests = async (showRefresh = false) => {
+    if (showRefresh) setRefreshing(true);
+    
     try {
       const res = await axios.get("/assets/my-requests", {
         headers: { Authorization: `Bearer ${token}` },
@@ -172,11 +311,19 @@ const MyAssets = () => {
       const data = res.data.requests || [];
       setRequests(data);
       calculateStats(data);
+      if (showRefresh) {
+        setNotification({
+          message: "Asset data refreshed!",
+          severity: "success",
+        });
+      }
     } catch (err) {
       setNotification({
         message: "Failed to fetch requests",
         severity: "error",
       });
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -184,13 +331,23 @@ const MyAssets = () => {
     const approved = data.filter((r) => r.status === "approved").length;
     const pending = data.filter((r) => r.status === "pending").length;
     const rejected = data.filter((r) => r.status === "rejected").length;
+    
     setStats({
       total: data.length,
       approved,
       pending,
       rejected,
+      approvalRate: data.length > 0 ? Math.round((approved / data.length) * 100) : 0,
     });
   };
+
+  const [stats, setStats] = useState({
+    total: 0,
+    approved: 0,
+    pending: 0,
+    rejected: 0,
+    approvalRate: 0,
+  });
 
   useEffect(() => {
     fetchRequests();
@@ -214,11 +371,17 @@ const MyAssets = () => {
         { assetName: newAsset },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setNotification({ message: "Request submitted successfully!", severity: "success" });
+      setNotification({ 
+        message: "🎉 Request submitted successfully!", 
+        severity: "success" 
+      });
       setNewAsset("");
       fetchRequests();
     } catch {
-      setNotification({ message: "Request failed", severity: "error" });
+      setNotification({ 
+        message: "❌ Request failed. Please try again.", 
+        severity: "error" 
+      });
     } finally {
       setLoading(false);
     }
@@ -245,100 +408,183 @@ const MyAssets = () => {
     return matchesSearch && matchesFilter;
   });
 
+  const getAssetIcon = (assetType) => {
+    const asset = allowedAssets.find(a => a.value === assetType);
+    return asset ? asset.icon : FiPackage;
+  };
+
+  const getAssetColor = (assetType) => {
+    const asset = allowedAssets.find(a => a.value === assetType);
+    return asset ? asset.color : 'primary';
+  };
+
   /* --------------------------------
-    🔹 RENDER UI
+    🎨 ENHANCED RENDER UI
   ---------------------------------*/
   return (
-    <Fade in timeout={600}>
+    <Fade in timeout={800}>
       <Box
         sx={{
-          p: { xs: 2, md: 4 },
-          background: `linear-gradient(135deg, ${theme.palette.background.default}, ${theme.palette.background.paper})`,
+          p: { xs: 2, sm: 3, md: 4 },
+          background: `linear-gradient(135deg, #667eea 0%, #764ba2 100%)`,
           minHeight: "100vh",
         }}
       >
-        {/* Header */}
-        <Paper
-          sx={{
-            p: 4,
-            mb: 4,
-            borderRadius: 4,
-            background: `linear-gradient(135deg, ${theme.palette.background.paper}, ${theme.palette.background.default})`,
-            boxShadow: "0 12px 40px rgba(0,0,0,0.08)",
+        {/* Enhanced Header */}
+        <GlassCard 
+          sx={{ 
+            p: { xs: 3, sm: 4 }, 
+            mb: { xs: 3, sm: 4 },
+            background: `linear-gradient(135deg, 
+              ${alpha(theme.palette.common.white, 0.95)} 0%, 
+              ${alpha(theme.palette.common.white, 0.85)} 100%)`,
           }}
         >
-          <Typography
-            variant="h4"
-            fontWeight={800}
-            sx={{
-              background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-              backgroundClip: "text",
-              WebkitBackgroundClip: "text",
-              color: "transparent",
-            }}
-            gutterBottom
+          <Stack 
+            direction={{ xs: 'column', sm: 'row' }} 
+            spacing={3} 
+            justifyContent="space-between" 
+            alignItems={{ xs: 'flex-start', sm: 'center' }}
           >
-            Asset Management
-          </Typography>
-          <Typography color="text.secondary">
-            Manage and request assets with real-time status tracking.
-          </Typography>
-        </Paper>
-
-        {/* Stat Cards */}
-        <Grid container spacing={2} sx={{ mb: 4 }}>
-          {[
-            { key: "total", label: "Total Requests", color: "primary" },
-            { key: "approved", label: "Approved", color: "success" },
-            { key: "pending", label: "Pending", color: "warning" },
-            { key: "rejected", label: "Rejected", color: "error" },
-          ].map((stat) => (
-            <Grid item xs={6} md={3} key={stat.key}>
-              <StatCard
-                color={stat.color}
-                onClick={() =>
-                  setFilterStatus(
-                    stat.key === "total" ? "all" : stat.key
-                  )
-                }
+            <Box>
+              <Typography
+                variant={isSmallMobile ? "h3" : isMobile ? "h2" : "h1"}
+                fontWeight={900}
                 sx={{
-                  border:
-                    filterStatus === stat.key ||
-                    (filterStatus === "all" && stat.key === "total")
-                      ? `2px solid ${theme.palette[stat.color].main}`
-                      : "1px solid transparent",
+                  background: `linear-gradient(135deg, #667eea 0%, #764ba2 100%)`,
+                  backgroundClip: "text",
+                  WebkitBackgroundClip: "text",
+                  color: "transparent",
+                  mb: 1,
+                  lineHeight: 1.1,
                 }}
               >
-                <CardContent>
-                  <Stack
-                    direction="row"
-                    alignItems="center"
-                    justifyContent="space-between"
-                  >
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
+                Asset Management
+              </Typography>
+              <Typography 
+                variant={isSmallMobile ? "body1" : "h6"}
+                color="text.secondary" 
+                sx={{ opacity: 0.8, fontWeight: 500 }}
+              >
+                Manage and request assets with real-time status tracking
+              </Typography>
+            </Box>
+
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Tooltip title="Refresh data">
+                <IconButton 
+                  onClick={() => fetchRequests(true)}
+                  disabled={refreshing}
+                  sx={{
+                    background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)} 0%, ${alpha(theme.palette.secondary.main, 0.1)} 100%)`,
+                    borderRadius: '14px',
+                    p: 1.5,
+                    border: `2px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+                    '&:hover': {
+                      background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.2)} 0%, ${alpha(theme.palette.secondary.main, 0.2)} 100%)`,
+                    }
+                  }}
+                >
+                  <FiRefreshCw 
+                    className={refreshing ? 'spin' : ''} 
+                    size={20}
+                    color={theme.palette.primary.main}
+                  />
+                </IconButton>
+              </Tooltip>
+            </Stack>
+          </Stack>
+        </GlassCard>
+
+        {/* Enhanced Stat Cards */}
+        <Grid container spacing={{ xs: 2, sm: 3, md: 4 }} sx={{ mb: { xs: 3, sm: 4, md: 5 } }}>
+          {[
+            { 
+              key: "total", 
+              label: "Total Requests", 
+              color: "primary", 
+              icon: FiPackage,
+              value: stats.total,
+            },
+            { 
+              key: "approved", 
+              label: "Approved", 
+              color: "success", 
+              icon: FiCheckCircle,
+              value: stats.approved,
+              extra: `${stats.approvalRate}%`
+            },
+            { 
+              key: "pending", 
+              label: "Pending", 
+              color: "warning", 
+              icon: FiClock,
+              value: stats.pending,
+            },
+            { 
+              key: "rejected", 
+              label: "Rejected", 
+              color: "error", 
+              icon: FiXCircle,
+              value: stats.rejected,
+            },
+          ].map((stat) => (
+            <Grid item xs={6} sm={6} md={3} key={stat.key}>
+              <StatCard 
+                color={stat.color}
+                onClick={() => setFilterStatus(stat.key === "total" ? "all" : stat.key)}
+                sx={{
+                  border: filterStatus === (stat.key === "total" ? "all" : stat.key) 
+                    ? `2px solid ${theme.palette[stat.color].main}`
+                    : `1px solid ${alpha(theme.palette.common.white, 0.2)}`,
+                }}
+              >
+                <CardContent sx={{ p: { xs: 2.5, sm: 3 } }}>
+                  <Stack direction="row" alignItems="center" spacing={{ xs: 2, sm: 2.5 }}>
+                    <Avatar sx={{ 
+                      bgcolor: `${theme.palette[stat.color].main}15`, 
+                      color: theme.palette[stat.color].main,
+                      borderRadius: '16px',
+                      width: { xs: 50, sm: 60 },
+                      height: { xs: 50, sm: 60 },
+                      boxShadow: `0 8px 25px ${alpha(theme.palette[stat.color].main, 0.3)}`
+                    }}>
+                      <stat.icon size={isSmallMobile ? 22 : 26} />
+                    </Avatar>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography 
+                        variant={isSmallMobile ? "body2" : "body1"}
+                        color="text.secondary" 
+                        sx={{ 
+                          opacity: 0.8,
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          fontWeight: 600
+                        }}
+                      >
                         {stat.label}
                       </Typography>
-                      <Typography variant="h4" fontWeight={700}>
-                        {stats[stat.key]}
-                      </Typography>
+                      <Stack direction="row" alignItems="baseline" spacing={1}>
+                        <Typography 
+                          variant={isSmallMobile ? "h4" : "h3"}
+                          fontWeight={900}
+                          sx={{ lineHeight: 1 }}
+                        >
+                          {stat.value}
+                        </Typography>
+                        {stat.extra && (
+                          <Typography 
+                            variant="h6" 
+                            color={`${stat.color}.main`}
+                            fontWeight={800}
+                            sx={{ ml: 1 }}
+                          >
+                            {stat.extra}
+                          </Typography>
+                        )}
+                      </Stack>
                     </Box>
-                    <Avatar
-                      sx={{
-                        bgcolor: `${theme.palette[stat.color].main}15`,
-                        color: theme.palette[stat.color].main,
-                      }}
-                    >
-                      {stat.key === "approved" ? (
-                        <FiCheckCircle />
-                      ) : stat.key === "pending" ? (
-                        <FiClock />
-                      ) : stat.key === "rejected" ? (
-                        <FiXCircle />
-                      ) : (
-                        <FiPackage />
-                      )}
-                    </Avatar>
                   </Stack>
                 </CardContent>
               </StatCard>
@@ -346,137 +592,290 @@ const MyAssets = () => {
           ))}
         </Grid>
 
-        {/* Request + Properties */}
+        {/* Enhanced Action Cards */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          {/* Request Card */}
-          <Grid item xs={12} md={6}>
-            <Card sx={{ borderRadius: 4, p: 3 }}>
-              <Typography variant="h6" fontWeight={700} gutterBottom>
-                Request New Asset
-              </Typography>
-              <Select
-                value={newAsset}
-                onChange={(e) => setNewAsset(e.target.value)}
-                fullWidth
-                displayEmpty
-                sx={{ borderRadius: 3, mb: 2 }}
-              >
-                <MenuItem disabled value="">
-                  Select asset type...
-                </MenuItem>
-                {allowedAssets.map((a) => (
-                  <MenuItem key={a.value} value={a.value}>
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                      <a.icon />
-                      <Typography>{a.label}</Typography>
-                    </Stack>
+          {/* Request New Asset Card */}
+          <Grid item xs={12} lg={6}>
+            <GlassCard sx={{ p: { xs: 3, sm: 4 }, height: '100%' }}>
+              <Stack spacing={3}>
+                <Box>
+                  <Typography variant="h5" fontWeight={900} color="primary.main" gutterBottom>
+                    🚀 Request New Asset
+                  </Typography>
+                  <Typography variant="body1" color="text.secondary">
+                    Select from available assets to make a request
+                  </Typography>
+                </Box>
+
+                <Select
+                  value={newAsset}
+                  onChange={(e) => setNewAsset(e.target.value)}
+                  fullWidth
+                  displayEmpty
+                  sx={{ 
+                    borderRadius: 3,
+                    background: `linear-gradient(135deg, 
+                      ${alpha(theme.palette.common.white, 0.9)} 0%, 
+                      ${alpha(theme.palette.common.white, 0.8)} 100%)`,
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: alpha(theme.palette.primary.main, 0.2),
+                    },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: alpha(theme.palette.primary.main, 0.4),
+                    },
+                  }}
+                  renderValue={(selected) => {
+                    if (!selected) {
+                      return "Select asset type...";
+                    }
+                    const asset = allowedAssets.find(a => a.value === selected);
+                    return asset ? asset.label : selected;
+                  }}
+                >
+                  <MenuItem disabled value="">
+                    <Typography color="text.secondary">Select asset type...</Typography>
                   </MenuItem>
-                ))}
-              </Select>
-              <GradientButton
-                onClick={handleRequest}
-                disabled={!newAsset || loading}
-                startIcon={
-                  loading ? (
-                    <CircularProgress size={18} color="inherit" />
-                  ) : (
-                    <FiPlus />
-                  )
-                }
-                fullWidth
-              >
-                {loading ? "Submitting..." : "Request Asset"}
-              </GradientButton>
-            </Card>
+                  {allowedAssets.map((asset) => (
+                    <MenuItem key={asset.value} value={asset.value}>
+                      <Stack direction="row" alignItems="center" spacing={2}>
+                        <Avatar 
+                          sx={{ 
+                            bgcolor: `${theme.palette[asset.color].main}15`, 
+                            color: theme.palette[asset.color].main,
+                            width: 40,
+                            height: 40,
+                          }}
+                        >
+                          <asset.icon />
+                        </Avatar>
+                        <Box>
+                          <Typography fontWeight={600}>{asset.label}</Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            Available for request
+                          </Typography>
+                        </Box>
+                      </Stack>
+                    </MenuItem>
+                  ))}
+                </Select>
+
+                <GradientButton
+                  onClick={handleRequest}
+                  disabled={!newAsset || loading}
+                  startIcon={
+                    loading ? (
+                      <CircularProgress size={20} color="inherit" />
+                    ) : (
+                      <FiPlus />
+                    )
+                  }
+                  fullWidth
+                  size="large"
+                >
+                  {loading ? "Submitting Request..." : "Request Asset"}
+                </GradientButton>
+              </Stack>
+            </GlassCard>
           </Grid>
 
-          {/* Assigned Properties */}
-          <Grid item xs={12} md={6}>
-            <Card sx={{ borderRadius: 4, p: 3 }}>
-              <Typography variant="h6" fontWeight={700} gutterBottom>
-                Assigned Properties
-              </Typography>
-              {properties.length ? (
-                <List dense>
-                  {properties.map((item, idx) => (
-                    <PropertyItem key={idx}>
-                      <ListItemText
-                        primary={<Typography fontWeight={600}>{item}</Typography>}
-                        secondary="Company-assigned asset"
-                      />
-                    </PropertyItem>
-                  ))}
-                </List>
-              ) : (
-                <Typography color="text.secondary">
-                  No properties assigned yet.
-                </Typography>
-              )}
-            </Card>
+          {/* Assigned Properties Card */}
+          <Grid item xs={12} lg={6}>
+            <GlassCard sx={{ p: { xs: 3, sm: 4 }, height: '100%' }}>
+              <Stack spacing={3}>
+                <Box>
+                  <Typography variant="h5" fontWeight={900} color="primary.main" gutterBottom>
+                    💼 My Assigned Assets
+                  </Typography>
+                  <Typography variant="body1" color="text.secondary">
+                    Assets currently assigned to you
+                  </Typography>
+                </Box>
+
+                {properties.length > 0 ? (
+                  <List sx={{ maxHeight: 300, overflow: 'auto' }}>
+                    {properties.map((item, idx) => (
+                      <PropertyItem key={idx}>
+                        <Stack direction="row" alignItems="center" spacing={2}>
+                          <Avatar 
+                            sx={{ 
+                              bgcolor: `${theme.palette.primary.main}15`, 
+                              color: theme.palette.primary.main,
+                            }}
+                          >
+                            <FiPackage />
+                          </Avatar>
+                          <Box sx={{ flex: 1 }}>
+                            <Typography fontWeight={700} variant="body1">
+                              {item}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              Company-assigned asset • Active
+                            </Typography>
+                          </Box>
+                          <StatusChip label="Active" status="approved" size="small" />
+                        </Stack>
+                      </PropertyItem>
+                    ))}
+                  </List>
+                ) : (
+                  <Box 
+                    sx={{ 
+                      textAlign: 'center', 
+                      py: 6,
+                      background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.05)} 0%, ${alpha(theme.palette.secondary.main, 0.05)} 100%)`,
+                      borderRadius: 3,
+                    }}
+                  >
+                    <FiPackage size={48} color={theme.palette.primary.main} style={{ opacity: 0.5, marginBottom: 16 }} />
+                    <Typography variant="h6" color="text.secondary" gutterBottom>
+                      No Assets Assigned
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ opacity: 0.7 }}>
+                      Your assigned assets will appear here
+                    </Typography>
+                  </Box>
+                )}
+              </Stack>
+            </GlassCard>
           </Grid>
         </Grid>
 
-        {/* Requests Table */}
-        <Card sx={{ borderRadius: 4, p: 3 }}>
+        {/* Enhanced Requests Table */}
+        <GlassCard sx={{ p: { xs: 3, sm: 4 } }}>
           <Stack
             direction={{ xs: "column", sm: "row" }}
             justifyContent="space-between"
-            alignItems="center"
-            spacing={2}
-            sx={{ mb: 3 }}
+            alignItems={{ xs: "stretch", sm: "center" }}
+            spacing={3}
+            sx={{ mb: 4 }}
           >
-            <Typography variant="h6" fontWeight={700}>
-              Asset Requests
-            </Typography>
-            <TextField
-              size="small"
-              placeholder="Search..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <FiSearch />
-                  </InputAdornment>
-                ),
-              }}
-            />
+            <Box>
+              <Typography variant="h5" fontWeight={900} color="primary.main" gutterBottom>
+                📋 Asset Requests
+              </Typography>
+              <Typography variant="body1" color="text.secondary">
+                Track your asset request history and status
+              </Typography>
+            </Box>
+
+            <Stack 
+              direction={{ xs: "column", sm: "row" }} 
+              spacing={2} 
+              alignItems="center"
+              sx={{ width: { xs: '100%', sm: 'auto' } }}
+            >
+              <SearchField
+                size="small"
+                placeholder="Search requests..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <FiSearch color={theme.palette.primary.main} />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{ 
+                  width: { xs: '100%', sm: 250 },
+                }}
+              />
+            </Stack>
           </Stack>
+
+          {/* Status Filter Tabs */}
+          <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+            <Tabs 
+              value={filterStatus} 
+              onChange={(e, newValue) => setFilterStatus(newValue)}
+              variant="scrollable"
+              scrollButtons="auto"
+            >
+              <Tab 
+                label={`All Requests (${stats.total})`} 
+                value="all" 
+                sx={{ fontWeight: 600, textTransform: 'none' }}
+              />
+              <Tab 
+                label={`Approved (${stats.approved})`} 
+                value="approved" 
+                sx={{ fontWeight: 600, textTransform: 'none' }}
+              />
+              <Tab 
+                label={`Pending (${stats.pending})`} 
+                value="pending" 
+                sx={{ fontWeight: 600, textTransform: 'none' }}
+              />
+              <Tab 
+                label={`Rejected (${stats.rejected})`} 
+                value="rejected" 
+                sx={{ fontWeight: 600, textTransform: 'none' }}
+              />
+            </Tabs>
+          </Box>
 
           {!isMobile ? (
             <TableContainer>
               <Table>
                 <TableHead>
-                  <TableRow>
-                    <TableCell>Asset Type</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell>Approved By</TableCell>
-                    <TableCell>Requested At</TableCell>
+                  <TableRow> 
+                    <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}></TableCell>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Asset Type</TableCell>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Status</TableCell>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Approved By</TableCell>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Requested At</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {filteredRequests.length ? (
-                    filteredRequests.map((req) => (
-                      <TableRow key={req._id}>
-                        <TableCell>{req.assetName}</TableCell>
-                        <TableCell>
-                          <StatusChip label={req.status} status={req.status} />
-                        </TableCell>
-                        <TableCell>
-                          {req.approvedBy
-                            ? `${req.approvedBy.name} (${req.approvedBy.role})`
-                            : req.status === "pending"
-                            ? "Pending"
-                            : "--"}
-                        </TableCell>
-                        <TableCell>{formatDate(req.createdAt)}</TableCell>
-                      </TableRow>
-                    ))
+                  {filteredRequests.length > 0 ? (
+                    filteredRequests.map((req) => {
+                      const AssetIcon = getAssetIcon(req.assetName);
+                      return (
+                        <StyledTableRow key={req._id} status={req.status}>
+                          <TableCell>
+                            <Stack direction="row" alignItems="center" spacing={2}>
+                              <Avatar 
+                                sx={{ 
+                                  bgcolor: `${theme.palette[getAssetColor(req.assetName)].main}15`, 
+                                  color: theme.palette[getAssetColor(req.assetName)].main,
+                                }}
+                              >
+                                <AssetIcon />
+                              </Avatar>
+                              <Typography fontWeight={600} sx={{ textTransform: 'capitalize' }}>
+                                {req.assetName}
+                              </Typography>
+                            </Stack>
+                          </TableCell>
+                          <TableCell>
+                            <StatusChip label={req.status} status={req.status} />
+                          </TableCell>
+                          <TableCell>
+                            <Typography fontWeight={600}>
+                              {req.approvedBy
+                                ? `${req.approvedBy.name} (${req.approvedBy.role})`
+                                : req.status === "pending"
+                                ? "Pending Approval"
+                                : "Not Approved"}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography fontWeight={600} color="text.primary">
+                              {formatDate(req.createdAt)}
+                            </Typography>
+                          </TableCell>
+                        </StyledTableRow>
+                      );
+                    })
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={4} align="center">
-                        <Typography color="text.secondary">
+                      <TableCell colSpan={4} align="center" sx={{ py: 8 }}>
+                        <FiPackage size={60} color={theme.palette.primary.main} style={{ opacity: 0.5 }} />
+                        <Typography variant="h5" color="primary.main" fontWeight={800} sx={{ mt: 3, opacity: 0.7 }}>
                           No requests found
+                        </Typography>
+                        <Typography variant="body1" color="text.secondary" sx={{ mt: 1.5, opacity: 0.5 }}>
+                          {searchTerm ? 'Try adjusting your search terms' : 'Start by requesting a new asset'}
                         </Typography>
                       </TableCell>
                     </TableRow>
@@ -486,74 +885,109 @@ const MyAssets = () => {
             </TableContainer>
           ) : (
             <Stack spacing={2}>
-              {filteredRequests.length ? (
-                filteredRequests.map((req) => (
-                  <Card key={req._id} sx={{ p: 2 }}>
-                    <Typography variant="subtitle1" fontWeight={600}>
-                      {req.assetName}
-                    </Typography>
-                    <Typography variant="body2">
-                      Status: {req.status}
-                    </Typography>
-                    <Typography variant="body2">
-                      Approved By:{" "}
-                      {req.approvedBy
-                        ? `${req.approvedBy.name} (${req.approvedBy.role})`
-                        : req.status === "pending"
-                        ? "Pending"
-                        : "--"}
-                    </Typography>
-                    <Typography variant="body2">
-                      Requested: {formatDate(req.createdAt)}
-                    </Typography>
-                  </Card>
-                ))
+              {filteredRequests.length > 0 ? (
+                filteredRequests.map((req) => {
+                  const AssetIcon = getAssetIcon(req.assetName);
+                  return (
+                    <GlassCard key={req._id} sx={{ p: 3 }}>
+                      <Stack spacing={2}>
+                        <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                          <Stack direction="row" alignItems="center" spacing={2}>
+                            <Avatar 
+                              sx={{ 
+                                bgcolor: `${theme.palette[getAssetColor(req.assetName)].main}15`, 
+                                color: theme.palette[getAssetColor(req.assetName)].main,
+                              }}
+                            >
+                              <AssetIcon />
+                            </Avatar>
+                            <Box>
+                              <Typography variant="h6" fontWeight={700} sx={{ textTransform: 'capitalize' }}>
+                                {req.assetName}
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                Requested on {formatDate(req.createdAt)}
+                              </Typography>
+                            </Box>
+                          </Stack>
+                          <StatusChip label={req.status} status={req.status} />
+                        </Stack>
+                        
+                        <Divider />
+                        
+                        <Typography variant="body2">
+                          <strong>Approved By:</strong>{' '}
+                          {req.approvedBy
+                            ? `${req.approvedBy.name} (${req.approvedBy.role})`
+                            : req.status === "pending"
+                            ? "Pending Approval"
+                            : "Not Approved"}
+                        </Typography>
+                      </Stack>
+                    </GlassCard>
+                  );
+                })
               ) : (
-                <Typography align="center" color="text.secondary">
-                  No requests found
-                </Typography>
+                <Box sx={{ textAlign: 'center', py: 6 }}>
+                  <FiPackage size={60} color={theme.palette.primary.main} style={{ opacity: 0.5 }} />
+                  <Typography variant="h5" color="primary.main" fontWeight={800} sx={{ mt: 3, opacity: 0.7 }}>
+                    No requests found
+                  </Typography>
+                  <Typography variant="body1" color="text.secondary" sx={{ mt: 1.5, opacity: 0.5 }}>
+                    {searchTerm ? 'Try adjusting your search terms' : 'Start by requesting a new asset'}
+                  </Typography>
+                </Box>
               )}
             </Stack>
           )}
-        </Card>
+        </GlassCard>
 
-        {/* Snackbar */}
+        {/* Enhanced Snackbar */}
         <Snackbar
           open={!!notification}
-          autoHideDuration={4000}
+          autoHideDuration={5000}
           onClose={() => setNotification(null)}
           anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         >
-          <Card
-            sx={{
-              background:
-                notification?.severity === "error"
-                  ? theme.palette.error.main
-                  : theme.palette.success.main,
+          <GlassCard 
+            sx={{ 
+              background: notification?.severity === "error" 
+                ? `linear-gradient(135deg, ${theme.palette.error.main} 0%, ${theme.palette.error.dark} 100%)`
+                : `linear-gradient(135deg, ${theme.palette.success.main} 0%, ${theme.palette.success.dark} 100%)`,
               color: "white",
-              borderRadius: 3,
-              boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
+              minWidth: 300,
             }}
           >
-            <CardContent sx={{ py: 1.5, px: 2 }}>
+            <CardContent sx={{ py: 2, px: 3 }}>
               <Stack direction="row" alignItems="center" spacing={2}>
                 {notification?.severity === "error" ? (
-                  <FiXCircle />
+                  <FiXCircle size={24} />
                 ) : (
-                  <FiCheckCircle />
+                  <FiCheckCircle size={24} />
                 )}
                 <Box>
-                  <Typography variant="body1" fontWeight={600}>
+                  <Typography variant="body1" fontWeight={700}>
                     {notification?.severity === "error" ? "Error" : "Success"}
                   </Typography>
-                  <Typography variant="body2">
+                  <Typography variant="body2" sx={{ opacity: 0.9 }}>
                     {notification?.message}
                   </Typography>
                 </Box>
               </Stack>
             </CardContent>
-          </Card>
+          </GlassCard>
         </Snackbar>
+
+        {/* Custom CSS for animations */}
+        <style jsx>{`
+          @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+          .spin {
+            animation: spin 1s linear infinite;
+          }
+        `}</style>
       </Box>
     </Fade>
   );

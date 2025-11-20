@@ -354,7 +354,7 @@ const AdminTaskManagement = () => {
 
       const queryString = new URLSearchParams(params).toString();
       
-      const tasksResult = await apiCall('get', `/task/assigned?${queryString}`);
+      const tasksResult = await apiCall('get', `/task/assigned`);
       
       // Handle tasks response
       const tasksArray = tasksResult.tasks || tasksResult.data || tasksResult.groupedTasks ? 

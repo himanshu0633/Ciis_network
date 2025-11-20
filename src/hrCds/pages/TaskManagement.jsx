@@ -17,7 +17,8 @@ import {
   FiCheck, FiX, FiAlertCircle, FiUser, FiBell, FiRefreshCw,
   FiMessageSquare, FiActivity, FiDownload, FiClock, FiCheckCircle,
   FiXCircle, FiFilter, FiSearch, FiLogOut, FiMessageCircle,
-  FiChevronLeft, FiChevronRight, FiX as FiClose
+  FiChevronLeft, FiChevronRight, FiX as FiClose, FiBarChart2,
+  FiTrendingUp, FiList, FiPieChart, FiTarget, FiUsers
 } from 'react-icons/fi';
 import { useTheme, useMediaQuery } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
@@ -167,6 +168,40 @@ const CalendarFilterButton = styled(Button)(({ theme, active }) => ({
   },
 }));
 
+const TimeFilterButton = styled(Button)(({ theme, active }) => ({
+  borderRadius: theme.shape.borderRadius,
+  border: `1px solid ${active ? theme.palette.primary.main : theme.palette.divider}`,
+  background: active ? `${theme.palette.primary.main}15` : 'transparent',
+  color: active ? theme.palette.primary.main : theme.palette.text.secondary,
+  fontWeight: active ? 600 : 400,
+  textTransform: 'none',
+  minWidth: 'auto',
+  px: 2,
+  fontSize: '0.75rem',
+  '&:hover': {
+    borderColor: theme.palette.primary.main,
+    backgroundColor: `${theme.palette.primary.main}08`,
+  },
+}));
+
+// Progress Bar Component
+const ProgressBar = styled(Box)(({ theme, progress, color }) => ({
+  width: '100%',
+  height: 6,
+  backgroundColor: theme.palette.grey[200],
+  borderRadius: 3,
+  overflow: 'hidden',
+  '&::after': {
+    content: '""',
+    display: 'block',
+    height: '100%',
+    width: `${progress}%`,
+    backgroundColor: color,
+    borderRadius: 3,
+    transition: 'width 0.3s ease',
+  },
+}));
+
 const statusColors = {
   pending: 'warning',
   'in-progress': 'info',
@@ -198,22 +233,29 @@ const UserCreateTask = () => {
   const [userName, setUserName] = useState('');
   const [authError, setAuthError] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(false);
 
-  // Task Management States - PAGINATION REMOVED
+  // Task Management States
   const [myTasksGrouped, setMyTasksGrouped] = useState({});
   const [statusFilter, setStatusFilter] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [stats, setStats] = useState({
+  
+  // Enhanced Stats State with Time Filters
+  const [taskStats, setTaskStats] = useState({
     total: 0,
-    pending: 0,
-    inProgress: 0,
-    completed: 0,
-    approved: 0,
-    rejected: 0,
-    onHold: 0,
-    reopen: 0,
-    cancelled: 0
+    pending: { count: 0, percentage: 0 },
+    inProgress: { count: 0, percentage: 0 },
+    completed: { count: 0, percentage: 0 },
+    approved: { count: 0, percentage: 0 },
+    rejected: { count: 0, percentage: 0 },
+    onHold: { count: 0, percentage: 0 },
+    reopen: { count: 0, percentage: 0 },
+    cancelled: { count: 0, percentage: 0 },
+    overdue: { count: 0, percentage: 0 }
   });
+
+  // Time Filter State
+  const [timeFilter, setTimeFilter] = useState('today');
 
   // Enhanced Features States
   const [notifications, setNotifications] = useState([]);
@@ -303,6 +345,90 @@ const UserCreateTask = () => {
     }
   };
 
+  // ✅ NEW: Fetch Task Status Counts with Time Filter
+  const fetchTaskStatusCounts = async (period = 'today') => {
+    if (!userId) return;
+    
+    setStatsLoading(true);
+    try {
+      const response = await axios.get(`/task/status-counts?period=${period}`);
+      
+      if (response.data.success) {
+        setTaskStats(response.data.statusCounts);
+      } else {
+        // Fallback to calculate from current tasks
+        calculateStatsFromTasks();
+      }
+    } catch (err) {
+      console.error('❌ Error fetching task status counts:', err);
+      // Fallback to calculate from current tasks
+      calculateStatsFromTasks();
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
+  // ✅ Calculate stats from tasks data if API fails
+  const calculateStatsFromTasks = () => {
+    if (Object.keys(myTasksGrouped).length === 0) {
+      setTaskStats({
+        total: 0,
+        pending: { count: 0, percentage: 0 },
+        inProgress: { count: 0, percentage: 0 },
+        completed: { count: 0, percentage: 0 },
+        approved: { count: 0, percentage: 0 },
+        rejected: { count: 0, percentage: 0 },
+        onHold: { count: 0, percentage: 0 },
+        reopen: { count: 0, percentage: 0 },
+        cancelled: { count: 0, percentage: 0 },
+        overdue: { count: 0, percentage: 0 }
+      });
+      return;
+    }
+    
+    let total = 0;
+    const statusCounts = {
+      pending: 0,
+      'in-progress': 0,
+      completed: 0,
+      approved: 0,
+      rejected: 0,
+      overdue: 0
+    };
+
+    Object.values(myTasksGrouped).forEach(dateTasks => {
+      dateTasks.forEach(task => {
+        total++;
+        const myStatus = getUserStatusForTask(task, userId);
+
+        if (statusCounts[myStatus] !== undefined) {
+          statusCounts[myStatus]++;
+        }
+
+        // Check overdue
+        if (task.dueDateTime && new Date(task.dueDateTime) < new Date() && 
+            myStatus !== 'completed') {
+          statusCounts.overdue++;
+        }
+      });
+    });
+
+    const calculatePercentage = (count) => total > 0 ? Math.round((count / total) * 100) : 0;
+
+    setTaskStats({
+      total,
+      pending: { count: statusCounts.pending, percentage: calculatePercentage(statusCounts.pending) },
+      inProgress: { count: statusCounts['in-progress'], percentage: calculatePercentage(statusCounts['in-progress']) },
+      completed: { count: statusCounts.completed, percentage: calculatePercentage(statusCounts.completed) },
+      approved: { count: statusCounts.approved, percentage: calculatePercentage(statusCounts.approved) },
+      rejected: { count: statusCounts.rejected, percentage: calculatePercentage(statusCounts.rejected) },
+      overdue: { count: statusCounts.overdue, percentage: calculatePercentage(statusCounts.overdue) },
+      onHold: { count: 0, percentage: 0 },
+      reopen: { count: 0, percentage: 0 },
+      cancelled: { count: 0, percentage: 0 }
+    });
+  };
+
   // Fetch function WITHOUT pagination
   const fetchMyTasks = useCallback(async () => {
     if (authError || !userId) {
@@ -317,13 +443,15 @@ const UserCreateTask = () => {
         ...(searchTerm && { search: searchTerm })
       });
 
-      const url = `/task?${params}`;
+      const url = `/task/my?${params}`;
       const res = await axios.get(url);
       
       const tasks = res.data.groupedTasks || {};
       
       setMyTasksGrouped(tasks);
-      calculateStats(tasks);
+      
+      // Fetch stats after getting tasks
+      await fetchTaskStatusCounts(timeFilter);
 
     } catch (err) {
       console.error('Error fetching tasks:', err);
@@ -340,12 +468,18 @@ const UserCreateTask = () => {
     } finally {
       setLoading(false);
     }
-  }, [authError, userId, statusFilter, searchTerm]);
+  }, [authError, userId, statusFilter, searchTerm, timeFilter]);
+
+  // Handle Time Filter Change
+  const handleTimeFilterChange = (period) => {
+    setTimeFilter(period);
+    fetchTaskStatusCounts(period);
+  };
 
   // Reset when filters change
   useEffect(() => {
     fetchMyTasks();
-  }, [statusFilter, searchTerm]);
+  }, [statusFilter, searchTerm, timeFilter]);
 
   // Enhanced Notifications Functions
   const fetchNotifications = async () => {
@@ -494,66 +628,6 @@ const UserCreateTask = () => {
   const filteredTasks = useMemo(() => {
     return applyDateFilter(myTasksGrouped);
   }, [myTasksGrouped, applyDateFilter]);
-
-  const calculateStats = (tasks) => {
-    let total = 0;
-    let pending = 0;
-    let inProgress = 0;
-    let completed = 0;
-    let approved = 0;
-    let rejected = 0;
-    let onHold = 0;
-    let reopen = 0;
-    let cancelled = 0;
-
-    Object.values(tasks).forEach(dateTasks => {
-      dateTasks.forEach(task => {
-        total++;
-        const myStatus = getUserStatusForTask(task, userId);
-
-        switch (myStatus) {
-          case 'pending':
-            pending++;
-            break;
-          case 'in-progress':
-            inProgress++;
-            break;
-          case 'completed':
-            completed++;
-            break;
-          case 'approved':
-            approved++;
-            break;
-          case 'rejected':
-            rejected++;
-            break;
-          case 'onhold':
-            onHold++;
-            break;
-          case 'reopen':
-            reopen++;
-            break;
-          case 'cancelled':
-            cancelled++;
-            break;
-          default:
-            break;
-        }
-      });
-    });
-
-    setStats({ 
-      total, 
-      pending, 
-      inProgress, 
-      completed, 
-      approved, 
-      rejected, 
-      onHold, 
-      reopen, 
-      cancelled 
-    });
-  };
 
   // Get individual user status for a task
   const getUserStatusForTask = (task, userId) => {
@@ -765,6 +839,132 @@ const UserCreateTask = () => {
     if (!dueDateTime) return false;
     return new Date(dueDateTime) < new Date();
   };
+
+  // ✅ NEW: Enhanced Statistics Cards Component
+  const renderStatisticsCards = () => {
+    const statsData = [
+      {
+        title: 'Total Tasks',
+        value: taskStats.total,
+        icon: FiList,
+        color: 'primary',
+        description: `All tasks (${timeFilter})`
+      },
+      {
+        title: 'Completed',
+        value: taskStats.completed.count,
+        percentage: taskStats.completed.percentage,
+        icon: FiCheckCircle,
+        color: 'success',
+        description: `${taskStats.completed.percentage}% of total`
+      },
+      {
+        title: 'In Progress',
+        value: taskStats.inProgress.count,
+        percentage: taskStats.inProgress.percentage,
+        icon: FiTrendingUp,
+        color: 'info',
+        description: `${taskStats.inProgress.percentage}% of total`
+      },
+      {
+        title: 'Pending',
+        value: taskStats.pending.count,
+        percentage: taskStats.pending.percentage,
+        icon: FiClock,
+        color: 'warning',
+        description: `${taskStats.pending.percentage}% of total`
+      },
+      {
+        title: 'Overdue',
+        value: taskStats.overdue.count,
+        percentage: taskStats.overdue.percentage,
+        icon: FiAlertCircle,
+        color: 'error',
+        description: `${taskStats.overdue.percentage}% of total`
+      },
+      {
+        title: 'Approved',
+        value: taskStats.approved.count,
+        percentage: taskStats.approved.percentage,
+        icon: FiTarget,
+        color: 'success',
+        description: `${taskStats.approved.percentage}% of total`
+      }
+    ];
+
+    return (
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        {statsData.map((stat, index) => (
+          <Grid item xs={6} sm={4} md={2} key={index}>
+            <StatCard color={stat.color}>
+              <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                <Stack spacing={1}>
+                  {/* Header */}
+                  <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                        {stat.title}
+                      </Typography>
+                      <Typography variant="h5" fontWeight={700} sx={{ mt: 0.5 }}>
+                        {stat.value}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ 
+                      p: 1, 
+                      borderRadius: 2, 
+                      bgcolor: `${theme.palette[stat.color].main}15`,
+                      color: theme.palette[stat.color].main
+                    }}>
+                      {React.createElement(stat.icon, { size: 18 })}
+                    </Box>
+                  </Stack>
+
+                  {/* Progress Bar for status tasks */}
+                  {stat.percentage !== undefined && (
+                    <ProgressBar 
+                      progress={stat.percentage} 
+                      color={theme.palette[stat.color].main}
+                    />
+                  )}
+
+                  {/* Description */}
+                  <Typography variant="caption" color="text.secondary">
+                    {stat.description}
+                  </Typography>
+                </Stack>
+              </CardContent>
+            </StatCard>
+          </Grid>
+        ))}
+      </Grid>
+    );
+  };
+
+  // ✅ NEW: Time Filter Component
+  const renderTimeFilter = () => (
+    <Box sx={{ mb: 2 }}>
+      <Typography variant="subtitle2" fontWeight={600} color="text.secondary" sx={{ mb: 1 }}>
+        FILTER BY TIME PERIOD:
+      </Typography>
+      <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+        {[
+          { value: 'today', label: 'Today' },
+          { value: 'week', label: 'This Week' },
+          { value: 'month', label: 'This Month' },
+          // { value: 'all', label: 'All Time' }
+        ].map((period) => (
+          <TimeFilterButton
+            key={period.value}
+            active={timeFilter === period.value}
+            onClick={() => handleTimeFilterChange(period.value)}
+            size="small"
+          >
+            {period.label}
+          </TimeFilterButton>
+        ))}
+      </Stack>
+    </Box>
+  );
 
   // Enhanced table cell with new action buttons
   const renderActionButtons = (task) => {
@@ -1958,6 +2158,36 @@ const UserCreateTask = () => {
             </Stack>
           </Paper>
 
+          {/* ✅ NEW: Statistics Section */}
+          <Paper sx={{
+            p: { xs: 2, sm: 3 },
+            mb: 3,
+            borderRadius: { xs: 2, sm: 3 },
+            boxShadow: 1,
+          }}>
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+              <FiBarChart2 color={theme.palette.primary.main} />
+              <Typography variant="h6" fontWeight={700}>
+                Task Statistics
+              </Typography>
+              {statsLoading && (
+                <CircularProgress size={16} sx={{ ml: 1 }} />
+              )}
+            </Stack>
+
+            {/* Time Filter */}
+            {renderTimeFilter()}
+
+            {/* Statistics Cards */}
+            {renderStatisticsCards()}
+
+            {/* Quick Stats Summary */}
+          
+              
+           
+           
+          </Paper>
+
           {/* Tasks Section */}
           <Paper sx={{
             borderRadius: { xs: 2, sm: 3 },
@@ -2105,4 +2335,4 @@ const UserCreateTask = () => {
   );
 };
 
-export default UserCreateTask;  
+export default UserCreateTask;

@@ -4,12 +4,14 @@ import {
   TableContainer, TableHead, TableRow, Paper, Chip, IconButton,
   Popover, Modal, Stack, useMediaQuery, Card, CardContent,
   InputAdornment, Button, Avatar, LinearProgress, Fade,
-  Tooltip, Divider, Grid
+  Tooltip, Divider, Grid, Menu, MenuItem, Tabs, Tab,
+  Drawer, useTheme, alpha
 } from '@mui/material';
 import {
   FiSearch, FiCalendar, FiClock, FiUser, FiTrendingUp,
-  FiDownload, FiEye, FiChevronRight,
-  FiCheckCircle, FiAlertCircle, FiMinusCircle
+  FiDownload, FiEye, FiChevronRight, FiFilter,
+  FiCheckCircle, FiAlertCircle, FiMinusCircle, FiX,
+  FiBarChart2, FiRefreshCw, FiMenu, FiGrid
 } from 'react-icons/fi';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -17,92 +19,220 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import axios from '../../utils/axiosConfig';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { useTheme } from '@mui/material/styles';
 import { styled } from '@mui/material/styles';
 
-// Styled Components
-const StatCard = styled(Card)(({ theme }) => ({
-  background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
-  borderRadius: theme.shape.borderRadius * 2,
-  boxShadow: theme.shadows[2],
-  transition: theme.transitions.create(['all'], {
-    duration: theme.transitions.duration.standard,
-  }),
+// Enhanced Glass Morphism Styled Components
+const GlassCard = styled(Card)(({ theme }) => ({
+  background: `linear-gradient(135deg, 
+    ${alpha(theme.palette.common.white, 0.95)} 0%, 
+    ${alpha(theme.palette.common.white, 0.85)} 100%)`,
+  backdropFilter: 'blur(20px)',
+  borderRadius: '20px',
+  border: `1px solid ${alpha(theme.palette.common.white, 0.2)}`,
+  boxShadow: `0 15px 35px ${alpha(theme.palette.common.black, 0.1)}`,
+  transition: 'all 0.3s ease',
+  [theme.breakpoints.down('sm')]: {
+    borderRadius: '16px',
+  },
   '&:hover': {
-    boxShadow: theme.shadows[6],
-    transform: 'translateY(-2px)',
+    boxShadow: `0 20px 40px ${alpha(theme.palette.common.black, 0.15)}`,
+    transform: 'translateY(-5px)',
+  },
+}));
+
+const StatCard = styled(GlassCard)(({ theme, active }) => ({
+  position: 'relative',
+  overflow: 'hidden',
+  height: '100%',
+  cursor: 'pointer',
+  background: active 
+    ? `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)} 0%, ${alpha(theme.palette.secondary.main, 0.1)} 100%)`
+    : `linear-gradient(135deg, ${alpha(theme.palette.common.white, 0.95)} 0%, ${alpha(theme.palette.common.white, 0.85)} 100%)`,
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '4px',
+    background: active ? `linear-gradient(90deg, 
+      ${theme.palette.primary.main} 0%, 
+      ${theme.palette.secondary.main} 100%)` : 'transparent',
+    [theme.breakpoints.down('sm')]: {
+      height: '3px',
+    },
   },
 }));
 
 const StyledTableRow = styled(TableRow)(({ theme, status }) => ({
   cursor: 'pointer',
-  transition: theme.transitions.create(['all'], {
-    duration: theme.transitions.duration.short,
-  }),
-  '&:hover': {
-    backgroundColor: theme.palette.action.hover,
-    transform: 'scale(1.01)',
+  transition: 'all 0.3s ease',
+  position: 'relative',
+  background: `linear-gradient(135deg, 
+    ${alpha(theme.palette.common.white, 0.9)} 0%, 
+    ${alpha(theme.palette.common.white, 0.8)} 100%)`,
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    left: 0,
+    top: '50%',
+    transform: 'translateY(-50%)',
+    width: '4px',
+    height: '70%',
+    borderRadius: '0 8px 8px 0',
+    background: 
+      status === 'PRESENT' ? `linear-gradient(180deg, ${theme.palette.success.main} 0%, ${theme.palette.success.dark} 100%)` :
+      status === 'ABSENT' ? `linear-gradient(180deg, ${theme.palette.error.main} 0%, ${theme.palette.error.dark} 100%)` :
+      status === 'HALF_DAY' ? `linear-gradient(180deg, ${theme.palette.warning.main} 0%, ${theme.palette.warning.dark} 100%)` :
+      `linear-gradient(180deg, ${theme.palette.grey[400]} 0%, ${theme.palette.grey[600]} 100%)`,
+    [theme.breakpoints.down('md')]: {
+      width: '3px',
+    },
   },
-  ...(status === 'PRESENT' && {
-    borderLeft: `4px solid ${theme.palette.success.main}`,
-  }),
-  ...(status === 'ABSENT' && {
-    borderLeft: `4px solid ${theme.palette.error.main}`,
-  }),
-  ...(status === 'HALF_DAY' && {
-    borderLeft: `4px solid ${theme.palette.warning.main}`,
-  }),
+  '&:hover': {
+    backgroundColor: alpha(theme.palette.primary.main, 0.08),
+    transform: 'translateX(8px)',
+    boxShadow: `0 8px 25px ${alpha(theme.palette.primary.main, 0.15)}`,
+  },
 }));
 
 const StatusChip = styled(Chip)(({ theme, status }) => ({
-  fontWeight: 600,
+  fontWeight: 700,
+  fontSize: '0.75rem',
+  borderRadius: '12px',
+  padding: '4px 12px',
+  height: '32px',
+  [theme.breakpoints.down('sm')]: {
+    fontSize: '0.7rem',
+    height: '28px',
+    padding: '2px 10px',
+  },
   ...(status === 'PRESENT' && {
-    background: `${theme.palette.success.main}20`,
+    background: `linear-gradient(135deg, ${alpha(theme.palette.success.main, 0.2)} 0%, ${alpha(theme.palette.success.main, 0.3)} 100%)`,
     color: theme.palette.success.dark,
-    border: `1px solid ${theme.palette.success.main}40`,
+    border: `2px solid ${alpha(theme.palette.success.main, 0.4)}`,
+    boxShadow: `0 4px 15px ${alpha(theme.palette.success.main, 0.2)}`,
   }),
   ...(status === 'ABSENT' && {
-    background: `${theme.palette.error.main}20`,
+    background: `linear-gradient(135deg, ${alpha(theme.palette.error.main, 0.2)} 0%, ${alpha(theme.palette.error.main, 0.3)} 100%)`,
     color: theme.palette.error.dark,
-    border: `1px solid ${theme.palette.error.main}40`,
+    border: `2px solid ${alpha(theme.palette.error.main, 0.4)}`,
+    boxShadow: `0 4px 15px ${alpha(theme.palette.error.main, 0.2)}`,
   }),
   ...(status === 'HALF_DAY' && {
-    background: `${theme.palette.warning.main}20`,
+    background: `linear-gradient(135deg, ${alpha(theme.palette.warning.main, 0.2)} 0%, ${alpha(theme.palette.warning.main, 0.3)} 100%)`,
     color: theme.palette.warning.dark,
-    border: `1px solid ${theme.palette.warning.main}40`,
+    border: `2px solid ${alpha(theme.palette.warning.main, 0.4)}`,
+    boxShadow: `0 4px 15px ${alpha(theme.palette.warning.main, 0.2)}`,
   }),
 }));
 
-const MobileRecordCard = styled(Card)(({ theme, status }) => ({
-  borderRadius: theme.shape.borderRadius * 2,
-  boxShadow: theme.shadows[2],
-  cursor: 'pointer',
-  transition: theme.transitions.create(['all'], {
-    duration: theme.transitions.duration.standard,
-  }),
-  borderLeft: `4px solid ${
-    status === 'PRESENT' ? theme.palette.success.main :
-    status === 'ABSENT' ? theme.palette.error.main :
-    status === 'HALF_DAY' ? theme.palette.warning.main :
-    theme.palette.divider
-  }`,
-  '&:hover': {
-    boxShadow: theme.shadows[6],
-    transform: 'translateY(-2px)',
+const MobileRecordCard = styled(GlassCard)(({ theme, status }) => ({
+  position: 'relative',
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    left: 0,
+    top: '50%',
+    transform: 'translateY(-50%)',
+    width: '5px',
+    height: '80%',
+    borderRadius: '0 8px 8px 0',
+    background: 
+      status === 'PRESENT' ? `linear-gradient(180deg, ${theme.palette.success.main} 0%, ${theme.palette.success.dark} 100%)` :
+      status === 'ABSENT' ? `linear-gradient(180deg, ${theme.palette.error.main} 0%, ${theme.palette.error.dark} 100%)` :
+      status === 'HALF_DAY' ? `linear-gradient(180deg, ${theme.palette.warning.main} 0%, ${theme.palette.warning.dark} 100%)` :
+      `linear-gradient(180deg, ${theme.palette.grey[400]} 0%, ${theme.palette.grey[600]} 100%)`,
   },
 }));
 
 const SearchField = styled(TextField)(({ theme }) => ({
   '& .MuiOutlinedInput-root': {
-    borderRadius: theme.shape.borderRadius * 2,
-    background: theme.palette.background.paper,
+    borderRadius: '16px',
+    background: `linear-gradient(135deg, 
+      ${alpha(theme.palette.common.white, 0.9)} 0%, 
+      ${alpha(theme.palette.common.white, 0.8)} 100%)`,
+    backdropFilter: 'blur(10px)',
+    transition: 'all 0.3s ease',
+    border: `2px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+    [theme.breakpoints.down('sm')]: {
+      borderRadius: '12px',
+    },
     '&:hover fieldset': {
-      borderColor: theme.palette.primary.main,
+      borderColor: alpha(theme.palette.primary.main, 0.3),
+      borderWidth: 2,
     },
     '&.Mui-focused fieldset': {
       borderColor: theme.palette.primary.main,
       borderWidth: 2,
+      boxShadow: `0 0 0 4px ${alpha(theme.palette.primary.main, 0.1)}`,
     },
+  },
+}));
+
+const GradientButton = styled(Button)(({ theme }) => ({
+  background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+  color: 'white',
+  fontWeight: 700,
+  borderRadius: '16px',
+  padding: '12px 24px',
+  textTransform: 'none',
+  boxShadow: `0 8px 25px ${alpha(theme.palette.primary.main, 0.4)}`,
+  transition: 'all 0.3s ease',
+  position: 'relative',
+  overflow: 'hidden',
+  [theme.breakpoints.down('sm')]: {
+    padding: '10px 20px',
+    fontSize: '0.9rem',
+    borderRadius: '12px',
+  },
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: '-100%',
+    width: '100%',
+    height: '100%',
+    background: `linear-gradient(90deg, transparent, ${alpha(theme.palette.common.white, 0.2)}, transparent)`,
+    transition: 'left 0.5s',
+  },
+  '&:hover': {
+    transform: 'translateY(-3px)',
+    boxShadow: `0 12px 35px ${alpha(theme.palette.primary.main, 0.6)}`,
+    '&::before': {
+      left: '100%',
+    },
+  },
+  '&:disabled': {
+    background: theme.palette.grey[400],
+    transform: 'none',
+    boxShadow: 'none',
+  },
+}));
+
+const ResponsiveTableContainer = styled(TableContainer)(({ theme }) => ({
+  borderRadius: '20px',
+  background: `linear-gradient(135deg, 
+    ${alpha(theme.palette.common.white, 0.95)} 0%, 
+    ${alpha(theme.palette.common.white, 0.85)} 100%)`,
+  '& .MuiTableCell-root': {
+    borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+    [theme.breakpoints.down('lg')]: {
+      padding: '16px 12px',
+      fontSize: '0.9rem',
+    },
+    [theme.breakpoints.down('md')]: {
+      padding: '12px 8px',
+      fontSize: '0.85rem',
+    },
+  },
+  '& .MuiTableHead-root .MuiTableCell-root': {
+    background: `linear-gradient(135deg, 
+      ${alpha(theme.palette.primary.main, 0.05)} 0%, 
+      ${alpha(theme.palette.secondary.main, 0.05)} 100%)`,
+    fontWeight: 700,
+    color: theme.palette.primary.dark,
+    fontSize: '0.95rem',
   },
 }));
 
@@ -114,24 +244,33 @@ const Attendance = () => {
   const [openModal, setOpenModal] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [timeRange, setTimeRange] = useState('ALL');
+  const [filterAnchorEl, setFilterAnchorEl] = useState(null);
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [stats, setStats] = useState({
     present: 0,
     absent: 0,
     halfDay: 0,
-    total: 0
+    total: 0,
+    percentage: 0
   });
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'lg'));
+  const isDesktop = useMediaQuery(theme.breakpoints.up('lg'));
 
   useEffect(() => {
     fetchAttendance();
   }, []);
 
-  const fetchAttendance = async () => {
-    setLoading(true);
+  const fetchAttendance = async (showRefresh = false) => {
+    if (showRefresh) setRefreshing(true);
+    else setLoading(true);
+    
     try {
       const token = localStorage.getItem('token');
       const res = await axios.get('/attendance/list', {
@@ -139,10 +278,12 @@ const Attendance = () => {
       });
       setAttendance(res.data.data);
       calculateStats(res.data.data);
+      if (showRefresh) toast.success('🔄 Attendance data refreshed!');
     } catch (err) {
       toast.error('❌ Failed to load attendance records');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -150,12 +291,15 @@ const Attendance = () => {
     const present = data.filter(record => record.status === 'PRESENT').length;
     const absent = data.filter(record => record.status === 'ABSENT').length;
     const halfDay = data.filter(record => record.status === 'HALF_DAY').length;
+    const total = data.length;
+    const percentage = total > 0 ? Math.round((present / total) * 100) : 0;
 
     setStats({
       present,
       absent,
       halfDay,
-      total: data.length
+      total,
+      percentage
     });
   };
 
@@ -173,19 +317,33 @@ const Attendance = () => {
   const formatTime = (timeStr) => {
     if (!timeStr) return '--';
     const date = new Date(timeStr);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString([], { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: true 
+    });
   };
 
   const getStatusIcon = (status) => {
+    const iconSize = isSmallMobile ? 16 : 18;
     switch (status) {
       case 'PRESENT':
-        return <FiCheckCircle color={theme.palette.success.main} />;
+        return <FiCheckCircle size={iconSize} />;
       case 'ABSENT':
-        return <FiMinusCircle color={theme.palette.error.main} />;
+        return <FiMinusCircle size={iconSize} />;
       case 'HALF_DAY':
-        return <FiAlertCircle color={theme.palette.warning.main} />;
+        return <FiAlertCircle size={iconSize} />;
       default:
-        return <FiClock color={theme.palette.text.secondary} />;
+        return <FiClock size={iconSize} />;
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'PRESENT': return theme.palette.success.main;
+      case 'ABSENT': return theme.palette.error.main;
+      case 'HALF_DAY': return theme.palette.warning.main;
+      default: return theme.palette.text.secondary;
     }
   };
 
@@ -209,7 +367,29 @@ const Attendance = () => {
       record.status.toLowerCase().includes(search.toLowerCase());
     const matchesStatus =
       statusFilter === 'ALL' || record.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    
+    // Time range filtering
+    const recordDate = new Date(record.date);
+    const now = new Date();
+    let matchesTimeRange = true;
+    
+    switch (timeRange) {
+      case 'TODAY':
+        matchesTimeRange = recordDate.toDateString() === now.toDateString();
+        break;
+      case 'WEEK':
+        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        matchesTimeRange = recordDate >= weekAgo;
+        break;
+      case 'MONTH':
+        const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+        matchesTimeRange = recordDate >= monthAgo;
+        break;
+      default:
+        matchesTimeRange = true;
+    }
+    
+    return matchesSearch && matchesStatus && matchesTimeRange;
   });
 
   const openDetailsModal = (record) => {
@@ -246,6 +426,22 @@ const Attendance = () => {
     toast.success('📊 CSV exported successfully!');
   };
 
+  const handleFilterClick = (event) => {
+    setFilterAnchorEl(event.currentTarget);
+  };
+
+  const handleFilterClose = () => {
+    setFilterAnchorEl(null);
+  };
+
+  const handleMobileFilterOpen = () => {
+    setMobileFilterOpen(true);
+  };
+
+  const handleMobileFilterClose = () => {
+    setMobileFilterOpen(false);
+  };
+
   if (loading) {
     return (
       <Box sx={{
@@ -253,222 +449,594 @@ const Attendance = () => {
         justifyContent: 'center',
         alignItems: 'center',
         minHeight: '100vh',
-        background: theme.palette.background.default
+        background: `linear-gradient(135deg, #667eea 0%, #764ba2 100%)`,
+        px: 2
       }}>
-        <LinearProgress sx={{ width: '100px' }} />
+        <Box sx={{ textAlign: 'center', maxWidth: 400, width: '100%' }}>
+          <LinearProgress 
+            sx={{ 
+              height: 8, 
+              borderRadius: 4,
+              mb: 3,
+              background: alpha('#fff', 0.2),
+              '& .MuiLinearProgress-bar': {
+                background: `linear-gradient(90deg, #fff 0%, ${alpha('#fff', 0.7)} 100%)`,
+                borderRadius: 4,
+              }
+            }} 
+          />
+          <Typography 
+            variant={isSmallMobile ? "h6" : "h5"} 
+            color="white"
+            fontWeight={700}
+            sx={{ opacity: 0.9 }}
+          >
+            Loading your attendance records...
+          </Typography>
+        </Box>
       </Box>
     );
   }
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Fade in={!loading} timeout={500}>
+      <Fade in={!loading} timeout={800}>
         <Box sx={{
-          px: { xs: 2, md: 4 },
-          py: 3,
-          background: theme.palette.background.default,
+          px: { xs: 2, sm: 3, md: 4, lg: 6 },
+          py: { xs: 3, sm: 4 },
+          background: `linear-gradient(135deg, #667eea 0%, #764ba2 100%)`,
           minHeight: '100vh'
         }}>
-          <ToastContainer position="top-right" autoClose={4000} />
+          <ToastContainer 
+            position={isMobile ? "top-center" : "top-right"}
+            autoClose={4000}
+            theme="light"
+          />
 
-          {/* Header */}
-          <Paper sx={{
-            p: 3, mb: 3,
-            borderRadius: theme.shape.borderRadius * 2,
-            background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
-            boxShadow: theme.shadows[4]
-          }}>
-            <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }}>
-              <Box>
-                <Typography variant="h4" fontWeight={800} gutterBottom>
-                  Attendance Records
-                </Typography>
-                <Typography variant="body1" color="text.secondary">
-                  Track your attendance history and statistics
-                </Typography>
-              </Box>
+          {/* Enhanced Header Section */}
+          {/* Enhanced Header Section */}
+<GlassCard sx={{ 
+  p: { xs: 3, sm: 4 }, 
+  mb: { xs: 3, sm: 4 },
+}}>
+  <Stack 
+    direction={{ xs: 'column', sm: 'row' }} 
+    spacing={{ xs: 3, sm: 4 }} 
+    justifyContent="space-between" 
+    alignItems={{ xs: 'stretch', sm: 'center' }}
+  >
+    {/* Header Text */}
+    <Box sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
+      <Typography 
+        variant={isSmallMobile ? "h4" : isMobile ? "h3" : "h2"}
+        fontWeight={900}
+        sx={{
+          background: `linear-gradient(135deg, #667eea 0%, #764ba2 100%)`,
+          backgroundClip: 'text',
+          WebkitBackgroundClip: 'text',
+          color: 'transparent',
+          mb: 1.5,
+          lineHeight: 1.1,
+          fontSize: {
+            xs: '2rem',
+            sm: '2.5rem',
+            md: '3rem',
+          }
+        }}
+      >
+        Attendance
+      </Typography>
+      <Typography 
+        variant={isSmallMobile ? "body2" : "body1"}
+        color="text.secondary" 
+        sx={{ 
+          opacity: 0.8, 
+          fontWeight: 500,
+          fontSize: {
+            xs: '0.875rem',
+            sm: '1rem',
+          }
+        }}
+      >
+        Track your attendance history and insights
+      </Typography>
+    </Box>
 
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
-                <SearchField
-                  placeholder="Search by date or status..."
-                  variant="outlined"
+    {/* Action Buttons - FIXED: Always in one row */}
+    <Stack 
+      direction="row" 
+      spacing={2} 
+      alignItems="center"
+      justifyContent={{ xs: 'center', sm: 'flex-end' }}
+      sx={{ 
+        width: { xs: '100%', sm: 'auto' },
+        flexWrap: { xs: 'nowrap', sm: 'nowrap' },
+        overflowX: { xs: 'auto', sm: 'visible' },
+        pb: { xs: 1, sm: 0 }, // Add some padding for scroll if needed
+        '& > *': {
+          flexShrink: 0, // Prevent buttons from shrinking
+        }
+      }}
+    >
+      <SearchField
+        placeholder="Search records..."
+        variant="outlined"
+        size="small"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <FiSearch color={theme.palette.primary.main} size={20} />
+            </InputAdornment>
+          ),
+          endAdornment: (
+            <InputAdornment position="end">
+              <Tooltip title="Filter by date">
+                <IconButton 
+                  onClick={handleCalendarClick} 
                   size="small"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <FiSearch color={theme.palette.text.secondary} />
-                      </InputAdornment>
-                    ),
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <Tooltip title="Filter by date">
-                          <IconButton onClick={handleCalendarClick} size="small">
-                            <FiCalendar color={theme.palette.primary.main} />
-                          </IconButton>
-                        </Tooltip>
-                      </InputAdornment>
-                    )
+                  sx={{ 
+                    p: 1,
+                    background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)} 0%, ${alpha(theme.palette.secondary.main, 0.1)} 100%)`,
+                    '&:hover': {
+                      background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.2)} 0%, ${alpha(theme.palette.secondary.main, 0.2)} 100%)`,
+                    }
                   }}
-                  sx={{ width: { xs: '100%', sm: 280 } }}
-                />
+                >
+                  <FiCalendar color={theme.palette.primary.main} size={18} />
+                </IconButton>
+              </Tooltip>
+            </InputAdornment>
+          )
+        }}
+        sx={{ 
+          width: { xs: 200, sm: 280, md: 320 }, // Fixed width to prevent stretching
+          minWidth: 200, // Minimum width on mobile
+        }}
+      />
 
-                <Tooltip title="Export to CSV">
+      {/* Filter Button */}
+      <Tooltip title="Filter options">
+        <IconButton
+          onClick={isMobile ? handleMobileFilterOpen : handleFilterClick}
+          sx={{
+            background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)} 0%, ${alpha(theme.palette.secondary.main, 0.1)} 100%)`,
+            borderRadius: '14px',
+            p: 1.5,
+            border: `2px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+            '&:hover': {
+              background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.2)} 0%, ${alpha(theme.palette.secondary.main, 0.2)} 100%)`,
+            }
+          }}
+        >
+          <FiFilter size={20} color={theme.palette.primary.main} />
+        </IconButton>
+      </Tooltip>
+
+      {/* Refresh Button */}
+      <Tooltip title="Refresh data">
+        <IconButton 
+          onClick={() => fetchAttendance(true)}
+          disabled={refreshing}
+          sx={{
+            background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)} 0%, ${alpha(theme.palette.secondary.main, 0.1)} 100%)`,
+            borderRadius: '14px',
+            p: 1.5,
+            border: `2px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+            '&:hover': {
+              background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.2)} 0%, ${alpha(theme.palette.secondary.main, 0.2)} 100%)`,
+            }
+          }}
+        >
+          <FiRefreshCw 
+            className={refreshing ? 'spin' : ''} 
+            size={20}
+            color={theme.palette.primary.main}
+          />
+        </IconButton>
+      </Tooltip>
+
+      {/* Export Button */}
+      <GradientButton
+        startIcon={<FiDownload size={18} />}
+        onClick={exportToCSV}
+        sx={{
+          minWidth: { xs: 100, sm: 120 }, // Fixed minimum width
+          whiteSpace: 'nowrap', // Prevent text wrapping
+        }}
+      >
+        {isSmallMobile ? 'Export' : 'Export CSV'}
+      </GradientButton>
+    </Stack>
+  </Stack>
+
+  {/* Time Range Tabs - FIXED: Better mobile handling */}
+  <Box sx={{ 
+    mt: { xs: 3, sm: 4 },
+    maxWidth: '100%',
+    overflow: 'auto'
+  }}>
+    <Tabs 
+      value={timeRange} 
+      onChange={(e, newValue) => setTimeRange(newValue)}
+      variant={isSmallMobile ? "scrollable" : "standard"}
+      scrollButtons={isSmallMobile ? "auto" : false}
+      sx={{
+        minHeight: '48px',
+        '& .MuiTab-root': {
+          textTransform: 'none',
+          fontWeight: 700,
+          borderRadius: '12px',
+          minHeight: '40px',
+          minWidth: 'auto',
+          px: { xs: 2, sm: 3 },
+          mx: 0.5,
+          fontSize: { xs: '0.8rem', sm: '0.9rem' },
+          transition: 'all 0.3s ease',
+          '&.Mui-selected': {
+            background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+            color: 'white',
+            boxShadow: `0 6px 20px ${alpha(theme.palette.primary.main, 0.4)}`,
+          }
+        }
+      }}
+    >
+      <Tab label="All Time" value="ALL" />
+      <Tab label="Today" value="TODAY" />
+      <Tab label="This Week" value="WEEK" />
+      <Tab label="This Month" value="MONTH" />
+    </Tabs>
+  </Box>
+
+  {/* Rest of your popover and menu code remains the same */}
+  <Popover
+    open={Boolean(anchorEl)}
+    anchorEl={anchorEl}
+    onClose={handleCalendarClose}
+    anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+    transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+  >
+    <GlassCard sx={{ p: 3 }}>
+      <DatePicker
+        value={selectedDate}
+        onChange={handleDateSelect}
+        renderInput={(params) => <TextField {...params} size="small" />}
+      />
+    </GlassCard>
+  </Popover>
+
+  <Menu
+    anchorEl={filterAnchorEl}
+    open={Boolean(filterAnchorEl)}
+    onClose={handleFilterClose}
+    PaperProps={{
+      sx: {
+        background: `linear-gradient(135deg, ${alpha(theme.palette.common.white, 0.98)} 0%, ${alpha(theme.palette.common.white, 0.92)} 100%)`,
+        backdropFilter: 'blur(20px)',
+        borderRadius: '16px',
+        border: `1px solid ${alpha(theme.palette.common.white, 0.2)}`,
+        boxShadow: `0 15px 35px ${alpha(theme.palette.common.black, 0.1)}`,
+        mt: 1,
+      }
+    }}
+  >
+    {['ALL', 'PRESENT', 'ABSENT', 'HALF_DAY'].map((status) => (
+      <MenuItem 
+        key={status}
+        onClick={() => { setStatusFilter(status); handleFilterClose(); }}
+        sx={{ 
+          fontWeight: 600, 
+          borderRadius: '8px', 
+          m: 0.5,
+          background: statusFilter === status ? alpha(theme.palette.primary.main, 0.1) : 'transparent'
+        }}
+      >
+        {status === 'ALL' ? 'All Status' : `${status.replace('_', ' ')} Only`}
+      </MenuItem>
+    ))}
+  </Menu>
+</GlassCard>
+
+          {/* Mobile Filter Drawer */}
+          <Drawer
+            anchor="right"
+            open={mobileFilterOpen}
+            onClose={handleMobileFilterClose}
+            sx={{
+              '& .MuiDrawer-paper': {
+                width: { xs: 300, sm: 350 },
+                p: 3,
+                background: `linear-gradient(135deg, ${alpha(theme.palette.common.white, 0.98)} 0%, ${alpha(theme.palette.common.white, 0.92)} 100%)`,
+                backdropFilter: 'blur(20px)',
+              }
+            }}
+          >
+            <Stack spacing={3}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="h5" fontWeight={800} color="primary.main">
+                  Filters
+                </Typography>
+                <IconButton 
+                  onClick={handleMobileFilterClose}
+                  sx={{
+                    background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)} 0%, ${alpha(theme.palette.secondary.main, 0.1)} 100%)`,
+                    borderRadius: '12px'
+                  }}
+                >
+                  <FiX size={20} color={theme.palette.primary.main} />
+                </IconButton>
+              </Stack>
+              
+              <Box>
+                <Typography variant="h6" fontWeight={700} gutterBottom color="primary.main">
+                  Status Filter
+                </Typography>
+                <Stack spacing={1.5}>
                   <Button
-                    variant="outlined"
-                    startIcon={<FiDownload />}
-                    onClick={exportToCSV}
-                    sx={{
-                      borderRadius: theme.shape.borderRadius * 2,
-                      textTransform: 'none',
-                      fontWeight: 600
+                    fullWidth
+                    variant={statusFilter === 'ALL' ? 'contained' : 'outlined'}
+                    onClick={() => { setStatusFilter('ALL'); handleMobileFilterClose(); }}
+                    sx={{ 
+                      justifyContent: 'flex-start',
+                      borderRadius: '12px',
+                      py: 1.5,
+                      fontWeight: 700
                     }}
                   >
-                    Export
+                    All Status
                   </Button>
-                </Tooltip>
-              </Stack>
-            </Stack>
-
-            <Popover
-              open={Boolean(anchorEl)}
-              anchorEl={anchorEl}
-              onClose={handleCalendarClose}
-              anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-              transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-            >
-              <Box sx={{ p: 2 }}>
-                <DatePicker
-                  value={selectedDate}
-                  onChange={handleDateSelect}
-                  renderInput={(params) => <TextField {...params} size="small" />}
-                />
+                  <Button
+                    fullWidth
+                    variant={statusFilter === 'PRESENT' ? 'contained' : 'outlined'}
+                    onClick={() => { setStatusFilter('PRESENT'); handleMobileFilterClose(); }}
+                    sx={{ 
+                      justifyContent: 'flex-start',
+                      borderRadius: '12px',
+                      py: 1.5,
+                      fontWeight: 700
+                    }}
+                    startIcon={<FiCheckCircle />}
+                  >
+                    Present
+                  </Button>
+                  <Button
+                    fullWidth
+                    variant={statusFilter === 'ABSENT' ? 'contained' : 'outlined'}
+                    onClick={() => { setStatusFilter('ABSENT'); handleMobileFilterClose(); }}
+                    sx={{ 
+                      justifyContent: 'flex-start',
+                      borderRadius: '12px',
+                      py: 1.5,
+                      fontWeight: 700
+                    }}
+                    startIcon={<FiMinusCircle />}
+                  >
+                    Absent
+                  </Button>
+                  <Button
+                    fullWidth
+                    variant={statusFilter === 'HALF_DAY' ? 'contained' : 'outlined'}
+                    onClick={() => { setStatusFilter('HALF_DAY'); handleMobileFilterClose(); }}
+                    sx={{ 
+                      justifyContent: 'flex-start',
+                      borderRadius: '12px',
+                      py: 1.5,
+                      fontWeight: 700
+                    }}
+                    startIcon={<FiAlertCircle />}
+                  >
+                    Half Day
+                  </Button>
+                </Stack>
               </Box>
-            </Popover>
-          </Paper>
+            </Stack>
+          </Drawer>
 
-          {/* Active Filter */}
-          {statusFilter !== 'ALL' && (
-            <Box sx={{ mb: 2 }}>
-              <Chip
-                label={`Filter: ${statusFilter}`}
-                color="primary"
-                onDelete={() => setStatusFilter('ALL')}
-                sx={{ fontWeight: 600 }}
-              />
+          {/* Enhanced Stat Cards Grid */}
+          <Grid 
+            container 
+            spacing={{ xs: 2, sm: 3, md: 4 }} 
+            sx={{ mb: { xs: 3, sm: 4, md: 5 } }}
+          >
+            {[
+              { 
+                key: 'present', 
+                label: 'Present Days', 
+                value: stats.present, 
+                icon: FiCheckCircle, 
+                color: 'success',
+                extra: `${stats.percentage}%`
+              },
+              { 
+                key: 'absent', 
+                label: 'Absent Days', 
+                value: stats.absent, 
+                icon: FiMinusCircle, 
+                color: 'error' 
+              },
+              { 
+                key: 'halfDay', 
+                label: 'Half Days', 
+                value: stats.halfDay, 
+                icon: FiAlertCircle, 
+                color: 'warning' 
+              },
+              { 
+                key: 'total', 
+                label: 'Total Records', 
+                value: stats.total, 
+                icon: FiBarChart2, 
+                color: 'info' 
+              }
+            ].map((stat) => (
+              <Grid item xs={6} sm={6} md={3} key={stat.key}>
+                <StatCard 
+                  active={statusFilter === stat.key.toUpperCase()}
+                  onClick={() => setStatusFilter(
+                    statusFilter === stat.key.toUpperCase() ? 'ALL' : stat.key.toUpperCase()
+                  )}
+                >
+                  <CardContent sx={{ p: { xs: 2.5, sm: 3 } }}>
+                    <Stack direction="row" alignItems="center" spacing={{ xs: 2, sm: 2.5 }}>
+                      <Avatar sx={{ 
+                        bgcolor: `${theme.palette[stat.color].main}15`, 
+                        color: theme.palette[stat.color].main,
+                        borderRadius: '16px',
+                        width: { xs: 50, sm: 60 },
+                        height: { xs: 50, sm: 60 },
+                        boxShadow: `0 8px 25px ${alpha(theme.palette[stat.color].main, 0.3)}`
+                      }}>
+                        <stat.icon size={isSmallMobile ? 22 : 26} />
+                      </Avatar>
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography 
+                          variant={isSmallMobile ? "body2" : "body1"}
+                          color="text.secondary" 
+                          sx={{ 
+                            opacity: 0.8,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            fontWeight: 600
+                          }}
+                        >
+                          {stat.label}
+                        </Typography>
+                        <Stack direction="row" alignItems="baseline" spacing={1}>
+                          <Typography 
+                            variant={isSmallMobile ? "h4" : "h3"}
+                            fontWeight={900}
+                            sx={{ lineHeight: 1 }}
+                          >
+                            {stat.value}
+                          </Typography>
+                          {stat.extra && (
+                            <Typography 
+                              variant="h6" 
+                              color={`${stat.color}.main`}
+                              fontWeight={800}
+                              sx={{ ml: 1 }}
+                            >
+                              {stat.extra}
+                            </Typography>
+                          )}
+                        </Stack>
+                      </Box>
+                    </Stack>
+                  </CardContent>
+                </StatCard>
+              </Grid>
+            ))}
+          </Grid>
+
+          {/* Active Filters Display */}
+          {(statusFilter !== 'ALL' || timeRange !== 'ALL') && (
+            <Box sx={{ mb: 3 }}>
+              <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap">
+                <Typography variant="h6" fontWeight={700} color="black" sx={{ mr: 2 }}>
+                  Active filters:
+                </Typography>
+                {statusFilter !== 'ALL' && (
+                  <Chip
+                    label={`Status: ${statusFilter}`}
+                    color="black"
+                    size="medium"
+                    onDelete={() => setStatusFilter('ALL')}
+                    sx={{ 
+                      mb: 1,
+                      fontWeight: 700,
+                      background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.2)} 0%, ${alpha(theme.palette.secondary.main, 0.2)} 100%)`,
+                      border: `2px solid ${alpha(theme.palette.primary.main, 0.3)}`,
+                    }}
+                  />
+                )}
+                {timeRange !== 'ALL' && (
+                  <Chip
+                    label={`Time: ${timeRange}`}
+                    color="secondary"
+                    size="medium"
+                    onDelete={() => setTimeRange('ALL')}
+                    sx={{ 
+                      mb: 1,
+                      fontWeight: 700,
+                      background: `linear-gradient(135deg, ${alpha(theme.palette.secondary.main, 0.2)} 0%, ${alpha(theme.palette.primary.main, 0.2)} 100%)`,
+                      border: `2px solid ${alpha(theme.palette.secondary.main, 0.3)}`,
+                    }}
+                  />
+                )}
+              </Stack>
             </Box>
           )}
 
-          {/* Stat Cards */}
-          <Grid container spacing={3} sx={{ mb: 4 }}>
-            {/* Present */}
-            <Grid item xs={12} sm={6} md={3}>
-              <StatCard
-                onClick={() => setStatusFilter('PRESENT')}
-                sx={{
-                  cursor: 'pointer',
-                  border: statusFilter === 'PRESENT' ? `2px solid ${theme.palette.success.main}` : 'none',
-                }}
-              >
-                <CardContent>
-                  <Stack direction="row" alignItems="center" spacing={2}>
-                    <Avatar sx={{ bgcolor: `${theme.palette.success.main}20`, color: theme.palette.success.main }}>
-                      <FiCheckCircle />
-                    </Avatar>
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">Present Days</Typography>
-                      <Typography variant="h4" fontWeight={700}>{stats.present}</Typography>
-                    </Box>
-                  </Stack>
-                </CardContent>
-              </StatCard>
-            </Grid>
+          {/* Results Count */}
+          <Box sx={{ mb: 3 }}>
+            <Typography 
+              variant="h6" 
+              color="black"
+              fontWeight={700}
+              sx={{ fontSize: { xs: '1rem', sm: '1.1rem' } }}
+            >
+              Showing {filteredData.length} of {attendance.length} records
+            </Typography>
+          </Box>
 
-            {/* Absent */}
-            <Grid item xs={12} sm={6} md={3}>
-              <StatCard
-                onClick={() => setStatusFilter('ABSENT')}
-                sx={{
-                  cursor: 'pointer',
-                  border: statusFilter === 'ABSENT' ? `2px solid ${theme.palette.error.main}` : 'none',
-                }}
-              >
-                <CardContent>
-                  <Stack direction="row" alignItems="center" spacing={2}>
-                    <Avatar sx={{ bgcolor: `${theme.palette.error.main}20`, color: theme.palette.error.main }}>
-                      <FiMinusCircle />
-                    </Avatar>
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">Absent Days</Typography>
-                      <Typography variant="h4" fontWeight={700}>{stats.absent}</Typography>
-                    </Box>
-                  </Stack>
-                </CardContent>
-              </StatCard>
-            </Grid>
-
-            {/* Half Day */}
-            <Grid item xs={12} sm={6} md={3}>
-              <StatCard
-                onClick={() => setStatusFilter('HALF_DAY')}
-                sx={{
-                  cursor: 'pointer',
-                  border: statusFilter === 'HALF_DAY' ? `2px solid ${theme.palette.warning.main}` : 'none',
-                }}
-              >
-                <CardContent>
-                  <Stack direction="row" alignItems="center" spacing={2}>
-                    <Avatar sx={{ bgcolor: `${theme.palette.warning.main}20`, color: theme.palette.warning.main }}>
-                      <FiAlertCircle />
-                    </Avatar>
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">Half Days</Typography>
-                      <Typography variant="h4" fontWeight={700}>{stats.halfDay}</Typography>
-                    </Box>
-                  </Stack>
-                </CardContent>
-              </StatCard>
-            </Grid>
-
-            {/* Total */}
-            <Grid item xs={12} sm={6} md={3}>
-              <StatCard
-                onClick={() => setStatusFilter('ALL')}
-                sx={{
-                  cursor: 'pointer',
-                  border: statusFilter === 'ALL' ? `2px solid ${theme.palette.info.main}` : 'none',
-                }}
-              >
-                <CardContent>
-                  <Stack direction="row" alignItems="center" spacing={2}>
-                    <Avatar sx={{ bgcolor: `${theme.palette.info.main}20`, color: theme.palette.info.main }}>
-                      <FiTrendingUp />
-                    </Avatar>
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">Total Records</Typography>
-                      <Typography variant="h4" fontWeight={700}>{stats.total}</Typography>
-                    </Box>
-                  </Stack>
-                </CardContent>
-              </StatCard>
-            </Grid>
-          </Grid>
-
-          {/* Desktop Table */}
+          {/* Enhanced Responsive Table for Desktop/Tablet */}
           {!isMobile && (
-            <StatCard>
+            <GlassCard>
               <CardContent sx={{ p: 0 }}>
-                <TableContainer>
+                <ResponsiveTableContainer>
                   <Table>
                     <TableHead>
-                      <TableRow>
-                        <TableCell sx={{ fontWeight: 700 }}>Date</TableCell>
-                        <TableCell sx={{ fontWeight: 700 }}>Login</TableCell>
-                        <TableCell sx={{ fontWeight: 700 }}>Logout</TableCell>
-                        <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
-                        <TableCell sx={{ fontWeight: 700 }}>Total Time</TableCell>
-                        <TableCell sx={{ fontWeight: 700 }}>Action</TableCell>
+                      <TableRow>       <TableCell sx={{ 
+                          fontWeight: 800, 
+                          fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' },
+                          py: { xs: 2, sm: 2.5 }
+                        }}>
+                          
+                        </TableCell>
+                        <TableCell sx={{ 
+                          fontWeight: 800, 
+                          fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' },
+                          py: { xs: 2, sm: 2.5 }
+                        }}>
+                          Date
+                        </TableCell>
+                        <TableCell sx={{ 
+                          fontWeight: 800, 
+                          fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' },
+                          py: { xs: 2, sm: 2.5 }
+                        }}>
+                          Login
+                        </TableCell>
+                        <TableCell sx={{ 
+                          fontWeight: 800, 
+                          fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' },
+                          py: { xs: 2, sm: 2.5 }
+                        }}>
+                          Logout
+                        </TableCell>
+                        <TableCell sx={{ 
+                          fontWeight: 800, 
+                          fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' },
+                          py: { xs: 2, sm: 2.5 }
+                        }}>
+                          Status
+                        </TableCell>
+                        <TableCell sx={{ 
+                          fontWeight: 800, 
+                          fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' },
+                          py: { xs: 2, sm: 2.5 }
+                        }}>
+                          Total Time
+                        </TableCell>
+                        <TableCell sx={{ 
+                          fontWeight: 800, 
+                          fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' },
+                          py: { xs: 2, sm: 2.5 }
+                        }}>
+                          Actions
+                        </TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -479,41 +1047,99 @@ const Attendance = () => {
                             status={record.status}
                             onClick={() => openDetailsModal(record)}
                           >
-                            <TableCell>{formatDate(record.date)}</TableCell>
-                            <TableCell>{formatTime(record.inTime)}</TableCell>
-                            <TableCell>{formatTime(record.outTime)}</TableCell>
+                            <TableCell>
+                              <Typography 
+                                variant="body1" 
+                                fontWeight={700}
+                                sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}
+                              >
+                                {formatDate(record.date)}
+                              </Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                <FiClock color={theme.palette.primary.main} size={18} />
+                                <Typography variant="body1" fontWeight={600}>
+                                  {formatTime(record.inTime)}
+                                </Typography>
+                              </Box>
+                            </TableCell>
+                            <TableCell>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                <FiClock color={theme.palette.primary.main} size={18} />
+                                <Typography variant="body1" fontWeight={600}>
+                                  {formatTime(record.outTime)}
+                                </Typography>
+                              </Box>
+                            </TableCell>
                             <TableCell>
                               <StatusChip
-                                label={record.status}
+                                label={record.status.replace('_', ' ')}
                                 status={record.status}
-                                size="small"
+                                size="medium"
                                 icon={getStatusIcon(record.status)}
                               />
                             </TableCell>
-                            <TableCell>{record.totalTime || '00:00:00'}</TableCell>
+                            <TableCell>
+                              <Typography 
+                                variant="body1" 
+                                fontWeight={800}
+                                color="primary.main"
+                                sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}
+                              >
+                                {record.totalTime || '00:00:00'}
+                              </Typography>
+                            </TableCell>
                             <TableCell>
                               <Tooltip title="View Details">
-                                <IconButton size="small"><FiEye /></IconButton>
+                                <IconButton 
+                                  size="medium"
+                                  sx={{
+                                    background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)} 0%, ${alpha(theme.palette.secondary.main, 0.1)} 100%)`,
+                                    borderRadius: '12px',
+                                    p: 1.5,
+                                    '&:hover': {
+                                      background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.2)} 0%, ${alpha(theme.palette.secondary.main, 0.2)} 100%)`,
+                                      transform: 'scale(1.1)',
+                                    }
+                                  }}
+                                >
+                                  <FiEye size={18} color={theme.palette.primary.main} />
+                                </IconButton>
                               </Tooltip>
                             </TableCell>
                           </StyledTableRow>
                         ))
                       ) : (
                         <TableRow>
-                          <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                            <FiUser size={48} color={theme.palette.text.secondary} />
-                            <Typography variant="h6" color="text.secondary">No records found</Typography>
+                          <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
+                            <FiUser size={60} color={theme.palette.primary.main} style={{ opacity: 0.5 }} />
+                            <Typography 
+                              variant={isSmallMobile ? "h5" : "h4"} 
+                              color="primary.main" 
+                              fontWeight={800}
+                              sx={{ mt: 3, opacity: 0.7 }}
+                            >
+                              No attendance records found
+                            </Typography>
+                            <Typography 
+                              variant="h6" 
+                              color="text.secondary" 
+                              sx={{ mt: 1.5, opacity: 0.5, fontWeight: 600 }}
+                            >
+                              Try adjusting your filters or search terms
+                            </Typography>
                           </TableCell>
                         </TableRow>
                       )}
                     </TableBody>
                   </Table>
-                </TableContainer>
+                </ResponsiveTableContainer>
               </CardContent>
-            </StatCard>
+            </GlassCard>
           )}
 
-          {/* Mobile Cards */}
+          {/* Enhanced Mobile Cards */}
           {isMobile && (
             <Stack spacing={2}>
               {filteredData.length > 0 ? (
@@ -523,92 +1149,222 @@ const Attendance = () => {
                     status={record.status}
                     onClick={() => openDetailsModal(record)}
                   >
-                    <CardContent>
+                    <CardContent sx={{ p: { xs: 3, sm: 3.5 } }}>
                       <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
-                        <Box sx={{ flex: 1 }}>
-                          <Typography variant="h6" fontWeight={600}>{formatDate(record.date)}</Typography>
-                          <Stack spacing={1}>
-                            <Typography variant="body2">In: {formatTime(record.inTime)}</Typography>
-                            <Typography variant="body2">Out: {formatTime(record.outTime)}</Typography>
-                            <Stack direction="row" spacing={2} alignItems="center">
-                              <StatusChip label={record.status} status={record.status} size="small" />
-                              <Typography variant="body2" fontWeight={500}>
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Typography 
+                            variant={isSmallMobile ? "h6" : "h5"} 
+                            fontWeight={800} 
+                            gutterBottom
+                            sx={{ 
+                              fontSize: { xs: '1.1rem', sm: '1.3rem' },
+                              lineHeight: 1.3
+                            }}
+                          >
+                            {formatDate(record.date)}
+                          </Typography>
+                          <Stack spacing={1.5}>
+                            <Stack 
+                              direction={isSmallMobile ? "column" : "row"} 
+                              spacing={isSmallMobile ? 1 : 4}
+                              alignItems={isSmallMobile ? "flex-start" : "center"}
+                            >
+                              <Box sx={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: 1,
+                                minWidth: isSmallMobile ? 'auto' : 120
+                              }}>
+                                <FiClock size={16} color={theme.palette.primary.main} />
+                                <Typography 
+                                  variant="body1"
+                                  fontWeight={600}
+                                  sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}
+                                >
+                                  In: {formatTime(record.inTime)}
+                                </Typography>
+                              </Box>
+                              <Box sx={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: 1,
+                                minWidth: isSmallMobile ? 'auto' : 120
+                              }}>
+                                <FiClock size={16} color={theme.palette.primary.main} />
+                                <Typography 
+                                  variant="body1"
+                                  fontWeight={600}
+                                  sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}
+                                >
+                                  Out: {formatTime(record.outTime)}
+                                </Typography>
+                              </Box>
+                            </Stack>
+                            <Stack 
+                              direction="row" 
+                              spacing={2} 
+                              alignItems="center"
+                              flexWrap="wrap"
+                            >
+                              <StatusChip 
+                                label={record.status.replace('_', ' ')} 
+                                status={record.status} 
+                                size="medium" 
+                              />
+                              <Typography 
+                                variant="h6" 
+                                fontWeight={800}
+                                color="primary.main"
+                                sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}
+                              >
                                 {record.totalTime || '00:00:00'}
                               </Typography>
                             </Stack>
                           </Stack>
                         </Box>
-                        <FiChevronRight color={theme.palette.text.secondary} />
+                        <FiChevronRight 
+                          color={theme.palette.primary.main} 
+                          size={isSmallMobile ? 20 : 24}
+                          style={{ marginTop: 4 }} 
+                        />
                       </Stack>
                     </CardContent>
                   </MobileRecordCard>
                 ))
               ) : (
-                <Box sx={{ textAlign: 'center', py: 4 }}>
-                  <FiUser size={48} color={theme.palette.text.secondary} />
-                  <Typography variant="h6" color="text.secondary">No records found</Typography>
-                </Box>
+                <GlassCard sx={{ textAlign: 'center', py: 8 }}>
+                  <FiUser size={60} color={theme.palette.primary.main} style={{ opacity: 0.5 }} />
+                  <Typography 
+                    variant={isSmallMobile ? "h5" : "h4"} 
+                    color="primary.main" 
+                    fontWeight={800}
+                    sx={{ mt: 3, opacity: 0.7 }}
+                  >
+                    No records found
+                  </Typography>
+                  <Typography 
+                    variant="h6" 
+                    color="text.secondary" 
+                    sx={{ mt: 1.5, opacity: 0.5, fontWeight: 600 }}
+                  >
+                    Adjust your search or filters
+                  </Typography>
+                </GlassCard>
               )}
             </Stack>
           )}
 
-          {/* Modal */}
-          <Modal open={openModal} onClose={closeModal}>
+          {/* Enhanced Responsive Modal */}
+          <Modal 
+            open={openModal} 
+            onClose={closeModal}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              p: 2
+            }}
+          >
             <Fade in={openModal}>
               <Box sx={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                width: isSmallMobile ? '90%' : 400,
-                bgcolor: 'background.paper',
-                borderRadius: theme.shape.borderRadius * 2,
-                boxShadow: theme.shadows[24],
-                overflow: 'hidden'
+                width: '100%',
+                maxWidth: { xs: '95%', sm: 500, md: 550 },
+                maxHeight: '90vh',
+                overflow: 'auto',
+                background: `linear-gradient(135deg, 
+                  ${alpha(theme.palette.common.white, 0.98)} 0%, 
+                  ${alpha(theme.palette.common.white, 0.92)} 100%)`,
+                borderRadius: '24px',
+                boxShadow: `0 32px 64px ${alpha(theme.palette.common.black, 0.3)}`,
+                border: `1px solid ${alpha(theme.palette.common.white, 0.2)}`,
+                backdropFilter: 'blur(20px)'
               }}>
                 {selectedRecord && (
                   <>
                     <Box sx={{
-                      p: 3,
-                      background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-                      color: 'white'
+                      p: { xs: 3, sm: 4 },
+                      background: `linear-gradient(135deg, ${getStatusColor(selectedRecord.status)} 0%, ${theme.palette.primary.main} 100%)`,
+                      color: 'white',
+                      textAlign: 'center',
+                      borderRadius: '24px 24px 0 0'
                     }}>
-                      <Typography variant="h5" fontWeight={700}>Attendance Details</Typography>
-                      <Typography variant="body1">{formatDate(selectedRecord.date)}</Typography>
+                      <Typography 
+                        variant={isSmallMobile ? "h4" : "h3"}
+                        fontWeight={900}
+                      >
+                        Attendance Details
+                      </Typography>
+                      <Typography 
+                        variant={isSmallMobile ? "h6" : "h5"}
+                        sx={{ opacity: 0.9, mt: 1, fontWeight: 700 }}
+                      >
+                        {formatDate(selectedRecord.date)}
+                      </Typography>
                     </Box>
 
-                    <Box sx={{ p: 3 }}>
-                      <Stack spacing={2}>
-                        <Stack direction="row" justifyContent="space-between">
-                          <Typography>Status</Typography>
-                          <StatusChip label={selectedRecord.status} status={selectedRecord.status} />
+                    <Box sx={{ p: { xs: 3, sm: 4 } }}>
+                      <Stack spacing={3}>
+                        <Stack direction="row" justifyContent="space-between" alignItems="center">
+                          <Typography 
+                            variant={isSmallMobile ? "h6" : "h5"}
+                            fontWeight={800}
+                            color="primary.main"
+                          >
+                            Status
+                          </Typography>
+                          <StatusChip 
+                            label={selectedRecord.status.replace('_', ' ')} 
+                            status={selectedRecord.status} 
+                            size="large"
+                          />
                         </Stack>
-                        <Divider />
-                        <Stack direction="row" justifyContent="space-between">
-                          <Typography>Login</Typography>
-                          <Typography>{formatTime(selectedRecord.inTime)}</Typography>
+                        <Divider sx={{ borderColor: alpha(theme.palette.primary.main, 0.2) }} />
+                        <Stack direction="row" justifyContent="space-between" alignItems="center">
+                          <Typography 
+                            variant={isSmallMobile ? "h6" : "h5"}
+                            fontWeight={800}
+                            color="primary.main"
+                          >
+                            Login Time
+                          </Typography>
+                          <Typography variant={isSmallMobile ? "h6" : "h5"} fontWeight={700}>
+                            {formatTime(selectedRecord.inTime)}
+                          </Typography>
                         </Stack>
-                        <Stack direction="row" justifyContent="space-between">
-                          <Typography>Logout</Typography>
-                          <Typography>{formatTime(selectedRecord.outTime)}</Typography>
+                        <Stack direction="row" justifyContent="space-between" alignItems="center">
+                          <Typography 
+                            variant={isSmallMobile ? "h6" : "h5"}
+                            fontWeight={800}
+                            color="primary.main"
+                          >
+                            Logout Time
+                          </Typography>
+                          <Typography variant={isSmallMobile ? "h6" : "h5"} fontWeight={700}>
+                            {formatTime(selectedRecord.outTime)}
+                          </Typography>
                         </Stack>
-                        <Stack direction="row" justifyContent="space-between">
-                          <Typography>Total Time</Typography>
-                          <Typography fontWeight={600}>{selectedRecord.totalTime || '00:00:00'}</Typography>
+                        <Stack direction="row" justifyContent="space-between" alignItems="center">
+                          <Typography 
+                            variant={isSmallMobile ? "h6" : "h5"}
+                            fontWeight={800}
+                            color="primary.main"
+                          >
+                            Total Duration
+                          </Typography>
+                          <Typography 
+                            variant={isSmallMobile ? "h5" : "h4"}
+                            fontWeight={900} 
+                            color="primary.main"
+                          >
+                            {selectedRecord.totalTime || '00:00:00'}
+                          </Typography>
                         </Stack>
-                        <Button
-                          fullWidth
-                          variant="contained"
+                        <GradientButton
                           onClick={closeModal}
-                          sx={{
-                            mt: 3,
-                            borderRadius: theme.shape.borderRadius * 2,
-                            py: 1.5,
-                            fontWeight: 600
-                          }}
+                          sx={{ mt: 2, py: 2 }}
                         >
-                          Close
-                        </Button>
+                          Close Details
+                        </GradientButton>
                       </Stack>
                     </Box>
                   </>
@@ -616,6 +1372,17 @@ const Attendance = () => {
               </Box>
             </Fade>
           </Modal>
+
+          {/* Custom CSS for spinning animation */}
+          <style jsx>{`
+            @keyframes spin {
+              from { transform: rotate(0deg); }
+              to { transform: rotate(360deg); }
+            }
+            .spin {
+              animation: spin 1s linear infinite;
+            }
+          `}</style>
         </Box>
       </Fade>
     </LocalizationProvider>

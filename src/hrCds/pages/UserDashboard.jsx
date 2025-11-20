@@ -5,7 +5,8 @@ import 'react-toastify/dist/ReactToastify.css';
 import {
   FiClock, FiCalendar, FiTrendingUp, FiAward,
   FiChevronLeft, FiChevronRight, FiPlay, FiSquare, FiRefreshCw,
-  FiUser, FiBriefcase, FiCheckCircle, FiAlertCircle
+  FiUser, FiBriefcase, FiCheckCircle, FiAlertCircle,
+  FiBarChart2, FiPieChart
 } from 'react-icons/fi';
 import {
   MdToday, MdAccessTime, MdWork, MdBeachAccess, MdSick
@@ -71,23 +72,67 @@ const UserDashboard = () => {
   const [attendanceHistory, setAttendanceHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [recentTasks, setRecentTasks] = useState([]);
-  const [error, setError] = useState(null);
-  const [tasksLoading, setTasksLoading] = useState(false);
+
+  // New states for task status graph
+ // New states for task status graph
+const [taskStats, setTaskStats] = useState({
+  total: 0,
+  pending: { count: 0, percentage: 0 },
+  inProgress: { count: 0, percentage: 0 },
+  completed: { count: 0, percentage: 0 },
+  overdue: { count: 0, percentage: 0 },
+  rejected: { count: 0, percentage: 0 },
+  onHold: { count: 0, percentage: 0 },
+  reopen: { count: 0, percentage: 0 },
+  cancelled: { count: 0, percentage: 0 }
+});
+  const [timeFilter, setTimeFilter] = useState('today'); // today, week, month
+  const [graphLoading, setGraphLoading] = useState(false);
 
   // Auto clock-out references
   const autoClockOutTimeoutRef = useRef(null);
   const autoClockOutIntervalRef = useRef(null);
 
-  // Debug function to check data
+  // ✅ Fetch Task Status Counts for Graph
+  const fetchTaskStatusCounts = async (period = 'today') => {
+    try {
+      setGraphLoading(true);
+      const token = localStorage.getItem('token');
+      
+      const response = await axios.get(`/task/status-counts?period=${period}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
 
+      if (response.data.success) {
+        setTaskStats(response.data.statusCounts);
+      }
+      
+    } catch (err) {
+      console.error('❌ Error fetching task status counts:', err);
+      toast.error('Failed to load task statistics');
+    } finally {
+      setGraphLoading(false);
+    }
+  };
+
+  // ✅ Handle Time Filter Change
+  const handleTimeFilterChange = (period) => {
+    setTimeFilter(period);
+    fetchTaskStatusCounts(period);
+  };
+
+  // ✅ Refresh Graph Data
+  const handleRefreshGraph = () => {
+    fetchTaskStatusCounts(timeFilter);
+  };
 
   // ✅ Auto Clock-out Setup
   const setupAutoClockOut = () => {
     const now = new Date();
     const targetTime = new Date();
-    
-
     targetTime.setHours(20, 0, 0, 0); // 8:00 PM
     
     if (now > targetTime) {
@@ -95,17 +140,13 @@ const UserDashboard = () => {
     }
     
     const timeUntilTarget = targetTime.getTime() - now.getTime();
-    
 
-  
     if (autoClockOutTimeoutRef.current) {
       clearTimeout(autoClockOutTimeoutRef.current);
     }
-    
 
     autoClockOutTimeoutRef.current = setTimeout(() => {
       autoClockOut();
-      
       autoClockOutIntervalRef.current = setInterval(autoClockOut, 24 * 60 * 60 * 1000);
     }, timeUntilTarget);
   };
@@ -116,8 +157,6 @@ const UserDashboard = () => {
       const token = localStorage.getItem('token');
       const isRunning = localStorage.getItem('isRunning') === 'true';
       
-      // Only proceed if user is currently clocked in
-
       const res = await axios.post('/attendance/out', {}, { 
         headers: { Authorization: `Bearer ${token}` } 
       });
@@ -141,8 +180,6 @@ const UserDashboard = () => {
       await fetchStats();
       await fetchAttendanceHistory();
       
-
-      
     } catch (error) {
       console.error('❌ Auto clock-out error:', error);
       toast.error("❌ Auto clock-out failed");
@@ -162,74 +199,11 @@ const UserDashboard = () => {
       
       // If last clock-in was before today's 8 PM and it's after 8 PM now
       if (lastClockInDate < today8PM && now > today8PM) {
-      
         toast.info("🕗 Processing auto clock-out for previous session...");
         await autoClockOut();
       }
     }
   };
-
-  // ✅ CORRECTED: Recent tasks fetch करने का function
-  const fetchRecentTasks = async () => {
-    try {
-      setTasksLoading(true);
-      setError(null);
-      
-      const token = localStorage.getItem('token');
-      
-      const response = await axios.get('/task/my', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-   
-
-      // ✅ FIXED: API response structure के according data extract करें
-      let tasksData = [];
-      
-      if (response.data.groupedTasks) {
-        // groupedTasks से सभी tasks को एक array में combine करें
-        Object.values(response.data.groupedTasks).forEach(dateGroup => {
-          if (Array.isArray(dateGroup)) {
-            tasksData = tasksData.concat(dateGroup);
-          }
-        });
-      } else if (response.data.tasks) {
-        tasksData = response.data.tasks;
-      } else if (response.data.data) {
-        tasksData = response.data.data;
-      } else if (Array.isArray(response.data)) {
-        tasksData = response.data;
-      }
-
-  
-
-      // Tasks को created date के descending order में sort करें और latest 3 tasks लें
-      const sortedTasks = tasksData
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-        .slice(0, 3);
-
-      setRecentTasks(sortedTasks);
-      
-    } catch (err) {
-      console.error('❌ Error fetching recent tasks:', err);
-      setError('Failed to load recent activities');
-      toast.error('Failed to load recent activities');
-    } finally {
-      setTasksLoading(false);
-    }
-  };
-
-  // ✅ Refresh button handler
-  const handleRefreshTasks = () => {
-    fetchRecentTasks();
-  };
-
-  useEffect(() => {
-    fetchRecentTasks();
-  }, []);
 
   const fetchStats = async () => {
     const token = localStorage.getItem('token');
@@ -237,7 +211,6 @@ const UserDashboard = () => {
       const res = await axios.get('/attendance/stats', { 
         headers: { Authorization: `Bearer ${token}` } 
       });
- 
       setStats(prev => ({ ...prev, ...res.data }));
     } catch (error) {
       console.error('❌ Error fetching stats:', error);
@@ -250,7 +223,6 @@ const UserDashboard = () => {
       const res = await axios.get('/attendance/history', {
         headers: { Authorization: `Bearer ${token}` }
       });
-      // console.log('📅 Attendance History:', res.data);
       setAttendanceHistory(res.data || []);
     } catch (error) {
       console.error('❌ Error fetching history:', error);
@@ -261,18 +233,14 @@ const UserDashboard = () => {
   const fetchLeaves = async () => {
     const token = localStorage.getItem('token');
     try {
-      // console.log('🔄 Fetching leaves...');
       const res = await axios.get('http://localhost:3000/api/leaves/status', {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
       
       if (res.data.leaves && Array.isArray(res.data.leaves)) {
         const approvedLeaves = res.data.leaves.filter(leave => 
           leave.status === 'Approved' || leave.status === 'APPROVED'
         );
-        
-        // console.log('✅ Approved Leaves:', approvedLeaves);
         
         const leaveDatesArray = [];
         
@@ -281,14 +249,11 @@ const UserDashboard = () => {
             const startDate = new Date(leave.startDate);
             const endDate = new Date(leave.endDate);
             
-            // console.log(`📅 Processing approved leave from ${startDate.toDateString()} to ${endDate.toDateString()}`);
-            
             // Add all dates in the leave range
             const currentDate = new Date(startDate);
             while (currentDate <= endDate) {
               const dateKey = `${currentDate.getFullYear()}-${currentDate.getMonth()}-${currentDate.getDate()}`;
               leaveDatesArray.push(dateKey);
-              // console.log(`   Added leave date: ${dateKey}`);
               currentDate.setDate(currentDate.getDate() + 1);
             }
           } catch (err) {
@@ -296,16 +261,12 @@ const UserDashboard = () => {
           }
         });
         
-        // console.log('✅ Final Leave Dates Array:', leaveDatesArray);
         setLeaveDates(leaveDatesArray);
       } else {
-        // console.log('ℹ️ No leaves data found');
         setLeaveDates([]);
       }
     } catch (error) {
       console.error('❌ Error fetching leaves:', error);
-      // console.log('Error details:', error.response?.data || error.message);
-      // toast.error('Failed to load leave data');
       setLeaveDates([]);
     }
   };
@@ -314,8 +275,6 @@ const UserDashboard = () => {
     setLoading(true);
     const token = localStorage.getItem('token');
     try {
-      // console.log('🔄 Fetching attendance data...');
-      
       const [statusRes, listRes] = await Promise.all([
         axios.get('/attendance/status', { 
           headers: { Authorization: `Bearer ${token}` } 
@@ -324,7 +283,6 @@ const UserDashboard = () => {
           headers: { Authorization: `Bearer ${token}` } 
         })
       ]);
-
 
       setTodayStatus(statusRes.data);
       
@@ -369,7 +327,6 @@ const UserDashboard = () => {
           }
         });
       }
- 
       
       setMarkedDates([...new Set(dates)]);
       setDailyTimeMap(timeMap);
@@ -378,7 +335,6 @@ const UserDashboard = () => {
       
     } catch (error) {
       console.error('❌ Error fetching data:', error);
-     
       toast.error('Failed to load attendance data');
     } finally {
       setLoading(false);
@@ -387,21 +343,18 @@ const UserDashboard = () => {
 
   useEffect(() => {
     const initializeData = async () => {
-
       try {
         await fetchData();
         await fetchStats();
         await fetchAttendanceHistory();
         await fetchLeaves();
+        await fetchTaskStatusCounts('today');
         
         // Check for missed clock-out
         await checkMissedClockOut();
         
         // Setup auto clock-out
         setupAutoClockOut();
-        
-        // Debug after all data is loaded
-        setTimeout(debugData, 1000);
       } catch (error) {
         console.error('❌ Error initializing data:', error);
       }
@@ -561,26 +514,83 @@ const UserDashboard = () => {
   const totalDaysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
   const attendanceRate = Math.round((monthlyPresentCount / totalDaysInMonth) * 100);
 
-  // ✅ Task status check function
-  const getTaskStatus = (task) => {
-    // Check if task has statusInfo array
-    if (task.statusInfo && Array.isArray(task.statusInfo)) {
-      const userStatus = task.statusInfo.find(status => 
-        status.userId === user?._id || status.userId === user?.id
-      );
-      return userStatus?.status || 'pending';
+  // ✅ Graph Data Preparation for Chart
+  const getGraphData = () => {
+  return [
+    { 
+      status: 'Pending', 
+      count: taskStats.pending.count, 
+      percentage: taskStats.pending.percentage,
+      color: '#ffc107',
+      icon: '⏳'
+    },
+    { 
+      status: 'In Progress', 
+      count: taskStats.inProgress.count, 
+      percentage: taskStats.inProgress.percentage,
+      color: '#17a2b8',
+      icon: '🔄'
+    },
+    { 
+      status: 'Completed', 
+      count: taskStats.completed.count, 
+      percentage: taskStats.completed.percentage,
+      color: '#28a745',
+      icon: '✅'
+    },
+    { 
+      status: 'Overdue', 
+      count: taskStats.overdue.count, 
+      percentage: taskStats.overdue.percentage,
+      color: '#dc3545',
+      icon: '⚠️'
+    },
+    { 
+      status: 'Rejected', 
+      count: taskStats.rejected.count, 
+      percentage: taskStats.rejected.percentage,
+      color: '#dc3545',
+      icon: '❌'
+    },
+    { 
+      status: 'On Hold', 
+      count: taskStats.onHold.count, 
+      percentage: taskStats.onHold.percentage,
+      color: '#6c757d',
+      icon: '⏸️'
+    },
+    { 
+      status: 'Reopen', 
+      count: taskStats.reopen.count, 
+      percentage: taskStats.reopen.percentage,
+      color: '#fd7e14',
+      icon: '↩️'
+    },
+    { 
+      status: 'Cancelled', 
+      count: taskStats.cancelled.count, 
+      percentage: taskStats.cancelled.percentage,
+      color: '#6c757d',
+      icon: '🚫'
     }
-    
-    // Fallback to statusByUser array
-    if (task.statusByUser && Array.isArray(task.statusByUser)) {
-      const userStatus = task.statusByUser.find(status => 
-        status.user === user?._id || status.user === user?.id
-      );
-      return userStatus?.status || 'pending';
-    }
-    
-    return 'pending';
-  };
+  ];
+};
+
+  // ✅ Calculate Bar Heights for Graph
+  // ✅ Calculate Bar Heights for Graph (with all statuses)
+const calculateBarHeight = (count) => {
+  const maxCount = Math.max(
+    taskStats.pending.count,
+    taskStats.inProgress.count,
+    taskStats.completed.count,
+    taskStats.overdue.count,
+    taskStats.rejected.count,
+    taskStats.onHold.count,
+    taskStats.reopen.count,
+    taskStats.cancelled.count
+  );
+  return maxCount > 0 ? (count / maxCount) * 100 : 0;
+};
 
   return (
     <div className="dashboard-container">
@@ -595,9 +605,6 @@ const UserDashboard = () => {
         draggable
         pauseOnHover
       />
-
-      {/* Debug Button - Remove in production */}
-  
 
       {/* Enhanced Header Section */}
       <div className="dashboard-header">
@@ -634,7 +641,7 @@ const UserDashboard = () => {
               <div className="timer-value-large">{formatTime(timer)}</div>
               <div className="timer-status">
                 {isRunning ? 'Active Timer' : 'Timer Stopped'}
-                {isRunning && <span className="auto-clockout-note">(Auto clock-out at 8 PM)</span>}
+                {/* {isRunning && <span className="auto-clockout-note">(Auto clock-out at 8 PM)</span>} */}
               </div>
             </div>
             <div className="clock-buttons">
@@ -666,7 +673,7 @@ const UserDashboard = () => {
         <div className="left-column">
           
           {/* Enhanced Timer Card */}
-          <div className="timer-card">
+          {/* <div className="timer-card">
             <div className="card-header">
               <h3><FiClock /> Live Timer</h3>
               <span className={`status-badge ${isRunning ? 'active' : 'inactive'}`}>
@@ -682,11 +689,6 @@ const UserDashboard = () => {
                     Clocked in at {new Date(todayStatus.inTime).toLocaleTimeString()}
                   </p>
                 )}
-                {/* {isRunning && (
-                  <p className="auto-clockout-info">
-                    ⏰ Auto clock-out scheduled for 8:00 PM
-                  </p>
-                )} */}
               </div>
               
               <div className="timer-stats">
@@ -702,7 +704,7 @@ const UserDashboard = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </div> */}
 
           {/* Enhanced Calendar Card */}
           <div className="calendar-card">
@@ -786,11 +788,123 @@ const UserDashboard = () => {
           </div>
         </div>
 
-        {/* Right Column - Stats & Activities */}
+        {/* Right Column - Stats & Graph */}
         <div className="right-column">
 
           {/* Enhanced Stats Grid */}
-          <div className="stats-grid-enhanced">
+          
+
+          {/* 🔥 NEW: Task Status Graph Card */}
+          <div className="graph-card-enhanced">
+            <div className="graph-header">
+              <div className="graph-title-section">
+                <FiBarChart2 size={20} />
+                <h3>Task Status Overview</h3>
+                <span className="total-tasks-badge">
+                  Total: {taskStats.total}
+                </span>
+              </div>
+              
+              <div className="graph-controls">
+                <div className="time-filters">
+                  <button 
+                    className={`time-filter-btn ${timeFilter === 'today' ? 'active' : ''}`}
+                    onClick={() => handleTimeFilterChange('today')}
+                  >
+                    Today
+                  </button>
+                  <button 
+                    className={`time-filter-btn ${timeFilter === 'week' ? 'active' : ''}`}
+                    onClick={() => handleTimeFilterChange('week')}
+                  >
+                    This Week
+                  </button>
+                  <button 
+                    className={`time-filter-btn ${timeFilter === 'month' ? 'active' : ''}`}
+                    onClick={() => handleTimeFilterChange('month')}
+                  >
+                    This Month
+                  </button>
+                </div>
+                
+                <button 
+                  onClick={handleRefreshGraph}
+                  className="refresh-graph-btn"
+                  disabled={graphLoading}
+                >
+                  <FiRefreshCw size={14} className={graphLoading ? 'spinning' : ''} />
+                </button>
+              </div>
+            </div>
+
+            <div className="graph-content">
+              {graphLoading ? (
+                <div className="graph-loading-state">
+                  <div className="loading-spinner"></div>
+                  <p>Loading task statistics...</p>
+                </div>
+              ) : taskStats.total === 0 ? (
+                <div className="graph-empty-state">
+                  <FiPieChart size={48} />
+                  <p>No tasks found for {timeFilter}</p>
+                  <span>Tasks will appear here when assigned or created</span>
+                </div>
+              ) : (
+                <>
+                  {/* Bar Graph */}
+                  <div className="bar-graph-container">
+                    <div className="bar-graph">
+                      {getGraphData().map((item, index) => (
+                        <div key={item.status} className="bar-item">
+                          <div className="bar-label">
+                            <span className="bar-icon">{item.icon}</span>
+                            <span className="bar-status">{item.status}</span>
+                          </div>
+                          <div className="bar-wrapper">
+                            <div 
+                              className="bar-fill"
+                              style={{
+                                height: `${calculateBarHeight(item.count)}%`,
+                                backgroundColor: item.color
+                              }}
+                              title={`${item.count} tasks (${item.percentage}%)`}
+                            >
+                              <div className="bar-count">{item.count}</div>
+                            </div>
+                          </div>
+                          <div className="bar-percentage">{item.percentage}%</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Statistics Summary */}
+                  <div className="graph-stats-summary">
+                    {getGraphData().map((item) => (
+                      <div key={item.status} className="stat-summary-item">
+                        <div 
+                          className="stat-color-indicator"
+                          style={{ backgroundColor: item.color }}
+                        ></div>
+                        <div className="stat-summary-content">
+                          <span className="stat-summary-label">{item.status}</span>
+                          <span className="stat-summary-value">
+                            {item.count} ({item.percentage}%)
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>  
+      </div>
+<br />
+      {/* Monthly Summary Stats */}
+      <div>
+        <div className="stats-grid-enhanced">
             <div className="stat-card-enhanced present">
               <div className="stat-icon-container">
                 <MdWork size={20} />
@@ -824,81 +938,6 @@ const UserDashboard = () => {
               </div>
             </div>
           </div>
-
-          {/* Enhanced Activity Card */}
-          <div className="activity-card-enhanced">
-            <div className="activity-header">
-              <h3>Recent Activities</h3>
-              <button 
-                onClick={handleRefreshTasks}
-                className="refresh-btn-enhanced"
-                disabled={tasksLoading}
-              >
-                <FiRefreshCw size={16} className={tasksLoading ? 'spinning' : ''} />
-                {tasksLoading ? 'Refreshing...' : 'Refresh'}
-              </button>
-            </div>
-            
-            <div className="activity-list-enhanced">
-              {tasksLoading ? (
-                <div className="loading-state">
-                  <div className="loading-spinner"></div>
-                  <p>Loading activities...</p>
-                </div>
-              ) : error ? (
-                <div className="error-state">
-                  <FiAlertCircle size={32} />
-                  <p>{error}</p>
-                  <button onClick={handleRefreshTasks} className="retry-btn">
-                    Try Again
-                  </button>
-                </div>
-              ) : recentTasks.length > 0 ? (
-                recentTasks.map((task, index) => {
-                  const taskStatus = getTaskStatus(task);
-                  return (
-                    <div key={task._id || index} className="activity-item-enhanced">
-                      <div className="activity-item-header">
-                        <div className="activity-type-indicator"></div>
-                        <span className="activity-date">
-                          {new Date(task.createdAt).toLocaleDateString('en-US', {
-                            day: 'numeric',
-                            month: 'short'
-                          })}
-                        </span>
-                        <span className={`task-status ${taskStatus}`}>
-                          {taskStatus.charAt(0).toUpperCase() + taskStatus.slice(1)}
-                        </span>
-                      </div>
-                      <p className="activity-title">{task.title || 'Untitled Task'}</p>
-                      {task.description && (
-                        <p className="activity-description">
-                          {task.description.length > 80 
-                            ? `${task.description.substring(0, 80)}...` 
-                            : task.description
-                          }
-                        </p>
-                      )}
-                      {task.projectId?.projectName && (
-                        <div className="activity-project">
-                          Project: {task.projectId.projectName}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="empty-state">
-                  <FiCheckCircle size={32} />
-                  <p>No recent activities found</p>
-                  <button onClick={handleRefreshTasks} className="retry-btn">
-                    Refresh
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
