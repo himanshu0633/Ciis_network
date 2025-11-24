@@ -713,6 +713,7 @@ const MyLeaves = () => {
                     <Table>
                       <TableHead>
                         <TableRow>
+                          <TableCell sx={{ fontWeight: 800, fontSize: '1.1rem', py: 2.5 }}></TableCell>
                           <TableCell sx={{ fontWeight: 800, fontSize: '1.1rem', py: 2.5 }}>Type</TableCell>
                           <TableCell sx={{ fontWeight: 800, fontSize: '1.1rem', py: 2.5 }}>Start Date</TableCell>
                           <TableCell sx={{ fontWeight: 800, fontSize: '1.1rem', py: 2.5 }}>End Date</TableCell>

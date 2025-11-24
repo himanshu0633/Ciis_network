@@ -24,6 +24,7 @@ import Profile from './hrCds/pages/Profile';
 import UserDashboard from './hrCds/pages/UserDashboard';
 import AdminTaskCreate from './hrCds/pages/hr/AdminTaskCreate';
 import AdminMeetingPage from './hrCds/pages/hr/AdminMeetingPage';
+import Landing from './page/Landing';
 //hr
 import EmppDetail from './hrCds/pages/hr/EmppDetail';
 import EmppLeave from './hrCds/pages/hr/EmppLeaves';
@@ -40,7 +41,8 @@ function App() {
   return (
     <>
       <Routes>
-        <Route index element={<Login />} />
+        <Route index element={<Landing />} />
+        <Route path="login" element={<Login />} /> 
         <Route
           path="/cds/admin/*"
           element={
@@ -50,6 +52,7 @@ function App() {
               </ProtectedRoute>
             </ThemeContextProvider>
           }>
+          
           <Route path="create-user" element={<CreateUser />} />
           <Route path="change-password" element={<ChangePassword />} />
           <Route path="emp-details" element={<EmppDetail />} />

@@ -397,7 +397,7 @@
 }
 
 .calendar-day.leave {
-  background: linear-gradient(135deg, #FFA500, #ff8c00);
+  background: linear-gradient(135deg, #ff8c00, #ff8c00);
   color: white;
 }
 
@@ -1727,4 +1727,223 @@ html {
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(102, 126, 234, 0.7);
+}
+/* Add these new styles to your existing UserDashboard.css */
+
+/* Half Day Button */
+.clock-btn.half-day {
+  background: linear-gradient(135deg, #FFA500, #ff8c00);
+  color: white;
+}
+
+.clock-btn.half-day:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(255, 165, 0, 0.4);
+}
+
+/* Half Day Calendar Styles */
+.calendar-day.halfday {
+  background: linear-gradient(135deg, #045608, #ff8c00);
+  color: white;
+  position: relative;
+}
+
+.halfday-indicator {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 5px;
+  height: 5px;
+  background: white;
+  border-radius: 50%;
+  opacity: 0.8;
+}
+
+.legend-color.halfday {
+  background: linear-gradient(135deg, #045608, #ff8c00);
+}
+
+/* Work Hours Analysis Card */
+.work-hours-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.work-hours-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 15px;
+}
+
+.work-hour-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(102, 126, 234, 0.05);
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.work-hour-item:hover {
+  background: rgba(102, 126, 234, 0.1);
+  transform: translateY(-2px);
+}
+
+.work-hour-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: rgba(102, 126, 234, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #667eea;
+  flex-shrink: 0;
+}
+
+.work-hour-icon.overtime {
+  background: rgba(255, 107, 107, 0.1);
+  color: #ff6b6b;
+}
+
+.work-hour-details {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.work-hour-label {
+  font-size: 0.7rem;
+  color: #718096;
+  font-weight: 500;
+}
+
+.work-hour-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.work-hour-value.overtime {
+  color: #ff6b6b;
+}
+
+/* Performance Metrics Card */
+.additional-stats-section {
+  margin-top: 20px;
+}
+
+.performance-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.performance-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 15px;
+}
+
+.performance-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(102, 126, 234, 0.05);
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.performance-item:hover {
+  background: rgba(102, 126, 234, 0.1);
+  transform: translateY(-2px);
+}
+
+.performance-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: rgba(102, 126, 234, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #667eea;
+  flex-shrink: 0;
+}
+
+.performance-details {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.performance-label {
+  font-size: 0.7rem;
+  color: #718096;
+  font-weight: 500;
+}
+
+.performance-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+/* Stats Card Common Styles */
+.stats-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Half Day Stat Card */
+.stat-card-enhanced.halfday {
+  border-left: 4px solid #FFA500;
+}
+
+.stat-card-enhanced.halfday .stat-icon-container {
+  background: rgba(255, 165, 0, 0.1);
+  color: #FFA500;
+}
+
+/* Responsive Design Updates */
+@media (max-width: 768px) {
+  .clock-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .clock-btn {
+    max-width: 200px;
+    width: 100%;
+  }
+  
+  .work-hours-content,
+  .performance-content {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .work-hours-content,
+  .performance-content {
+    grid-template-columns: 1fr;
+  }
+  
+  .work-hour-item,
+  .performance-item {
+    justify-content: flex-start;
+  }
 }
