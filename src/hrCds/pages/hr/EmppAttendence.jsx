@@ -24,6 +24,10 @@ import {
   useMediaQuery,
   Snackbar,
   InputAdornment,
+  IconButton,
+  Tooltip,
+  Container,
+  alpha,
 } from "@mui/material";
 import {
   FiCalendar,
@@ -33,6 +37,11 @@ import {
   FiXCircle,
   FiAlertCircle,
   FiTrendingUp,
+  FiSearch,
+  FiFilter,
+  FiRefreshCw,
+  FiDownload,
+  FiEye,
 } from "react-icons/fi";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
@@ -40,70 +49,136 @@ import format from "date-fns/format";
 import EmployeeTypeFilter from "../../Filter/EmployeeTypeFilter";
 import { styled } from "@mui/material/styles";
 
-// Styled Components
-const StatCard = styled(Card)(({ theme, color = "primary", active }) => ({
-  borderRadius: theme.shape.borderRadius * 2,
-  boxShadow: theme.shadows[2],
-  borderLeft: `4px solid ${theme.palette[color].main}`,
-  transition: "all 0.3s ease",
+// Enhanced Styled Components
+const GradientStatCard = styled(Card)(({ theme, color = "primary", active }) => ({
+  background: active 
+    ? `linear-gradient(135deg, ${theme.palette[color].main}15, ${theme.palette[color].main}08)`
+    : theme.palette.background.paper,
+  borderRadius: theme.shape.borderRadius * 3,
+  boxShadow: active ? theme.shadows[8] : theme.shadows[2],
+  border: `1px solid ${active ? theme.palette[color].main + '40' : theme.palette.divider}`,
+  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
   cursor: "pointer",
-  transform: active ? "scale(1.05)" : "scale(1)",
+  transform: active ? "translateY(-4px)" : "translateY(0)",
+  position: "relative",
+  overflow: "hidden",
   "&:hover": {
-    boxShadow: theme.shadows[6],
-    transform: "scale(1.05)",
+    boxShadow: theme.shadows[8],
+    transform: "translateY(-4px)",
+    border: `1px solid ${theme.palette[color].main + '60'}`,
   },
+  "&::before": active ? {
+    content: '""',
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 3,
+    background: `linear-gradient(90deg, ${theme.palette[color].main}, ${theme.palette[color].light})`,
+  } : {},
 }));
 
 const StatusChip = styled(Chip)(({ theme, status }) => ({
-  fontWeight: 600,
+  fontWeight: 700,
+  borderRadius: 20,
   ...(status === "present" && {
-    background: `${theme.palette.success.main}20`,
-    color: theme.palette.success.dark,
+    background: `linear-gradient(45deg, ${theme.palette.success.main}, ${theme.palette.success.light})`,
+    color: theme.palette.success.contrastText,
+    boxShadow: `0 2px 8px ${theme.palette.success.main}40`,
   }),
   ...(status === "halfday" && {
-    background: `${theme.palette.warning.main}20`,
-    color: theme.palette.warning.dark,
+    background: `linear-gradient(45deg, ${theme.palette.warning.main}, ${theme.palette.warning.light})`,
+    color: theme.palette.warning.contrastText,
+    boxShadow: `0 2px 8px ${theme.palette.warning.main}40`,
   }),
   ...(status === "absent" && {
-    background: `${theme.palette.error.main}20`,
-    color: theme.palette.error.dark,
+    background: `linear-gradient(45deg, ${theme.palette.error.main}, ${theme.palette.error.light})`,
+    color: theme.palette.error.contrastText,
+    boxShadow: `0 2px 8px ${theme.palette.error.main}40`,
   }),
 }));
 
 const EmployeeTypeChip = styled(Chip)(({ theme, type }) => ({
-  fontWeight: 500,
+  fontWeight: 600,
+  borderRadius: 16,
+  fontSize: "0.75rem",
   ...(type === "full-time" && {
-    background: `${theme.palette.success.main}20`,
+    background: `${theme.palette.success.main}15`,
     color: theme.palette.success.dark,
+    border: `1px solid ${theme.palette.success.main}30`,
   }),
   ...(type === "part-time" && {
-    background: `${theme.palette.warning.main}20`,
+    background: `${theme.palette.warning.main}15`,
     color: theme.palette.warning.dark,
+    border: `1px solid ${theme.palette.warning.main}30`,
   }),
   ...(type === "contract" && {
-    background: `${theme.palette.info.main}20`,
+    background: `${theme.palette.info.main}15`,
     color: theme.palette.info.dark,
+    border: `1px solid ${theme.palette.info.main}30`,
   }),
   ...(type === "intern" && {
-    background: `${theme.palette.secondary.main}20`,
+    background: `${theme.palette.secondary.main}15`,
     color: theme.palette.secondary.dark,
+    border: `1px solid ${theme.palette.secondary.main}30`,
   }),
 }));
 
 const StyledTableRow = styled(TableRow)(({ theme, status }) => ({
-  transition: "all 0.2s ease",
+  transition: "all 0.3s ease",
   "&:hover": {
     backgroundColor: theme.palette.action.hover,
+    transform: "scale(1.01)",
+  },
+  "& td": {
+    borderBottom: `1px solid ${theme.palette.divider}`,
   },
   ...(status === "present" && {
-    borderLeft: `4px solid ${theme.palette.success.main}`,
+    background: `${theme.palette.success.main}08`,
+    "&:hover": {
+      background: `${theme.palette.success.main}12`,
+    },
   }),
   ...(status === "halfday" && {
-    borderLeft: `4px solid ${theme.palette.warning.main}`,
+    background: `${theme.palette.warning.main}08`,
+    "&:hover": {
+      background: `${theme.palette.warning.main}12`,
+    },
   }),
   ...(status === "absent" && {
-    borderLeft: `4px solid ${theme.palette.error.main}`,
+    background: `${theme.palette.error.main}08`,
+    "&:hover": {
+      background: `${theme.palette.error.main}12`,
+    },
   }),
+}));
+
+const EnhancedHeader = styled(Box)(({ theme }) => ({
+  background: `linear-gradient(135deg, ${theme.palette.primary.main}15, ${theme.palette.secondary.main}10)`,
+  borderRadius: theme.shape.borderRadius * 3,
+  padding: theme.spacing(4),
+  marginBottom: theme.spacing(4),
+  border: `1px solid ${theme.palette.divider}`,
+  position: "relative",
+  overflow: "hidden",
+  "&::before": {
+    content: '""',
+    position: "absolute",
+    top: -50,
+    right: -50,
+    width: 120,
+    height: 120,
+    borderRadius: "50%",
+    background: `linear-gradient(45deg, ${theme.palette.primary.main}20, transparent)`,
+  },
+}));
+
+const FilterSection = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(3),
+  borderRadius: theme.shape.borderRadius * 2,
+  background: theme.palette.background.paper,
+  boxShadow: theme.shadows[1],
+  border: `1px solid ${theme.palette.divider}`,
 }));
 
 const EmppAttendence = () => {
@@ -129,6 +204,7 @@ const EmppAttendence = () => {
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+
   useEffect(() => {
     fetchData(selectedDate);
   }, [selectedDate]);
@@ -173,6 +249,15 @@ const EmppAttendence = () => {
     setStatusFilter("all");
     setSelectedEmployeeType("all");
     setSearchTerm("");
+  };
+
+  const exportData = () => {
+    // Implement export functionality
+    setSnackbar({
+      open: true,
+      message: "Export feature coming soon!",
+      severity: "info",
+    });
   };
 
   const filteredRecords = useMemo(() => {
@@ -229,70 +314,207 @@ const EmppAttendence = () => {
           .join("")
           .toUpperCase()
       : "U";
+
   if (loading && records.length === 0) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", minHeight: "50vh" }}>
-        <LinearProgress sx={{ width: "60%" }} />
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "50vh" }}>
+        <Box sx={{ width: "60%", textAlign: "center" }}>
+          <LinearProgress sx={{ height: 8, borderRadius: 4 }} />
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+            Loading attendance data...
+          </Typography>
+        </Box>
       </Box>
     );
   }
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Fade in={!loading}>
-        <Box sx={{ p: { xs: 2, md: 3 } }}>
-          {/* Header + Filters */}
-          <Paper sx={{ p: 3, mb: 3, borderRadius: 4 }}>
+      <Fade in={!loading} timeout={500}>
+        <Container maxWidth="xl" sx={{ py: { xs: 2, md: 3 } }}>
+          {/* Enhanced Header */}
+          <EnhancedHeader>
             <Stack spacing={3}>
-              <Typography variant="h4" fontWeight={800}>
-                Attendance Management
-              </Typography>
-              <Stack
-                direction={{ xs: "column", sm: "row" }}
-                spacing={2}
-                alignItems={{ xs: "stretch", sm: "center" }}
-              >
-                <DatePicker
-                  label="Select Date"
-                  value={selectedDate}
-                  onChange={(newDate) => setSelectedDate(newDate)}
-                />
-                <EmployeeTypeFilter
-                  selected={selectedEmployeeType}
-                  onChange={setSelectedEmployeeType}
-                />
-                <TextField
-                  fullWidth
-                  placeholder="Search employee..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <FiUsers size={18} />
-                      </InputAdornment>
-                    ),
+              <Box>
+                <Typography 
+                  variant="h3" 
+                  fontWeight={800}
+                  sx={{
+                    background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
                   }}
+                >
+                  Attendance Management
+                </Typography>
+                <Typography variant="h6" color="text.secondary" sx={{ mt: 1 }}>
+                  Monitor and manage employee attendance in real-time
+                </Typography>
+              </Box>
+
+              {/* Action Bar */}
+              <Stack direction="row" spacing={2} alignItems="center">
+                <Tooltip title="Refresh Data">
+                  <IconButton 
+                    onClick={() => fetchData(selectedDate)}
+                    sx={{
+                      background: theme.palette.background.paper,
+                      boxShadow: theme.shadows[1],
+                      "&:hover": {
+                        background: theme.palette.action.hover,
+                      },
+                    }}
+                  >
+                    <FiRefreshCw />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Export Report">
+                  <IconButton 
+                    onClick={exportData}
+                    sx={{
+                      background: theme.palette.background.paper,
+                      boxShadow: theme.shadows[1],
+                      "&:hover": {
+                        background: theme.palette.action.hover,
+                      },
+                    }}
+                  >
+                    <FiDownload />
+                  </IconButton>
+                </Tooltip>
+                <Box sx={{ flex: 1 }} />
+                <Chip
+                  icon={<FiCalendar />}
+                  label={format(selectedDate, "MMMM d, yyyy")}
+                  variant="outlined"
+                  sx={{ fontWeight: 600 }}
                 />
-                <Button variant="outlined" onClick={clearFilters}>
-                  Clear Filters
-                </Button>
               </Stack>
             </Stack>
-          </Paper>
+          </EnhancedHeader>
 
-          {/* Stat Cards */}
+          {/* Filters Section */}
+          <FilterSection sx={{ mb: 4 }}>
+            <Stack spacing={3}>
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <FiFilter size={20} color={theme.palette.primary.main} />
+                <Typography variant="h6" fontWeight={600}>
+                  Filters & Search
+                </Typography>
+              </Stack>
+              
+              <Grid container spacing={3} alignItems="center">
+                <Grid item xs={12} md={3}>
+                  <DatePicker
+                    label="Select Date"
+                    value={selectedDate}
+                    onChange={(newDate) => setSelectedDate(newDate)}
+                    slotProps={{
+                      textField: {
+                        fullWidth: true,
+                        variant: "outlined",
+                      }
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={2}>
+                  <EmployeeTypeFilter
+                    selected={selectedEmployeeType}
+                    onChange={setSelectedEmployeeType}
+                  />
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <TextField
+                    fullWidth
+                    placeholder="Search employees by name, email, or status..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <FiSearch size={18} />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={3}>
+                  <Stack direction="row" spacing={1}>
+                    <Button 
+                      variant="outlined" 
+                      onClick={clearFilters}
+                      fullWidth
+                    >
+                      Clear All
+                    </Button>
+                    <Button 
+                      variant="contained"
+                      onClick={() => fetchData(selectedDate)}
+                      fullWidth
+                    >
+                      Apply
+                    </Button>
+                  </Stack>
+                </Grid>
+              </Grid>
+            </Stack>
+          </FilterSection>
+
+          {/* Enhanced Stat Cards */}
           <Grid container spacing={3} sx={{ mb: 4 }}>
             {[
-              { label: "Total", count: stats.total, color: "primary", value: "all", icon: <FiUsers /> },
-              { label: "Present", count: stats.present, color: "success", value: "present", icon: <FiCheckCircle /> },
-              { label: "Absent", count: stats.absent, color: "error", value: "absent", icon: <FiXCircle /> },
-              { label: "Half Day", count: stats.halfDay, color: "warning", value: "halfday", icon: <FiAlertCircle /> },
-              { label: "On Time", count: stats.onTime, color: "info", value: "ontime", icon: <FiClock /> },
-              { label: "Late Arrivals", count: stats.late, color: "secondary", value: "late", icon: <FiTrendingUp /> },
+              { 
+                label: "Total Employees", 
+                count: stats.total, 
+                color: "primary", 
+                value: "all", 
+                icon: <FiUsers />,
+                description: "Total tracked employees"
+              },
+              { 
+                label: "Present", 
+                count: stats.present, 
+                color: "success", 
+                value: "present", 
+                icon: <FiCheckCircle />,
+                description: "Employees present today"
+              },
+              { 
+                label: "Absent", 
+                count: stats.absent, 
+                color: "error", 
+                value: "absent", 
+                icon: <FiXCircle />,
+                description: "Employees absent today"
+              },
+              { 
+                label: "Half Day", 
+                count: stats.halfDay, 
+                color: "warning", 
+                value: "halfday", 
+                icon: <FiAlertCircle />,
+                description: "Employees on half day"
+              },
+              { 
+                label: "On Time", 
+                count: stats.onTime, 
+                color: "info", 
+                value: "ontime", 
+                icon: <FiClock />,
+                description: "Arrived on time"
+              },
+              { 
+                label: "Late Arrivals", 
+                count: stats.late, 
+                color: "secondary", 
+                value: "late", 
+                icon: <FiTrendingUp />,
+                description: "Arrived late today"
+              },
             ].map((stat) => (
-              <Grid item xs={6} md={2} key={stat.label}>
-                <StatCard
+              <Grid item xs={6} md={4} lg={2} key={stat.label}>
+                <GradientStatCard
                   color={stat.color}
                   active={statusFilter === stat.value}
                   onClick={() =>
@@ -301,95 +523,168 @@ const EmppAttendence = () => {
                     )
                   }
                 >
-                  <CardContent>
-                    <Stack direction="row" alignItems="center" spacing={2}>
-                      <Avatar
-                        sx={{
-                          bgcolor: `${theme.palette[stat.color].main}20`,
-                          color: theme.palette[stat.color].main,
-                        }}
-                      >
-                        {stat.icon}
-                      </Avatar>
-                      <Box>
-                        <Typography variant="body2" color="text.secondary">
-                          {stat.label}
-                        </Typography>
-                        <Typography variant="h4" fontWeight={700}>
-                          {stat.count}
-                        </Typography>
-                      </Box>
+                  <CardContent sx={{ p: 2.5 }}>
+                    <Stack spacing={2}>
+                      <Stack direction="row" alignItems="center" spacing={2}>
+                        <Avatar
+                          sx={{
+                            bgcolor: `${theme.palette[stat.color].main}20`,
+                            color: theme.palette[stat.color].main,
+                            width: 48,
+                            height: 48,
+                          }}
+                        >
+                          {stat.icon}
+                        </Avatar>
+                        <Box>
+                          <Typography variant="body2" color="text.secondary" fontSize="0.75rem">
+                            {stat.label}
+                          </Typography>
+                          <Typography variant="h4" fontWeight={800} lineHeight={1}>
+                            {stat.count}
+                          </Typography>
+                        </Box>
+                      </Stack>
+                      <Typography variant="caption" color="text.secondary" fontSize="0.7rem">
+                        {stat.description}
+                      </Typography>
                     </Stack>
                   </CardContent>
-                </StatCard>
+                </GradientStatCard>
               </Grid>
             ))}
           </Grid>
 
-          {/* Attendance Table */}
-          <Paper sx={{ borderRadius: 4, boxShadow: theme.shadows[2] }}>
+          {/* Enhanced Attendance Table */}
+          <Paper 
+            sx={{ 
+              borderRadius: 4, 
+              boxShadow: theme.shadows[2],
+              border: `1px solid ${theme.palette.divider}`,
+              overflow: "hidden",
+            }}
+          >
+            <Box sx={{ p: 3, borderBottom: `1px solid ${theme.palette.divider}` }}>
+              <Stack direction="row" alignItems="center" justifyContent="space-between">
+                <Typography variant="h6" fontWeight={700}>
+                  Attendance Records
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {filteredRecords.length} records found
+                </Typography>
+              </Stack>
+            </Box>
+
             <TableContainer>
               <Table>
                 <TableHead>
-                  <TableRow sx={{ backgroundColor: theme.palette.primary.main + "10" }}>
-                    <TableCell>Employee</TableCell>
-                    <TableCell>Type</TableCell>
-                    <TableCell>Date</TableCell>
-                    <TableCell>Check In</TableCell>
-                    <TableCell>Check Out</TableCell>
-                    <TableCell>Total Time</TableCell>
-                    <TableCell>Status</TableCell>
+                  <TableRow sx={{ 
+                    backgroundColor: theme.palette.primary.main + "08",
+                    borderBottom: `2px solid ${theme.palette.divider}`,
+                  }}>
+                    <TableCell sx={{ fontWeight: 700, py: 3 }}>Employee</TableCell>
+                    <TableCell sx={{ fontWeight: 700, py: 3 }}>Type</TableCell>
+                    <TableCell sx={{ fontWeight: 700, py: 3 }}>Date</TableCell>
+                    <TableCell sx={{ fontWeight: 700, py: 3 }}>Check In</TableCell>
+                    <TableCell sx={{ fontWeight: 700, py: 3 }}>Check Out</TableCell>
+                    <TableCell sx={{ fontWeight: 700, py: 3 }}>Total Time</TableCell>
+                    <TableCell sx={{ fontWeight: 700, py: 3 }}>Status</TableCell>
+                    <TableCell sx={{ fontWeight: 700, py: 3 }}>Actions</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {filteredRecords.length ? (
                     filteredRecords.map((rec) => (
                       <StyledTableRow key={rec._id} status={rec.status}>
-                        <TableCell>
+                        <TableCell sx={{ py: 2.5 }}>
                           <Stack direction="row" spacing={2} alignItems="center">
-                            <Avatar>{getInitials(rec.user?.name)}</Avatar>
+                            <Avatar
+                              sx={{
+                                background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                                fontWeight: 600,
+                              }}
+                            >
+                              {getInitials(rec.user?.name)}
+                            </Avatar>
                             <Box>
-                              <Typography fontWeight={600}>
+                              <Typography fontWeight={600} fontSize="0.95rem">
                                 {rec.user?.name || "N/A"}
                               </Typography>
-                              <Typography variant="caption" color="text.secondary">
+                              <Typography variant="caption" color="text.secondary" fontSize="0.75rem">
                                 {rec.user?.email || "N/A"}
                               </Typography>
                             </Box>
                           </Stack>
                         </TableCell>
-                        <TableCell>
+                        <TableCell sx={{ py: 2.5 }}>
                           <EmployeeTypeChip
                             label={rec.user?.employeeType?.toUpperCase() || "N/A"}
                             type={rec.user?.employeeType?.toLowerCase()}
                             size="small"
                           />
                         </TableCell>
-                        <TableCell>
-                          {new Date(rec.date).toLocaleDateString("en-US", {
-                            weekday: "short",
-                            month: "short",
-                            day: "numeric",
-                          })}
+                        <TableCell sx={{ py: 2.5 }}>
+                          <Typography fontWeight={500} fontSize="0.9rem">
+                            {new Date(rec.date).toLocaleDateString("en-US", {
+                              weekday: "short",
+                              month: "short",
+                              day: "numeric",
+                            })}
+                          </Typography>
                         </TableCell>
-                        <TableCell>{formatTime(rec.inTime)}</TableCell>
-                        <TableCell>{formatTime(rec.outTime)}</TableCell>
-                        <TableCell>{rec.totalTime || "00:00:00"}</TableCell>
-                        <TableCell>
+                        <TableCell sx={{ py: 2.5 }}>
+                          <Typography fontWeight={500}>
+                            {formatTime(rec.inTime)}
+                          </Typography>
+                        </TableCell>
+                        <TableCell sx={{ py: 2.5 }}>
+                          <Typography fontWeight={500}>
+                            {formatTime(rec.outTime)}
+                          </Typography>
+                        </TableCell>
+                        <TableCell sx={{ py: 2.5 }}>
+                          <Chip 
+                            label={rec.totalTime || "00:00:00"} 
+                            size="small"
+                            variant="outlined"
+                          />
+                        </TableCell>
+                        <TableCell sx={{ py: 2.5 }}>
                           <StatusChip
                             label={
                               rec.status.charAt(0).toUpperCase() + rec.status.slice(1)
                             }
                             status={rec.status}
+                            size="small"
                           />
+                        </TableCell>
+                        <TableCell sx={{ py: 2.5 }}>
+                          <Tooltip title="View Details">
+                            <IconButton size="small" sx={{ 
+                              background: theme.palette.action.hover,
+                              "&:hover": {
+                                background: theme.palette.primary.main,
+                                color: "white",
+                              }
+                            }}>
+                              <FiEye size={16} />
+                            </IconButton>
+                          </Tooltip>
                         </TableCell>
                       </StyledTableRow>
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
-                        <FiCalendar size={40} />
-                        <Typography variant="h6">No Records Found</Typography>
+                      <TableCell colSpan={8} align="center" sx={{ py: 6 }}>
+                        <Box sx={{ textAlign: "center" }}>
+                          <FiCalendar size={48} color={theme.palette.text.secondary} />
+                          <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
+                            No Records Found
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            Try adjusting your filters or search criteria
+                          </Typography>
+                        </Box>
                       </TableCell>
                     </TableRow>
                   )}
@@ -398,28 +693,46 @@ const EmppAttendence = () => {
             </TableContainer>
           </Paper>
 
-          {/* Snackbar */}
+          {/* Enhanced Snackbar */}
           <Snackbar
             open={snackbar.open}
             autoHideDuration={4000}
             onClose={() => setSnackbar({ ...snackbar, open: false })}
-            anchorOrigin={{ vertical: "top", horizontal: "center" }}
+            anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
           >
             <Card
               sx={{
-                background:
-                  snackbar.severity === "error"
-                    ? theme.palette.error.main
-                    : theme.palette.success.main,
+                background: `linear-gradient(135deg, ${
+                  snackbar.severity === "error" 
+                    ? theme.palette.error.main 
+                    : snackbar.severity === "warning"
+                    ? theme.palette.warning.main
+                    : theme.palette.success.main
+                }, ${
+                  snackbar.severity === "error" 
+                    ? theme.palette.error.dark 
+                    : snackbar.severity === "warning"
+                    ? theme.palette.warning.dark
+                    : theme.palette.success.dark
+                })`,
                 color: "#fff",
+                borderRadius: 3,
+                boxShadow: theme.shadows[8],
               }}
             >
-              <CardContent>
-                <Typography>{snackbar.message}</Typography>
+              <CardContent sx={{ py: 2, px: 3 }}>
+                <Stack direction="row" spacing={2} alignItems="center">
+                  {snackbar.severity === "error" && <FiXCircle size={20} />}
+                  {snackbar.severity === "success" && <FiCheckCircle size={20} />}
+                  {snackbar.severity === "info" && <FiAlertCircle size={20} />}
+                  <Typography variant="body2" fontWeight={500}>
+                    {snackbar.message}
+                  </Typography>
+                </Stack>
               </CardContent>
             </Card>
           </Snackbar>
-        </Box>
+        </Container>
       </Fade>
     </LocalizationProvider>
   );

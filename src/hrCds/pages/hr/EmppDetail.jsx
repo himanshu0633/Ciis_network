@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useContext } from "react";
 import {
   Box,
   Typography,
@@ -31,7 +31,14 @@ import {
   CircularProgress,
   FormControl,
   InputLabel,
-  Select
+  Select,
+  alpha,
+  Container,
+  InputAdornment,
+  Badge,
+  Tabs,
+  Tab,
+  Slide
 } from "@mui/material";
 import {
   FiMail,
@@ -53,38 +60,75 @@ import {
   FiTrash2,
   FiSave,
   FiEye,
-  FiShield
+  FiShield,
+  FiStar,
+  FiAward,
+  FiTrendingUp,
+  FiFilter,
+  FiPlus,
+  FiRefreshCw,
+  FiGlobe,
+  FiLinkedin,
+  FiGithub,
+  FiTwitter,
+  FiCheckCircle,
+  FiInfo
 } from "react-icons/fi";
 import axios from "../../../utils/axiosConfig";
 import { styled } from "@mui/material/styles";
 
 // Enhanced Styled Components
-const EmployeeCard = styled(Card)(({ theme }) => ({
-  borderRadius: theme.shape.borderRadius * 2,
+const EnhancedEmployeeCard = styled(Card)(({ theme, status = 'active' }) => ({
+  background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.default, 0.8)} 100%)`,
+  borderRadius: theme.shape.borderRadius * 3,
   boxShadow: theme.shadows[2],
   cursor: 'pointer',
   transition: theme.transitions.create(['all'], {
     duration: theme.transitions.duration.standard,
   }),
   border: `1px solid ${theme.palette.divider}`,
+  position: 'relative',
+  overflow: 'visible',
+  '&::before': status === 'new' ? {
+    content: '""',
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    width: 12,
+    height: 12,
+    borderRadius: '50%',
+    background: theme.palette.success.main,
+    zIndex: 1,
+  } : {},
   '&:hover': {
-    boxShadow: theme.shadows[6],
-    transform: 'translateY(-4px)',
+    boxShadow: theme.shadows[8],
+    transform: 'translateY(-8px)',
     borderColor: theme.palette.primary.main,
   },
 }));
 
-const StatCard = styled(Card)(({ theme, color = 'primary' }) => ({
-  background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
-  borderRadius: theme.shape.borderRadius * 2,
-  boxShadow: theme.shadows[2],
+const GradientStatCard = styled(Card)(({ theme, color = 'primary' }) => ({
+  background: `linear-gradient(135deg, ${theme.palette[color].main}15, ${theme.palette[color].light}08)`,
+  borderRadius: theme.shape.borderRadius * 3,
+  boxShadow: `0 4px 20px ${alpha(theme.palette[color].main, 0.1)}`,
   transition: theme.transitions.create(['all'], {
     duration: theme.transitions.duration.standard,
   }),
-  borderLeft: `4px solid ${theme.palette[color].main}`,
+  border: `1px solid ${alpha(theme.palette[color].main, 0.2)}`,
+  position: 'relative',
+  overflow: 'hidden',
   '&:hover': {
-    boxShadow: theme.shadows[6],
-    transform: 'translateY(-2px)',
+    boxShadow: `0 8px 32px ${alpha(theme.palette[color].main, 0.2)}`,
+    transform: 'translateY(-4px)',
+  },
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 3,
+    background: `linear-gradient(90deg, ${theme.palette[color].main}, ${theme.palette[color].light})`,
   },
 }));
 
@@ -92,79 +136,99 @@ const DetailItem = styled(Box)(({ theme }) => ({
   display: 'flex',
   alignItems: 'flex-start',
   gap: theme.spacing(1.5),
-  padding: theme.spacing(1),
-  borderRadius: theme.shape.borderRadius,
+  padding: theme.spacing(1.5),
+  borderRadius: theme.shape.borderRadius * 2,
+  background: theme.palette.background.default,
+  transition: theme.transitions.create(['background'], {
+    duration: theme.transitions.duration.short,
+  }),
   '&:hover': {
-    backgroundColor: theme.palette.action.hover,
+    backgroundColor: alpha(theme.palette.primary.main, 0.04),
   }
 }));
 
 const EmployeeTypeChip = styled(Chip)(({ theme, type }) => ({
-  fontWeight: 600,
+  fontWeight: 700,
+  borderRadius: 20,
+  fontSize: '0.7rem',
   ...(type === 'technical' && {
-    background: `${theme.palette.success.main}20`,
-    color: theme.palette.success.dark,
-    border: `1px solid ${theme.palette.success.main}40`,
+    background: `linear-gradient(45deg, ${theme.palette.success.main}, ${theme.palette.success.light})`,
+    color: theme.palette.success.contrastText,
+    boxShadow: `0 2px 8px ${alpha(theme.palette.success.main, 0.3)}`,
   }),
   ...(type === 'non-technical' && {
-    background: `${theme.palette.warning.main}20`,
-    color: theme.palette.warning.dark,
-    border: `1px solid ${theme.palette.warning.main}40`,
+    background: `linear-gradient(45deg, ${theme.palette.warning.main}, ${theme.palette.warning.light})`,
+    color: theme.palette.warning.contrastText,
+    boxShadow: `0 2px 8px ${alpha(theme.palette.warning.main, 0.3)}`,
   }),
   ...(type === 'sales' && {
-    background: `${theme.palette.info.main}20`,
-    color: theme.palette.info.dark,
-    border: `1px solid ${theme.palette.info.main}40`,
+    background: `linear-gradient(45deg, ${theme.palette.info.main}, ${theme.palette.info.light})`,
+    color: theme.palette.info.contrastText,
+    boxShadow: `0 2px 8px ${alpha(theme.palette.info.main, 0.3)}`,
   }),
   ...(type === 'intern' && {
-    background: `${theme.palette.secondary.main}20`,
-    color: theme.palette.secondary.dark,
-    border: `1px solid ${theme.palette.secondary.main}40`,
+    background: `linear-gradient(45deg, ${theme.palette.secondary.main}, ${theme.palette.secondary.light})`,
+    color: theme.palette.secondary.contrastText,
+    boxShadow: `0 2px 8px ${alpha(theme.palette.secondary.main, 0.3)}`,
   }),
 }));
 
-// New Role Chip Component
 const RoleChip = styled(Chip)(({ theme, role }) => ({
-  fontWeight: 600,
-  fontSize: '0.7rem',
+  fontWeight: 700,
+  fontSize: '0.65rem',
+  borderRadius: 16,
   ...(role === 'admin' && {
-    background: `${theme.palette.error.main}20`,
-    color: theme.palette.error.dark,
-    border: `1px solid ${theme.palette.error.main}40`,
+    background: `linear-gradient(45deg, ${theme.palette.error.main}, ${theme.palette.error.light})`,
+    color: theme.palette.error.contrastText,
   }),
   ...(role === 'manager' && {
-    background: `${theme.palette.warning.main}20`,
-    color: theme.palette.warning.dark,
-    border: `1px solid ${theme.palette.warning.main}40`,
+    background: `linear-gradient(45deg, ${theme.palette.warning.main}, ${theme.palette.warning.light})`,
+    color: theme.palette.warning.contrastText,
   }),
   ...(role === 'hr' && {
-    background: `${theme.palette.info.main}20`,
-    color: theme.palette.info.dark,
-    border: `1px solid ${theme.palette.info.main}40`,
+    background: `linear-gradient(45deg, ${theme.palette.info.main}, ${theme.palette.info.light})`,
+    color: theme.palette.info.contrastText,
   }),
   ...(role === 'user' && {
-    background: `${theme.palette.success.main}20`,
-    color: theme.palette.success.dark,
-    border: `1px solid ${theme.palette.success.main}40`,
+    background: `linear-gradient(45deg, ${theme.palette.success.main}, ${theme.palette.success.light})`,
+    color: theme.palette.success.contrastText,
   }),
   ...(role === 'SuperAdmin' && {
-    background: `${theme.palette.primary.main}20`,
-    color: theme.palette.primary.dark,
-    border: `1px solid ${theme.palette.primary.main}40`,
+    background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
+    color: theme.palette.primary.contrastText,
   }),
 }));
 
-// Role Filter Component - Employee Type Filter की जगह यही use होगा
+const EnhancedHeader = styled(Box)(({ theme }) => ({
+  background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)} 0%, ${alpha(theme.palette.secondary.main, 0.05)} 100%)`,
+  borderRadius: theme.shape.borderRadius * 3,
+  padding: theme.spacing(4),
+  marginBottom: theme.spacing(4),
+  border: `1px solid ${theme.palette.divider}`,
+  position: 'relative',
+  overflow: 'hidden',
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: -50,
+    right: -50,
+    width: 200,
+    height: 200,
+    borderRadius: '50%',
+    background: `linear-gradient(45deg, ${alpha(theme.palette.primary.main, 0.1)}, transparent)`,
+  },
+}));
+
 const RoleFilter = ({ selected, onChange, stats }) => {
   const theme = useTheme();
   
   const roleOptions = [
-    { value: 'all', label: 'All Roles', count: 'all' },
-    { value: 'SuperAdmin', label: 'Super Admin', count: stats.superAdmin },
-    { value: 'admin', label: 'Admin', count: stats.admin },
-    { value: 'manager', label: 'Manager', count: stats.manager },
-    { value: 'hr', label: 'HR', count: stats.hr },
-    { value: 'user', label: 'User', count: stats.user }
+    { value: 'all', label: 'All Roles', count: 'all', color: 'primary' },
+    { value: 'SuperAdmin', label: 'Super Admin', count: stats.superAdmin, color: 'primary' },
+    { value: 'admin', label: 'Admin', count: stats.admin, color: 'error' },
+    { value: 'manager', label: 'Manager', count: stats.manager, color: 'warning' },
+    { value: 'hr', label: 'HR', count: stats.hr, color: 'info' },
+    { value: 'user', label: 'User', count: stats.user, color: 'success' }
   ];
 
   return (
@@ -173,6 +237,7 @@ const RoleFilter = ({ selected, onChange, stats }) => {
         minWidth: 200,
         '& .MuiOutlinedInput-root': {
           borderRadius: theme.shape.borderRadius * 2,
+          background: theme.palette.background.paper,
         }
       }} 
       size="small"
@@ -185,8 +250,18 @@ const RoleFilter = ({ selected, onChange, stats }) => {
       >
         {roleOptions.map((option) => (
           <MenuItem key={option.value} value={option.value}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-              <span>{option.label}</span>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <Box
+                  sx={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    backgroundColor: theme.palette[option.color].main,
+                  }}
+                />
+                <span>{option.label}</span>
+              </Stack>
               {option.count !== 'all' && (
                 <Chip 
                   label={option.count} 
@@ -195,7 +270,9 @@ const RoleFilter = ({ selected, onChange, stats }) => {
                     ml: 1,
                     height: 20,
                     fontSize: '0.7rem',
-                    minWidth: 30
+                    minWidth: 30,
+                    background: alpha(theme.palette[option.color].main, 0.1),
+                    color: theme.palette[option.color].main,
                   }} 
                 />
               )}
@@ -210,7 +287,7 @@ const RoleFilter = ({ selected, onChange, stats }) => {
 const EmployeeDirectory = () => {
   const [employees, setEmployees] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [selectedRole, setSelectedRole] = useState("all"); // Employee Type की जगह Role
+  const [selectedRole, setSelectedRole] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [editingUser, setEditingUser] = useState(null);
@@ -222,8 +299,8 @@ const EmployeeDirectory = () => {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [activeTab, setActiveTab] = useState(0);
 
-  // Role options for dropdown
   const roleOptions = [
     { value: 'user', label: 'User' },
     { value: 'hr', label: 'HR' },
@@ -232,14 +309,12 @@ const EmployeeDirectory = () => {
     { value: 'SuperAdmin', label: 'Super Admin' }
   ];
 
-  // Corrected stats calculation with role stats
   const stats = useMemo(() => ({
     total: employees.length,
     technical: employees.filter(emp => emp.employeeType?.toLowerCase() === 'technical').length,
     nonTechnical: employees.filter(emp => emp.employeeType?.toLowerCase() === 'non-technical').length,
     sales: employees.filter(emp => emp.employeeType?.toLowerCase() === 'sales').length,
     intern: employees.filter(emp => emp.employeeType?.toLowerCase() === 'intern').length,
-    // Role-based stats
     admin: employees.filter(emp => emp.role === 'admin').length,
     manager: employees.filter(emp => emp.role === 'manager').length,
     hr: employees.filter(emp => emp.role === 'hr').length,
@@ -289,7 +364,7 @@ const EmployeeDirectory = () => {
     setEditingUser(user);
     setEditFormData({ 
       ...user,
-      role: user.role || 'user' // Default to 'user' if role is not set
+      role: user.role || 'user'
     });
     handleMenuClose();
   };
@@ -347,11 +422,9 @@ const EmployeeDirectory = () => {
     }));
   };
 
-  // Filter logic with search - Employee Type की जगह Role based filtering
   const filteredEmployees = useMemo(() => {
     let filtered = employees;
     
-    // Role-based filtering (Employee Type की जगह)
     if (selectedRole !== "all") {
       filtered = filtered.filter((u) => u.role === selectedRole);
     }
@@ -362,7 +435,7 @@ const EmployeeDirectory = () => {
           u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           u.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           u.jobRole?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          u.role?.toLowerCase().includes(searchTerm.toLowerCase()) || // Search by role
+          u.role?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           u.phone?.includes(searchTerm)
       );
     }
@@ -386,10 +459,18 @@ const EmployeeDirectory = () => {
     return phoneStr.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3');
   };
 
-  // Function to get role display label
   const getRoleLabel = (role) => {
     const roleOption = roleOptions.find(opt => opt.value === role);
     return roleOption ? roleOption.label : role || 'User';
+  };
+
+  const isNewEmployee = (employee) => {
+    if (!employee.createdAt) return false;
+    const created = new Date(employee.createdAt);
+    const now = new Date();
+    const diffTime = Math.abs(now - created);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays <= 7;
   };
 
   if (loading) {
@@ -398,225 +479,227 @@ const EmployeeDirectory = () => {
         display: 'flex', 
         justifyContent: 'center', 
         alignItems: 'center', 
-        minHeight: '50vh'
+        minHeight: '60vh',
+        flexDirection: 'column',
+        gap: 2
       }}>
-        <LinearProgress sx={{ width: '100px' }} />
+        <CircularProgress size={40} />
+        <Typography variant="body1" color="text.secondary">
+          Loading employee directory...
+        </Typography>
       </Box>
     );
   }
 
   return (
-    <Fade in={!loading} timeout={500}>
-      <Box sx={{ p: { xs: 2, md: 3 } }}>
-        {/* Header Section */}
-        <Paper sx={{ 
-          p: 3, 
-          mb: 3, 
-          borderRadius: theme.shape.borderRadius * 2,
-          background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
-          boxShadow: theme.shadows[4]
-        }}>
+    <Fade in={!loading} timeout={600}>
+      <Container maxWidth="xl" sx={{ py: { xs: 2, md: 3 } }}>
+        {/* Enhanced Header Section */}
+        <EnhancedHeader>
           <Stack spacing={3}>
             <Box>
-              <Typography variant="h4" fontWeight={800} gutterBottom>
+              <Typography 
+                variant="h3" 
+                fontWeight={800}
+                gutterBottom
+                sx={{
+                  background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                }}
+              >
                 Employee Directory
               </Typography>
-              <Typography variant="body1" color="text.secondary">
-                Find and connect with your colleagues
+              <Typography variant="h6" color="text.secondary" sx={{ mt: 1 }}>
+                Find and connect with your colleagues across the organization
               </Typography>
             </Box>
 
-            {/* Search and Filter Section - Employee Type Filter की जगह Role Filter */}
-            <Stack 
-              direction={{ xs: 'column', sm: 'row' }} 
-              spacing={2} 
-              alignItems={{ xs: 'stretch', sm: 'center' }}
-            >
-              <TextField
-                placeholder="Search employees by name, email, role, or job role..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                InputProps={{
-                  startAdornment: (
-                    <FiSearch style={{ marginRight: 8, color: theme.palette.text.secondary }} />
-                  ),
-                  endAdornment: searchTerm && (
-                    <IconButton 
-                      size="small" 
-                      onClick={() => setSearchTerm('')}
-                      sx={{ mr: -0.5 }}
-                    >
-                      <FiX size={16} />
-                    </IconButton>
-                  ),
-                }}
-                sx={{ 
-                  flex: 1,
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: theme.shape.borderRadius * 2,
-                  }
-                }}
-              />
+            {/* Action Bar */}
+            <Stack direction="row" spacing={2} alignItems="center">
+
+         
               
-              {/* Employee Type Filter की जगह Role Filter */}
-              <RoleFilter
-                selected={selectedRole}
-                onChange={setSelectedRole}
-                stats={stats}
+              <Box sx={{ flex: 1 }} />
+              
+              <Chip
+                icon={<FiUsers />}
+                label={`${stats.total} Employees`}
+                variant="outlined"
+                sx={{ 
+                  fontWeight: 600,
+                  background: alpha(theme.palette.primary.main, 0.1),
+                }}
               />
             </Stack>
+
+            {/* Search and Filter Section */}
+            <Paper sx={{ 
+              p: 3, 
+              borderRadius: theme.shape.borderRadius * 2,
+              background: theme.palette.background.paper,
+              boxShadow: theme.shadows[1],
+            }}>
+              <Stack spacing={3}>
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <FiFilter size={20} color={theme.palette.primary.main} />
+                  <Typography variant="h6" fontWeight={600}>
+                    Search & Filter
+                  </Typography>
+                </Stack>
+                
+                <Stack 
+                  direction={{ xs: 'column', sm: 'row' }} 
+                  spacing={2} 
+                  alignItems={{ xs: 'stretch', sm: 'center' }}
+                >
+                  <TextField
+                    placeholder="Search employees by name, email, role, or job role..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <FiSearch color={theme.palette.text.secondary} />
+                        </InputAdornment>
+                      ),
+                      endAdornment: searchTerm && (
+                        <IconButton 
+                          size="small" 
+                          onClick={() => setSearchTerm('')}
+                          sx={{ mr: -0.5 }}
+                        >
+                          <FiX size={16} />
+                        </IconButton>
+                      ),
+                    }}
+                    sx={{ 
+                      flex: 1,
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: theme.shape.borderRadius * 2,
+                      }
+                    }}
+                  />
+                  
+                  <RoleFilter
+                    selected={selectedRole}
+                    onChange={setSelectedRole}
+                    stats={stats}
+                  />
+                </Stack>
+              </Stack>
+            </Paper>
           </Stack>
-        </Paper>
+        </EnhancedHeader>
 
-        {/* Statistics Cards - पहले जैसे ही रहेंगे */}
+        {/* Enhanced Statistics Cards */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={6} md={2.4}>
-            <StatCard color="primary">
-              <CardContent>
-                <Stack direction="row" alignItems="center" spacing={2}>
-                  <Avatar sx={{ 
-                    bgcolor: `${theme.palette.primary.main}20`, 
-                    color: theme.palette.primary.main 
-                  }}>
-                    <FiUsers />
-                  </Avatar>
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">
-                      Total
-                    </Typography>
-                    <Typography variant="h4" fontWeight={700}>
-                      {stats.total}
-                    </Typography>
-                  </Box>
-                </Stack>
-              </CardContent>
-            </StatCard>
-          </Grid>
-
-          <Grid item xs={6} md={2.4}>
-            <StatCard color="success">
-              <CardContent>
-                <Stack direction="row" alignItems="center" spacing={2}>
-                  <Avatar sx={{ 
-                    bgcolor: `${theme.palette.success.main}20`, 
-                    color: theme.palette.success.main 
-                  }}>
-                    <FiBriefcase />
-                  </Avatar>
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">
-                      Technical
-                    </Typography>
-                    <Typography variant="h4" fontWeight={700}>
-                      {stats.technical}
-                    </Typography>
-                  </Box>
-                </Stack>
-              </CardContent>
-            </StatCard>
-          </Grid>
-
-          <Grid item xs={6} md={2.4}>
-            <StatCard color="warning">
-              <CardContent>
-                <Stack direction="row" alignItems="center" spacing={2}>
-                  <Avatar sx={{ 
-                    bgcolor: `${theme.palette.warning.main}20`, 
-                    color: theme.palette.warning.main 
-                  }}>
-                    <FiClock />
-                  </Avatar>
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">
-                      Non-Tech
-                    </Typography>
-                    <Typography variant="h4" fontWeight={700}>
-                      {stats.nonTechnical}
-                    </Typography>
-                  </Box>
-                </Stack>
-              </CardContent>
-            </StatCard>
-          </Grid>
-
-          <Grid item xs={6} md={2.4}>
-            <StatCard color="info">
-              <CardContent>
-                <Stack direction="row" alignItems="center" spacing={2}>
-                  <Avatar sx={{ 
-                    bgcolor: `${theme.palette.info.main}20`, 
-                    color: theme.palette.info.main 
-                  }}>
-                    <FiUser />
-                  </Avatar>
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">
-                      Sales
-                    </Typography>
-                    <Typography variant="h4" fontWeight={700}>
-                      {stats.sales}
-                    </Typography>
-                  </Box>
-                </Stack>
-              </CardContent>
-            </StatCard>
-          </Grid>
-           <Grid item xs={6} md={2.4}>
-            <StatCard color="success">
-              <CardContent>
-                <Stack direction="row" alignItems="center" spacing={2}>
-                  <Avatar sx={{ 
-                    bgcolor: `${theme.palette.success.main}20`, 
-                    color: theme.palette.success.main,
-                    width: 40,
-                    height: 40
-                  }}>
-                    <FiUsers />
-                  </Avatar>
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">
-                      Interns
-                    </Typography>
-                    <Typography variant="h5" fontWeight={700}>
-                      {stats.intern}
-                    </Typography>
-                  </Box>
-                </Stack>
-              </CardContent>
-            </StatCard>
-          </Grid>
+          {[
+            { label: 'Total Employees', count: stats.total, color: 'primary', icon: <FiUsers />, trend: '+5%' },
+            { label: 'Technical Team', count: stats.technical, color: 'success', icon: <FiBriefcase />, trend: '+12%' },
+            { label: 'Non-Technical', count: stats.nonTechnical, color: 'warning', icon: <FiClock />, trend: '+3%' },
+            { label: 'Sales Team', count: stats.sales, color: 'info', icon: <FiTrendingUp />, trend: '+8%' },
+            { label: 'Interns', count: stats.intern, color: 'secondary', icon: <FiAward />, trend: '+15%' },
+          ].map((stat, index) => (
+            <Grid item xs={12} sm={6} md={2.4} key={stat.label}>
+              <GradientStatCard color={stat.color}>
+                <CardContent sx={{ p: 3 }}>
+                  <Stack spacing={2}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                      <Avatar
+                        sx={{
+                          bgcolor: alpha(theme.palette[stat.color].main, 0.1),
+                          color: theme.palette[stat.color].main,
+                          width: 48,
+                          height: 48,
+                        }}
+                      >
+                        {stat.icon}
+                      </Avatar>
+                      <Chip 
+                        label={stat.trend} 
+                        size="small"
+                        sx={{
+                          background: alpha(theme.palette[stat.color].main, 0.1),
+                          color: theme.palette[stat.color].main,
+                          fontSize: '0.7rem',
+                          height: 20,
+                        }}
+                      />
+                    </Stack>
+                    <Box>
+                      <Typography variant="body2" color="text.secondary" fontSize="0.8rem" fontWeight={600}>
+                        {stat.label}
+                      </Typography>
+                      <Typography variant="h3" fontWeight={800} lineHeight={1} sx={{ mt: 0.5 }}>
+                        {stat.count}
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </CardContent>
+              </GradientStatCard>
+            </Grid>
+          ))}
         </Grid>
 
         {/* Results Header */}
         <Stack 
-          direction="row" 
+          direction={{ xs: 'column', sm: 'row' }} 
           justifyContent="space-between" 
-          alignItems="center" 
+          alignItems={{ xs: 'flex-start', sm: 'center' }}
+          spacing={2}
           sx={{ mb: 3 }}
         >
-          <Typography variant="h6" fontWeight={700}>
-            {filteredEmployees.length} Employee{filteredEmployees.length !== 1 ? 's' : ''} Found
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {selectedRole !== 'all' && `Filtered by: ${getRoleLabel(selectedRole)}`}
-          </Typography>
+          <Box>
+            <Typography variant="h4" fontWeight={800} gutterBottom>
+              Team Members
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              {filteredEmployees.length} employee{filteredEmployees.length !== 1 ? 's' : ''} found
+              {selectedRole !== 'all' && ` • Filtered by ${getRoleLabel(selectedRole)}`}
+              {searchTerm && ` • Matching "${searchTerm}"`}
+            </Typography>
+          </Box>
+          
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Tabs 
+              value={activeTab} 
+              onChange={(e, newValue) => setActiveTab(newValue)}
+              sx={{
+                '& .MuiTab-root': {
+                  borderRadius: theme.shape.borderRadius * 2,
+                  minHeight: 32,
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                }
+              }}
+            >
+              <Tab label="All" />
+              <Tab label="Active" />
+              <Tab label="New" />
+            </Tabs>
+          </Stack>
         </Stack>
 
-        {/* Employees Grid - यह पहले जैसा ही रहेगा */}
+        {/* Enhanced Employees Grid - FIXED VERSION */}
         {filteredEmployees.length === 0 ? (
           <Paper sx={{ 
             textAlign: 'center', 
-            py: 8,
-            borderRadius: theme.shape.borderRadius * 2
+            py: 10,
+            borderRadius: theme.shape.borderRadius * 3,
+            background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.default, 0.8)} 100%)`,
           }}>
-            <FiUsers size={48} color={theme.palette.text.secondary} style={{ marginBottom: 16 }} />
-            <Typography variant="h6" color="text.secondary" gutterBottom>
+            <Box sx={{ mb: 3 }}>
+              <FiUsers size={64} color={alpha(theme.palette.text.secondary, 0.5)} />
+            </Box>
+            <Typography variant="h5" fontWeight={700} color="text.secondary" gutterBottom>
               No Employees Found
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 400, mx: 'auto' }}>
               {searchTerm || selectedRole !== 'all' 
-                ? 'Try adjusting your search criteria' 
-                : 'No employees in the directory'
+                ? 'Try adjusting your search criteria or filters to find what you\'re looking for.' 
+                : 'The employee directory is currently empty. Add your first team member to get started.'
               }
             </Typography>
           </Paper>
@@ -624,103 +707,211 @@ const EmployeeDirectory = () => {
           <Grid container spacing={3}>
             {filteredEmployees.map((emp) => (
               <Grid item xs={12} sm={6} md={4} lg={3} key={emp._id}>
-                <EmployeeCard>
-                  <CardContent>
-                    <Stack spacing={2}>
-                      {/* Header with Avatar and Basic Info */}
-                      <Stack direction="row" spacing={2} alignItems="flex-start">
-                        <Avatar 
-                          src={emp.image} 
-                          sx={{ 
-                            width: 56, 
-                            height: 56,
-                            border: `2px solid ${theme.palette.primary.main}20`
-                          }}
-                        >
-                          {getInitials(emp.name)}
-                        </Avatar>
-                        <Box sx={{ flex: 1 }}>
-                          <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                            <Box>
-                              <Typography variant="h6" fontWeight={600} noWrap>
-                                {emp.name}
-                              </Typography>
-                              <Typography variant="body2" color="primary.main" fontWeight={500}>
-                                {emp.jobRole || 'No role specified'}
-                              </Typography>
-                              <Stack direction="row" spacing={0.5} sx={{ mt: 0.5 }} flexWrap="wrap" gap={0.5}>
-                                <EmployeeTypeChip
-                                  label={emp.employeeType?.toUpperCase() || 'N/A'}
-                                  type={emp.employeeType?.toLowerCase()}
-                                  size="small"
-                                />
-                                <RoleChip
-                                  label={getRoleLabel(emp.role)}
-                                  role={emp.role}
-                                  size="small"
-                                />
-                              </Stack>
-                            </Box>
-                            <IconButton 
-                              size="small" 
-                              onClick={(e) => handleMenuOpen(e, emp)}
-                              sx={{ mt: -0.5, mr: -0.5 }}
-                            >
-                              <FiMoreVertical size={16} />
-                            </IconButton>
-                          </Stack>
-                        </Box>
-                      </Stack>
-
-                      <Divider />
-
-                      {/* Contact Information */}
-                      <Stack spacing={1}>
-                        <Stack direction="row" spacing={1} alignItems="center">
-                          <FiMail size={14} color={theme.palette.text.secondary} />
-                          <Typography variant="body2" noWrap title={emp.email}>
-                            {emp.email || 'No email'}
-                          </Typography>
-                        </Stack>
-                        
-                        <Stack direction="row" spacing={1} alignItems="center">
-                          <FiPhone size={14} color={theme.palette.text.secondary} />
-                          <Typography variant="body2">
-                            {formatPhoneNumber(emp.phone)}
-                          </Typography>
-                        </Stack>
-
-                        <Stack direction="row" spacing={1} alignItems="center">
-                          <FiShield size={14} color={theme.palette.text.secondary} />
-                          <Typography variant="body2">
-                            Role: {getRoleLabel(emp.role)}
-                          </Typography>
-                        </Stack>
-                      </Stack>
-
-                      {/* Action Button */}
-                      <Button 
-                        variant="outlined" 
-                        fullWidth
-                        size="small"
-                        startIcon={<FiEye size={14} />}
-                        onClick={() => handleOpenUser(emp)}
+                <Slide direction="up" in timeout={500}>
+                  <EnhancedEmployeeCard 
+                    status={isNewEmployee(emp) ? 'new' : 'active'}
+                    onClick={() => handleOpenUser(emp)}
+                    sx={{ cursor: 'pointer' }}
+                  >
+                    <CardContent sx={{ p: 3, position: 'relative' }}>
+                      {/* Menu Button - Positioned absolutely outside the clickable area */}
+                      <IconButton 
+                        size="small" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleMenuOpen(e, emp);
+                        }}
                         sx={{ 
-                          borderRadius: theme.shape.borderRadius * 2,
-                          mt: 1
+                          position: 'absolute',
+                          top: 8,
+                          right: 8,
+                          background: alpha(theme.palette.primary.main, 0.1),
+                          '&:hover': {
+                            background: alpha(theme.palette.primary.main, 0.2),
+                          }
                         }}
                       >
-                        View Profile
-                      </Button>
-                    </Stack>
-                  </CardContent>
-                </EmployeeCard>
+                        <FiMoreVertical size={16} />
+                      </IconButton>
+
+                      <Stack spacing={2.5}>
+                        {/* Header with Avatar and Basic Info */}
+                        <Stack direction="row" spacing={2} alignItems="flex-start">
+                          <Badge
+                            overlap="circular"
+                            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                            badgeContent={
+                              isNewEmployee(emp) ? (
+                                <Box
+                                  sx={{
+                                    width: 12,
+                                    height: 12,
+                                    borderRadius: '50%',
+                                    bgcolor: theme.palette.success.main,
+                                    border: `2px solid ${theme.palette.background.paper}`,
+                                  }}
+                                />
+                              ) : null
+                            }
+                          >
+                            <Avatar 
+                              src={emp.image} 
+                              sx={{ 
+                                width: 60, 
+                                height: 60,
+                                border: `3px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                                background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                                fontSize: '1.2rem',
+                                fontWeight: 700,
+                              }}
+                            >
+                              {getInitials(emp.name)}
+                            </Avatar>
+                          </Badge>
+                          <Box sx={{ flex: 1, minWidth: 0, pr: 4 }}>
+                            <Box sx={{ minWidth: 0 }}>
+                              <Typography 
+                                variant="h6" 
+                                fontWeight={700} 
+                                noWrap
+                                sx={{ 
+                                  background: `linear-gradient(135deg, ${theme.palette.text.primary}, ${alpha(theme.palette.text.primary, 0.8)})`,
+                                  WebkitBackgroundClip: "text",
+                                  WebkitTextFillColor: "transparent",
+                                  backgroundClip: "text",
+                                }}
+                              >
+                                {emp.name}
+                              </Typography>
+                              <Typography 
+                                variant="body2" 
+                                color="primary.main" 
+                                fontWeight={600}
+                                noWrap
+                                sx={{ mt: 0.5 }}
+                              >
+                                {emp.jobRole || 'No role specified'}
+                              </Typography>
+                            </Box>
+                            
+                            {/* Chips */}
+                            <Stack direction="row" spacing={0.5} sx={{ mt: 1.5 }} flexWrap="wrap" gap={0.5}>
+                              <EmployeeTypeChip
+                                label={emp.employeeType?.toUpperCase() || 'N/A'}
+                                type={emp.employeeType?.toLowerCase()}
+                                size="small"
+                              />
+                              <RoleChip
+                                label={getRoleLabel(emp.role)}
+                                role={emp.role}
+                                size="small"
+                              />
+                            </Stack>
+                          </Box>
+                        </Stack>
+
+                        <Divider sx={{ my: 1 }} />
+
+                        {/* Contact Information */}
+                        <Stack spacing={1.5}>
+                          <Stack direction="row" spacing={1.5} alignItems="center">
+                            <Box
+                              sx={{
+                                width: 32,
+                                height: 32,
+                                borderRadius: '50%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: alpha(theme.palette.primary.main, 0.1),
+                                color: theme.palette.primary.main,
+                                flexShrink: 0,
+                              }}
+                            >
+                              <FiMail size={14} />
+                            </Box>
+                            <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                              {emp.email || 'No email'}
+                            </Typography>
+                          </Stack>
+                          
+                          <Stack direction="row" spacing={1.5} alignItems="center">
+                            <Box
+                              sx={{
+                                width: 32,
+                                height: 32,
+                                borderRadius: '50%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: alpha(theme.palette.success.main, 0.1),
+                                color: theme.palette.success.main,
+                                flexShrink: 0,
+                              }}
+                            >
+                              <FiPhone size={14} />
+                            </Box>
+                            <Typography variant="body2" sx={{ flex: 1 }}>
+                              {formatPhoneNumber(emp.phone)}
+                            </Typography>
+                          </Stack>
+
+                          <Stack direction="row" spacing={1.5} alignItems="center">
+                            <Box
+                              sx={{
+                                width: 32,
+                                height: 32,
+                                borderRadius: '50%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: alpha(theme.palette.warning.main, 0.1),
+                                color: theme.palette.warning.main,
+                                flexShrink: 0,
+                              }}
+                            >
+                              <FiShield size={14} />
+                            </Box>
+                            <Typography variant="body2" sx={{ flex: 1 }}>
+                              {getRoleLabel(emp.role)}
+                            </Typography>
+                          </Stack>
+                        </Stack>
+
+                        {/* Action Button */}
+                        <Button 
+                          variant="outlined" 
+                          fullWidth
+                          size="small"
+                          startIcon={<FiEye size={14} />}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenUser(emp);
+                          }}
+                          sx={{ 
+                            borderRadius: theme.shape.borderRadius * 2,
+                            mt: 1,
+                            fontWeight: 600,
+                            borderWidth: 2,
+                            '&:hover': {
+                              borderWidth: 2,
+                              transform: 'translateY(-1px)',
+                            },
+                            transition: 'all 0.2s ease',
+                          }}
+                        >
+                          View Profile
+                        </Button>
+                      </Stack>
+                    </CardContent>
+                  </EnhancedEmployeeCard>
+                </Slide>
               </Grid>
             ))}
           </Grid>
         )}
 
-        {/* बाकी सभी Dialog और Components पहले जैसे ही रहेंगे */}
+        {/* Rest of the dialogs and components */}
         {/* User Detail Dialog */}
         <Dialog 
           open={Boolean(selectedUser)} 
@@ -728,17 +919,23 @@ const EmployeeDirectory = () => {
           maxWidth="md" 
           fullWidth
           scroll="paper"
+          PaperProps={{
+            sx: {
+              borderRadius: theme.shape.borderRadius * 3,
+              background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.default, 0.9)} 100%)`,
+            }
+          }}
         >
           {selectedUser && (
             <>
-              <DialogTitle>
+              <DialogTitle sx={{ pb: 2 }}>
                 <Stack 
                   direction="row" 
                   justifyContent="space-between" 
                   alignItems="flex-start"
                 >
                   <Box>
-                    <Typography variant="h4" fontWeight={700} gutterBottom>
+                    <Typography variant="h4" fontWeight={800} gutterBottom>
                       {selectedUser.name}
                     </Typography>
                     <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" gap={1}>
@@ -746,6 +943,7 @@ const EmployeeDirectory = () => {
                         label={selectedUser.jobRole || 'No role specified'} 
                         color="primary"
                         size="small"
+                        sx={{ fontWeight: 600 }}
                       />
                       <EmployeeTypeChip
                         label={selectedUser.employeeType?.toUpperCase() || 'N/A'}
@@ -761,11 +959,27 @@ const EmployeeDirectory = () => {
                   </Box>
                   <Stack direction="row" spacing={1}>
                     <Tooltip title="Edit Employee">
-                      <IconButton onClick={() => handleEdit(selectedUser)}>
+                      <IconButton 
+                        onClick={() => handleEdit(selectedUser)}
+                        sx={{
+                          background: alpha(theme.palette.primary.main, 0.1),
+                          '&:hover': {
+                            background: alpha(theme.palette.primary.main, 0.2),
+                          }
+                        }}
+                      >
                         <FiEdit />
                       </IconButton>
                     </Tooltip>
-                    <IconButton onClick={handleCloseUser}>
+                    <IconButton 
+                      onClick={handleCloseUser}
+                      sx={{
+                        background: alpha(theme.palette.error.main, 0.1),
+                        '&:hover': {
+                          background: alpha(theme.palette.error.main, 0.2),
+                        }
+                      }}
+                    >
                       <FiX />
                     </IconButton>
                   </Stack>
@@ -787,61 +1001,37 @@ const EmployeeDirectory = () => {
                     <Grid container spacing={2}>
                       <Grid item xs={12} md={6}>
                         <DetailItem>
-                          <FiUser color={theme.palette.text.secondary} />
+                          <FiUser color={theme.palette.primary.main} />
                           <Box>
                             <Typography variant="body2" color="text.secondary">
                               Full Name
                             </Typography>
-                            <Typography variant="body1" fontWeight={500}>
+                            <Typography variant="body1" fontWeight={600}>
                               {selectedUser.name || 'Not provided'}
                             </Typography>
                           </Box>
                         </DetailItem>
                         
                         <DetailItem>
-                          <FiShield color={theme.palette.text.secondary} />
+                          <FiShield color={theme.palette.primary.main} />
                           <Box>
                             <Typography variant="body2" color="text.secondary">
                               System Role
                             </Typography>
-                            <Typography variant="body1" fontWeight={500}>
+                            <Typography variant="body1" fontWeight={600}>
                               {getRoleLabel(selectedUser.role)}
                             </Typography>
                           </Box>
                         </DetailItem>
 
                         <DetailItem>
-                          <FiCalendar color={theme.palette.text.secondary} />
+                          <FiCalendar color={theme.palette.primary.main} />
                           <Box>
                             <Typography variant="body2" color="text.secondary">
                               Date of Birth
                             </Typography>
-                            <Typography variant="body1" fontWeight={500}>
+                            <Typography variant="body1" fontWeight={600}>
                               {selectedUser.dob ? new Date(selectedUser.dob).toLocaleDateString() : 'Not provided'}
-                            </Typography>
-                          </Box>
-                        </DetailItem>
-                        
-                        <DetailItem>
-                          <FiUser color={theme.palette.text.secondary} />
-                          <Box>
-                            <Typography variant="body2" color="text.secondary">
-                              Gender
-                            </Typography>
-                            <Typography variant="body1" fontWeight={500}>
-                              {selectedUser.gender || 'Not provided'}
-                            </Typography>
-                          </Box>
-                        </DetailItem>
-                        
-                        <DetailItem>
-                          <FiHeart color={theme.palette.text.secondary} />
-                          <Box>
-                            <Typography variant="body2" color="text.secondary">
-                              Marital Status
-                            </Typography>
-                            <Typography variant="body1" fontWeight={500}>
-                              {selectedUser.maritalStatus || 'Not provided'}
                             </Typography>
                           </Box>
                         </DetailItem>
@@ -849,36 +1039,36 @@ const EmployeeDirectory = () => {
                       
                       <Grid item xs={12} md={6}>
                         <DetailItem>
-                          <FiMail color={theme.palette.text.secondary} />
+                          <FiMail color={theme.palette.primary.main} />
                           <Box>
                             <Typography variant="body2" color="text.secondary">
                               Email Address
                             </Typography>
-                            <Typography variant="body1" fontWeight={500}>
+                            <Typography variant="body1" fontWeight={600}>
                               {selectedUser.email || 'Not provided'}
                             </Typography>
                           </Box>
                         </DetailItem>
                         
                         <DetailItem>
-                          <FiPhone color={theme.palette.text.secondary} />
+                          <FiPhone color={theme.palette.primary.main} />
                           <Box>
                             <Typography variant="body2" color="text.secondary">
                               Phone Number
                             </Typography>
-                            <Typography variant="body1" fontWeight={500}>
+                            <Typography variant="body1" fontWeight={600}>
                               {formatPhoneNumber(selectedUser.phone)}
                             </Typography>
                           </Box>
                         </DetailItem>
                         
                         <DetailItem>
-                          <FiMapPin color={theme.palette.text.secondary} />
+                          <FiMapPin color={theme.palette.primary.main} />
                           <Box>
                             <Typography variant="body2" color="text.secondary">
                               Address
                             </Typography>
-                            <Typography variant="body1" fontWeight={500}>
+                            <Typography variant="body1" fontWeight={600}>
                               {selectedUser.address || 'Not provided'}
                             </Typography>
                           </Box>
@@ -892,7 +1082,10 @@ const EmployeeDirectory = () => {
               <DialogActions sx={{ p: 3, gap: 1 }}>
                 <Button 
                   onClick={handleCloseUser}
-                  sx={{ borderRadius: theme.shape.borderRadius * 2 }}
+                  sx={{ 
+                    borderRadius: theme.shape.borderRadius * 2,
+                    fontWeight: 600,
+                  }}
                 >
                   Close
                 </Button>
@@ -900,7 +1093,11 @@ const EmployeeDirectory = () => {
                   variant="contained"
                   startIcon={<FiEdit />}
                   onClick={() => handleEdit(selectedUser)}
-                  sx={{ borderRadius: theme.shape.borderRadius * 2 }}
+                  sx={{ 
+                    borderRadius: theme.shape.borderRadius * 2,
+                    fontWeight: 600,
+                    boxShadow: `0 4px 16px ${alpha(theme.palette.primary.main, 0.3)}`,
+                  }}
                 >
                   Edit Profile
                 </Button>
@@ -916,15 +1113,39 @@ const EmployeeDirectory = () => {
           maxWidth="md" 
           fullWidth
           scroll="paper"
+          PaperProps={{
+            sx: {
+              borderRadius: theme.shape.borderRadius * 3,
+              background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.default, 0.9)} 100%)`,
+            }
+          }}
         >
           {editingUser && (
             <>
-              <DialogTitle>
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  <FiEdit />
-                  <Typography variant="h5" fontWeight={600}>
-                    Edit Employee - {editingUser.name}
-                  </Typography>
+              <DialogTitle sx={{ pb: 2 }}>
+                <Stack direction="row" alignItems="center" spacing={2}>
+                  <Box
+                    sx={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                      color: 'white',
+                    }}
+                  >
+                    <FiEdit size={20} />
+                  </Box>
+                  <Box>
+                    <Typography variant="h5" fontWeight={800}>
+                      Edit Employee
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {editingUser.name}
+                    </Typography>
+                  </Box>
                 </Stack>
               </DialogTitle>
               
@@ -932,7 +1153,7 @@ const EmployeeDirectory = () => {
                 <Stack spacing={3}>
                   {/* Personal Information */}
                   <Box>
-                    <Typography variant="h6" fontWeight={600} gutterBottom>
+                    <Typography variant="h6" fontWeight={600} gutterBottom sx={{ color: theme.palette.primary.main }}>
                       Personal Information
                     </Typography>
                     <Grid container spacing={2}>
@@ -943,6 +1164,11 @@ const EmployeeDirectory = () => {
                           onChange={(e) => handleInputChange('name', e.target.value)}
                           fullWidth
                           margin="normal"
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: theme.shape.borderRadius * 2,
+                            }
+                          }}
                         />
                         <TextField
                           label="System Role"
@@ -951,33 +1177,17 @@ const EmployeeDirectory = () => {
                           fullWidth
                           margin="normal"
                           select
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: theme.shape.borderRadius * 2,
+                            }
+                          }}
                         >
                           {roleOptions.map((option) => (
                             <MenuItem key={option.value} value={option.value}>
                               {option.label}
                             </MenuItem>
                           ))}
-                        </TextField>
-                        <TextField
-                          label="Date of Birth"
-                          type="date"
-                          value={editFormData.dob ? new Date(editFormData.dob).toISOString().split('T')[0] : ''}
-                          onChange={(e) => handleInputChange('dob', e.target.value)}
-                          fullWidth
-                          margin="normal"
-                          InputLabelProps={{ shrink: true }}
-                        />
-                        <TextField
-                          label="Gender"
-                          value={editFormData.gender || ''}
-                          onChange={(e) => handleInputChange('gender', e.target.value)}
-                          fullWidth
-                          margin="normal"
-                          select
-                        >
-                          <MenuItem value="male">Male</MenuItem>
-                          <MenuItem value="female">Female</MenuItem>
-                          <MenuItem value="other">Other</MenuItem>
                         </TextField>
                       </Grid>
                       
@@ -989,6 +1199,11 @@ const EmployeeDirectory = () => {
                           onChange={(e) => handleInputChange('email', e.target.value)}
                           fullWidth
                           margin="normal"
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: theme.shape.borderRadius * 2,
+                            }
+                          }}
                         />
                         <TextField
                           label="Phone Number"
@@ -996,15 +1211,11 @@ const EmployeeDirectory = () => {
                           onChange={(e) => handleInputChange('phone', e.target.value)}
                           fullWidth
                           margin="normal"
-                        />
-                        <TextField
-                          label="Address"
-                          multiline
-                          rows={2}
-                          value={editFormData.address || ''}
-                          onChange={(e) => handleInputChange('address', e.target.value)}
-                          fullWidth
-                          margin="normal"
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: theme.shape.borderRadius * 2,
+                            }
+                          }}
                         />
                       </Grid>
                     </Grid>
@@ -1014,7 +1225,7 @@ const EmployeeDirectory = () => {
 
                   {/* Job Information */}
                   <Box>
-                    <Typography variant="h6" fontWeight={600} gutterBottom>
+                    <Typography variant="h6" fontWeight={600} gutterBottom sx={{ color: theme.palette.primary.main }}>
                       Job Information
                     </Typography>
                     <Grid container spacing={2}>
@@ -1025,6 +1236,11 @@ const EmployeeDirectory = () => {
                           onChange={(e) => handleInputChange('jobRole', e.target.value)}
                           fullWidth
                           margin="normal"
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: theme.shape.borderRadius * 2,
+                            }
+                          }}
                         />
                       </Grid>
                       <Grid item xs={12} md={6}>
@@ -1035,6 +1251,11 @@ const EmployeeDirectory = () => {
                           fullWidth
                           margin="normal"
                           select
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: theme.shape.borderRadius * 2,
+                            }
+                          }}
                         >
                           <MenuItem value="technical">Technical</MenuItem>
                           <MenuItem value="non-technical">Non-technical</MenuItem>
@@ -1051,7 +1272,10 @@ const EmployeeDirectory = () => {
                 <Button 
                   onClick={handleCancelEdit}
                   disabled={saving}
-                  sx={{ borderRadius: theme.shape.borderRadius * 2 }}
+                  sx={{ 
+                    borderRadius: theme.shape.borderRadius * 2,
+                    fontWeight: 600,
+                  }}
                 >
                   Cancel
                 </Button>
@@ -1060,7 +1284,11 @@ const EmployeeDirectory = () => {
                   startIcon={saving ? <CircularProgress size={16} /> : <FiSave />}
                   onClick={handleSaveEdit}
                   disabled={saving}
-                  sx={{ borderRadius: theme.shape.borderRadius * 2 }}
+                  sx={{ 
+                    borderRadius: theme.shape.borderRadius * 2,
+                    fontWeight: 600,
+                    boxShadow: `0 4px 16px ${alpha(theme.palette.primary.main, 0.3)}`,
+                  }}
                 >
                   {saving ? 'Saving...' : 'Save Changes'}
                 </Button>
@@ -1075,24 +1303,39 @@ const EmployeeDirectory = () => {
           open={Boolean(menuAnchorEl)}
           onClose={handleMenuClose}
           elevation={3}
+          PaperProps={{
+            sx: {
+              borderRadius: theme.shape.borderRadius * 2,
+              minWidth: 180,
+            }
+          }}
         >
           <MenuItem onClick={() => handleEdit(selectedMenuUser)}>
             <ListItemIcon>
-              <FiEdit size={18} />
+              <FiEdit size={18} color={theme.palette.primary.main} />
             </ListItemIcon>
-            <ListItemText>Edit Employee</ListItemText>
+            <ListItemText>
+              <Typography fontWeight={600}>Edit Employee</Typography>
+            </ListItemText>
           </MenuItem>
           <MenuItem onClick={() => handleOpenUser(selectedMenuUser)}>
             <ListItemIcon>
-              <FiEye size={18} />
+              <FiEye size={18} color={theme.palette.info.main} />
             </ListItemIcon>
-            <ListItemText>View Details</ListItemText>
+            <ListItemText>
+              <Typography fontWeight={600}>View Details</Typography>
+            </ListItemText>
           </MenuItem>
-          <MenuItem onClick={() => handleDeleteClick(selectedMenuUser)} sx={{ color: 'error.main' }}>
+          <MenuItem 
+            onClick={() => handleDeleteClick(selectedMenuUser)} 
+            sx={{ color: 'error.main' }}
+          >
             <ListItemIcon>
               <FiTrash2 size={18} color={theme.palette.error.main} />
             </ListItemIcon>
-            <ListItemText>Delete Employee</ListItemText>
+            <ListItemText>
+              <Typography fontWeight={600}>Delete Employee</Typography>
+            </ListItemText>
           </MenuItem>
         </Menu>
 
@@ -1102,25 +1345,45 @@ const EmployeeDirectory = () => {
           onClose={() => !deleting && setDeleteConfirmOpen(false)}
           maxWidth="sm"
           fullWidth
+          PaperProps={{
+            sx: {
+              borderRadius: theme.shape.borderRadius * 3,
+            }
+          }}
         >
-          <DialogTitle>
-            <Stack direction="row" alignItems="center" spacing={1} color="error.main">
-              <FiAlertTriangle />
-              <Typography variant="h6" fontWeight={600}>
+          <DialogTitle sx={{ pb: 2 }}>
+            <Stack direction="row" alignItems="center" spacing={2} color="error.main">
+              <Box
+                sx={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: alpha(theme.palette.error.main, 0.1),
+                }}
+              >
+                <FiAlertTriangle size={20} />
+              </Box>
+              <Typography variant="h6" fontWeight={800}>
                 Confirm Delete
               </Typography>
             </Stack>
           </DialogTitle>
           <DialogContent>
             <Typography>
-              Are you sure you want to delete <strong>{userToDelete?.name}</strong>? This action cannot be undone.
+              Are you sure you want to delete <strong>{userToDelete?.name}</strong>? This action cannot be undone and all associated data will be permanently removed.
             </Typography>
           </DialogContent>
           <DialogActions sx={{ p: 3, gap: 1 }}>
             <Button 
               onClick={() => setDeleteConfirmOpen(false)}
               disabled={deleting}
-              sx={{ borderRadius: theme.shape.borderRadius * 2 }}
+              sx={{ 
+                borderRadius: theme.shape.borderRadius * 2,
+                fontWeight: 600,
+              }}
             >
               Cancel
             </Button>
@@ -1130,14 +1393,18 @@ const EmployeeDirectory = () => {
               startIcon={deleting ? <CircularProgress size={16} /> : <FiTrash2 />}
               onClick={handleDeleteConfirm}
               disabled={deleting}
-              sx={{ borderRadius: theme.shape.borderRadius * 2 }}
+              sx={{ 
+                borderRadius: theme.shape.borderRadius * 2,
+                fontWeight: 600,
+                boxShadow: `0 4px 16px ${alpha(theme.palette.error.main, 0.3)}`,
+              }}
             >
               {deleting ? 'Deleting...' : 'Delete Employee'}
             </Button>
           </DialogActions>
         </Dialog>
 
-        {/* Snackbar for notifications */}
+        {/* Enhanced Snackbar */}
         <Snackbar
           open={snackbar.open}
           autoHideDuration={6000}
@@ -1147,12 +1414,22 @@ const EmployeeDirectory = () => {
           <Alert 
             severity={snackbar.severity}
             onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
-            sx={{ borderRadius: theme.shape.borderRadius * 2 }}
+            sx={{ 
+              borderRadius: theme.shape.borderRadius * 2,
+              fontWeight: 600,
+              boxShadow: theme.shadows[8],
+            }}
+            iconMapping={{
+              success: <FiCheckCircle />,
+              error: <FiAlertTriangle />,
+              warning: <FiAlertTriangle />,
+              info: <FiInfo />,
+            }}
           >
             {snackbar.message}
           </Alert>
         </Snackbar>
-      </Box>
+      </Container>
     </Fade>
   );
 };

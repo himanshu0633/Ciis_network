@@ -18,26 +18,31 @@ import {
   FiMessageSquare, FiActivity, FiDownload, FiClock, FiCheckCircle,
   FiXCircle, FiFilter, FiSearch, FiLogOut, FiMessageCircle,
   FiChevronLeft, FiChevronRight, FiX as FiClose, FiBarChart2,
-  FiTrendingUp, FiList, FiPieChart, FiTarget, FiUsers
+  FiTrendingUp, FiList, FiPause, FiTarget, FiUsers,FiSlash
 } from 'react-icons/fi';
 import { useTheme, useMediaQuery } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { styled } from '@mui/material/styles';
 
 // Enhanced Styled Components
-const StatCard = styled(Card)(({ theme, color = 'primary' }) => ({
-  background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
+const StatCard = styled(Card)(({ theme, color = 'primary', clickable = true, active = false }) => ({
+  background: active 
+    ? `linear-gradient(135deg, ${theme.palette[color].main}15 0%, ${theme.palette[color].main}08 100%)`
+    : `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
   borderRadius: theme.shape.borderRadius * 2,
-  boxShadow: theme.shadows[2],
+  boxShadow: active ? theme.shadows[4] : theme.shadows[2],
   transition: theme.transitions.create(['all'], {
     duration: theme.transitions.duration.standard,
   }),
   borderLeft: `4px solid ${theme.palette[color].main}`,
+  border: active ? `2px solid ${theme.palette[color].main}` : 'none',
   height: '100%',
-  '&:hover': {
+  cursor: clickable ? 'pointer' : 'default',
+  '&:hover': clickable ? {
     boxShadow: theme.shadows[6],
     transform: 'translateY(-4px)',
-  },
+    backgroundColor: `${theme.palette[color].main}08`,
+  } : {},
 }));
 
 const StatusChip = styled(Chip)(({ theme, status }) => ({
@@ -69,13 +74,6 @@ const StatusChip = styled(Chip)(({ theme, status }) => ({
     border: `1px solid ${theme.palette.success.main}30`,
   }),
 
-  // 🟣 Approved
-  ...(status === 'approved' && {
-    background: `${theme.palette.success.light}25`,
-    color: theme.palette.success.dark,
-    border: `1px solid ${theme.palette.success.main}30`,
-  }),
-
   // 🔴 Rejected
   ...(status === 'rejected' && {
     background: `${theme.palette.error.main}15`,
@@ -102,6 +100,13 @@ const StatusChip = styled(Chip)(({ theme, status }) => ({
     background: `${theme.palette.grey[500]}20`,
     color: theme.palette.grey[700],
     border: `1px solid ${theme.palette.grey[400]}30`,
+  }),
+
+  // 🔴 Overdue
+  ...(status === 'overdue' && {
+    background: `${theme.palette.error.main}20`,
+    color: theme.palette.error.dark,
+    border: `1px solid ${theme.palette.error.main}40`,
   }),
 }));
 
@@ -135,6 +140,7 @@ const MobileTaskCard = styled(Card)(({ theme, status }) => ({
   borderLeft: `4px solid ${status === 'completed' ? theme.palette.success.main :
     status === 'in-progress' ? theme.palette.info.main :
       status === 'pending' ? theme.palette.warning.main :
+      status === 'overdue' ? theme.palette.error.main :
         theme.palette.error.main
     }`,
   marginBottom: theme.spacing(2),
@@ -206,22 +212,22 @@ const statusColors = {
   pending: 'warning',
   'in-progress': 'info',
   completed: 'success',
-  approved: 'success',
   rejected: 'error',
   onhold: 'warning',
   reopen: 'secondary',
-  cancelled: 'grey'
+  cancelled: 'grey',
+  overdue: 'error'
 };
 
 const statusIcons = {
   pending: FiClock,
   'in-progress': FiAlertCircle,
   completed: FiCheckCircle,
-  approved: FiCheckCircle,
   rejected: FiXCircle,
   onhold: FiClock,
   reopen: FiRefreshCw,
-  cancelled: FiXCircle
+  cancelled: FiXCircle,
+  overdue: FiAlertCircle
 };
 
 const UserCreateTask = () => {
@@ -246,7 +252,6 @@ const UserCreateTask = () => {
     pending: { count: 0, percentage: 0 },
     inProgress: { count: 0, percentage: 0 },
     completed: { count: 0, percentage: 0 },
-    approved: { count: 0, percentage: 0 },
     rejected: { count: 0, percentage: 0 },
     onHold: { count: 0, percentage: 0 },
     reopen: { count: 0, percentage: 0 },
@@ -345,38 +350,43 @@ const UserCreateTask = () => {
     }
   };
 
-  // ✅ NEW: Fetch Task Status Counts with Time Filter
-  const fetchTaskStatusCounts = async (period = 'today') => {
-    if (!userId) return;
+  // ✅ FIXED: Get individual user status for a task - IMPROVED VERSION
+  const getUserStatusForTask = useCallback((task, userId) => {
+    if (!task || !userId) return 'pending';
     
-    setStatsLoading(true);
-    try {
-      const response = await axios.get(`/task/status-counts?period=${period}`);
-      
-      if (response.data.success) {
-        setTaskStats(response.data.statusCounts);
-      } else {
-        // Fallback to calculate from current tasks
-        calculateStatsFromTasks();
+    // First check statusByUser array
+    const userStatus = task.statusByUser?.find(s => {
+      // Handle both string and object formats
+      if (typeof s.user === 'string') {
+        return s.user === userId;
+      } else if (s.user && typeof s.user === 'object') {
+        return s.user._id === userId;
       }
-    } catch (err) {
-      console.error('❌ Error fetching task status counts:', err);
-      // Fallback to calculate from current tasks
-      calculateStatsFromTasks();
-    } finally {
-      setStatsLoading(false);
+      return false;
+    });
+    
+    if (userStatus) {
+      return userStatus.status || 'pending';
     }
-  };
+    
+    // Fallback to statusInfo array
+    const statusInfo = task.statusInfo?.find(s => s.userId === userId);
+    if (statusInfo) {
+      return statusInfo.status || 'pending';
+    }
+    
+    // Final fallback
+    return 'pending';
+  }, []);
 
-  // ✅ Calculate stats from tasks data if API fails
-  const calculateStatsFromTasks = () => {
-    if (Object.keys(myTasksGrouped).length === 0) {
+  // ✅ FIXED: Calculate stats from tasks data
+  const calculateStatsFromTasks = useCallback((tasks) => {
+    if (!tasks || Object.keys(tasks).length === 0) {
       setTaskStats({
         total: 0,
         pending: { count: 0, percentage: 0 },
         inProgress: { count: 0, percentage: 0 },
         completed: { count: 0, percentage: 0 },
-        approved: { count: 0, percentage: 0 },
         rejected: { count: 0, percentage: 0 },
         onHold: { count: 0, percentage: 0 },
         reopen: { count: 0, percentage: 0 },
@@ -391,12 +401,14 @@ const UserCreateTask = () => {
       pending: 0,
       'in-progress': 0,
       completed: 0,
-      approved: 0,
       rejected: 0,
+      onhold: 0,
+      reopen: 0,
+      cancelled: 0,
       overdue: 0
     };
 
-    Object.values(myTasksGrouped).forEach(dateTasks => {
+    Object.values(tasks).forEach(dateTasks => {
       dateTasks.forEach(task => {
         total++;
         const myStatus = getUserStatusForTask(task, userId);
@@ -405,9 +417,10 @@ const UserCreateTask = () => {
           statusCounts[myStatus]++;
         }
 
-        // Check overdue
-        if (task.dueDateTime && new Date(task.dueDateTime) < new Date() && 
-            myStatus !== 'completed') {
+        // Check overdue - only for pending and in-progress tasks
+        if (task.dueDateTime && 
+            new Date(task.dueDateTime) < new Date() && 
+            (myStatus === 'pending' || myStatus === 'in-progress')) {
           statusCounts.overdue++;
         }
       });
@@ -420,16 +433,15 @@ const UserCreateTask = () => {
       pending: { count: statusCounts.pending, percentage: calculatePercentage(statusCounts.pending) },
       inProgress: { count: statusCounts['in-progress'], percentage: calculatePercentage(statusCounts['in-progress']) },
       completed: { count: statusCounts.completed, percentage: calculatePercentage(statusCounts.completed) },
-      approved: { count: statusCounts.approved, percentage: calculatePercentage(statusCounts.approved) },
       rejected: { count: statusCounts.rejected, percentage: calculatePercentage(statusCounts.rejected) },
-      overdue: { count: statusCounts.overdue, percentage: calculatePercentage(statusCounts.overdue) },
-      onHold: { count: 0, percentage: 0 },
-      reopen: { count: 0, percentage: 0 },
-      cancelled: { count: 0, percentage: 0 }
+      onHold: { count: statusCounts.onhold, percentage: calculatePercentage(statusCounts.onhold) },
+      reopen: { count: statusCounts.reopen, percentage: calculatePercentage(statusCounts.reopen) },
+      cancelled: { count: statusCounts.cancelled, percentage: calculatePercentage(statusCounts.cancelled) },
+      overdue: { count: statusCounts.overdue, percentage: calculatePercentage(statusCounts.overdue) }
     });
-  };
+  }, [userId, getUserStatusForTask]);
 
-  // Fetch function WITHOUT pagination
+  // ✅ FIXED: Fetch function with proper filtering
   const fetchMyTasks = useCallback(async () => {
     if (authError || !userId) {
       setLoading(false);
@@ -438,23 +450,38 @@ const UserCreateTask = () => {
 
     setLoading(true);
     try {
-      const params = new URLSearchParams({
-        ...(statusFilter && { status: statusFilter }),
-        ...(searchTerm && { search: searchTerm })
-      });
+      const params = new URLSearchParams();
+      
+      // Add status filter if set
+      if (statusFilter && statusFilter !== 'all') {
+        params.append('status', statusFilter);
+      }
+      
+      // Add search term if set
+      if (searchTerm) {
+        params.append('search', searchTerm);
+      }
+      
+      // Add time period filter
+      if (timeFilter && timeFilter !== 'all') {
+        params.append('period', timeFilter);
+      }
 
-      const url = `/task/my?${params}`;
+      const url = `/task/my?${params.toString()}`;
+      console.log('🔍 Fetching tasks with URL:', url); // Debug log
+      
       const res = await axios.get(url);
       
       const tasks = res.data.groupedTasks || {};
+      console.log('📦 Fetched tasks:', tasks); // Debug log
       
       setMyTasksGrouped(tasks);
       
-      // Fetch stats after getting tasks
-      await fetchTaskStatusCounts(timeFilter);
+      // Calculate stats from the fetched tasks
+      calculateStatsFromTasks(tasks);
 
     } catch (err) {
-      console.error('Error fetching tasks:', err);
+      console.error('❌ Error fetching tasks:', err);
       if (err.response?.status === 401) {
         setAuthError(true);
         setSnackbar({
@@ -468,18 +495,48 @@ const UserCreateTask = () => {
     } finally {
       setLoading(false);
     }
-  }, [authError, userId, statusFilter, searchTerm, timeFilter]);
+  }, [authError, userId, statusFilter, searchTerm, timeFilter, calculateStatsFromTasks]);
 
-  // Handle Time Filter Change
+  // ✅ FIXED: Handle Time Filter Change
   const handleTimeFilterChange = (period) => {
     setTimeFilter(period);
-    fetchTaskStatusCounts(period);
+  };
+
+  // ✅ FIXED: Handle Status Filter from Stats Cards
+  const handleStatsCardClick = (status) => {
+    if (status) {
+      // Toggle filter - if same status is clicked again, clear the filter
+      const newStatusFilter = statusFilter === status ? '' : status;
+      setStatusFilter(newStatusFilter);
+      
+      setSnackbar({
+        open: true,
+        message: newStatusFilter 
+          ? `Filtering tasks by: ${status.replace('-', ' ')}` 
+          : 'Cleared status filter',
+        severity: 'info'
+      });
+    }
+  };
+
+  // ✅ FIXED: Clear all filters
+  const clearAllFilters = () => {
+    setStatusFilter('');
+    setTimeFilter('today');
+    setSelectedDate(null);
+    setDateRange({ start: null, end: null });
+    setSearchTerm('');
+    setSnackbar({
+      open: true,
+      message: 'All filters cleared',
+      severity: 'info'
+    });
   };
 
   // Reset when filters change
   useEffect(() => {
     fetchMyTasks();
-  }, [statusFilter, searchTerm, timeFilter]);
+  }, [statusFilter, searchTerm, timeFilter, fetchMyTasks]);
 
   // Enhanced Notifications Functions
   const fetchNotifications = async () => {
@@ -628,14 +685,6 @@ const UserCreateTask = () => {
   const filteredTasks = useMemo(() => {
     return applyDateFilter(myTasksGrouped);
   }, [myTasksGrouped, applyDateFilter]);
-
-  // Get individual user status for a task
-  const getUserStatusForTask = (task, userId) => {
-    const userStatus = task.statusByUser?.find(s => 
-      s.user === userId || s.user?._id === userId
-    );
-    return userStatus?.status || 'pending';
-  };
 
   // Status Change Handler
   const handleStatusChange = async (taskId, newStatus, remarks = '') => {
@@ -840,7 +889,7 @@ const UserCreateTask = () => {
     return new Date(dueDateTime) < new Date();
   };
 
-  // ✅ NEW: Enhanced Statistics Cards Component
+  // ✅ FIXED: Enhanced Statistics Cards Component with click functionality
   const renderStatisticsCards = () => {
     const statsData = [
       {
@@ -848,7 +897,9 @@ const UserCreateTask = () => {
         value: taskStats.total,
         icon: FiList,
         color: 'primary',
-        description: `All tasks (${timeFilter})`
+        description: `All tasks (${timeFilter})`,
+        clickable: false,
+        status: null
       },
       {
         title: 'Completed',
@@ -856,7 +907,9 @@ const UserCreateTask = () => {
         percentage: taskStats.completed.percentage,
         icon: FiCheckCircle,
         color: 'success',
-        description: `${taskStats.completed.percentage}% of total`
+        description: `${taskStats.completed.percentage}% of total`,
+        status: 'completed',
+        clickable: true
       },
       {
         title: 'In Progress',
@@ -864,7 +917,9 @@ const UserCreateTask = () => {
         percentage: taskStats.inProgress.percentage,
         icon: FiTrendingUp,
         color: 'info',
-        description: `${taskStats.inProgress.percentage}% of total`
+        description: `${taskStats.inProgress.percentage}% of total`,
+        status: 'in-progress',
+        clickable: true
       },
       {
         title: 'Pending',
@@ -872,7 +927,29 @@ const UserCreateTask = () => {
         percentage: taskStats.pending.percentage,
         icon: FiClock,
         color: 'warning',
-        description: `${taskStats.pending.percentage}% of total`
+        description: `${taskStats.pending.percentage}% of total`,
+        status: 'pending',
+        clickable: true
+      },
+      {
+        title: 'On Hold',
+        value: taskStats.onHold.count,
+        percentage: taskStats.onHold.percentage,
+        icon: FiPause,
+        color: 'secondary',
+        description: `${taskStats.onHold.percentage}% of total`,
+        status: 'onhold',
+        clickable: true
+      },
+      {
+        title: 'Cancelled',
+        value: taskStats.cancelled.count,
+        percentage: taskStats.cancelled.percentage,
+        icon: FiSlash,
+        color: 'grey',
+        description: `${taskStats.cancelled.percentage}% of total`,
+        status: 'cancelled',
+        clickable: true
       },
       {
         title: 'Overdue',
@@ -880,15 +957,19 @@ const UserCreateTask = () => {
         percentage: taskStats.overdue.percentage,
         icon: FiAlertCircle,
         color: 'error',
-        description: `${taskStats.overdue.percentage}% of total`
+        description: `${taskStats.overdue.percentage}% of total`,
+        status: 'overdue',
+        clickable: true
       },
       {
-        title: 'Approved',
-        value: taskStats.approved.count,
-        percentage: taskStats.approved.percentage,
-        icon: FiTarget,
-        color: 'success',
-        description: `${taskStats.approved.percentage}% of total`
+        title: 'Rejected',
+        value: taskStats.rejected.count,
+        percentage: taskStats.rejected.percentage,
+        icon: FiXCircle,
+        color: 'error',
+        description: `${taskStats.rejected.percentage}% of total`,
+        status: 'rejected',
+        clickable: true
       }
     ];
 
@@ -896,7 +977,12 @@ const UserCreateTask = () => {
       <Grid container spacing={2} sx={{ mb: 3 }}>
         {statsData.map((stat, index) => (
           <Grid item xs={6} sm={4} md={2} key={index}>
-            <StatCard color={stat.color}>
+            <StatCard 
+              color={stat.color} 
+              clickable={stat.clickable}
+              active={stat.status === statusFilter}
+              onClick={() => stat.clickable && handleStatsCardClick(stat.status)}
+            >
               <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
                 <Stack spacing={1}>
                   {/* Header */}
@@ -931,6 +1017,13 @@ const UserCreateTask = () => {
                   <Typography variant="caption" color="text.secondary">
                     {stat.description}
                   </Typography>
+
+                  {/* Click hint for clickable cards */}
+                  {stat.clickable && (
+                    <Typography variant="caption" color="primary" sx={{ fontStyle: 'italic', fontSize: '0.7rem' }}>
+                      {stat.status === statusFilter ? '✓ Active filter' : 'Click to filter'}
+                    </Typography>
+                  )}
                 </Stack>
               </CardContent>
             </StatCard>
@@ -940,7 +1033,7 @@ const UserCreateTask = () => {
     );
   };
 
-  // ✅ NEW: Time Filter Component
+  // ✅ FIXED: Time Filter Component
   const renderTimeFilter = () => (
     <Box sx={{ mb: 2 }}>
       <Typography variant="subtitle2" fontWeight={600} color="text.secondary" sx={{ mb: 1 }}>
@@ -949,9 +1042,9 @@ const UserCreateTask = () => {
       <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
         {[
           { value: 'today', label: 'Today' },
-          { value: 'week', label: 'This Week' },
-          { value: 'month', label: 'This Month' },
-          // { value: 'all', label: 'All Time' }
+          // { value: 'week', label: 'This Week' },
+          // { value: 'month', label: 'This Month' },
+          { value: 'all', label: 'All Time' }
         ].map((period) => (
           <TimeFilterButton
             key={period.value}
@@ -1035,7 +1128,6 @@ const UserCreateTask = () => {
           <MenuItem value="pending">Pending</MenuItem>
           <MenuItem value="in-progress">In Progress</MenuItem>
           <MenuItem value="completed">Completed</MenuItem>
-          <MenuItem value="approved">Approved</MenuItem>
           <MenuItem value="rejected">Rejected</MenuItem>
           <MenuItem value="onhold">On Hold</MenuItem>
           <MenuItem value="reopen">Reopen</MenuItem>
@@ -1343,25 +1435,27 @@ const UserCreateTask = () => {
         <Box sx={{ textAlign: 'center', py: 6, px: 2 }}>
           <FiCalendar size={isMobile ? 48 : 64} color={theme.palette.text.secondary} />
           <Typography variant="h6" color="text.secondary" sx={{ mt: 2, fontWeight: 600 }}>
-            {selectedDate || dateRange.start || dateRange.end ? 'No tasks found for selected date' : 'No tasks found'}
+            {statusFilter ? `No ${statusFilter} tasks found` : 
+             selectedDate || dateRange.start || dateRange.end ? 'No tasks found for selected date' : 'No tasks found'}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            {selectedDate || dateRange.start || dateRange.end ? 'Try changing your date filter' : 'You have no tasks assigned yet'}
+            {statusFilter ? `Try changing your status filter` :
+             selectedDate || dateRange.start || dateRange.end ? 'Try changing your date filter' : 'You have no tasks assigned yet'}
           </Typography>
-          {(selectedDate || dateRange.start || dateRange.end) && (
+          {(statusFilter || selectedDate || dateRange.start || dateRange.end) && (
             <Button
               variant="outlined"
-              onClick={clearDateFilter}
+              onClick={clearAllFilters}
               sx={{ mt: 2, borderRadius: 2 }}
             >
-              Clear Date Filter
+              Clear All Filters
             </Button>
           )}
           <Button
             variant="contained"
             startIcon={<FiPlus />}
             onClick={() => setOpenDialog(true)}
-            sx={{ mt: 2, borderRadius: 2, ml: (selectedDate || dateRange.start || dateRange.end) ? 1 : 0 }}
+            sx={{ mt: 2, borderRadius: 2, ml: (statusFilter || selectedDate || dateRange.start || dateRange.end) ? 1 : 0 }}
           >
             Create New Task
           </Button>
@@ -2138,6 +2232,27 @@ const UserCreateTask = () => {
                   </ActionButton>
                 </Tooltip>
 
+                {/* Clear All Filters Button */}
+                {(statusFilter || timeFilter !== 'today' || selectedDate || dateRange.start || dateRange.end) && (
+                  <Tooltip title="Clear All Filters">
+                    <Button
+                      variant="outlined"
+                      onClick={clearAllFilters}
+                      startIcon={<FiClose />}
+                      sx={{
+                        borderRadius: 2,
+                        textTransform: "none",
+                        fontWeight: 600,
+                        px: 2,
+                        py: 1,
+                        fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                      }}
+                    >
+                      Clear Filters
+                    </Button>
+                  </Tooltip>
+                )}
+
                 {/* Create Task Button */}
                 <Button
                   variant="contained"
@@ -2158,7 +2273,7 @@ const UserCreateTask = () => {
             </Stack>
           </Paper>
 
-          {/* ✅ NEW: Statistics Section */}
+          {/* ✅ FIXED: Statistics Section */}
           <Paper sx={{
             p: { xs: 2, sm: 3 },
             mb: 3,
@@ -2181,11 +2296,20 @@ const UserCreateTask = () => {
             {/* Statistics Cards */}
             {renderStatisticsCards()}
 
-            {/* Quick Stats Summary */}
-          
-              
-           
-           
+            {/* Active Filter Summary */}
+            {(statusFilter || timeFilter !== 'today') && (
+              <Alert severity="info" sx={{ mt: 2, borderRadius: 1 }}>
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <FiFilter size={16} />
+                  <Typography variant="body2" fontWeight={600}>
+                    Active Filters: 
+                    {statusFilter && ` Status: ${statusFilter.replace('-', ' ')}`}
+                    {statusFilter && timeFilter !== 'today' && ' | '}
+                    {timeFilter !== 'today' && ` Time: ${timeFilter}`}
+                  </Typography>
+                </Stack>
+              </Alert>
+            )}
           </Paper>
 
           {/* Tasks Section */}
@@ -2204,6 +2328,11 @@ const UserCreateTask = () => {
               >
                 <Typography variant="h5" fontWeight={700}>
                   My Tasks
+                  {statusFilter && (
+                    <Typography component="span" variant="body1" color="primary" sx={{ ml: 1, fontWeight: 600 }}>
+                      ({statusFilter.replace('-', ' ')})
+                    </Typography>
+                  )}
                 </Typography>
                 
                 <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
@@ -2231,11 +2360,11 @@ const UserCreateTask = () => {
                       <MenuItem value="pending">Pending</MenuItem>
                       <MenuItem value="in-progress">In Progress</MenuItem>
                       <MenuItem value="completed">Completed</MenuItem>
-                      <MenuItem value="approved">Approved</MenuItem>
                       <MenuItem value="rejected">Rejected</MenuItem>
                       <MenuItem value="onhold">On Hold</MenuItem>
                       <MenuItem value="reopen">Reopen</MenuItem>
                       <MenuItem value="cancelled">Cancelled</MenuItem>
+                      <MenuItem value="overdue">Overdue</MenuItem>
                     </Select>
                   </FormControl>
 
