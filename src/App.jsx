@@ -34,6 +34,7 @@ import TaskDeatils from './hrCds/pages/hr/TaskDetails';
 import EmpAllTask from './hrCds/pages/hr/EmpAllTask';
 import AdminProject from './hrCds/pages/AdminProject'
 import EmployeeProject from './hrCds/pages/EmployeeProject'
+import Client from './hrCds/pages/hr/Client';
 function App() {
   const user = JSON.parse(localStorage.getItem('user'));
   const userRole = user?.role;
@@ -65,6 +66,7 @@ function App() {
           <Route path="admin-meeting" element={<AdminMeetingPage />} />
           <Route path="adminp" element={<AdminProject />} />
           <Route path="emp-all-task" element={<EmpAllTask />} />
+          <Route path="emp-client" element={<Client />} />
         </Route>
         <Route
           path="/cds/*"

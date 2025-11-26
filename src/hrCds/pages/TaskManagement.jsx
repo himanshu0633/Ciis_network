@@ -18,7 +18,8 @@ import {
   FiMessageSquare, FiActivity, FiDownload, FiClock, FiCheckCircle,
   FiXCircle, FiFilter, FiSearch, FiLogOut, FiMessageCircle,
   FiChevronLeft, FiChevronRight, FiX as FiClose, FiBarChart2,
-  FiTrendingUp, FiList, FiPause, FiTarget, FiUsers,FiSlash
+  FiTrendingUp, FiList, FiPause, FiTarget, FiUsers, FiSlash,
+  FiImage, FiCamera, FiTrash2, FiZoomIn
 } from 'react-icons/fi';
 import { useTheme, useMediaQuery } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
@@ -52,57 +53,41 @@ const StatusChip = styled(Chip)(({ theme, status }) => ({
   borderRadius: theme.shape.borderRadius * 2,
   textTransform: 'uppercase',
   letterSpacing: 0.3,
-
-  // 🟡 Pending
   ...(status === 'pending' && {
     background: `${theme.palette.warning.main}15`,
     color: theme.palette.warning.dark,
     border: `1px solid ${theme.palette.warning.main}30`,
   }),
-
-  // 🔵 In Progress
   ...(status === 'in-progress' && {
     background: `${theme.palette.info.main}15`,
     color: theme.palette.info.dark,
     border: `1px solid ${theme.palette.info.main}30`,
   }),
-
-  // 🟢 Completed
   ...(status === 'completed' && {
     background: `${theme.palette.success.main}15`,
     color: theme.palette.success.dark,
     border: `1px solid ${theme.palette.success.main}30`,
   }),
-
-  // 🔴 Rejected
   ...(status === 'rejected' && {
     background: `${theme.palette.error.main}15`,
     color: theme.palette.error.dark,
     border: `1px solid ${theme.palette.error.main}30`,
   }),
-
-  // 🟠 On-Hold
   ...(status === 'onhold' && {
     background: `${theme.palette.warning.light}25`,
     color: theme.palette.warning.dark,
     border: `1px solid ${theme.palette.warning.main}30`,
   }),
-
-  // 🟣 Reopen
   ...(status === 'reopen' && {
     background: `${theme.palette.secondary.main}15`,
     color: theme.palette.secondary.dark,
     border: `1px solid ${theme.palette.secondary.main}30`,
   }),
-
-  // ⚫ Cancelled
   ...(status === 'cancelled' && {
     background: `${theme.palette.grey[500]}20`,
     color: theme.palette.grey[700],
     border: `1px solid ${theme.palette.grey[400]}30`,
   }),
-
-  // 🔴 Overdue
   ...(status === 'overdue' && {
     background: `${theme.palette.error.main}20`,
     color: theme.palette.error.dark,
@@ -208,6 +193,62 @@ const ProgressBar = styled(Box)(({ theme, progress, color }) => ({
   },
 }));
 
+// New Styled Components for Image Upload
+const ImageUploadArea = styled(Box)(({ theme, isDragActive }) => ({
+  border: `2px dashed ${isDragActive ? theme.palette.primary.main : theme.palette.divider}`,
+  borderRadius: theme.shape.borderRadius * 2,
+  padding: theme.spacing(3),
+  textAlign: 'center',
+  backgroundColor: isDragActive ? `${theme.palette.primary.main}08` : theme.palette.background.paper,
+  cursor: 'pointer',
+  transition: 'all 0.3s ease',
+  '&:hover': {
+    borderColor: theme.palette.primary.main,
+    backgroundColor: `${theme.palette.primary.main}04`,
+  },
+}));
+
+const ImagePreview = styled(Box)(({ theme }) => ({
+  position: 'relative',
+  borderRadius: theme.shape.borderRadius,
+  overflow: 'hidden',
+  cursor: 'pointer',
+  transition: 'all 0.3s ease',
+  '&:hover': {
+    transform: 'scale(1.02)',
+    boxShadow: theme.shadows[4],
+  },
+}));
+
+const ImagePreviewContainer = styled(Box)(({ theme }) => ({
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+  gap: theme.spacing(1),
+  marginTop: theme.spacing(2),
+}));
+
+const RemoveImageButton = styled(IconButton)(({ theme }) => ({
+  position: 'absolute',
+  top: 4,
+  right: 4,
+  backgroundColor: theme.palette.error.main,
+  color: 'white',
+  width: 24,
+  height: 24,
+  '&:hover': {
+    backgroundColor: theme.palette.error.dark,
+  },
+}));
+
+const ZoomModal = styled(Modal)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  '& .MuiBackdrop-root': {
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+  },
+}));
+
 const statusColors = {
   pending: 'warning',
   'in-progress': 'info',
@@ -267,9 +308,12 @@ const UserCreateTask = () => {
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
   const [remarksDialog, setRemarksDialog] = useState({ open: false, taskId: null, remarks: [] });
   const [newRemark, setNewRemark] = useState('');
+  const [remarkImages, setRemarkImages] = useState([]);
+  const [isUploadingRemark, setIsUploadingRemark] = useState(false);
   const [activityLogs, setActivityLogs] = useState([]);
   const [activityDialog, setActivityDialog] = useState({ open: false, taskId: null });
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [zoomImage, setZoomImage] = useState(null);
 
   // Calendar Filter States
   const [calendarFilterOpen, setCalendarFilterOpen] = useState(false);
@@ -293,6 +337,7 @@ const UserCreateTask = () => {
     assignedGroups: []
   });
 
+  const [pendingStatusChange, setPendingStatusChange] = useState({ taskId: null, status: '' });
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef(null);
   const chunks = useRef([]);
@@ -356,7 +401,6 @@ const UserCreateTask = () => {
     
     // First check statusByUser array
     const userStatus = task.statusByUser?.find(s => {
-      // Handle both string and object formats
       if (typeof s.user === 'string') {
         return s.user === userId;
       } else if (s.user && typeof s.user === 'object') {
@@ -452,32 +496,26 @@ const UserCreateTask = () => {
     try {
       const params = new URLSearchParams();
       
-      // Add status filter if set
       if (statusFilter && statusFilter !== 'all') {
         params.append('status', statusFilter);
       }
       
-      // Add search term if set
       if (searchTerm) {
         params.append('search', searchTerm);
       }
       
-      // Add time period filter
       if (timeFilter && timeFilter !== 'all') {
         params.append('period', timeFilter);
       }
 
       const url = `/task/my?${params.toString()}`;
-      console.log('🔍 Fetching tasks with URL:', url); // Debug log
+      console.log('🔍 Fetching tasks with URL:', url);
       
       const res = await axios.get(url);
-      
       const tasks = res.data.groupedTasks || {};
-      console.log('📦 Fetched tasks:', tasks); // Debug log
+      console.log('📦 Fetched tasks:', tasks);
       
       setMyTasksGrouped(tasks);
-      
-      // Calculate stats from the fetched tasks
       calculateStatsFromTasks(tasks);
 
     } catch (err) {
@@ -505,7 +543,6 @@ const UserCreateTask = () => {
   // ✅ FIXED: Handle Status Filter from Stats Cards
   const handleStatsCardClick = (status) => {
     if (status) {
-      // Toggle filter - if same status is clicked again, clear the filter
       const newStatusFilter = statusFilter === status ? '' : status;
       setStatusFilter(newStatusFilter);
       
@@ -533,10 +570,109 @@ const UserCreateTask = () => {
     });
   };
 
-  // Reset when filters change
-  useEffect(() => {
-    fetchMyTasks();
-  }, [statusFilter, searchTerm, timeFilter, fetchMyTasks]);
+  // Enhanced Remarks Functions with Image Upload
+  const fetchTaskRemarks = async (taskId) => {
+    try {
+      const res = await axios.get(`/task/${taskId}/remarks`);
+      setRemarksDialog({ 
+        open: true, 
+        taskId, 
+        remarks: res.data.remarks || [] 
+      });
+    } catch (error) {
+      console.error('Error fetching remarks:', error);
+      setSnackbar({ open: true, message: 'Failed to load remarks', severity: 'error' });
+    }
+  };
+
+  const handleRemarkImageUpload = (event) => {
+  const files = Array.from(event.target.files);
+  const imageFiles = files.filter(file => file.type.startsWith('image/'));
+  
+  if (imageFiles.length === 0) {
+    setSnackbar({ open: true, message: 'Please select valid image files', severity: 'warning' });
+    return;
+  }
+
+  // For single image upload, replace existing image
+  const newImage = {
+    file: imageFiles[0],
+    preview: URL.createObjectURL(imageFiles[0]),
+    name: imageFiles[0].name,
+    size: imageFiles[0].size
+  };
+
+  // Clear existing images and add new one
+  remarkImages.forEach(image => URL.revokeObjectURL(image.preview)); // Clean up memory
+  setRemarkImages([newImage]);
+};
+
+  const handleRemoveRemarkImage = (index) => {
+    setRemarkImages(prev => {
+      const newImages = [...prev];
+      URL.revokeObjectURL(newImages[index].preview);
+      newImages.splice(index, 1);
+      return newImages;
+    });
+  };
+
+  const handleDragOver = (event) => {
+    event.preventDefault();
+  };
+
+  const handleDrop = (event) => {
+    event.preventDefault();
+    const files = Array.from(event.dataTransfer.files);
+    if (files.length > 0) {
+      const inputEvent = {
+        target: {
+          files: event.dataTransfer.files
+        }
+      };
+      handleRemarkImageUpload(inputEvent);
+    }
+  };
+
+  const addRemark = async (taskId) => {
+    if (!newRemark.trim() && remarkImages.length === 0) {
+      setSnackbar({ open: true, message: 'Please enter a remark or upload an image', severity: 'warning' });
+      return;
+    }
+    
+    setIsUploadingRemark(true);
+    
+    try {
+      const formData = new FormData();
+      formData.append('text', newRemark.trim());
+
+      // Append all images
+      remarkImages.forEach((image, index) => {
+        formData.append('image', image.file);
+      });
+
+      const response = await axios.post(`/task/${taskId}/remarks`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        }
+      });
+
+      setNewRemark('');
+      setRemarkImages([]);
+      fetchTaskRemarks(taskId);
+      
+      setSnackbar({ 
+        open: true, 
+        message: `Remark added successfully${remarkImages.length > 0 ? ' with ' + remarkImages.length + ' image(s)' : ''}`, 
+        severity: 'success' 
+      });
+
+    } catch (error) {
+      console.error('Error adding remark:', error);
+      setSnackbar({ open: true, message: 'Failed to add remark', severity: 'error' });
+    } finally {
+      setIsUploadingRemark(false);
+    }
+  };
 
   // Enhanced Notifications Functions
   const fetchNotifications = async () => {
@@ -568,38 +704,6 @@ const UserCreateTask = () => {
       setSnackbar({ open: true, message: 'All notifications marked as read', severity: 'success' });
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
-    }
-  };
-
-  // Enhanced Remarks Functions
-  const fetchTaskRemarks = async (taskId) => {
-    try {
-      const res = await axios.get(`/task/${taskId}/remarks`);
-      setRemarksDialog({ 
-        open: true, 
-        taskId, 
-        remarks: res.data.remarks || [] 
-      });
-    } catch (error) {
-      console.error('Error fetching remarks:', error);
-      setSnackbar({ open: true, message: 'Failed to load remarks', severity: 'error' });
-    }
-  };
-
-  const addRemark = async (taskId) => {
-    if (!newRemark.trim()) {
-      setSnackbar({ open: true, message: 'Please enter a remark', severity: 'warning' });
-      return;
-    }
-    
-    try {
-      await axios.post(`/task/${taskId}/remarks`, { text: newRemark });
-      setNewRemark('');
-      fetchTaskRemarks(taskId);
-      setSnackbar({ open: true, message: 'Remark added successfully', severity: 'success' });
-    } catch (error) {
-      console.error('Error adding remark:', error);
-      setSnackbar({ open: true, message: 'Failed to add remark', severity: 'error' });
     }
   };
 
@@ -889,6 +993,22 @@ const UserCreateTask = () => {
     return new Date(dueDateTime) < new Date();
   };
 
+  // Reset when filters change
+  useEffect(() => {
+    fetchMyTasks();
+  }, [statusFilter, searchTerm, timeFilter, fetchMyTasks]);
+
+  useEffect(() => {
+    fetchUserData();
+  }, []);
+
+  useEffect(() => {
+    if (!authError && userId) {
+      fetchMyTasks();
+      fetchNotifications();
+    }
+  }, [authError, userId]);
+
   // ✅ FIXED: Enhanced Statistics Cards Component with click functionality
   const renderStatisticsCards = () => {
     const statsData = [
@@ -975,60 +1095,58 @@ const UserCreateTask = () => {
 
     return (
       <Grid container spacing={2} sx={{ mb: 3 }}>
-        {statsData.map((stat, index) => (
-          <Grid item xs={6} sm={4} md={2} key={index}>
-            <StatCard 
-              color={stat.color} 
-              clickable={stat.clickable}
-              active={stat.status === statusFilter}
-              onClick={() => stat.clickable && handleStatsCardClick(stat.status)}
-            >
-              <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                <Stack spacing={1}>
-                  {/* Header */}
-                  <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                    <Box>
-                      <Typography variant="caption" color="text.secondary" fontWeight={600}>
-                        {stat.title}
-                      </Typography>
-                      <Typography variant="h5" fontWeight={700} sx={{ mt: 0.5 }}>
-                        {stat.value}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ 
-                      p: 1, 
-                      borderRadius: 2, 
-                      bgcolor: `${theme.palette[stat.color].main}15`,
-                      color: theme.palette[stat.color].main
-                    }}>
-                      {React.createElement(stat.icon, { size: 18 })}
-                    </Box>
-                  </Stack>
+        {statsData
+          .filter(stat => stat.title === "Total Tasks" || stat.value > 0)
+          .map((stat, index) => (
+            <Grid item xs={6} sm={4} md={2} key={index}>
+              <StatCard 
+                color={stat.color} 
+                clickable={stat.clickable}
+                active={stat.status === statusFilter}
+                onClick={() => stat.clickable && handleStatsCardClick(stat.status)}
+              >
+                <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                  <Stack spacing={1}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                      <Box>
+                        <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                          {stat.title}
+                        </Typography>
+                        <Typography variant="h5" fontWeight={700} sx={{ mt: 0.5 }}>
+                          {stat.value}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ 
+                        p: 1, 
+                        borderRadius: 2, 
+                        bgcolor: `${theme.palette[stat.color].main}15`,
+                        color: theme.palette[stat.color].main
+                      }}>
+                        {React.createElement(stat.icon, { size: 18 })}
+                      </Box>
+                    </Stack>
 
-                  {/* Progress Bar for status tasks */}
-                  {stat.percentage !== undefined && (
-                    <ProgressBar 
-                      progress={stat.percentage} 
-                      color={theme.palette[stat.color].main}
-                    />
-                  )}
+                    {stat.percentage !== undefined && (
+                      <ProgressBar 
+                        progress={stat.percentage} 
+                        color={theme.palette[stat.color].main}
+                      />
+                    )}
 
-                  {/* Description */}
-                  <Typography variant="caption" color="text.secondary">
-                    {stat.description}
-                  </Typography>
-
-                  {/* Click hint for clickable cards */}
-                  {stat.clickable && (
-                    <Typography variant="caption" color="primary" sx={{ fontStyle: 'italic', fontSize: '0.7rem' }}>
-                      {stat.status === statusFilter ? '✓ Active filter' : 'Click to filter'}
+                    <Typography variant="caption" color="text.secondary">
+                      {stat.description}
                     </Typography>
-                  )}
-                </Stack>
-              </CardContent>
-            </StatCard>
-          </Grid>
-        ))}
+
+                    {stat.clickable && (
+                      <Typography variant="caption" color="primary" sx={{ fontStyle: 'italic', fontSize: '0.7rem' }}>
+                        {stat.status === statusFilter ? '✓ Active filter' : 'Click to filter'}
+                      </Typography>
+                    )}
+                  </Stack>
+                </CardContent>
+              </StatCard>
+            </Grid>
+          ))}
       </Grid>
     );
   };
@@ -1042,8 +1160,6 @@ const UserCreateTask = () => {
       <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
         {[
           { value: 'today', label: 'Today' },
-          // { value: 'week', label: 'This Week' },
-          // { value: 'month', label: 'This Month' },
           { value: 'all', label: 'All Time' }
         ].map((period) => (
           <TimeFilterButton
@@ -1116,13 +1232,14 @@ const UserCreateTask = () => {
       <FormControl size="small" sx={{ minWidth: isSmallMobile ? 100 : 120 }}>
         <Select
           value={myStatus}
-          onChange={(e) => handleStatusChange(task._id, e.target.value)}
-          sx={{
-            borderRadius: theme.shape.borderRadius,
-            '& .MuiSelect-select': {
-              py: 1,
-              fontSize: isSmallMobile ? '0.75rem' : '0.875rem',
-            },
+          onChange={(e) => {
+            const selectedStatus = e.target.value;
+            if (["completed", "onhold", "reopen", "cancelled", "rejected"].includes(selectedStatus)) {
+              setPendingStatusChange({ taskId: task._id, status: selectedStatus });
+              setRemarksDialog({ open: true, taskId: task._id, remarks: [] });
+            } else {
+              handleStatusChange(task._id, selectedStatus);
+            }
           }}
         >
           <MenuItem value="pending">Pending</MenuItem>
@@ -1137,7 +1254,329 @@ const UserCreateTask = () => {
     );
   };
 
-  // Render Desktop Table
+  // Enhanced Remarks Dialog with Image Upload
+  const renderRemarksDialog = () => (
+    <Dialog 
+      open={remarksDialog.open} 
+      onClose={() => {
+        setRemarksDialog({ open: false, taskId: null, remarks: [] });
+        setRemarkImages([]);
+        setNewRemark('');
+      }}
+      maxWidth="md"
+      fullWidth
+      fullScreen={isSmallMobile}
+      PaperProps={{ sx: { borderRadius: isSmallMobile ? 0 : 2 } }}
+    >
+      <DialogTitle sx={{ 
+        background: `linear-gradient(135deg, ${theme.palette.info.main}15 0%, ${theme.palette.info.main}05 100%)`,
+        pb: 2
+      }}>
+        <Stack direction="row" alignItems="center" justifyContent="space-between">
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <FiMessageSquare color={theme.palette.info.main} />
+            <Typography variant="h6" fontWeight={600}>Task Remarks</Typography>
+          </Stack>
+          <Typography variant="body2" color="text.secondary">
+            {remarksDialog.remarks.length} remark(s)
+          </Typography>
+        </Stack>
+      </DialogTitle>
+      
+      <DialogContent>
+        <Stack spacing={3} sx={{ mt: 1 }}>
+          {/* Add New Remark Section */}
+          <Card variant="outlined" sx={{ borderRadius: 2 }}>
+            <CardContent sx={{ p: 3 }}>
+              <Typography variant="h6" gutterBottom fontWeight={600}>
+                Add New Remark
+              </Typography>
+              
+              {/* Text Input */}
+              <TextField
+                fullWidth
+                multiline
+                rows={3}
+                label="Your Remark"
+                value={newRemark}
+                onChange={(e) => setNewRemark(e.target.value)}
+                placeholder="Enter your remark here... (Optional if uploading images)"
+                sx={{ mb: 2 }}
+              />
+
+              {/* Image Upload Section */}
+              <Box>
+                <Typography variant="subtitle2" gutterBottom fontWeight={600}>
+                  Attach Images (Optional)
+                </Typography>
+                
+                <ImageUploadArea
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                  onClick={() => document.getElementById('remark-image-upload').click()}
+                  isDragActive={false}
+                >
+                  <Stack spacing={1} alignItems="center">
+                    <FiImage size={32} color={theme.palette.primary.main} />
+                    <Typography variant="body1" fontWeight={600}>
+                      Click to upload or drag & drop
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Supports JPG, PNG, GIF • Max 5 images • 1MB each
+                    </Typography>
+                    <Button
+                      variant="outlined"
+                      startIcon={<FiCamera />}
+                      sx={{ mt: 1 }}
+                    >
+                      Choose Images
+                    </Button>
+                  </Stack>
+                  
+                  <input
+                    id="remark-image-upload"
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={handleRemarkImageUpload}
+                    style={{ display: 'none' }}
+                  />
+                </ImageUploadArea>
+
+                {/* Image Previews */}
+                {remarkImages.length > 0 && (
+                  <Box sx={{ mt: 2 }}>
+                    <Typography variant="subtitle2" gutterBottom fontWeight={600}>
+                      Selected Images ({remarkImages.length}/5)
+                    </Typography>
+                    <ImagePreviewContainer>
+                      {remarkImages.map((image, index) => (
+                        <ImagePreview key={index}>
+                          <img
+                            src={image.preview}
+                            alt={`Preview ${index + 1}`}
+                            style={{
+                              width: '100%',
+                              height: 80,
+                              objectFit: 'cover',
+                              display: 'block'
+                            }}
+                            onClick={() => setZoomImage(image.preview)}
+                          />
+                          <RemoveImageButton
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveRemarkImage(index);
+                            }}
+                          >
+                            <FiX size={14} />
+                          </RemoveImageButton>
+                        </ImagePreview>
+                      ))}
+                    </ImagePreviewContainer>
+                  </Box>
+                )}
+              </Box>
+
+              {/* Submit Button */}
+              <Box sx={{ mt: 2 }}>
+                <Button
+                  variant="contained"
+                  onClick={async () => {
+                    await addRemark(remarksDialog.taskId);
+                    
+                    // Handle status change if pending
+                    if (pendingStatusChange.status) {
+                      await handleStatusChange(
+                        pendingStatusChange.taskId, 
+                        pendingStatusChange.status, 
+                        newRemark || 'Status changed with image upload'
+                      );
+                      setPendingStatusChange({ taskId: null, status: '' });
+                    }
+                  }}
+                  disabled={isUploadingRemark || (!newRemark.trim() && remarkImages.length === 0)}
+                  startIcon={isUploadingRemark ? <CircularProgress size={16} /> : <FiMessageSquare />}
+                  fullWidth
+                  sx={{ borderRadius: 2 }}
+                >
+                  {isUploadingRemark ? 'Uploading...' : 
+                   pendingStatusChange.status ? 'Save Remark & Update Status' : 'Add Remark'}
+                </Button>
+              </Box>
+            </CardContent>
+          </Card>
+
+          {/* Remarks History */}
+          <Box>
+            <Typography variant="h6" gutterBottom fontWeight={600}>
+              Remarks History
+            </Typography>
+            
+            {remarksDialog.remarks.length > 0 ? (
+              <Stack spacing={2}>
+                {remarksDialog.remarks.map((remark, index) => (
+                  <Card key={index} variant="outlined" sx={{ borderRadius: 2 }}>
+                    <CardContent sx={{ p: 2 }}>
+                      <Stack spacing={1.5}>
+                        {/* User Info and Date */}
+                        <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                          <Stack direction="row" alignItems="center" spacing={1.5}>
+                            <Avatar 
+                              sx={{ 
+                                width: 36, 
+                                height: 36, 
+                                bgcolor: theme.palette.primary.main,
+                                fontSize: '0.875rem'
+                              }}
+                            >
+                              {remark.user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                            </Avatar>
+                            <Box>
+                              <Typography variant="subtitle2" fontWeight={600}>
+                                {remark.user?.name || 'Unknown User'}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                {remark.user?.role || 'User'} • {new Date(remark.createdAt).toLocaleDateString()} at {' '}
+                                {new Date(remark.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </Typography>
+                            </Box>
+                          </Stack>
+                        </Stack>
+
+                        {/* Remark Text */}
+                        {remark.text && (
+                          <Typography variant="body2" sx={{ 
+                            mt: 0.5,
+                            p: 1.5,
+                            backgroundColor: theme.palette.background.default,
+                            borderRadius: 1,
+                            borderLeft: `3px solid ${theme.palette.primary.main}`
+                          }}>
+                            {remark.text}
+                          </Typography>
+                        )}
+
+                        {/* Remark Image */}
+                        
+{/* Remark Image */}
+{remark.image && (
+  <Box sx={{ mt: 1 }}>
+    <Typography variant="caption" fontWeight={600} display="block" gutterBottom>
+      Attached Image:
+    </Typography>
+    <ImagePreview 
+      sx={{ 
+        maxWidth: 200,
+        borderRadius: 1
+      }}
+      onClick={() => setZoomImage(`http://localhost:3000/${remark.image}`)}
+    >
+      <img
+        src={`http://localhost:3000/${remark.image}`}
+        alt="Remark attachment"
+        style={{
+          width: '100%',
+          height: 'auto',
+          borderRadius: theme.shape.borderRadius,
+          cursor: 'pointer'
+        }}
+      />
+      <Tooltip title="Zoom">
+        <IconButton
+          size="small"
+          sx={{
+            position: 'absolute',
+            bottom: 4,
+            right: 4,
+            backgroundColor: 'rgba(0,0,0,0.6)',
+            color: 'white',
+            '&:hover': {
+              backgroundColor: 'rgba(0,0,0,0.8)',
+            }
+          }}
+        >
+          <FiZoomIn size={14} />
+        </IconButton>
+      </Tooltip>
+    </ImagePreview>
+  </Box>
+)}
+                      </Stack>
+                    </CardContent>
+                  </Card>
+                ))}
+              </Stack>
+            ) : (
+              <Card variant="outlined" sx={{ textAlign: 'center', py: 4 }}>
+                <CardContent>
+                  <FiMessageSquare size={48} color={theme.palette.text.secondary} />
+                  <Typography variant="h6" color="text.secondary" sx={{ mt: 2, fontWeight: 600 }}>
+                    No remarks yet
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    Be the first to add a remark for this task
+                  </Typography>
+                </CardContent>
+              </Card>
+            )}
+          </Box>
+        </Stack>
+      </DialogContent>
+    </Dialog>
+  );
+
+  // Image Zoom Modal
+  const renderImageZoomModal = () => (
+    <ZoomModal
+      open={!!zoomImage}
+      onClose={() => setZoomImage(null)}
+      closeAfterTransition
+    >
+      <Fade in={!!zoomImage}>
+        <Box sx={{ 
+          position: 'relative',
+          maxWidth: '90vw',
+          maxHeight: '90vh',
+          outline: 'none'
+        }}>
+          <IconButton
+            onClick={() => setZoomImage(null)}
+            sx={{
+              position: 'absolute',
+              top: 16,
+              right: 16,
+              backgroundColor: 'rgba(0,0,0,0.6)',
+              color: 'white',
+              zIndex: 1,
+              '&:hover': {
+                backgroundColor: 'rgba(0,0,0,0.8)',
+              }
+            }}
+          >
+            <FiX size={20} />
+          </IconButton>
+          <img
+            src={zoomImage}
+            alt="Zoomed view"
+            style={{
+              width: '100%',
+              height: 'auto',
+              maxHeight: '90vh',
+              objectFit: 'contain',
+              borderRadius: theme.shape.borderRadius
+            }}
+          />
+        </Box>
+      </Fade>
+    </ZoomModal>
+  );
+
+  // ... (Keep all other render functions like renderDesktopTable, renderMobileCards, etc. from your original code)
+  // They remain the same as in your original code
+
+  // Render Desktop Table (keep your existing implementation)
   const renderDesktopTable = (groupedTasks) => {
     const tasksToRender = applyDateFilter(groupedTasks);
     
@@ -1565,103 +2004,6 @@ const UserCreateTask = () => {
     </Modal>
   );
 
-  // Enhanced Remarks Dialog
-  const renderRemarksDialog = () => (
-    <Dialog 
-      open={remarksDialog.open} 
-      onClose={() => setRemarksDialog({ open: false, taskId: null, remarks: [] })}
-      maxWidth="md"
-      fullWidth
-      fullScreen={isSmallMobile}
-      PaperProps={{ sx: { borderRadius: isSmallMobile ? 0 : 2 } }}
-    >
-      <DialogTitle sx={{ 
-        background: `linear-gradient(135deg, ${theme.palette.info.main}15 0%, ${theme.palette.info.main}05 100%)` 
-      }}>
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <FiMessageSquare color={theme.palette.info.main} />
-          <Typography variant="h6" fontWeight={600}>Task Remarks</Typography>
-        </Stack>
-      </DialogTitle>
-      <DialogContent>
-        <Stack spacing={3} sx={{ mt: 2 }}>
-          {/* Add New Remark */}
-          <Box>
-            <Typography variant="subtitle1" gutterBottom fontWeight={600}>
-              Add New Remark
-            </Typography>
-            <TextField
-              fullWidth
-              multiline
-              rows={isSmallMobile ? 2 : 3}
-              label="Your Remark"
-              value={newRemark}
-              onChange={(e) => setNewRemark(e.target.value)}
-              placeholder="Enter your remark here..."
-              sx={{ borderRadius: 1 }}
-            />
-            <Button
-              variant="contained"
-              onClick={() => addRemark(remarksDialog.taskId)}
-              disabled={!newRemark.trim()}
-              sx={{ mt: 1, borderRadius: 1 }}
-              fullWidth={isSmallMobile}
-            >
-              Add Remark
-            </Button>
-          </Box>
-
-          {/* Remarks List */}
-          <Box>
-            <Typography variant="h6" gutterBottom fontWeight={600}>Remarks History</Typography>
-            {remarksDialog.remarks.length > 0 ? (
-              <Stack spacing={1}>
-                {remarksDialog.remarks.map((remark, index) => (
-                  <Card key={index} variant="outlined" sx={{ borderRadius: 1 }}>
-                    <CardContent sx={{ py: 1.5 }}>
-                      <Stack spacing={1}>
-                        <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                          <Stack direction="row" alignItems="center" spacing={1}>
-                            <Avatar sx={{ 
-                              width: 32, 
-                              height: 32, 
-                              fontSize: '0.875rem',
-                              bgcolor: theme.palette.primary.main 
-                            }}>
-                              {remark.user?.name?.charAt(0)?.toUpperCase() || 'U'}
-                            </Avatar>
-                            <Box>
-                              <Typography variant="subtitle2" fontWeight={600}>
-                                {remark.user?.name || 'Unknown User'}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                {remark.user?.role || 'User'}
-                              </Typography>
-                            </Box>
-                          </Stack>
-                          <Typography variant="caption" color="text.secondary">
-                            {new Date(remark.createdAt).toLocaleDateString()}
-                          </Typography>
-                        </Stack>
-                        <Typography variant="body2" sx={{ mt: 0.5 }}>
-                          {remark.text}
-                        </Typography>
-                      </Stack>
-                    </CardContent>
-                  </Card>
-                ))}
-              </Stack>
-            ) : (
-              <Typography color="text.secondary" textAlign="center" py={3} fontWeight={500}>
-                No remarks yet. Be the first to add one!
-              </Typography>
-            )}
-          </Box>
-        </Stack>
-      </DialogContent>
-    </Dialog>
-  );
-
   // Enhanced Activity Logs Dialog
   const renderActivityLogsDialog = () => (
     <Dialog 
@@ -1875,7 +2217,7 @@ const UserCreateTask = () => {
     </Dialog>
   );
 
-  // CREATE TASK DIALOG
+  // CREATE TASK DIALOG (keep your existing implementation)
   const renderCreateTaskDialog = () => (
     <Dialog 
       open={openDialog} 
@@ -2108,17 +2450,6 @@ const UserCreateTask = () => {
       </DialogActions>
     </Dialog>
   );
-
-  useEffect(() => {
-    fetchUserData();
-  }, []);
-
-  useEffect(() => {
-    if (!authError && userId) {
-      fetchMyTasks();
-      fetchNotifications();
-    }
-  }, [authError, userId]);
 
   if (authError) {
     return (
@@ -2425,6 +2756,7 @@ const UserCreateTask = () => {
           {renderNotificationsPanel()}
           {renderRemarksDialog()}
           {renderActivityLogsDialog()}
+          {renderImageZoomModal()}
 
           {/* Enhanced Snackbar */}
           <Snackbar

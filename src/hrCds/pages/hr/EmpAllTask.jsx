@@ -5,13 +5,16 @@ import {
   Stack, Button, FormControl, InputLabel, Select, MenuItem,
   CircularProgress, Alert, Divider, Fade, LinearProgress,
   useTheme, useMediaQuery, Paper, Tooltip, Dialog,
-  DialogTitle, DialogContent, IconButton, TextField
+  DialogTitle, DialogContent, IconButton, TextField,
+  DialogActions, Badge, Modal, List, ListItem, ListItemText,
+  ListItemAvatar, InputAdornment
 } from "@mui/material";
 import {
   FiUsers, FiUser, FiCalendar, FiCheckCircle, FiClock,
   FiAlertCircle, FiXCircle, FiTrendingUp, FiList, 
   FiArrowRight, FiX, FiBarChart2, FiPieChart, FiSearch, 
-  FiMail, FiBriefcase
+  FiMail, FiBriefcase, FiMessageSquare, FiPlus, FiImage,
+  FiCamera, FiZoomIn, FiSend, FiTrash2
 } from "react-icons/fi";
 import { styled } from "@mui/material/styles";
 
@@ -106,6 +109,61 @@ const GraphBar = styled(Box)(({ theme, height, color }) => ({
   position: 'relative',
 }));
 
+const ImageUploadArea = styled(Box)(({ theme, isDragActive }) => ({
+  border: `2px dashed ${isDragActive ? theme.palette.primary.main : theme.palette.divider}`,
+  borderRadius: theme.shape.borderRadius * 2,
+  padding: theme.spacing(2),
+  textAlign: 'center',
+  backgroundColor: isDragActive ? `${theme.palette.primary.main}08` : theme.palette.background.paper,
+  cursor: 'pointer',
+  transition: 'all 0.3s ease',
+  '&:hover': {
+    borderColor: theme.palette.primary.main,
+    backgroundColor: `${theme.palette.primary.main}04`,
+  },
+}));
+
+const ImagePreview = styled(Box)(({ theme }) => ({
+  position: 'relative',
+  borderRadius: theme.shape.borderRadius,
+  overflow: 'hidden',
+  cursor: 'pointer',
+  transition: 'all 0.3s ease',
+  '&:hover': {
+    transform: 'scale(1.02)',
+    boxShadow: theme.shadows[2],
+  },
+}));
+
+const ImagePreviewContainer = styled(Box)(({ theme }) => ({
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))',
+  gap: theme.spacing(1),
+  marginTop: theme.spacing(2),
+}));
+
+const RemoveImageButton = styled(IconButton)(({ theme }) => ({
+  position: 'absolute',
+  top: 4,
+  right: 4,
+  backgroundColor: theme.palette.error.main,
+  color: 'white',
+  width: 20,
+  height: 20,
+  '&:hover': {
+    backgroundColor: theme.palette.error.dark,
+  },
+}));
+
+const ZoomModal = styled(Modal)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  '& .MuiBackdrop-root': {
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+  },
+}));
+
 // ✅ EMPLOYEE_TYPES CONSTANT
 const EMPLOYEE_TYPES = [
   { value: "all", label: "All Employees", icon: FiUsers },
@@ -126,6 +184,15 @@ const TaskDetails = () => {
   const [currentUserRole, setCurrentUserRole] = useState("");
   const [selectedEmployeeType, setSelectedEmployeeType] = useState("all");
   const [openDialog, setOpenDialog] = useState(false);
+  
+  // Remark States
+  const [openRemarksDialog, setOpenRemarksDialog] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [remarks, setRemarks] = useState([]);
+  const [newRemark, setNewRemark] = useState('');
+  const [remarkImages, setRemarkImages] = useState([]);
+  const [isUploadingRemark, setIsUploadingRemark] = useState(false);
+  const [zoomImage, setZoomImage] = useState(null);
   
   const [taskStats, setTaskStats] = useState({
     total: 0,
@@ -314,6 +381,113 @@ const TaskDetails = () => {
     }
   };
 
+  // ✅ Enhanced Remark Functions
+  const fetchRemarks = async (task) => {
+    try {
+      setSelectedTask(task);
+      const data = await axios.get(`/task/${task._id}/remarks`);
+      setRemarks(data.data.remarks || data.data.data || []);
+      setOpenRemarksDialog(true);
+    } catch (error) {
+      console.error('Error fetching remarks:', error);
+      setError('Failed to load remarks');
+    }
+  };
+
+  const handleRemarkImageUpload = (event) => {
+    const files = Array.from(event.target.files);
+    const imageFiles = files.filter(file => file.type.startsWith('image/'));
+    
+    if (imageFiles.length === 0) {
+      setError('Please select valid image files');
+      return;
+    }
+
+    // For single image upload, replace existing image
+    const newImage = {
+      file: imageFiles[0],
+      preview: URL.createObjectURL(imageFiles[0]),
+      name: imageFiles[0].name,
+      size: imageFiles[0].size
+    };
+
+    // Clear existing images and add new one
+    remarkImages.forEach(image => URL.revokeObjectURL(image.preview)); // Clean up memory
+    setRemarkImages([newImage]);
+  };
+
+  const handleRemoveRemarkImage = (index) => {
+    setRemarkImages(prev => {
+      const newImages = [...prev];
+      URL.revokeObjectURL(newImages[index].preview);
+      newImages.splice(index, 1);
+      return newImages;
+    });
+  };
+
+  const handleDragOver = (event) => {
+    event.preventDefault();
+  };
+
+  const handleDrop = (event) => {
+    event.preventDefault();
+    const files = Array.from(event.dataTransfer.files);
+    if (files.length > 0) {
+      const inputEvent = {
+        target: {
+          files: event.dataTransfer.files
+        }
+      };
+      handleRemarkImageUpload(inputEvent);
+    }
+  };
+
+  const addRemark = async () => {
+    if (!newRemark.trim() && remarkImages.length === 0) {
+      setError('Please enter a remark or upload an image');
+      return;
+    }
+    
+    if (!selectedTask) return;
+    
+    setIsUploadingRemark(true);
+    
+    try {
+      const formData = new FormData();
+      formData.append('text', newRemark.trim());
+
+      // Append single image (since backend expects single image)
+      if (remarkImages.length > 0) {
+        formData.append('image', remarkImages[0].file);
+      }
+
+      await axios.post(`/task/${selectedTask._id}/remarks`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        }
+      });
+
+      setNewRemark('');
+      setRemarkImages([]);
+      // Refresh remarks
+      await fetchRemarks(selectedTask);
+      
+    } catch (error) {
+      console.error('Error adding remark:', error);
+      
+      // More specific error messages
+      if (error.response?.status === 413) {
+        setError('File size too large. Maximum 5MB per image');
+      } else if (error.response?.status === 400) {
+        setError(error.response.data.error || 'Invalid file type');
+      } else {
+        setError('Failed to add remark');
+      }
+    } finally {
+      setIsUploadingRemark(false);
+    }
+  };
+
   // ✅ Graph Data Preparation
   const getGraphData = () => {
     const data = [
@@ -419,6 +593,31 @@ const TaskDetails = () => {
     }
   };
 
+  const formatDateTime = (dateStr) => {
+    if (!dateStr) return "Not set";
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch (error) {
+      return "Invalid date";
+    }
+  };
+
+  // Helper function to get user name
+  const getUserName = (userId) => {
+    if (typeof userId === 'object') {
+      return userId.name || 'Unknown User';
+    }
+    const user = users.find(u => u._id === userId);
+    return user ? user.name : 'Unknown User';
+  };
+
   // Group tasks by date
   const groupedTasks = useMemo(() => {
     if (!Array.isArray(tasks)) return {};
@@ -432,6 +631,309 @@ const TaskDetails = () => {
       return groups;
     }, {});
   }, [tasks]);
+
+  // ✅ Render Enhanced Remarks Dialog
+  const renderRemarksDialog = () => (
+    <Dialog 
+      open={openRemarksDialog} 
+      onClose={() => {
+        setOpenRemarksDialog(false);
+        setRemarkImages([]);
+        setNewRemark('');
+      }}
+      maxWidth="md"
+      fullWidth
+      fullScreen={isMobile}
+    >
+      <DialogTitle sx={{ 
+        background: `linear-gradient(135deg, ${theme.palette.info.main}15 0%, ${theme.palette.info.main}05 100%)`,
+        pb: 2
+      }}>
+        <Stack direction="row" alignItems="center" justifyContent="space-between">
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <FiMessageSquare color={theme.palette.info.main} />
+            <Typography variant="h6" fontWeight={600}>
+              Remarks for: {selectedTask?.title}
+            </Typography>
+          </Stack>
+          <Typography variant="body2" color="text.secondary">
+            {remarks.length} remark(s)
+          </Typography>
+        </Stack>
+      </DialogTitle>
+      
+      <DialogContent>
+        <Stack spacing={3} sx={{ mt: 1 }}>
+          {/* Add New Remark Section */}
+          <Card variant="outlined" sx={{ borderRadius: 2 }}>
+            <CardContent sx={{ p: 2 }}>
+              <Typography variant="h6" gutterBottom fontWeight={600}>
+                Add New Remark
+              </Typography>
+              
+              {/* Text Input */}
+              <TextField
+                fullWidth
+                multiline
+                rows={3}
+                label="Your Remark"
+                value={newRemark}
+                onChange={(e) => setNewRemark(e.target.value)}
+                placeholder="Enter your remark here... (Optional if uploading images)"
+                sx={{ mb: 2 }}
+              />
+
+              {/* Image Upload Section */}
+              <Box>
+                <Typography variant="subtitle2" gutterBottom fontWeight={600}>
+                  Attach Image (Optional)
+                </Typography>
+                
+                <ImageUploadArea
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                  onClick={() => document.getElementById('remark-image-upload').click()}
+                  isDragActive={false}
+                >
+                  <Stack spacing={1} alignItems="center">
+                    <FiImage size={24} color={theme.palette.primary.main} />
+                    <Typography variant="body2" fontWeight={600}>
+                      Click to upload or drag & drop
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Supports JPG, PNG, GIF • Max 5MB
+                    </Typography>
+                    <Button
+                      variant="outlined"
+                      startIcon={<FiCamera />}
+                      size="small"
+                      sx={{ mt: 1 }}
+                    >
+                      Choose Image
+                    </Button>
+                  </Stack>
+                  
+                  <input
+                    id="remark-image-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleRemarkImageUpload}
+                    style={{ display: 'none' }}
+                  />
+                </ImageUploadArea>
+
+                {/* Image Preview */}
+                {remarkImages.length > 0 && (
+                  <Box sx={{ mt: 2 }}>
+                    <Typography variant="subtitle2" gutterBottom fontWeight={600}>
+                      Selected Image:
+                    </Typography>
+                    <ImagePreviewContainer>
+                      {remarkImages.map((image, index) => (
+                        <ImagePreview key={index}>
+                          <img
+                            src={image.preview}
+                            alt={`Preview ${index + 1}`}
+                            style={{
+                              width: '100%',
+                              height: 80,
+                              objectFit: 'cover',
+                              display: 'block'
+                            }}
+                            onClick={() => setZoomImage(image.preview)}
+                          />
+                          <RemoveImageButton
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveRemarkImage(index);
+                            }}
+                          >
+                            <FiX size={12} />
+                          </RemoveImageButton>
+                        </ImagePreview>
+                      ))}
+                    </ImagePreviewContainer>
+                  </Box>
+                )}
+              </Box>
+
+              {/* Submit Button */}
+              <Box sx={{ mt: 2 }}>
+                <Button
+                  variant="contained"
+                  onClick={addRemark}
+                  disabled={isUploadingRemark || (!newRemark.trim() && remarkImages.length === 0)}
+                  startIcon={isUploadingRemark ? <CircularProgress size={16} /> : <FiSend />}
+                  fullWidth
+                >
+                  {isUploadingRemark ? 'Uploading...' : 'Add Remark'}
+                </Button>
+              </Box>
+            </CardContent>
+          </Card>
+
+          {/* Remarks History */}
+          <Box>
+            <Typography variant="h6" gutterBottom fontWeight={600}>
+              Remarks History
+            </Typography>
+            
+            {remarks.length > 0 ? (
+              <Stack spacing={2}>
+                {remarks.map((remark, index) => (
+                  <Card key={index} variant="outlined" sx={{ borderRadius: 2 }}>
+                    <CardContent sx={{ p: 2 }}>
+                      <Stack spacing={1.5}>
+                        {/* User Info and Date */}
+                        <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                          <Stack direction="row" alignItems="center" spacing={1.5}>
+                            <Avatar 
+                              sx={{ 
+                                width: 32, 
+                                height: 32, 
+                                bgcolor: theme.palette.primary.main,
+                                fontSize: '0.75rem'
+                              }}
+                            >
+                              {getUserName(remark.user)?.charAt(0)?.toUpperCase() || 'U'}
+                            </Avatar>
+                            <Box>
+                              <Typography variant="subtitle2" fontWeight={600}>
+                                {getUserName(remark.user)}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                {formatDateTime(remark.createdAt)}
+                              </Typography>
+                            </Box>
+                          </Stack>
+                        </Stack>
+
+                        {/* Remark Text */}
+                        {remark.text && (
+                          <Typography variant="body2" sx={{ 
+                            mt: 0.5,
+                            p: 1.5,
+                            backgroundColor: theme.palette.background.default,
+                            borderRadius: 1,
+                            borderLeft: `3px solid ${theme.palette.primary.main}`
+                          }}>
+                            {remark.text}
+                          </Typography>
+                        )}
+
+                        {/* Remark Image */}
+                        {remark.image && (
+                          <Box sx={{ mt: 1 }}>
+                            <Typography variant="caption" fontWeight={600} display="block" gutterBottom>
+                              Attached Image:
+                            </Typography>
+                            <ImagePreview 
+                              sx={{ 
+                                maxWidth: 200,
+                                borderRadius: 1
+                              }}
+                              onClick={() => setZoomImage(`http://localhost:3000/${remark.image}`)}
+                            >
+                              <img
+                                src={`http://localhost:3000/${remark.image}`}
+                                alt="Remark attachment"
+                                style={{
+                                  width: '100%',
+                                  height: 'auto',
+                                  borderRadius: theme.shape.borderRadius,
+                                  cursor: 'pointer'
+                                }}
+                              />
+                              <Tooltip title="Zoom">
+                                <IconButton
+                                  size="small"
+                                  sx={{
+                                    position: 'absolute',
+                                    bottom: 4,
+                                    right: 4,
+                                    backgroundColor: 'rgba(0,0,0,0.6)',
+                                    color: 'white',
+                                    '&:hover': {
+                                      backgroundColor: 'rgba(0,0,0,0.8)',
+                                    }
+                                  }}
+                                >
+                                  <FiZoomIn size={12} />
+                                </IconButton>
+                              </Tooltip>
+                            </ImagePreview>
+                          </Box>
+                        )}
+                      </Stack>
+                    </CardContent>
+                  </Card>
+                ))}
+              </Stack>
+            ) : (
+              <Card variant="outlined" sx={{ textAlign: 'center', py: 4 }}>
+                <CardContent>
+                  <FiMessageSquare size={32} color={theme.palette.text.secondary} />
+                  <Typography variant="h6" color="text.secondary" sx={{ mt: 2, fontWeight: 600 }}>
+                    No remarks yet
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    Be the first to add a remark for this task
+                  </Typography>
+                </CardContent>
+              </Card>
+            )}
+          </Box>
+        </Stack>
+      </DialogContent>
+    </Dialog>
+  );
+
+  // ✅ Render Image Zoom Modal
+  const renderImageZoomModal = () => (
+    <ZoomModal
+      open={!!zoomImage}
+      onClose={() => setZoomImage(null)}
+      closeAfterTransition
+    >
+      <Fade in={!!zoomImage}>
+        <Box sx={{ 
+          position: 'relative',
+          maxWidth: '90vw',
+          maxHeight: '90vh',
+          outline: 'none'
+        }}>
+          <IconButton
+            onClick={() => setZoomImage(null)}
+            sx={{
+              position: 'absolute',
+              top: 16,
+              right: 16,
+              backgroundColor: 'rgba(0,0,0,0.6)',
+              color: 'white',
+              zIndex: 1,
+              '&:hover': {
+                backgroundColor: 'rgba(0,0,0,0.8)',
+              }
+            }}
+          >
+            <FiX size={20} />
+          </IconButton>
+          <img
+            src={zoomImage}
+            alt="Zoomed view"
+            style={{
+              width: '100%',
+              height: 'auto',
+              maxHeight: '90vh',
+              objectFit: 'contain',
+              borderRadius: theme.shape.borderRadius
+            }}
+          />
+        </Box>
+      </Fade>
+    </ZoomModal>
+  );
 
   if (!canManage)
     return (
@@ -931,6 +1433,25 @@ const TaskDetails = () => {
                                           </Typography>
                                         )}
                                       </Stack>
+
+                                      {/* Remarks Section */}
+                                      <Stack direction="row" spacing={1} alignItems="center">
+                                        <Button
+                                          size="small"
+                                          startIcon={<FiMessageSquare />}
+                                          onClick={() => fetchRemarks(task)}
+                                          variant="outlined"
+                                        >
+                                          Remarks
+                                          {task.remarksCount > 0 && (
+                                            <Badge 
+                                              badgeContent={task.remarksCount} 
+                                              color="primary"
+                                              sx={{ ml: 1 }}
+                                            />
+                                          )}
+                                        </Button>
+                                      </Stack>
                                     </Stack>
                                   </CardContent>
                                 </TaskCard>
@@ -946,6 +1467,12 @@ const TaskDetails = () => {
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Enhanced Remarks Dialog */}
+        {renderRemarksDialog()}
+
+        {/* Image Zoom Modal */}
+        {renderImageZoomModal()}
       </Box>
     </Fade>
   );
