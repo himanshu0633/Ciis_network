@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from '../../../utils/axiosConfig';
+import { API_URL_IMG } from '../../../config';
 import {
   Box, Typography, Paper, Button, Dialog, DialogTitle, DialogContent,
   DialogActions, TextField, FormControl, InputLabel, Select, MenuItem,
@@ -860,7 +861,7 @@ const UserCreateTask = () => {
           <Tooltip title="Download Files">
             <ActionButton
               size="small"
-              href={`http://localhost:5000/${task.files[0]?.path || task.files[0]}`}
+              href={`${API_URL_IMG}${task.files[0]?.path || task.files[0]}`}
               target="_blank"
               sx={{ 
                 color: theme.palette.success.main,
@@ -1105,7 +1106,7 @@ const UserCreateTask = () => {
                         <Tooltip title={`${task.files.length} file(s)`}>
                           <ActionButton
                             size="small"
-                            href={`http://localhost:5000/${task.files[0]?.path || task.files[0]}`}
+                            href={`${API_URL_IMG}${task.files[0]?.path || task.files[0]}`}
                             target="_blank"
                             sx={{
                               color: theme.palette.primary.main,
@@ -1223,7 +1224,7 @@ const UserCreateTask = () => {
                             <Tooltip title="Download" key={i}>
                               <ActionButton
                                 size="small"
-                                href={`http://localhost:5000/${file?.path || file}`}
+                                href={`${API_URL_IMG}${file?.path || file}`}
                                 target="_blank"
                                 sx={{
                                   color: theme.palette.primary.main,

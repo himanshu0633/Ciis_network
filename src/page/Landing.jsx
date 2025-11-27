@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
+import { useNavigate } from "react-router-dom"; 
 
 const App = () => {
   const [employeeCount, setEmployeeCount] = useState(0);
@@ -31,30 +32,37 @@ const App = () => {
     animateCount(setAssetCount, 210);
   }, []);
 
-  const keyFeatures = [
-    { title: 'Attendance Management', description: 'Mark IN/OUT, track login/logout, and view total work hours with precision analytics.', image: '📊' },
-    { title: 'Leave Management', description: 'Apply, approve, and track employee leaves with automated workflows and notifications.', image: '🏖️' },
-    { title: 'Asset Management', description: 'Request and manage company assets with tracking, maintenance alerts, and inventory control.', image: '💻' },
-    { title: 'Task Management', description: 'Create, assign, and monitor task progress with real-time status updates and deadlines.', image: '✅' },
-    { title: 'System Alerts', description: 'Get instant notifications and important announcements with smart prioritization.', image: '🔔' },
-    { title: 'Employee Directory', description: 'View, search, and manage employee profiles with advanced filtering and analytics.', image: '👥' }
+  const powerfulFeatures = [
+    {title: 'Advanced Analytics',description: 'Real-time insights and detailed reports for informed decision-making.',icon: '📊'},
+    {title: 'Lightning Fast',description: 'Optimized performance with instant updates and seamless navigation.',icon: '⚡'},
+    {title: 'Enterprise Security',description: 'Military-grade encryption and compliance with industry standards.',icon: '🛡️'},
+    {title: 'Automated Workflows',description: 'Streamline operations with customizable automation rules.',icon: '🔄'}
   ];
+
+  const features = [
+  {title: 'Attendance Management',description: 'Mark IN/OUT, track login/logout, and view total work hours with precision analytics.',icon: '⏰'},
+  {title: 'Leave Management',description: 'Apply, approve, and track employee leaves with automated workflows and notifications.',icon: '🌴'},
+  {title: 'Asset Management',description: 'Request and manage company assets with tracking, maintenance alerts, and inventory control.',icon: '💻'},
+  {title: 'Task Management',description: 'Create, assign, and monitor task progress with real-time status updates and deadlines.',icon: '📋'},
+  {title: 'System Alerts',description: 'Get instant notifications and important announcements with smart prioritization.',icon: '🔔'},
+  {title: 'Employee Directory',description: 'View, search, and manage employee profiles with advanced filtering and analytics.',icon: '👥'}
+];
 
   const stats = [
-    { label: 'Employees', value: employeeCount, icon: '👥' },
-    { label: 'Attendance Records', value: attendanceCount, icon: '⏰' },
-    { label: 'Leaves Processed', value: leaveCount, icon: '🌴' },
-    { label: 'Tasks in Progress', value: taskCount, icon: '📋' },
-    { label: 'Assets Managed', value: assetCount, icon: '💻' }
-  ];
+  { label: 'EMPLOYEES', icon: '👥' },
+  { label: 'ATTENDANCE RECORDS', icon: '⏰' },
+  { label: 'LEAVES', icon: '🌴' },
+  { label: 'TASKS IN PROGRESS', icon: '📋' }
+];
 
   const benefits = [
+    { icon: '🕧', title: '24/7 Access', description: 'Access your dashboard anytime, anywhere' },
     { icon: '🔄', title: 'Real-time Updates', description: 'Instant synchronization across all devices' },
     { icon: '🔒', title: 'Secure Data', description: 'Enterprise-grade security and encryption' },
     { icon: '📱', title: 'User-friendly', description: 'Intuitive interface for all users' },
     { icon: '💻', title: 'Fully Responsive', description: 'Perfect experience on any device' }
   ];
-
+ const navigate = useNavigate();
   const adminFeatures = [
     'Manage all employees and departments',
     'Approve leaves and asset requests',
@@ -88,25 +96,18 @@ const App = () => {
                   e.target.nextSibling.style.display = 'flex';
                 }}
               />
-              {/* Fallback text logo */}
+              {/* Fallback text logo - अब यह केवल error case में दिखेगा */}
               <div className="ciis-logo-fallback">
                 <span className="ciis-logo-text">CIIS NETWORK</span>
               </div>
             </div>
           </div>
-          
-          {/* Mobile Menu Button */}
-          <button 
-            className="ciis-mobile-menu-btn"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-          >
-            <span></span>
-            <span></span>
-            <span></span>
-          </button>
-
-
-          <button className="ciis-login-btn" route="/login">LOGIN</button>
+         <button
+      className="ciis-login-btn"
+      onClick={() => navigate("/login")}
+    >
+      LOGIN
+    </button>
         </div>
       </header>
 
@@ -140,17 +141,17 @@ const App = () => {
               <span className="ciis-feature-chip">✅ Task Automation</span>
             </div>
             <div className="ciis-hero-actions">
-              <button className="ciis-hero-btn ciis-primary-btn">
-                LOGIN →
-              </button>
+              
+              
+                <button
+      className="ciis-hero-btn ciis-primary-btn"
+      onClick={() => navigate("/login")}
+    >
+      LOGIN
+    </button>
+              
             </div>
             <div className="ciis-trust-indicators">
-              <div className="ciis-trust-item">
-                <strong>500+</strong> Companies
-              </div>
-              <div className="ciis-trust-item">
-                <span className="ciis-stars">★★★★★</span> 4.9/5 Rating
-              </div>
               <div className="ciis-trust-item">
                 <strong>24/7</strong> Support
               </div>
@@ -159,29 +160,23 @@ const App = () => {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section id="features" className="ciis-features">
+      {/* Powerful Features Section */}
+      <section id="features" className="ciis-powerful-features">
         <div className="ciis-section-container">
           <div className="ciis-section-header">
-            <span className="ciis-section-badge">Core Features</span>
-            <h2 className="ciis-section-title">Everything You Need</h2>
+            <h2 className="ciis-section-title">Powerful Features</h2>
             <p className="ciis-section-description">
-              Comprehensive tools to manage your workforce efficiently and effectively
+              Everything you need to manage your workforce efficiently and effectively
             </p>
           </div>
-          <div className="ciis-key-features-grid">
-            {keyFeatures.map((feature, index) => (
-              <div key={index} className="ciis-key-feature-card">
-                <div className="ciis-key-feature-header">
-                  <div className="ciis-key-feature-image">
-                    <span>{feature.image}</span>
-                  </div>
-                  <h3 className="ciis-key-feature-title">{feature.title}</h3>
+          <div className="ciis-powerful-features-grid">
+            {powerfulFeatures.map((feature, index) => (
+              <div key={index} className="ciis-powerful-feature-card">
+                <div className="ciis-powerful-feature-icon">
+                  <span>{feature.icon}</span>
                 </div>
-                <p className="ciis-key-feature-description">{feature.description}</p>
-                <button className="ciis-feature-learn-more">
-                  Learn more →
-                </button>
+                <h3 className="ciis-powerful-feature-title">{feature.title}</h3>
+                <p className="ciis-powerful-feature-description">{feature.description}</p>
               </div>
             ))}
           </div>
@@ -192,19 +187,19 @@ const App = () => {
       <section id="dashboard" className="ciis-dashboard-preview">
         <div className="ciis-section-container">
           <div className="ciis-section-header">
-            <h2 className="ciis-section-title">Smart Dashboard</h2>
+            <h2 className="ciis-section-title">Key Features</h2>
             <p className="ciis-section-description">
-              Real-time insights and beautiful analytics at your fingertips
+              Explore the essential tools that make our Employee Management Portal smart, seamless, and efficient.
             </p>
           </div>
           <div className="ciis-dashboard-mockup">
             <div className="ciis-dashboard-grid">
-              {stats.map((stat, index) => (
-                <div key={index} className="ciis-dashboard-stat">
-                  <div className="ciis-dashboard-stat-icon">{stat.icon}</div>
-                  <div className="ciis-dashboard-stat-info">
-                    <div className="ciis-dashboard-stat-value">{stat.value.toLocaleString()}</div>
-                    <div className="ciis-dashboard-stat-label">{stat.label}</div>
+              {features.map((feature, index) => (
+                <div key={index} className="ciis-dashboard-feature">
+                  <div className="ciis-dashboard-feature-icon">{feature.icon}</div>
+                  <div className="ciis-dashboard-feature-info">
+                    <h3 className="ciis-dashboard-feature-title">{feature.title}</h3>
+                    <p className="ciis-dashboard-feature-description">{feature.description}</p>
                   </div>
                 </div>
               ))}
@@ -212,6 +207,43 @@ const App = () => {
           </div>
         </div>
       </section>
+
+      {/* <section id="dashboard" className="dashboard-overview">
+        <div className="dashboard-container">
+          <div className="dashboard-header">
+            <h2 className="dashboard-title">Dashboard Overview</h2>
+            <p className="dashboard-description">
+              Real-time insights and analytics at your fingertips. Monitor your key metrics with beautiful visualizations.
+            </p>
+          </div>
+          <div className="dashboard-content">
+            <div className="dashboard-stats">
+              {stats.map((stat, index) => (
+                <div key={index} className="stat-card">
+                  <div className="stat-icon">{stat.icon}</div>
+                  <div className="stat-content">
+                    <div className="stat-label">{stat.label}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="dashboard-visualization">
+              <div className="visualization-placeholder">
+                <div className="chart-area">
+                  <div className="chart-bars">
+                    <div className="chart-bar" style={{height: '80%'}}></div>
+                    <div className="chart-bar" style={{height: '60%'}}></div>
+                    <div className="chart-bar" style={{height: '90%'}}></div>
+                    <div className="chart-bar" style={{height: '70%'}}></div>
+                    <div className="chart-bar" style={{height: '85%'}}></div>
+                    <div className="chart-bar" style={{height: '75%'}}></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section> */}
 
       {/* Access Section */}
       <section id="access" className="ciis-access">
@@ -283,19 +315,7 @@ const App = () => {
             ))}
           </div>
         </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="ciis-cta">
-        <div className="ciis-section-container">
-          <div className="ciis-cta-content">
-            <h2 className="ciis-cta-title">Ready to Transform Your Workplace?</h2>
-            <p className="ciis-cta-description">
-              Join thousands of companies that trust our platform for their employee management needs.
-            </p>
-          </div>
-        </div>
-      </section>
+      </section>   
 
       {/* Footer */}
       <footer className="ciis-footer">
@@ -303,7 +323,6 @@ const App = () => {
           <div className="ciis-footer-content">
             <div className="ciis-footer-section">
               <div className="ciis-footer-logo">
-                {/* Footer Logo Image */}
                 <img 
                   src="/logo.png" 
                   alt="CIIS Network Logo" 
@@ -313,10 +332,9 @@ const App = () => {
                     e.target.nextSibling.style.display = 'flex';
                   }}
                 />
-                {/* Fallback text logo */}
-                {/* <div className="ciis-footer-logo-fallback">
+                <div className="ciis-footer-logo-fallback">
                   <span className="ciis-footer-logo-text">CIIS NETWORK</span>
-                </div> */}
+                </div>
               </div>
               <p className="ciis-footer-description">
                 Streamlining employee management for modern businesses with innovative

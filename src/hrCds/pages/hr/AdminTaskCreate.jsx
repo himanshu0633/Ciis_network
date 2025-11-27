@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from '../../../utils/axiosConfig';
+import { API_URL_IMG } from '../../../config';
 import {
   Box, Typography, Paper, Button, Dialog, DialogTitle, DialogContent,
   DialogActions, TextField, FormControl, InputLabel, Select, MenuItem,
@@ -1309,10 +1310,10 @@ const AdminTaskManagement = () => {
                                 maxWidth: 200,
                                 borderRadius: 1
                               }}
-                              onClick={() => setZoomImage(`http://localhost:3000/${remark.image}`)}
+                              onClick={() => setZoomImage(`${API_URL_IMG}/${remark.image}`)}
                             >
                               <img
-                                src={`http://localhost:3000/${remark.image}`}
+                                src={`${API_URL_IMG}/${remark.image}`}
                                 alt="Remark attachment"
                                 style={{
                                   width: '100%',

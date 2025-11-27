@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from '../../utils/axiosConfig';
+import { API_URL_IMG } from '../../config';
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { CircularProgress } from '@mui/material';
 import {
@@ -1468,7 +1469,7 @@ const MyTaskManagement = () => {
                         <Tooltip title={`${task.files.length} file(s)`}>
                           <ActionButton
                             size="small"
-                            href={`http://localhost:5000/${task.files[0].path || task.files[0]}`}
+                            href={`${API_URL_IMG}${task.files[0].path || task.files[0]}`}
                             target="_blank"
                             sx={{
                               color: theme.palette.primary.main,
@@ -1631,7 +1632,7 @@ const MyTaskManagement = () => {
                             <Tooltip title="Download" key={i}>
                               <ActionButton
                                 size="small"
-                                href={`http://localhost:5000/${file.path || file}`}
+                                href={`${API_URL_IMG}${file.path || file}`}
                                 target="_blank"
                                 sx={{
                                   color: theme.palette.primary.main,
