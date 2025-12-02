@@ -192,6 +192,15 @@ const ZoomModal = styled(Modal)(({ theme }) => ({
   },
 }));
 
+// Custom MenuProps for Select with search
+const MenuProps = {
+  PaperProps: {
+    style: {
+      maxHeight: 300,
+    },
+  },
+};
+
 const AdminTaskManagement = () => {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -297,10 +306,27 @@ const AdminTaskManagement = () => {
   const [isCreatingGroup, setIsCreatingGroup] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
 
+  // Search state for user dropdown
+  const [userSearch, setUserSearch] = useState('');
+  const [groupSearch, setGroupSearch] = useState('');
+
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
+
+  // Filter users based on search
+  const filteredUsers = users.filter(user => 
+    user.name?.toLowerCase().includes(userSearch.toLowerCase()) ||
+    user.email?.toLowerCase().includes(userSearch.toLowerCase()) ||
+    user.role?.toLowerCase().includes(userSearch.toLowerCase())
+  );
+
+  // Filter groups based on search
+  const filteredGroups = groups.filter(group => 
+    group.name?.toLowerCase().includes(groupSearch.toLowerCase()) ||
+    group.description?.toLowerCase().includes(groupSearch.toLowerCase())
+  );
 
   // Fetch user data
   const fetchUserData = () => {
@@ -911,6 +937,8 @@ const AdminTaskManagement = () => {
       files: null,
       voiceNote: null
     });
+    setUserSearch('');
+    setGroupSearch('');
   };
 
   const resetStatusForm = () => {
@@ -1827,7 +1855,7 @@ const AdminTaskManagement = () => {
     </Dialog>
   );
 
-  // Create Task Dialog
+  // Create Task Dialog with searchable user dropdown
   const renderCreateTaskDialog = () => (
     <Dialog
       open={openCreateDialog}
@@ -1894,6 +1922,7 @@ const AdminTaskManagement = () => {
             </Grid>
           </Grid>
 
+          {/* Assign to Users with Search */}
           <FormControl fullWidth>
             <InputLabel>Assign to Users</InputLabel>
             <Select
@@ -1911,16 +1940,73 @@ const AdminTaskManagement = () => {
                   })}
                 </Box>
               )}
+              MenuProps={MenuProps}
             >
-              {users.map((user) => (
-                <MenuItem key={user._id} value={user._id}>
-                  <Checkbox checked={newTask.assignedUsers.indexOf(user._id) > -1} />
-                  <ListItemText primary={user.name} secondary={user.role} />
+              {/* Search Bar at the top of dropdown */}
+              <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  placeholder="Search users..."
+                  value={userSearch}
+                  onChange={(e) => setUserSearch(e.target.value)}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <FiSearch size={16} />
+                      </InputAdornment>
+                    ),
+                    endAdornment: userSearch && (
+                      <InputAdornment position="end">
+                        <IconButton
+                          size="small"
+                          onClick={() => setUserSearch('')}
+                          edge="end"
+                        >
+                          <FiX size={14} />
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => e.stopPropagation()}
+                  variant="outlined"
+                />
+              </Box>
+              
+              {filteredUsers.length > 0 ? (
+                filteredUsers.map((user) => (
+                  <MenuItem key={user._id} value={user._id}>
+                    <Checkbox checked={newTask.assignedUsers.indexOf(user._id) > -1} />
+                    <ListItemText 
+                      primary={user.name} 
+                      secondary={
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <Typography variant="caption" color="text.secondary">
+                            {user.role}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            •
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {user.email}
+                          </Typography>
+                        </Stack>
+                      }
+                    />
+                  </MenuItem>
+                ))
+              ) : (
+                <MenuItem disabled>
+                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', width: '100%', py: 1 }}>
+                    No users found
+                  </Typography>
                 </MenuItem>
-              ))}
+              )}
             </Select>
           </FormControl>
 
+          {/* Assign to Groups with Search */}
           <FormControl fullWidth>
             <InputLabel>Assign to Groups</InputLabel>
             <Select
@@ -1938,13 +2024,57 @@ const AdminTaskManagement = () => {
                   })}
                 </Box>
               )}
+              MenuProps={MenuProps}
             >
-              {groups.map((group) => (
-                <MenuItem key={group._id} value={group._id}>
-                  <Checkbox checked={newTask.assignedGroups.indexOf(group._id) > -1} />
-                  <ListItemText primary={group.name} secondary={`${group.members?.length || 0} members`} />
+              {/* Search Bar at the top of dropdown */}
+              <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  placeholder="Search groups..."
+                  value={groupSearch}
+                  onChange={(e) => setGroupSearch(e.target.value)}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <FiSearch size={16} />
+                      </InputAdornment>
+                    ),
+                    endAdornment: groupSearch && (
+                      <InputAdornment position="end">
+                        <IconButton
+                          size="small"
+                          onClick={() => setGroupSearch('')}
+                          edge="end"
+                        >
+                          <FiX size={14} />
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => e.stopPropagation()}
+                  variant="outlined"
+                />
+              </Box>
+              
+              {filteredGroups.length > 0 ? (
+                filteredGroups.map((group) => (
+                  <MenuItem key={group._id} value={group._id}>
+                    <Checkbox checked={newTask.assignedGroups.indexOf(group._id) > -1} />
+                    <ListItemText 
+                      primary={group.name} 
+                      secondary={`${group.members?.length || 0} members • ${group.description || 'No description'}`}
+                    />
+                  </MenuItem>
+                ))
+              ) : (
+                <MenuItem disabled>
+                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', width: '100%', py: 1 }}>
+                    No groups found
+                  </Typography>
                 </MenuItem>
-              ))}
+              )}
             </Select>
           </FormControl>
 
@@ -1999,7 +2129,7 @@ const AdminTaskManagement = () => {
     </Dialog>
   );
 
-  // Edit Task Dialog
+  // Edit Task Dialog with searchable user dropdown
   const renderEditTaskDialog = () => (
     <Dialog
       open={openEditDialog}
@@ -2066,6 +2196,7 @@ const AdminTaskManagement = () => {
             </Grid>
           </Grid>
 
+          {/* Assign to Users with Search */}
           <FormControl fullWidth>
             <InputLabel>Assign to Users</InputLabel>
             <Select
@@ -2083,16 +2214,73 @@ const AdminTaskManagement = () => {
                   })}
                 </Box>
               )}
+              MenuProps={MenuProps}
             >
-              {users.map((user) => (
-                <MenuItem key={user._id} value={user._id}>
-                  <Checkbox checked={editTask.assignedUsers.indexOf(user._id) > -1} />
-                  <ListItemText primary={user.name} secondary={user.role} />
+              {/* Search Bar at the top of dropdown */}
+              <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  placeholder="Search users..."
+                  value={userSearch}
+                  onChange={(e) => setUserSearch(e.target.value)}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <FiSearch size={16} />
+                      </InputAdornment>
+                    ),
+                    endAdornment: userSearch && (
+                      <InputAdornment position="end">
+                        <IconButton
+                          size="small"
+                          onClick={() => setUserSearch('')}
+                          edge="end"
+                        >
+                          <FiX size={14} />
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => e.stopPropagation()}
+                  variant="outlined"
+                />
+              </Box>
+              
+              {filteredUsers.length > 0 ? (
+                filteredUsers.map((user) => (
+                  <MenuItem key={user._id} value={user._id}>
+                    <Checkbox checked={editTask.assignedUsers.indexOf(user._id) > -1} />
+                    <ListItemText 
+                      primary={user.name} 
+                      secondary={
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <Typography variant="caption" color="text.secondary">
+                            {user.role}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            •
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {user.email}
+                          </Typography>
+                        </Stack>
+                      }
+                    />
+                  </MenuItem>
+                ))
+              ) : (
+                <MenuItem disabled>
+                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', width: '100%', py: 1 }}>
+                    No users found
+                  </Typography>
                 </MenuItem>
-              ))}
+              )}
             </Select>
           </FormControl>
 
+          {/* Assign to Groups with Search */}
           <FormControl fullWidth>
             <InputLabel>Assign to Groups</InputLabel>
             <Select
@@ -2110,13 +2298,57 @@ const AdminTaskManagement = () => {
                   })}
                 </Box>
               )}
+              MenuProps={MenuProps}
             >
-              {groups.map((group) => (
-                <MenuItem key={group._id} value={group._id}>
-                  <Checkbox checked={editTask.assignedGroups.indexOf(group._id) > -1} />
-                  <ListItemText primary={group.name} secondary={`${group.members?.length || 0} members`} />
+              {/* Search Bar at the top of dropdown */}
+              <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  placeholder="Search groups..."
+                  value={groupSearch}
+                  onChange={(e) => setGroupSearch(e.target.value)}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <FiSearch size={16} />
+                      </InputAdornment>
+                    ),
+                    endAdornment: groupSearch && (
+                      <InputAdornment position="end">
+                        <IconButton
+                          size="small"
+                          onClick={() => setGroupSearch('')}
+                          edge="end"
+                        >
+                          <FiX size={14} />
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => e.stopPropagation()}
+                  variant="outlined"
+                />
+              </Box>
+              
+              {filteredGroups.length > 0 ? (
+                filteredGroups.map((group) => (
+                  <MenuItem key={group._id} value={group._id}>
+                    <Checkbox checked={editTask.assignedGroups.indexOf(group._id) > -1} />
+                    <ListItemText 
+                      primary={group.name} 
+                      secondary={`${group.members?.length || 0} members • ${group.description || 'No description'}`}
+                    />
+                  </MenuItem>
+                ))
+              ) : (
+                <MenuItem disabled>
+                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', width: '100%', py: 1 }}>
+                    No groups found
+                  </Typography>
                 </MenuItem>
-              ))}
+              )}
             </Select>
           </FormControl>
         </Stack>
@@ -2439,8 +2671,6 @@ const AdminTaskManagement = () => {
                         <TableCell>Due Date</TableCell>
                         <TableCell>Priority</TableCell>
                         <TableCell>Status</TableCell>
-                        <TableCell>Assigned To</TableCell>
-                        <TableCell>Created By</TableCell>
                         <TableCell>Actions</TableCell>
                       </TableRow>
                     </TableHead>
@@ -2488,46 +2718,7 @@ const AdminTaskManagement = () => {
                               size="small"
                             />
                           </TableCell>
-                          <TableCell>
-                            <Stack spacing={0.5}>
-                              {/* Show assigned users with their status */}
-                              {getAllAssignedUsersWithStatus(task).slice(0, 3).map((assignedUser, index) => (
-                                <Tooltip 
-                                  key={index} 
-                                  title={`${assignedUser.user.name} - ${assignedUser.status} (${assignedUser.type})`}
-                                >
-                                  <Chip
-                                    label={`${assignedUser.user.name} - ${assignedUser.status}`}
-                                    size="small"
-                                    variant="outlined"
-                                    color={
-                                      assignedUser.status === 'completed' ? 'success' :
-                                      assignedUser.status === 'in-progress' ? 'info' :
-                                      assignedUser.status === 'rejected' ? 'error' : 'default'
-                                    }
-                                  />
-                                </Tooltip>
-                              ))}
-                              {getAllAssignedUsersWithStatus(task).length > 3 && (
-                                <Tooltip title="View all user statuses">
-                                  <Button
-                                    size="small"
-                                    onClick={() => fetchUserStatuses(task)}
-                                    sx={{ p: 0, minWidth: 'auto' }}
-                                  >
-                                    <Typography variant="caption" color="primary">
-                                      +{getAllAssignedUsersWithStatus(task).length - 3} more
-                                    </Typography>
-                                  </Button>
-                                </Tooltip>
-                              )}
-                            </Stack>
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant="body2">
-                              {getUserName(task.createdBy)}
-                            </Typography>
-                          </TableCell>
+                       
                           <TableCell>
                             <Stack direction="row" spacing={0.5}>
                               <Tooltip title="Edit">
