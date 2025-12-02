@@ -128,7 +128,7 @@ const EMPLOYEE_TYPES = [
 // ✅ QUICK DATE PRESETS
 const QUICK_DATE_PRESETS = [
   { value: 'today', label: 'Today', getDate: () => new Date() },
-  { value: 'yesterday', label: 'Yesterday', getDate: () => subDays(new Date(), 1) },
+  // { value: 'yesterday', label: 'Yesterday', getDate: () => subDays(new Date(), -1) },
   { value: 'week', label: 'This Week', getDate: () => startOfWeek(new Date()) },
   { value: 'month', label: 'This Month', getDate: () => startOfMonth(new Date()) },
   { value: 'quarter', label: 'Last 3 Months', getDate: () => subMonths(new Date(), 3) },
