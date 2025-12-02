@@ -50,7 +50,8 @@ import {
   Modal,
   InputAdornment,
   OutlinedInput,
-  Pagination
+  Pagination,
+
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -74,7 +75,14 @@ import {
   Search as SearchIcon,
   Close as CloseIcon,
   CalendarToday as CalendarIcon
+
+
+
 } from '@mui/icons-material';
+import FilterListIcon from "@mui/icons-material/FilterList";
+import PlaceIcon from "@mui/icons-material/Place";
+import TaskAltIcon from "@mui/icons-material/TaskAlt";
+
 import { styled } from '@mui/material/styles';
 import { FiBell, FiCheckCircle, FiClock, FiAlertCircle, FiXCircle, FiUsers, FiTrendingUp, FiInfo } from 'react-icons/fi';
 
@@ -2171,292 +2179,696 @@ const ClientManagement = () => {
       </Snackbar>
 
       {/* Clients Table */}
-      <Grid item xs={12}>
-        <Card sx={{ borderRadius: 2, boxShadow: 2 }}>
-          <CardHeader
-            title={
-              <Box display="flex" alignItems="center" justifyContent="space-between">
-                <Box display="flex" alignItems="center">
-                  <PeopleIcon sx={{ mr: 1 }} />
-                  All Clients ({pagination.totalItems || clients.length})
-                </Box>
-                <Box display="flex" gap={1} alignItems="center">
-                  <TextField
-                    size="small"
-                    placeholder="Search clients..."
-                    value={filters.search}
-                    onChange={(e) => handleFilterChange('search', e.target.value)}
-                    sx={{ width: 200 }}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <SearchIcon fontSize="small" />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                  <FormControl size="small" sx={{ width: 150 }}>
-                    <InputLabel>Status</InputLabel>
-                    <Select
-                      value={filters.status}
-                      label="Status"
-                      onChange={(e) => handleFilterChange('status', e.target.value)}
-                    >
-                      <MenuItem value="">All</MenuItem>
-                      <MenuItem value="Active">Active</MenuItem>
-                      <MenuItem value="On Hold">On Hold</MenuItem>
-                      <MenuItem value="Inactive">Inactive</MenuItem>
-                    </Select>
-                  </FormControl>
-                  <FormControl size="small" sx={{ width: 180 }}>
-                    <InputLabel>Project Manager</InputLabel>
-                    <Select
-                      value={filters.projectManager}
-                      label="Project Manager"
-                      onChange={(e) => handleFilterChange('projectManager', e.target.value)}
-                    >
-                      <MenuItem value="">All</MenuItem>
-                      {projectManagers.map((manager) => (
-                        <MenuItem key={manager._id || manager.id} value={manager.name}>
-                          {manager.name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                  <FormControl size="small" sx={{ width: 150 }}>
-                    <InputLabel>Service</InputLabel>
-                    <Select
-                      value={filters.service}
-                      label="Service"
-                      onChange={(e) => handleFilterChange('service', e.target.value)}
-                    >
-                      <MenuItem value="">All</MenuItem>
-                      {services.map((service) => (
-                        <MenuItem key={service._id} value={service.servicename}>
-                          {service.servicename}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                  <Button
-                    startIcon={<RefreshIcon />}
-                    onClick={fetchData}
-                    variant="outlined"
-                    size="small"
-                    sx={{ borderRadius: 2 }}
-                  >
-                    Refresh
-                  </Button>
-                </Box>
-              </Box>
-            }
-            titleTypographyProps={{ variant: 'h6', fontWeight: 'bold' }}
-            sx={{ 
-              backgroundColor: 'grey.900', 
-              color: 'white',
-              borderTopLeftRadius: 8,
-              borderTopRightRadius: 8
+      <Grid container width="100%" maxWidth="100%">
+   
+  <Card
+    sx={{
+      width: "100%",
+      borderRadius: 4,
+      boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+      border: '1px solid',
+      borderColor: 'divider',
+      overflow: 'hidden',
+      transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+      '&:hover': {
+        transform: 'translateY(-4px)',
+        boxShadow: '0 25px 50px rgba(0,0,0,0.15)'
+      }
+    }}
+  >
+
+    {/* Enhanced Header with Gradient */}
+    <CardHeader
+      title={
+        <Box display="flex" alignItems="center" justifyContent="space-between" sx={{ py: 1 }}>
+          <Box display="flex" alignItems="center" gap={2}>
+            <Box sx={{
+              width: 50,
+              height: 50,
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 4px 6px rgba(102, 126, 234, 0.3)'
+            }}>
+              <PeopleIcon sx={{ color: 'white', fontSize: 24 }} />
+            </Box>
+            <Box>
+              <Typography variant="h5" fontWeight="bold" color="white">
+                Client Portfolio
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)', mt: 0.5 }}>
+                Total {pagination.totalItems || clients.length} clients • {clients.filter(c => c.status === 'Active').length} active
+              </Typography>
+            </Box>
+          </Box>
+          
+          <Box display="flex" gap={2} alignItems="center">
+            {/* Quick Stats */}
+            <Box sx={{
+              background: 'rgba(255,255,255,0.15)',
+              backdropFilter: 'blur(10px)',
+              borderRadius: 3,
+              px: 2,
+              py: 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1
+            }}>
+              <TrendingUpIcon sx={{ fontSize: 18, color: '#4ade80' }} />
+              <Typography variant="body2" sx={{ color: 'white', fontWeight: 'medium' }}>
+                {clients.filter(c => c.status === 'Active').length} Active
+              </Typography>
+            </Box>
+            
+            <IconButton 
+              onClick={fetchData}
+              sx={{
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: 'white',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
+                  transform: 'rotate(45deg)'
+                },
+                transition: 'all 0.3s ease',
+                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)'
+              }}
+            >
+              <RefreshIcon />
+            </IconButton>
+          </Box>
+        </Box>
+      }
+      sx={{ 
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        color: 'white',
+        borderBottom: '1px solid',
+        borderColor: 'divider',
+        py: 2.5
+      }}
+    />
+    
+    {/* Enhanced Filter Bar */}
+    <Box sx={{ 
+      p: 3, 
+      background: 'linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)',
+      borderBottom: '1px solid',
+      borderColor: 'divider'
+    }}>
+      <Grid container spacing={2} alignItems="center">
+        <Grid item xs={12} md={3}>
+          <TextField
+            fullWidth
+            size="small"
+            placeholder="Search clients, companies..."
+            value={filters.search}
+            onChange={(e) => handleFilterChange('search', e.target.value)}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 3,
+                background: 'white',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                '&:hover': {
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                },
+                '&.Mui-focused': {
+                  boxShadow: '0 4px 12px rgba(102, 126, 234, 0.2)',
+                  borderColor: '#667eea'
+                }
+              }
+            }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: '#667eea' }} />
+                </InputAdornment>
+              ),
             }}
           />
-          <CardContent sx={{ px: 2, pb: 2 }}>
-            {clients.length > 0 ? (
-              <>
-                <StyledTableContainer>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Client Name</TableCell>
-                        <TableCell>Company</TableCell>
-                        <TableCell>City</TableCell>
-                        <TableCell>Managers</TableCell>
-                        <TableCell>Services</TableCell>
-                        <TableCell>Status</TableCell>
-                        <TableCell>Progress</TableCell>
-                        <TableCell>Pending Tasks</TableCell>
-                        <TableCell>Actions</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {clients.map((client) => {
-                        const stats = taskCounts[client._id] || { total: 0, completed: 0, pending: 0 };
-                        const pending = stats.pending || 0;
-                        
-                        return (
-                          <TableRow key={client._id} hover>
-                            <TableCell>
-                              <Typography variant="body2" fontWeight="medium">
+        </Grid>
+        
+        <Grid item xs={6} md={2}>
+          <FormControl fullWidth size="small">
+            <Select
+              value={filters.status}
+              onChange={(e) => handleFilterChange('status', e.target.value)}
+              displayEmpty
+              sx={{
+                borderRadius: 3,
+                background: 'white',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'transparent'
+                }
+              }}
+            >
+              <MenuItem value="">
+                <Box display="flex" alignItems="center" gap={1}>
+                  <FilterListIcon fontSize="small" />
+                  <Typography>All Status</Typography>
+                </Box>
+              </MenuItem>
+              <MenuItem value="Active">
+                <Box display="flex" alignItems="center" gap={1}>
+                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#10b981' }} />
+                  Active
+                </Box>
+              </MenuItem>
+              <MenuItem value="On Hold">
+                <Box display="flex" alignItems="center" gap={1}>
+                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#f59e0b' }} />
+                  On Hold
+                </Box>
+              </MenuItem>
+              <MenuItem value="Inactive">
+                <Box display="flex" alignItems="center" gap={1}>
+                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#ef4444' }} />
+                  Inactive
+                </Box>
+              </MenuItem>
+            </Select>
+          </FormControl>
+        </Grid>
+        
+        <Grid item xs={6} md={2.5}>
+          <FormControl fullWidth size="small">
+            <Select
+              value={filters.projectManager}
+              onChange={(e) => handleFilterChange('projectManager', e.target.value)}
+              displayEmpty
+              sx={{
+                borderRadius: 3,
+                background: 'white',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'transparent'
+                }
+              }}
+            >
+              <MenuItem value="">
+                <Box display="flex" alignItems="center" gap={1}>
+                  <PersonIcon fontSize="small" />
+                  <Typography>All Managers</Typography>
+                </Box>
+              </MenuItem>
+              {projectManagers.map((manager) => (
+                <MenuItem key={manager._id || manager.id} value={manager.name}>
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <Avatar sx={{ width: 24, height: 24, fontSize: 12, bgcolor: '#667eea' }}>
+                      {manager.name.charAt(0)}
+                    </Avatar>
+                    {manager.name}
+                  </Box>
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+        
+        <Grid item xs={6} md={2.5}>
+          <FormControl fullWidth size="small">
+            <Select
+              value={filters.service}
+              onChange={(e) => handleFilterChange('service', e.target.value)}
+              displayEmpty
+              sx={{
+                borderRadius: 3,
+                background: 'white',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'transparent'
+                }
+              }}
+            >
+              <MenuItem value="">
+                <Box display="flex" alignItems="center" gap={1}>
+                  <WorkIcon fontSize="small" />
+                  <Typography>All Services</Typography>
+                </Box>
+              </MenuItem>
+              {services.map((service) => (
+                <MenuItem key={service._id} value={service.servicename}>
+                  <Chip 
+                    size="small" 
+                    label={service.servicename} 
+                    sx={{ 
+                      background: 'linear-gradient(135deg, #667eea20 0%, #764ba220 100%)',
+                      color: '#667eea',
+                      border: '1px solid',
+                      borderColor: '#667eea40'
+                    }}
+                  />
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+        
+        <Grid item xs={6} md={2}>
+          <Button
+            fullWidth
+            variant="contained"
+            onClick={() => setServicesModal(true)}
+            startIcon={<AddIcon />}
+            sx={{
+              height: 40,
+              borderRadius: 3,
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: 'white',
+              textTransform: 'none',
+              fontWeight: 'bold',
+              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
+                boxShadow: '0 6px 16px rgba(102, 126, 234, 0.4)',
+                transform: 'translateY(-2px)'
+              },
+              transition: 'all 0.3s ease'
+            }}
+          >
+            New Client
+          </Button>
+        </Grid>
+      </Grid>
+    </Box>
+    
+    <CardContent sx={{ p: 0 }}>
+      {clients.length > 0 ? (
+        <>
+          {/* Enhanced Table Container */}
+          <Box sx={{ 
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            <StyledTableContainer sx={{ 
+              maxHeight: 600,
+              '&::-webkit-scrollbar': {
+                width: 8,
+                height: 8
+              },
+              '&::-webkit-scrollbar-track': {
+                background: '#f1f5f9',
+                borderRadius: 4
+              },
+              '&::-webkit-scrollbar-thumb': {
+                background: '#cbd5e1',
+                borderRadius: 4,
+                '&:hover': {
+                  background: '#94a3b8'
+                }
+              }
+            }}>
+              <Table stickyHeader>
+                <TableHead>
+                  <TableRow sx={{ 
+                    background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)',
+                    '& th': {
+                      fontWeight: 'bold',
+                      color: '#1e293b',
+                      fontSize: '0.875rem',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      borderBottom: '2px solid',
+                      borderColor: '#e2e8f0',
+                      py: 2
+                    }
+                  }}>
+                    <TableCell>Client</TableCell>
+                    <TableCell>Company</TableCell>
+                    {/* <TableCell>Location</TableCell>
+                    <TableCell>Managers</TableCell> */}
+                    <TableCell>Services</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Progress</TableCell>
+                    <TableCell>Tasks</TableCell>
+                    <TableCell align="center">Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {clients.map((client, index) => {
+                    const stats = taskCounts[client._id] || { total: 0, completed: 0, pending: 0 };
+                    const pending = stats.pending || 0;
+                    const progress = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
+                    
+                    return (
+                      <TableRow 
+                        key={client._id}
+                        hover
+                        sx={{ 
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            background: 'linear-gradient(90deg, rgba(102, 126, 234, 0.04) 0%, rgba(118, 75, 162, 0.04) 100%)',
+                            transform: 'translateX(4px)'
+                          },
+                          '&:nth-of-type(even)': {
+                            background: '#fafafa'
+                          }
+                        }}
+                      >
+                        <TableCell>
+                          <Box display="flex" alignItems="center" gap={2}>
+                            <Avatar 
+                              sx={{ 
+                                width: 36, 
+                                height: 36, 
+                                bgcolor: '#667eea',
+                                fontSize: 14,
+                                fontWeight: 'bold'
+                              }}
+                            >
+                              {client.client?.charAt(0) || 'C'}
+                            </Avatar>
+                            <Box>
+                              <Typography variant="body1" fontWeight="600">
                                 {client.client || 'N/A'}
                               </Typography>
-                            </TableCell>
-                            <TableCell>
-                              <Typography variant="body2">
-                                {client.company || 'N/A'}
+                              <Typography variant="caption" color="textSecondary">
+                                ID: {client.clientId || client._id?.slice(-6)}
                               </Typography>
-                            </TableCell>
-                            <TableCell>
-                              <Typography variant="body2">
-                                {client.city || 'N/A'}
-                              </Typography>
-                            </TableCell>
-                            <TableCell>
-                              <Box display="flex" flexDirection="column" gap={0.5}>
-                                {getProjectManagersDetails(client).length > 0 ? (
-                                  getProjectManagersDetails(client).map((manager, idx) => (
-                                    <Box key={idx} display="flex" alignItems="center" gap={0.5}>
-                                      <Chip 
-                                        size="small" 
-                                        label={manager.name} 
-                                        color="info" 
-                                        variant="outlined"
-                                      />
-                                      <Typography variant="caption" color="textSecondary">
-                                        {/* ID: {manager.id || manager._id || 'N/A'} */}
-                                      </Typography>
-                                    </Box>
-                                  ))
-                                ) : (
-                                  <Typography variant="caption" color="textSecondary">
-                                    Not assigned
-                                  </Typography>
-                                )}
-                              </Box>
-                            </TableCell>
-                            <TableCell>
-                              <Box display="flex" flexWrap="wrap" gap={0.5}>
-                                {Array.isArray(client.services) && client.services.length > 0 ? (
-                                  client.services.map((service, idx) => (
-                                    <Chip 
-                                      key={idx} 
-                                      size="small" 
-                                      label={service} 
-                                      color="primary" 
-                                      variant="outlined"
-                                      sx={{ mb: 0.5 }}
-                                    />
-                                  ))
-                                ) : (
-                                  <Typography variant="caption" color="textSecondary">
-                                    No services
-                                  </Typography>
-                                )}
-                              </Box>
-                            </TableCell>
-                            <TableCell>
-                              <StatusChip 
-                                label={client.status || 'Unknown'} 
-                                status={client.status || 'Unknown'} 
-                                size="small" 
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Box>
-                                <Typography variant="body2">
-                                  {stats.completed}/{stats.total}
-                                </Typography>
-                                {stats.total > 0 && (
-                                  <Typography variant="caption" color="textSecondary">
-                                    {Math.round((stats.completed / stats.total) * 100)}% complete
-                                  </Typography>
-                                )}
-                              </Box>
-                            </TableCell>
-                            <TableCell>
+                            </Box>
+                          </Box>
+                        </TableCell>
+                        
+                        <TableCell>
+                          <Box>
+                            <Typography variant="body2" fontWeight="medium">
+                              {client.company || 'N/A'}
+                            </Typography>
+                            <Typography variant="caption" color="textSecondary">
+                              {client.email || 'No email'}
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                     
+                        
+                      
+                        <TableCell>
+                          <Box display="flex" flexWrap="wrap" gap={0.5} maxWidth={200}>
+                            {Array.isArray(client.services) && client.services.map((service, idx) => (
                               <Chip 
-                                label={pending} 
-                                color={pending > 0 ? "warning" : "success"} 
-                                size="small" 
+                                key={idx}
+                                size="small"
+                                label={service}
+                                sx={{
+                                  background: 'linear-gradient(135deg, #667eea10 0%, #764ba210 100%)',
+                                  color: '#667eea',
+                                  border: '1px solid',
+                                  borderColor: '#667eea30',
+                                  fontWeight: '500',
+                                  fontSize: '0.7rem'
+                                }}
                               />
-                            </TableCell>
-                            <TableCell>
-                              <Box display="flex" gap={1}>
-                                <Tooltip title="View Details">
-                                  <IconButton 
-                                    size="small"
-                                    color="primary"
-                                    onClick={() => handleViewClick(client)}
-                                  >
-                                    <VisibilityIcon fontSize="small" />
-                                  </IconButton>
-                                </Tooltip>
-                                <Tooltip title="Edit Client">
-                                  <IconButton 
-                                    size="small"
-                                    color="info"
-                                    onClick={() => handleEditClick(client)}
-                                  >
-                                    <EditIcon fontSize="small" />
-                                  </IconButton>
-                                </Tooltip>
-                                <Tooltip title="Delete Client">
-                                  <IconButton 
-                                    size="small"
-                                    color="error"
-                                    onClick={() => handleDeleteClick('client', client._id, client.client)}
-                                  >
-                                    <DeleteIcon fontSize="small" />
-                                  </IconButton>
-                                </Tooltip>
-                              </Box>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </StyledTableContainer>
-                
-                {/* Pagination */}
-                <Box sx={{ 
-                  py: 2, 
-                  px: 3, 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center', 
-                  background: '#f8fafc',
-                  borderTop: '1px solid',
-                  borderColor: 'divider'
-                }}>
-                  <Typography variant="body2" color="textSecondary">
-                    Showing {((filters.page - 1) * filters.limit) + 1} to {Math.min(filters.page * filters.limit, pagination.totalItems)} of {pagination.totalItems} entries
-                  </Typography>
-                  <Pagination
-                    count={pagination.totalPages}
-                    page={filters.page}
-                    onChange={(event, value) => handleFilterChange('page', value)}
-                    color="primary"
-                    showFirstButton
-                    showLastButton
-                  />
-                </Box>
-              </>
-            ) : (
-              <Box textAlign="center" py={5}>
-                <PeopleIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
-                <Typography variant="h6" color="textSecondary" gutterBottom>
-                  No Clients Found
-                </Typography>
-                <Typography variant="body2" color="textSecondary">
-                  {services.length === 0 ? 
-                    'Add services first to create clients' : 
-                    'Add your first client using the "Add New Client" button'
-                  }
-                </Typography>
-                {services.length === 0 && (
-                  <Button 
-                    variant="contained" 
-                    startIcon={<WorkIcon />}
-                    onClick={() => setServicesModal(true)}
-                    sx={{ mt: 2 }}
+                            ))}
+                          </Box>
+                        </TableCell>
+                        
+                        <TableCell>
+                          <Box sx={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 1,
+                            px: 2,
+                            py: 0.5,
+                            borderRadius: 20,
+                            background: client.status === 'Active' 
+                              ? 'linear-gradient(135deg, #10b98120 0%, #05966920 100%)'
+                              : client.status === 'On Hold'
+                              ? 'linear-gradient(135deg, #f59e0b20 0%, #d9770620 100%)'
+                              : 'linear-gradient(135deg, #ef444420 0%, #dc262620 100%)',
+                            border: '1px solid',
+                            borderColor: client.status === 'Active'
+                              ? '#10b98140'
+                              : client.status === 'On Hold'
+                              ? '#f59e0b40'
+                              : '#ef444440'
+                          }}>
+                            <Box sx={{
+                              width: 6,
+                              height: 6,
+                              borderRadius: '50%',
+                              bgcolor: client.status === 'Active'
+                                ? '#10b981'
+                                : client.status === 'On Hold'
+                                ? '#f59e0b'
+                                : '#ef4444'
+                            }} />
+                            <Typography variant="caption" fontWeight="bold" sx={{
+                              color: client.status === 'Active'
+                                ? '#059669'
+                                : client.status === 'On Hold'
+                                ? '#d97706'
+                                : '#dc2626'
+                            }}>
+                              {client.status || 'Unknown'}
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                        
+                        <TableCell>
+                          <Box sx={{ minWidth: 120 }}>
+                            <Box display="flex" justifyContent="space-between" alignItems="center" mb={0.5}>
+                              <Typography variant="body2" fontWeight="medium">
+                                {progress}%
+                              </Typography>
+                              <Typography variant="caption" color="textSecondary">
+                                {stats.completed}/{stats.total}
+                              </Typography>
+                            </Box>
+                            <LinearProgress 
+                              variant="determinate" 
+                              value={progress}
+                              sx={{
+                                height: 8,
+                                borderRadius: 4,
+                                bgcolor: '#e2e8f0',
+                                '& .MuiLinearProgress-bar': {
+                                  borderRadius: 4,
+                                  background: progress > 70 
+                                    ? 'linear-gradient(90deg, #10b981 0%, #059669 100%)'
+                                    : progress > 30
+                                    ? 'linear-gradient(90deg, #f59e0b 0%, #d97706 100%)'
+                                    : 'linear-gradient(90deg, #ef4444 0%, #dc2626 100%)'
+                                }
+                              }}
+                            />
+                          </Box>
+                        </TableCell>
+                        
+                        <TableCell>
+                          <Box display="flex" alignItems="center" gap={1}>
+                            <Chip 
+                              icon={<TaskAltIcon />}
+                              label={pending}
+                              size="small"
+                              sx={{
+                                background: pending > 0 
+                                  ? 'linear-gradient(135deg, #f59e0b20 0%, #d9770620 100%)'
+                                  : 'linear-gradient(135deg, #10b98120 0%, #05966920 100%)',
+                                color: pending > 0 ? '#d97706' : '#059669',
+                                fontWeight: 'bold',
+                                border: '1px solid',
+                                borderColor: pending > 0 ? '#f59e0b40' : '#10b98140'
+                              }}
+                            />
+                            <Typography variant="caption" color="textSecondary">
+                              pending
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                        
+                        <TableCell align="center">
+                          <Box display="flex" gap={1} justifyContent="center">
+                            <IconButton 
+                              size="small"
+                              onClick={() => handleViewClick(client)}
+                              sx={{
+                                background: 'linear-gradient(135deg, #667eea10 0%, #764ba210 100%)',
+                                color: '#667eea',
+                                '&:hover': {
+                                  background: '#667eea',
+                                  color: 'white',
+                                  transform: 'scale(1.1)'
+                                },
+                                transition: 'all 0.2s ease'
+                              }}
+                            >
+                              <VisibilityIcon fontSize="small" />
+                            </IconButton>
+                            <IconButton 
+                              size="small"
+                              onClick={() => handleEditClick(client)}
+                              sx={{
+                                background: 'linear-gradient(135deg, #10b98110 0%, #05966910 100%)',
+                                color: '#10b981',
+                                '&:hover': {
+                                  background: '#10b981',
+                                  color: 'white',
+                                  transform: 'scale(1.1)'
+                                },
+                                transition: 'all 0.2s ease'
+                              }}
+                            >
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                            {/* <IconButton 
+                              size="small"
+                              onClick={() => handleDeleteClick('client', client._id, client.client)}
+                              sx={{
+                                background: 'linear-gradient(135deg, #ef444410 0%, #dc262610 100%)',
+                                color: '#ef4444',
+                                '&:hover': {
+                                  background: '#ef4444',
+                                  color: 'white',
+                                  transform: 'scale(1.1)'
+                                },
+                                transition: 'all 0.2s ease'
+                              }}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton> */}
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </StyledTableContainer>
+            
+            {/* Enhanced Pagination */}
+            <Box sx={{ 
+              py: 2, 
+              px: 3, 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              background: 'linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)',
+              borderTop: '1px solid',
+              borderColor: '#e2e8f0'
+            }}>
+              <Box display="flex" alignItems="center" gap={2}>
+                <FormControl size="small" sx={{ width: 100 }}>
+                  <Select
+                    value={filters.limit}
+                    onChange={(e) => handleFilterChange('limit', e.target.value)}
+                    sx={{ borderRadius: 2 }}
                   >
-                    Add Services First
-                  </Button>
-                )}
+                    <MenuItem value={10}>10 per page</MenuItem>
+                    <MenuItem value={25}>25 per page</MenuItem>
+                    <MenuItem value={50}>50 per page</MenuItem>
+                    <MenuItem value={100}>100 per page</MenuItem>
+                  </Select>
+                </FormControl>
+                <Typography variant="body2" color="#64748b">
+                  Showing <strong>{((filters.page - 1) * filters.limit) + 1}-{Math.min(filters.page * filters.limit, pagination.totalItems)}</strong> of <strong>{pagination.totalItems}</strong> clients
+                </Typography>
               </Box>
-            )}
-          </CardContent>
-        </Card>
-      </Grid>
+              
+              <Pagination
+                count={pagination.totalPages}
+                page={filters.page}
+                onChange={(event, value) => handleFilterChange('page', value)}
+                shape="rounded"
+                showFirstButton
+                showLastButton
+                sx={{
+                  '& .MuiPaginationItem-root': {
+                    borderRadius: 2,
+                    '&:hover': {
+                      background: '#667eea20'
+                    }
+                  },
+                  '& .Mui-selected': {
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    color: 'white',
+                    fontWeight: 'bold',
+                    '&:hover': {
+                      background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)'
+                    }
+                  }
+                }}
+              />
+            </Box>
+          </Box>
+        </>
+      ) : (
+        <Box textAlign="center" py={8}>
+          <Box sx={{
+            width: 120,
+            height: 120,
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            mx: 'auto',
+            mb: 3
+          }}>
+            <PeopleIcon sx={{ fontSize: 48, color: '#94a3b8' }} />
+          </Box>
+          <Typography variant="h6" color="#64748b" fontWeight="bold" gutterBottom>
+            No Clients Found
+          </Typography>
+          <Typography variant="body2" color="#94a3b8" sx={{ maxWidth: 400, mx: 'auto' }} gutterBottom>
+            {services.length === 0 
+              ? 'Add services first to create clients and start managing your portfolio' 
+              : 'Add your first client to start building your business relationships'
+            }
+          </Typography>
+          {services.length === 0 ? (
+            <Button 
+              variant="contained" 
+              startIcon={<WorkIcon />}
+              onClick={() => setServicesModal(true)}
+              sx={{ 
+                mt: 3,
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                borderRadius: 3,
+                px: 4,
+                py: 1.5,
+                fontWeight: 'bold',
+                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
+                  boxShadow: '0 6px 16px rgba(102, 126, 234, 0.4)',
+                  transform: 'translateY(-2px)'
+                },
+                transition: 'all 0.3s ease'
+              }}
+            >
+              Add Services First
+            </Button>
+          ) : (
+            <Button 
+              variant="contained" 
+              startIcon={<AddIcon />}
+              onClick={() => setServicesModal(true)}
+              sx={{ 
+                mt: 3,
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                borderRadius: 3,
+                px: 4,
+                py: 1.5,
+                fontWeight: 'bold',
+                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
+                  boxShadow: '0 6px 16px rgba(102, 126, 234, 0.4)',
+                  transform: 'translateY(-2px)'
+                },
+                transition: 'all 0.3s ease'
+              }}
+            >
+              Create First Client
+            </Button>
+          )}
+        </Box>
+      )}
+    </CardContent>
+  </Card>
 
+</Grid>
       {/* Add Client Modal */}
       <AddClientModal
         open={addClientModal}
@@ -2571,6 +2983,8 @@ const ClientManagement = () => {
                   </Grid>
                 </Grid>
               </Box>
+
+
 
               {/* Project Managers with IDs - FIXED */}
               <Box>
