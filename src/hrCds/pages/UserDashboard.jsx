@@ -12,8 +12,8 @@ import {
   MdToday, MdAccessTime, MdWork, MdBeachAccess, MdSick,
   MdOutlineWatchLater, MdOutlineCrop54
 } from 'react-icons/md';
-import './UserDashboard.css';
 
+import './UserDashboard.css';
 const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const monthNames = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -1004,7 +1004,7 @@ const UserDashboard = () => {
                 <MdBeachAccess size={24} />
               </div>
               <div className="stat-content">
-                <div className="stat-value">{leaveDates.length}</div>
+                <div className="stat-value">{leaveDates.length} </div>
                 <div className="stat-label">Leaves Taken</div>
                 <div className="stat-trend">Approved</div>
               </div>

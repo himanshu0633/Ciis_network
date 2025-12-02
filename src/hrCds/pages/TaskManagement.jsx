@@ -19,12 +19,17 @@ import {
   FiXCircle, FiFilter, FiSearch, FiLogOut, FiMessageCircle,
   FiChevronLeft, FiChevronRight, FiX as FiClose, FiBarChart2,
   FiTrendingUp, FiList, FiPause, FiTarget, FiUsers, FiSlash,
-  FiImage, FiCamera, FiTrash2, FiZoomIn
+  FiImage, FiCamera, FiTrash2, FiZoomIn,FiCheckSquare 
 } from 'react-icons/fi';
 import { useTheme, useMediaQuery } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { styled } from '@mui/material/styles';
+import { alpha } from '@mui/material/styles';
 
+
+
+
+import { FiGlobe, FiSun, FiRotateCcw } from 'react-icons/fi';
 // Enhanced Styled Components
 const StatCard = styled(Card)(({ theme, color = 'primary', clickable = true, active = false }) => ({
   background: active 
@@ -162,18 +167,25 @@ const CalendarFilterButton = styled(Button)(({ theme, active }) => ({
 const TimeFilterButton = styled(Button)(({ theme, active }) => ({
   borderRadius: theme.shape.borderRadius,
   border: `1px solid ${active ? theme.palette.primary.main : theme.palette.divider}`,
-  background: active ? `${theme.palette.primary.main}15` : 'transparent',
+  backgroundColor: active ? `${theme.palette.primary.main}22` : "transparent",
   color: active ? theme.palette.primary.main : theme.palette.text.secondary,
-  fontWeight: active ? 600 : 400,
-  textTransform: 'none',
-  minWidth: 'auto',
-  px: 2,
-  fontSize: '0.75rem',
-  '&:hover': {
+  fontWeight: active ? 700 : 500,
+  textTransform: "none",
+  minWidth: "auto",
+  padding: "4px 10px",
+  fontSize: "0.75rem",
+  transition: "all 0.25s ease",
+
+  "&:hover": {
     borderColor: theme.palette.primary.main,
-    backgroundColor: `${theme.palette.primary.main}08`,
+    backgroundColor: active
+      ? `${theme.palette.primary.main}33` // ⭐ hover when active
+      : `${theme.palette.primary.main}12`, // ⭐ hover when inactive
+    color: theme.palette.primary.main,
+    transform: "translateY(-2px)",
   },
 }));
+
 
 // Progress Bar Component
 const ProgressBar = styled(Box)(({ theme, progress, color }) => ({
@@ -271,6 +283,19 @@ const statusIcons = {
   overdue: FiAlertCircle
 };
 
+const getStatusColor = (status, theme) => {
+  const colors = {
+    'pending': theme.palette.warning.main,
+    'in-progress': theme.palette.info.main,
+    'completed': theme.palette.success.main,
+    'rejected': theme.palette.error.main,
+    'onhold': theme.palette.grey[500],
+    'reopen': theme.palette.warning.dark,
+    'cancelled': theme.palette.grey[700],
+    'overdue': theme.palette.error.dark
+  };
+  return colors[status] || alpha(theme.palette.text.secondary, 0.3);
+};
 const UserCreateTask = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [isCreatingTask, setIsCreatingTask] = useState(false);
@@ -301,7 +326,7 @@ const UserCreateTask = () => {
   });
 
   // Time Filter State
-  const [timeFilter, setTimeFilter] = useState('today');
+const [timeFilter, setTimeFilter] = useState("all");
 
   // Enhanced Features States
   const [notifications, setNotifications] = useState([]);
@@ -1010,170 +1035,442 @@ const UserCreateTask = () => {
   }, [authError, userId]);
 
   // ✅ FIXED: Enhanced Statistics Cards Component with click functionality
-  const renderStatisticsCards = () => {
-    const statsData = [
-      {
-        title: 'Total Tasks',
-        value: taskStats.total,
-        icon: FiList,
-        color: 'primary',
-        description: `All tasks (${timeFilter})`,
-        clickable: false,
-        status: null
-      },
-      {
-        title: 'Completed',
-        value: taskStats.completed.count,
-        percentage: taskStats.completed.percentage,
-        icon: FiCheckCircle,
-        color: 'success',
-        description: `${taskStats.completed.percentage}% of total`,
-        status: 'completed',
-        clickable: true
-      },
-      {
-        title: 'In Progress',
-        value: taskStats.inProgress.count,
-        percentage: taskStats.inProgress.percentage,
-        icon: FiTrendingUp,
-        color: 'info',
-        description: `${taskStats.inProgress.percentage}% of total`,
-        status: 'in-progress',
-        clickable: true
-      },
-      {
-        title: 'Pending',
-        value: taskStats.pending.count,
-        percentage: taskStats.pending.percentage,
-        icon: FiClock,
-        color: 'warning',
-        description: `${taskStats.pending.percentage}% of total`,
-        status: 'pending',
-        clickable: true
-      },
-      {
-        title: 'On Hold',
-        value: taskStats.onHold.count,
-        percentage: taskStats.onHold.percentage,
-        icon: FiPause,
-        color: 'secondary',
-        description: `${taskStats.onHold.percentage}% of total`,
-        status: 'onhold',
-        clickable: true
-      },
-      {
-        title: 'Cancelled',
-        value: taskStats.cancelled.count,
-        percentage: taskStats.cancelled.percentage,
-        icon: FiSlash,
-        color: 'grey',
-        description: `${taskStats.cancelled.percentage}% of total`,
-        status: 'cancelled',
-        clickable: true
-      },
-      {
-        title: 'Overdue',
-        value: taskStats.overdue.count,
-        percentage: taskStats.overdue.percentage,
-        icon: FiAlertCircle,
-        color: 'error',
-        description: `${taskStats.overdue.percentage}% of total`,
-        status: 'overdue',
-        clickable: true
-      },
-      {
-        title: 'Rejected',
-        value: taskStats.rejected.count,
-        percentage: taskStats.rejected.percentage,
-        icon: FiXCircle,
-        color: 'error',
-        description: `${taskStats.rejected.percentage}% of total`,
-        status: 'rejected',
-        clickable: true
-      }
-    ];
+const renderStatisticsCards = () => {
+  const statsData = [
+    {
+      title: 'Total Tasks',
+      value: taskStats.total,
+      icon: FiList,
+      color: 'primary',
+      description: `All tasks (${timeFilter})`,
+      clickable: false,
+      status: null
+    },
+    {
+      title: 'Completed',
+      value: taskStats.completed.count,
+      percentage: taskStats.completed.percentage,
+      icon: FiCheckCircle,
+      color: 'success',
+      description: `${taskStats.completed.percentage}% of total`,
+      status: 'completed',
+      clickable: true
+    },
+    {
+      title: 'In Progress',
+      value: taskStats.inProgress.count,
+      percentage: taskStats.inProgress.percentage,
+      icon: FiTrendingUp,
+      color: 'info',
+      description: `${taskStats.inProgress.percentage}% of total`,
+      status: 'in-progress',
+      clickable: true
+    },
+    {
+      title: 'Pending',
+      value: taskStats.pending.count,
+      percentage: taskStats.pending.percentage,
+      icon: FiClock,
+      color: 'warning',
+      description: `${taskStats.pending.percentage}% of total`,
+      status: 'pending',
+      clickable: true
+    },
+    {
+      title: 'On Hold',
+      value: taskStats.onHold.count,
+      percentage: taskStats.onHold.percentage,
+      icon: FiPause,
+      color: 'secondary',
+      description: `${taskStats.onHold.percentage}% of total`,
+      status: 'onhold',
+      clickable: true
+    },
+    {
+      title: 'Cancelled',
+      value: taskStats.cancelled.count,
+      percentage: taskStats.cancelled.percentage,
+      icon: FiSlash,
+      color: 'grey',
+      description: `${taskStats.cancelled.percentage}% of total`,
+      status: 'cancelled',
+      clickable: true
+    },
+    {
+      title: 'Overdue',
+      value: taskStats.overdue.count,
+      percentage: taskStats.overdue.percentage,
+      icon: FiAlertCircle,
+      color: 'error',
+      description: `${taskStats.overdue.percentage}% of total`,
+      status: 'overdue',
+      clickable: true
+    },
+    {
+      title: 'Rejected',
+      value: taskStats.rejected.count,
+      percentage: taskStats.rejected.percentage,
+      icon: FiXCircle,
+      color: 'error',
+      description: `${taskStats.rejected.percentage}% of total`,
+      status: 'rejected',
+      clickable: true
+    }
+  ];
 
-    return (
-      <Grid container spacing={2} sx={{ mb: 3 }}>
-        {statsData
-          .filter(stat => stat.title === "Total Tasks" || stat.value > 0)
-          .map((stat, index) => (
-            <Grid item xs={6} sm={4} md={2} key={index}>
-              <StatCard 
-                color={stat.color} 
-                clickable={stat.clickable}
-                active={stat.status === statusFilter}
+  return (
+    <Grid container spacing={2} sx={{ mb: 4 }}>
+      {statsData
+        .filter(stat => stat.title === "Total Tasks" || stat.value > 0)
+        .map((stat, index) => {
+          // Get color gradient based on status
+          const getGradient = (color) => {
+            const gradients = {
+              'primary': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              'success': 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+              'info': 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)',
+              'warning': 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+              'secondary': 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+              'grey': 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)',
+              'error': 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
+            };
+            return gradients[color] || gradients['primary'];
+          };
+
+          const isActive = stat.status === statusFilter;
+          
+          return (
+            <Grid item xs={6} sm={4} md={3} key={index}>
+              <Card
+                sx={{
+                  height: '100%',
+                  borderRadius: 3,
+                  border: isActive 
+                    ? `2px solid ${stat.color === 'primary' ? '#667eea' : theme.palette[stat.color].main}`
+                    : `1px solid rgba(102, 126, 234, 0.1)`,
+                  background: isActive
+                    ? stat.color === 'primary'
+                      ? 'linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.04) 100%)'
+                      : `${alpha(theme.palette[stat.color].main, 0.06)}`
+                    : 'rgba(255, 255, 255, 0.7)',
+                  backdropFilter: 'blur(10px)',
+                  transition: 'all 0.3s ease',
+                  cursor: stat.clickable ? 'pointer' : 'default',
+                  '&:hover': stat.clickable ? {
+                    transform: 'translateY(-4px)',
+                    boxShadow: `0 12px 24px ${alpha(
+                      stat.color === 'primary' ? '#667eea' : theme.palette[stat.color].main, 
+                      0.15
+                    )}`,
+                    borderColor: stat.color === 'primary' ? '#667eea' : theme.palette[stat.color].main,
+                  } : {},
+                  position: 'relative',
+                  overflow: 'hidden',
+                  '&::before': stat.clickable && isActive ? {
+                    content: '""',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: 3,
+                    background: getGradient(stat.color),
+                  } : {}
+                }}
                 onClick={() => stat.clickable && handleStatsCardClick(stat.status)}
               >
-                <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                  <Stack spacing={1}>
+                <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
+                  <Stack spacing={1.5}>
+                    {/* Header */}
                     <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
                       <Box>
-                        <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                        <Typography 
+                          variant="caption" 
+                          color="text.secondary" 
+                          fontWeight={600}
+                          sx={{ 
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px',
+                            fontSize: '0.7rem'
+                          }}
+                        >
                           {stat.title}
                         </Typography>
-                        <Typography variant="h5" fontWeight={700} sx={{ mt: 0.5 }}>
+                        <Typography 
+                          variant="h4" 
+                          fontWeight={800} 
+                          sx={{ 
+                            mt: 0.5,
+                            background: getGradient(stat.color),
+                            backgroundClip: 'text',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            lineHeight: 1.2
+                          }}
+                        >
                           {stat.value}
                         </Typography>
                       </Box>
                       <Box sx={{ 
-                        p: 1, 
-                        borderRadius: 2, 
-                        bgcolor: `${theme.palette[stat.color].main}15`,
-                        color: theme.palette[stat.color].main
+                        p: 1.5, 
+                        borderRadius: 2.5,
+                        background: getGradient(stat.color),
+                        color: '#fff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: `0 4px 12px ${alpha(
+                          stat.color === 'primary' ? '#667eea' : theme.palette[stat.color].main, 
+                          0.3
+                        )}`,
+                        position: 'relative',
+                        '&::after': {
+                          content: '""',
+                          position: 'absolute',
+                          inset: 0,
+                          borderRadius: 'inherit',
+                          background: 'linear-gradient(135deg, rgba(255,255,255,0.2), transparent)',
+                        }
                       }}>
-                        {React.createElement(stat.icon, { size: 18 })}
+                        {React.createElement(stat.icon, { size: 20 })}
                       </Box>
                     </Stack>
 
+                    {/* Progress Bar */}
                     {stat.percentage !== undefined && (
-                      <ProgressBar 
-                        progress={stat.percentage} 
-                        color={theme.palette[stat.color].main}
-                      />
+                      <Box sx={{ mt: 1 }}>
+                        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
+                          <Typography variant="caption" fontWeight={600} color="text.secondary">
+                            Progress
+                          </Typography>
+                          <Typography 
+                            variant="caption" 
+                            fontWeight={700}
+                            sx={{
+                              background: getGradient(stat.color),
+                              backgroundClip: 'text',
+                              WebkitBackgroundClip: 'text',
+                              WebkitTextFillColor: 'transparent'
+                            }}
+                          >
+                            {stat.percentage}%
+                          </Typography>
+                        </Stack>
+                        <Box sx={{ 
+                          width: '100%', 
+                          height: 6, 
+                          borderRadius: 3, 
+                          bgcolor: 'rgba(102, 126, 234, 0.1)',
+                          overflow: 'hidden'
+                        }}>
+                          <Box sx={{ 
+                            width: `${stat.percentage}%`, 
+                            height: '100%', 
+                            borderRadius: 3,
+                            background: getGradient(stat.color),
+                            position: 'relative',
+                            '&::after': {
+                              content: '""',
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)',
+                              animation: 'shimmer 2s infinite',
+                              '@keyframes shimmer': {
+                                '0%': { transform: 'translateX(-100%)' },
+                                '100%': { transform: 'translateX(100%)' }
+                              }
+                            }
+                          }} />
+                        </Box>
+                      </Box>
                     )}
 
-                    <Typography variant="caption" color="text.secondary">
+                    {/* Description */}
+                    <Typography 
+                      variant="caption" 
+                      color="text.secondary"
+                      sx={{ 
+                        fontSize: '0.75rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.5
+                      }}
+                    >
+                      <FiInfo size={12} />
                       {stat.description}
                     </Typography>
 
+                    {/* Clickable Indicator */}
                     {stat.clickable && (
-                      <Typography variant="caption" color="primary" sx={{ fontStyle: 'italic', fontSize: '0.7rem' }}>
-                        {stat.status === statusFilter ? '✓ Active filter' : 'Click to filter'}
-                      </Typography>
+                      <Box sx={{ 
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        pt: 1,
+                        borderTop: '1px solid rgba(102, 126, 234, 0.1)'
+                      }}>
+                        <Typography 
+                          variant="caption" 
+                          sx={{ 
+                            fontStyle: 'italic',
+                            fontSize: '0.7rem',
+                            background: isActive 
+                              ? getGradient(stat.color)
+                              : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                            backgroundClip: 'text',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            fontWeight: 600
+                          }}
+                        >
+                          {isActive ? '✓ Active filter' : 'Click to filter'}
+                        </Typography>
+                        {isActive && (
+                          <Box
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleStatsCardClick(null);
+                            }}
+                            sx={{
+                              width: 20,
+                              height: 20,
+                              borderRadius: '50%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              background: 'rgba(239, 68, 68, 0.1)',
+                              color: '#ef4444',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease',
+                              '&:hover': {
+                                background: '#ef4444',
+                                color: '#fff'
+                              }
+                            }}
+                          >
+                            <FiX size={12} />
+                          </Box>
+                        )}
+                      </Box>
                     )}
                   </Stack>
                 </CardContent>
-              </StatCard>
+              </Card>
             </Grid>
-          ))}
-      </Grid>
-    );
-  };
+          );
+        })}
+    </Grid>
+  );
+};
 
-  // ✅ FIXED: Time Filter Component
-  const renderTimeFilter = () => (
-    <Box sx={{ mb: 2 }}>
-      <Typography variant="subtitle2" fontWeight={600} color="text.secondary" sx={{ mb: 1 }}>
-        FILTER BY TIME PERIOD:
-      </Typography>
-      <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-        {[
-          { value: 'today', label: 'Today' },
-          { value: 'all', label: 'All Time' }
-        ].map((period) => (
-          <TimeFilterButton
+// ✅ Enhanced Time Filter Component
+const renderTimeFilter = () => (
+  <Box sx={{ mb: 3 }}>
+    <Stack 
+      direction="row" 
+      justifyContent="space-between" 
+      alignItems="center" 
+      sx={{ mb: 2 }}
+    >
+      <Box>
+        <Typography
+          variant="subtitle2"
+          fontWeight={700}
+          sx={{ 
+            textTransform: 'uppercase',
+            letterSpacing: '1px',
+            fontSize: '0.8rem',
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            backgroundClip: 'text',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent'
+          }}
+        >
+          Filter by Time Period
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          Select a timeframe to view task statistics
+        </Typography>
+      </Box>
+      {timeFilter !== 'all' && (
+        <Button
+          size="small"
+          variant="text"
+          onClick={() => handleTimeFilterChange('all')}
+          startIcon={<FiRotateCcw size={14} />}
+          sx={{
+            color: '#6b7280',
+            fontWeight: 600,
+            fontSize: '0.75rem',
+            '&:hover': {
+              color: '#667eea',
+              background: 'rgba(102, 126, 234, 0.1)'
+            }
+          }}
+        >
+          Reset to All Time
+        </Button>
+      )}
+    </Stack>
+
+    <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
+      {[
+        { value: "all", label: "All Time", icon: FiGlobe },
+        { value: "today", label: "Today", icon: FiSun },
+        { value: "yesterday", label: "Yesterday", icon: FiCalendar },
+        { value: "this-week", label: "This Week", icon: FiClock },
+        { value: "last-week", label: "Last Week", icon: FiCalendar },
+        { value: "this-month", label: "This Month", icon: FiCalendar },
+        { value: "last-month", label: "Last Month", icon: FiCalendar },
+     
+      ].map((period) => {
+        const isActive = timeFilter === period.value;
+        
+        return (
+          <Button
             key={period.value}
-            active={timeFilter === period.value}
+            variant={isActive ? "contained" : "outlined"}
             onClick={() => handleTimeFilterChange(period.value)}
             size="small"
+            startIcon={React.createElement(period.icon, { size: 14 })}
+            sx={{
+              borderRadius: 3,
+              textTransform: 'none',
+              fontWeight: 600,
+              px: 2,
+              py: 1,
+              fontSize: '0.8125rem',
+              minWidth: 'fit-content',
+              ...(isActive ? {
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4090 100%)',
+                  boxShadow: '0 6px 16px rgba(102, 126, 234, 0.4)',
+                  transform: 'translateY(-1px)'
+                }
+              } : {
+                borderColor: 'rgba(102, 126, 234, 0.2)',
+                color: '#6b7280',
+                '&:hover': {
+                  borderColor: '#667eea',
+                  color: '#667eea',
+                  background: 'rgba(102, 126, 234, 0.05)',
+                  transform: 'translateY(-1px)'
+                }
+              }),
+              transition: 'all 0.2s ease'
+            }}
           >
             {period.label}
-          </TimeFilterButton>
-        ))}
-      </Stack>
-    </Box>
-  );
+          </Button>
+        );
+      })}
+    </Stack>
+  </Box>
+);
 
   // Enhanced table cell with new action buttons
   const renderActionButtons = (task) => {
@@ -2231,32 +2528,130 @@ const UserCreateTask = () => {
         }
       }}
     >
-      <DialogTitle sx={{ 
-        pb: 2, 
-        borderBottom: 1, 
-        borderColor: 'divider',
-        background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-        color: 'white',
+     <DialogTitle sx={{ 
+  pb: 3, 
+  position: 'relative',
+  overflow: 'hidden',
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+  },
+  '&::after': {
+    content: '""',
+    position: 'absolute',
+    top: -50,
+    right: -50,
+    width: 100,
+    height: 100,
+    borderRadius: '50%',
+    background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)',
+  }
+}}>
+  <Box sx={{ 
+    display: 'flex', 
+    alignItems: 'center', 
+    gap: 2, 
+    position: 'relative',
+    zIndex: 1 
+  }}>
+    <Box sx={{ 
+      p: 1.5, 
+      borderRadius: 3,
+      background: 'rgba(255,255,255,0.15)',
+      backdropFilter: 'blur(10px)',
+      border: '1px solid rgba(255,255,255,0.2)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+    }}>
+      <FiPlus size={22} color="white" />
+    </Box>
+    <Box sx={{ flex: 1 }}>
+      <Typography 
+        variant="h4" 
+        fontWeight={800}
+        sx={{ 
+          letterSpacing: '-0.5px',
+          textShadow: '0 2px 4px rgba(0,0,0,0.2)',
+          mb: 0.5
+        }}
+      >
+        Create Personal Task
+      </Typography>
+      <Box sx={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: 1.5,
+        flexWrap: 'wrap'
       }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Typography 
+          variant="body2" 
+          sx={{ 
+            opacity: 0.95,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.5,
+            background: 'rgba(255,255,255,0.1)',
+            px: 1.5,
+            py: 0.5,
+            borderRadius: 2,
+            backdropFilter: 'blur(4px)'
+          }}
+        >
+          <FiUser size={14} />
+          This task will be assigned to: 
+          <Box component="span" sx={{ fontWeight: 600, ml: 0.5 }}>
+            {userName}
+          </Box>
+        </Typography>
+        
+        {/* Optional status indicator */}
+        <Box sx={{ 
+          display: 'flex',
+          alignItems: 'center',
+          gap: 0.5,
+          background: 'rgba(255,255,255,0.1)',
+          px: 1.5,
+          py: 0.5,
+          borderRadius: 2,
+          backdropFilter: 'blur(4px)'
+        }}>
           <Box sx={{ 
-            p: 1, 
-            borderRadius: 2, 
-            background: 'rgba(255,255,255,0.2)',
-          }}>
-            <FiPlus size={20} />
-          </Box>
-          <Box>
-            <Typography variant="h5" fontWeight={700}>
-              Create Personal Task
-            </Typography>
-            <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5 }}>
-              This task will be assigned to: {userName}
-            </Typography>
-          </Box>
+            width: 8, 
+            height: 8, 
+            borderRadius: '50%', 
+            background: 'rgba(255,255,255,0.8)',
+            animation: 'pulse 2s infinite',
+            '@keyframes pulse': {
+              '0%': { opacity: 1 },
+              '50%': { opacity: 0.5 },
+              '100%': { opacity: 1 }
+            }
+          }} />
+      
         </Box>
-      </DialogTitle>
-
+      </Box>
+    </Box>
+    
+    {/* Decorative corner */}
+    <Box sx={{
+      position: 'absolute',
+      bottom: -10,
+      right: -10,
+      width: 80,
+      height: 80,
+      borderRadius: '50%',
+      background: 'radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 70%)',
+      zIndex: 0
+    }} />
+  </Box>
+</DialogTitle>
       <DialogContent sx={{ p: 0 }}>
         <Box sx={{ p: isMobile ? 2 : 3 }}>
           <Stack spacing={isMobile ? 2 : 3}>
@@ -2510,245 +2905,917 @@ const UserCreateTask = () => {
       <Fade in={!loading} timeout={500}>
         <Box sx={{ p: { xs: 1, sm: 2, md: 3 }, maxWidth: 1400, margin: '0 auto' }}>
           {/* Header */}
-          <Paper
-            sx={{
-              p: { xs: 2, sm: 3 },
-              mb: 3,
-              borderRadius: { xs: 2, sm: 3 },
-              background: `linear-gradient(135deg, ${theme.palette.primary.main}15 0%, ${theme.palette.primary.main}05 100%)`,
-              boxShadow: 2,
+    <Paper
+  sx={{
+    p: { xs: 2.5, sm: 3.5 },
+    mb: 4,
+    borderRadius: { xs: 3, sm: 4 },
+    background: `linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.05) 100%)`,
+    border: `1px solid rgba(102, 126, 234, 0.15)`,
+    boxShadow: '0 8px 32px rgba(102, 126, 234, 0.08)',
+    position: 'relative',
+    overflow: 'hidden',
+    '&::before': {
+      content: '""',
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      height: 4,
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    },
+    '&::after': {
+      content: '""',
+      position: 'absolute',
+      top: -100,
+      right: -100,
+      width: 200,
+      height: 200,
+      borderRadius: '50%',
+      background: 'radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%)',
+    }
+  }}
+>
+  <Stack
+    direction={{ xs: "column", md: "row" }}
+    spacing={{ xs: 3, md: 0 }}
+    justifyContent="space-between"
+    alignItems={{ xs: "flex-start", md: "center" }}
+  >
+    {/* Left Section: Title & Info with Stats */}
+    <Box sx={{ flex: 1, maxWidth: { md: '60%' } }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+        <Box
+          sx={{
+            width: 56,
+            height: 56,
+            borderRadius: 3,
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+            position: 'relative',
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              inset: -2,
+              borderRadius: 'inherit',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              opacity: 0.4,
+              filter: 'blur(4px)',
+              zIndex: -1
+            }
+          }}
+        >
+          <FiCheckSquare size={28} color="#fff" />
+        </Box>
+        <Box>
+          <Typography 
+            variant="h3" 
+            fontWeight={800} 
+            gutterBottom 
+            sx={{ 
+              fontSize: { xs: '1.75rem', sm: '2.25rem', md: '2.5rem' },
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              letterSpacing: '-0.5px',
+              lineHeight: 1.2
             }}
           >
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              spacing={2}
-              justifyContent="space-between"
-              alignItems={{ xs: "flex-start", sm: "center" }}
+            My Task Management
+          </Typography>
+          <Typography 
+            variant="subtitle1" 
+            color="text.secondary"
+            sx={{ 
+              fontSize: { xs: '0.875rem', sm: '1rem' },
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1
+            }}
+          >
+            <FiBarChart2 size={16} color="#667eea" />
+            Manage and track your personal tasks efficiently
+          </Typography>
+        </Box>
+      </Box>
+      
+      {/* Quick Stats with gradient accents */}
+      <Stack 
+        direction="row" 
+        spacing={2} 
+        sx={{ 
+          mt: 3,
+          flexWrap: 'wrap',
+          gap: 2
+        }}
+      >
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: 1,
+          p: 1.5,
+          borderRadius: 2,
+          background: 'rgba(102, 126, 234, 0.06)',
+          border: '1px solid rgba(102, 126, 234, 0.1)'
+        }}>
+          <Box sx={{ 
+            width: 8, 
+            height: 8, 
+            borderRadius: '50%', 
+            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' 
+          }} />
+          <Typography variant="caption" fontWeight={600} color="text.secondary">
+            <Box component="span" sx={{ color: '#111827', fontSize: '0.9rem', fontWeight: 700 }}>
+              24
+            </Box>{' '}
+            Completed
+          </Typography>
+        </Box>
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: 1,
+          p: 1.5,
+          borderRadius: 2,
+          background: 'rgba(245, 158, 11, 0.06)',
+          border: '1px solid rgba(245, 158, 11, 0.1)'
+        }}>
+          <Box sx={{ 
+            width: 8, 
+            height: 8, 
+            borderRadius: '50%', 
+            background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' 
+          }} />
+          <Typography variant="caption" fontWeight={600} color="text.secondary">
+            <Box component="span" sx={{ color: '#111827', fontSize: '0.9rem', fontWeight: 700 }}>
+              8
+            </Box>{' '}
+            In Progress
+          </Typography>
+        </Box>
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: 1,
+          p: 1.5,
+          borderRadius: 2,
+          background: 'rgba(239, 68, 68, 0.06)',
+          border: '1px solid rgba(239, 68, 68, 0.1)'
+        }}>
+          <Box sx={{ 
+            width: 8, 
+            height: 8, 
+            borderRadius: '50%', 
+            background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' 
+          }} />
+          <Typography variant="caption" fontWeight={600} color="text.secondary">
+            <Box component="span" sx={{ color: '#111827', fontSize: '0.9rem', fontWeight: 700 }}>
+              3
+            </Box>{' '}
+            Overdue
+          </Typography>
+        </Box>
+      </Stack>
+    </Box>
+
+    {/* Right Section: Action Buttons */}
+    <Stack 
+      direction={{ xs: "column", sm: "row" }} 
+      spacing={1.5} 
+      alignItems="center"
+      sx={{ 
+        width: { xs: '100%', md: 'auto' },
+        mt: { xs: 2, md: 0 }
+      }}
+    >
+      {/* Notifications Badge */}
+      <Tooltip title="Notifications" arrow>
+        <Box sx={{ position: 'relative' }}>
+          <IconButton
+            onClick={() => setNotificationsOpen(true)}
+            sx={{
+              width: 44,
+              height: 44,
+              borderRadius: 2.5,
+              background: 'rgba(255, 255, 255, 0.8)',
+              border: '1px solid rgba(102, 126, 234, 0.2)',
+              backdropFilter: 'blur(8px)',
+              '&:hover': {
+                background: 'rgba(102, 126, 234, 0.1)',
+                borderColor: '#667eea',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 6px 16px rgba(102, 126, 234, 0.2)',
+                transition: 'all 0.3s ease'
+              }
+            }}
+          >
+            <FiBell size={20} color="#667eea" />
+          </IconButton>
+          {unreadNotificationCount > 0 && (
+            <Badge
+              badgeContent={unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}
+              color="error"
+              sx={{
+                position: 'absolute',
+                top: -4,
+                right: -4,
+                '& .MuiBadge-badge': {
+                  fontSize: '0.65rem',
+                  fontWeight: 700,
+                  minWidth: 20,
+                  height: 20,
+                  borderRadius: 10,
+                  background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                  animation: 'pulse 2s infinite',
+                  '@keyframes pulse': {
+                    '0%': { boxShadow: '0 0 0 0 rgba(239, 68, 68, 0.7)' },
+                    '70%': { boxShadow: '0 0 0 6px rgba(239, 68, 68, 0)' },
+                    '100%': { boxShadow: '0 0 0 0 rgba(239, 68, 68, 0)' }
+                  }
+                }
+              }}
+            />
+          )}
+        </Box>
+      </Tooltip>
+
+      {/* Action Buttons Group */}
+      <Stack direction="row" spacing={1} alignItems="center">
+        {/* Clear All Filters Button */}
+        {(statusFilter || timeFilter !== 'today' || selectedDate || dateRange.start || dateRange.end) && (
+          <Tooltip title="Clear All Filters" arrow>
+            <Button
+              variant="outlined"
+              onClick={clearAllFilters}
+              startIcon={<FiX size={18} color="#9ca3af" />}
+              sx={{
+                borderRadius: 3,
+                textTransform: "none",
+                fontWeight: 600,
+                px: 2.5,
+                py: 1.25,
+                fontSize: '0.875rem',
+                borderWidth: 2,
+                borderColor: 'rgba(156, 163, 175, 0.3)',
+                color: '#6b7280',
+                '&:hover': {
+                  borderColor: '#ef4444',
+                  color: '#ef4444',
+                  backgroundColor: 'rgba(239, 68, 68, 0.04)',
+                  transform: 'translateY(-1px)',
+                  boxShadow: '0 4px 12px rgba(239, 68, 68, 0.1)'
+                }
+              }}
             >
-              {/* Left Section: Title & Info */}
-              <Box sx={{ flex: 1 }}>
-                <Typography variant="h4" fontWeight={700} gutterBottom sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>
-                  My Task Management
-                </Typography>
-                <Typography variant="body1" color="text.secondary" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
-                  Manage and track your personal tasks efficiently
-                </Typography>
+              Clear All
+            </Button>
+          </Tooltip>
+        )}
+
+        {/* Create Task Button */}
+        <Tooltip title="Create New Task" arrow>
+          <Button
+            variant="contained"
+            startIcon={
+              <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                transition: 'transform 0.3s ease'
+              }}>
+                <FiPlus size={20} color="#fff" />
               </Box>
+            }
+            onClick={() => setOpenDialog(true)}
+            sx={{
+              borderRadius: 3,
+              textTransform: "none",
+              fontWeight: 700,
+              px: 3.5,
+              py: 1.5,
+              fontSize: '0.9375rem',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              boxShadow: '0 4px 14px rgba(102, 126, 234, 0.4)',
+              position: 'relative',
+              overflow: 'hidden',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: -100,
+                width: 100,
+                height: '100%',
+                background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)',
+                transition: 'left 0.7s ease',
+              },
+              '&:hover': {
+                transform: 'translateY(-2px)',
+                boxShadow: '0 8px 25px rgba(102, 126, 234, 0.6)',
+                '&::before': {
+                  left: '100%',
+                },
+                '& .MuiButton-startIcon': {
+                  transform: 'rotate(90deg)',
+                }
+              },
+              '&:active': {
+                transform: 'translateY(0)',
+                boxShadow: '0 2px 10px rgba(102, 126, 234, 0.4)',
+              }
+            }}
+          >
+            Create Task
+          </Button>
+        </Tooltip>
+      </Stack>
+    </Stack>
+  </Stack>
 
-              {/* Right Section: Buttons */}
-              <Stack direction="row" spacing={1} alignItems="center" sx={{ width: { xs: '100%', sm: 'auto' } }}>
-                {/* Notifications Badge */}
-                <Tooltip title="Notifications">
-                  <ActionButton 
-                    onClick={() => setNotificationsOpen(true)}
-                    sx={{ 
-                      position: 'relative',
-                      '&:hover': { 
-                        backgroundColor: `${theme.palette.primary.main}10`,
-                      }
-                    }}
-                  >
-                    <FiBell size={18} />
-                    {unreadNotificationCount > 0 && (
-                      <Badge 
-                        badgeContent={unreadNotificationCount} 
-                        color="error"
-                        sx={{
-                          position: 'absolute',
-                          top: 6,
-                          right: 6,
-                        }}
-                      />
-                    )}
-                  </ActionButton>
-                </Tooltip>
+  {/* Progress Indicator */}
+  {/* <Box sx={{ mt: 3, pt: 2, borderTop: '1px solid rgba(102, 126, 234, 0.1)' }}>
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+      <Typography variant="caption" fontWeight={600} color="#6b7280">
+        Daily Progress
+      </Typography>
+      <Typography variant="caption" fontWeight={700} color="#667eea">
+        75%
+      </Typography>
+    </Box>
+    <Box sx={{ 
+      width: '100%', 
+      height: 6, 
+      borderRadius: 3, 
+      background: 'rgba(102, 126, 234, 0.1)',
+      overflow: 'hidden'
+    }}>
+      <Box sx={{ 
+        width: '75%', 
+        height: '100%', 
+        borderRadius: 3,
+        background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
+        position: 'relative',
+        '&::after': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)',
+          animation: 'shimmer 2s infinite',
+          '@keyframes shimmer': {
+            '0%': { transform: 'translateX(-100%)' },
+            '100%': { transform: 'translateX(100%)' }
+          }
+        }
+      }} />
+    </Box>
+    <Typography variant="caption" color="#9ca3af" sx={{ display: 'block', mt: 0.5 }}>
+      6 of 8 tasks completed today
+    </Typography>
+  </Box> */}
 
-                {/* Clear All Filters Button */}
-                {(statusFilter || timeFilter !== 'today' || selectedDate || dateRange.start || dateRange.end) && (
-                  <Tooltip title="Clear All Filters">
-                    <Button
-                      variant="outlined"
-                      onClick={clearAllFilters}
-                      startIcon={<FiClose />}
-                      sx={{
-                        borderRadius: 2,
-                        textTransform: "none",
-                        fontWeight: 600,
-                        px: 2,
-                        py: 1,
-                        fontSize: { xs: '0.75rem', sm: '0.875rem' }
-                      }}
-                    >
-                      Clear Filters
-                    </Button>
-                  </Tooltip>
-                )}
-
-                {/* Create Task Button */}
-                <Button
-                  variant="contained"
-                  startIcon={<FiPlus />}
-                  onClick={() => setOpenDialog(true)}
-                  sx={{
-                    borderRadius: 2,
-                    textTransform: "none",
-                    fontWeight: 600,
-                    px: 3,
-                    py: 1,
-                    fontSize: { xs: '0.75rem', sm: '0.875rem' }
-                  }}
-                >
-                  Create Task
-                </Button>
-              </Stack>
-            </Stack>
-          </Paper>
+  {/* Decorative corner accent */}
+  <Box sx={{
+    position: 'absolute',
+    bottom: -20,
+    left: -20,
+    width: 100,
+    height: 100,
+    borderRadius: '50%',
+    background: 'radial-gradient(circle, rgba(118, 75, 162, 0.1) 0%, transparent 70%)',
+    zIndex: 0
+  }} />
+</Paper>
 
           {/* ✅ FIXED: Statistics Section */}
-          <Paper sx={{
-            p: { xs: 2, sm: 3 },
-            mb: 3,
-            borderRadius: { xs: 2, sm: 3 },
-            boxShadow: 1,
-          }}>
-            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
-              <FiBarChart2 color={theme.palette.primary.main} />
-              <Typography variant="h6" fontWeight={700}>
-                Task Statistics
-              </Typography>
-              {statsLoading && (
-                <CircularProgress size={16} sx={{ ml: 1 }} />
+       <Paper 
+  sx={{
+    p: { xs: 2.5, sm: 3.5 },
+    mb: 3,
+    borderRadius: { xs: 3, sm: 4 },
+    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+    border: `1px solid ${theme.palette.divider}`,
+    background: `linear-gradient(145deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.default, 0.5)} 100%)`,
+    transition: 'all 0.3s ease',
+    '&:hover': {
+      boxShadow: '0 6px 25px rgba(0,0,0,0.12)',
+    }
+  }}
+>
+  {/* Header Section */}
+  <Stack 
+    direction="row" 
+    alignItems="center" 
+    justifyContent="space-between"
+    sx={{ 
+      mb: 3,
+      pb: 2,
+      borderBottom: `2px solid ${alpha(theme.palette.primary.main, 0.1)}`
+    }}
+  >
+    <Stack direction="row" alignItems="center" spacing={1.5}>
+      <Box
+        sx={{
+          p: 1.2,
+          borderRadius: 2,
+          bgcolor: alpha(theme.palette.primary.main, 0.1),
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        <FiBarChart2 
+          size={20} 
+          color={theme.palette.primary.main} 
+        />
+      </Box>
+      <Box>
+        <Typography 
+          variant="h6" 
+          fontWeight={700}
+          sx={{ 
+            color: theme.palette.text.primary,
+            letterSpacing: '-0.2px'
+          }}
+        >
+          Task Statistics
+        </Typography>
+        <Typography 
+          variant="caption" 
+          sx={{ 
+            color: theme.palette.text.secondary,
+            display: { xs: 'none', sm: 'block' }
+          }}
+        >
+          Overview of your task performance
+        </Typography>
+      </Box>
+    </Stack>
+    
+    {statsLoading && (
+      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+        <CircularProgress 
+          size={20} 
+          thickness={5}
+          sx={{ 
+            color: theme.palette.primary.main,
+            mr: 1 
+          }} 
+        />
+        <Typography variant="caption" color="text.secondary">
+          Loading...
+        </Typography>
+      </Box>
+    )}
+  </Stack>
+
+  {/* Time Filter Section */}
+  <Box sx={{ mb: 3 }}>
+    {renderTimeFilter()}
+  </Box>
+
+  {/* Statistics Cards Section */}
+  <Box sx={{ mb: 3 }}>
+    {renderStatisticsCards()}
+  </Box>
+
+  {/* Active Filter Summary */}
+  {(statusFilter || timeFilter !== 'today') && (
+    <Fade in={true}>
+      <Alert 
+        severity="info" 
+        icon={<FiFilter size={18} />}
+        sx={{ 
+          mt: 2,
+          borderRadius: 2,
+          bgcolor: alpha(theme.palette.info.light, 0.1),
+          border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+          '& .MuiAlert-icon': {
+            alignItems: 'center',
+            color: theme.palette.info.main
+          }
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Typography variant="body2" fontWeight={600}>
+            <Box component="span" sx={{ color: 'text.primary' }}>
+              Active Filters:
+            </Box>
+            <Box component="span" sx={{ ml: 1, color: 'text.secondary' }}>
+              {statusFilter && (
+                <Chip
+                  size="small"
+                  label={statusFilter.replace('-', ' ')}
+                  onDelete={() => setStatusFilter(null)}
+                  sx={{
+                    mx: 0.5,
+                    bgcolor: alpha(theme.palette.primary.main, 0.1),
+                    color: theme.palette.primary.main,
+                    fontWeight: 500,
+                    '& .MuiChip-deleteIcon': {
+                      color: theme.palette.primary.main,
+                      '&:hover': {
+                        color: theme.palette.primary.dark
+                      }
+                    }
+                  }}
+                />
               )}
-            </Stack>
+              {timeFilter !== 'today' && (
+                <Chip
+                  size="small"
+                  label={`Time: ${timeFilter}`}
+                  onDelete={() => setTimeFilter('today')}
+                  sx={{
+                    mx: 0.5,
+                    bgcolor: alpha(theme.palette.secondary.main, 0.1),
+                    color: theme.palette.secondary.main,
+                    fontWeight: 500,
+                    '& .MuiChip-deleteIcon': {
+                      color: theme.palette.secondary.main,
+                      '&:hover': {
+                        color: theme.palette.secondary.dark
+                      }
+                    }
+                  }}
+                />
+              )}
+            </Box>
+          </Typography>
+          <Button
+            size="small"
+            variant="text"
+            onClick={() => {
+              setStatusFilter(null);
+              setTimeFilter('today');
+            }}
+            sx={{
+              ml: 2,
+              color: theme.palette.info.main,
+              '&:hover': {
+                bgcolor: alpha(theme.palette.info.main, 0.1)
+              }
+            }}
+          >
+            Clear All
+          </Button>
+        </Box>
+      </Alert>
+    </Fade>
+  )}
 
-            {/* Time Filter */}
-            {renderTimeFilter()}
-
-            {/* Statistics Cards */}
-            {renderStatisticsCards()}
-
-            {/* Active Filter Summary */}
-            {(statusFilter || timeFilter !== 'today') && (
-              <Alert severity="info" sx={{ mt: 2, borderRadius: 1 }}>
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  <FiFilter size={16} />
-                  <Typography variant="body2" fontWeight={600}>
-                    Active Filters: 
-                    {statusFilter && ` Status: ${statusFilter.replace('-', ' ')}`}
-                    {statusFilter && timeFilter !== 'today' && ' | '}
-                    {timeFilter !== 'today' && ` Time: ${timeFilter}`}
-                  </Typography>
-                </Stack>
-              </Alert>
-            )}
-          </Paper>
+  {/* Optional: Add a subtle footer */}
+  <Box sx={{ 
+    mt: 3, 
+    pt: 2, 
+    borderTop: `1px dashed ${theme.palette.divider}`,
+    display: 'flex',
+    justifyContent: 'flex-end'
+  }}>
+    <Typography variant="caption" color="text.secondary">
+      Last updated: Just now
+    </Typography>
+  </Box>
+</Paper>
 
           {/* Tasks Section */}
-          <Paper sx={{
-            borderRadius: { xs: 2, sm: 3 },
-            boxShadow: 1,
-            overflow: 'hidden'
-          }}>
-            {/* Filter Section */}
-            <Box sx={{ p: { xs: 2, sm: 3 }, borderBottom: 1, borderColor: 'divider' }}>
-              <Stack
-                direction={{ xs: 'column', sm: 'row' }}
-                spacing={2}
-                justifyContent="space-between"
-                alignItems={{ xs: 'flex-start', sm: 'center' }}
-              >
-                <Typography variant="h5" fontWeight={700}>
-                  My Tasks
-                  {statusFilter && (
-                    <Typography component="span" variant="body1" color="primary" sx={{ ml: 1, fontWeight: 600 }}>
-                      ({statusFilter.replace('-', ' ')})
-                    </Typography>
-                  )}
+    <Paper 
+  sx={{
+    borderRadius: { xs: 3, sm: 4 },
+    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+    overflow: 'hidden',
+    border: `1px solid ${theme.palette.divider}`,
+    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+    '&:hover': {
+      boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+    }
+  }}
+>
+  {/* Enhanced Filter Header */}
+  <Box 
+    sx={{ 
+      p: { xs: 2.5, sm: 3, md: 3.5 },
+      borderBottom: `2px solid ${alpha(theme.palette.primary.main, 0.08)}`,
+      background: `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.9)} 0%, ${alpha(theme.palette.background.default, 0.4)} 100%)`,
+      backdropFilter: 'blur(10px)'
+    }}
+  >
+    <Stack
+      direction={{ xs: 'column', md: 'row' }}
+      spacing={{ xs: 2, md: 0 }}
+      justifyContent="space-between"
+      alignItems={{ xs: 'flex-start', md: 'center' }}
+      sx={{ mb: 2 }}
+    >
+      {/* Title Section */}
+      <Stack direction="row" alignItems="center" spacing={1.5}>
+        <Box
+          sx={{
+            width: 40,
+            height: 40,
+            borderRadius: 2,
+            bgcolor: alpha(theme.palette.primary.main, 0.1),
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            border: `2px solid ${alpha(theme.palette.primary.main, 0.2)}`
+          }}
+        >
+          <FiCheckSquare size={20} color={theme.palette.primary.main} />
+        </Box>
+        <Box>
+          <Typography 
+            variant="h5" 
+            fontWeight={800}
+            sx={{ 
+              color: theme.palette.text.primary,
+              letterSpacing: '-0.3px',
+              lineHeight: 1.2
+            }}
+          >
+            My Tasks
+            {statusFilter && (
+              <Chip
+                label={statusFilter.replace('-', ' ')}
+                size="small"
+                sx={{
+                  ml: 1.5,
+                  height: 24,
+                  fontWeight: 600,
+                  bgcolor: alpha(theme.palette.primary.main, 0.1),
+                  color: theme.palette.primary.main,
+                  '& .MuiChip-label': { px: 1.5 }
+                }}
+              />
+            )}
+          </Typography>
+          <Typography 
+            variant="caption" 
+            sx={{ 
+              color: theme.palette.text.secondary,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5
+            }}
+          >
+            <FiInfo size={12} />
+            Manage and track your assigned tasks
+          </Typography>
+        </Box>
+      </Stack>
+      
+      {/* Action Buttons Section */}
+      <Stack 
+        direction="row" 
+        spacing={1.5} 
+        alignItems="center"
+        sx={{ 
+          width: { xs: '100%', md: 'auto' },
+          mt: { xs: 1, md: 0 }
+        }}
+      >
+        {/* Calendar Filter Button */}
+        <Tooltip title="Filter by Date" arrow>
+          <Button
+            variant={selectedDate || dateRange.start || dateRange.end ? "contained" : "outlined"}
+            onClick={() => setCalendarFilterOpen(true)}
+            startIcon={<FiCalendar size={16} />}
+            size="small"
+            sx={{
+              borderRadius: 2,
+              textTransform: 'none',
+              fontWeight: 600,
+              px: 2,
+              minWidth: 'fit-content',
+              ...(selectedDate || dateRange.start || dateRange.end ? {
+                bgcolor: theme.palette.primary.main,
+                '&:hover': {
+                  bgcolor: theme.palette.primary.dark,
+                }
+              } : {})
+            }}
+          >
+            {getDateFilterSummary() || 'Date Filter'}
+          </Button>
+        </Tooltip>
+
+        {/* Status Filter */}
+        <FormControl size="small" sx={{ minWidth: 160 }}>
+          <InputLabel sx={{ fontWeight: 500 }}>Status</InputLabel>
+          <Select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            input={<OutlinedInput label="Status" />}
+            sx={{ 
+              borderRadius: 2,
+              fontWeight: 500,
+              '& .MuiSelect-select': {
+                py: 1.25
+              }
+            }}
+            renderValue={(selected) => (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box
+                  sx={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    bgcolor: getStatusColor(selected, theme),
+                  }}
+                />
+                <Typography variant="body2" fontWeight={500}>
+                  {selected ? selected.replace('-', ' ') : 'All Status'}
                 </Typography>
-                
-                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-                  {/* Calendar Filter Button */}
-                  <Tooltip title="Filter by Date">
-                    <CalendarFilterButton
-                      onClick={() => setCalendarFilterOpen(true)}
-                      active={selectedDate || dateRange.start || dateRange.end}
-                      startIcon={<FiCalendar size={16} />}
-                    >
-                      {getDateFilterSummary() || 'Date Filter'}
-                    </CalendarFilterButton>
-                  </Tooltip>
-
-                  {/* Status Filter */}
-                  <FormControl size="small" sx={{ minWidth: 150 }}>
-                    <InputLabel>Status Filter</InputLabel>
-                    <Select
-                      value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value)}
-                      input={<OutlinedInput label="Status Filter" />}
-                      sx={{ borderRadius: 1 }}
-                    >
-                      <MenuItem value="">All Status</MenuItem>
-                      <MenuItem value="pending">Pending</MenuItem>
-                      <MenuItem value="in-progress">In Progress</MenuItem>
-                      <MenuItem value="completed">Completed</MenuItem>
-                      <MenuItem value="rejected">Rejected</MenuItem>
-                      <MenuItem value="onhold">On Hold</MenuItem>
-                      <MenuItem value="reopen">Reopen</MenuItem>
-                      <MenuItem value="cancelled">Cancelled</MenuItem>
-                      <MenuItem value="overdue">Overdue</MenuItem>
-                    </Select>
-                  </FormControl>
-
-                  {/* Clear Date Filter Button */}
-                  {(selectedDate || dateRange.start || dateRange.end) && (
-                    <Tooltip title="Clear Date Filter">
-                      <ActionButton 
-                        onClick={clearDateFilter}
-                        sx={{ 
-                          '&:hover': { 
-                            backgroundColor: `${theme.palette.error.main}10`,
-                            color: theme.palette.error.main
-                          }
-                        }}
-                      >
-                        <FiClose size={16} />
-                      </ActionButton>
-                    </Tooltip>
-                  )}
-
-                  <Tooltip title="Refresh">
-                    <ActionButton 
-                      onClick={() => fetchMyTasks()}
-                      sx={{ 
-                        '&:hover': { 
-                          backgroundColor: `${theme.palette.primary.main}10`,
-                        }
-                      }}
-                    >
-                      <FiRefreshCw size={18} />
-                    </ActionButton>
-                  </Tooltip>
-                </Stack>
-              </Stack>
-
-              {/* Date Filter Summary */}
-              {(selectedDate || dateRange.start || dateRange.end) && (
-                <Box sx={{ mt: 2, p: 1.5, bgcolor: 'primary.light', borderRadius: 1 }}>
-                  <Stack direction="row" alignItems="center" spacing={1}>
-                    <FiFilter size={16} color={theme.palette.primary.main} />
-                    <Typography variant="body2" fontWeight={600} color="primary.main">
-                      Active Date Filter: {getDateFilterSummary()}
-                    </Typography>
-                  </Stack>
+              </Box>
+            )}
+          >
+            <MenuItem value="">
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: alpha(theme.palette.text.secondary, 0.3) }} />
+                <Typography>All Status</Typography>
+              </Box>
+            </MenuItem>
+            {[
+              { value: 'pending', color: theme.palette.warning.main },
+              { value: 'in-progress', color: theme.palette.info.main },
+              { value: 'completed', color: theme.palette.success.main },
+              { value: 'rejected', color: theme.palette.error.main },
+              { value: 'onhold', color: theme.palette.grey[500] },
+              { value: 'reopen', color: theme.palette.warning.dark },
+              { value: 'cancelled', color: theme.palette.grey[700] },
+              { value: 'overdue', color: theme.palette.error.dark }
+            ].map((status) => (
+              <MenuItem key={status.value} value={status.value}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: status.color }} />
+                  <Typography>{status.value.replace('-', ' ')}</Typography>
                 </Box>
-              )}
-            </Box>
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
 
-            {/* Tasks Content */}
-            <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
-              {renderGroupedTasks(myTasksGrouped)}
+        {/* Action Buttons Group */}
+        <Stack direction="row" spacing={0.5} sx={{ ml: 0.5 }}>
+          {(selectedDate || dateRange.start || dateRange.end) && (
+            <Tooltip title="Clear Date Filter" arrow>
+              <IconButton
+                size="small"
+                onClick={clearDateFilter}
+                sx={{
+                  borderRadius: 2,
+                  bgcolor: alpha(theme.palette.error.main, 0.1),
+                  color: theme.palette.error.main,
+                  '&:hover': {
+                    bgcolor: theme.palette.error.main,
+                    color: theme.palette.error.contrastText,
+                  }
+                }}
+              >
+                <FiX size={18} />
+              </IconButton>
+            </Tooltip>
+          )}
+
+          <Tooltip title="Refresh" arrow>
+            <IconButton
+              size="small"
+              onClick={() => fetchMyTasks()}
+              sx={{
+                borderRadius: 2,
+                bgcolor: alpha(theme.palette.primary.main, 0.1),
+                color: theme.palette.primary.main,
+                '&:hover': {
+                  bgcolor: theme.palette.primary.main,
+                  color: theme.palette.primary.contrastText,
+                  animation: 'spin 0.6s ease',
+                  '@keyframes spin': {
+                    '0%': { transform: 'rotate(0deg)' },
+                    '100%': { transform: 'rotate(360deg)' }
+                  }
+                }
+              }}
+            >
+              <FiRefreshCw size={18} />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+      </Stack>
+    </Stack>
+
+    {/* Enhanced Date Filter Summary */}
+    {(selectedDate || dateRange.start || dateRange.end) && (
+      <Fade in={true}>
+        <Box 
+          sx={{ 
+            mt: 2.5,
+            p: 2,
+            borderRadius: 2,
+            bgcolor: alpha(theme.palette.primary.main, 0.06),
+            border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 1
+          }}
+        >
+          <Stack direction="row" alignItems="center" spacing={1.5}>
+            <Box
+              sx={{
+                p: 0.75,
+                borderRadius: 1,
+                bgcolor: alpha(theme.palette.primary.main, 0.1),
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <FiFilter size={16} color={theme.palette.primary.main} />
             </Box>
-          </Paper>
+            <Box>
+              <Typography variant="caption" fontWeight={600} color="text.secondary">
+                ACTIVE DATE FILTER
+              </Typography>
+              <Typography variant="body2" fontWeight={600} color="primary.main">
+                {getDateFilterSummary()}
+              </Typography>
+            </Box>
+          </Stack>
+          <Button
+            size="small"
+            variant="text"
+            onClick={clearDateFilter}
+            startIcon={<FiX size={14} />}
+            sx={{
+              color: theme.palette.text.secondary,
+              fontWeight: 500,
+              '&:hover': {
+                color: theme.palette.error.main,
+                bgcolor: alpha(theme.palette.error.main, 0.1)
+              }
+            }}
+          >
+            Clear
+          </Button>
+        </Box>
+      </Fade>
+    )}
+  </Box>
+
+  {/* Tasks Content Area */}
+  <Box 
+    sx={{ 
+      p: { xs: 2, sm: 2.5, md: 3 },
+      minHeight: 400,
+      bgcolor: alpha(theme.palette.background.default, 0.4)
+    }}
+  >
+    {renderGroupedTasks(myTasksGrouped)}
+    
+    {/* Empty State (if needed) */}
+    {(!myTasksGrouped || Object.keys(myTasksGrouped).length === 0) && (
+      <Box 
+        sx={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          py: 8,
+          textAlign: 'center'
+        }}
+      >
+        <Box
+          sx={{
+            width: 80,
+            height: 80,
+            borderRadius: '50%',
+            bgcolor: alpha(theme.palette.grey[300], 0.3),
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            mb: 2
+          }}
+        >
+          <FiCheckSquare size={36} color={theme.palette.grey[500]} />
+        </Box>
+        <Typography variant="h6" color="text.secondary" gutterBottom>
+          No tasks found
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 300 }}>
+          {statusFilter 
+            ? `No ${statusFilter.replace('-', ' ')} tasks found for the selected date`
+            : 'Try adjusting your filters or create a new task'}
+        </Typography>
+      </Box>
+    )}
+  </Box>
+</Paper>
 
           {/* DIALOGS */}
           {renderCreateTaskDialog()}

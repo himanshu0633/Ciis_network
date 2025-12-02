@@ -8,7 +8,7 @@ import {
   useTheme, useMediaQuery, Paper, Tooltip, Dialog,
   DialogTitle, DialogContent, IconButton, TextField,
   DialogActions, Badge, InputAdornment, Tabs, Tab,
-  CardHeader, CardActions, Collapse, Skeleton
+  CardHeader, CardActions, Collapse, Skeleton, alpha 
 } from "@mui/material";
 import {
   FiUsers, FiUser, FiCalendar, FiCheckCircle, FiClock,
@@ -21,7 +21,7 @@ import {
   FiCheckSquare, FiArchive, FiTarget, FiPercent,
   FiAlertTriangle, FiActivity, FiTrendingDown, FiTrendingUp as FiTrendUp,
   FiChevronDown, FiChevronUp, FiStar, FiAward, FiBarChart,
-  FiEdit3, FiExternalLink, FiMoreVertical, FiShare2
+  FiEdit3, FiExternalLink, FiMoreVertical, FiShare2,FiInfo,FiHash 
 } from "react-icons/fi";
 import { styled } from "@mui/material/styles";
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -693,199 +693,440 @@ const TaskDetails = () => {
   };
 
   // ✅ Render Overall Statistics - All Users Combined
-  const renderOverallStats = () => (
-    <Box sx={{ mb: 4 }}>
-      <Typography variant="h5" fontWeight={800} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-        <FiBarChart size={24} color={theme.palette.primary.main} />
+ const renderOverallStats = () => {
+  const statusGradients = {
+    'pending': 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+    'in-progress': 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)',
+    'completed': 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+    'rejected': 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+    'onhold': 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+    'overdue': 'linear-gradient(135deg, #dc2626 0%, #991b1b 100%)',
+    'reopen': 'linear-gradient(135deg, #f59e0b 0%, #b45309 100%)',
+    'cancelled': 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)'
+  };
+
+  const getStatusGradient = (status) => statusGradients[status] || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+
+  return (
+    <Box sx={{ mb: 3 }}>
+      <Typography
+        variant="h6"
+        fontWeight={800}
+        gutterBottom
+        sx={{ 
+          display: "flex", 
+          alignItems: "center", 
+          gap: 1,
+          fontSize: '1rem'
+        }}
+      >
+        <Box sx={{ 
+          p: 0.75, 
+          borderRadius: 2, 
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <FiBarChart size={16} color="white" />
+        </Box>
         System-wide Task Statistics
       </Typography>
-      
-      <Grid container spacing={2}>
+
+      <Grid container spacing={1.5}>
         {/* Total Tasks Card */}
-        <Grid item xs={12} md={3}>
-          <DashboardCard>
-            <CardContent sx={{ p: 3, textAlign: 'center' }}>
-              <Box sx={{ 
-                p: 2, 
-                borderRadius: 3, 
-                bgcolor: `${theme.palette.primary.main}10`,
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                mb: 2
-              }}>
-                <FiList size={32} color={theme.palette.primary.main} />
-              </Box>
-              <Typography variant="h1" fontWeight={900} sx={{ fontSize: '3.5rem', lineHeight: 1 }}>
-                {overallStats.total}
-              </Typography>
-              <Typography variant="h6" color="text.secondary" fontWeight={700}>
-                Total Tasks
-              </Typography>
+        <Grid item xs={6} sm={4} md={2.4}>
+          <Card sx={{ 
+            height: '100%',
+            borderRadius: 2.5,
+            background: 'rgba(255, 255, 255, 0.7)',
+            border: '1px solid rgba(102, 126, 234, 0.15)',
+            transition: 'all 0.2s ease',
+            '&:hover': {
+              transform: 'translateY(-2px)',
+              boxShadow: '0 8px 16px rgba(102, 126, 234, 0.1)'
+            }
+          }}>
+            <CardContent sx={{ p: 1.5, textAlign: "center" }}>
+              <Stack spacing={1} alignItems="center">
+                <Box
+                  sx={{
+                    p: 1,
+                    borderRadius: 2,
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+                    mb: 0.5,
+                  }}
+                >
+                  <FiList size={18} color="white" />
+                </Box>
+
+                <Typography
+                  fontWeight={900}
+                  sx={{
+                    fontSize: "1.8rem",
+                    lineHeight: 1,
+                    mb: 0.25,
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    backgroundClip: 'text',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent'
+                  }}
+                >
+                  {overallStats.total}
+                </Typography>
+
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  fontWeight={700}
+                  sx={{ 
+                    fontSize: "0.7rem",
+                    letterSpacing: '0.5px'
+                  }}
+                >
+                  Total Tasks
+                </Typography>
+              </Stack>
             </CardContent>
-          </DashboardCard>
+          </Card>
         </Grid>
 
-        {/* Status Breakdown - Show only non-zero statuses */}
+        {/* Status Breakdown - Compact Cards */}
         {getNonZeroStatuses
-          .filter(status => status.value !== 'all' && overallStats[status.value] > 0)
-          .map((status, index) => (
-            <Grid item xs={6} sm={4} md={2} key={status.value}>
-              <StatCard color={status.color}>
-                <CardContent sx={{ p: 2.5, textAlign: 'center' }}>
-                  <Stack spacing={1.5} alignItems="center">
-                    <Box 
-                      sx={{ 
-                        p: 1.5, 
-                        borderRadius: '50%', 
-                        backgroundColor: `${status.color}20`,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      {React.createElement(status.icon, { 
-                        size: 20, 
-                        color: status.color 
-                      })}
-                    </Box>
-                    <Box>
-                      <Typography variant="h4" fontWeight={900} sx={{ lineHeight: 1 }}>
-                        {overallStats[status.value]}
-                      </Typography>
-                      <Typography variant="caption" fontWeight={600} sx={{ opacity: 0.8 }}>
-                        {status.label}
-                      </Typography>
-                    </Box>
-                    <Typography variant="caption" sx={{ 
-                      fontWeight: 600,
-                      color: status.color
-                    }}>
-                      {Math.round((overallStats[status.value] / overallStats.total) * 100) || 0}%
-                    </Typography>
-                  </Stack>
-                </CardContent>
-              </StatCard>
-            </Grid>
-          ))}
+          .filter((status) => status.value !== "all" && overallStats[status.value] > 0)
+          .map((status) => {
+            const percentage = Math.round(
+              (overallStats[status.value] / overallStats.total) * 100
+            ) || 0;
+
+            return (
+              <Grid item xs={6} sm={4} md={2.4} key={status.value}>
+                <Card sx={{ 
+                  height: '100%',
+                  borderRadius: 2.5,
+                  background: 'rgba(255, 255, 255, 0.7)',
+                  border: `1px solid rgba(102, 126, 234, 0.15)`,
+                  transition: 'all 0.2s ease',
+                  cursor: 'pointer',
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: `0 8px 16px ${alpha(status.color === 'primary' ? '#667eea' : theme.palette[status.color]?.main || '#667eea', 0.15)}`,
+                    borderColor: status.color === 'primary' ? '#667eea' : theme.palette[status.color]?.main || '#667eea'
+                  }
+                }}>
+                  <CardContent sx={{ p: 1.5, textAlign: "center" }}>
+                    <Stack spacing={1} alignItems="center">
+                      <Box
+                        sx={{
+                          p: 0.75,
+                          borderRadius: "50%",
+                          background: getStatusGradient(status.value),
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          boxShadow: `0 4px 8px ${alpha(status.color === 'primary' ? '#667eea' : theme.palette[status.color]?.main || '#667eea', 0.3)}`,
+                          mb: 0.5,
+                        }}
+                      >
+                        {React.createElement(status.icon, {
+                          size: 14,
+                          color: "white",
+                        })}
+                      </Box>
+
+                      <Box>
+                        <Typography
+                          fontWeight={900}
+                          sx={{
+                            fontSize: "1.4rem",
+                            lineHeight: 1,
+                            mb: 0.25,
+                            background: getStatusGradient(status.value),
+                            backgroundClip: 'text',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent'
+                          }}
+                        >
+                          {overallStats[status.value]}
+                        </Typography>
+
+                        <Typography
+                          variant="caption"
+                          fontWeight={600}
+                          sx={{
+                            opacity: 0.8,
+                            fontSize: "0.65rem",
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px'
+                          }}
+                        >
+                          {status.label}
+                        </Typography>
+                      </Box>
+
+                      {/* Mini Progress Bar */}
+                      <Box sx={{ width: '100%', mt: 0.5 }}>
+                        <Box sx={{ 
+                          display: 'flex', 
+                          justifyContent: 'space-between', 
+                          alignItems: 'center',
+                          mb: 0.25 
+                        }}>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              fontWeight: 700,
+                              fontSize: "0.65rem",
+                              background: getStatusGradient(status.value),
+                              backgroundClip: 'text',
+                              WebkitBackgroundClip: 'text',
+                              WebkitTextFillColor: 'transparent'
+                            }}
+                          >
+                            {percentage}%
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ fontSize: "0.6rem" }}
+                          >
+                            of total
+                          </Typography>
+                        </Box>
+                        <Box sx={{ 
+                          width: '100%', 
+                          height: 4, 
+                          borderRadius: 2, 
+                          bgcolor: 'rgba(102, 126, 234, 0.1)',
+                          overflow: 'hidden'
+                        }}>
+                          <Box sx={{ 
+                            width: `${percentage}%`, 
+                            height: '100%', 
+                            borderRadius: 2,
+                            background: getStatusGradient(status.value),
+                          }} />
+                        </Box>
+                      </Box>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              </Grid>
+            );
+          })}
       </Grid>
     </Box>
   );
+};
 
-  // ✅ Render Status Statistics Cards - Specific User
-  const renderStatusCards = () => {
-    const nonZeroStatuses = STATUS_OPTIONS.filter(status => {
-      if (status.value === 'all') return true;
-      return getStatusCount(status.value) > 0;
-    });
+// ✅ Render Status Statistics Cards - Specific User
+const renderStatusCards = () => {
+  const statusGradients = {
+    'pending': 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+    'in-progress': 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)',
+    'completed': 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+    'rejected': 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+    'onhold': 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+    'overdue': 'linear-gradient(135deg, #dc2626 0%, #991b1b 100%)',
+    'reopen': 'linear-gradient(135deg, #f59e0b 0%, #b45309 100%)',
+    'cancelled': 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)',
+    'all': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+  };
 
-    return (
-      <Box sx={{ mb: 3 }}>
-        <Stack direction="row" alignItems="center" justifyContent="space-between" mb={2}>
-          <Stack direction="row" alignItems="center" spacing={1.5}>
-            <Box sx={{ 
-              p: 1, 
-              borderRadius: 2, 
-              bgcolor: `${theme.palette.primary.main}15`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <FiActivity size={20} color={theme.palette.primary.main} />
-            </Box>
-            <Box>
-              <Typography variant="h6" fontWeight={800}>
-                Task Status Distribution
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {selectedUser ? `${selectedUser.name}'s tasks` : 'All tasks'}
-              </Typography>
-            </Box>
-          </Stack>
-          <Button
-            size="small"
-            onClick={() => setShowStatusFilters(!showStatusFilters)}
-            startIcon={showStatusFilters ? <FiChevronUp /> : <FiChevronDown />}
-            variant="outlined"
-            sx={{ borderRadius: 2, fontWeight: 600 }}
-          >
-            {showStatusFilters ? 'Hide Filters' : 'Show Filters'}
-          </Button>
+  const nonZeroStatuses = STATUS_OPTIONS.filter(status => {
+    if (status.value === 'all') return true;
+    return getStatusCount(status.value) > 0;
+  });
+
+  return (
+    <Box sx={{ mb: 2.5 }}>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" mb={1.5}>
+        <Stack direction="row" alignItems="center" spacing={1}>
+          <Box sx={{ 
+            p: 0.75, 
+            borderRadius: 2, 
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <FiActivity size={16} color="white" />
+          </Box>
+          <Box>
+            <Typography variant="subtitle1" fontWeight={800} sx={{ fontSize: '0.95rem' }}>
+              Task Status Distribution
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+              {selectedUser ? `${selectedUser.name}'s tasks` : 'All tasks'}
+            </Typography>
+          </Box>
         </Stack>
-        
-        <Collapse in={showStatusFilters}>
-          <Grid container spacing={2} sx={{ mb: 3 }}>
-            {nonZeroStatuses.map((status) => {
-              const count = status.value === 'all' ? userTaskStats.total : getStatusCount(status.value);
-              const isActive = activeStatusFilters.includes(status.value);
-              const percentage = status.value !== 'all' ? userTaskStats[status.value]?.percentage || 0 : 0;
-              
-              return (
-                <Grid item xs={6} sm={4} md={2.4} key={status.value}>
-                  <StatCard 
-                    color={status.color}
-                    onClick={() => handleStatusFilterToggle(status.value)}
-                    sx={{ 
-                      cursor: 'pointer',
-                      borderColor: isActive ? status.color : `${status.color}20`,
-                      borderWidth: isActive ? 2 : 1,
-                    }}
-                  >
-                    <CardContent sx={{ p: 2, textAlign: 'center' }}>
-                      <Stack spacing={1.5} alignItems="center">
-                        <Box 
-                          className="stat-icon"
-                          sx={{ 
-                            p: 1.5, 
-                            borderRadius: '50%', 
-                            backgroundColor: `${status.color}20`,
-                            display: 'flex',
+        <Button
+          size="small"
+          onClick={() => setShowStatusFilters(!showStatusFilters)}
+          startIcon={showStatusFilters ? <FiChevronUp size={12} /> : <FiChevronDown size={12} />}
+          variant="outlined"
+          sx={{ 
+            borderRadius: 2, 
+            fontWeight: 600,
+            fontSize: '0.75rem',
+            py: 0.5,
+            px: 1.5,
+            minWidth: 'auto',
+            borderColor: 'rgba(102, 126, 234, 0.2)',
+            color: '#6b7280',
+            '&:hover': {
+              borderColor: '#667eea',
+              color: '#667eea',
+              background: 'rgba(102, 126, 234, 0.05)'
+            }
+          }}
+        >
+          {showStatusFilters ? 'Hide' : 'Show'}
+        </Button>
+      </Stack>
+      
+      <Collapse in={showStatusFilters}>
+        <Grid container spacing={1.5} sx={{ mb: 2 }}>
+          {nonZeroStatuses.map((status) => {
+            const count = status.value === 'all' ? userTaskStats.total : getStatusCount(status.value);
+            const isActive = activeStatusFilters.includes(status.value);
+            const percentage = status.value !== 'all' ? userTaskStats[status.value]?.percentage || 0 : 0;
+            const gradient = statusGradients[status.value] || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+            
+            return (
+              <Grid item xs={6} sm={3} md={2.4} key={status.value}>
+                <Card 
+                  onClick={() => handleStatusFilterToggle(status.value)}
+                  sx={{ 
+                    height: '100%',
+                    borderRadius: 2.5,
+                    background: isActive 
+                      ? `${alpha(status.color === 'primary' ? '#667eea' : theme.palette[status.color]?.main || '#667eea', 0.06)}`
+                      : 'rgba(255, 255, 255, 0.7)',
+                    border: isActive 
+                      ? `2px solid ${status.color === 'primary' ? '#667eea' : theme.palette[status.color]?.main || '#667eea'}`
+                      : `1px solid rgba(102, 126, 234, 0.15)`,
+                    transition: 'all 0.2s ease',
+                    cursor: 'pointer',
+                    '&:hover': {
+                      transform: 'translateY(-2px)',
+                      boxShadow: `0 8px 16px ${alpha(status.color === 'primary' ? '#667eea' : theme.palette[status.color]?.main || '#667eea', 0.15)}`,
+                      borderColor: status.color === 'primary' ? '#667eea' : theme.palette[status.color]?.main || '#667eea'
+                    }
+                  }}
+                >
+                  <CardContent sx={{ p: 1.5, textAlign: 'center' }}>
+                    <Stack spacing={1} alignItems="center">
+                      <Box 
+                        sx={{ 
+                          p: 0.75, 
+                          borderRadius: '50%', 
+                          background: gradient,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          boxShadow: `0 4px 8px ${alpha(status.color === 'primary' ? '#667eea' : theme.palette[status.color]?.main || '#667eea', 0.3)}`,
+                          mb: 0.5,
+                        }}
+                      >
+                        {React.createElement(status.icon, { 
+                          size: 14, 
+                          color: "white" 
+                        })}
+                      </Box>
+                      <Box>
+                        <Typography variant="h6" fontWeight={900} sx={{ 
+                          lineHeight: 1,
+                          fontSize: '1.3rem',
+                          background: gradient,
+                          backgroundClip: 'text',
+                          WebkitBackgroundClip: 'text',
+                          WebkitTextFillColor: 'transparent',
+                          mb: 0.25
+                        }}>
+                          {count}
+                        </Typography>
+                        <Typography variant="caption" fontWeight={600} sx={{ 
+                          opacity: 0.8,
+                          fontSize: '0.65rem',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px'
+                        }}>
+                          {status.label}
+                        </Typography>
+                      </Box>
+                      
+                      {status.value !== 'all' && (
+                        <Box sx={{ width: '100%', mt: 0.5 }}>
+                          <Box sx={{ 
+                            display: 'flex', 
+                            justifyContent: 'space-between', 
                             alignItems: 'center',
-                            justifyContent: 'center',
-                            transition: 'transform 0.3s ease',
-                          }}
-                        >
-                          {React.createElement(status.icon, { 
-                            size: 22, 
-                            color: status.color 
-                          })}
-                        </Box>
-                        <Box>
-                          <Typography variant="h4" fontWeight={900} sx={{ lineHeight: 1 }}>
-                            {count}
-                          </Typography>
-                          <Typography variant="caption" fontWeight={600} sx={{ opacity: 0.8 }}>
-                            {status.label}
-                          </Typography>
-                        </Box>
-                        {status.value !== 'all' && (
-                          <Box sx={{ width: '100%' }}>
-                            <ProgressIndicator 
-                              value={percentage}
-                              color={status.color}
-                            />
+                            mb: 0.25 
+                          }}>
                             <Typography variant="caption" sx={{ 
-                              display: 'block', 
-                              textAlign: 'right', 
-                              mt: 0.5,
-                              fontWeight: 600,
-                              color: status.color
+                              fontWeight: 700,
+                              fontSize: '0.65rem',
+                              background: gradient,
+                              backgroundClip: 'text',
+                              WebkitBackgroundClip: 'text',
+                              WebkitTextFillColor: 'transparent'
                             }}>
                               {percentage}%
                             </Typography>
                           </Box>
-                        )}
-                      </Stack>
-                    </CardContent>
-                  </StatCard>
-                </Grid>
-              );
-            })}
-          </Grid>
-        </Collapse>
-      </Box>
-    );
-  };
+                          <Box sx={{ 
+                            width: '100%', 
+                            height: 4, 
+                            borderRadius: 2, 
+                            bgcolor: 'rgba(102, 126, 234, 0.1)',
+                            overflow: 'hidden'
+                          }}>
+                            <Box sx={{ 
+                              width: `${percentage}%`, 
+                              height: '100%', 
+                              borderRadius: 2,
+                              background: gradient,
+                            }} />
+                          </Box>
+                        </Box>
+                      )}
+
+                      {/* Active Filter Indicator */}
+                      {isActive && (
+                        <Box sx={{ 
+                          mt: 0.5,
+                          px: 1,
+                          py: 0.25,
+                          borderRadius: 1,
+                          background: 'rgba(102, 126, 234, 0.1)',
+                          border: '1px solid rgba(102, 126, 234, 0.2)'
+                        }}>
+                          <Typography variant="caption" sx={{ 
+                            fontSize: '0.6rem',
+                            fontWeight: 600,
+                            color: '#667eea'
+                          }}>
+                            ✓ Active
+                          </Typography>
+                        </Box>
+                      )}
+                    </Stack>
+                  </CardContent>
+                </Card>
+              </Grid>
+            );
+          })}
+        </Grid>
+      </Collapse>
+    </Box>
+  );
+};
 
   // ✅ Render Date Filter Section
   const renderDateFilterSection = () => (
@@ -1151,531 +1392,816 @@ const TaskDetails = () => {
     const completionRate = userStats.completionRate || 0;
     
     return (
-      <UserCard selected={isSelected}>
-        <CardContent sx={{ p: 2.5 }}>
-          <Stack spacing={2.5}>
-            {/* User Header */}
-            <Stack direction="row" spacing={2} alignItems="flex-start">
-              <Badge
-                overlap="circular"
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                badgeContent={
-                  <Box sx={{ 
-                    width: 14, 
-                    height: 14, 
-                    borderRadius: '50%',
-                    bgcolor: completionRate >= 80 ? '#4CAF50' : 
-                            completionRate >= 50 ? '#FFC107' : '#F44336',
-                    border: `2px solid ${theme.palette.background.paper}`,
-                    boxShadow: theme.shadows[2]
-                  }} />
-                }
-              >
-                <Avatar 
-                  sx={{ 
-                    background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
-                    width: 60,
-                    height: 60,
-                    fontSize: '1.3rem',
-                    fontWeight: 800,
-                    boxShadow: theme.shadows[3]
-                  }}
-                >
-                  {getInitials(user.name)}
-                </Avatar>
-              </Badge>
-              <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Typography variant="h6" fontWeight={900} noWrap sx={{ mb: 0.5 }}>
-                  {user.name || "Unknown User"}
-                </Typography>
-                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
-                  <FiBriefcase size={14} color={theme.palette.text.secondary} />
-                  <Typography variant="body2" color="text.secondary" noWrap>
-                    {user.role || "No Role"}
-                  </Typography>
-                </Stack>
-                <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block' }}>
-                  {user.email || 'No email'}
-                </Typography>
-              </Box>
-            </Stack>
-            
-            {/* Stats with Visual Indicators */}
-            <Box sx={{ 
-              p: 2, 
-              borderRadius: 2.5, 
-              background: theme.palette.background.default,
-              border: `1px solid ${theme.palette.divider}`,
-              position: 'relative',
-              overflow: 'hidden'
-            }}>
-              <Grid container spacing={1.5}>
-                <Grid item xs={4}>
-                  <Stack alignItems="center">
-                    <Typography variant="h5" fontWeight={900} color="primary">
-                      {userStats.total || 0}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" fontWeight={700}>
-                      TOTAL
-                    </Typography>
-                  </Stack>
-                </Grid>
-                <Grid item xs={4}>
-                  <Stack alignItems="center">
-                    <Typography variant="h5" fontWeight={900} color="#28a745">
-                      {userStats.completed || 0}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" fontWeight={700}>
-                      DONE
-                    </Typography>
-                  </Stack>
-                </Grid>
-                <Grid item xs={4}>
-                  <Stack alignItems="center">
-                    <Typography 
-                      variant="h5" 
-                      fontWeight={900}
-                      sx={{
-                        color: completionRate >= 80 ? '#28a745' :
-                               completionRate >= 50 ? '#FFC107' : '#F44336'
-                      }}
-                    >
-                      {completionRate}%
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" fontWeight={700}>
-                      RATE
-                    </Typography>
-                  </Stack>
-                </Grid>
-              </Grid>
-              
-              {/* Progress Bar */}
-              <Box sx={{ mt: 2.5 }}>
-                <Stack direction="row" justifyContent="space-between" sx={{ mb: 1 }}>
-                  <Typography variant="caption" color="text.secondary" fontWeight={600}>
-                    Progress
-                  </Typography>
-                  <Typography variant="caption" fontWeight={800}>
-                    {completionRate}%
-                  </Typography>
-                </Stack>
-                <LinearProgress 
-                  variant="determinate" 
-                  value={completionRate}
-                  sx={{
-                    height: 8,
-                    borderRadius: 4,
-                    backgroundColor: `${theme.palette.primary.main}15`,
-                    '& .MuiLinearProgress-bar': {
-                      borderRadius: 4,
-                      background: `linear-gradient(90deg, 
-                        ${completionRate >= 80 ? '#28a745' :
-                          completionRate >= 50 ? '#FFC107' : '#F44336'} 0%, 
-                        ${completionRate >= 80 ? '#28a745' :
-                          completionRate >= 50 ? '#FFC107' : '#F44336'}AA 100%)`,
-                    }
-                  }}
-                />
-              </Box>
-            </Box>
-            
-            {/* Tags */}
-            <Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
-              {user.employeeType && (
-                <Chip
-                  label={user.employeeType.toUpperCase()}
-                  color="primary"
-                  size="small"
-                  variant="filled"
-                  sx={{ 
-                    fontWeight: 800,
-                    fontSize: '0.65rem',
-                    letterSpacing: '0.5px',
-                    borderRadius: 1.5
-                  }}
-                />
-              )}
-              {user.department && (
-                <Chip
-                  label={user.department}
-                  size="small"
-                  variant="outlined"
-                  color="secondary"
-                  sx={{ 
-                    fontWeight: 700,
-                    fontSize: '0.65rem',
-                    borderRadius: 1.5
-                  }}
-                />
-              )}
-            </Stack>
-          </Stack>
-        </CardContent>
-        
-        {/* Action Button */}
-        <CardActions sx={{ p: 2.5, pt: 0 }}>
-          <Button
-            fullWidth
-            variant={isSelected ? "contained" : "outlined"}
-            endIcon={<FiArrowRight />}
-            size="small"
-            onClick={() => {
-              setSelectedUserId(user._id);
-              fetchUserTasks(user._id);
-            }}
+    <UserCard selected={isSelected}>
+  <CardContent sx={{ p: 2 }}>
+    <Stack spacing={2}>
+
+      {/* USER HEADER */}
+      <Stack direction="row" spacing={1.5} alignItems="flex-start">
+        <Badge
+          overlap="circular"
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+          badgeContent={
+            <Box
+              sx={{
+                width: 10,
+                height: 10,
+                borderRadius: "50%",
+                bgcolor:
+                  completionRate >= 80
+                    ? "#4CAF50"
+                    : completionRate >= 50
+                    ? "#FFC107"
+                    : "#F44336",
+                border: `2px solid ${theme.palette.background.paper}`,
+              }}
+            />
+          }
+        >
+          <Avatar
             sx={{
+              background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+              width: 48,
+              height: 48,
+              fontSize: "1rem",
               fontWeight: 800,
-              borderRadius: 2.5,
-              py: 1.2,
-              fontSize: '0.85rem',
-              background: isSelected ? 
-                `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)` : undefined,
-              '&:hover': {
-                transform: 'translateY(-2px)',
-                boxShadow: isSelected ? theme.shadows[6] : theme.shadows[3],
-              },
-              transition: 'all 0.3s ease',
             }}
           >
-            View Tasks
-          </Button>
-        </CardActions>
-      </UserCard>
+            {getInitials(user.name)}
+          </Avatar>
+        </Badge>
+
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography
+            fontWeight={800}
+            noWrap
+            sx={{ fontSize: "1rem", mb: 0.3 }}
+          >
+            {user.name || "Unknown"}
+          </Typography>
+
+          <Stack direction="row" spacing={0.7} alignItems="center" sx={{ mb: 0.5 }}>
+            <FiBriefcase size={12} color={theme.palette.text.secondary} />
+            <Typography variant="caption" color="text.secondary" noWrap>
+              {user.role || "No Role"}
+            </Typography>
+          </Stack>
+
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            noWrap
+            sx={{ fontSize: "0.7rem" }}
+          >
+            {user.email || "No Email"}
+          </Typography>
+        </Box>
+      </Stack>
+
+      {/* STATS BOX */}
+      <Box
+        sx={{
+          p: 1.5,
+          borderRadius: 2,
+          border: `1px solid ${theme.palette.divider}`,
+          background: theme.palette.background.default,
+        }}
+      >
+        <Grid container spacing={1}>
+          <Grid item xs={4}>
+            <Stack alignItems="center">
+              <Typography
+                fontWeight={900}
+                sx={{ fontSize: "1.1rem" }}
+                color="primary"
+              >
+                {userStats.total || 0}
+              </Typography>
+              <Typography variant="caption" fontWeight={600} sx={{ fontSize: "0.65rem" }}>
+                TOTAL
+              </Typography>
+            </Stack>
+          </Grid>
+
+          <Grid item xs={4}>
+            <Stack alignItems="center">
+              <Typography
+                fontWeight={900}
+                sx={{ fontSize: "1.1rem" }}
+                color="#28a745"
+              >
+                {userStats.completed || 0}
+              </Typography>
+              <Typography variant="caption" fontWeight={600} sx={{ fontSize: "0.65rem" }}>
+                DONE
+              </Typography>
+            </Stack>
+          </Grid>
+
+          <Grid item xs={4}>
+            <Stack alignItems="center">
+              <Typography
+                fontWeight={900}
+                sx={{
+                  fontSize: "1.1rem",
+                  color:
+                    completionRate >= 80
+                      ? "#28a745"
+                      : completionRate >= 50
+                      ? "#FFC107"
+                      : "#F44336",
+                }}
+              >
+                {completionRate}%
+              </Typography>
+              <Typography variant="caption" fontWeight={600} sx={{ fontSize: "0.65rem" }}>
+                RATE
+              </Typography>
+            </Stack>
+          </Grid>
+        </Grid>
+
+        {/* PROGRESS BAR */}
+        <Box sx={{ mt: 1.8 }}>
+          <Stack
+            direction="row"
+            justifyContent="space-between"
+            sx={{ mb: 0.6 }}
+          >
+            <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ fontSize: "0.65rem" }}>
+              Progress
+            </Typography>
+            <Typography variant="caption" fontWeight={800} sx={{ fontSize: "0.65rem" }}>
+              {completionRate}%
+            </Typography>
+          </Stack>
+
+          <LinearProgress
+            variant="determinate"
+            value={completionRate}
+            sx={{
+              height: 6,
+              borderRadius: 4,
+              backgroundColor: `${theme.palette.primary.main}15`,
+              "& .MuiLinearProgress-bar": {
+                borderRadius: 4,
+                background:
+                  completionRate >= 80
+                    ? "#28a745"
+                    : completionRate >= 50
+                    ? "#FFC107"
+                    : "#F44336",
+              },
+            }}
+          />
+        </Box>
+      </Box>
+
+      {/* TAGS */}
+      <Stack direction="row" spacing={1} flexWrap="wrap" gap={0.7}>
+        {user.employeeType && (
+          <Chip
+            label={user.employeeType.toUpperCase()}
+            size="small"
+            sx={{
+              fontSize: "0.6rem",
+              borderRadius: 1.2,
+              fontWeight: 700,
+            }}
+          />
+        )}
+
+        {user.department && (
+          <Chip
+            label={user.department}
+            size="small"
+            variant="outlined"
+            color="secondary"
+            sx={{
+              fontSize: "0.6rem",
+              borderRadius: 1.2,
+              fontWeight: 700,
+            }}
+          />
+        )}
+      </Stack>
+    </Stack>
+  </CardContent>
+
+  {/* ACTION BUTTON */}
+  <CardActions sx={{ p: 2, pt: 0.5 }}>
+    <Button
+      fullWidth
+      variant={isSelected ? "contained" : "outlined"}
+      endIcon={<FiArrowRight />}
+      size="small"
+      onClick={() => {
+        setSelectedUserId(user._id);
+        fetchUserTasks(user._id);
+      }}
+      sx={{
+        fontWeight: 800,
+        borderRadius: 2,
+        py: 0.8,
+        fontSize: "0.75rem",
+      }}
+    >
+      View Tasks
+    </Button>
+  </CardActions>
+</UserCard>
+
     );
   };
 
   // ✅ Render Enhanced Dialog
-  const renderEnhancedDialog = () => (
-    <Dialog
-      open={openDialog}
-      onClose={() => setOpenDialog(false)}
-      fullWidth
-      maxWidth="xl"
-      scroll="paper"
-      fullScreen={isMobile}
-      PaperProps={{
-        sx: {
-          borderRadius: isMobile ? 0 : 4,
-          overflow: 'hidden',
-          background: theme.palette.background.default,
-        }
-      }}
-    >
-      <DialogTitle sx={{ 
-        background: `linear-gradient(135deg, ${theme.palette.primary.main}15 0%, ${theme.palette.secondary.main}15 100%)`,
-        borderBottom: `1px solid ${theme.palette.divider}`,
-        pb: 3,
-        pt: 3
-      }}>
-        <Stack spacing={2}>
-          <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={2}>
-            <Stack direction="row" alignItems="center" spacing={2}>
+const renderEnhancedDialog = () => (
+  <Dialog
+    open={openDialog}
+    onClose={() => setOpenDialog(false)}
+    fullWidth
+    maxWidth="xl"
+    scroll="paper"
+    fullScreen={isMobile}
+    PaperProps={{
+      sx: {
+        borderRadius: isMobile ? 0 : 4,
+        overflow: 'hidden',
+        background: 'rgba(255, 255, 255, 0.95)',
+        backdropFilter: 'blur(20px)',
+        border: '1px solid rgba(102, 126, 234, 0.2)',
+      }
+    }}
+  >
+    {/* Dialog Header */}
+    <DialogTitle sx={{ 
+      background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.05) 100%)',
+      borderBottom: '1px solid rgba(102, 126, 234, 0.15)',
+      pb: 3,
+      pt: 3.5,
+      position: 'relative',
+      '&::before': {
+        content: '""',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 4,
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      }
+    }}>
+      <Stack spacing={2.5}>
+        {/* User Info Header */}
+        <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={2}>
+          <Stack direction="row" alignItems="center" spacing={2}>
+            <Box sx={{ 
+              position: 'relative',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                inset: -3,
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                opacity: 0.3,
+                zIndex: 0
+              }
+            }}>
               <Avatar 
                 sx={{ 
-                  bgcolor: theme.palette.primary.main,
-                  width: 56,
-                  height: 56,
-                  fontSize: '1.3rem',
+                  width: 60,
+                  height: 60,
+                  fontSize: '1.4rem',
                   fontWeight: 800,
-                  boxShadow: theme.shadows[4]
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  boxShadow: '0 8px 24px rgba(102, 126, 234, 0.4)',
+                  border: '3px solid white',
+                  position: 'relative',
+                  zIndex: 1
                 }}
               >
                 {getInitials(selectedUser?.name)}
               </Avatar>
-              <Box>
-                <Typography variant="h4" fontWeight={900} color="primary">
-                  {selectedUser?.name}'s Task Dashboard
-                </Typography>
-                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" sx={{ mt: 0.5 }}>
-                  <Chip 
-                    label={selectedUser?.role || 'No Role'} 
-                    size="small" 
-                    color="primary" 
-                    variant="filled"
-                    sx={{ fontWeight: 700 }}
-                  />
-                  <Chip 
-                    label={selectedUser?.employeeType || 'No Type'} 
-                    size="small" 
-                    color="secondary" 
-                    variant="filled"
-                    sx={{ fontWeight: 700 }}
-                  />
-                  <Typography variant="caption" color="text.secondary">
-                    {selectedUser?.email}
-                  </Typography>
-                </Stack>
-              </Box>
-            </Stack>
-            <IconButton 
-              onClick={() => setOpenDialog(false)}
-              sx={{ 
-                border: `2px solid ${theme.palette.divider}`,
-                '&:hover': { 
-                  backgroundColor: theme.palette.error.main,
-                  color: 'white',
-                  borderColor: theme.palette.error.main
-                }
-              }}
-            >
-              <FiX />
-            </IconButton>
-          </Stack>
-          
-          {/* Current Filters Display */}
-          <Card variant="outlined" sx={{ 
-            p: 1.5, 
-            borderRadius: 2,
-            background: theme.palette.background.paper
-          }}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={1.5}>
-              <Stack direction="row" alignItems="center" spacing={1.5}>
-                <FiFilter size={18} color={theme.palette.primary.main} />
-                <Typography variant="body2" fontWeight={700}>
-                  Active Filters:
-                </Typography>
-              </Stack>
-              <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+            </Box>
+            <Box>
+              <Typography variant="h3" fontWeight={900} sx={{
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                letterSpacing: '-0.5px',
+                lineHeight: 1.2
+              }}>
+                {selectedUser?.name}'s Task Dashboard
+              </Typography>
+              <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" sx={{ mt: 1 }}>
                 <Chip 
-                  label={QUICK_DATE_PRESETS.find(p => p.value === quickDateFilter)?.label || 'Custom'} 
-                  color="primary" 
-                  size="small"
-                  variant="filled"
-                  icon={<FiCalendar size={12} />}
-                  sx={{ fontWeight: 700 }}
-                />
-                {activeStatusFilters.filter(f => f !== 'all').map(status => {
-                  const statusOpt = STATUS_OPTIONS.find(s => s.value === status);
-                  return statusOpt ? (
-                    <Chip
-                      key={status}
-                      label={statusOpt.label}
-                      size="small"
-                      variant="filled"
-                      sx={{ 
-                        backgroundColor: `${statusOpt.color}20`,
-                        color: statusOpt.color,
-                        fontWeight: 700
-                      }}
-                      icon={React.createElement(statusOpt.icon, { size: 12 })}
-                    />
-                  ) : null;
-                })}
-                {searchQuery && (
-                  <Chip
-                    label="Search Active"
-                    size="small"
-                    color="info"
-                    variant="filled"
-                    sx={{ fontWeight: 700 }}
-                    icon={<FiSearch size={12} />}
-                  />
-                )}
-              </Stack>
-            </Stack>
-          </Card>
-        </Stack>
-      </DialogTitle>
-      
-      <DialogContent dividers sx={{ p: 3 }}>
-        <Stack spacing={3}>
-          {/* Date Filter Section */}
-          {renderDateFilterSection()}
-
-          {/* Status Statistics */}
-          {renderStatusCards()}
-
-          {/* Task List Section */}
-          <DashboardCard sx={{ p: 3 }}>
-            <Stack direction={{ xs: 'column', sm: 'row' }} 
-                   justifyContent="space-between" 
-                   alignItems={{ xs: 'flex-start', sm: 'center' }} 
-                   spacing={2} 
-                   mb={3}>
-              <Stack direction="row" alignItems="center" spacing={2}>
-                <Box sx={{ 
-                  p: 1.5, 
-                  borderRadius: 3, 
-                  bgcolor: `${theme.palette.info.main}15`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <FiList size={24} color={theme.palette.info.main} />
-                </Box>
-                <Box>
-                  <Typography variant="h5" fontWeight={800}>
-                    Task Details
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Showing {filteredTasks.length} of {tasks.length} tasks
-                  </Typography>
-                </Box>
-              </Stack>
-
-              {/* Search */}
-              <Stack direction="row" spacing={2} alignItems="center" sx={{ width: { xs: '100%', sm: 'auto' } }}>
-                <TextField
-                  size="small"
-                  placeholder="Search tasks..."
-                  value={searchQuery}
-                  onChange={(e) => handleSearch(e.target.value)}
-                  InputProps={{
-                    startAdornment: <FiSearch style={{ marginRight: 8, color: theme.palette.text.secondary }} />,
-                    endAdornment: searchQuery && (
-                      <InputAdornment position="end">
-                        <IconButton size="small" onClick={() => handleSearch('')}>
-                          <FiX size={14} />
-                        </IconButton>
-                      </InputAdornment>
-                    )
-                  }}
+                  label={selectedUser?.role || 'No Role'} 
+                  size="small" 
                   sx={{ 
-                    minWidth: { xs: '100%', sm: 280 },
-                    backgroundColor: theme.palette.background.default,
+                    fontWeight: 700,
+                    background: 'rgba(102, 126, 234, 0.1)',
+                    color: '#667eea',
+                    border: '1px solid rgba(102, 126, 234, 0.3)',
                     borderRadius: 2,
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
+                    '&:hover': {
+                      background: 'rgba(102, 126, 234, 0.15)'
                     }
                   }}
                 />
+                <Chip 
+                  label={selectedUser?.employeeType || 'No Type'} 
+                  size="small" 
+                  sx={{ 
+                    fontWeight: 700,
+                    background: 'rgba(118, 75, 162, 0.1)',
+                    color: '#764ba2',
+                    border: '1px solid rgba(118, 75, 162, 0.3)',
+                    borderRadius: 2,
+                    '&:hover': {
+                      background: 'rgba(118, 75, 162, 0.15)'
+                    }
+                  }}
+                />
+                <Typography variant="caption" color="#6b7280" sx={{ 
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5
+                }}>
+                  <FiMail size={12} />
+                  {selectedUser?.email}
+                </Typography>
               </Stack>
+            </Box>
+          </Stack>
+          <IconButton 
+            onClick={() => setOpenDialog(false)}
+            sx={{ 
+              width: 44,
+              height: 44,
+              borderRadius: 2.5,
+              border: '2px solid rgba(102, 126, 234, 0.2)',
+              background: 'rgba(255, 255, 255, 0.8)',
+              backdropFilter: 'blur(8px)',
+              color: '#6b7280',
+              transition: 'all 0.2s ease',
+              '&:hover': { 
+                background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                color: 'white',
+                borderColor: 'transparent',
+                transform: 'rotate(90deg)'
+              }
+            }}
+          >
+            <FiX size={20} />
+          </IconButton>
+        </Stack>
+        
+        {/* Active Filters Display */}
+        <Card sx={{ 
+          p: 2, 
+          borderRadius: 3,
+          background: 'rgba(255, 255, 255, 0.8)',
+          border: '1px solid rgba(102, 126, 234, 0.15)',
+          boxShadow: '0 4px 12px rgba(102, 126, 234, 0.08)'
+        }}>
+          <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={1.5}>
+            <Stack direction="row" alignItems="center" spacing={1.5}>
+              <Box sx={{ 
+                p: 1, 
+                borderRadius: 2,
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <FiFilter size={16} color="#fff" />
+              </Box>
+              <Typography variant="body2" fontWeight={700} color="#667eea">
+                ACTIVE FILTERS:
+              </Typography>
+            </Stack>
+            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap gap={1}>
+              <Chip 
+                label={QUICK_DATE_PRESETS.find(p => p.value === quickDateFilter)?.label || 'Custom'} 
+                size="small"
+                sx={{
+                  fontWeight: 700,
+                  fontSize: '0.75rem',
+                  background: 'rgba(102, 126, 234, 0.1)',
+                  color: '#667eea',
+                  border: '1px solid rgba(102, 126, 234, 0.3)',
+                  borderRadius: 2,
+                  '&:hover': {
+                    background: 'rgba(102, 126, 234, 0.15)'
+                  }
+                }}
+                icon={<FiCalendar size={12} color="#667eea" />}
+              />
+              {activeStatusFilters.filter(f => f !== 'all').map(status => {
+                const statusOpt = STATUS_OPTIONS.find(s => s.value === status);
+                return statusOpt ? (
+                  <Chip
+                    key={status}
+                    label={statusOpt.label}
+                    size="small"
+                    sx={{ 
+                      fontWeight: 700,
+                      fontSize: '0.75rem',
+                      background: `${statusOpt.color}15`,
+                      color: statusOpt.color,
+                      border: `1px solid ${statusOpt.color}30`,
+                      borderRadius: 2,
+                      '&:hover': {
+                        background: `${statusOpt.color}20`
+                      }
+                    }}
+                    icon={React.createElement(statusOpt.icon, { 
+                      size: 12,
+                      color: statusOpt.color 
+                    })}
+                  />
+                ) : null;
+              })}
+              {searchQuery && (
+                <Chip
+                  label="Search Active"
+                  size="small"
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: '0.75rem',
+                    background: 'rgba(59, 130, 246, 0.1)',
+                    color: '#3b82f6',
+                    border: '1px solid rgba(59, 130, 246, 0.3)',
+                    borderRadius: 2,
+                    '&:hover': {
+                      background: 'rgba(59, 130, 246, 0.15)'
+                    }
+                  }}
+                  icon={<FiSearch size={12} color="#3b82f6" />}
+                />
+              )}
+            </Stack>
+          </Stack>
+        </Card>
+      </Stack>
+    </DialogTitle>
+    
+    <DialogContent dividers sx={{ 
+      p: 3.5,
+      background: 'rgba(102, 126, 234, 0.02)'
+    }}>
+      <Stack spacing={4}>
+        {/* Date Filter Section */}
+        {renderDateFilterSection()}
+
+        {/* Status Statistics */}
+        {renderStatusCards()}
+
+        {/* Task List Section */}
+        <Card sx={{ 
+          p: 3.5,
+          borderRadius: 4,
+          background: 'rgba(255, 255, 255, 0.8)',
+          border: '1px solid rgba(102, 126, 234, 0.15)',
+          boxShadow: '0 8px 32px rgba(102, 126, 234, 0.08)',
+          backdropFilter: 'blur(10px)'
+        }}>
+          <Stack direction={{ xs: 'column', sm: 'row' }} 
+                 justifyContent="space-between" 
+                 alignItems={{ xs: 'flex-start', sm: 'center' }} 
+                 spacing={2} 
+                 mb={4}>
+            <Stack direction="row" alignItems="center" spacing={2}>
+              <Box sx={{ 
+                p: 1.5, 
+                borderRadius: 3, 
+                background: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 4px 12px rgba(14, 165, 233, 0.3)'
+              }}>
+                <FiList size={22} color="#fff" />
+              </Box>
+              <Box>
+                <Typography variant="h5" fontWeight={800} sx={{
+                  background: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)',
+                  backgroundClip: 'text',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent'
+                }}>
+                  Task Details
+                </Typography>
+                <Typography variant="body2" color="#6b7280" sx={{ 
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  fontSize: '0.875rem'
+                }}>
+                  <FiInfo size={14} />
+                  Showing {filteredTasks.length} of {tasks.length} tasks
+                </Typography>
+              </Box>
             </Stack>
 
-            {/* Loading State */}
-            {loading ? (
-              <Box textAlign="center" py={6}>
-                <CircularProgress size={60} thickness={4} sx={{ mb: 3 }} />
-                <Typography variant="h6" fontWeight={700}>
-                  Loading Tasks...
-                </Typography>
-                <Typography variant="body2" color="text.secondary" mt={1}>
-                  Please wait while we fetch task details
-                </Typography>
+            {/* Search */}
+            <Stack direction="row" spacing={2} alignItems="center" sx={{ width: { xs: '100%', sm: 'auto' } }}>
+              <TextField
+                size="small"
+                placeholder="Search tasks..."
+                value={searchQuery}
+                onChange={(e) => handleSearch(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <Box sx={{ display: 'flex', alignItems: 'center', mr: 1 }}>
+                      <FiSearch size={18} color="#667eea" />
+                    </Box>
+                  ),
+                  endAdornment: searchQuery && (
+                    <InputAdornment position="end">
+                      <IconButton 
+                        size="small" 
+                        onClick={() => handleSearch('')}
+                        sx={{
+                          '&:hover': {
+                            background: 'rgba(239, 68, 68, 0.1)',
+                            color: '#ef4444'
+                          }
+                        }}
+                      >
+                        <FiX size={16} />
+                      </IconButton>
+                    </InputAdornment>
+                  )
+                }}
+                sx={{ 
+                  minWidth: { xs: '100%', sm: 300 },
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  borderRadius: 3,
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 3,
+                    borderColor: 'rgba(102, 126, 234, 0.2)',
+                    '&:hover': {
+                      borderColor: '#667eea',
+                    },
+                    '&.Mui-focused': {
+                      borderColor: '#667eea',
+                      boxShadow: '0 0 0 2px rgba(102, 126, 234, 0.1)'
+                    }
+                  }
+                }}
+              />
+            </Stack>
+          </Stack>
+
+          {/* Loading State */}
+          {loading ? (
+            <Box textAlign="center" py={8}>
+              <Box sx={{ 
+                width: 70, 
+                height: 70, 
+                borderRadius: '50%', 
+                background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.05) 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mx: 'auto',
+                mb: 3,
+                border: '2px dashed rgba(102, 126, 234, 0.3)'
+              }}>
+                <CircularProgress 
+                  size={50} 
+                  thickness={4} 
+                  sx={{ 
+                    color: '#667eea'
+                  }} 
+                />
               </Box>
-            ) : filteredTasks.length === 0 ? (
-              <Box textAlign="center" py={6} color="text.secondary">
-                <FiArchive size={72} style={{ marginBottom: 16, opacity: 0.3 }} />
-                <Typography variant="h5" gutterBottom fontWeight={700}>
-                  No Tasks Found
-                </Typography>
-                <Typography>
-                  No tasks match the current filters. Try adjusting your filter settings.
-                </Typography>
-                <Button 
-                  variant="outlined" 
-                  sx={{ mt: 3 }}
-                  onClick={resetDateFilters}
-                >
-                  Reset All Filters
-                </Button>
+              <Typography variant="h5" fontWeight={700} mt={2} sx={{
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
+              }}>
+                Loading Tasks...
+              </Typography>
+              <Typography variant="body2" color="#6b7280" mt={1}>
+                Please wait while we fetch task details
+              </Typography>
+            </Box>
+          ) : filteredTasks.length === 0 ? (
+            <Box textAlign="center" py={8} color="text.secondary">
+              <Box sx={{ 
+                width: 80, 
+                height: 80, 
+                borderRadius: '50%', 
+                background: 'rgba(102, 126, 234, 0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mx: 'auto',
+                mb: 3,
+                border: '2px dashed rgba(102, 126, 234, 0.3)'
+              }}>
+                <FiArchive size={32} color="#667eea" />
               </Box>
-            ) : (
-              <Grid container spacing={2}>
-                {filteredTasks.map((task) => {
-                  const status = task.userStatus || task.status || task.overallStatus;
-                  const statusColor = getStatusColor(status);
-                  const statusIcon = getStatusIcon(status);
-                  
-                  return (
-                    <Grid item xs={12} key={task._id}>
-                      <Card variant="outlined" sx={{ 
-                        borderRadius: 3,
-                        borderLeft: `4px solid ${statusColor}`,
-                        transition: 'all 0.3s ease',
-                        '&:hover': {
-                          transform: 'translateY(-2px)',
-                          boxShadow: theme.shadows[4],
-                        }
-                      }}>
-                        <CardContent sx={{ p: 2.5 }}>
-                          <Stack spacing={2}>
-                            <Stack direction="row" justifyContent="space-between" alignItems="flex-start" flexWrap="wrap" gap={2}>
-                              <Box sx={{ flex: 1, minWidth: 0 }}>
-                                <Typography variant="h6" fontWeight={800} sx={{ mb: 0.5 }}>
-                                  {task.title || 'No Title'}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                                  Task ID: {task.serialNo || 'N/A'} • Created: {formatDate(task.createdAt)}
-                                </Typography>
-                              </Box>
-                              <Stack direction="row" spacing={1} alignItems="center">
-                                <Chip
-                                  label={task.priority || 'medium'}
-                                  size="small"
-                                  sx={{
-                                    fontWeight: 700,
-                                    borderRadius: 1.5,
-                                    backgroundColor: 
-                                      task.priority === 'high' ? `${theme.palette.error.main}20` :
-                                      task.priority === 'medium' ? `${theme.palette.warning.main}20` :
-                                      `${theme.palette.success.main}20`,
-                                    color: 
-                                      task.priority === 'high' ? theme.palette.error.main :
-                                      task.priority === 'medium' ? theme.palette.warning.main :
-                                      theme.palette.success.main,
-                                  }}
-                                />
-                                <Chip
-                                  label={status}
-                                  size="small"
-                                  sx={{
-                                    fontWeight: 800,
-                                    borderRadius: 1.5,
-                                    backgroundColor: `${statusColor}20`,
-                                    color: statusColor,
-                                    textTransform: 'capitalize'
-                                  }}
-                                  icon={statusIcon}
-                                />
-                              </Stack>
-                            </Stack>
-                            
-                            {task.description && (
-                              <Typography variant="body2" color="text.secondary">
-                                {task.description}
+              <Typography variant="h5" gutterBottom fontWeight={800} sx={{
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
+              }}>
+                No Tasks Found
+              </Typography>
+              <Typography color="#6b7280">
+                No tasks match the current filters. Try adjusting your filter settings.
+              </Typography>
+              <Button 
+                variant="outlined" 
+                sx={{ 
+                  mt: 3,
+                  borderRadius: 3,
+                  fontWeight: 600,
+                  borderColor: 'rgba(102, 126, 234, 0.3)',
+                  color: '#667eea',
+                  '&:hover': {
+                    borderColor: '#667eea',
+                    background: 'rgba(102, 126, 234, 0.05)'
+                  }
+                }}
+                onClick={resetDateFilters}
+              >
+                Reset All Filters
+              </Button>
+            </Box>
+          ) : (
+            <Grid container spacing={2.5}>
+              {filteredTasks.map((task) => {
+                const status = task.userStatus || task.status || task.overallStatus;
+                const statusColor = getStatusColor(status);
+                const statusIcon = getStatusIcon(status);
+                
+                return (
+                  <Grid item xs={12} key={task._id}>
+                    <Card sx={{ 
+                      borderRadius: 3,
+                      background: 'rgba(255, 255, 255, 0.9)',
+                      border: '1px solid rgba(102, 126, 234, 0.15)',
+                      borderLeft: `4px solid ${statusColor}`,
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        transform: 'translateY(-3px)',
+                        boxShadow: '0 12px 32px rgba(102, 126, 234, 0.15)',
+                        borderColor: statusColor
+                      }
+                    }}>
+                      <CardContent sx={{ p: 3 }}>
+                        <Stack spacing={2.5}>
+                          {/* Header */}
+                          <Stack direction="row" justifyContent="space-between" alignItems="flex-start" flexWrap="wrap" gap={2}>
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                              <Typography variant="h6" fontWeight={800} sx={{ 
+                                mb: 0.5,
+                                color: '#111827'
+                              }}>
+                                {task.title || 'No Title'}
                               </Typography>
-                            )}
-                            
-                            <Stack direction="row" spacing={3} flexWrap="wrap" gap={2}>
-                              {task.dueDateTime && (
-                                <Stack direction="row" spacing={1} alignItems="center">
-                                  <FiCalendar size={16} color={theme.palette.text.secondary} />
-                                  <Typography variant="caption" fontWeight={600}>
-                                    Due: {formatDate(task.dueDateTime)}
-                                  </Typography>
-                                </Stack>
-                              )}
-                              {task.completionDate && (
-                                <Stack direction="row" spacing={1} alignItems="center">
-                                  <FiCheckCircle size={16} color="#28a745" />
-                                  <Typography variant="caption" fontWeight={600} color="#28a745">
-                                    Completed: {formatDate(task.completionDate)}
-                                  </Typography>
-                                </Stack>
-                              )}
-                              {task.assignedUsers?.length > 0 && (
-                                <Stack direction="row" spacing={1} alignItems="center">
-                                  <FiUsers size={16} color={theme.palette.text.secondary} />
-                                  <Typography variant="caption" fontWeight={600}>
-                                    {task.assignedUsers.length} assigned
-                                  </Typography>
-                                </Stack>
-                              )}
+                              <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" gap={1}>
+                                <Typography variant="caption" color="#6b7280" sx={{ 
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 0.5
+                                }}>
+                                  <FiHash size={12} />
+                                  Task ID: {task.serialNo || 'N/A'}
+                                </Typography>
+                                <Typography variant="caption" color="#6b7280" sx={{ 
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 0.5
+                                }}>
+                                  <FiCalendar size={12} />
+                                  Created: {formatDate(task.createdAt)}
+                                </Typography>
+                              </Stack>
+                            </Box>
+                            <Stack direction="row" spacing={1} alignItems="center">
+                              <Chip
+                                label={task.priority || 'medium'}
+                                size="small"
+                                sx={{
+                                  fontWeight: 700,
+                                  fontSize: '0.7rem',
+                                  borderRadius: 2,
+                                  background: task.priority === 'high' ? 'rgba(239, 68, 68, 0.1)' :
+                                            task.priority === 'medium' ? 'rgba(245, 158, 11, 0.1)' :
+                                            'rgba(16, 185, 129, 0.1)',
+                                  color: task.priority === 'high' ? '#ef4444' :
+                                        task.priority === 'medium' ? '#f59e0b' :
+                                        '#10b981',
+                                  border: `1px solid ${
+                                    task.priority === 'high' ? 'rgba(239, 68, 68, 0.3)' :
+                                    task.priority === 'medium' ? 'rgba(245, 158, 11, 0.3)' :
+                                    'rgba(16, 185, 129, 0.3)'
+                                  }`,
+                                }}
+                              />
+                              <Chip
+                                label={status}
+                                size="small"
+                                sx={{
+                                  fontWeight: 800,
+                                  fontSize: '0.7rem',
+                                  borderRadius: 2,
+                                  background: `${statusColor}15`,
+                                  color: statusColor,
+                                  border: `1px solid ${statusColor}30`,
+                                  textTransform: 'capitalize'
+                                }}
+                                icon={statusIcon}
+                              />
                             </Stack>
                           </Stack>
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                  );
-                })}
-              </Grid>
-            )}
-          </DashboardCard>
-        </Stack>
-      </DialogContent>
-    </Dialog>
-  );
+                          
+                          {/* Description */}
+                          {task.description && (
+                            <Typography variant="body2" color="#4b5563" sx={{ 
+                              lineHeight: 1.6,
+                              backgroundColor: 'rgba(102, 126, 234, 0.03)',
+                              p: 2,
+                              borderRadius: 2
+                            }}>
+                              {task.description}
+                            </Typography>
+                          )}
+                          
+                          {/* Footer Info */}
+                          <Stack direction="row" spacing={3} flexWrap="wrap" gap={2}>
+                            {task.dueDateTime && (
+                              <Stack direction="row" spacing={1} alignItems="center">
+                                <Box sx={{ 
+                                  p: 0.5, 
+                                  borderRadius: 1,
+                                  background: 'rgba(102, 126, 234, 0.1)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center'
+                                }}>
+                                  <FiCalendar size={14} color="#667eea" />
+                                </Box>
+                                <Typography variant="caption" fontWeight={600} color="#6b7280">
+                                  Due: {formatDate(task.dueDateTime)}
+                                </Typography>
+                              </Stack>
+                            )}
+                            {task.completionDate && (
+                              <Stack direction="row" spacing={1} alignItems="center">
+                                <Box sx={{ 
+                                  p: 0.5, 
+                                  borderRadius: 1,
+                                  background: 'rgba(16, 185, 129, 0.1)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center'
+                                }}>
+                                  <FiCheckCircle size={14} color="#10b981" />
+                                </Box>
+                                <Typography variant="caption" fontWeight={600} color="#10b981">
+                                  Completed: {formatDate(task.completionDate)}
+                                </Typography>
+                              </Stack>
+                            )}
+                            {task.assignedUsers?.length > 0 && (
+                              <Stack direction="row" spacing={1} alignItems="center">
+                                <Box sx={{ 
+                                  p: 0.5, 
+                                  borderRadius: 1,
+                                  background: 'rgba(139, 92, 246, 0.1)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center'
+                                }}>
+                                  <FiUsers size={14} color="#8b5cf6" />
+                                </Box>
+                                <Typography variant="caption" fontWeight={600} color="#6b7280">
+                                  {task.assignedUsers.length} assigned
+                                </Typography>
+                              </Stack>
+                            )}
+                          </Stack>
+                        </Stack>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                );
+              })}
+            </Grid>
+          )}
+        </Card>
+      </Stack>
+    </DialogContent>
+  </Dialog>
+);
 
   if (!canManage)
     return (
@@ -1705,246 +2231,429 @@ const TaskDetails = () => {
           position: 'relative',
           overflow: 'hidden'
         }}>
-          <Stack spacing={4} position="relative" zIndex={1}>
-            <Stack direction={{ xs: "column", md: "row" }} 
-                   spacing={3} 
-                   justifyContent="space-between" 
-                   alignItems={{ xs: "flex-start", md: "center" }}>
-              <Box>
-                <Typography variant="h1" fontWeight={900} gutterBottom sx={{ fontSize: { xs: '2.5rem', md: '3.5rem' } }}>
-                  📊 Employee Task Management
-                </Typography>
-                <Typography variant="h5" color="text.secondary" fontWeight={500}>
-                  Comprehensive dashboard with advanced filtering and analytics
-                </Typography>
-              </Box>
-              <Stack direction="row" spacing={3} alignItems="center">
-                <Box sx={{ 
-                  p: 2.5, 
-                  borderRadius: 4, 
-                  background: `linear-gradient(135deg, ${theme.palette.primary.main}20 0%, ${theme.palette.secondary.main}20 100%)`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}>
-                  <FiUsers size={48} color={theme.palette.primary.main} />
-                </Box>
-                <Box>
-                  <Typography variant="h1" fontWeight={900} color="primary" sx={{ fontSize: { xs: '3rem', md: '4rem' }, lineHeight: 1 }}>
-                    {filteredUsers.length}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" fontWeight={700}>
-                    ACTIVE EMPLOYEES
-                  </Typography>
-                </Box>
-              </Stack>
-            </Stack>
-            
-            {/* Overall Statistics from All Users */}
-            {renderOverallStats()}
-          </Stack>
+         <Stack spacing={3} position="relative" zIndex={1}>
+  <Stack
+    direction={{ xs: "column", md: "row" }}
+    spacing={2}
+    justifyContent="space-between"
+    alignItems={{ xs: "flex-start", md: "center" }}
+  >
+    {/* LEFT SIDE HEADING */}
+    <Box>
+      <Typography
+        variant="h3"
+        fontWeight={800}
+        gutterBottom
+        sx={{
+          fontSize: { xs: "1.6rem", sm: "2rem", md: "2.4rem" }, // smaller
+          lineHeight: 1.2,
+        }}
+      >
+        📊 Employee Task Management
+      </Typography>
+
+      <Typography
+        variant="body1"
+        color="text.secondary"
+        fontWeight={500}
+        sx={{
+          fontSize: { xs: "0.8rem", sm: "0.9rem" }, // smaller subtitle
+          opacity: 0.8,
+        }}
+      >
+        Comprehensive dashboard with advanced filtering and analytics
+      </Typography>
+    </Box>
+
+    {/* RIGHT SIDE USER COUNT */}
+    <Stack direction="row" spacing={2} alignItems="center">
+      <Box
+        sx={{
+          p: 1.5, // smaller box padding
+          borderRadius: 3,
+          background: `linear-gradient(135deg, ${theme.palette.primary.main}20, ${theme.palette.secondary.main}20)`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <FiUsers size={32} color={theme.palette.primary.main} /> {/* smaller icon */}
+      </Box>
+
+      <Box>
+        <Typography
+          fontWeight={800}
+          color="primary"
+          sx={{
+            fontSize: { xs: "2rem", sm: "2.4rem", md: "2.6rem" }, // smaller count
+            lineHeight: 1,
+          }}
+        >
+          {filteredUsers.length}
+        </Typography>
+
+        <Typography
+          color="text.secondary"
+          fontWeight={700}
+          sx={{
+            fontSize: { xs: "0.7rem", sm: "0.75rem" }, // smaller caption
+            letterSpacing: "0.5px",
+          }}
+        >
+          ACTIVE EMPLOYEES
+        </Typography>
+      </Box>
+    </Stack>
+  </Stack>
+
+  {/* Overall Statistics */}
+  {renderOverallStats()}
+</Stack>
+
         </Paper>
 
         {/* Main Content */}
-        <DashboardCard sx={{ p: 3, mb: 3 }}>
-          <Stack spacing={4}>
-            {/* Top Bar */}
-            <Stack direction={{ xs: 'column', md: 'row' }} 
-                   justifyContent="space-between" 
-                   alignItems={{ xs: 'flex-start', md: 'center' }} 
-                   spacing={3}>
-              
-              {/* Left Side */}
-              <Stack direction="row" alignItems="center" spacing={2}>
-                <Box sx={{ 
-                  p: 2, 
-                  borderRadius: 3, 
-                  bgcolor: `${theme.palette.primary.main}15`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <FiUsers size={28} color={theme.palette.primary.main} />
-                </Box>
-                <Box>
-                  <Typography variant="h4" fontWeight={900}>
-                    Employee Directory
-                  </Typography>
-                  <Typography variant="body1" color="text.secondary">
-                    Click on any employee to view their task details
-                  </Typography>
-                </Box>
-              </Stack>
+     <DashboardCard sx={{ 
+  p: 3, 
+  mb: 4,
+  borderRadius: 4,
+  border: '1px solid rgba(102, 126, 234, 0.15)',
+  background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.95) 100%)',
+  boxShadow: '0 8px 32px rgba(102, 126, 234, 0.08)',
+  position: 'relative',
+  overflow: 'hidden',
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 4,
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+  }
+}}>
+  <Stack spacing={3}>
+    {/* Top Bar - Optimized */}
+    <Stack direction={{ xs: 'column', md: 'row' }} 
+           justifyContent="space-between" 
+           alignItems={{ xs: 'flex-start', md: 'center' }} 
+           spacing={2}>
+      
+      {/* Left Side */}
+      <Stack direction="row" alignItems="center" spacing={2}>
+        <Box sx={{ 
+          p: 1.5, 
+          borderRadius: 3, 
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+        }}>
+          <FiUsers size={22} color="#fff" />
+        </Box>
+        <Box>
+          <Typography variant="h4" fontWeight={900} sx={{
+            color: '#111827',
+            letterSpacing: '-0.5px',
+            lineHeight: 1.2,
+            mb: 0.5
+          }}>
+            Employee Directory
+          </Typography>
+          <Typography variant="body2" color="#6b7280" sx={{ 
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.5,
+            fontSize: '0.875rem'
+          }}>
+            <FiInfo size={14} />
+            Click on any employee to view their task details
+          </Typography>
+        </Box>
+      </Stack>
 
-              {/* Right Side - Search and Filters */}
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
-                <TextField
-                  size="small"
-                  placeholder="Search employees..."
-                  sx={{ 
-                    minWidth: { xs: '100%', sm: 280 },
-                    backgroundColor: theme.palette.background.default,
-                    borderRadius: 2,
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                    }
-                  }}
-                  InputProps={{
-                    startAdornment: <FiSearch style={{ marginRight: 8, color: theme.palette.text.secondary }} />,
-                  }}
-                />
-                
-                <FormControl size="small" sx={{ minWidth: 200 }}>
-                  <InputLabel>Employee Type</InputLabel>
-                  <Select
-                    value={selectedEmployeeType}
-                    label="Employee Type"
-                    onChange={(e) => setSelectedEmployeeType(e.target.value)}
-                    sx={{ borderRadius: 2 }}
-                  >
-                    {EMPLOYEE_TYPES.map((type) => (
-                      <MenuItem key={type.value} value={type.value}>
-                        <Stack direction="row" spacing={2} alignItems="center">
-                          {React.createElement(type.icon, {
-                            size: 18,
-                            color: type.color,
-                          })}
-                          <Typography>{type.label}</Typography>
-                        </Stack>
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Stack>
-            </Stack>
-
-            {/* Employee Type Chips */}
-            <Box>
-              <Typography variant="subtitle2" fontWeight={700} gutterBottom>
-                Filter by Department:
-              </Typography>
-              <Stack direction="row" flexWrap="wrap" gap={1.5}>
-                {EMPLOYEE_TYPES.map((type) => (
-                  <Chip
-                    key={type.value}
-                    label={type.label}
-                    onClick={() => setSelectedEmployeeType(type.value)}
-                    variant={selectedEmployeeType === type.value ? "filled" : "outlined"}
-                    color="primary"
-                    icon={React.createElement(type.icon, { size: 16 })}
-                    sx={{
-                      fontWeight: selectedEmployeeType === type.value ? 800 : 600,
-                      backgroundColor: selectedEmployeeType === type.value ? 
-                        `${type.color}20` : 'transparent',
-                      borderColor: selectedEmployeeType === type.value ? 
-                        type.color : 'divider',
-                      color: selectedEmployeeType === type.value ? 
-                        type.color : 'text.secondary',
-                      borderRadius: 2,
-                      '&:hover': {
-                        transform: 'translateY(-2px)',
-                        boxShadow: theme.shadows[2],
-                      },
-                      transition: 'all 0.3s ease',
-                    }}
-                  />
-                ))}
-              </Stack>
-            </Box>
-
-            {/* System Stats Summary */}
-            <Grid container spacing={2}>
-              {[
-                { label: 'Total Employees', value: systemStats.totalEmployees, icon: FiUsers, color: theme.palette.primary.main },
-                { label: 'Total Tasks', value: systemStats.totalTasks, icon: FiList, color: theme.palette.info.main },
-                { label: 'Avg Completion', value: `${systemStats.avgCompletion}%`, icon: FiPercent, color: theme.palette.success.main },
-                { label: 'Active Employees', value: systemStats.activeEmployees, icon: FiActivity, color: theme.palette.secondary.main },
-              ].map((stat, index) => (
-                <Grid item xs={6} md={3} key={index}>
-                  <Card variant="outlined" sx={{ 
-                    p: 2.5, 
-                    borderRadius: 3,
-                    border: `1px solid ${stat.color}30`,
-                    background: `linear-gradient(135deg, ${stat.color}10 0%, ${stat.color}05 100%)`,
-                    transition: 'all 0.3s ease',
-                    '&:hover': {
-                      transform: 'translateY(-2px)',
-                      borderColor: stat.color,
-                    }
-                  }}>
-                    <Stack direction="row" alignItems="center" spacing={2.5}>
-                      <Box sx={{ 
-                        p: 1.5, 
-                        borderRadius: 2.5, 
-                        bgcolor: `${stat.color}20`,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}>
-                        {React.createElement(stat.icon, { 
-                          size: 20, 
-                          color: stat.color 
-                        })}
-                      </Box>
-                      <Box>
-                        <Typography variant="h4" fontWeight={900}>
-                          {stat.value}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary" fontWeight={600}>
-                          {stat.label}
-                        </Typography>
-                      </Box>
-                    </Stack>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
-
-            {/* Loading State */}
-            {usersLoading ? (
-              <Box sx={{ textAlign: 'center', py: 8 }}>
-                <CircularProgress size={80} thickness={4} sx={{ mb: 3 }} />
-                <Typography variant="h5" fontWeight={700} mt={3}>
-                  Loading Employee Data...
-                </Typography>
-                <Typography variant="body2" color="text.secondary" mt={1}>
-                  Please wait while we fetch the latest information
-                </Typography>
+      {/* Right Side - Search and Filters */}
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems="center">
+        <TextField
+          size="small"
+          placeholder="Search employees..."
+          sx={{ 
+            minWidth: { xs: '100%', sm: 280 },
+            backgroundColor: 'white',
+            borderRadius: 2,
+            '& .MuiOutlinedInput-root': {
+              borderRadius: 2,
+              '&:hover .MuiOutlinedInput-notchedOutline': {
+                borderColor: '#667eea',
+              },
+              '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                borderColor: '#667eea',
+                borderWidth: 2
+              }
+            }
+          }}
+          InputProps={{
+            startAdornment: (
+              <Box sx={{ display: 'flex', alignItems: 'center', mr: 1 }}>
+                <FiSearch size={18} color="#667eea" />
               </Box>
-            ) : filteredUsers.length === 0 ? (
-              <Box sx={{ textAlign: 'center', py: 10, color: 'text.secondary' }}>
-                <FiUsers size={96} style={{ marginBottom: 24, opacity: 0.2 }} />
-                <Typography variant="h4" fontWeight={800} gutterBottom>
-                  No Employees Found
-                </Typography>
-                <Typography variant="body1" sx={{ maxWidth: 500, mx: 'auto', mb: 3 }}>
-                  Try selecting a different employee type or check your search terms
-                </Typography>
-                <Button 
-                  variant="contained" 
-                  size="large"
-                  startIcon={<FiRefreshCw />}
-                  onClick={() => {
-                    setSelectedEmployeeType('all');
-                    setSearchQuery('');
+            ),
+          }}
+        />
+        
+        <FormControl size="small" sx={{ minWidth: 200 }}>
+          <InputLabel sx={{ color: '#6b7280' }}>Employee Type</InputLabel>
+          <Select
+            value={selectedEmployeeType}
+            label="Employee Type"
+            onChange={(e) => setSelectedEmployeeType(e.target.value)}
+            sx={{ 
+              borderRadius: 2,
+              '& .MuiOutlinedInput-notchedOutline': {
+                borderColor: '#e5e7eb',
+              },
+              '&:hover .MuiOutlinedInput-notchedOutline': {
+                borderColor: '#667eea',
+              }
+            }}
+          >
+            {EMPLOYEE_TYPES.map((type) => (
+              <MenuItem key={type.value} value={type.value}>
+                <Stack direction="row" spacing={1.5} alignItems="center">
+                  {React.createElement(type.icon, {
+                    size: 16,
+                    color: type.color || '#667eea',
+                  })}
+                  <Typography variant="body2">{type.label}</Typography>
+                </Stack>
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Stack>
+    </Stack>
+
+    {/* Employee Type Chips */}
+    <Box>
+      <Typography variant="subtitle2" fontWeight={700} gutterBottom sx={{ 
+        fontSize: '0.875rem',
+        textTransform: 'uppercase',
+        letterSpacing: '0.5px',
+        color: '#6b7280',
+        mb: 1.5
+      }}>
+        Filter by Department:
+      </Typography>
+      <Stack direction="row" flexWrap="wrap" gap={0.75}>
+        {EMPLOYEE_TYPES.map((type) => {
+          const isActive = selectedEmployeeType === type.value;
+          return (
+            <Chip
+              key={type.value}
+              label={type.label}
+              onClick={() => setSelectedEmployeeType(type.value)}
+              variant={isActive ? "filled" : "outlined"}
+              icon={React.createElement(type.icon, { size: 14 })}
+              sx={{
+                fontWeight: isActive ? 800 : 600,
+                fontSize: '0.8125rem',
+                backgroundColor: isActive ? 
+                  `${type.color || '#667eea'}15` : 'transparent',
+                borderColor: isActive ? 
+                  type.color || '#667eea' : '#e5e7eb',
+                color: isActive ? 
+                  type.color || '#667eea' : '#6b7280',
+                borderRadius: 2,
+                '&:hover': {
+                  backgroundColor: `${type.color || '#667eea'}10`,
+                },
+                transition: 'all 0.2s ease',
+              }}
+            />
+          );
+        })}
+      </Stack>
+    </Box>
+
+    {/* Stats Summary */}
+    <Grid container spacing={1.5}>
+      {[
+        { 
+          label: "Total Employees", 
+          value: systemStats.totalEmployees, 
+          icon: FiUsers, 
+          color: '#667eea',
+          bgColor: 'rgba(102, 126, 234, 0.1)'
+        },
+        { 
+          label: "Total Tasks", 
+          value: systemStats.totalTasks, 
+          icon: FiList, 
+          color: '#0ea5e9',
+          bgColor: 'rgba(14, 165, 233, 0.1)'
+        },
+        { 
+          label: "Avg Completion", 
+          value: `${systemStats.avgCompletion}%`, 
+          icon: FiPercent, 
+          color: '#10b981',
+          bgColor: 'rgba(16, 185, 129, 0.1)'
+        },
+        { 
+          label: "Active Employees", 
+          value: systemStats.activeEmployees, 
+          icon: FiActivity, 
+          color: '#8b5cf6',
+          bgColor: 'rgba(139, 92, 246, 0.1)'
+        },
+      ].map((stat, index) => (
+        <Grid item xs={6} md={3} key={index}>
+          <Card
+            sx={{
+              p: 1.5,
+              borderRadius: 2,
+              border: `1px solid ${stat.bgColor}`,
+              background: 'white',
+              transition: "all 0.2s ease",
+              "&:hover": {
+                transform: "translateY(-2px)",
+                boxShadow: `0 8px 16px ${alpha(stat.color, 0.1)}`,
+              },
+            }}
+          >
+            <Stack direction="row" alignItems="center" spacing={1.5}>
+              <Box
+                sx={{
+                  p: 1,
+                  borderRadius: 2,
+                  background: stat.bgColor,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                {React.createElement(stat.icon, {
+                  size: 16,
+                  color: stat.color,
+                })}
+              </Box>
+
+              <Box>
+                <Typography
+                  fontWeight={900}
+                  sx={{
+                    fontSize: "1.4rem",
+                    lineHeight: 1,
+                    mb: 0.25,
+                    color: '#111827'
                   }}
-                  sx={{ borderRadius: 3, fontWeight: 700 }}
                 >
-                  Reset All Filters
-                </Button>
-              </Box>
-            ) : (
-              <Grid container spacing={3}>
-                {filteredUsers.map((user) => (
-                  <Grid item xs={12} sm={6} md={4} lg={3} key={user._id}>
-                    {renderEnhancedUserCard(user)}
-                  </Grid>
-                ))}
-              </Grid>
-            )}
-          </Stack>
-        </DashboardCard>
+                  {stat.value}
+                </Typography>
 
+                <Typography
+                  variant="caption"
+                  color="#6b7280"
+                  fontWeight={600}
+                  sx={{
+                    fontSize: "0.7rem",
+                    letterSpacing: '0.5px'
+                  }}
+                >
+                  {stat.label}
+                </Typography>
+              </Box>
+            </Stack>
+          </Card>
+        </Grid>
+      ))}
+    </Grid>
+
+    {/* Loading State */}
+    {usersLoading ? (
+      <Box sx={{ 
+        textAlign: 'center', 
+        py: 6,
+        background: 'rgba(102, 126, 234, 0.03)',
+        borderRadius: 3,
+        border: '1px solid rgba(102, 126, 234, 0.1)'
+      }}>
+        <CircularProgress 
+          size={60} 
+          thickness={4} 
+          sx={{ 
+            mb: 2,
+            color: '#667eea'
+          }} 
+        />
+        <Typography variant="h5" fontWeight={700} mt={2} color="#111827">
+          Loading Employee Data...
+        </Typography>
+        <Typography variant="body2" color="#6b7280" mt={1}>
+          Please wait while we fetch the latest information
+        </Typography>
+      </Box>
+    ) : filteredUsers.length === 0 ? (
+      <Box sx={{ 
+        textAlign: 'center', 
+        py: 8, 
+        background: 'rgba(102, 126, 234, 0.03)',
+        borderRadius: 3,
+        border: '1px solid rgba(102, 126, 234, 0.1)'
+      }}>
+        <Box sx={{ 
+          width: 80, 
+          height: 80, 
+          borderRadius: '50%', 
+          background: 'rgba(102, 126, 234, 0.1)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          mx: 'auto',
+          mb: 3
+        }}>
+          <FiUsers size={32} color="#667eea" />
+        </Box>
+        <Typography variant="h4" fontWeight={800} gutterBottom color="#111827">
+          No Employees Found
+        </Typography>
+        <Typography variant="body1" color="#6b7280" sx={{ maxWidth: 500, mx: 'auto', mb: 3 }}>
+          Try selecting a different employee type or check your search terms
+        </Typography>
+        <Button 
+          variant="contained" 
+          size="large"
+          startIcon={<FiRefreshCw />}
+          onClick={() => {
+            setSelectedEmployeeType('all');
+            setSearchQuery('');
+          }}
+          sx={{ 
+            borderRadius: 3, 
+            fontWeight: 700,
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            boxShadow: '0 4px 14px rgba(102, 126, 234, 0.4)',
+            '&:hover': {
+              background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4090 100%)',
+              boxShadow: '0 6px 20px rgba(102, 126, 234, 0.6)',
+            }
+          }}
+        >
+          Reset All Filters
+        </Button>
+      </Box>
+    ) : (
+      <Grid container spacing={2}>
+        {filteredUsers.map((user) => (
+          <Grid item xs={12} sm={6} md={4} lg={3} key={user._id}>
+            {renderEnhancedUserCard(user)}
+          </Grid>
+        ))}
+      </Grid>
+    )}
+  </Stack>
+</DashboardCard>
         {/* Enhanced Dialog */}
         {renderEnhancedDialog()}
       </Box>
