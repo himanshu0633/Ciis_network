@@ -51,7 +51,7 @@ import {
   InputAdornment,
   OutlinedInput,
   Pagination,
-
+  useMediaQuery,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -74,10 +74,8 @@ import {
   Visibility as VisibilityIcon,
   Search as SearchIcon,
   Close as CloseIcon,
-  CalendarToday as CalendarIcon
-
-
-
+  CalendarToday as CalendarIcon,
+  Menu as MenuIcon
 } from '@mui/icons-material';
 import FilterListIcon from "@mui/icons-material/FilterList";
 import PlaceIcon from "@mui/icons-material/Place";
@@ -86,11 +84,14 @@ import TaskAltIcon from "@mui/icons-material/TaskAlt";
 import { styled } from '@mui/material/styles';
 import { FiBell, FiCheckCircle, FiClock, FiAlertCircle, FiXCircle, FiUsers, FiTrendingUp, FiInfo } from 'react-icons/fi';
 
-// Enhanced Styled Components
+// Enhanced Styled Components with responsive design
 const DashboardContainer = styled(Box)(({ theme }) => ({
-  padding: theme.spacing(3),
+  padding: theme.spacing(2),
   backgroundColor: theme.palette.background.default,
-  minHeight: '100vh'
+  minHeight: '100vh',
+  [theme.breakpoints.down('sm')]: {
+    padding: theme.spacing(1),
+  }
 }));
 
 const HeaderCard = styled(Card)(({ theme }) => ({
@@ -104,6 +105,10 @@ const HeaderCard = styled(Card)(({ theme }) => ({
     boxShadow: theme.shadows[4],
     transform: 'translateY(-2px)',
     transition: 'all 0.3s ease'
+  },
+  [theme.breakpoints.down('sm')]: {
+    borderRadius: theme.spacing(1.5),
+    marginBottom: theme.spacing(2),
   }
 }));
 
@@ -119,6 +124,9 @@ const StatCard = styled(Card)(({ theme, color = 'primary' }) => ({
     boxShadow: theme.shadows[6],
     transform: 'translateY(-2px)',
   },
+  [theme.breakpoints.down('sm')]: {
+    borderRadius: theme.spacing(1.5),
+  }
 }));
 
 const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
@@ -127,6 +135,24 @@ const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
   border: `1px solid ${theme.palette.divider}`,
   width: '100%',
   overflowX: 'auto',
+  [theme.breakpoints.down('sm')]: {
+    borderRadius: theme.spacing(1),
+  },
+  '&::-webkit-scrollbar': {
+    width: 8,
+    height: 8
+  },
+  '&::-webkit-scrollbar-track': {
+    background: '#f1f5f9',
+    borderRadius: 4
+  },
+  '&::-webkit-scrollbar-thumb': {
+    background: '#cbd5e1',
+    borderRadius: 4,
+    '&:hover': {
+      background: '#94a3b8'
+    }
+  }
 }));
 
 const StatusChip = styled(Chip)(({ status, theme }) => ({
@@ -276,11 +302,6 @@ const TaskDetailsModal = ({ task, open, onClose, projectManagers = [] }) => {
                           {assigneeDetails.email}
                         </Typography>
                       )}
-                      {assigneeDetails.id && (
-                        <Typography variant="caption" color="textSecondary" display="block">
-                          {/* ID: {assigneeDetails.id} */}
-                        </Typography>
-                      )}
                     </Box>
                   </>
                 ) : (
@@ -314,7 +335,7 @@ const TaskDetailsModal = ({ task, open, onClose, projectManagers = [] }) => {
   );
 };
 
-// Service Progress Card Component with Backend Integration
+// Service Progress Card Component
 const ServiceProgressCard = ({ service, clientId, clientProjectManagers = [], onTaskUpdate, api }) => {
   const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState({
@@ -327,21 +348,16 @@ const ServiceProgressCard = ({ service, clientId, clientProjectManagers = [], on
   const [editTask, setEditTask] = useState(null);
   const [showTaskDetails, setShowTaskDetails] = useState({ open: false, task: null });
   const [loading, setLoading] = useState(true);
-  const [localStorageTasks, setLocalStorageTasks] = useState([]);
 
-  // Fetch tasks from backend
   const fetchTasks = async () => {
     try {
       setLoading(true);
       const response = await api.get(`/client/${clientId}/service/${service}`);
-      console.log(`Tasks response for ${service}:`, response.data);
-
       if (response.data.success) {
         setTasks(response.data.data || []);
       }
     } catch (error) {
       console.error('Error fetching tasks:', error);
-      // Fallback to localStorage if API fails
       const savedTasks = localStorage.getItem(`client_${clientId}_service_${service}_tasks`);
       if (savedTasks) {
         try {
@@ -361,20 +377,8 @@ const ServiceProgressCard = ({ service, clientId, clientProjectManagers = [], on
     }
   };
 
-  // Load tasks on component mount
   useEffect(() => {
     fetchTasks();
-    
-    // Also load localStorage tasks for fallback
-    const savedTasks = localStorage.getItem(`client_${clientId}_service_${service}_tasks`);
-    if (savedTasks) {
-      try {
-        const parsedTasks = JSON.parse(savedTasks);
-        setLocalStorageTasks(parsedTasks);
-      } catch (e) {
-        console.error('Error parsing localStorage tasks:', e);
-      }
-    }
   }, [clientId, service]);
 
   const completedTasks = tasks.filter(task => task.completed).length;
@@ -393,12 +397,7 @@ const ServiceProgressCard = ({ service, clientId, clientProjectManagers = [], on
 
         if (response.data.success) {
           setTasks([...tasks, response.data.data]);
-          setNewTask({
-            name: '',
-            dueDate: '',
-            assignee: '',
-            priority: 'Medium'
-          });
+          setNewTask({ name: '', dueDate: '', assignee: '', priority: 'Medium' });
           setShowAddTask(false);
           if (onTaskUpdate) {
             onTaskUpdate(service, [...tasks, response.data.data]);
@@ -406,7 +405,6 @@ const ServiceProgressCard = ({ service, clientId, clientProjectManagers = [], on
         }
       } catch (error) {
         console.error('Error adding task:', error);
-        // Fallback to localStorage
         const newTaskObj = {
           id: Date.now(),
           name: newTask.name.trim(),
@@ -420,12 +418,7 @@ const ServiceProgressCard = ({ service, clientId, clientProjectManagers = [], on
         const updatedTasks = [...tasks, newTaskObj];
         setTasks(updatedTasks);
         localStorage.setItem(`client_${clientId}_service_${service}_tasks`, JSON.stringify(updatedTasks));
-        setNewTask({
-          name: '',
-          dueDate: '',
-          assignee: '',
-          priority: 'Medium'
-        });
+        setNewTask({ name: '', dueDate: '', assignee: '', priority: 'Medium' });
         setShowAddTask(false);
         if (onTaskUpdate) {
           onTaskUpdate(service, updatedTasks);
@@ -438,7 +431,6 @@ const ServiceProgressCard = ({ service, clientId, clientProjectManagers = [], on
     if (editTask && editTask.name.trim()) {
       try {
         if (editTask._id) {
-          // Update in backend
           const response = await api.put(`/${editTask._id}`, {
             name: editTask.name.trim(),
             dueDate: editTask.dueDate || null,
@@ -457,7 +449,6 @@ const ServiceProgressCard = ({ service, clientId, clientProjectManagers = [], on
             }
           }
         } else {
-          // Update locally (for localStorage tasks)
           const updatedTasks = tasks.map(task => 
             task.id === editTask.id ? {
               ...editTask,
@@ -479,7 +470,6 @@ const ServiceProgressCard = ({ service, clientId, clientProjectManagers = [], on
 
   const toggleTaskCompletion = async (task) => {
     try {
-      // First update locally for immediate feedback
       const updatedTasks = tasks.map(t => {
         if (t._id === task._id || t.id === task.id) {
           return {
@@ -492,11 +482,9 @@ const ServiceProgressCard = ({ service, clientId, clientProjectManagers = [], on
       });
       setTasks(updatedTasks);
 
-      // Then update in backend
       if (task._id) {
         await api.patch(`/${task._id}/toggle`);
       } else {
-        // Update localStorage
         localStorage.setItem(`client_${clientId}_service_${service}_tasks`, JSON.stringify(updatedTasks));
       }
       
@@ -505,22 +493,18 @@ const ServiceProgressCard = ({ service, clientId, clientProjectManagers = [], on
       }
     } catch (error) {
       console.error('Error toggling task:', error);
-      // Revert on error
       fetchTasks();
     }
   };
 
   const deleteTask = async (task) => {
     try {
-      // First update locally for immediate feedback
       const updatedTasks = tasks.filter(t => t._id !== task._id && t.id !== task.id);
       setTasks(updatedTasks);
 
-      // Then delete from backend
       if (task._id) {
         await api.delete(`/${task._id}`);
       } else {
-        // Delete from localStorage
         localStorage.setItem(`client_${clientId}_service_${service}_tasks`, JSON.stringify(updatedTasks));
       }
       
@@ -529,7 +513,6 @@ const ServiceProgressCard = ({ service, clientId, clientProjectManagers = [], on
       }
     } catch (error) {
       console.error('Error deleting task:', error);
-      // Revert on error
       fetchTasks();
     }
   };
@@ -542,7 +525,6 @@ const ServiceProgressCard = ({ service, clientId, clientProjectManagers = [], on
     }
   };
 
-  // Get priority color
   const getPriorityColor = (priority) => {
     switch (priority) {
       case 'High': return 'error';
@@ -552,7 +534,6 @@ const ServiceProgressCard = ({ service, clientId, clientProjectManagers = [], on
     }
   };
 
-  // Check if task is overdue
   const isOverdue = (dueDate) => {
     if (!dueDate) return false;
     const today = new Date();
@@ -569,7 +550,7 @@ const ServiceProgressCard = ({ service, clientId, clientProjectManagers = [], on
           <Box display="flex" justifyContent="center" alignItems="center" py={3}>
             <CircularProgress size={24} />
             <Typography variant="body2" sx={{ ml: 2 }}>
-              Loading tasks for {service}...
+              Loading tasks...
             </Typography>
           </Box>
         </CardContent>
@@ -625,14 +606,12 @@ const ServiceProgressCard = ({ service, clientId, clientProjectManagers = [], on
           </Box>
         </Box>
 
-        {/* Progress Bar */}
         <ProgressBar 
           variant="determinate" 
           value={progressPercentage} 
           sx={{ mb: 2 }}
         />
 
-        {/* Add/Edit Task Form */}
         {(showAddTask || editTask) && (
           <Card variant="outlined" sx={{ mb: 2, p: 2, backgroundColor: 'grey.50' }}>
             <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
@@ -656,7 +635,7 @@ const ServiceProgressCard = ({ service, clientId, clientProjectManagers = [], on
               />
               
               <Grid container spacing={2}>
-                <Grid item xs={12} md={4}>
+                <Grid item xs={12} sm={6}>
                   <TextField
                     size="small"
                     label="Due Date"
@@ -674,7 +653,7 @@ const ServiceProgressCard = ({ service, clientId, clientProjectManagers = [], on
                   />
                 </Grid>
                 
-                <Grid item xs={12} md={4}>
+                <Grid item xs={12} sm={6}>
                   <FormControl size="small" fullWidth>
                     <InputLabel>Assignee</InputLabel>
                     <Select
@@ -705,24 +684,9 @@ const ServiceProgressCard = ({ service, clientId, clientProjectManagers = [], on
                             >
                               {pm.name?.charAt(0)?.toUpperCase() || 'U'}
                             </Avatar>
-                            <Box sx={{ flex: 1, minWidth: 0 }}>
-                              <Typography variant="body2" noWrap>
-                                {pm.name}
-                                {pm.id && pm.id.startsWith('temp-') && (
-                                  <Typography component="span" variant="caption" color="warning" sx={{ ml: 0.5 }}>
-                                    (Not in system)
-                                  </Typography>
-                                )}
-                              </Typography>
-                              <Typography variant="caption" color="textSecondary" display="block" noWrap>
-                                {/* ID: {pm.id || pm._id || 'N/A'} */}
-                              </Typography>
-                              {pm.email && (
-                                <Typography variant="caption" color="textSecondary" display="block" noWrap>
-                                  {pm.email}
-                                </Typography>
-                              )}
-                            </Box>
+                            <Typography variant="body2" noWrap>
+                              {pm.name}
+                            </Typography>
                           </Box>
                         </MenuItem>
                       ))}
@@ -730,7 +694,7 @@ const ServiceProgressCard = ({ service, clientId, clientProjectManagers = [], on
                   </FormControl>
                 </Grid>
                 
-                <Grid item xs={12} md={4}>
+                <Grid item xs={12}>
                   <FormControl size="small" fullWidth>
                     <InputLabel>Priority</InputLabel>
                     <Select
@@ -786,7 +750,6 @@ const ServiceProgressCard = ({ service, clientId, clientProjectManagers = [], on
           </Card>
         )}
 
-        {/* Tasks List */}
         <Box>
           <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
             Tasks ({totalTasks}):
@@ -922,7 +885,6 @@ const ServiceProgressCard = ({ service, clientId, clientProjectManagers = [], on
         </Box>
       </CardContent>
 
-      {/* Task Details Modal */}
       {showTaskDetails.open && (
         <TaskDetailsModal
           task={showTaskDetails.task}
@@ -956,7 +918,6 @@ const ServicesModal = ({ open, onClose, services, onAddService, onDeleteService 
         </Box>
       </DialogTitle>
       <DialogContent>
-        {/* Add Service Form */}
         <Box component="form" onSubmit={handleSubmit} sx={{ mb: 3, mt: 1 }}>
           <Grid container spacing={2} alignItems="center">
             <Grid item xs={12} sm={8}>
@@ -986,7 +947,6 @@ const ServicesModal = ({ open, onClose, services, onAddService, onDeleteService 
 
         <Divider sx={{ my: 2 }} />
 
-        {/* Services List */}
         <Typography variant="h6" gutterBottom>
           All Services ({services.length})
         </Typography>
@@ -1053,7 +1013,7 @@ const ServicesModal = ({ open, onClose, services, onAddService, onDeleteService 
   );
 };
 
-// Add Client Modal Component
+// Add Client Modal Component - FIXED VERSION
 const AddClientModal = ({ 
   open, 
   onClose, 
@@ -1066,7 +1026,7 @@ const AddClientModal = ({
     client: '',
     company: '',
     city: '',
-    projectManagers: [], // This will store manager IDs
+    projectManagers: [], // Store manager IDs
     services: [],
     status: 'Active',
     progress: '',
@@ -1082,46 +1042,36 @@ const AddClientModal = ({
   const handleSubmit = (e) => {
     e.preventDefault();
     if (newClient.client && newClient.company && newClient.city && newClient.projectManagers.length > 0) {
-      // Get full manager objects for selected managers
+      // Get selected manager IDs
+      const selectedManagerIds = newClient.projectManagers;
+      
+      // Get full manager objects for the selected IDs
       const selectedManagers = projectManagers.filter(pm => 
-        newClient.projectManagers.includes(pm._id)
+        selectedManagerIds.includes(pm._id)
       );
       
-      // Create client with full manager objects
-      const clientWithManagers = {
+      // Format project managers for backend
+      const formattedProjectManagers = selectedManagers.map(pm => ({
+        _id: pm._id,
+        name: pm.name,
+        email: pm.email,
+        role: pm.role
+      }));
+      
+      // Prepare data for backend with proper format
+      const clientData = {
         ...newClient,
-        projectManagers: selectedManagers.map(pm => ({
-          id: pm._id,
-          name: pm.name,
-          email: pm.email,
-          role: pm.role
-        }))
+        projectManagers: formattedProjectManagers, // Send full manager objects
+        projectManager: selectedManagers.map(pm => pm.name) // Also include names array for compatibility
       };
       
-      onAddClient(clientWithManagers);
-      // Reset form
-      setNewClient({
-        client: '',
-        company: '',
-        city: '',
-        projectManagers: [],
-        services: [],
-        status: 'Active',
-        progress: '',
-        email: '',
-        phone: '',
-        address: '',
-        description: '',
-        notes: ''
-      });
-      setManagerSearch('');
+      onAddClient(clientData);
     }
   };
 
   const filteredManagers = projectManagers.filter(manager =>
     manager.name?.toLowerCase().includes(managerSearch.toLowerCase()) ||
-    manager.email?.toLowerCase().includes(managerSearch.toLowerCase()) ||
-    manager.role?.toLowerCase().includes(managerSearch.toLowerCase())
+    manager.email?.toLowerCase().includes(managerSearch.toLowerCase())
   );
 
   return (
@@ -1188,7 +1138,7 @@ const AddClientModal = ({
               </FormControl>
             </Grid>
 
-            {/* Project Managers Multi-Select */}
+            {/* Project Managers - FIXED: Store IDs not names */}
             <Grid item xs={12}>
               <FormControl fullWidth required>
                 <InputLabel>Project Managers *</InputLabel>
@@ -1197,9 +1147,9 @@ const AddClientModal = ({
                   value={newClient.projectManagers}
                   onChange={(e) => setNewClient({...newClient, projectManagers: e.target.value})}
                   input={<OutlinedInput label="Project Managers *" />}
-                  renderValue={(selected) => {
+                  renderValue={(selectedIds) => {
                     const selectedManagers = projectManagers.filter(pm => 
-                      selected.includes(pm._id)
+                      selectedIds.includes(pm._id)
                     );
                     return selectedManagers.map(pm => pm.name).join(', ');
                   }}
@@ -1212,7 +1162,6 @@ const AddClientModal = ({
                   }}
                   disabled={loading}
                 >
-                  {/* Search Bar inside Dropdown */}
                   <MenuItem disabled>
                     <TextField
                       fullWidth
@@ -1252,17 +1201,13 @@ const AddClientModal = ({
                               {manager.name}
                             </Typography>
                             <Typography variant="caption" color="textSecondary" noWrap display="block">
-                              ID: {manager._id}
+                              ID: {manager._id?.slice(-8)}
                             </Typography>
                             <Typography variant="caption" color="textSecondary" noWrap display="block">
                               {manager.role} • {manager.email}
                             </Typography>
                           </Box>
                         </Box>
-
-
-
-                        {/* ID: {manager._id} */}
                       </MenuItem>
                     ))
                   ) : (
@@ -1407,6 +1352,9 @@ const AddClientModal = ({
 
 const ClientManagement = () => {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
+  
   const [clients, setClients] = useState([]);
   const [services, setServices] = useState([]);
   const [projectManagers, setProjectManagers] = useState([]);
@@ -1424,7 +1372,7 @@ const ClientManagement = () => {
   // Filter and pagination state
   const [filters, setFilters] = useState({
     page: 1,
-    limit: 10,
+    limit: isMobile ? 5 : isTablet ? 8 : 10,
     sortBy: 'createdAt',
     sortOrder: 'desc',
     search: '',
@@ -1437,7 +1385,7 @@ const ClientManagement = () => {
     currentPage: 1,
     totalPages: 1,
     totalItems: 0,
-    itemsPerPage: 10
+    itemsPerPage: isMobile ? 5 : isTablet ? 8 : 10
   });
 
   // Create axios instance with base URL
@@ -1506,48 +1454,49 @@ const ClientManagement = () => {
     };
   }, []);
 
+  // Update limit when screen size changes
+  useEffect(() => {
+    const newLimit = isMobile ? 5 : isTablet ? 8 : 10;
+    if (filters.limit !== newLimit) {
+      handleFilterChange('limit', newLimit);
+    }
+  }, [isMobile, isTablet]);
+
   // Filter change handler
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({
       ...prev,
       [key]: value,
-      ...(key !== 'page' ? { page: 1 } : {}) // Reset to first page when filter changes
+      ...(key !== 'page' ? { page: 1 } : {})
     }));
   };
 
   // Helper function to get full manager objects from names
-  const getFullManagerObjects = (managerNames) => {
-    if (!managerNames) return [];
+  const getFullManagerObjects = (managerData) => {
+    if (!managerData) return [];
     
-    // Handle both array and string
-    const names = Array.isArray(managerNames) ? managerNames : [managerNames];
+    // If managerData is already an array of objects
+    if (Array.isArray(managerData) && managerData.length > 0) {
+      // Check if first element is an object
+      if (typeof managerData[0] === 'object') {
+        return managerData;
+      }
+      // If it's an array of strings (names)
+      if (typeof managerData[0] === 'string') {
+        return managerData.map(name => {
+          const manager = projectManagers.find(pm => pm.name === name);
+          return manager || { name, id: `temp-${Date.now()}` };
+        });
+      }
+    }
     
-    return names.map(name => {
-      if (typeof name === 'object' && name !== null) {
-        // If it's already an object with id, return it
-        if (name.id || name._id) {
-          return name;
-        }
-        // If it's an object without id, try to find in projectManagers
-        const manager = projectManagers.find(pm => pm.name === name.name);
-        return manager || { name: name.name, id: `temp-${Date.now()}`, email: name.email, role: name.role };
-      }
-      
-      // If it's a string, find the matching manager
-      if (typeof name === 'string') {
-        const manager = projectManagers.find(pm => pm.name === name);
-        return manager || { name, id: `temp-${Date.now()}` };
-      }
-      
-      return { name: 'Unknown', id: 'unknown' };
-    });
+    return [];
   };
 
   // Fetch all data from backend with error handling
   const fetchData = async () => {
     try {
       setLoading(true);
-      console.log('Fetching data from backend...');
       
       // Fetch all data in parallel
       const [clientsRes, servicesRes, usersRes] = await Promise.all([
@@ -1558,10 +1507,6 @@ const ClientManagement = () => {
           return { data: [] };
         })
       ]);
-      
-      console.log('Clients Response:', clientsRes.data);
-      console.log('Services Response:', servicesRes.data);
-      console.log('Users Response:', usersRes.data);
       
       // Handle services response
       if (servicesRes.data?.success) {
@@ -1575,24 +1520,20 @@ const ClientManagement = () => {
         // Handle clients response
         if (clientsRes.data?.success) {
           const clientsData = clientsRes.data.data || [];
-          console.log('Clients loaded:', clientsData.length);
           
           // Enhance clients data with full manager objects
           const enhancedClients = clientsData.map(client => {
-            // IMPORTANT FIX: Backend se "projectManager" field me data aaraha hai
-            const managerNames = client.projectManager || [];
-            const fullManagerObjects = getFullManagerObjects(managerNames);
+            // Get project managers data (could be in projectManagers or projectManager field)
+            const managerData = client.projectManagers || client.projectManager || [];
+            const fullManagerObjects = getFullManagerObjects(managerData);
             
-            // Add projectManagers field with full objects
             return {
               ...client,
               projectManagers: fullManagerObjects,
-              // Keep original projectManager field for compatibility
-              projectManager: managerNames
+              projectManager: fullManagerObjects.map(pm => pm.name)
             };
           });
           
-          console.log('Enhanced clients:', enhancedClients);
           setClients(enhancedClients);
           
           if (clientsRes.data.pagination) {
@@ -1606,7 +1547,6 @@ const ClientManagement = () => {
             });
           }
         } else {
-          console.warn('Clients response not successful:', clientsRes.data);
           setClients([]);
         }
       }
@@ -1635,10 +1575,7 @@ const ClientManagement = () => {
   const fetchClientTasks = async (clientId) => {
     try {
       const response = await tasksApi.get(`/client/${clientId}`);
-      console.log(`Tasks response for client ${clientId}:`, response.data);
-      
       if (response.data?.success) {
-        // Handle different response structures
         if (Array.isArray(response.data.data)) {
           return response.data.data;
         } else if (response.data.data?.tasks) {
@@ -1673,25 +1610,11 @@ const ClientManagement = () => {
       }
     }
     
-    console.log('Task counts calculated:', counts);
     setTaskCounts(counts);
-    
-    // Update tasks stats
     setTasksStats(prev => ({
       ...prev,
       pendingTasks: totalPending
     }));
-  };
-
-  // Calculate pending tasks from backend
-  const calculatePendingTasks = async () => {
-    let totalPending = 0;
-    for (const client of clients) {
-      const tasksData = await fetchClientTasks(client._id);
-      const pending = tasksData.filter(t => !t.completed).length;
-      totalPending += pending;
-    }
-    return totalPending;
   };
 
   // Calculate overdue tasks from backend
@@ -1757,18 +1680,27 @@ const ClientManagement = () => {
     }
   };
 
-  // Add new client
+  // Add new client - FIXED VERSION
   const handleAddClient = async (clientData) => {
     try {
       setAddLoading(true);
       
-      // Extract just manager names for backend storage (backend expects "projectManager" field)
+      // IMPORTANT: Backend expects projectManagers as an array of objects with _id field
+      // Also include projectManager field with names for compatibility
       const backendClientData = {
         ...clientData,
         client: clientData.client,
         company: clientData.company,
         city: clientData.city,
-        projectManager: clientData.projectManagers.map(pm => pm.name), // IMPORTANT: Backend expects "projectManager" field with names
+        // Send projectManagers as array of objects with _id
+        projectManagers: clientData.projectManagers.map(pm => ({
+          _id: pm._id,
+          name: pm.name,
+          email: pm.email,
+          role: pm.role
+        })),
+        // Also include projectManager as array of names for compatibility
+        projectManager: clientData.projectManagers.map(pm => pm.name),
         services: clientData.services,
         status: clientData.status,
         progress: clientData.progress,
@@ -1787,18 +1719,21 @@ const ClientManagement = () => {
         // Store the full manager objects in the response
         const fullClientData = {
           ...response.data.data,
-          projectManagers: clientData.projectManagers // Keep full objects
+          projectManagers: clientData.projectManagers
         };
         
         setSuccess('Client added successfully!');
         setError('');
         setAddClientModal(false);
-        fetchData(); // Refresh to get the latest data
+        fetchData();
       }
     } catch (err) {
-      const errorMessage = err.response?.data?.message || err.response?.data?.errors?.join(', ') || 'Client add failed';
+      const errorMessage = err.response?.data?.message || 
+                         err.response?.data?.errors?.join(', ') || 
+                         'Client add failed';
       setError(errorMessage);
       console.error('Add client error:', err);
+      console.error('Error response:', err.response?.data);
     } finally {
       setAddLoading(false);
     }
@@ -1835,7 +1770,6 @@ const ClientManagement = () => {
         try {
           const tasksResponse = await tasksApi.get(`/client/${id}`);
           if (tasksResponse.data.success && tasksResponse.data.data.tasks) {
-            // Delete each task
             for (const task of tasksResponse.data.data.tasks) {
               await tasksApi.delete(`/${task._id}`);
             }
@@ -1882,12 +1816,21 @@ const ClientManagement = () => {
 
   const handleEditSave = () => {
     const { client } = editDialog;
-    // Extract just manager names for backend (backend expects "projectManager" field)
+    
+    // Format project managers for backend
+    const formattedProjectManagers = client.projectManagers.map(pm => ({
+      _id: pm._id || pm.id,
+      name: pm.name,
+      email: pm.email,
+      role: pm.role
+    }));
+    
     const updateData = {
       client: client.client,
       company: client.company,
       city: client.city,
-      projectManager: client.projectManagers.map(pm => pm.name), // IMPORTANT: Backend expects "projectManager"
+      projectManagers: formattedProjectManagers,
+      projectManager: client.projectManagers.map(pm => pm.name),
       services: client.services,
       status: client.status,
       progress: client.progress,
@@ -1907,19 +1850,15 @@ const ClientManagement = () => {
     setViewDialog({ open: true, client });
   };
 
-  // Get project managers details - FIXED VERSION
+  // Get project managers details
   const getProjectManagersDetails = (client) => {
     if (!client) return [];
     
-    // First check if we have projectManagers field (with full objects)
     if (client.projectManagers && Array.isArray(client.projectManagers) && client.projectManagers.length > 0) {
       return client.projectManagers;
     }
     
-    // Fallback to projectManager field (names only)
     const managerNames = client.projectManager || [];
-    
-    // Convert names to full objects
     return managerNames.map(name => {
       const manager = projectManagers.find(pm => pm.name === name);
       return manager || { name, id: `temp-${Date.now()}` };
@@ -1954,7 +1893,7 @@ const ClientManagement = () => {
               {manager.name}
             </Typography>
             <Typography variant="caption" color="textSecondary">
-              {/* ID: {manager.id || manager._id || 'N/A'} */}
+              ID: {manager._id?.slice(-8) || manager.id?.slice(-8) || 'N/A'}
             </Typography>
           </Box>
         </Box>
@@ -1983,11 +1922,6 @@ const ClientManagement = () => {
   // Handle task updates for services
   const handleTaskUpdate = (serviceName, tasks) => {
     console.log(`Tasks updated for ${serviceName}:`, tasks);
-    const completedTasks = tasks.filter(task => task.completed).length;
-    const totalTasks = tasks.length;
-    const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
-    
-    console.log(`Progress for ${serviceName}: ${completedTasks}/${totalTasks} (${progress}%)`);
   };
 
   if (loading) {
@@ -2004,30 +1938,31 @@ const ClientManagement = () => {
   }
 
   return (
-    <DashboardContainer sx={{ px: 2, pb: 5 }}>
+    <DashboardContainer>
       {/* Header */}
       <HeaderCard>
         <CardContent>
-          <Stack direction="row" justifyContent="space-between" alignItems="center">
+          <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }} spacing={2}>
             <Box display="flex" alignItems="center">
-              <PeopleIcon sx={{ fontSize: 40, mr: 2, color: 'primary.main' }} />
+              <PeopleIcon sx={{ fontSize: { xs: 30, md: 40 }, mr: 2, color: 'primary.main' }} />
               <Box>
-                <Typography variant="h4" fontWeight="bold">
-                  Client Management Dashboard
+                <Typography variant={isMobile ? "h5" : "h4"} fontWeight="bold">
+                  Client Management
                 </Typography>
-                <Typography variant="subtitle1" color="text.secondary">
-                  Manage clients and services through backend
+                <Typography variant={isMobile ? "body2" : "subtitle1"} color="text.secondary">
+                  Manage clients and services
                 </Typography>
               </Box>
             </Box>
-            <Stack direction="row" spacing={2}>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} width={{ xs: '100%', md: 'auto' }}>
               <Button
                 startIcon={<WorkIcon />}
                 onClick={() => setServicesModal(true)}
                 variant="outlined"
                 sx={{ borderRadius: 2 }}
+                fullWidth={isMobile}
               >
-                Manage Services ({services.length})
+                Services ({services.length})
               </Button>
               <Button
                 startIcon={<AddIcon />}
@@ -2035,14 +1970,16 @@ const ClientManagement = () => {
                 variant="contained"
                 sx={{ borderRadius: 2 }}
                 disabled={services.length === 0}
+                fullWidth={isMobile}
               >
-                Add New Client
+                Add Client
               </Button>
               <Button
                 startIcon={<RefreshIcon />}
                 onClick={fetchData}
                 variant="outlined"
                 sx={{ borderRadius: 2 }}
+                fullWidth={isMobile}
               >
                 Refresh
               </Button>
@@ -2051,122 +1988,40 @@ const ClientManagement = () => {
         </CardContent>
       </HeaderCard>
 
-      {/* Statistics Cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={6} md={3}>
-          <StatCard color="primary">
-            <CardContent>
-              <Stack direction="row" alignItems="center" spacing={2}>
-                <Avatar sx={{ 
-                  bgcolor: `${theme.palette.primary.main}20`, 
-                  color: theme.palette.primary.main 
-                }}>
-                  <PeopleIcon />
-                </Avatar>
-                <Box>
-                  <Typography variant="body2" color="text.secondary">
-                    Total Clients
-                  </Typography>
-                  <Typography variant="h4" fontWeight={700}>
-                    {pagination.totalItems || clients.length}
-                  </Typography>
-                </Box>
-              </Stack>
-            </CardContent>
-          </StatCard>
-        </Grid>
-
-        <Grid item xs={6} md={3}>
-          <StatCard color="success">
-            <CardContent>
-              <Stack direction="row" alignItems="center" spacing={2}>
-                <Avatar sx={{ 
-                  bgcolor: `${theme.palette.success.main}20`, 
-                  color: theme.palette.success.main 
-                }}>
-                  <FiCheckCircle />
-                </Avatar>
-                <Box>
-                  <Typography variant="body2" color="text.secondary">
-                    Active Clients
-                  </Typography>
-                  <Typography variant="h4" fontWeight={700}>
-                    {clients.filter(client => client.status === 'Active').length}
-                  </Typography>
-                </Box>
-              </Stack>
-            </CardContent>
-          </StatCard>
-        </Grid>
-
-        <Grid item xs={6} md={3}>
-          <StatCard color="warning">
-            <CardContent>
-              <Stack direction="row" alignItems="center" spacing={2}>
-                <Avatar sx={{ 
-                  bgcolor: `${theme.palette.warning.main}20`, 
-                  color: theme.palette.warning.main 
-                }}>
-                  <FiClock />
-                </Avatar>
-                <Box>
-                  <Typography variant="body2" color="text.secondary">
-                    Pending Tasks
-                  </Typography>
-                  <Typography variant="h4" fontWeight={700}>
-                    {tasksStats.pendingTasks}
-                  </Typography>
-                </Box>
-              </Stack>
-            </CardContent>
-          </StatCard>
-        </Grid>
-
-        <Grid item xs={6} md={3}>
-          <StatCard color="error">
-            <CardContent>
-              <Stack direction="row" alignItems="center" spacing={2}>
-                <Avatar sx={{ 
-                  bgcolor: `${theme.palette.error.main}20`, 
-                  color: theme.palette.error.main 
-                }}>
-                  <FiAlertCircle />
-                </Avatar>
-                <Box>
-                  <Typography variant="body2" color="text.secondary">
-                    Overdue Tasks
-                  </Typography>
-                  <Typography variant="h4" fontWeight={700}>
-                    {tasksStats.overdueTasks}
-                  </Typography>
-                </Box>
-              </Stack>
-            </CardContent>
-          </StatCard>
-        </Grid>
-
-        <Grid item xs={6} md={3}>
-          <StatCard color="info">
-            <CardContent>
-              <Stack direction="row" alignItems="center" spacing={2}>
-                <Avatar sx={{ 
-                  bgcolor: `${theme.palette.info.main}20`, 
-                  color: theme.palette.info.main 
-                }}>
-                  <WorkIcon />
-                </Avatar>
-                <Box>
-                  <Typography variant="body2" color="text.secondary">
-                    Services
-                  </Typography>
-                  <Typography variant="h4" fontWeight={700}>
-                    {services.length}
-                  </Typography>
-                </Box>
-              </Stack>
-            </CardContent>
-          </StatCard>
-        </Grid>
+      {/* Statistics Cards - Responsive */}
+      <Grid container spacing={2} sx={{ mb: 4 }}>
+        {[
+          { label: 'Total Clients', value: pagination.totalItems || clients.length, color: 'primary', icon: <PeopleIcon /> },
+          { label: 'Active Clients', value: clients.filter(c => c.status === 'Active').length, color: 'success', icon: <FiCheckCircle /> },
+          { label: 'Pending Tasks', value: tasksStats.pendingTasks, color: 'warning', icon: <FiClock /> },
+          { label: 'Overdue Tasks', value: tasksStats.overdueTasks, color: 'error', icon: <FiAlertCircle /> },
+          { label: 'Services', value: services.length, color: 'info', icon: <WorkIcon /> },
+        ].map((stat, index) => (
+          <Grid item xs={6} sm={4} md={2.4} key={index}>
+            <StatCard color={stat.color}>
+              <CardContent>
+                <Stack direction="row" alignItems="center" spacing={2}>
+                  <Avatar sx={{ 
+                    bgcolor: `${theme.palette[stat.color].main}20`, 
+                    color: theme.palette[stat.color].main,
+                    width: { xs: 36, md: 44 },
+                    height: { xs: 36, md: 44 }
+                  }}>
+                    {stat.icon}
+                  </Avatar>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', md: '0.8rem' } }}>
+                      {stat.label}
+                    </Typography>
+                    <Typography variant="h6" fontWeight={700} sx={{ fontSize: { xs: '1.1rem', md: '1.5rem' } }}>
+                      {stat.value}
+                    </Typography>
+                  </Box>
+                </Stack>
+              </CardContent>
+            </StatCard>
+          </Grid>
+        ))}
       </Grid>
 
       {/* Notifications */}
@@ -2182,697 +2037,611 @@ const ClientManagement = () => {
         </Alert>
       </Snackbar>
 
-      {/* Clients Table */}
-      <Grid container width="100%" maxWidth="100%">
-   
-  <Card
-    sx={{
-      width: "100%",
-      borderRadius: 4,
-      boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-      border: '1px solid',
-      borderColor: 'divider',
-      overflow: 'hidden',
-      transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-      '&:hover': {
-        transform: 'translateY(-4px)',
-        boxShadow: '0 25px 50px rgba(0,0,0,0.15)'
-      }
-    }}
-  >
-
-    {/* Enhanced Header with Gradient */}
-    <CardHeader
-      title={
-        <Box display="flex" alignItems="center" justifyContent="space-between" sx={{ py: 1 }}>
-          <Box display="flex" alignItems="center" gap={2}>
-            <Box sx={{
-              width: 50,
-              height: 50,
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 4px 6px rgba(102, 126, 234, 0.3)'
-            }}>
-              <PeopleIcon sx={{ color: 'white', fontSize: 24 }} />
-            </Box>
-            <Box>
-              <Typography variant="h5" fontWeight="bold" color="white">
-                Client Portfolio
-              </Typography>
-              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)', mt: 0.5 }}>
-                Total {pagination.totalItems || clients.length} clients • {clients.filter(c => c.status === 'Active').length} active
-              </Typography>
-            </Box>
-          </Box>
-          
-          <Box display="flex" gap={2} alignItems="center">
-            {/* Quick Stats */}
-            <Box sx={{
-              background: 'rgba(255,255,255,0.15)',
-              backdropFilter: 'blur(10px)',
-              borderRadius: 3,
-              px: 2,
-              py: 1,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1
-            }}>
-              <TrendingUpIcon sx={{ fontSize: 18, color: '#4ade80' }} />
-              <Typography variant="body2" sx={{ color: 'white', fontWeight: 'medium' }}>
-                {clients.filter(c => c.status === 'Active').length} Active
-              </Typography>
-            </Box>
-            
-            <IconButton 
-              onClick={fetchData}
-              sx={{
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                color: 'white',
-                '&:hover': {
-                  background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
-                  transform: 'rotate(45deg)'
-                },
-                transition: 'all 0.3s ease',
-                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)'
-              }}
-            >
-              <RefreshIcon />
-            </IconButton>
-          </Box>
-        </Box>
-      }
-      sx={{ 
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        color: 'white',
-        borderBottom: '1px solid',
+      {/* Main Content Card */}
+      <Card sx={{ 
+        width: "100%", 
+        borderRadius: { xs: 2, md: 4 },
+        boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+        border: '1px solid',
         borderColor: 'divider',
-        py: 2.5
-      }}
-    />
-    
-    {/* Enhanced Filter Bar */}
-    <Box sx={{ 
-      p: 3, 
-      background: 'linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)',
-      borderBottom: '1px solid',
-      borderColor: 'divider'
-    }}>
-      <Grid container spacing={2} alignItems="center">
-        <Grid item xs={12} md={3}>
-          <TextField
-            fullWidth
-            size="small"
-            placeholder="Search clients, companies..."
-            value={filters.search}
-            onChange={(e) => handleFilterChange('search', e.target.value)}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                borderRadius: 3,
-                background: 'white',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-                '&:hover': {
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
-                },
-                '&.Mui-focused': {
-                  boxShadow: '0 4px 12px rgba(102, 126, 234, 0.2)',
-                  borderColor: '#667eea'
-                }
-              }
-            }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon sx={{ color: '#667eea' }} />
-                </InputAdornment>
-              ),
-            }}
-          />
-        </Grid>
-        
-        <Grid item xs={6} md={2}>
-          <FormControl fullWidth size="small">
-            <Select
-              value={filters.status}
-              onChange={(e) => handleFilterChange('status', e.target.value)}
-              displayEmpty
-              sx={{
-                borderRadius: 3,
-                background: 'white',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-                '& .MuiOutlinedInput-notchedOutline': {
-                  borderColor: 'transparent'
-                }
-              }}
-            >
-              <MenuItem value="">
-                <Box display="flex" alignItems="center" gap={1}>
-                  <FilterListIcon fontSize="small" />
-                  <Typography>All Status</Typography>
-                </Box>
-              </MenuItem>
-              <MenuItem value="Active">
-                <Box display="flex" alignItems="center" gap={1}>
-                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#10b981' }} />
-                  Active
-                </Box>
-              </MenuItem>
-              <MenuItem value="On Hold">
-                <Box display="flex" alignItems="center" gap={1}>
-                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#f59e0b' }} />
-                  On Hold
-                </Box>
-              </MenuItem>
-              <MenuItem value="Inactive">
-                <Box display="flex" alignItems="center" gap={1}>
-                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#ef4444' }} />
-                  Inactive
-                </Box>
-              </MenuItem>
-            </Select>
-          </FormControl>
-        </Grid>
-        
-        <Grid item xs={6} md={2.5}>
-          <FormControl fullWidth size="small">
-            <Select
-              value={filters.projectManager}
-              onChange={(e) => handleFilterChange('projectManager', e.target.value)}
-              displayEmpty
-              sx={{
-                borderRadius: 3,
-                background: 'white',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-                '& .MuiOutlinedInput-notchedOutline': {
-                  borderColor: 'transparent'
-                }
-              }}
-            >
-              <MenuItem value="">
-                <Box display="flex" alignItems="center" gap={1}>
-                  <PersonIcon fontSize="small" />
-                  <Typography>All Managers</Typography>
-                </Box>
-              </MenuItem>
-              {projectManagers.map((manager) => (
-                <MenuItem key={manager._id || manager.id} value={manager.name}>
-                  <Box display="flex" alignItems="center" gap={1}>
-                    <Avatar sx={{ width: 24, height: 24, fontSize: 12, bgcolor: '#667eea' }}>
-                      {manager.name.charAt(0)}
-                    </Avatar>
-                    {manager.name}
-                  </Box>
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Grid>
-        
-        <Grid item xs={6} md={2.5}>
-          <FormControl fullWidth size="small">
-            <Select
-              value={filters.service}
-              onChange={(e) => handleFilterChange('service', e.target.value)}
-              displayEmpty
-              sx={{
-                borderRadius: 3,
-                background: 'white',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-                '& .MuiOutlinedInput-notchedOutline': {
-                  borderColor: 'transparent'
-                }
-              }}
-            >
-              <MenuItem value="">
-                <Box display="flex" alignItems="center" gap={1}>
-                  <WorkIcon fontSize="small" />
-                  <Typography>All Services</Typography>
-                </Box>
-              </MenuItem>
-              {services.map((service) => (
-                <MenuItem key={service._id} value={service.servicename}>
-                  <Chip 
-                    size="small" 
-                    label={service.servicename} 
-                    sx={{ 
-                      background: 'linear-gradient(135deg, #667eea20 0%, #764ba220 100%)',
-                      color: '#667eea',
-                      border: '1px solid',
-                      borderColor: '#667eea40'
-                    }}
-                  />
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Grid>
-        
-        <Grid item xs={6} md={2}>
-          <Button
-            fullWidth
-            variant="contained"
-            onClick={() => setServicesModal(true)}
-            startIcon={<AddIcon />}
-            sx={{
-              height: 40,
-              borderRadius: 3,
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              color: 'white',
-              textTransform: 'none',
-              fontWeight: 'bold',
-              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
-              '&:hover': {
-                background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
-                boxShadow: '0 6px 16px rgba(102, 126, 234, 0.4)',
-                transform: 'translateY(-2px)'
-              },
-              transition: 'all 0.3s ease'
-            }}
-          >
-            New Client
-          </Button>
-        </Grid>
-      </Grid>
-    </Box>
-    
-    <CardContent sx={{ p: 0 }}>
-      {clients.length > 0 ? (
-        <>
-          {/* Enhanced Table Container */}
-          <Box sx={{ 
-            position: 'relative',
-            overflow: 'hidden'
-          }}>
-            <StyledTableContainer sx={{ 
-              maxHeight: 600,
-              '&::-webkit-scrollbar': {
-                width: 8,
-                height: 8
-              },
-              '&::-webkit-scrollbar-track': {
-                background: '#f1f5f9',
-                borderRadius: 4
-              },
-              '&::-webkit-scrollbar-thumb': {
-                background: '#cbd5e1',
-                borderRadius: 4,
-                '&:hover': {
-                  background: '#94a3b8'
-                }
-              }
-            }}>
-              <Table stickyHeader>
-                <TableHead>
-                  <TableRow sx={{ 
-                    background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)',
-                    '& th': {
-                      fontWeight: 'bold',
-                      color: '#1e293b',
-                      fontSize: '0.875rem',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.5px',
-                      borderBottom: '2px solid',
-                      borderColor: '#e2e8f0',
-                      py: 2
-                    }
-                  }}>
-                    <TableCell>Client</TableCell>
-                    <TableCell>Company</TableCell>
-                    {/* <TableCell>Location</TableCell>
-                    <TableCell>Managers</TableCell> */}
-                    <TableCell>Services</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell>Progress</TableCell>
-                    <TableCell>Tasks</TableCell>
-                    <TableCell align="center">Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {clients.map((client, index) => {
-                    const stats = taskCounts[client._id] || { total: 0, completed: 0, pending: 0 };
-                    const pending = stats.pending || 0;
-                    const progress = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
-                    
-                    return (
-                      <TableRow 
-                        key={client._id}
-                        hover
-                        sx={{ 
-                          transition: 'all 0.2s ease',
-                          '&:hover': {
-                            background: 'linear-gradient(90deg, rgba(102, 126, 234, 0.04) 0%, rgba(118, 75, 162, 0.04) 100%)',
-                            transform: 'translateX(4px)'
-                          },
-                          '&:nth-of-type(even)': {
-                            background: '#fafafa'
-                          }
-                        }}
-                      >
-                        <TableCell>
-                          <Box display="flex" alignItems="center" gap={2}>
-                            <Avatar 
-                              sx={{ 
-                                width: 36, 
-                                height: 36, 
-                                bgcolor: '#667eea',
-                                fontSize: 14,
-                                fontWeight: 'bold'
-                              }}
-                            >
-                              {client.client?.charAt(0) || 'C'}
-                            </Avatar>
-                            <Box>
-                              <Typography variant="body1" fontWeight="600">
-                                {client.client || 'N/A'}
-                              </Typography>
-                              <Typography variant="caption" color="textSecondary">
-                                ID: {client.clientId || client._id?.slice(-6)}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </TableCell>
-                        
-                        <TableCell>
-                          <Box>
-                            <Typography variant="body2" fontWeight="medium">
-                              {client.company || 'N/A'}
-                            </Typography>
-                            <Typography variant="caption" color="textSecondary">
-                              {client.email || 'No email'}
-                            </Typography>
-                          </Box>
-                        </TableCell>
-                     
-                        
-                      
-                        <TableCell>
-                          <Box display="flex" flexWrap="wrap" gap={0.5} maxWidth={200}>
-                            {Array.isArray(client.services) && client.services.map((service, idx) => (
-                              <Chip 
-                                key={idx}
-                                size="small"
-                                label={service}
-                                sx={{
-                                  background: 'linear-gradient(135deg, #667eea10 0%, #764ba210 100%)',
-                                  color: '#667eea',
-                                  border: '1px solid',
-                                  borderColor: '#667eea30',
-                                  fontWeight: '500',
-                                  fontSize: '0.7rem'
-                                }}
-                              />
-                            ))}
-                          </Box>
-                        </TableCell>
-                        
-                        <TableCell>
-                          <Box sx={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 1,
-                            px: 2,
-                            py: 0.5,
-                            borderRadius: 20,
-                            background: client.status === 'Active' 
-                              ? 'linear-gradient(135deg, #10b98120 0%, #05966920 100%)'
-                              : client.status === 'On Hold'
-                              ? 'linear-gradient(135deg, #f59e0b20 0%, #d9770620 100%)'
-                              : 'linear-gradient(135deg, #ef444420 0%, #dc262620 100%)',
-                            border: '1px solid',
-                            borderColor: client.status === 'Active'
-                              ? '#10b98140'
-                              : client.status === 'On Hold'
-                              ? '#f59e0b40'
-                              : '#ef444440'
-                          }}>
-                            <Box sx={{
-                              width: 6,
-                              height: 6,
-                              borderRadius: '50%',
-                              bgcolor: client.status === 'Active'
-                                ? '#10b981'
-                                : client.status === 'On Hold'
-                                ? '#f59e0b'
-                                : '#ef4444'
-                            }} />
-                            <Typography variant="caption" fontWeight="bold" sx={{
-                              color: client.status === 'Active'
-                                ? '#059669'
-                                : client.status === 'On Hold'
-                                ? '#d97706'
-                                : '#dc2626'
-                            }}>
-                              {client.status || 'Unknown'}
-                            </Typography>
-                          </Box>
-                        </TableCell>
-                        
-                        <TableCell>
-                          <Box sx={{ minWidth: 120 }}>
-                            <Box display="flex" justifyContent="space-between" alignItems="center" mb={0.5}>
-                              <Typography variant="body2" fontWeight="medium">
-                                {progress}%
-                              </Typography>
-                              <Typography variant="caption" color="textSecondary">
-                                {stats.completed}/{stats.total}
-                              </Typography>
-                            </Box>
-                            <LinearProgress 
-                              variant="determinate" 
-                              value={progress}
-                              sx={{
-                                height: 8,
-                                borderRadius: 4,
-                                bgcolor: '#e2e8f0',
-                                '& .MuiLinearProgress-bar': {
-                                  borderRadius: 4,
-                                  background: progress > 70 
-                                    ? 'linear-gradient(90deg, #10b981 0%, #059669 100%)'
-                                    : progress > 30
-                                    ? 'linear-gradient(90deg, #f59e0b 0%, #d97706 100%)'
-                                    : 'linear-gradient(90deg, #ef4444 0%, #dc2626 100%)'
-                                }
-                              }}
-                            />
-                          </Box>
-                        </TableCell>
-                        
-                        <TableCell>
-                          <Box display="flex" alignItems="center" gap={1}>
-                            <Chip 
-                              icon={<TaskAltIcon />}
-                              label={pending}
-                              size="small"
-                              sx={{
-                                background: pending > 0 
-                                  ? 'linear-gradient(135deg, #f59e0b20 0%, #d9770620 100%)'
-                                  : 'linear-gradient(135deg, #10b98120 0%, #05966920 100%)',
-                                color: pending > 0 ? '#d97706' : '#059669',
-                                fontWeight: 'bold',
-                                border: '1px solid',
-                                borderColor: pending > 0 ? '#f59e0b40' : '#10b98140'
-                              }}
-                            />
-                            <Typography variant="caption" color="textSecondary">
-                              pending
-                            </Typography>
-                          </Box>
-                        </TableCell>
-                        
-                        <TableCell align="center">
-                          <Box display="flex" gap={1} justifyContent="center">
-                            <IconButton 
-                              size="small"
-                              onClick={() => handleViewClick(client)}
-                              sx={{
-                                background: 'linear-gradient(135deg, #667eea10 0%, #764ba210 100%)',
-                                color: '#667eea',
-                                '&:hover': {
-                                  background: '#667eea',
-                                  color: 'white',
-                                  transform: 'scale(1.1)'
-                                },
-                                transition: 'all 0.2s ease'
-                              }}
-                            >
-                              <VisibilityIcon fontSize="small" />
-                            </IconButton>
-                            <IconButton 
-                              size="small"
-                              onClick={() => handleEditClick(client)}
-                              sx={{
-                                background: 'linear-gradient(135deg, #10b98110 0%, #05966910 100%)',
-                                color: '#10b981',
-                                '&:hover': {
-                                  background: '#10b981',
-                                  color: 'white',
-                                  transform: 'scale(1.1)'
-                                },
-                                transition: 'all 0.2s ease'
-                              }}
-                            >
-                              <EditIcon fontSize="small" />
-                            </IconButton>
-                            {/* <IconButton 
-                              size="small"
-                              onClick={() => handleDeleteClick('client', client._id, client.client)}
-                              sx={{
-                                background: 'linear-gradient(135deg, #ef444410 0%, #dc262610 100%)',
-                                color: '#ef4444',
-                                '&:hover': {
-                                  background: '#ef4444',
-                                  color: 'white',
-                                  transform: 'scale(1.1)'
-                                },
-                                transition: 'all 0.2s ease'
-                              }}
-                            >
-                              <DeleteIcon fontSize="small" />
-                            </IconButton> */}
-                          </Box>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </StyledTableContainer>
-            
-            {/* Enhanced Pagination */}
-            <Box sx={{ 
-              py: 2, 
-              px: 3, 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'center', 
-              background: 'linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)',
-              borderTop: '1px solid',
-              borderColor: '#e2e8f0'
-            }}>
+        overflow: 'hidden',
+      }}>
+        {/* Enhanced Header */}
+        <CardHeader
+          title={
+            <Box display="flex" alignItems="center" justifyContent="space-between">
               <Box display="flex" alignItems="center" gap={2}>
-                <FormControl size="small" sx={{ width: 100 }}>
-                  <Select
-                    value={filters.limit}
-                    onChange={(e) => handleFilterChange('limit', e.target.value)}
-                    sx={{ borderRadius: 2 }}
-                  >
-                    <MenuItem value={10}>10 per page</MenuItem>
-                    <MenuItem value={25}>25 per page</MenuItem>
-                    <MenuItem value={50}>50 per page</MenuItem>
-                    <MenuItem value={100}>100 per page</MenuItem>
-                  </Select>
-                </FormControl>
-                <Typography variant="body2" color="#64748b">
-                  Showing <strong>{((filters.page - 1) * filters.limit) + 1}-{Math.min(filters.page * filters.limit, pagination.totalItems)}</strong> of <strong>{pagination.totalItems}</strong> clients
-                </Typography>
+                <Box sx={{
+                  width: { xs: 40, md: 50 },
+                  height: { xs: 40, md: 50 },
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 4px 6px rgba(102, 126, 234, 0.3)'
+                }}>
+                  <PeopleIcon sx={{ color: 'white', fontSize: { xs: 20, md: 24 } }} />
+                </Box>
+                <Box>
+                  <Typography variant={isMobile ? "h6" : "h5"} fontWeight="bold" color="white">
+                    Client Portfolio
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)', mt: 0.5 }}>
+                    Total {pagination.totalItems} clients • {clients.filter(c => c.status === 'Active').length} active
+                  </Typography>
+                </Box>
               </Box>
               
-              <Pagination
-                count={pagination.totalPages}
-                page={filters.page}
-                onChange={(event, value) => handleFilterChange('page', value)}
-                shape="rounded"
-                showFirstButton
-                showLastButton
+              {!isMobile && (
+                <Box display="flex" gap={2} alignItems="center">
+                  <Box sx={{
+                    background: 'rgba(255,255,255,0.15)',
+                    backdropFilter: 'blur(10px)',
+                    borderRadius: 3,
+                    px: 2,
+                    py: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1
+                  }}>
+                    <TrendingUpIcon sx={{ fontSize: 18, color: '#4ade80' }} />
+                    <Typography variant="body2" sx={{ color: 'white', fontWeight: 'medium' }}>
+                      {clients.filter(c => c.status === 'Active').length} Active
+                    </Typography>
+                  </Box>
+                  
+                  <IconButton 
+                    onClick={fetchData}
+                    sx={{
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      color: 'white',
+                      '&:hover': {
+                        background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
+                        transform: 'rotate(45deg)'
+                      },
+                      transition: 'all 0.3s ease',
+                      boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)'
+                    }}
+                  >
+                    <RefreshIcon />
+                  </IconButton>
+                </Box>
+              )}
+            </Box>
+          }
+          sx={{ 
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            color: 'white',
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            py: { xs: 1.5, md: 2.5 }
+          }}
+        />
+        
+        {/* Enhanced Filter Bar - Responsive */}
+        <Box sx={{ 
+          p: { xs: 2, md: 3 }, 
+          background: 'linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)',
+          borderBottom: '1px solid',
+          borderColor: 'divider'
+        }}>
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={12} md={3}>
+              <TextField
+                fullWidth
+                size="small"
+                placeholder="Search clients..."
+                value={filters.search}
+                onChange={(e) => handleFilterChange('search', e.target.value)}
                 sx={{
-                  '& .MuiPaginationItem-root': {
-                    borderRadius: 2,
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 3,
+                    background: 'white',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
                     '&:hover': {
-                      background: '#667eea20'
-                    }
-                  },
-                  '& .Mui-selected': {
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    color: 'white',
-                    fontWeight: 'bold',
-                    '&:hover': {
-                      background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)'
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
                     }
                   }
                 }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon sx={{ color: '#667eea' }} />
+                    </InputAdornment>
+                  ),
+                }}
               />
-            </Box>
-          </Box>
-        </>
-      ) : (
-        <Box textAlign="center" py={8}>
-          <Box sx={{
-            width: 120,
-            height: 120,
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            mx: 'auto',
-            mb: 3
-          }}>
-            <PeopleIcon sx={{ fontSize: 48, color: '#94a3b8' }} />
-          </Box>
-          <Typography variant="h6" color="#64748b" fontWeight="bold" gutterBottom>
-            No Clients Found
-          </Typography>
-          <Typography variant="body2" color="#94a3b8" sx={{ maxWidth: 400, mx: 'auto' }} gutterBottom>
-            {services.length === 0 
-              ? 'Add services first to create clients and start managing your portfolio' 
-              : 'Add your first client to start building your business relationships'
-            }
-          </Typography>
-          {services.length === 0 ? (
-            <Button 
-              variant="contained" 
-              startIcon={<WorkIcon />}
-              onClick={() => setServicesModal(true)}
-              sx={{ 
-                mt: 3,
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                borderRadius: 3,
-                px: 4,
-                py: 1.5,
-                fontWeight: 'bold',
-                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
-                '&:hover': {
-                  background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
-                  boxShadow: '0 6px 16px rgba(102, 126, 234, 0.4)',
-                  transform: 'translateY(-2px)'
-                },
-                transition: 'all 0.3s ease'
-              }}
-            >
-              Add Services First
-            </Button>
-          ) : (
-            <Button 
-              variant="contained" 
-              startIcon={<AddIcon />}
-              onClick={() => setServicesModal(true)}
-              sx={{ 
-                mt: 3,
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                borderRadius: 3,
-                px: 4,
-                py: 1.5,
-                fontWeight: 'bold',
-                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
-                '&:hover': {
-                  background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
-                  boxShadow: '0 6px 16px rgba(102, 126, 234, 0.4)',
-                  transform: 'translateY(-2px)'
-                },
-                transition: 'all 0.3s ease'
-              }}
-            >
-              Create First Client
-            </Button>
-          )}
+            </Grid>
+            
+            <Grid item xs={6} sm={4} md={2}>
+              <FormControl fullWidth size="small">
+                <Select
+                  value={filters.status}
+                  onChange={(e) => handleFilterChange('status', e.target.value)}
+                  displayEmpty
+                  sx={{
+                    borderRadius: 3,
+                    background: 'white',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'transparent'
+                    }
+                  }}
+                >
+                  <MenuItem value="">All Status</MenuItem>
+                  <MenuItem value="Active">Active</MenuItem>
+                  <MenuItem value="On Hold">On Hold</MenuItem>
+                  <MenuItem value="Inactive">Inactive</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            <Grid item xs={6} sm={4} md={2.5}>
+              <FormControl fullWidth size="small">
+                <Select
+                  value={filters.projectManager}
+                  onChange={(e) => handleFilterChange('projectManager', e.target.value)}
+                  displayEmpty
+                  sx={{
+                    borderRadius: 3,
+                    background: 'white',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'transparent'
+                    }
+                  }}
+                >
+                  <MenuItem value="">All Managers</MenuItem>
+                  {projectManagers.map((manager) => (
+                    <MenuItem key={manager._id || manager.id} value={manager.name}>
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <Avatar sx={{ width: 24, height: 24, fontSize: 12, bgcolor: '#667eea' }}>
+                          {manager.name.charAt(0)}
+                        </Avatar>
+                        <Typography variant="body2" noWrap>
+                          {manager.name}
+                        </Typography>
+                      </Box>
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            <Grid item xs={6} sm={4} md={2.5}>
+              <FormControl fullWidth size="small">
+                <Select
+                  value={filters.service}
+                  onChange={(e) => handleFilterChange('service', e.target.value)}
+                  displayEmpty
+                  sx={{
+                    borderRadius: 3,
+                    background: 'white',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'transparent'
+                    }
+                  }}
+                >
+                  <MenuItem value="">All Services</MenuItem>
+                  {services.map((service) => (
+                    <MenuItem key={service._id} value={service.servicename}>
+                      <Chip 
+                        size="small" 
+                        label={service.servicename} 
+                        sx={{ 
+                          background: 'linear-gradient(135deg, #667eea20 0%, #764ba220 100%)',
+                          color: '#667eea',
+                          border: '1px solid',
+                          borderColor: '#667eea40'
+                        }}
+                      />
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            <Grid item xs={6} sm={4} md={2}>
+              <Button
+                fullWidth
+                variant="contained"
+                onClick={() => setAddClientModal(true)}
+                startIcon={<AddIcon />}
+                disabled={services.length === 0}
+                sx={{
+                  height: 40,
+                  borderRadius: 3,
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  color: 'white',
+                  textTransform: 'none',
+                  fontWeight: 'bold',
+                  boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
+                    boxShadow: '0 6px 16px rgba(102, 126, 234, 0.4)',
+                    transform: 'translateY(-2px)'
+                  },
+                  transition: 'all 0.3s ease',
+                  '&:disabled': {
+                    background: 'grey',
+                    boxShadow: 'none'
+                  }
+                }}
+              >
+                New Client
+              </Button>
+            </Grid>
+          </Grid>
         </Box>
-      )}
-    </CardContent>
-  </Card>
+        
+        <CardContent sx={{ p: 0 }}>
+          {clients.length > 0 ? (
+            <>
+              {/* Enhanced Table Container */}
+              <StyledTableContainer sx={{ maxHeight: 600 }}>
+                <Table stickyHeader>
+                  <TableHead>
+                    <TableRow sx={{ 
+                      background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)',
+                      '& th': {
+                        fontWeight: 'bold',
+                        color: '#1e293b',
+                        fontSize: '0.875rem',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                        borderBottom: '2px solid',
+                        borderColor: '#e2e8f0',
+                        py: 2,
+                        display: isMobile ? 'none' : 'table-cell'
+                      }
+                    }}>
+                      <TableCell sx={{ display: { xs: 'table-cell', sm: 'table-cell' } }}>Client</TableCell>
+                      <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Company</TableCell>
+                      <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Services</TableCell>
+                      <TableCell>Status</TableCell>
+                      <TableCell>Progress</TableCell>
+                      <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Tasks</TableCell>
+                      <TableCell align="center">Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {clients.map((client) => {
+                      const stats = taskCounts[client._id] || { total: 0, completed: 0, pending: 0 };
+                      const pending = stats.pending || 0;
+                      const progress = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
+                      
+                      return (
+                        <TableRow 
+                          key={client._id}
+                          hover
+                          sx={{ 
+                            transition: 'all 0.2s ease',
+                            '&:hover': {
+                              background: 'linear-gradient(90deg, rgba(102, 126, 234, 0.04) 0%, rgba(118, 75, 162, 0.04) 100%)',
+                            },
+                            '&:nth-of-type(even)': {
+                              background: '#fafafa'
+                            }
+                          }}
+                        >
+                          {/* Client Cell - Always visible */}
+                          <TableCell sx={{ display: { xs: 'table-cell', sm: 'table-cell' } }}>
+                            <Box display="flex" alignItems="center" gap={2}>
+                              <Avatar 
+                                sx={{ 
+                                  width: { xs: 32, sm: 36 }, 
+                                  height: { xs: 32, sm: 36 }, 
+                                  bgcolor: '#667eea',
+                                  fontSize: { xs: 12, sm: 14 },
+                                  fontWeight: 'bold'
+                                }}
+                              >
+                                {client.client?.charAt(0) || 'C'}
+                              </Avatar>
+                              <Box>
+                                <Typography variant="body1" fontWeight="600" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
+                                  {client.client || 'N/A'}
+                                </Typography>
+                                <Typography variant="caption" color="textSecondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
+                                  ID: {client.clientId || client._id?.slice(-6)}
+                                </Typography>
+                                <Typography variant="caption" color="textSecondary" sx={{ display: { xs: 'block', sm: 'none' } }}>
+                                  {client.company || 'N/A'}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </TableCell>
+                          
+                          {/* Company Cell - Hidden on mobile */}
+                          <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
+                            <Box>
+                              <Typography variant="body2" fontWeight="medium">
+                                {client.company || 'N/A'}
+                              </Typography>
+                              <Typography variant="caption" color="textSecondary">
+                                {client.email || 'No email'}
+                              </Typography>
+                            </Box>
+                          </TableCell>
+                          
+                          {/* Services Cell - Hidden on mobile and tablet */}
+                          <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
+                            <Box display="flex" flexWrap="wrap" gap={0.5} maxWidth={200}>
+                              {Array.isArray(client.services) && client.services.slice(0, 2).map((service, idx) => (
+                                <Chip 
+                                  key={idx}
+                                  size="small"
+                                  label={service}
+                                  sx={{
+                                    background: 'linear-gradient(135deg, #667eea10 0%, #764ba210 100%)',
+                                    color: '#667eea',
+                                    border: '1px solid',
+                                    borderColor: '#667eea30',
+                                    fontWeight: '500',
+                                    fontSize: '0.7rem'
+                                  }}
+                                />
+                              ))}
+                              {Array.isArray(client.services) && client.services.length > 2 && (
+                                <Chip 
+                                  size="small"
+                                  label={`+${client.services.length - 2}`}
+                                  sx={{
+                                    background: '#e2e8f0',
+                                    color: '#64748b'
+                                  }}
+                                />
+                              )}
+                            </Box>
+                          </TableCell>
+                          
+                          {/* Status Cell - Always visible */}
+                          <TableCell>
+                            <Box sx={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 1,
+                              px: { xs: 1, sm: 2 },
+                              py: 0.5,
+                              borderRadius: 20,
+                              background: client.status === 'Active' 
+                                ? 'linear-gradient(135deg, #10b98120 0%, #05966920 100%)'
+                                : client.status === 'On Hold'
+                                ? 'linear-gradient(135deg, #f59e0b20 0%, #d9770620 100%)'
+                                : 'linear-gradient(135deg, #ef444420 0%, #dc262620 100%)',
+                              border: '1px solid',
+                              borderColor: client.status === 'Active'
+                                ? '#10b98140'
+                                : client.status === 'On Hold'
+                                ? '#f59e0b40'
+                                : '#ef444440'
+                            }}>
+                              <Box sx={{
+                                width: 6,
+                                height: 6,
+                                borderRadius: '50%',
+                                bgcolor: client.status === 'Active'
+                                  ? '#10b981'
+                                  : client.status === 'On Hold'
+                                  ? '#f59e0b'
+                                  : '#ef4444'
+                              }} />
+                              <Typography variant="caption" fontWeight="bold" sx={{
+                                color: client.status === 'Active'
+                                  ? '#059669'
+                                  : client.status === 'On Hold'
+                                  ? '#d97706'
+                                  : '#dc2626',
+                                fontSize: { xs: '0.65rem', sm: '0.75rem' }
+                              }}>
+                                {client.status || 'Unknown'}
+                              </Typography>
+                            </Box>
+                          </TableCell>
+                          
+                          {/* Progress Cell - Always visible */}
+                          <TableCell>
+                            <Box sx={{ minWidth: { xs: 80, sm: 120 } }}>
+                              <Box display="flex" justifyContent="space-between" alignItems="center" mb={0.5}>
+                                <Typography variant="body2" fontWeight="medium" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
+                                  {progress}%
+                                </Typography>
+                                <Typography variant="caption" color="textSecondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
+                                  {stats.completed}/{stats.total}
+                                </Typography>
+                              </Box>
+                              <LinearProgress 
+                                variant="determinate" 
+                                value={progress}
+                                sx={{
+                                  height: 6,
+                                  borderRadius: 4,
+                                  bgcolor: '#e2e8f0',
+                                  '& .MuiLinearProgress-bar': {
+                                    borderRadius: 4,
+                                    background: progress > 70 
+                                      ? 'linear-gradient(90deg, #10b981 0%, #059669 100%)'
+                                      : progress > 30
+                                      ? 'linear-gradient(90deg, #f59e0b 0%, #d97706 100%)'
+                                      : 'linear-gradient(90deg, #ef4444 0%, #dc2626 100%)'
+                                  }
+                                }}
+                              />
+                            </Box>
+                          </TableCell>
+                          
+                          {/* Tasks Cell - Hidden on mobile */}
+                          <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
+                            <Box display="flex" alignItems="center" gap={1}>
+                              <Chip 
+                                icon={<TaskAltIcon />}
+                                label={pending}
+                                size="small"
+                                sx={{
+                                  background: pending > 0 
+                                    ? 'linear-gradient(135deg, #f59e0b20 0%, #d9770620 100%)'
+                                    : 'linear-gradient(135deg, #10b98120 0%, #05966920 100%)',
+                                  color: pending > 0 ? '#d97706' : '#059669',
+                                  fontWeight: 'bold',
+                                  border: '1px solid',
+                                  borderColor: pending > 0 ? '#f59e0b40' : '#10b98140'
+                                }}
+                              />
+                              <Typography variant="caption" color="textSecondary">
+                                pending
+                              </Typography>
+                            </Box>
+                          </TableCell>
+                          
+                          {/* Actions Cell - Always visible */}
+                          <TableCell align="center">
+                            <Box display="flex" gap={1} justifyContent="center">
+                              <IconButton 
+                                size="small"
+                                onClick={() => handleViewClick(client)}
+                                sx={{
+                                  background: 'linear-gradient(135deg, #667eea10 0%, #764ba210 100%)',
+                                  color: '#667eea',
+                                  '&:hover': {
+                                    background: '#667eea',
+                                    color: 'white',
+                                  }
+                                }}
+                              >
+                                <VisibilityIcon fontSize="small" />
+                              </IconButton>
+                              <IconButton 
+                                size="small"
+                                onClick={() => handleEditClick(client)}
+                                sx={{
+                                  background: 'linear-gradient(135deg, #10b98110 0%, #05966910 100%)',
+                                  color: '#10b981',
+                                  '&:hover': {
+                                    background: '#10b981',
+                                    color: 'white',
+                                  }
+                                }}
+                              >
+                                <EditIcon fontSize="small" />
+                              </IconButton>
+                            </Box>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </StyledTableContainer>
+              
+              {/* Enhanced Pagination */}
+              <Box sx={{ 
+                py: 2, 
+                px: { xs: 2, md: 3 }, 
+                display: 'flex', 
+                flexDirection: { xs: 'column', sm: 'row' },
+                justifyContent: 'space-between', 
+                alignItems: 'center', 
+                gap: 2,
+                background: 'linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)',
+                borderTop: '1px solid',
+                borderColor: '#e2e8f0'
+              }}>
+                <Box display="flex" alignItems="center" gap={2}>
+                  <FormControl size="small" sx={{ width: { xs: '100%', sm: 100 } }}>
+                    <Select
+                      value={filters.limit}
+                      onChange={(e) => handleFilterChange('limit', e.target.value)}
+                      sx={{ borderRadius: 2 }}
+                    >
+                      <MenuItem value={5}>5 per page</MenuItem>
+                      <MenuItem value={10}>10 per page</MenuItem>
+                      <MenuItem value={25}>25 per page</MenuItem>
+                      <MenuItem value={50}>50 per page</MenuItem>
+                    </Select>
+                  </FormControl>
+                  <Typography variant="body2" color="#64748b">
+                    Showing <strong>{((filters.page - 1) * filters.limit) + 1}-{Math.min(filters.page * filters.limit, pagination.totalItems)}</strong> of <strong>{pagination.totalItems}</strong>
+                  </Typography>
+                </Box>
+                
+                <Pagination
+                  count={pagination.totalPages}
+                  page={filters.page}
+                  onChange={(event, value) => handleFilterChange('page', value)}
+                  shape="rounded"
+                  showFirstButton
+                  showLastButton
+                  size={isMobile ? "small" : "medium"}
+                  sx={{
+                    '& .MuiPaginationItem-root': {
+                      borderRadius: 2,
+                      '&:hover': {
+                        background: '#667eea20'
+                      }
+                    },
+                    '& .Mui-selected': {
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      color: 'white',
+                      fontWeight: 'bold',
+                      '&:hover': {
+                        background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)'
+                      }
+                    }
+                  }}
+                />
+              </Box>
+            </>
+          ) : (
+            <Box textAlign="center" py={8}>
+              <Box sx={{
+                width: { xs: 80, md: 120 },
+                height: { xs: 80, md: 120 },
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mx: 'auto',
+                mb: 3
+              }}>
+                <PeopleIcon sx={{ fontSize: { xs: 32, md: 48 }, color: '#94a3b8' }} />
+              </Box>
+              <Typography variant="h6" color="#64748b" fontWeight="bold" gutterBottom>
+                No Clients Found
+              </Typography>
+              <Typography variant="body2" color="#94a3b8" sx={{ maxWidth: 400, mx: 'auto', px: 2 }} gutterBottom>
+                {services.length === 0 
+                  ? 'Add services first to create clients' 
+                  : 'Add your first client to start managing your portfolio'
+                }
+              </Typography>
+              <Button 
+                variant="contained" 
+                startIcon={services.length === 0 ? <WorkIcon /> : <AddIcon />}
+                onClick={() => services.length === 0 ? setServicesModal(true) : setAddClientModal(true)}
+                sx={{ 
+                  mt: 3,
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  borderRadius: 3,
+                  px: 4,
+                  py: 1.5,
+                  fontWeight: 'bold',
+                  boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
+                    boxShadow: '0 6px 16px rgba(102, 126, 234, 0.4)',
+                  }
+                }}
+              >
+                {services.length === 0 ? 'Add Services First' : 'Create First Client'}
+              </Button>
+            </Box>
+          )}
+        </CardContent>
+      </Card>
 
-</Grid>
       {/* Add Client Modal */}
       <AddClientModal
         open={addClientModal}
@@ -2922,7 +2691,7 @@ const ClientManagement = () => {
         </DialogActions>
       </Dialog>
 
-      {/* View Client Dialog - FIXED VERSION */}
+      {/* View Client Dialog */}
       <Dialog 
         open={viewDialog.open} 
         onClose={() => setViewDialog({ open: false, client: null })}
@@ -2988,13 +2757,11 @@ const ClientManagement = () => {
                 </Grid>
               </Box>
 
-
-
-              {/* Project Managers with IDs - FIXED */}
+              {/* Project Managers */}
               <Box>
                 <Typography variant="h6" fontWeight={600} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <PeopleIcon />
-                  Project Managers (with IDs)
+                  Project Managers
                 </Typography>
                 <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
                   These managers will appear in task assignment dropdowns
@@ -3053,21 +2820,6 @@ const ClientManagement = () => {
                 </Box>
               )}
 
-              {/* Description */}
-              {viewDialog.client.description && (
-                <Box>
-                  <Typography variant="h6" fontWeight={600} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <FiInfo />
-                    Description
-                  </Typography>
-                  <Paper sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
-                    <Typography variant="body1">
-                      {viewDialog.client.description}
-                    </Typography>
-                  </Paper>
-                </Box>
-              )}
-
               {/* Additional Information */}
               <Box>
                 <Typography variant="h6" fontWeight={600} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -3085,6 +2837,12 @@ const ClientManagement = () => {
                     <Grid item xs={12} sm={6}>
                       <Typography variant="body2" color="textSecondary">Address</Typography>
                       <Typography variant="body1" fontWeight={600}>{viewDialog.client.address}</Typography>
+                    </Grid>
+                  )}
+                  {viewDialog.client.description && (
+                    <Grid item xs={12}>
+                      <Typography variant="body2" color="textSecondary">Description</Typography>
+                      <Typography variant="body1" fontWeight={600}>{viewDialog.client.description}</Typography>
                     </Grid>
                   )}
                   {viewDialog.client.notes && (
@@ -3178,13 +2936,17 @@ const ClientManagement = () => {
                   <InputLabel>Project Managers *</InputLabel>
                   <Select
                     multiple
-                    value={editDialog.client.projectManagers.map(pm => pm.name)}
+                    value={editDialog.client.projectManagers.map(pm => pm._id || pm.id)}
                     onChange={(e) => {
-                      const selectedNames = e.target.value;
-                      const selectedManagers = selectedNames.map(name => {
-                        const existingPM = projectManagers.find(pm => pm.name === name);
-                        return existingPM || { name, id: `temp-${Date.now()}` };
-                      });
+                      const selectedIds = e.target.value;
+                      const selectedManagers = projectManagers.filter(pm => 
+                        selectedIds.includes(pm._id)
+                      ).map(pm => ({
+                        _id: pm._id,
+                        name: pm.name,
+                        email: pm.email,
+                        role: pm.role
+                      }));
                       
                       setEditDialog({
                         ...editDialog,
@@ -3192,11 +2954,16 @@ const ClientManagement = () => {
                       });
                     }}
                     input={<OutlinedInput label="Project Managers *" />}
-                    renderValue={(selected) => selected.join(', ')}
+                    renderValue={(selected) => {
+                      const selectedManagers = projectManagers.filter(pm => 
+                        selected.includes(pm._id)
+                      );
+                      return selectedManagers.map(pm => pm.name).join(', ');
+                    }}
                   >
                     {projectManagers.map((manager) => (
-                      <MenuItem key={manager._id} value={manager.name}>
-                        <Checkbox checked={editDialog.client.projectManagers.some(pm => pm.name === manager.name)} />
+                      <MenuItem key={manager._id} value={manager._id}>
+                        <Checkbox checked={editDialog.client.projectManagers.some(pm => pm._id === manager._id || pm.id === manager._id)} />
                         <Box display="flex" alignItems="center" sx={{ ml: 1, width: '100%' }}>
                           <Avatar 
                             sx={{ 
@@ -3214,9 +2981,6 @@ const ClientManagement = () => {
                               {manager.name}
                             </Typography>
                             <Typography variant="caption" color="textSecondary" noWrap display="block">
-                              {/* ID: {manager._id} */}
-                            </Typography>
-                            <Typography variant="caption" color="textSecondary" noWrap display="block">
                               {manager.role} • {manager.email}
                             </Typography>
                           </Box>
@@ -3227,24 +2991,31 @@ const ClientManagement = () => {
                 </FormControl>
               </Grid>
 
-              {/* Description */}
+              {/* Services */}
               <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Description"
-                  multiline
-                  rows={3}
-                  value={editDialog.client.description || ''}
-                  onChange={(e) => setEditDialog({
-                    ...editDialog,
-                    client: { ...editDialog.client, description: e.target.value }
-                  })}
-                  placeholder="Enter client description..."
-                  helperText="Brief description about the client and project"
-                />
+                <FormControl fullWidth>
+                  <InputLabel>Services</InputLabel>
+                  <Select
+                    multiple
+                    value={editDialog.client.services || []}
+                    onChange={(e) => setEditDialog({
+                      ...editDialog,
+                      client: { ...editDialog.client, services: e.target.value }
+                    })}
+                    input={<OutlinedInput label="Services" />}
+                    renderValue={(selected) => selected.join(', ')}
+                  >
+                    {services.map((service) => (
+                      <MenuItem key={service._id} value={service.servicename}>
+                        <Checkbox checked={(editDialog.client.services || []).includes(service.servicename)} />
+                        <ListItemText primary={service.servicename} />
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               </Grid>
 
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={12}>
                 <TextField
                   fullWidth
                   label="Progress"
@@ -3282,7 +3053,7 @@ const ClientManagement = () => {
                 />
               </Grid>
 
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={12}>
                 <TextField
                   fullWidth
                   label="Address"
@@ -3295,26 +3066,18 @@ const ClientManagement = () => {
               </Grid>
 
               <Grid item xs={12}>
-                <FormControl fullWidth>
-                  <InputLabel>Services</InputLabel>
-                  <Select
-                    multiple
-                    value={editDialog.client.services || []}
-                    onChange={(e) => setEditDialog({
-                      ...editDialog,
-                      client: { ...editDialog.client, services: e.target.value }
-                    })}
-                    input={<OutlinedInput label="Services" />}
-                    renderValue={(selected) => selected.join(', ')}
-                  >
-                    {services.map((service) => (
-                      <MenuItem key={service._id} value={service.servicename}>
-                        <Checkbox checked={(editDialog.client.services || []).includes(service.servicename)} />
-                        <ListItemText primary={service.servicename} />
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+                <TextField
+                  fullWidth
+                  label="Description"
+                  multiline
+                  rows={3}
+                  value={editDialog.client.description || ''}
+                  onChange={(e) => setEditDialog({
+                    ...editDialog,
+                    client: { ...editDialog.client, description: e.target.value }
+                  })}
+                  placeholder="Enter client description..."
+                />
               </Grid>
 
               <Grid item xs={12}>

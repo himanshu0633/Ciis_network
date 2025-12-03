@@ -2926,11 +2926,7 @@ const UserCreateTask = () => {
               p: { xs: 2.5, sm: 3.5 },
               mb: 4,
               borderRadius: { xs: 3, sm: 4 },
-<<<<<<< HEAD
-              background: `linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.05) 100%)`,
-=======
               background: 'rgba(255, 255, 255, 0.95)',
->>>>>>> 1af64000f4e0759ba11d2ce60ec483ae06b8b147
               border: `1px solid rgba(102, 126, 234, 0.15)`,
               boxShadow: '0 8px 32px rgba(102, 126, 234, 0.08)',
               position: 'relative',
@@ -2973,11 +2969,7 @@ const UserCreateTask = () => {
                       width: 56,
                       height: 56,
                       borderRadius: 3,
-<<<<<<< HEAD
-                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-=======
                       background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
->>>>>>> 1af64000f4e0759ba11d2ce60ec483ae06b8b147
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -2988,11 +2980,7 @@ const UserCreateTask = () => {
                         position: 'absolute',
                         inset: -2,
                         borderRadius: 'inherit',
-<<<<<<< HEAD
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-=======
                         background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
->>>>>>> 1af64000f4e0759ba11d2ce60ec483ae06b8b147
                         opacity: 0.4,
                         filter: 'blur(4px)',
                         zIndex: -1

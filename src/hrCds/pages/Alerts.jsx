@@ -1135,7 +1135,7 @@ const Alerts = () => {
                               fontSize: '0.875rem'
                             }}
                           >
-                            {(user.name || user.email).charAt(0).toUpperCase()}
+                            
                           </Avatar>
                           <Box sx={{ flex: 1 }}>
                             <Typography variant="body2" fontWeight={500}>
