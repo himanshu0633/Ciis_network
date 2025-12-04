@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from '../../utils/axiosConfig';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { useNavigate } from "react-router-dom";
+
 import {
   FiClock, FiCalendar, FiTrendingUp, FiAward,
   FiChevronLeft, FiChevronRight, FiPlay, FiSquare, FiRefreshCw,
@@ -688,6 +690,8 @@ const UserDashboard = () => {
     return maxCount > 0 ? (count / maxCount) * 100 : 0;
   };
 
+  const navigate = useNavigate();
+
   return (
     <div className="dashboard-container">
       <ToastContainer 
@@ -708,7 +712,7 @@ const UserDashboard = () => {
           <div className="user-info-section">
             <div className="user-avatar">
               {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
-            </div>
+            </div>     
             <div className="user-details">
               <h1 className="user-name">{user?.name || 'Loading...'}</h1>
               <div className="user-meta">
@@ -977,51 +981,68 @@ const UserDashboard = () => {
 
 
         <div className="stats-grid-enhanced">
-            <div className="stat-card-enhanced present">
-              <div className="stat-icon-container">
-                <MdWork size={20} />
-              </div>
-              <div className="stat-content">
-                <div className="stat-value">{monthlyPresentCount}</div>
-                <div className="stat-label">Days Present</div>
-                <div className="stat-trend">This Month</div>
-              </div>
-            </div>
-            
-            <div className="stat-card-enhanced halfday">
-              <div className="stat-icon-container">
-                <MdOutlineCrop54 size={24} />
-              </div>
-              <div className="stat-content">
-                <div className="stat-value">{halfDayDates.length}</div>
-                <div className="stat-label">Half Days</div>
-                <div className="stat-trend">This Month</div>
-              </div>
-            </div>
-            
-            <div className="stat-card-enhanced leave">
-              <div className="stat-icon-container">
-                <MdBeachAccess size={24} />
-              </div>
-              <div className="stat-content">
-                <div className="stat-value">{leaveDates.length} </div>
-                <div className="stat-label">Leaves Taken</div>
-                <div className="stat-trend">Approved</div>
-              </div>
-            </div>
-            
-            <div className="stat-card-enhanced absent">
-              <div className="stat-icon-container">
-                <MdSick size={24} />
-              </div>
-              <div className="stat-content">
-                <div className="stat-value">{absentDates.length}</div>
-                <div className="stat-label">Absent Days</div>
-                <div className="stat-trend">This Month</div>
-              </div>
-            </div>
+        <div
+          className="stat-card-enhanced present"
+          onClick={() => navigate("/cds/attendance")}
+          style={{ cursor: "pointer" }}
+        >
+          <div className="stat-icon-container">
+            <MdWork size={20} />
           </div>
-    </div>
+          <div className="stat-content">
+            <div className="stat-value">{monthlyPresentCount}</div>
+            <div className="stat-label">Days Present</div>
+            <div className="stat-trend">This Month</div>
+          </div>
+        </div>
+
+        <div
+          className="stat-card-enhanced halfday"
+          onClick={() => navigate("/cds/attendance")}
+          style={{ cursor: "pointer" }}
+        >
+          <div className="stat-icon-container">
+            <MdOutlineCrop54 size={24} />
+          </div>
+          <div className="stat-content">
+            <div className="stat-value">{halfDayDates.length}</div>
+            <div className="stat-label">Half Days</div>
+            <div className="stat-trend">This Month</div>
+          </div>
+        </div>
+
+        <div
+          className="stat-card-enhanced leave"
+          onClick={() => navigate("/cds/attendance")}
+          style={{ cursor: "pointer" }}
+        >
+          <div className="stat-icon-container">
+            <MdBeachAccess size={24} />
+          </div>
+          <div className="stat-content">
+            <div className="stat-value">{leaveDates.length}</div>
+            <div className="stat-label">Leaves Taken</div>
+            <div className="stat-trend">Approved</div>
+          </div>
+        </div>
+
+        <div
+          className="stat-card-enhanced absent"
+          onClick={() => navigate("/cds/attendance")} 
+          style={{ cursor: "pointer" }}
+        >
+          <div className="stat-icon-container">
+            <MdSick size={24} />
+          </div>
+          <div className="stat-content">
+            <div className="stat-value">{absentDates.length}</div>
+            <div className="stat-label">Absent Days</div>
+            <div className="stat-trend">This Month</div>
+          </div>
+        </div>
+      </div>
+
+    </div>  
   );
 };
 
