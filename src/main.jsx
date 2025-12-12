@@ -4,21 +4,21 @@ import { BrowserRouter } from 'react-router-dom';
 import './index.css';
 import App from './App.jsx';
 
-// ✅ Contexts
+// MUI v4 FIX: Required for stable classnames in production
+import { StylesProvider } from '@material-ui/core/styles';
+import generateClassName from './utils/generateClassName';
+
+// Contexts
 import { AuthProvider } from './context/AuthContext';
-// import { AssetsProvider } from './hrCds/context/AssetsContext.jsx';
-// import { LeavesProvider } from './hrCds/context/LeavesContext.jsx';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <AuthProvider>
-      {/* <LeavesProvider> */}
-        {/* <AssetsProvider> */}
-          <BrowserRouter>
-            <App />
-          </BrowserRouter>
-        {/* </AssetsProvider> */}
-      {/* </LeavesProvider> */}
-    </AuthProvider>
+    <StylesProvider generateClassName={generateClassName}>
+      <AuthProvider>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </AuthProvider>
+    </StylesProvider>
   </StrictMode>
 );

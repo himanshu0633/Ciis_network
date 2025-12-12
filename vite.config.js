@@ -4,15 +4,31 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(),
-        tailwindcss()
-
+  plugins: [
+    react(),
+    tailwindcss(),
   ],
+
+  // Fix for Material-UI v4 + Vite compatibility
+  optimizeDeps: {
+    include: [
+      "@material-ui/core",
+      "@material-ui/styles",
+      "@material-ui/icons",
+      "@material-ui/utils"
+    ]
+  },
+
+  build: {
+    commonjsOptions: {
+      include: [/node_modules/]
+    }
+  },
+
   server: {
     proxy: {
       '/api': {
         target: 'http://localhost:3000',
-        // target: 'http://147.93.106.84:6000',
         changeOrigin: true,
         secure: false,
       }
