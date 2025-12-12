@@ -561,90 +561,73 @@ const MyLeaves = () => {
             )}
           </GlassCard>
 
-          {/* Enhanced Stats Cards */}
-          <Grid container spacing={{ xs: 2, sm: 3, md: 4 }} sx={{ mb: { xs: 3, sm: 4, md: 5 } }}>
-            {[
-              { 
-                key: 'total', 
-                label: 'Total Leaves', 
-                value: stats.total, 
-                icon: FiCalendar, 
-                color: 'primary',
-                filter: 'ALL'
-              },
-              { 
-                key: 'approved', 
-                label: 'Approved', 
-                value: stats.approved, 
-                icon: FiCheckCircle, 
-                color: 'success',
-                filter: 'Approved'
-              },
-              { 
-                key: 'pending', 
-                label: 'Pending', 
-                value: stats.pending, 
-                icon: FiClock, 
-                color: 'warning',
-                filter: 'Pending'
-              },
-              { 
-                key: 'rejected', 
-                label: 'Rejected', 
-                value: stats.rejected, 
-                icon: FiXCircle, 
-                color: 'error',
-                filter: 'Rejected'
-              }
-            ].map((stat) => (
-              <Grid item xs={6} sm={6} md={3} key={stat.key}>
-                <StatCard 
-                  color={stat.color}
-                  active={statusFilter === stat.filter}
-                  onClick={() => setStatusFilter(
-                    statusFilter === stat.filter ? 'ALL' : stat.filter
-                  )}
-                >
-                  <CardContent sx={{ p: { xs: 2.5, sm: 3 } }}>
-                    <Stack direction="row" alignItems="center" spacing={{ xs: 2, sm: 2.5 }}>
-                      <Avatar sx={{ 
-                        bgcolor: `${theme.palette[stat.color].main}15`, 
-                        color: theme.palette[stat.color].main,
-                        borderRadius: '16px',
-                        width: { xs: 50, sm: 60 },
-                        height: { xs: 50, sm: 60 },
-                        boxShadow: `0 8px 25px ${alpha(theme.palette[stat.color].main, 0.3)}`
-                      }}>
-                        <stat.icon size={isSmallMobile ? 22 : 26} />
-                      </Avatar>
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography 
-                          variant={isSmallMobile ? "body2" : "body1"}
-                          color="text.secondary" 
-                          sx={{ 
-                            opacity: 0.8,
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            fontWeight: 600
-                          }}
-                        >
-                          {stat.label}
-                        </Typography>
-                        <Typography 
-                          variant={isSmallMobile ? "h4" : "h3"}
-                          fontWeight={900}
-                          sx={{ lineHeight: 1 }}
-                        >
-                          {stat.value}
-                        </Typography>
-                      </Box>
-                    </Stack>
-                  </CardContent>
-                </StatCard>
-              </Grid>
-            ))}
-          </Grid>
+       <Grid 
+  container 
+  spacing={{ xs: 1.5, sm: 2, md: 3 }} 
+  sx={{ mb: { xs: 2.5, sm: 3, md: 4 } }}
+>
+  {[
+    { key: 'total', label: 'Total Leaves', value: stats.total, icon: FiCalendar, color: 'primary', filter: 'ALL' },
+    { key: 'approved', label: 'Approved', value: stats.approved, icon: FiCheckCircle, color: 'success', filter: 'Approved' },
+    { key: 'pending', label: 'Pending', value: stats.pending, icon: FiClock, color: 'warning', filter: 'Pending' },
+    { key: 'rejected', label: 'Rejected', value: stats.rejected, icon: FiXCircle, color: 'error', filter: 'Rejected' }
+  ].map((stat) => (
+    <Grid item xs={6} sm={6} md={3} key={stat.key}>
+      <StatCard 
+        color={stat.color}
+        active={statusFilter === stat.filter}
+        onClick={() => setStatusFilter(
+          statusFilter === stat.filter ? 'ALL' : stat.filter
+        )}
+      >
+        <CardContent sx={{ p: { xs: 1.8, sm: 2.2 } }}>
+          <Stack 
+            direction="row" 
+            alignItems="center" 
+            spacing={{ xs: 1.6, sm: 2 }}
+          >
+            <Avatar
+              sx={{
+                bgcolor: `${theme.palette[stat.color].main}15`,
+                color: theme.palette[stat.color].main,
+                borderRadius: '14px',
+                width: { xs: 40, sm: 48 },
+                height: { xs: 40, sm: 48 },
+                boxShadow: `0 6px 18px ${alpha(theme.palette[stat.color].main, 0.25)}`
+              }}
+            >
+              <stat.icon size={isSmallMobile ? 18 : 20} />
+            </Avatar>
+
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  opacity: 0.75,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  fontWeight: 600,
+                  fontSize: { xs: "0.70rem", sm: "0.78rem" }
+                }}
+              >
+                {stat.label}
+              </Typography>
+
+              <Typography
+                variant="h5"
+                fontWeight={800}
+                sx={{ lineHeight: 1, fontSize: { xs: "1.4rem", sm: "1.7rem" } }}
+              >
+                {stat.value}
+              </Typography>
+            </Box>
+          </Stack>
+        </CardContent>
+      </StatCard>
+    </Grid>
+  ))}
+</Grid>
 
           {/* Enhanced Tabs Section */}
           <GlassCard>
