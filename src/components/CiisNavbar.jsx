@@ -14,7 +14,7 @@ const CiisNavbar = () => {
 
         <div className="navbar-brand">
           <Link to="/" className="logo">
-            <img src="/Logo.png" alt="Brand Logo" className="logo-img" />
+            <img src="/logoo.png" alt="Brand Logo" className="logo-img" />
           </Link>
         </div>
 
