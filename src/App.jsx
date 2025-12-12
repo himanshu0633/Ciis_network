@@ -24,8 +24,7 @@ import Profile from './hrCds/pages/Profile';
 import UserDashboard from './hrCds/pages/UserDashboard';
 import AdminTaskCreate from './hrCds/pages/hr/AdminTaskCreate';
 import AdminMeetingPage from './hrCds/pages/hr/AdminMeetingPage';
-import Landing from './page/Landing';
-//hr
+
 import EmppDetail from './hrCds/pages/hr/EmppDetail';
 import EmppLeave from './hrCds/pages/hr/EmppLeaves';
 import EmppAsset from './hrCds/pages/hr/EmppAssets';
@@ -35,6 +34,12 @@ import EmpAllTask from './hrCds/pages/hr/EmpAllTask';
 import AdminProject from './hrCds/pages/AdminProject'
 import EmployeeProject from './hrCds/pages/EmployeeProject'
 import Client from './hrCds/pages/hr/Client';
+import Home from "./Pages/Home";
+import AboutUs from "./Pages/AboutUs";
+import ContactUs from "./Pages/ContactUs";
+
+
+
 function App() {
   const user = JSON.parse(localStorage.getItem('user'));
   const userRole = user?.role;
@@ -42,7 +47,9 @@ function App() {
   return (
     <>
       <Routes>
-        <Route index element={<Landing />} />
+        <Route path="/" element={<Home />} />
+        <Route path="about" element={<AboutUs />} />
+        <Route path="contact" element={<ContactUs />} />
         <Route path="login" element={<Login />} /> 
         <Route
           path="/cds/admin/*"
@@ -92,6 +99,7 @@ function App() {
         </Route>
         {/* Catch-all route */}
         <Route path="*" element={<Navigate to="/" replace />} />
+
       </Routes>
 
       <ToastContainer position="top-right" autoClose={3000} />
