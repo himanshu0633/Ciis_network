@@ -513,42 +513,36 @@ const exportToPDF = async () => {
         <div className="header-actions">
  
           {/* Export Button with Dropdown */}
-          <div className="export-container" ref={exportMenuRef}>
-            <button 
-              className="action-button export-button"
-              onClick={() => setExportMenuOpen(!exportMenuOpen)}
-              title="Export Report"
-            >
-         
-              <span style={{ marginLeft: '-40px' }}>Export</span>
-            </button>
-            
-            {exportMenuOpen && (
-              <div className="export-dropdown">
-                <button 
-                  className="export-option"
-                  onClick={exportToPDF}
-                >
-                  <FiFileText size={16} />
-                  <span>Export as PDF</span>
-                </button>
-                <button 
-                  className="export-option"
-                  onClick={exportToImage}
-                >
-                  <FiImage size={16} />
-                  <span>Export as Image (JPG)</span>
-                </button>
-                <button 
-                  className="export-option"
-                  onClick={exportToCSV}
-                >
-                  <FiDownload size={16} />
-                  <span>Export as CSV</span>
-                </button>
-              </div>
-            )}
-          </div>
+       <div className="export-container" ref={exportMenuRef}>
+  <button
+    className="export-trigger"
+    onClick={() => setExportMenuOpen(!exportMenuOpen)}
+    title="Export Report"
+  >
+    <FiDownload size={16} />
+    <span>Export</span>
+  </button>
+
+  {exportMenuOpen && (
+    <div className="export-dropdown">
+      <button className="export-option" onClick={exportToPDF}>
+        <FiFileText size={16} />
+        <span>Export as PDF</span>
+      </button>
+
+      <button className="export-option" onClick={exportToImage}>
+        <FiImage size={16} />
+        <span>Export as Image (JPG)</span>
+      </button>
+
+      <button className="export-option" onClick={exportToCSV}>
+        <FiDownload size={16} />
+        <span>Export as CSV</span>
+      </button>
+    </div>
+  )}
+</div>
+
           
           <div className="date-chip">
             <FiCalendar size={16} />

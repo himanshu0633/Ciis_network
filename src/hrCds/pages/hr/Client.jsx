@@ -1647,14 +1647,7 @@ const ClientManagement = () => {
     console.log(`Tasks updated for ${serviceName}:`, tasks);
   };
 
-  if (loading) {
-    return (
-      <div className="loading-spinner">
-        <div className="spinner"></div>
-        <p>Loading client data...</p>
-      </div>
-    );
-  }
+
 
   return (
     <div className="client-management">
