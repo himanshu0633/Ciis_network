@@ -37,8 +37,8 @@ import Client from './hrCds/pages/hr/Client';
 import Home from "./Pages/Home";
 import AboutUs from "./Pages/AboutUs";
 import ContactUs from "./Pages/ContactUs";
-
-
+import ClientMeeting from "./hrCds/pages/ClientMeeting";
+import Clock from './hrCds/pages/Clock';
 
 function App() {
   const user = JSON.parse(localStorage.getItem('user'));
@@ -74,6 +74,8 @@ function App() {
           <Route path="adminp" element={<AdminProject />} />
           <Route path="emp-all-task" element={<EmpAllTask />} />
           <Route path="emp-client" element={<Client />} />
+      
+       
         </Route>
         <Route
           path="/cds/*"
@@ -95,7 +97,8 @@ function App() {
           <Route path="project" element={<EmployeeProject />} />
           <Route path="task-management" element={<TaskManagement />} />
           <Route path="employee-meeting" element={<EmployeeMeetingPage />} />
-
+             <Route path="client-meeting" element={<ClientMeeting />} />
+    <Route path="clock" element={<Clock />} />
         </Route>
         {/* Catch-all route */}
         <Route path="*" element={<Navigate to="/" replace />} />

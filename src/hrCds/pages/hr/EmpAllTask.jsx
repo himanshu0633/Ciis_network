@@ -52,7 +52,35 @@ const TaskDetails = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeStatusFilters, setActiveStatusFilters] = useState(['all']);
   const [showStatusFilters, setShowStatusFilters] = useState(true);
-  
+  const [dateFilter, setDateFilter] = useState("all"); // all | today | tomorrow | week | overdue
+const [priorityFilter, setPriorityFilter] = useState("all"); // all | low | medium | high
+
+const [specificDate, setSpecificDate] = useState(""); 
+// format: YYYY-MM-DD
+const [fromDate, setFromDate] = useState("");
+const [toDate, setToDate] = useState("");
+
+const today = new Date();
+
+const isSameDay = (d1, d2) => {
+  const a = new Date(d1);
+  const b = new Date(d2);
+  return (
+    a.getDate() === b.getDate() &&
+    a.getMonth() === b.getMonth() &&
+    a.getFullYear() === b.getFullYear()
+  );
+};
+
+const isThisWeek = (date) => {
+  const now = new Date();
+  const start = new Date(now);
+  start.setDate(now.getDate() - now.getDay());
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  return new Date(date) >= start && new Date(date) <= end;
+};
+
   // Overall Statistics
   const [overallStats, setOverallStats] = useState({
     total: 0,
@@ -170,28 +198,121 @@ const TaskDetails = () => {
   }, [overallStats]);
 
   // Filter tasks based on active status filters
-  const filteredTasks = useMemo(() => {
-    if (!Array.isArray(tasks)) return [];
-    
-    let filtered = tasks;
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(task => 
-        (task.title && task.title.toLowerCase().includes(query)) ||
-        (task.description && task.description.toLowerCase().includes(query)) ||
-        (task.serialNo && task.serialNo.toString().includes(query))
-      );
-    }
-    
-    if (activeStatusFilters.includes('all')) {
-      return filtered;
-    }
-    
-    return filtered.filter(task => {
+const filteredTasks = useMemo(() => {
+  if (!Array.isArray(tasks)) return [];
+
+  let filtered = [...tasks];
+  const now = new Date();
+
+  /* 🔍 SEARCH FILTER */
+  if (searchQuery.trim()) {
+    const query = searchQuery.toLowerCase();
+    filtered = filtered.filter(task =>
+      task.title?.toLowerCase().includes(query) ||
+      task.description?.toLowerCase().includes(query) ||
+      task.serialNo?.toString().includes(query)
+    );
+  }
+
+  /* 📌 STATUS FILTER */
+  if (!activeStatusFilters.includes("all")) {
+    filtered = filtered.filter(task => {
       const status = task.userStatus || task.status || task.overallStatus;
       return activeStatusFilters.includes(status);
     });
-  }, [tasks, activeStatusFilters, searchQuery]);
+  }
+
+  /* 📅 DATE FILTER (DATE RANGE > QUICK FILTERS) */
+  filtered = filtered.filter(task => {
+    const rawDate = task.dueDateTime || task.createdAt;
+    if (!rawDate) return false;
+
+    const taskTime = new Date(rawDate).setHours(0, 0, 0, 0);
+
+    // 🔹 DATE RANGE FILTER (From – To)
+    if (fromDate || toDate) {
+      const fromTime = fromDate
+        ? new Date(fromDate).setHours(0, 0, 0, 0)
+        : null;
+
+      const toTime = toDate
+        ? new Date(toDate).setHours(23, 59, 59, 999)
+        : null;
+
+      if (fromTime && taskTime < fromTime) return false;
+      if (toTime && taskTime > toTime) return false;
+
+      return true;
+    }
+
+    // 🔹 QUICK DATE FILTERS
+    if (dateFilter === "today") {
+      return isSameDay(rawDate, now);
+    }
+
+    if (dateFilter === "tomorrow") {
+      const tomorrow = new Date(now);
+      tomorrow.setDate(now.getDate() + 1);
+      return isSameDay(rawDate, tomorrow);
+    }
+
+    if (dateFilter === "week") {
+      return isThisWeek(rawDate);
+    }
+
+    if (dateFilter === "overdue") {
+      return new Date(rawDate) < now;
+    }
+
+    return true;
+  });
+
+  /* 🚦 PRIORITY FILTER */
+  if (priorityFilter !== "all") {
+    filtered = filtered.filter(task => task.priority === priorityFilter);
+  }
+
+  /* ⭐ TODAY TASKS ALWAYS ON TOP */
+  filtered.sort((a, b) => {
+    const aDate = a.dueDateTime || a.createdAt;
+    const bDate = b.dueDateTime || b.createdAt;
+
+    const aToday = aDate && isSameDay(aDate, now);
+    const bToday = bDate && isSameDay(bDate, now);
+
+    if (aToday && !bToday) return -1;
+    if (!aToday && bToday) return 1;
+
+    return new Date(b.createdAt) - new Date(a.createdAt);
+  });
+
+  return filtered;
+}, [
+  tasks,
+  searchQuery,
+  activeStatusFilters,
+  dateFilter,
+  fromDate,
+  toDate,
+  priorityFilter
+]);
+
+useEffect(() => {
+  if (fromDate || toDate) setDateFilter("all");
+}, [fromDate, toDate]);
+``
+
+const isSameSelectedDate = (taskDate, selectedDate) => {
+  if (!selectedDate) return true;
+  const task = new Date(taskDate);
+  const selected = new Date(selectedDate);
+
+  return (
+    task.getDate() === selected.getDate() &&
+    task.getMonth() === selected.getMonth() &&
+    task.getFullYear() === selected.getFullYear()
+  );
+};
 
   // Role from localStorage
   useEffect(() => {
@@ -950,6 +1071,65 @@ const TaskDetails = () => {
                   )}
                 </div>
               </div>
+<div className="emp-all-task-extra-filters">
+  <select value={dateFilter} onChange={e => setDateFilter(e.target.value)}>
+    <option value="all">All Dates</option>
+    <option value="today">Today</option>
+    <option value="tomorrow">Tomorrow</option>
+    <option value="week">This Week</option>
+    <option value="overdue">Overdue</option>
+  </select>
+
+  <select value={priorityFilter} onChange={e => setPriorityFilter(e.target.value)}>
+    <option value="all">All Priority</option>
+    <option value="low">Low</option>
+    <option value="medium">Medium</option>
+    <option value="high">High</option>
+  </select>
+<div className="emp-all-task-date-range">
+  <input
+    type="date"
+    value={fromDate}
+    onChange={(e) => setFromDate(e.target.value)}
+    className="emp-all-task-date-picker"
+    placeholder="From"
+  />
+
+  <span className="emp-all-task-date-separator">to</span>
+
+  <input
+    type="date"
+    value={toDate}
+    onChange={(e) => setToDate(e.target.value)}
+    className="emp-all-task-date-picker"
+    placeholder="To"
+  />
+
+  {(fromDate || toDate) && (
+    <button
+      className="emp-all-task-clear-date"
+      onClick={() => {
+        setFromDate("");
+        setToDate("");
+      }}
+    >
+      Clear
+    </button>
+  )}
+</div>
+
+
+{specificDate && (
+  <button
+    className="emp-all-task-clear-date"
+    onClick={() => setSpecificDate("")}
+  >
+    Clear Date
+  </button>
+)}
+
+</div>
+
 
               {/* Loading State */}
               {loading ? (
@@ -975,11 +1155,14 @@ const TaskDetails = () => {
                     const statusOption = STATUS_OPTIONS.find(s => s.value === status) || STATUS_OPTIONS[0];
                     
                     return (
-                      <div 
-                        key={task._id} 
-                        className="emp-all-task-task-item"
-                        style={{ borderLeftColor: statusOption.color }}
-                      >
+                   <div 
+  key={task._id}
+  className={`emp-all-task-task-item ${
+    isSameDay(task.dueDateTime || task.createdAt, today) ? "today-task" : ""
+  }`}
+  style={{ borderLeftColor: statusOption.color }}
+>
+
                         <div className="emp-all-task-task-header">
                           <div className="emp-all-task-task-title">
                             {task.title || 'No Title'}

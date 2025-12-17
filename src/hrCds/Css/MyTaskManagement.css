@@ -1,0 +1,1836 @@
+/* MyTaskManagement.css */
+
+/* Base Styles */
+.MyTaskManagement-container {
+  padding: 1rem;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+}
+
+/* Animations */
+@keyframes MyTaskManagement-fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes MyTaskManagement-slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes MyTaskManagement-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Loading State */
+.MyTaskManagement-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  gap: 1rem;
+}
+
+.MyTaskManagement-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: MyTaskManagement-spin 1s linear infinite;
+}
+
+.MyTaskManagement-loading h3 {
+  color: white;
+  font-weight: 600;
+}
+
+/* Auth Error */
+.MyTaskManagement-auth-error {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 50vh;
+  padding: 2rem;
+}
+
+.MyTaskManagement-error-card {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  text-align: center;
+  max-width: 400px;
+  width: 100%;
+  animation: MyTaskManagement-slideUp 0.3s ease;
+}
+
+.MyTaskManagement-error-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.MyTaskManagement-error-card h3 {
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.MyTaskManagement-error-card p {
+  color: #666;
+  margin-bottom: 1.5rem;
+}
+
+.MyTaskManagement-login-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.MyTaskManagement-login-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+/* Header */
+.MyTaskManagement-header {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  animation: MyTaskManagement-slideUp 0.3s ease;
+}
+
+.MyTaskManagement-header-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .MyTaskManagement-header-content {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.MyTaskManagement-header-text h1 {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  font-size: 1.75rem;
+}
+
+.MyTaskManagement-header-text p {
+  color: #666;
+  font-size: 0.875rem;
+}
+
+.MyTaskManagement-header-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.MyTaskManagement-notifications-btn {
+  background: #f5f5f5;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.3s ease;
+  font-size: 1.25rem;
+}
+
+.MyTaskManagement-notifications-btn:hover {
+  background: #e5e5e5;
+}
+
+.MyTaskManagement-notification-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: #ff4757;
+  color: white;
+  font-size: 0.7rem;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+.MyTaskManagement-manage-groups-btn {
+  background: transparent;
+  border: 2px solid #667eea;
+  color: #667eea;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.875rem;
+}
+
+.MyTaskManagement-manage-groups-btn:hover {
+  background: rgba(102, 126, 234, 0.1);
+}
+
+.MyTaskManagement-create-task-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 0.5rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.875rem;
+}
+
+.MyTaskManagement-create-task-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+/* Stats Grid */
+.MyTaskManagement-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .MyTaskManagement-stats-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+.MyTaskManagement-stat-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  animation: MyTaskManagement-slideUp 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.MyTaskManagement-stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.MyTaskManagement-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+}
+
+.MyTaskManagement-stat-card.MyTaskManagement-primary::before {
+  background: #667eea;
+}
+
+.MyTaskManagement-stat-card.MyTaskManagement-warning::before {
+  background: #ffa502;
+}
+
+.MyTaskManagement-stat-card.MyTaskManagement-info::before {
+  background: #2ed573;
+}
+
+.MyTaskManagement-stat-card.MyTaskManagement-success::before {
+  background: #1e90ff;
+}
+
+.MyTaskManagement-stat-card.MyTaskManagement-error::before {
+  background: #ff4757;
+}
+
+.MyTaskManagement-stat-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.MyTaskManagement-stat-icon {
+  font-size: 1.5rem;
+}
+
+.MyTaskManagement-stat-details {
+  flex: 1;
+}
+
+.MyTaskManagement-stat-label {
+  color: #666;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.MyTaskManagement-stat-value {
+  color: #333;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+/* Tabs */
+.MyTaskManagement-tabs-container {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  animation: MyTaskManagement-slideUp 0.3s ease;
+}
+
+.MyTaskManagement-tabs-header {
+  display: flex;
+  border-bottom: 1px solid #e5e5e5;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+}
+
+.MyTaskManagement-tab {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: #666;
+  font-size: 0.875rem;
+}
+
+.MyTaskManagement-tab:hover {
+  background: rgba(102, 126, 234, 0.1);
+}
+
+.MyTaskManagement-tab.MyTaskManagement-active-tab {
+  color: #667eea;
+  position: relative;
+}
+
+.MyTaskManagement-tab.MyTaskManagement-active-tab::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.MyTaskManagement-tab-badge {
+  background: #667eea;
+  color: white;
+  font-size: 0.7rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 10px;
+  min-width: 20px;
+  text-align: center;
+}
+
+.MyTaskManagement-tab-content {
+  padding: 1.5rem;
+}
+
+/* Filter Section */
+.MyTaskManagement-filter-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+@media (min-width: 768px) {
+  .MyTaskManagement-filter-section {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.MyTaskManagement-filter-control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 200px;
+}
+
+.MyTaskManagement-filter-control label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.MyTaskManagement-filter-select {
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  background: white;
+  cursor: pointer;
+}
+
+.MyTaskManagement-results-count {
+  color: #666;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+/* Date Groups */
+.MyTaskManagement-date-group {
+  margin-bottom: 2rem;
+  animation: MyTaskManagement-fadeIn 0.3s ease;
+}
+
+.MyTaskManagement-date-header {
+  color: #333;
+  font-size: 1.125rem;
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  border-left: 4px solid #667eea;
+}
+
+/* Table */
+.MyTaskManagement-table-container {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid #e5e5e5;
+  background: white;
+}
+
+.MyTaskManagement-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 800px;
+}
+
+.MyTaskManagement-table th {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+  padding: 1rem;
+  text-align: left;
+  font-weight: 700;
+  color: #667eea;
+  font-size: 0.875rem;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.MyTaskManagement-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 0.875rem;
+}
+
+.MyTaskManagement-table-row {
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.MyTaskManagement-table-row:hover {
+  background: rgba(102, 126, 234, 0.05);
+  transform: translateX(4px);
+}
+
+.MyTaskManagement-table-row::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 70%;
+  border-radius: 0 2px 2px 0;
+}
+
+.MyTaskManagement-table-row.MyTaskManagement-status-pending::before {
+  background: #ffa502;
+}
+
+.MyTaskManagement-table-row.MyTaskManagement-status-in-progress::before {
+  background: #2ed573;
+}
+
+.MyTaskManagement-table-row.MyTaskManagement-status-completed::before {
+  background: #1e90ff;
+}
+
+.MyTaskManagement-table-row.MyTaskManagement-status-rejected::before {
+  background: #ff4757;
+}
+
+.MyTaskManagement-task-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.MyTaskManagement-task-title strong {
+  color: #333;
+  font-weight: 600;
+}
+
+.MyTaskManagement-recurring-icon {
+  color: #1e90ff;
+  font-size: 0.875rem;
+}
+
+.MyTaskManagement-task-description {
+  color: #666;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.MyTaskManagement-due-date {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #333;
+}
+
+.MyTaskManagement-due-date.MyTaskManagement-overdue {
+  color: #ff4757;
+}
+
+.MyTaskManagement-overdue-icon {
+  color: #ff4757;
+}
+
+/* Chips */
+.MyTaskManagement-priority-chip,
+.MyTaskManagement-status-chip {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.MyTaskManagement-priority-low {
+  background: rgba(46, 213, 115, 0.15);
+  color: #2ed573;
+  border: 1px solid rgba(46, 213, 115, 0.3);
+}
+
+.MyTaskManagement-priority-medium {
+  background: rgba(255, 165, 2, 0.15);
+  color: #ffa502;
+  border: 1px solid rgba(255, 165, 2, 0.3);
+}
+
+.MyTaskManagement-priority-high {
+  background: rgba(255, 71, 87, 0.15);
+  color: #ff4757;
+  border: 1px solid rgba(255, 71, 87, 0.3);
+}
+
+.MyTaskManagement-status-pending {
+  background: rgba(255, 165, 2, 0.15);
+  color: #ffa502;
+  border: 1px solid rgba(255, 165, 2, 0.3);
+}
+
+.MyTaskManagement-status-in-progress {
+  background: rgba(46, 213, 115, 0.15);
+  color: #2ed573;
+  border: 1px solid rgba(46, 213, 115, 0.3);
+}
+
+.MyTaskManagement-status-completed {
+  background: rgba(30, 144, 255, 0.15);
+  color: #1e90ff;
+  border: 1px solid rgba(30, 144, 255, 0.3);
+}
+
+.MyTaskManagement-status-rejected {
+  background: rgba(255, 71, 87, 0.15);
+  color: #ff4757;
+  border: 1px solid rgba(255, 71, 87, 0.3);
+}
+
+/* Assigned Users */
+.MyTaskManagement-assigned-users {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.MyTaskManagement-user-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.MyTaskManagement-user-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #667eea;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.MyTaskManagement-user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.MyTaskManagement-user-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.MyTaskManagement-more-users {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+/* Recurring Badge */
+.MyTaskManagement-recurring-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  background: rgba(30, 144, 255, 0.15);
+  color: #1e90ff;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid rgba(30, 144, 255, 0.3);
+}
+
+.MyTaskManagement-no-repeat,
+.MyTaskManagement-no-files {
+  color: #999;
+  font-size: 0.875rem;
+}
+
+/* Download Button */
+.MyTaskManagement-download-btn {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  color: #667eea;
+}
+
+.MyTaskManagement-download-btn:hover {
+  background: rgba(102, 126, 234, 0.1);
+  transform: scale(1.1);
+}
+
+/* Action Buttons */
+.MyTaskManagement-action-buttons {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.MyTaskManagement-action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+}
+
+.MyTaskManagement-action-btn.MyTaskManagement-info:hover {
+  background: rgba(30, 144, 255, 0.1);
+  color: #1e90ff;
+}
+
+.MyTaskManagement-action-btn.MyTaskManagement-primary:hover {
+  background: rgba(102, 126, 234, 0.1);
+  color: #667eea;
+}
+
+.MyTaskManagement-action-btn.MyTaskManagement-warning:hover {
+  background: rgba(255, 165, 2, 0.1);
+  color: #ffa502;
+}
+
+.MyTaskManagement-action-btn.MyTaskManagement-error:hover {
+  background: rgba(255, 71, 87, 0.1);
+  color: #ff4757;
+}
+
+/* Status Select */
+.MyTaskManagement-status-select {
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  background: white;
+  cursor: pointer;
+  min-width: 120px;
+}
+
+.MyTaskManagement-status-select.MyTaskManagement-disabled {
+  background: #f5f5f5;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Mobile Cards */
+.MyTaskManagement-mobile-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.MyTaskManagement-mobile-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.MyTaskManagement-mobile-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.MyTaskManagement-mobile-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+}
+
+.MyTaskManagement-mobile-card.MyTaskManagement-status-pending::before {
+  background: #ffa502;
+}
+
+.MyTaskManagement-mobile-card.MyTaskManagement-status-in-progress::before {
+  background: #2ed573;
+}
+
+.MyTaskManagement-mobile-card.MyTaskManagement-status-completed::before {
+  background: #1e90ff;
+}
+
+.MyTaskManagement-mobile-card.MyTaskManagement-status-rejected::before {
+  background: #ff4757;
+}
+
+.MyTaskManagement-mobile-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.MyTaskManagement-mobile-card-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.MyTaskManagement-mobile-card-title-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.MyTaskManagement-mobile-task-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.MyTaskManagement-mobile-task-title strong {
+  color: #333;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.MyTaskManagement-mobile-description {
+  color: #666;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.MyTaskManagement-recurring-info {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #1e90ff;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.MyTaskManagement-mobile-card-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.MyTaskManagement-mobile-due-date {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #333;
+  font-size: 0.875rem;
+}
+
+.MyTaskManagement-mobile-due-date.MyTaskManagement-overdue {
+  color: #ff4757;
+}
+
+.MyTaskManagement-mobile-assigned-users {
+  border-top: 1px solid #f0f0f0;
+  padding-top: 0.75rem;
+}
+
+.MyTaskManagement-assigned-users-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #666;
+  margin-bottom: 0.5rem;
+}
+
+.MyTaskManagement-mobile-users-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.MyTaskManagement-mobile-user-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.MyTaskManagement-mobile-user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.MyTaskManagement-mobile-user-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.MyTaskManagement-mobile-more-users {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.MyTaskManagement-mobile-files {
+  border-top: 1px solid #f0f0f0;
+  padding-top: 0.75rem;
+}
+
+.MyTaskManagement-files-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #666;
+  margin-bottom: 0.5rem;
+}
+
+.MyTaskManagement-mobile-files-list {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.MyTaskManagement-mobile-download-btn {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  color: #667eea;
+}
+
+.MyTaskManagement-mobile-download-btn:hover {
+  background: rgba(102, 126, 234, 0.1);
+}
+
+.MyTaskManagement-mobile-more-files {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.MyTaskManagement-mobile-card-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  border-top: 1px solid #f0f0f0;
+  padding-top: 0.75rem;
+}
+
+.MyTaskManagement-mobile-action-buttons {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.MyTaskManagement-mobile-status-select {
+  min-width: 100px;
+}
+
+/* No Tasks */
+.MyTaskManagement-no-tasks {
+  text-align: center;
+  padding: 3rem 1rem;
+}
+
+.MyTaskManagement-no-tasks-icon {
+  font-size: 3rem;
+  color: #ccc;
+  margin-bottom: 1rem;
+}
+
+.MyTaskManagement-no-tasks h3 {
+  color: #666;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.MyTaskManagement-no-tasks p {
+  color: #999;
+  font-size: 0.875rem;
+}
+
+/* Groups Management */
+.MyTaskManagement-groups-section {
+  animation: MyTaskManagement-slideUp 0.3s ease;
+}
+
+.MyTaskManagement-groups-header {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .MyTaskManagement-groups-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.MyTaskManagement-groups-header h2 {
+  color: #333;
+  font-weight: 700;
+}
+
+.MyTaskManagement-create-group-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 0.5rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.MyTaskManagement-create-group-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.MyTaskManagement-groups-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .MyTaskManagement-groups-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .MyTaskManagement-groups-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.MyTaskManagement-group-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.MyTaskManagement-group-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.MyTaskManagement-group-card-content {
+  padding: 1.5rem;
+}
+
+.MyTaskManagement-group-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.MyTaskManagement-group-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.MyTaskManagement-group-info h3 {
+  color: #333;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.MyTaskManagement-group-info p {
+  color: #666;
+  font-size: 0.875rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.MyTaskManagement-group-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.MyTaskManagement-group-action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+}
+
+.MyTaskManagement-group-action-btn.MyTaskManagement-edit:hover {
+  background: rgba(255, 165, 2, 0.1);
+  color: #ffa502;
+}
+
+.MyTaskManagement-group-action-btn.MyTaskManagement-delete:hover {
+  background: rgba(255, 71, 87, 0.1);
+  color: #ff4757;
+}
+
+.MyTaskManagement-group-divider {
+  height: 1px;
+  background: #f0f0f0;
+  margin: 1rem 0;
+}
+
+.MyTaskManagement-group-members {
+  margin-top: 1rem;
+}
+
+.MyTaskManagement-members-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #666;
+  margin-bottom: 0.5rem;
+}
+
+.MyTaskManagement-members-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.MyTaskManagement-member-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.MyTaskManagement-member-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #667eea;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.MyTaskManagement-member-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.MyTaskManagement-member-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.MyTaskManagement-member-role {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.MyTaskManagement-more-members {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.MyTaskManagement-no-groups {
+  text-align: center;
+  padding: 3rem 1rem;
+}
+
+.MyTaskManagement-no-groups-icon {
+  font-size: 3rem;
+  color: #ccc;
+  margin-bottom: 1rem;
+}
+
+.MyTaskManagement-no-groups h3 {
+  color: #666;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.MyTaskManagement-no-groups p {
+  color: #999;
+  font-size: 0.875rem;
+}
+
+/* Modal Overlay */
+.MyTaskManagement-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.MyTaskManagement-modal-overlay.MyTaskManagement-modal-open {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Modals */
+.MyTaskManagement-create-task-modal,
+.MyTaskManagement-group-modal,
+.MyTaskManagement-notifications-modal,
+.MyTaskManagement-remarks-modal,
+.MyTaskManagement-activity-modal,
+.MyTaskManagement-edit-task-modal,
+.MyTaskManagement-status-modal {
+  background: white;
+  border-radius: 12px;
+  max-width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: MyTaskManagement-slideUp 0.3s ease;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .MyTaskManagement-create-task-modal {
+    max-width: 700px;
+  }
+  
+  .MyTaskManagement-group-modal,
+  .MyTaskManagement-remarks-modal,
+  .MyTaskManagement-activity-modal,
+  .MyTaskManagement-edit-task-modal,
+  .MyTaskManagement-status-modal {
+    max-width: 500px;
+  }
+  
+  .MyTaskManagement-notifications-modal {
+    max-width: 400px;
+  }
+}
+
+/* Modal Headers */
+.MyTaskManagement-create-task-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 1.5rem;
+  border-radius: 12px 12px 0 0;
+}
+
+.MyTaskManagement-create-task-title h2 {
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.MyTaskManagement-create-task-title p {
+  opacity: 0.9;
+  font-size: 0.875rem;
+}
+
+.MyTaskManagement-group-modal-header,
+.MyTaskManagement-notifications-header,
+.MyTaskManagement-remarks-header,
+.MyTaskManagement-activity-header,
+.MyTaskManagement-edit-task-header,
+.MyTaskManagement-status-modal-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.MyTaskManagement-group-modal-header h3,
+.MyTaskManagement-notifications-header h3,
+.MyTaskManagement-remarks-header h3,
+.MyTaskManagement-activity-header h3,
+.MyTaskManagement-edit-task-header h3,
+.MyTaskManagement-status-modal-header h3 {
+  color: #333;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.MyTaskManagement-group-modal-header p,
+.MyTaskManagement-status-modal-header p {
+  color: #666;
+  font-size: 0.875rem;
+}
+
+/* Modal Content */
+.MyTaskManagement-create-task-content,
+.MyTaskManagement-group-modal-content,
+.MyTaskManagement-remarks-content,
+.MyTaskManagement-activity-content,
+.MyTaskManagement-edit-task-content,
+.MyTaskManagement-status-modal-content {
+  padding: 1.5rem;
+}
+
+.MyTaskManagement-notifications-list {
+  padding: 1rem;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+/* Sections */
+.MyTaskManagement-create-task-section {
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.MyTaskManagement-create-task-section:last-child {
+  margin-bottom: 0;
+  border-bottom: none;
+}
+
+.MyTaskManagement-create-task-section h3 {
+  color: #333;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.MyTaskManagement-group-form-section {
+  margin-bottom: 1.5rem;
+}
+
+.MyTaskManagement-group-form-section h4 {
+  color: #333;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+/* Form Elements */
+.MyTaskManagement-form-group {
+  margin-bottom: 1rem;
+}
+
+.MyTaskManagement-form-group label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.MyTaskManagement-form-input,
+.MyTaskManagement-form-textarea,
+.MyTaskManagement-form-select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  background: white;
+}
+
+.MyTaskManagement-form-input:focus,
+.MyTaskManagement-form-textarea:focus,
+.MyTaskManagement-form-select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.MyTaskManagement-form-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.MyTaskManagement-form-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.MyTaskManagement-form-group.MyTaskManagement-half {
+  flex: 1;
+}
+
+.MyTaskManagement-multi-select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  background: white;
+  min-height: 120px;
+}
+
+/* Upload Buttons */
+.MyTaskManagement-upload-buttons {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.MyTaskManagement-upload-btn {
+  background: white;
+  border: 2px dashed #ddd;
+  color: #666;
+  padding: 1rem;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex: 1;
+  min-width: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.MyTaskManagement-upload-btn:hover {
+  border-color: #667eea;
+  color: #667eea;
+  background: rgba(102, 126, 234, 0.05);
+}
+
+/* Week Days */
+.MyTaskManagement-week-days {
+  margin-top: 1rem;
+}
+
+.MyTaskManagement-days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.MyTaskManagement-day-chip {
+  background: white;
+  border: 1px solid #ddd;
+  color: #666;
+  padding: 0.5rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.MyTaskManagement-day-chip:hover {
+  border-color: #667eea;
+  color: #667eea;
+}
+
+.MyTaskManagement-day-chip.MyTaskManagement-day-selected {
+  background: #667eea;
+  border-color: #667eea;
+  color: white;
+}
+
+/* Selected Chips */
+.MyTaskManagement-selected-users,
+.MyTaskManagement-selected-groups,
+.MyTaskManagement-selected-members {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.MyTaskManagement-selected-user-chip,
+.MyTaskManagement-selected-group-chip,
+.MyTaskManagement-selected-member-chip {
+  background: rgba(102, 126, 234, 0.15);
+  color: #667eea;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Notification Items */
+.MyTaskManagement-notification-item {
+  background: white;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  transition: all 0.3s ease;
+}
+
+.MyTaskManagement-notification-item.MyTaskManagement-unread {
+  border-left: 4px solid #667eea;
+  background: rgba(102, 126, 234, 0.05);
+}
+
+.MyTaskManagement-notification-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.MyTaskManagement-notification-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.MyTaskManagement-notification-title {
+  font-weight: 600;
+  color: #333;
+  font-size: 0.875rem;
+}
+
+.MyTaskManagement-notification-message {
+  color: #666;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.MyTaskManagement-notification-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.MyTaskManagement-notification-date {
+  color: #999;
+  font-size: 0.75rem;
+}
+
+.MyTaskManagement-mark-read-btn {
+  background: none;
+  border: 1px solid #667eea;
+  color: #667eea;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.MyTaskManagement-mark-read-btn:hover {
+  background: rgba(102, 126, 234, 0.1);
+}
+
+.MyTaskManagement-mark-all-read-btn {
+  background: none;
+  border: 1px solid #667eea;
+  color: #667eea;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.MyTaskManagement-mark-all-read-btn:hover:not(:disabled) {
+  background: rgba(102, 126, 234, 0.1);
+}
+
+.MyTaskManagement-mark-all-read-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* No Notifications */
+.MyTaskManagement-no-notifications {
+  text-align: center;
+  padding: 2rem;
+}
+
+.MyTaskManagement-no-notifications-icon {
+  font-size: 2rem;
+  color: #ccc;
+  margin-bottom: 1rem;
+}
+
+.MyTaskManagement-no-notifications p {
+  color: #999;
+  font-size: 0.875rem;
+}
+
+/* Remarks & Activity Items */
+.MyTaskManagement-remark-item,
+.MyTaskManagement-activity-item {
+  background: white;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.MyTaskManagement-remark-header,
+.MyTaskManagement-activity-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.MyTaskManagement-remark-user,
+.MyTaskManagement-activity-user {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.MyTaskManagement-remark-avatar,
+.MyTaskManagement-activity-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #667eea;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+.MyTaskManagement-remark-username,
+.MyTaskManagement-activity-username {
+  font-weight: 600;
+  color: #333;
+  font-size: 0.875rem;
+}
+
+.MyTaskManagement-remark-userrole,
+.MyTaskManagement-activity-userrole {
+  color: #666;
+  font-size: 0.75rem;
+}
+
+.MyTaskManagement-remark-date,
+.MyTaskManagement-activity-date {
+  color: #999;
+  font-size: 0.75rem;
+}
+
+.MyTaskManagement-remark-text,
+.MyTaskManagement-activity-description {
+  color: #333;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  margin-bottom: 0.75rem;
+}
+
+.MyTaskManagement-activity-tags {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.MyTaskManagement-activity-action {
+  background: rgba(102, 126, 234, 0.15);
+  color: #667eea;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.MyTaskManagement-activity-ip {
+  color: #999;
+  font-size: 0.75rem;
+}
+
+.MyTaskManagement-no-remarks,
+.MyTaskManagement-no-activity {
+  text-align: center;
+  padding: 2rem;
+  color: #999;
+  font-weight: 500;
+}
+
+/* Add Remark */
+.MyTaskManagement-add-remark {
+  margin-bottom: 2rem;
+}
+
+.MyTaskManagement-add-remark h4 {
+  color: #333;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.MyTaskManagement-remark-textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  background: white;
+  resize: vertical;
+  min-height: 80px;
+  margin-bottom: 1rem;
+}
+
+.MyTaskManagement-add-remark-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+.MyTaskManagement-add-remark-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.MyTaskManagement-add-remark-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Edit Form */
+.MyTaskManagement-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Modal Footers */
+.MyTaskManagement-create-task-footer,
+.MyTaskManagement-group-modal-footer,
+.MyTaskManagement-edit-task-footer,
+.MyTaskManagement-status-modal-footer {
+  padding: 1.5rem;
+  border-top: 1px solid #e5e5e5;
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+.MyTaskManagement-cancel-btn,
+.MyTaskManagement-close-modal-btn {
+  background: #f5f5f5;
+  color: #666;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.MyTaskManagement-cancel-btn:hover,
+.MyTaskManagement-close-modal-btn:hover {
+  background: #e5e5e5;
+}
+
+.MyTaskManagement-create-btn,
+.MyTaskManagement-update-task-btn,
+.MyTaskManagement-update-status-btn,
+.MyTaskManagement-create-group-submit-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.MyTaskManagement-create-btn:hover:not(:disabled),
+.MyTaskManagement-update-task-btn:hover:not(:disabled),
+.MyTaskManagement-update-status-btn:hover:not(:disabled),
+.MyTaskManagement-create-group-submit-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.MyTaskManagement-create-btn:disabled,
+.MyTaskManagement-update-status-btn:disabled,
+.MyTaskManagement-create-group-submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Snackbar */
+.MyTaskManagement-snackbar {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 280px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  z-index: 1001;
+  animation: MyTaskManagement-slideUp 0.3s ease;
+}
+
+.MyTaskManagement-snackbar-success {
+  background: linear-gradient(135deg, #2ed573 0%, #1e90ff 100%);
+  color: white;
+}
+
+.MyTaskManagement-snackbar-error {
+  background: linear-gradient(135deg, #ff4757 0%, #ffa502 100%);
+  color: white;
+}
+
+.MyTaskManagement-snackbar-warning {
+  background: linear-gradient(135deg, #ffa502 0%, #2ed573 100%);
+  color: white;
+}
+
+.MyTaskManagement-snackbar-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.MyTaskManagement-snackbar-icon {
+  font-size: 1.25rem;
+}
+
+.MyTaskManagement-snackbar-message {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.MyTaskManagement-snackbar-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 1rem;
+}

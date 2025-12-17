@@ -1,105 +1,50 @@
-// ========================= AdminProject.jsx =========================
+// AdminProject.jsx
 import React, { useState, useEffect } from "react";
 import axios from "../../utils/axiosConfig";
-import {
-  Box,
-  Card,
-  CardContent,
-  TextField,
-  Button,
-  Typography,
-  Grid,
-  MenuItem,
-  Select,
-  InputLabel,
-  FormControl,
-  Stack,
-  Paper,
-  Chip,
-  Avatar,
-  AvatarGroup,
-  FormHelperText,
-  Divider,
-  CardHeader,
-  Alert,
-  CircularProgress,
-  IconButton,
-  Snackbar,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Tooltip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Tabs,
-  Tab,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  LinearProgress,
-  alpha,
-  useTheme,
-  Badge,
-  Fade,
-  Zoom,
-  InputAdornment,
-  Switch,
-  FormControlLabel,
+import "../Css/AdminProject.css";
 
-
-} from "@mui/material";
-import CloudUploadIcon from "@mui/icons-material/CloudUpload";
-
-import {
-  Add as AddIcon,
-  CloudUpload as UploadIcon,
-  Schedule as ScheduleIcon,
-  Person as PersonIcon,
-  Description as DescriptionIcon,
-  Delete as DeleteIcon,
-  Edit as EditIcon,
-  AttachFile as AttachFileIcon,
-  CheckCircle as CheckCircleIcon,
-  Pause as PauseIcon,
-  Download as DownloadIcon,
-  Visibility as VisibilityIcon,
-  PictureAsPdf as PdfIcon,
-  InsertDriveFile as FileIcon,
-  Close as CloseIcon,
-  Task as TaskIcon,
-  
-  Dashboard as DashboardIcon,
-  TrendingUp as TrendingUpIcon,
-  ArrowUpward as ArrowUpwardIcon,
-  ArrowDownward as ArrowDownwardIcon,
-  MoreVert as MoreVertIcon,
-  FilterList as FilterIcon,
-  Search as SearchIcon,
-  Sort as SortIcon,
-  CalendarMonth as CalendarIcon,
-  Group as GroupIcon,
-  Bolt as BoltIcon,
-  Timeline as TimelineIcon,
-  BarChart as BarChartIcon,
-  Folder as FolderIcon,
-  CloudDownload as CloudDownloadIcon,
-  PlayArrow as PlayArrowIcon,
-  Stop as StopIcon,
-  Flag as FlagIcon,
-  DateRange as DateRangeIcon,
-  DescriptionOutlined as DescriptionOutlinedIcon,
-  AdminPanelSettings as AdminPanelSettingsIcon,
-  RocketLaunch as RocketLaunchIcon
-} from "@mui/icons-material";
-import TabContext from "@mui/lab/TabContext";
-import TabList from "@mui/lab/TabList";
-import TabPanel from "@mui/lab/TabPanel";
+// Icons (you can replace these with actual icon fonts or SVG files)
+const Icons = {
+  Add: () => <span>+</span>,
+  Upload: () => <span>📤</span>,
+  Schedule: () => <span>📅</span>,
+  Person: () => <span>👤</span>,
+  Description: () => <span>📝</span>,
+  Delete: () => <span>🗑️</span>,
+  Edit: () => <span>✏️</span>,
+  AttachFile: () => <span>📎</span>,
+  CheckCircle: () => <span>✅</span>,
+  Pause: () => <span>⏸️</span>,
+  Download: () => <span>⬇️</span>,
+  Visibility: () => <span>👁️</span>,
+  Pdf: () => <span>📄</span>,
+  File: () => <span>📁</span>,
+  Close: () => <span>✕</span>,
+  Task: () => <span>✓</span>,
+  Dashboard: () => <span>📊</span>,
+  TrendingUp: () => <span>📈</span>,
+  ArrowUpward: () => <span>↑</span>,
+  ArrowDownward: () => <span>↓</span>,
+  MoreVert: () => <span>⋮</span>,
+  Filter: () => <span>🔍</span>,
+  Search: () => <span>🔍</span>,
+  Sort: () => <span>⇅</span>,
+  Calendar: () => <span>📅</span>,
+  Group: () => <span>👥</span>,
+  Bolt: () => <span>⚡</span>,
+  Timeline: () => <span>📈</span>,
+  BarChart: () => <span>📊</span>,
+  Folder: () => <span>📁</span>,
+  CloudDownload: () => <span>⬇️</span>,
+  PlayArrow: () => <span>▶️</span>,
+  Stop: () => <span>⏹️</span>,
+  Flag: () => <span>🚩</span>,
+  DateRange: () => <span>📅</span>,
+  DescriptionOutlined: () => <span>📝</span>,
+  AdminPanelSettings: () => <span>⚙️</span>,
+  RocketLaunch: () => <span>🚀</span>,
+  CloudUpload: () => <span>📤</span>,
+};
 
 export const AdminProject = () => {
   // FORM STATES
@@ -138,7 +83,9 @@ export const AdminProject = () => {
     highPriority: 0
   });
 
-  const theme = useTheme();
+  // DROPDOWN STATES
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [memberSearchTerm, setMemberSearchTerm] = useState("");
 
   // Fetch users & projects
   useEffect(() => {
@@ -146,6 +93,7 @@ export const AdminProject = () => {
     fetchProjects();
   }, []);
 
+  // Update stats when projects change
   useEffect(() => {
     if (projects.length > 0) {
       const active = projects.filter(p => p.status?.toLowerCase() === "active").length;
@@ -162,6 +110,41 @@ export const AdminProject = () => {
       });
     }
   }, [projects]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isDropdownOpen && !event.target.closest('.AdminProject-dropdown-container')) {
+        setIsDropdownOpen(false);
+      }
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [isDropdownOpen]);
+
+  // Filter users for member dropdown
+  const filteredUsers = users.filter(u => 
+    u.name?.toLowerCase().includes(memberSearchTerm.toLowerCase()) ||
+    u.email?.toLowerCase().includes(memberSearchTerm.toLowerCase())
+  );
+
+  // Handle member toggle
+  const handleMemberToggle = (userId) => {
+    if (members.includes(userId)) {
+      setMembers(members.filter(id => id !== userId));
+    } else {
+      setMembers([...members, userId]);
+    }
+  };
+
+  // Handle member remove from avatars
+  const handleMemberRemove = (userId) => {
+    setMembers(members.filter(id => id !== userId));
+  };
+
+  // Get selected users for display
+  const getSelectedUsers = () => users.filter(u => members.includes(u._id));
 
   const fetchUsers = async () => {
     try {
@@ -303,7 +286,7 @@ export const AdminProject = () => {
     setFileName("");
     
     // Scroll to form
-    document.getElementById('project-form').scrollIntoView({ behavior: 'smooth' });
+    document.getElementById('AdminProject-project-form').scrollIntoView({ behavior: 'smooth' });
   };
 
   // VIEW PROJECT DETAILS
@@ -359,6 +342,8 @@ export const AdminProject = () => {
     setFile(null);
     setFileName("");
     setErrors({});
+    setIsDropdownOpen(false);
+    setMemberSearchTerm("");
   };
 
   const handleFileChange = (e) => {
@@ -381,27 +366,6 @@ export const AdminProject = () => {
     setSnackbar({ ...snackbar, open: false });
   };
 
-  const getStatusIcon = (status) => {
-    switch (status?.toLowerCase()) {
-      case "active": return <PlayArrowIcon fontSize="small" color="success" />;
-      case "completed": return <CheckCircleIcon fontSize="small" color="success" />;
-      case "on hold":
-      case "onhold": return <PauseIcon fontSize="small" color="warning" />;
-      case "planning": return <ScheduleIcon fontSize="small" color="info" />;
-      case "cancelled": return <StopIcon fontSize="small" color="error" />;
-      default: return null;
-    }
-  };
-
-  const getPriorityColor = (priority) => {
-    switch (priority?.toLowerCase()) {
-      case "high": return "#EF5350";
-      case "medium": return "#FFA726";
-      case "low": return "#66BB6A";
-      default: return "#9E9E9E";
-    }
-  };
-
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
       case "active": return "#66BB6A";
@@ -414,7 +378,14 @@ export const AdminProject = () => {
     }
   };
 
-  const getSelectedUsers = () => users.filter(u => members.includes(u._id));
+  const getPriorityColor = (priority) => {
+    switch (priority?.toLowerCase()) {
+      case "high": return "#EF5350";
+      case "medium": return "#FFA726";
+      case "low": return "#66BB6A";
+      default: return "#9E9E9E";
+    }
+  };
 
   const getTaskProgress = (tasks) => {
     if (!tasks || tasks.length === 0) return 0;
@@ -423,1316 +394,966 @@ export const AdminProject = () => {
   };
 
   const StatCard = ({ icon, value, label, color, trend, subtext }) => (
-    <Card sx={{ 
-      height: '100%',
-      background: `linear-gradient(135deg, ${alpha(color, 0.1)} 0%, ${alpha(color, 0.05)} 100%)`,
-      border: `1px solid ${alpha(color, 0.2)}`,
-      borderRadius: 3,
-      position: 'relative',
-      overflow: 'visible',
-      transition: 'all 0.3s ease',
-      '&:hover': {
-        transform: 'translateY(-4px)',
-        boxShadow: `0 8px 25px ${alpha(color, 0.15)}`,
-      }
-    }}>
-      <CardContent>
-        <Box display="flex" alignItems="center" justifyContent="space-between">
-          <Box>
-            <Typography variant="h4" fontWeight="800" color={color} sx={{ mb: 1 }}>
-              {value}
-            </Typography>
-            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
-              {label}
-            </Typography>
-            {subtext && (
-              <Typography variant="caption" color="text.secondary">
-                {subtext}
-              </Typography>
-            )}
-          </Box>
-          <Box sx={{
-            width: 56,
-            height: 56,
-            borderRadius: 2,
-            background: `linear-gradient(135deg, ${alpha(color, 0.2)} 0%, ${alpha(color, 0.1)} 100%)`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: color,
-            fontSize: 28
-          }}>
+    <div className={`AdminProject-stat-card ${color === "#66BB6A" ? "AdminProject-stat-card-green" : color === "#29B6F6" ? "AdminProject-stat-card-blue" : color === "#EF5350" ? "AdminProject-stat-card-red" : ""}`}>
+      <div className="AdminProject-stat-content">
+        <div className="AdminProject-stat-content-inner">
+          <div>
+            <div className="AdminProject-stat-value" style={{ color }}>{value}</div>
+            <div className="AdminProject-stat-label">{label}</div>
+            {subtext && <div className="AdminProject-stat-subtext">{subtext}</div>}
+          </div>
+          <div className="AdminProject-stat-icon-container" style={{ background: `linear-gradient(135deg, ${color}20 0%, ${color}10 100%)`, color }}>
             {icon}
-          </Box>
-        </Box>
+          </div>
+        </div>
         {trend && (
-          <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            {trend > 0 ? <ArrowUpwardIcon sx={{ fontSize: 16, color: color }} /> : <ArrowDownwardIcon sx={{ fontSize: 16, color: color }} />}
-            <Typography variant="caption" color={color} fontWeight="500">
+          <div style={{ marginTop: "16px", display: "flex", alignItems: "center", gap: "4px" }}>
+            {trend > 0 ? <Icons.ArrowUpward /> : <Icons.ArrowDownward />}
+            <span style={{ fontSize: "0.75rem", color, fontWeight: "500" }}>
               {trend > 0 ? `+${trend}%` : `${trend}%`}
-            </Typography>
-          </Box>
+            </span>
+          </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 
-  return (
-    <Box sx={{ 
-      p: { xs: 2, md: 3 }, 
-      maxWidth: '1600px', 
-      margin: '0 auto',
-      background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%)',
-      minHeight: '100vh'
-    }}>
-      {/* Snackbar for notifications */}
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={3000}
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: "top", horizontal: "right" }}
-      >
-        <Alert 
-          onClose={handleCloseSnackbar} 
-          severity={snackbar.severity}
-          sx={{
-            borderRadius: 2,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-            backdropFilter: 'blur(10px)',
-            background: alpha(theme.palette.background.paper, 0.9)
-          }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+  const SnackbarComponent = () => {
+    if (!snackbar.open) return null;
+    
+    return (
+      <div className={`AdminProject-snackbar AdminProject-snackbar-${snackbar.severity}`}>
+        <div className="AdminProject-snackbar-content">
+          <div className="AdminProject-snackbar-message">{snackbar.message}</div>
+          <button className="AdminProject-snackbar-close" onClick={handleCloseSnackbar}>
+            <Icons.Close />
+          </button>
+        </div>
+      </div>
+    );
+  };
 
-      {/* PDF Viewer Dialog */}
-      <Dialog
-        open={openPdfDialog}
-        onClose={() => setOpenPdfDialog(false)}
-        maxWidth="lg"
-        fullWidth
-        PaperProps={{
-          sx: {
-            height: '90vh',
-            borderRadius: 3,
-            background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%)'
-          }
-        }}
-      >
-        <DialogTitle sx={{ 
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white',
-          borderTopLeftRadius: 12,
-          borderTopRightRadius: 12
-        }}>
-          <Box display="flex" justifyContent="space-between" alignItems="center">
-            <Box display="flex" alignItems="center" gap={1}>
-              <PdfIcon />
-              <Typography variant="h6">
-                PDF Document
-              </Typography>
-            </Box>
-            <IconButton onClick={() => setOpenPdfDialog(false)} sx={{ color: 'white' }}>
-              <CloseIcon />
-            </IconButton>
-          </Box>
-        </DialogTitle>
-        <DialogContent sx={{ p: 0, height: 'calc(100% - 64px)' }}>
-          <iframe
-            src={selectedPdfUrl}
-            title="PDF Viewer"
-            width="100%"
-            height="100%"
-            style={{ border: 'none' }}
-          />
-        </DialogContent>
-        <DialogActions sx={{ p: 2, background: alpha('#f5f7fa', 0.8) }}>
-          <Button
-            variant="contained"
-            startIcon={<DownloadIcon />}
-            onClick={() => {
-              const link = document.createElement('a');
-              link.href = selectedPdfUrl;
-              link.download = selectedPdfUrl.split('/').pop();
-              link.click();
-            }}
-            sx={{
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              borderRadius: 2,
-              '&:hover': {
-                background: 'linear-gradient(135deg, #5a6fd8 0%, #6a3f8c 100%)',
-              }
-            }}
-          >
-            Download
-          </Button>
-          <Button 
-            onClick={() => setOpenPdfDialog(false)}
-            sx={{ borderRadius: 2 }}
-          >
-            Close
-          </Button>
-        </DialogActions>
-      </Dialog>
+  const PdfDialog = () => {
+    if (!openPdfDialog) return null;
+    
+    return (
+      <div className="AdminProject-dialog-backdrop">
+        <div className="AdminProject-dialog" style={{ maxWidth: "1200px", height: "90vh" }}>
+          <div className="AdminProject-dialog-header">
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <Icons.Pdf />
+              <div className="AdminProject-dialog-title">PDF Document</div>
+            </div>
+            <button className="AdminProject-dialog-close" onClick={() => setOpenPdfDialog(false)}>
+              <Icons.Close />
+            </button>
+          </div>
+          <div className="AdminProject-dialog-content" style={{ padding: 0, height: "calc(100% - 64px)" }}>
+            <iframe
+              src={selectedPdfUrl}
+              title="PDF Viewer"
+              width="100%"
+              height="100%"
+              style={{ border: "none" }}
+            />
+          </div>
+          <div style={{ padding: "16px", background: "rgba(245, 247, 250, 0.8)", display: "flex", justifyContent: "flex-end", gap: "8px" }}>
+            <button
+              className="AdminProject-button AdminProject-button-primary"
+              onClick={() => {
+                const link = document.createElement('a');
+                link.href = selectedPdfUrl;
+                link.download = selectedPdfUrl.split('/').pop();
+                link.click();
+              }}
+            >
+              <Icons.Download /> Download
+            </button>
+            <button
+              className="AdminProject-button AdminProject-button-outline"
+              onClick={() => setOpenPdfDialog(false)}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
-      {/* Project Details Dialog */}
-      <Dialog
-        open={openDetailsDialog}
-        onClose={() => setOpenDetailsDialog(false)}
-        maxWidth="md"
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 3,
-            overflow: 'hidden'
-          }
-        }}
-      >
-        <DialogTitle sx={{ 
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white'
-        }}>
-          <Box display="flex" justifyContent="space-between" alignItems="center">
-            <Typography variant="h6" fontWeight="700">
-              Project Details
-            </Typography>
-            <IconButton onClick={() => setOpenDetailsDialog(false)} sx={{ color: 'white' }}>
-              <CloseIcon />
-            </IconButton>
-          </Box>
-        </DialogTitle>
-        <DialogContent dividers sx={{ p: 0 }}>
-          {selectedProject && (
-            <TabContext value={tabValue.toString()}>
-              <Box sx={{ 
-                borderBottom: 1, 
-                borderColor: 'divider',
-                background: alpha('#f5f7fa', 0.5)
-              }}>
-                <Tabs 
-                  value={tabValue} 
-                  onChange={(e, newValue) => setTabValue(newValue)}
-                  sx={{
-                    '& .MuiTab-root': {
-                      fontWeight: 600,
-                      textTransform: 'none',
-                      fontSize: '0.95rem',
-                      minHeight: 60
-                    },
-                    '& .MuiTabs-indicator': {
-                      backgroundColor: '#667eea',
-                      height: 3
-                    }
-                  }}
-                >
-                  <Tab icon={<DashboardIcon />} iconPosition="start" label="Overview" />
-                  <Tab icon={<TaskIcon />} iconPosition="start" label="Tasks" />
-                  <Tab icon={<FileIcon />} iconPosition="start" label="Documents" />
-                </Tabs>
-              </Box>
-
-              <TabPanel value="0" sx={{ p: 3 }}>
-                <Stack spacing={3}>
-                  <Box>
-                    <Typography variant="h5" fontWeight="800" gutterBottom color="primary">
+  const DetailsDialog = () => {
+    if (!openDetailsDialog || !selectedProject) return null;
+    
+    return (
+      <div className="AdminProject-dialog-backdrop">
+        <div className="AdminProject-dialog" style={{ maxWidth: "900px" }}>
+          <div className="AdminProject-dialog-header">
+            <div className="AdminProject-dialog-title">Project Details</div>
+            <button className="AdminProject-dialog-close" onClick={() => setOpenDetailsDialog(false)}>
+              <Icons.Close />
+            </button>
+          </div>
+          <div className="AdminProject-dialog-content">
+            <div className="AdminProject-tabs">
+              <button 
+                className={`AdminProject-tab ${tabValue === 0 ? "AdminProject-tab-active" : ""}`}
+                onClick={() => setTabValue(0)}
+              >
+                <Icons.Dashboard /> Overview
+              </button>
+              <button 
+                className={`AdminProject-tab ${tabValue === 1 ? "AdminProject-tab-active" : ""}`}
+                onClick={() => setTabValue(1)}
+              >
+                <Icons.Task /> Tasks
+              </button>
+              <button 
+                className={`AdminProject-tab ${tabValue === 2 ? "AdminProject-tab-active" : ""}`}
+                onClick={() => setTabValue(2)}
+              >
+                <Icons.File /> Documents
+              </button>
+            </div>
+            
+            {tabValue === 0 && (
+              <div className="AdminProject-tab-panel">
+                <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+                  <div>
+                    <h3 style={{ fontSize: "1.5rem", fontWeight: "800", marginBottom: "8px", color: "#667eea" }}>
                       {selectedProject.projectName}
-                    </Typography>
-                    <Typography variant="body1" color="text.secondary" paragraph>
+                    </h3>
+                    <p style={{ color: "#666", marginBottom: "16px" }}>
                       {selectedProject.description}
-                    </Typography>
-                  </Box>
+                    </p>
+                  </div>
 
-                  <Grid container spacing={3}>
-                    <Grid item xs={12} md={6}>
-                      <Card sx={{ borderRadius: 2 }}>
-                        <CardContent>
-                          <Typography variant="h6" fontWeight="700" gutterBottom display="flex" alignItems="center" gap={1}>
-                            <DescriptionIcon color="primary" />
-                            Project Details
-                          </Typography>
-                          <Stack spacing={2}>
-                            <Box display="flex" justifyContent="space-between" alignItems="center">
-                              <Typography variant="body2" color="text.secondary">Status</Typography>
-                              <Chip
-                                label={selectedProject.status}
-                                size="small"
-                                sx={{ 
-                                  textTransform: 'capitalize',
-                                  background: getStatusColor(selectedProject.status) + '15',
-                                  color: getStatusColor(selectedProject.status),
-                                  fontWeight: 600,
-                                  border: `1px solid ${getStatusColor(selectedProject.status)}30`
-                                }}
-                              />
-                            </Box>
-                            <Box display="flex" justifyContent="space-between" alignItems="center">
-                              <Typography variant="body2" color="text.secondary">Priority</Typography>
-                              <Chip
-                                label={selectedProject.priority}
-                                size="small"
-                                sx={{ 
-                                  textTransform: 'capitalize',
-                                  background: getPriorityColor(selectedProject.priority) + '15',
-                                  color: getPriorityColor(selectedProject.priority),
-                                  fontWeight: 600,
-                                  border: `1px solid ${getPriorityColor(selectedProject.priority)}30`
-                                }}
-                              />
-                            </Box>
-                            <Box display="flex" justifyContent="space-between" alignItems="center">
-                              <Typography variant="body2" color="text.secondary">Start Date</Typography>
-                              <Typography variant="body2" fontWeight="500">
-                                {selectedProject.startDate ? new Date(selectedProject.startDate).toLocaleDateString() : 'Not set'}
-                              </Typography>
-                            </Box>
-                            <Box display="flex" justifyContent="space-between" alignItems="center">
-                              <Typography variant="body2" color="text.secondary">End Date</Typography>
-                              <Typography variant="body2" fontWeight="500">
-                                {selectedProject.endDate ? new Date(selectedProject.endDate).toLocaleDateString() : 'Not set'}
-                              </Typography>
-                            </Box>
-                            <Box display="flex" justifyContent="space-between" alignItems="center">
-                              <Typography variant="body2" color="text.secondary">Created On</Typography>
-                              <Typography variant="body2" fontWeight="500">
-                                {new Date(selectedProject.createdAt).toLocaleDateString()}
-                              </Typography>
-                            </Box>
-                          </Stack>
-                        </CardContent>
-                      </Card>
-                    </Grid>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(1, 1fr)", gap: "24px" }}>
+                    <div style={{ gridColumn: "span 1" }}>
+                      <div className="AdminProject-stat-card" style={{ border: "1px solid #eee" }}>
+                        <div className="AdminProject-stat-content">
+                          <h4 style={{ fontSize: "1.25rem", fontWeight: "700", marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
+                            <Icons.Description /> Project Details
+                          </h4>
+                          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                            {[
+                              { label: "Status", value: selectedProject.status },
+                              { label: "Priority", value: selectedProject.priority },
+                              { label: "Start Date", value: selectedProject.startDate ? new Date(selectedProject.startDate).toLocaleDateString() : "Not set" },
+                              { label: "End Date", value: selectedProject.endDate ? new Date(selectedProject.endDate).toLocaleDateString() : "Not set" },
+                              { label: "Created On", value: new Date(selectedProject.createdAt).toLocaleDateString() }
+                            ].map((item, idx) => (
+                              <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                <span style={{ fontSize: "0.875rem", color: "#666" }}>{item.label}</span>
+                                <span style={{ fontSize: "0.875rem", fontWeight: "500" }}>{item.value}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
 
-                    <Grid item xs={12} md={6}>
-                      <Card sx={{ borderRadius: 2 }}>
-                        <CardContent>
-                          <Typography variant="h6" fontWeight="700" gutterBottom display="flex" alignItems="center" gap={1}>
-                            <TimelineIcon color="primary" />
-                            Progress & Analytics
-                          </Typography>
-                          <Box mb={3}>
-                            <Box display="flex" justifyContent="space-between" mb={1}>
-                              <Typography variant="body2" color="text.secondary">Task Completion</Typography>
-                              <Typography variant="h6" fontWeight="700" color="primary">
+                    <div style={{ gridColumn: "span 1" }}>
+                      <div className="AdminProject-stat-card" style={{ border: "1px solid #eee" }}>
+                        <div className="AdminProject-stat-content">
+                          <h4 style={{ fontSize: "1.25rem", fontWeight: "700", marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
+                            <Icons.Timeline /> Progress & Analytics
+                          </h4>
+                          <div style={{ marginBottom: "24px" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+                              <span style={{ fontSize: "0.875rem", color: "#666" }}>Task Completion</span>
+                              <span style={{ fontSize: "1.25rem", fontWeight: "700", color: "#667eea" }}>
                                 {getTaskProgress(selectedProject.tasks)}%
-                              </Typography>
-                            </Box>
-                            <LinearProgress 
-                              variant="determinate" 
-                              value={getTaskProgress(selectedProject.tasks)} 
-                              sx={{ 
-                                height: 10, 
-                                borderRadius: 5,
-                                backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                                '& .MuiLinearProgress-bar': {
-                                  background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
-                                  borderRadius: 5
-                                }
-                              }}
-                            />
-                          </Box>
-                          <Stack spacing={1.5}>
-                            <Box display="flex" justifyContent="space-between">
-                              <Typography variant="body2">Total Tasks</Typography>
-                              <Typography variant="body2" fontWeight="600">{selectedProject.tasks?.length || 0}</Typography>
-                            </Box>
-                            <Box display="flex" justifyContent="space-between">
-                              <Typography variant="body2">Completed Tasks</Typography>
-                              <Typography variant="body2" fontWeight="600" color="#66BB6A">
-                                {selectedProject.tasks?.filter(t => t.status === "completed").length || 0}
-                              </Typography>
-                            </Box>
-                            <Box display="flex" justifyContent="space-between">
-                              <Typography variant="body2">In Progress</Typography>
-                              <Typography variant="body2" fontWeight="600" color="#29B6F6">
-                                {selectedProject.tasks?.filter(t => t.status === "in progress").length || 0}
-                              </Typography>
-                            </Box>
-                            <Box display="flex" justifyContent="space-between">
-                              <Typography variant="body2">Pending</Typography>
-                              <Typography variant="body2" fontWeight="600" color="#FFA726">
-                                {selectedProject.tasks?.filter(t => t.status === "pending").length || 0}
-                              </Typography>
-                            </Box>
-                          </Stack>
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                  </Grid>
+                              </span>
+                            </div>
+                            <div className="AdminProject-progress-bar">
+                              <div 
+                                className="AdminProject-progress-fill"
+                                style={{ width: `${getTaskProgress(selectedProject.tasks)}%` }}
+                              />
+                            </div>
+                          </div>
+                          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                            {[
+                              { label: "Total Tasks", value: selectedProject.tasks?.length || 0 },
+                              { label: "Completed Tasks", value: selectedProject.tasks?.filter(t => t.status === "completed").length || 0, color: "#66BB6A" },
+                              { label: "In Progress", value: selectedProject.tasks?.filter(t => t.status === "in progress").length || 0, color: "#29B6F6" },
+                              { label: "Pending", value: selectedProject.tasks?.filter(t => t.status === "pending").length || 0, color: "#FFA726" }
+                            ].map((item, idx) => (
+                              <div key={idx} style={{ display: "flex", justifyContent: "space-between" }}>
+                                <span style={{ fontSize: "0.875rem" }}>{item.label}</span>
+                                <span style={{ fontSize: "0.875rem", fontWeight: "600", color: item.color || "inherit" }}>
+                                  {item.value}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
-                  <Card sx={{ borderRadius: 2 }}>
-                    <CardContent>
-                      <Typography variant="h6" fontWeight="700" gutterBottom display="flex" alignItems="center" gap={1}>
-                        <GroupIcon color="primary" />
-                        Team Members ({selectedProject.users?.length || 0})
-                      </Typography>
-                      <Grid container spacing={2}>
+                  <div className="AdminProject-stat-card" style={{ border: "1px solid #eee" }}>
+                    <div className="AdminProject-stat-content">
+                      <h4 style={{ fontSize: "1.25rem", fontWeight: "700", marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
+                        <Icons.Group /> Team Members ({selectedProject.users?.length || 0})
+                      </h4>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(1, 1fr)", gap: "16px" }}>
                         {selectedProject.users?.map((user) => (
-                          <Grid item xs={12} sm={6} md={4} key={user._id}>
-                            <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-                              <Box display="flex" alignItems="center" gap={2}>
-                                <Avatar sx={{ 
-                                  width: 48, 
-                                  height: 48,
-                                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                  fontSize: '1.2rem',
-                                  fontWeight: 600
-                                }}>
-                                  {user.name?.charAt(0)}
-                                </Avatar>
-                                <Box>
-                                  <Typography variant="subtitle1" fontWeight="600">{user.name}</Typography>
-                                  <Typography variant="caption" color="text.secondary" display="block">
-                                    {user.email}
-                                  </Typography>
-                                  {user.role && (
-                                    <Chip
-                                      label={user.role}
-                                      size="small"
-                                      sx={{ 
-                                        mt: 0.5,
-                                        height: 20,
-                                        fontSize: '0.7rem',
-                                        background: 'rgba(0,0,0,0.05)'
-                                      }}
-                                    />
-                                  )}
-                                </Box>
-                              </Box>
-                            </Paper>
-                          </Grid>
-                        ))}
-                      </Grid>
-                    </CardContent>
-                  </Card>
-                </Stack>
-              </TabPanel>
-
-              <TabPanel value="1" sx={{ p: 3 }}>
-                <Box>
-                  <Typography variant="h6" fontWeight="700" gutterBottom>
-                    Tasks ({selectedProject.tasks?.length || 0})
-                  </Typography>
-                  {selectedProject.tasks?.length > 0 ? (
-                    <List sx={{ '& .MuiListItem-root': { p: 0, mb: 1 } }}>
-                      {selectedProject.tasks.map((task) => (
-                        <Paper
-                          key={task._id}
-                          variant="outlined"
-                          sx={{ 
-                            borderRadius: 2,
-                            overflow: 'hidden',
-                            transition: 'all 0.2s ease',
-                            '&:hover': {
-                              transform: 'translateY(-2px)',
-                              boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                            }
-                          }}
-                        >
-                          <Box sx={{ p: 2 }}>
-                            <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
-                              <Box display="flex" alignItems="center" gap={1}>
-                                <TaskIcon color="primary" fontSize="small" />
-                                <Typography variant="subtitle1" fontWeight="600">
-                                  {task.title}
-                                </Typography>
-                              </Box>
-                              <Stack direction="row" spacing={1} alignItems="center">
-                                <Chip
-                                  label={task.status}
-                                  size="small"
-                                  sx={{ 
-                                    textTransform: 'capitalize',
-                                    background: getStatusColor(task.status) + '15',
-                                    color: getStatusColor(task.status),
-                                    fontWeight: 600,
-                                    height: 24
-                                  }}
-                                />
-                                <Chip
-                                  label={task.priority}
-                                  size="small"
-                                  sx={{ 
-                                    textTransform: 'capitalize',
-                                    background: getPriorityColor(task.priority) + '15',
-                                    color: getPriorityColor(task.priority),
-                                    fontWeight: 600,
-                                    height: 24,
-                                    border: `1px solid ${getPriorityColor(task.priority)}30`
-                                  }}
-                                />
-                              </Stack>
-                            </Box>
-                            {task.description && (
-                              <Typography variant="body2" color="text.secondary" paragraph>
-                                {task.description}
-                              </Typography>
-                            )}
-                            <Box display="flex" justifyContent="space-between" alignItems="center" mt={2}>
-                              <Box display="flex" alignItems="center" gap={2}>
-                                <Box display="flex" alignItems="center" gap={0.5}>
-                                  <PersonIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                                  <Typography variant="caption" color="text.secondary">
-                                    {task.assignedTo?.name || 'Unassigned'}
-                                  </Typography>
-                                </Box>
-                                {task.dueDate && (
-                                  <Box display="flex" alignItems="center" gap={0.5}>
-                                    <CalendarIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                                    <Typography variant="caption" color="text.secondary">
-                                      Due: {new Date(task.dueDate).toLocaleDateString()}
-                                    </Typography>
-                                  </Box>
+                          <div key={user._id} style={{ border: "1px solid #eee", padding: "16px", borderRadius: "8px" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                              <div className="AdminProject-avatar">
+                                {user.name?.charAt(0)}
+                              </div>
+                              <div>
+                                <div style={{ fontSize: "1rem", fontWeight: "600" }}>{user.name}</div>
+                                <div style={{ fontSize: "0.75rem", color: "#666", display: "block" }}>
+                                  {user.email}
+                                </div>
+                                {user.role && (
+                                  <span className="AdminProject-chip" style={{ marginTop: "4px", fontSize: "0.7rem", background: "rgba(0,0,0,0.05)", padding: "2px 8px" }}>
+                                    {user.role}
+                                  </span>
                                 )}
-                              </Box>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {tabValue === 1 && (
+              <div className="AdminProject-tab-panel">
+                <div>
+                  <h4 style={{ fontSize: "1.25rem", fontWeight: "700", marginBottom: "16px" }}>
+                    Tasks ({selectedProject.tasks?.length || 0})
+                  </h4>
+                  {selectedProject.tasks?.length > 0 ? (
+                    <div className="AdminProject-task-list">
+                      {selectedProject.tasks.map((task) => (
+                        <div key={task._id} className="AdminProject-task-item">
+                          <div className="AdminProject-task-content">
+                            <div className="AdminProject-task-header">
+                              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                <Icons.Task />
+                                <div className="AdminProject-task-title">{task.title}</div>
+                              </div>
+                              <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                                <span className="AdminProject-chip AdminProject-chip-status" style={{
+                                  "--status-color": getStatusColor(task.status),
+                                  "--status-color-rgb": getStatusColor(task.status).replace('#', '').match(/.{2}/g).map(c => parseInt(c, 16)).join(',')
+                                }}>
+                                  {task.status}
+                                </span>
+                                <span className="AdminProject-chip AdminProject-chip-priority" style={{
+                                  "--priority-color": getPriorityColor(task.priority),
+                                  "--priority-color-rgb": getPriorityColor(task.priority).replace('#', '').match(/.{2}/g).map(c => parseInt(c, 16)).join(',')
+                                }}>
+                                  {task.priority}
+                                </span>
+                              </div>
+                            </div>
+                            {task.description && (
+                              <p style={{ color: "#666", marginBottom: "16px" }}>
+                                {task.description}
+                              </p>
+                            )}
+                            <div className="AdminProject-task-meta">
+                              <div className="AdminProject-task-info">
+                                <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                                  <Icons.Person />
+                                  <span>{task.assignedTo?.name || "Unassigned"}</span>
+                                </div>
+                                {task.dueDate && (
+                                  <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                                    <Icons.Calendar />
+                                    <span>Due: {new Date(task.dueDate).toLocaleDateString()}</span>
+                                  </div>
+                                )}
+                              </div>
                               {task.pdfFile?.path && (
-                                <Tooltip title="View PDF">
-                                  <IconButton
-                                    size="small"
-                                    onClick={() => viewPdf(task.pdfFile.path, task.pdfFile.filename)}
-                                  >
-                                    <VisibilityIcon fontSize="small" />
-                                  </IconButton>
-                                </Tooltip>
+                                <button
+                                  className="AdminProject-icon-button"
+                                  onClick={() => viewPdf(task.pdfFile.path, task.pdfFile.filename)}
+                                  title="View PDF"
+                                >
+                                  <Icons.Visibility />
+                                </button>
                               )}
-                            </Box>
-                          </Box>
-                        </Paper>
+                            </div>
+                          </div>
+                        </div>
                       ))}
-                    </List>
+                    </div>
                   ) : (
-                    <Box textAlign="center" py={4}>
-                      <TaskIcon sx={{ fontSize: 64, color: alpha('#667eea', 0.3), mb: 2 }} />
-                      <Typography variant="body1" color="text.secondary">
-                        No tasks available for this project
-                      </Typography>
-                    </Box>
+                    <div style={{ textAlign: "center", padding: "32px 16px" }}>
+                      <Icons.Task style={{ fontSize: "64px", color: "rgba(102, 126, 234, 0.3)", marginBottom: "16px" }} />
+                      <p style={{ color: "#666" }}>No tasks available for this project</p>
+                    </div>
                   )}
-                </Box>
-              </TabPanel>
+                </div>
+              </div>
+            )}
 
-              <TabPanel value="2" sx={{ p: 3 }}>
-                <Box>
-                  <Typography variant="h6" fontWeight="700" gutterBottom>
+            {tabValue === 2 && (
+              <div className="AdminProject-tab-panel">
+                <div>
+                  <h4 style={{ fontSize: "1.25rem", fontWeight: "700", marginBottom: "16px" }}>
                     Project Documents
-                  </Typography>
+                  </h4>
                   
-                  {/* Project Document */}
                   {selectedProject.pdfFile?.path ? (
-                    <Card sx={{ mb: 3, borderRadius: 2 }}>
-                      <CardContent>
-                        <Box display="flex" justifyContent="space-between" alignItems="center">
-                          <Box display="flex" alignItems="center" gap={2}>
-                            <Box sx={{
-                              width: 60,
-                              height: 60,
-                              borderRadius: 2,
-                              background: 'linear-gradient(135deg, rgba(239, 83, 80, 0.1) 0%, rgba(239, 83, 80, 0.05) 100%)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              border: '1px solid rgba(239, 83, 80, 0.2)'
+                    <div className="AdminProject-stat-card" style={{ border: "1px solid #eee", marginBottom: "24px" }}>
+                      <div className="AdminProject-stat-content">
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                            <div style={{
+                              width: "60px",
+                              height: "60px",
+                              borderRadius: "8px",
+                              background: "linear-gradient(135deg, rgba(239, 83, 80, 0.1) 0%, rgba(239, 83, 80, 0.05) 100%)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              border: "1px solid rgba(239, 83, 80, 0.2)"
                             }}>
-                              <PdfIcon sx={{ fontSize: 32, color: '#EF5350' }} />
-                            </Box>
-                            <Box>
-                              <Typography variant="h6" fontWeight="600">
-                                {selectedProject.pdfFile.filename || 'Project Document'}
-                              </Typography>
-                              <Typography variant="body2" color="text.secondary">
+                              <Icons.Pdf style={{ fontSize: "32px", color: "#EF5350" }} />
+                            </div>
+                            <div>
+                              <div style={{ fontSize: "1.25rem", fontWeight: "600" }}>
+                                {selectedProject.pdfFile.filename || "Project Document"}
+                              </div>
+                              <div style={{ fontSize: "0.875rem", color: "#666" }}>
                                 Project main document • Uploaded on: {new Date(selectedProject.createdAt).toLocaleDateString()}
-                              </Typography>
-                            </Box>
-                          </Box>
-                          <Stack direction="row" spacing={1}>
-                            <Button
-                              variant="outlined"
-                              startIcon={<VisibilityIcon />}
+                              </div>
+                            </div>
+                          </div>
+                          <div style={{ display: "flex", gap: "8px" }}>
+                            <button
+                              className="AdminProject-button AdminProject-button-outline"
                               onClick={() => viewPdf(selectedProject.pdfFile.path, selectedProject.pdfFile.filename)}
-                              sx={{ borderRadius: 2 }}
                             >
-                              View
-                            </Button>
-                            <Button
-                              variant="contained"
-                              startIcon={<DownloadIcon />}
+                              <Icons.Visibility /> View
+                            </button>
+                            <button
+                              className="AdminProject-button AdminProject-button-primary"
                               onClick={() => downloadPdf(selectedProject.pdfFile.path, selectedProject.pdfFile.filename)}
-                              sx={{
-                                borderRadius: 2,
-                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                '&:hover': {
-                                  background: 'linear-gradient(135deg, #5a6fd8 0%, #6a3f8c 100%)',
-                                }
-                              }}
                             >
-                              Download
-                            </Button>
-                          </Stack>
-                        </Box>
-                      </CardContent>
-                    </Card>
+                              <Icons.Download /> Download
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   ) : (
-                    <Alert severity="info" sx={{ mb: 3, borderRadius: 2 }}>
+                    <div style={{ background: "#e3f2fd", color: "#1565c0", padding: "16px", borderRadius: "8px", marginBottom: "24px" }}>
                       No project document uploaded
-                    </Alert>
+                    </div>
                   )}
 
-                  {/* Task Documents */}
-                  <Typography variant="h6" fontWeight="700" gutterBottom>
+                  <h4 style={{ fontSize: "1.25rem", fontWeight: "700", marginBottom: "16px" }}>
                     Task Documents ({selectedProject.tasks?.filter(t => t.pdfFile?.path).length || 0})
-                  </Typography>
+                  </h4>
                   {selectedProject.tasks?.filter(t => t.pdfFile?.path).length > 0 ? (
-                    <Grid container spacing={2}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(1, 1fr)", gap: "16px" }}>
                       {selectedProject.tasks
                         .filter(task => task.pdfFile?.path)
                         .map((task) => (
-                          <Grid item xs={12} md={6} key={task._id}>
-                            <Card variant="outlined" sx={{ borderRadius: 2 }}>
-                              <CardContent>
-                                <Box display="flex" justifyContent="space-between" alignItems="flex-start">
-                                  <Box display="flex" alignItems="center" gap={2}>
-                                    <FileIcon sx={{ fontSize: 32, color: '#29B6F6' }} />
-                                    <Box>
-                                      <Typography variant="subtitle1" fontWeight="600">
-                                        {task.pdfFile.filename || 'Task Document'}
-                                      </Typography>
-                                      <Typography variant="caption" color="text.secondary" display="block">
-                                        From task: {task.title}
-                                      </Typography>
-                                      <Typography variant="caption" color="text.secondary" display="block">
-                                        Assigned to: {task.assignedTo?.name || 'Unassigned'}
-                                      </Typography>
-                                    </Box>
-                                  </Box>
-                                  <Stack direction="row" spacing={0.5}>
-                                    <Tooltip title="View PDF">
-                                      <IconButton
-                                        size="small"
-                                        onClick={() => viewPdf(task.pdfFile.path, task.pdfFile.filename)}
-                                      >
-                                        <VisibilityIcon />
-                                      </IconButton>
-                                    </Tooltip>
-                                    <Tooltip title="Download">
-                                      <IconButton
-                                        size="small"
-                                        onClick={() => downloadPdf(task.pdfFile.path, task.pdfFile.filename)}
-                                      >
-                                        <DownloadIcon />
-                                      </IconButton>
-                                    </Tooltip>
-                                  </Stack>
-                                </Box>
-                              </CardContent>
-                            </Card>
-                          </Grid>
+                          <div key={task._id} className="AdminProject-stat-card" style={{ border: "1px solid #eee" }}>
+                            <div className="AdminProject-stat-content">
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                                  <Icons.File style={{ fontSize: "32px", color: "#29B6F6" }} />
+                                  <div>
+                                    <div style={{ fontSize: "1rem", fontWeight: "600" }}>
+                                      {task.pdfFile.filename || "Task Document"}
+                                    </div>
+                                    <div style={{ fontSize: "0.75rem", color: "#666", display: "block" }}>
+                                      From task: {task.title}
+                                    </div>
+                                    <div style={{ fontSize: "0.75rem", color: "#666", display: "block" }}>
+                                      Assigned to: {task.assignedTo?.name || "Unassigned"}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div style={{ display: "flex", gap: "4px" }}>
+                                  <button
+                                    className="AdminProject-icon-button"
+                                    onClick={() => viewPdf(task.pdfFile.path, task.pdfFile.filename)}
+                                    title="View PDF"
+                                  >
+                                    <Icons.Visibility />
+                                  </button>
+                                  <button
+                                    className="AdminProject-icon-button AdminProject-icon-button-green"
+                                    onClick={() => downloadPdf(task.pdfFile.path, task.pdfFile.filename)}
+                                    title="Download"
+                                  >
+                                    <Icons.Download />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                         ))}
-                    </Grid>
+                    </div>
                   ) : (
-                    <Alert severity="info" sx={{ borderRadius: 2 }}>
+                    <div style={{ background: "#e3f2fd", color: "#1565c0", padding: "16px", borderRadius: "8px" }}>
                       No task documents available
-                    </Alert>
+                    </div>
                   )}
-                </Box>
-              </TabPanel>
-            </TabContext>
-          )}
-        </DialogContent>
-      </Dialog>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="AdminProject-container">
+      <SnackbarComponent />
+      <PdfDialog />
+      <DetailsDialog />
 
       {/* Header */}
-      <Box sx={{ 
-        mb: 4,
-        background: 'white',
-        borderRadius: 3,
-        p: 3,
-        boxShadow: '0 8px 32px rgba(0,0,0,0.05)',
-        border: '1px solid rgba(255,255,255,0.2)'
-      }}>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-          <Box>
-            <Typography variant="h3" fontWeight="800" color="primary" gutterBottom>
-              Project Management
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
+      <div className="AdminProject-header">
+        <div className="AdminProject-header-content">
+          <div>
+            <div className="AdminProject-header-title">Project Management</div>
+            <div className="AdminProject-header-subtitle">
               Admin dashboard for managing all projects
-            </Typography>
-          </Box>
-          <Box display="flex" alignItems="center" gap={1}>
-            <AdminPanelSettingsIcon color="primary" fontSize="large" />
-          </Box>
-        </Box>
+            </div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+            <Icons.AdminPanelSettings />
+          </div>
+        </div>
 
         {/* Stats Cards */}
-        <Grid container spacing={3} mb={4}>
-          <Grid item xs={12} sm={6} md={3}>
-            <StatCard
-              icon={<FolderIcon />}
-              value={stats.total}
-              label="Total Projects"
-              color="#667eea"
-              subtext="Across all teams"
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <StatCard
-              icon={<PlayArrowIcon />}
-              value={stats.active}
-              label="Active Projects"
-              color="#66BB6A"
-              trend="+12"
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <StatCard
-              icon={<CheckCircleIcon />}
-              value={stats.completed}
-              label="Completed"
-              color="#29B6F6"
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <StatCard
-              icon={<FlagIcon />}
-              value={stats.highPriority}
-              label="High Priority"
-              color="#EF5350"
-              subtext="Urgent attention"
-            />
-          </Grid>
-        </Grid>
-      </Box>
+        <div className="AdminProject-stats-grid">
+          <StatCard
+            icon={<Icons.Folder />}
+            value={stats.total}
+            label="Total Projects"
+            color="#667eea"
+            subtext="Across all teams"
+          />
+          <StatCard
+            icon={<Icons.PlayArrow />}
+            value={stats.active}
+            label="Active Projects"
+            color="#66BB6A"
+            trend="+12"
+          />
+          <StatCard
+            icon={<Icons.CheckCircle />}
+            value={stats.completed}
+            label="Completed"
+            color="#29B6F6"
+          />
+          <StatCard
+            icon={<Icons.Flag />}
+            value={stats.highPriority}
+            label="High Priority"
+            color="#EF5350"
+            subtext="Urgent attention"
+          />
+        </div>
+      </div>
 
-      {/* ==== CREATE / EDIT PROJECT FORM ==== */}
-      <Card 
-        id="project-form"
-        sx={{ 
-          mb: 4,
-          borderRadius: 3,
-          overflow: 'hidden',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.05)',
-          border: '1px solid rgba(255,255,255,0.2)'
-        }}
-      >
-        <Box sx={{ 
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white',
-          p: 3
-        }}>
-          <Box display="flex" justifyContent="space-between" alignItems="center">
-            <Typography variant="h5" fontWeight="800">
-              {projectId ? "Edit Project" : "Create New Project"}
-            </Typography>
+      {/* CREATE / EDIT PROJECT FORM */}
+      <div id="AdminProject-project-form" className="AdminProject-form-card">
+        <div className="AdminProject-form-header">
+          <div className="AdminProject-form-header-content">
+            <div>
+              <div className="AdminProject-form-title">
+                {projectId ? "Edit Project" : "Create New Project"}
+              </div>
+              <div className="AdminProject-form-subtitle">
+                {projectId ? "Update project details below" : "Fill in the details to create a new project"}
+              </div>
+            </div>
             {projectId && (
-              <Button 
-                onClick={resetForm} 
-                variant="outlined" 
-                size="small"
-                sx={{
-                  color: 'white',
-                  borderColor: 'rgba(255,255,255,0.3)',
-                  '&:hover': {
-                    borderColor: 'white',
-                    background: 'rgba(255,255,255,0.1)'
-                  }
-                }}
+              <button 
+                className="AdminProject-button AdminProject-button-outline"
+                onClick={resetForm}
+                style={{ color: "white", borderColor: "rgba(255,255,255,0.3)" }}
               >
                 Cancel Edit
-              </Button>
+              </button>
             )}
-          </Box>
-          <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5 }}>
-            {projectId ? "Update project details below" : "Fill in the details to create a new project"}
-          </Typography>
-        </Box>
+          </div>
+        </div>
 
-        <CardContent sx={{ p: 3 }}>
-          <Stack spacing={3}>
+        <div className="AdminProject-form-content">
+          <div className="AdminProject-form-stack">
             {/* PROJECT NAME */}
-            <TextField
-              label="Project Name *"
-              value={projectName}
-              onChange={(e) => setProjectName(e.target.value)}
-              error={!!errors.projectName}
-              helperText={errors.projectName}
-              fullWidth
-              variant="outlined"
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <DescriptionOutlinedIcon color="action" />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                }
-              }}
-            />
+            <div className="AdminProject-form-group">
+              <label className="AdminProject-form-label AdminProject-form-label-required">
+                Project Name
+              </label>
+              <input
+                type="text"
+                className={`AdminProject-textfield ${errors.projectName ? "AdminProject-textfield-error" : ""}`}
+                value={projectName}
+                onChange={(e) => setProjectName(e.target.value)}
+                placeholder="Enter project name"
+              />
+              {errors.projectName && (
+                <div className="AdminProject-helper-text AdminProject-helper-text-error">
+                  {errors.projectName}
+                </div>
+              )}
+            </div>
 
             {/* DESCRIPTION */}
-            <TextField
-              label="Description *"
-              multiline
-              rows={3}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              error={!!errors.description}
-              helperText={errors.description}
-              fullWidth
-              variant="outlined"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                }
-              }}
-            />
+            <div className="AdminProject-form-group">
+              <label className="AdminProject-form-label AdminProject-form-label-required">
+                Description
+              </label>
+              <textarea
+                className={`AdminProject-textarea ${errors.description ? "AdminProject-textfield-error" : ""}`}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Enter project description"
+                rows={3}
+              />
+              {errors.description && (
+                <div className="AdminProject-helper-text AdminProject-helper-text-error">
+                  {errors.description}
+                </div>
+              )}
+            </div>
 
             {/* DATES */}
-            <Grid container spacing={3}>
-              <Grid item xs={12} md={6}>
-                <TextField
+            <div className="AdminProject-form-grid">
+              <div className="AdminProject-form-group">
+                <label className="AdminProject-form-label AdminProject-form-label-required">
+                  Start Date
+                </label>
+                <input
                   type="date"
-                  label="Start Date *"
-                  InputLabelProps={{ shrink: true }}
+                  className={`AdminProject-textfield ${errors.startDate ? "AdminProject-textfield-error" : ""}`}
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  error={!!errors.startDate}
-                  helperText={errors.startDate}
-                  fullWidth
-                  variant="outlined"
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <CalendarIcon color="action" />
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                    }
-                  }}
                 />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <TextField
+                {errors.startDate && (
+                  <div className="AdminProject-helper-text AdminProject-helper-text-error">
+                    {errors.startDate}
+                  </div>
+                )}
+              </div>
+              <div className="AdminProject-form-group">
+                <label className="AdminProject-form-label AdminProject-form-label-required">
+                  End Date
+                </label>
+                <input
                   type="date"
-                  label="End Date *"
-                  InputLabelProps={{ shrink: true }}
+                  className={`AdminProject-textfield ${errors.endDate ? "AdminProject-textfield-error" : ""}`}
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  error={!!errors.endDate}
-                  helperText={errors.endDate}
-                  fullWidth
-                  variant="outlined"
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <DateRangeIcon color="action" />
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                    }
-                  }}
                 />
-              </Grid>
-            </Grid>
+                {errors.endDate && (
+                  <div className="AdminProject-helper-text AdminProject-helper-text-error">
+                    {errors.endDate}
+                  </div>
+                )}
+              </div>
+            </div>
 
             {/* PRIORITY & STATUS */}
-            <Grid container spacing={3}>
-              <Grid item xs={12} md={6}>
-                <FormControl fullWidth error={!!errors.priority}>
-                  <InputLabel>Priority</InputLabel>
-                  <Select
-                    value={priority}
-                    onChange={(e) => setPriority(e.target.value)}
-                    label="Priority"
-                    sx={{ borderRadius: 2 }}
-                  >
-                    <MenuItem value="Low">
-                      <Box display="flex" alignItems="center" gap={1}>
-                        <BoltIcon sx={{ color: '#66BB6A', fontSize: 18 }} />
-                        Low Priority
-                      </Box>
-                    </MenuItem>
-                    <MenuItem value="Medium">
-                      <Box display="flex" alignItems="center" gap={1}>
-                        <BoltIcon sx={{ color: '#FFA726', fontSize: 18 }} />
-                        Medium Priority
-                      </Box>
-                    </MenuItem>
-                    <MenuItem value="High">
-                      <Box display="flex" alignItems="center" gap={1}>
-                        <BoltIcon sx={{ color: '#EF5350', fontSize: 18 }} />
-                        High Priority
-                      </Box>
-                    </MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <FormControl fullWidth>
-                  <InputLabel>Status</InputLabel>
-                  <Select
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
-                    label="Status"
-                    sx={{ borderRadius: 2 }}
-                  >
-                    <MenuItem value="Active">
-                      <Box display="flex" alignItems="center" gap={1}>
-                        <PlayArrowIcon sx={{ color: '#66BB6A', fontSize: 18 }} />
-                        Active
-                      </Box>
-                    </MenuItem>
-                    <MenuItem value="On Hold">
-                      <Box display="flex" alignItems="center" gap={1}>
-                        <PauseIcon sx={{ color: '#FFA726', fontSize: 18 }} />
-                        On Hold
-                      </Box>
-                    </MenuItem>
-                    <MenuItem value="Completed">
-                      <Box display="flex" alignItems="center" gap={1}>
-                        <CheckCircleIcon sx={{ color: '#29B6F6', fontSize: 18 }} />
-                        Completed
-                      </Box>
-                    </MenuItem>
-                    <MenuItem value="Planning">
-                      <Box display="flex" alignItems="center" gap={1}>
-                        <ScheduleIcon sx={{ color: '#AB47BC', fontSize: 18 }} />
-                        Planning
-                      </Box>
-                    </MenuItem>
-                    <MenuItem value="Cancelled">
-                      <Box display="flex" alignItems="center" gap={1}>
-                        <StopIcon sx={{ color: '#EF5350', fontSize: 18 }} />
-                        Cancelled
-                      </Box>
-                    </MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-            </Grid>
+            <div className="AdminProject-form-grid">
+              <div className="AdminProject-form-group">
+                <label className="AdminProject-form-label">Priority</label>
+                <select
+                  className="AdminProject-select"
+                  value={priority}
+                  onChange={(e) => setPriority(e.target.value)}
+                >
+                  <option value="Low">
+                    <Icons.Bolt /> Low Priority
+                  </option>
+                  <option value="Medium">
+                    <Icons.Bolt /> Medium Priority
+                  </option>
+                  <option value="High">
+                    <Icons.Bolt /> High Priority
+                  </option>
+                </select>
+              </div>
+              <div className="AdminProject-form-group">
+                <label className="AdminProject-form-label">Status</label>
+                <select
+                  className="AdminProject-select"
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                >
+                  <option value="Active">
+                    <Icons.PlayArrow /> Active
+                  </option>
+                  <option value="On Hold">
+                    <Icons.Pause /> On Hold
+                  </option>
+                  <option value="Completed">
+                    <Icons.CheckCircle /> Completed
+                  </option>
+                  <option value="Planning">
+                    <Icons.Schedule /> Planning
+                  </option>
+                  <option value="Cancelled">
+                    <Icons.Stop /> Cancelled
+                  </option>
+                </select>
+              </div>
+            </div>
 
             {/* MEMBERS */}
-            <FormControl fullWidth error={!!errors.members}>
-              <InputLabel>Team Members *</InputLabel>
-              <Select
-                multiple
-                value={members}
-                onChange={(e) => setMembers(e.target.value)}
-                renderValue={() => (
-                  <Box display="flex" alignItems="center" gap={1}>
-                    <AvatarGroup max={4}>
-                      {getSelectedUsers().map((u) => (
-                        <Tooltip key={u._id} title={u.name}>
-                          <Avatar sx={{ 
-                            width: 32, 
-                            height: 32,
-                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                            fontSize: '0.9rem',
-                            fontWeight: 600
-                          }}>
+            <div className="AdminProject-form-group">
+              <label className="AdminProject-form-label AdminProject-form-label-required">
+                Team Members
+              </label>
+              
+              {/* Dropdown Container */}
+              <div className="AdminProject-dropdown-container">
+                {/* Dropdown Trigger - Shows selected members count */}
+                <div 
+                  className="AdminProject-dropdown-trigger"
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                >
+                  <span className="AdminProject-dropdown-placeholder">
+                    {members.length > 0 
+                      ? `${members.length} member${members.length > 1 ? 's' : ''} selected` 
+                      : 'Select team members'}
+                  </span>
+                  <span className={`AdminProject-dropdown-arrow ${isDropdownOpen ? 'open' : ''}`}>
+                    ▼
+                  </span>
+                </div>
+                
+                {/* Dropdown Menu */}
+                {isDropdownOpen && (
+                  <div className="AdminProject-dropdown-menu">
+                    <div className="AdminProject-dropdown-search">
+                      <input
+                        type="text"
+                        placeholder="Search members..."
+                        value={memberSearchTerm}
+                        onChange={(e) => setMemberSearchTerm(e.target.value)}
+                        className="AdminProject-dropdown-search-input"
+                      />
+                    </div>
+                    
+                    <div className="AdminProject-dropdown-options">
+                      {filteredUsers.map((u) => (
+                        <div 
+                          key={u._id}
+                          className={`AdminProject-dropdown-option ${members.includes(u._id) ? 'selected' : ''}`}
+                          onClick={() => handleMemberToggle(u._id)}
+                        >
+                          <div className="AdminProject-dropdown-option-checkbox">
+                            <input
+                              type="checkbox"
+                              checked={members.includes(u._id)}
+                              onChange={() => {}}
+                              className="AdminProject-checkbox"
+                            />
+                          </div>
+                          <div className="AdminProject-dropdown-option-avatar">
                             {u.name?.charAt(0)}
-                          </Avatar>
-                        </Tooltip>
+                          </div>
+                          <div className="AdminProject-dropdown-option-info">
+                            <div className="AdminProject-dropdown-option-name">{u.name}</div>
+                            <div className="AdminProject-dropdown-option-email">{u.email}</div>
+                          </div>
+                        </div>
                       ))}
-                    </AvatarGroup>
-                    <Typography variant="caption" color="text.secondary">
-                      {members.length} member{members.length !== 1 ? 's' : ''} selected
-                    </Typography>
-                  </Box>
+                      
+                      {filteredUsers.length === 0 && (
+                        <div className="AdminProject-dropdown-no-results">
+                          No members found
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="AdminProject-dropdown-footer">
+                      <button
+                        type="button"
+                        className="AdminProject-dropdown-close-btn"
+                        onClick={() => setIsDropdownOpen(false)}
+                      >
+                        Done
+                      </button>
+                    </div>
+                  </div>
                 )}
-                label="Team Members *"
-                sx={{ borderRadius: 2 }}
-              >
-                {users.map((u) => (
-                  <MenuItem key={u._id} value={u._id}>
-                    <Box display="flex" alignItems="center" gap={2}>
-                      <Avatar sx={{ 
-                        width: 32, 
-                        height: 32,
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        fontSize: '0.9rem',
-                        fontWeight: 600
-                      }}>
-                        {u.name?.charAt(0)}
-                      </Avatar>
-                      <Box>
-                        <Typography variant="body2">{u.name}</Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {u.email}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </MenuItem>
+              </div>
+              
+              {/* Selected Members Avatars */}
+              <div className="AdminProject-avatar-group">
+                {getSelectedUsers().map((u) => (
+                  <div key={u._id} className="AdminProject-avatar" title={`${u.name} (${u.email})`}>
+                    {u.name?.charAt(0)}
+                    <span 
+                      className="AdminProject-avatar-remove"
+                      onClick={() => handleMemberRemove(u._id)}
+                      title="Remove"
+                    >
+                      ×
+                    </span>
+                  </div>
                 ))}
-              </Select>
-              {errors.members && <FormHelperText error>{errors.members}</FormHelperText>}
-            </FormControl>
+              </div>
+              
+              {errors.members && (
+                <div className="AdminProject-helper-text AdminProject-helper-text-error">
+                  {errors.members}
+                </div>
+              )}
+            </div>
 
             {/* FILE UPLOAD */}
-            <Box>
-              <Button
-                variant="outlined"
-                component="label"
-                startIcon={<CloudUploadIcon />}
-                sx={{ 
-                  mb: 2,
-                  borderRadius: 2,
-                  borderStyle: 'dashed',
-                  borderWidth: 2,
-                  py: 1.5
-                }}
-              >
-                Upload Project Document (PDF)
-                <input
-                  type="file"
-                  hidden
-                  accept=".pdf"
-                  onChange={handleFileChange}
-                />
-              </Button>
-              {fileName && (
-                <Box display="flex" alignItems="center" gap={1} mt={1}>
-                  <PdfIcon sx={{ color: '#EF5350', fontSize: 20 }} />
-                  <Typography variant="body2" color="text.secondary">
-                    Selected: {fileName}
-                  </Typography>
-                </Box>
-              )}
-              {projectId && projects.find(p => p._id === projectId)?.pdfFile?.filename && (
-                <Box display="flex" alignItems="center" gap={1} mt={1}>
-                  <PdfIcon sx={{ color: '#66BB6A', fontSize: 20 }} />
-                  <Typography variant="body2" color="text.secondary">
-                    Current file: {projects.find(p => p._id === projectId)?.pdfFile?.filename}
-                  </Typography>
-                </Box>
-              )}
-            </Box>
+            <div className="AdminProject-form-group">
+              <label className="AdminProject-form-label">Project Document (PDF)</label>
+              <div>
+                <label className="AdminProject-file-upload">
+                  <Icons.CloudUpload /> Upload Project Document (PDF)
+                  <input
+                    type="file"
+                    className="AdminProject-file-input"
+                    accept=".pdf"
+                    onChange={handleFileChange}
+                  />
+                </label>
+                {fileName && (
+                  <div className="AdminProject-file-info">
+                    <Icons.Pdf /> Selected: {fileName}
+                  </div>
+                )}
+                {projectId && projects.find(p => p._id === projectId)?.pdfFile?.filename && (
+                  <div className="AdminProject-file-info">
+                    <Icons.Pdf /> Current file: {projects.find(p => p._id === projectId)?.pdfFile?.filename}
+                  </div>
+                )}
+              </div>
+            </div>
 
             {/* ACTION BUTTONS */}
-            <Box display="flex" gap={2}>
-              <Button
-                variant="contained"
+            <div className="AdminProject-button-group">
+              <button
+                className="AdminProject-button AdminProject-button-primary"
                 onClick={handleSubmit}
                 disabled={loading}
-                startIcon={loading ? <CircularProgress size={20} /> : projectId ? <EditIcon /> : <RocketLaunchIcon />}
-                sx={{ 
-                  flex: 1,
-                  borderRadius: 2,
-                  py: 1.5,
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  fontWeight: 600,
-                  '&:hover': {
-                    background: 'linear-gradient(135deg, #5a6fd8 0%, #6a3f8c 100%)',
-                    transform: 'translateY(-2px)',
-                    boxShadow: '0 8px 25px rgba(102, 126, 234, 0.4)'
-                  }
-                }}
               >
                 {loading ? "Saving..." : projectId ? "Update Project" : "Create Project"}
-              </Button>
+              </button>
               {!projectId && (
-                <Button
-                  variant="outlined"
+                <button
+                  className="AdminProject-button AdminProject-button-outline"
                   onClick={resetForm}
                   disabled={loading}
-                  sx={{ borderRadius: 2, py: 1.5 }}
                 >
                   Clear Form
-                </Button>
+                </button>
               )}
-            </Box>
-          </Stack>
-        </CardContent>
-      </Card>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      {/* ===================== PROJECT LIST SECTION ===================== */}
-      <Box sx={{ 
-        background: 'white',
-        borderRadius: 3,
-        p: 3,
-        boxShadow: '0 8px 32px rgba(0,0,0,0.05)',
-        border: '1px solid rgba(255,255,255,0.2)'
-      }}>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-          <Box>
-            <Typography variant="h5" fontWeight="800">
+      {/* PROJECT LIST SECTION */}
+      <div className="AdminProject-list-section">
+        <div className="AdminProject-list-header">
+          <div>
+            <div className="AdminProject-list-title">
               All Projects ({filteredProjects.length})
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
+            </div>
+            <div className="AdminProject-list-subtitle">
               Manage and monitor all your projects
-            </Typography>
-          </Box>
+            </div>
+          </div>
           
-          <Box display="flex" gap={2}>
-            <TextField
-              size="small"
-              placeholder="Search projects..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon color="action" />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{ 
-                width: 250,
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                }
-              }}
-            />
-            <FormControl size="small" sx={{ minWidth: 150 }}>
-              <Select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                sx={{ borderRadius: 2 }}
-                startAdornment={
-                  <InputAdornment position="start">
-                    <SortIcon color="action" sx={{ ml: 1 }} />
-                  </InputAdornment>
-                }
-                displayEmpty
-              >
-                <MenuItem value="newest">Newest First</MenuItem>
-                <MenuItem value="oldest">Oldest First</MenuItem>
-                <MenuItem value="priority">Priority</MenuItem>
-                <MenuItem value="name">Name A-Z</MenuItem>
-              </Select>
-            </FormControl>
-          </Box>
-        </Box>
+          <div className="AdminProject-list-controls">
+            <div style={{ position: "relative" }}>
+              <Icons.Search className="AdminProject-search-icon" />
+              <input
+                type="text"
+                className="AdminProject-search"
+                placeholder="Search projects..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <select
+              className="AdminProject-select"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              style={{ minWidth: "150px" }}
+            >
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+              <option value="priority">Priority</option>
+              <option value="name">Name A-Z</option>
+            </select>
+          </div>
+        </div>
 
         {filteredProjects.length === 0 ? (
-          <Box textAlign="center" py={6}>
-            <FolderIcon sx={{ fontSize: 64, color: alpha('#667eea', 0.3), mb: 2 }} />
-            <Typography variant="h6" color="text.secondary" gutterBottom>
-              No projects found
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              {searchTerm ? 'Try a different search term' : 'Create your first project to get started'}
-            </Typography>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
+          <div className="AdminProject-empty-state">
+            <div className="AdminProject-empty-icon">
+              <Icons.Folder />
+            </div>
+            <div className="AdminProject-empty-title">No projects found</div>
+            <div className="AdminProject-empty-description">
+              {searchTerm ? "Try a different search term" : "Create your first project to get started"}
+            </div>
+            <button
+              className="AdminProject-button AdminProject-button-primary"
               onClick={() => {
                 resetForm();
-                document.getElementById('project-form').scrollIntoView({ behavior: 'smooth' });
-              }}
-              sx={{
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                borderRadius: 2,
-                px: 3
+                document.getElementById('AdminProject-project-form').scrollIntoView({ behavior: 'smooth' });
               }}
             >
-              Create First Project
-            </Button>
-          </Box>
+              <Icons.Add /> Create First Project
+            </button>
+          </div>
         ) : (
-          <Grid container spacing={3}>
+          <div className="AdminProject-grid">
             {filteredProjects.map((p) => (
-              <Grid item xs={12} md={6} lg={4} key={p._id}>
-                <Card sx={{ 
-                  borderRadius: 3,
-                  height: '100%',
-                  position: 'relative',
-                  overflow: 'visible',
-                  background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.98) 100%)',
-                  border: '1px solid rgba(0,0,0,0.08)',
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
-                  transition: 'all 0.3s ease',
-                  '&:hover': {
-                    transform: 'translateY(-4px)',
-                    boxShadow: '0 12px 40px rgba(0,0,0,0.1)',
-                    borderColor: alpha('#667eea', 0.3),
-                  }
-                }}>
-                  <Box sx={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: 4,
-                    background: `linear-gradient(90deg, ${getStatusColor(p.status)} 0%, ${getPriorityColor(p.priority)} 100%)`,
-                    borderTopLeftRadius: 12,
-                    borderTopRightRadius: 12
-                  }} />
+              <div key={p._id} className="AdminProject-project-card">
+                <div 
+                  className="AdminProject-project-top-bar"
+                  style={{
+                    "--status-color": getStatusColor(p.status),
+                    "--priority-color": getPriorityColor(p.priority)
+                  }}
+                />
+                
+                <div className="AdminProject-project-content">
+                  <div className="AdminProject-project-header">
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+                        <Icons.Folder style={{ color: "#667eea", fontSize: "20px" }} />
+                        <div className="AdminProject-project-title">
+                          {p.projectName}
+                        </div>
+                      </div>
+                      <div className="AdminProject-chip-group">
+                        <span className="AdminProject-chip AdminProject-chip-status" style={{
+                          "--status-color": getStatusColor(p.status),
+                          "--status-color-rgb": getStatusColor(p.status).replace('#', '').match(/.{2}/g).map(c => parseInt(c, 16)).join(',')
+                        }}>
+                          {p.status}
+                        </span>
+                        <span className="AdminProject-chip AdminProject-chip-priority" style={{
+                          "--priority-color": getPriorityColor(p.priority),
+                          "--priority-color-rgb": getPriorityColor(p.priority).replace('#', '').match(/.{2}/g).map(c => parseInt(c, 16)).join(',')
+                        }}>
+                          {p.priority}
+                        </span>
+                      </div>
+                    </div>
+                    <button className="AdminProject-icon-button">
+                      <Icons.MoreVert />
+                    </button>
+                  </div>
                   
-                  <CardContent sx={{ p: 3 }}>
-                    <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
-                      <Box flex={1}>
-                        <Box display="flex" alignItems="center" gap={1} mb={1}>
-                          <FolderIcon sx={{ color: '#667eea', fontSize: 20 }} />
-                          <Typography variant="h6" fontWeight="700" noWrap>
-                            {p.projectName}
-                          </Typography>
-                        </Box>
-                        <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
-                          <Chip
-                            label={p.status}
-                            size="small"
-                            sx={{ 
-                              textTransform: 'capitalize',
-                              background: getStatusColor(p.status) + '15',
-                              color: getStatusColor(p.status),
-                              fontWeight: 600,
-                              border: `1px solid ${getStatusColor(p.status)}30`
-                            }}
-                          />
-                          <Chip
-                            label={p.priority}
-                            size="small"
-                            sx={{ 
-                              textTransform: 'capitalize',
-                              background: getPriorityColor(p.priority) + '15',
-                              color: getPriorityColor(p.priority),
-                              fontWeight: 600,
-                              border: `1px solid ${getPriorityColor(p.priority)}30`
-                            }}
-                          />
-                        </Box>
-                      </Box>
-                      <IconButton size="small">
-                        <MoreVertIcon />
-                      </IconButton>
-                    </Box>
-                    
-                    <Typography variant="body2" color="text.secondary" paragraph sx={{ 
-                      mb: 2,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical'
-                    }}>
-                      {p.description}
-                    </Typography>
-                    
-                    {/* Progress Bar */}
-                    <Box mb={2}>
-                      <Box display="flex" justifyContent="space-between" mb={0.5}>
-                        <Typography variant="caption" color="text.secondary">
-                          Task Progress
-                        </Typography>
-                        <Typography variant="caption" fontWeight="600" color="primary">
-                          {getTaskProgress(p.tasks)}%
-                        </Typography>
-                      </Box>
-                      <LinearProgress 
-                        variant="determinate" 
-                        value={getTaskProgress(p.tasks)} 
-                        sx={{ 
-                          height: 6, 
-                          borderRadius: 3,
-                          backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                          '& .MuiLinearProgress-bar': {
-                            background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
-                            borderRadius: 3
-                          }
-                        }}
+                  <div className="AdminProject-project-description">
+                    {p.description}
+                  </div>
+                  
+                  {/* Progress Bar */}
+                  <div className="AdminProject-progress-container">
+                    <div className="AdminProject-progress-header">
+                      <div className="AdminProject-progress-label">Task Progress</div>
+                      <div className="AdminProject-progress-value">{getTaskProgress(p.tasks)}%</div>
+                    </div>
+                    <div className="AdminProject-progress-bar">
+                      <div 
+                        className="AdminProject-progress-fill"
+                        style={{ width: `${getTaskProgress(p.tasks)}%` }}
                       />
-                    </Box>
-                    
-                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                      <Box display="flex" alignItems="center" gap={1}>
-                        <CalendarIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                        <Typography variant="caption" color="text.secondary">
-                          {p.startDate ? new Date(p.startDate).toLocaleDateString() : 'No start'} - {p.endDate ? new Date(p.endDate).toLocaleDateString() : 'No end'}
-                        </Typography>
-                      </Box>
-                      <Box display="flex" alignItems="center" gap={1}>
-                        <GroupIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                        <Typography variant="caption" color="text.secondary">
-                          {p.users?.length || 0}
-                        </Typography>
-                        <TaskIcon sx={{ fontSize: 16, color: 'text.secondary', ml: 1 }} />
-                        <Typography variant="caption" color="text.secondary">
-                          {p.tasks?.length || 0}
-                        </Typography>
-                      </Box>
-                    </Box>
-                    
-                    <Divider sx={{ my: 2 }} />
-                    
-                    <Box display="flex" justifyContent="space-between" alignItems="center">
-                      {/* PDF Actions */}
-                      <Stack direction="row" spacing={1}>
-                        {p.pdfFile?.path ? (
-                          <>
-                            <Tooltip title="View PDF">
-                              <IconButton
-                                size="small"
-                                onClick={() => viewPdf(p.pdfFile.path, p.pdfFile.filename)}
-                                sx={{ color: '#667eea' }}
-                              >
-                                <VisibilityIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Download PDF">
-                              <IconButton
-                                size="small"
-                                onClick={() => downloadPdf(p.pdfFile.path, p.pdfFile.filename)}
-                                sx={{ color: '#66BB6A' }}
-                              >
-                                <DownloadIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          </>
-                        ) : (
-                          <Typography variant="caption" color="text.secondary">
-                            No document
-                          </Typography>
-                        )}
-                      </Stack>
-                      
-                      {/* Action Buttons */}
-                      <Stack direction="row" spacing={0.5}>
-                        <Tooltip title="View Details">
-                          <IconButton
-                            size="small"
-                            onClick={() => viewProjectDetails(p)}
-                            sx={{ color: '#667eea' }}
+                    </div>
+                  </div>
+                  
+                  <div className="AdminProject-project-meta">
+                    <div className="AdminProject-project-meta-left">
+                      <Icons.Calendar />
+                      <span>
+                        {p.startDate ? new Date(p.startDate).toLocaleDateString() : "No start"} - {p.endDate ? new Date(p.endDate).toLocaleDateString() : "No end"}
+                      </span>
+                    </div>
+                    <div className="AdminProject-project-meta-right">
+                      <Icons.Group />
+                      <span>{p.users?.length || 0}</span>
+                      <Icons.Task />
+                      <span>{p.tasks?.length || 0}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="AdminProject-divider" />
+                  
+                  <div className="AdminProject-project-actions">
+                    {/* PDF Actions */}
+                    <div className="AdminProject-pdf-actions">
+                      {p.pdfFile?.path ? (
+                        <>
+                          <button
+                            className="AdminProject-icon-button"
+                            onClick={() => viewPdf(p.pdfFile.path, p.pdfFile.filename)}
+                            title="View PDF"
                           >
-                            <VisibilityIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Edit">
-                          <IconButton
-                            size="small"
-                            color="primary"
-                            onClick={() => editProject(p)}
+                            <Icons.Visibility />
+                          </button>
+                          <button
+                            className="AdminProject-icon-button AdminProject-icon-button-green"
+                            onClick={() => downloadPdf(p.pdfFile.path, p.pdfFile.filename)}
+                            title="Download PDF"
                           >
-                            <EditIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Delete">
-                          <IconButton
-                            size="small"
-                            color="error"
-                            onClick={() => deleteProject(p._id, p.projectName)}
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </Stack>
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
+                            <Icons.Download />
+                          </button>
+                        </>
+                      ) : (
+                        <span style={{ fontSize: "0.75rem", color: "#666" }}>No document</span>
+                      )}
+                    </div>
+                    
+                    {/* Action Buttons */}
+                    <div className="AdminProject-action-buttons">
+                      <button
+                        className="AdminProject-icon-button"
+                        onClick={() => viewProjectDetails(p)}
+                        title="View Details"
+                      >
+                        <Icons.Visibility />
+                      </button>
+                      <button
+                        className="AdminProject-icon-button"
+                        onClick={() => editProject(p)}
+                        title="Edit"
+                      >
+                        <Icons.Edit />
+                      </button>
+                      <button
+                        className="AdminProject-icon-button AdminProject-icon-button-red"
+                        onClick={() => deleteProject(p._id, p.projectName)}
+                        title="Delete"
+                      >
+                        <Icons.Delete />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             ))}
-          </Grid>
+          </div>
         )}
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 };
 

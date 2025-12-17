@@ -1,81 +1,7 @@
 // ========================= EmployeeProject.jsx =========================
 import React, { useState, useEffect } from "react";
 import axios from "../../utils/axiosConfig";
-import {
-  Box,
-  Card,
-  CardContent,
-  TextField,
-  Button,
-  Typography,
-  Grid,
-  MenuItem,
-  Select,
-  InputLabel,
-  FormControl,
-  Stack,
-  Chip,
-  Avatar,
-  Divider,
-  Paper,
-  IconButton,
-  Alert,
-  CircularProgress,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Badge,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  Drawer,
-  Tooltip,
-  Snackbar,
-  LinearProgress,
-  Tabs,
-  Tab,
-  alpha,
-  useTheme
-} from "@mui/material";
-import {
-  Add as AddIcon,
-  AttachFile as AttachFileIcon,
-  Comment as CommentIcon,
-  CalendarToday as CalendarIcon,
-  PriorityHigh as PriorityIcon,
-  Person as PersonIcon,
-  CheckCircle as CheckCircleIcon,
-  Schedule as ScheduleIcon,
-  Cancel as CancelIcon,
-  Notifications as NotificationsIcon,
-  History as HistoryIcon,
-  Update as UpdateIcon,
-  ClearAll as ClearAllIcon,
-  Pause as PauseIcon,
-  Replay as ReplayIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Download as DownloadIcon,
-  Visibility as VisibilityIcon,
-  PictureAsPdf as PdfIcon,
-  InsertDriveFile as FileIcon,
-  Close as CloseIcon,
-  Task as TaskIcon,
-  Description as DescriptionIcon,
-  Dashboard as DashboardIcon,
-  TrendingUp as TrendingUpIcon,
-  MoreVert as MoreVertIcon,
-  ArrowForward as ArrowForwardIcon,
-  Star as StarIcon,
-  FiberNew as NewIcon,
-  AccessTime as AccessTimeIcon,
-  Group as GroupIcon,
-  Folder as FolderIcon,
-  CloudUpload as CloudUploadIcon,
-  Bolt as BoltIcon
-} from "@mui/icons-material";
+import "../Css/EmployeeProject.css";
 
 const EmployeeProject = () => {
   const [projects, setProjects] = useState([]);
@@ -105,8 +31,6 @@ const EmployeeProject = () => {
     inProgressTasks: 0
   });
 
-  const theme = useTheme();
-
   const [newTask, setNewTask] = useState({
     title: "",
     description: "",
@@ -119,12 +43,51 @@ const EmployeeProject = () => {
   const [taskErrors, setTaskErrors] = useState({});
 
   const TASK_STATUS_OPTIONS = [
-    { value: "pending", label: "Pending", icon: <ScheduleIcon />, color: "#FFA726" },
-    { value: "in progress", label: "In Progress", icon: <UpdateIcon />, color: "#29B6F6" },
-    { value: "completed", label: "Completed", icon: <CheckCircleIcon />, color: "#66BB6A" },
-    { value: "on hold", label: "On Hold", icon: <PauseIcon />, color: "#AB47BC" },
-    { value: "cancelled", label: "Cancelled", icon: <CancelIcon />, color: "#EF5350" },
+    { value: "pending", label: "Pending", color: "#FFA726" },
+    { value: "in progress", label: "In Progress", color: "#29B6F6" },
+    { value: "completed", label: "Completed", color: "#66BB6A" },
+    { value: "on hold", label: "On Hold", color: "#AB47BC" },
+    { value: "cancelled", label: "Cancelled", color: "#EF5350" },
   ];
+
+  // Icons
+  const Icons = {
+    Add: () => <span className="EmployeeProject-icon">➕</span>,
+    AttachFile: () => <span className="EmployeeProject-icon">📎</span>,
+    Comment: () => <span className="EmployeeProject-icon">💬</span>,
+    CalendarToday: () => <span className="EmployeeProject-icon">📅</span>,
+    PriorityHigh: () => <span className="EmployeeProject-icon">⚠️</span>,
+    Person: () => <span className="EmployeeProject-icon">👤</span>,
+    CheckCircle: () => <span className="EmployeeProject-icon">✅</span>,
+    Schedule: () => <span className="EmployeeProject-icon">⏰</span>,
+    Cancel: () => <span className="EmployeeProject-icon">❌</span>,
+    Notifications: () => <span className="EmployeeProject-icon">🔔</span>,
+    History: () => <span className="EmployeeProject-icon">📜</span>,
+    Update: () => <span className="EmployeeProject-icon">🔄</span>,
+    ClearAll: () => <span className="EmployeeProject-icon">🗑️</span>,
+    Pause: () => <span className="EmployeeProject-icon">⏸️</span>,
+    Replay: () => <span className="EmployeeProject-icon">↪️</span>,
+    Edit: () => <span className="EmployeeProject-icon">✏️</span>,
+    Delete: () => <span className="EmployeeProject-icon">🗑️</span>,
+    Download: () => <span className="EmployeeProject-icon">⬇️</span>,
+    Visibility: () => <span className="EmployeeProject-icon">👁️</span>,
+    PictureAsPdf: () => <span className="EmployeeProject-icon">📄</span>,
+    InsertDriveFile: () => <span className="EmployeeProject-icon">📎</span>,
+    Close: () => <span className="EmployeeProject-icon">✕</span>,
+    Task: () => <span className="EmployeeProject-icon">✅</span>,
+    Description: () => <span className="EmployeeProject-icon">📝</span>,
+    Dashboard: () => <span className="EmployeeProject-icon">📊</span>,
+    TrendingUp: () => <span className="EmployeeProject-icon">📈</span>,
+    MoreVert: () => <span className="EmployeeProject-icon">⋯</span>,
+    ArrowForward: () => <span className="EmployeeProject-icon">→</span>,
+    Star: () => <span className="EmployeeProject-icon">⭐</span>,
+    FiberNew: () => <span className="EmployeeProject-icon">🆕</span>,
+    AccessTime: () => <span className="EmployeeProject-icon">⏱️</span>,
+    Group: () => <span className="EmployeeProject-icon">👥</span>,
+    Folder: () => <span className="EmployeeProject-icon">📁</span>,
+    CloudUpload: () => <span className="EmployeeProject-icon">☁️↑</span>,
+    Bolt: () => <span className="EmployeeProject-icon">⚡</span>
+  };
 
   // Load all projects
   useEffect(() => {
@@ -414,17 +377,6 @@ const EmployeeProject = () => {
     }
   };
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case "completed": return <CheckCircleIcon fontSize="small" />;
-      case "in progress": return <UpdateIcon fontSize="small" />;
-      case "pending": return <ScheduleIcon fontSize="small" />;
-      case "cancelled": return <CancelIcon fontSize="small" />;
-      case "on hold": return <PauseIcon fontSize="small" />;
-      default: return <ScheduleIcon fontSize="small" />;
-    }
-  };
-
   const getTaskProgress = () => {
     if (tasks.length === 0) return 0;
     const completed = tasks.filter(t => t.status === "completed").length;
@@ -434,1655 +386,1126 @@ const EmployeeProject = () => {
   const unreadNotificationsCount = notifications.filter(n => !n.isRead).length;
 
   const StatCard = ({ icon, value, label, color, subtext, trend }) => (
-    <Card sx={{ 
-      height: '100%',
-      background: `linear-gradient(135deg, ${alpha(color, 0.1)} 0%, ${alpha(color, 0.05)} 100%)`,
-      border: `1px solid ${alpha(color, 0.2)}`,
-      borderRadius: 3,
-      position: 'relative',
-      overflow: 'visible',
-      transition: 'all 0.3s ease',
-      '&:hover': {
-        transform: 'translateY(-4px)',
-        boxShadow: `0 8px 25px ${alpha(color, 0.15)}`,
-      }
-    }}>
-      <CardContent>
-        <Box display="flex" alignItems="center" justifyContent="space-between">
-          <Box>
-            <Typography variant="h4" fontWeight="800" color={color} sx={{ mb: 1 }}>
-              {value}
-            </Typography>
-            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
-              {label}
-            </Typography>
-            {subtext && (
-              <Typography variant="caption" color="text.secondary">
-                {subtext}
-              </Typography>
-            )}
-          </Box>
-          <Box sx={{
-            width: 56,
-            height: 56,
-            borderRadius: 2,
-            background: `linear-gradient(135deg, ${alpha(color, 0.2)} 0%, ${alpha(color, 0.1)} 100%)`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: color,
-            fontSize: 28
-          }}>
-            {icon}
-          </Box>
-        </Box>
-        {trend && (
-          <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <TrendingUpIcon sx={{ fontSize: 16, color: color }} />
-            <Typography variant="caption" color={color} fontWeight="500">
-              {trend}
-            </Typography>
-          </Box>
-        )}
-      </CardContent>
-    </Card>
+    <div className="EmployeeProject-stat-card" style={{ borderLeftColor: color }}>
+      <div className="EmployeeProject-stat-content">
+        <div className="EmployeeProject-stat-text">
+          <h3 className="EmployeeProject-stat-value" style={{ color }}>{value}</h3>
+          <p className="EmployeeProject-stat-label">{label}</p>
+          {subtext && (
+            <p className="EmployeeProject-stat-subtext">{subtext}</p>
+          )}
+        </div>
+        <div className="EmployeeProject-stat-icon" style={{ backgroundColor: `${color}20` }}>
+          {icon}
+        </div>
+      </div>
+      {trend && (
+        <div className="EmployeeProject-stat-trend">
+          <Icons.TrendingUp />
+          <span style={{ color }}>{trend}</span>
+        </div>
+      )}
+    </div>
+  );
+
+  const Chip = ({ label, color, icon, variant = "default" }) => (
+    <span 
+      className={`EmployeeProject-chip EmployeeProject-chip-${variant}`}
+      style={{ 
+        backgroundColor: variant === "outlined" ? "transparent" : `${color}15`,
+        color: color,
+        borderColor: `${color}30`
+      }}
+    >
+      {icon && <span className="EmployeeProject-chip-icon">{icon}</span>}
+      {label}
+    </span>
+  );
+
+  const Avatar = ({ children, size = "medium" }) => (
+    <div className={`EmployeeProject-avatar EmployeeProject-avatar-${size}`}>
+      {children}
+    </div>
+  );
+
+  const Badge = ({ children, badgeContent, color = "error" }) => (
+    <div className="EmployeeProject-badge">
+      {children}
+      {badgeContent > 0 && (
+        <span className={`EmployeeProject-badge-content EmployeeProject-badge-${color}`}>
+          {badgeContent > 99 ? "99+" : badgeContent}
+        </span>
+      )}
+    </div>
+  );
+
+  const Tooltip = ({ title, children }) => (
+    <div className="EmployeeProject-tooltip">
+      {children}
+      <span className="EmployeeProject-tooltip-text">{title}</span>
+    </div>
+  );
+
+  const Alert = ({ severity, children, onClose }) => (
+    <div className={`EmployeeProject-alert EmployeeProject-alert-${severity}`}>
+      <div className="EmployeeProject-alert-content">
+        {children}
+      </div>
+      {onClose && (
+        <button className="EmployeeProject-alert-close" onClick={onClose}>
+          <Icons.Close />
+        </button>
+      )}
+    </div>
+  );
+
+  const LinearProgress = ({ value, variant = "determinate" }) => (
+    <div className="EmployeeProject-linear-progress">
+      <div 
+        className="EmployeeProject-linear-progress-bar" 
+        style={{ width: `${value}%` }}
+      />
+    </div>
+  );
+
+  const CircularProgress = ({ size = 40, thickness = 3.6 }) => (
+    <div 
+      className="EmployeeProject-circular-progress" 
+      style={{ width: size, height: size }}
+    >
+      <svg className="EmployeeProject-circular-progress-svg" viewBox="22 22 44 44">
+        <circle
+          className="EmployeeProject-circular-progress-circle"
+          cx="44"
+          cy="44"
+          r="20.2"
+          fill="none"
+          strokeWidth={thickness}
+        />
+      </svg>
+    </div>
   );
 
   return (
-    <Box sx={{ 
-      p: { xs: 2, md: 3 }, 
-      maxWidth: '1600px', 
-      margin: '0 auto',
-      background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%)',
-      minHeight: '100vh'
-    }}>
+    <div className="EmployeeProject-container">
       {/* Snackbar */}
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={3000}
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: "top", horizontal: "right" }}
-      >
-        <Alert 
-          onClose={handleCloseSnackbar} 
-          severity={snackbar.severity}
-          sx={{
-            borderRadius: 2,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-            backdropFilter: 'blur(10px)',
-            background: alpha(theme.palette.background.paper, 0.9)
-          }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+      {snackbar.open && (
+        <div className="EmployeeProject-snackbar">
+          <Alert severity={snackbar.severity} onClose={handleCloseSnackbar}>
+            {snackbar.message}
+          </Alert>
+        </div>
+      )}
 
       {/* PDF Viewer Dialog */}
-      <Dialog
-        open={openPdfDialog}
-        onClose={() => setOpenPdfDialog(false)}
-        maxWidth="lg"
-        fullWidth
-        PaperProps={{
-          sx: {
-            height: '90vh',
-            borderRadius: 3,
-            background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%)'
-          }
-        }}
-      >
-        <DialogTitle sx={{ 
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white',
-          borderTopLeftRadius: 12,
-          borderTopRightRadius: 12
-        }}>
-          <Box display="flex" justifyContent="space-between" alignItems="center">
-            <Box display="flex" alignItems="center" gap={1}>
-              <PdfIcon />
-              <Typography variant="h6">
-                {selectedPdfName}
-              </Typography>
-            </Box>
-            <IconButton onClick={() => setOpenPdfDialog(false)} sx={{ color: 'white' }}>
-              <CloseIcon />
-            </IconButton>
-          </Box>
-        </DialogTitle>
-        <DialogContent sx={{ p: 0, height: 'calc(100% - 64px)' }}>
-          {selectedPdfUrl ? (
-            <iframe
-              src={selectedPdfUrl}
-              title="PDF Viewer"
-              width="100%"
-              height="100%"
-              style={{ border: 'none' }}
-            />
-          ) : (
-            <Box display="flex" justifyContent="center" alignItems="center" height="100%">
-              <Typography color="text.secondary">
-                PDF cannot be loaded
-              </Typography>
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions sx={{ p: 2, background: alpha('#f5f7fa', 0.8) }}>
-          <Button
-            variant="contained"
-            startIcon={<DownloadIcon />}
-            onClick={() => {
-              const link = document.createElement('a');
-              link.href = selectedPdfUrl;
-              link.download = selectedPdfName || 'document.pdf';
-              link.click();
-            }}
-            disabled={!selectedPdfUrl}
-            sx={{
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              borderRadius: 2,
-              '&:hover': {
-                background: 'linear-gradient(135deg, #5a6fd8 0%, #6a3f8c 100%)',
-              }
-            }}
-          >
-            Download
-          </Button>
-          <Button 
-            onClick={() => setOpenPdfDialog(false)}
-            sx={{ borderRadius: 2 }}
-          >
-            Close
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {openPdfDialog && (
+        <div className="EmployeeProject-modal EmployeeProject-pdf-modal">
+          <div className="EmployeeProject-modal-backdrop" onClick={() => setOpenPdfDialog(false)} />
+          <div className="EmployeeProject-modal-content">
+            <div className="EmployeeProject-modal-header EmployeeProject-modal-header-primary">
+              <div className="EmployeeProject-modal-header-content">
+                <Icons.PictureAsPdf />
+                <h3>{selectedPdfName}</h3>
+              </div>
+              <button className="EmployeeProject-modal-close" onClick={() => setOpenPdfDialog(false)}>
+                <Icons.Close />
+              </button>
+            </div>
+            <div className="EmployeeProject-modal-body EmployeeProject-pdf-viewer">
+              {selectedPdfUrl ? (
+                <iframe
+                  src={selectedPdfUrl}
+                  title="PDF Viewer"
+                  className="EmployeeProject-pdf-frame"
+                />
+              ) : (
+                <div className="EmployeeProject-pdf-error">
+                  <p>PDF cannot be loaded</p>
+                </div>
+              )}
+            </div>
+            <div className="EmployeeProject-modal-footer">
+              <button
+                className="EmployeeProject-button EmployeeProject-button-primary"
+                onClick={() => {
+                  const link = document.createElement('a');
+                  link.href = selectedPdfUrl;
+                  link.download = selectedPdfName || 'document.pdf';
+                  link.click();
+                }}
+                disabled={!selectedPdfUrl}
+              >
+                <Icons.Download />
+                Download
+              </button>
+              <button 
+                className="EmployeeProject-button EmployeeProject-button-outline"
+                onClick={() => setOpenPdfDialog(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
-      <Box sx={{ 
-        mb: 4,
-        background: 'white',
-        borderRadius: 3,
-        p: 3,
-        boxShadow: '0 8px 32px rgba(0,0,0,0.05)',
-        border: '1px solid rgba(255,255,255,0.2)'
-      }}>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-          <Box>
-            <Typography variant="h3" fontWeight="800" color="primary" gutterBottom>
-              Project Dashboard
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-              Manage your projects and tasks efficiently
-            </Typography>
-          </Box>
+      <div className="EmployeeProject-header">
+        <div className="EmployeeProject-header-content">
+          <div className="EmployeeProject-header-text">
+            <h1 className="EmployeeProject-title">Project Dashboard</h1>
+            <p className="EmployeeProject-subtitle">Manage your projects and tasks efficiently</p>
+          </div>
           <Tooltip title="Notifications">
-            <IconButton 
+            <button 
+              className="EmployeeProject-icon-button EmployeeProject-notification-button"
               onClick={() => setOpenNotificationsDrawer(true)}
-              sx={{
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                color: 'white',
-                width: 48,
-                height: 48,
-                '&:hover': {
-                  background: 'linear-gradient(135deg, #5a6fd8 0%, #6a3f8c 100%)',
-                }
-              }}
             >
-              <Badge badgeContent={unreadNotificationsCount} color="error">
-                <NotificationsIcon />
+              <Badge badgeContent={unreadNotificationsCount}>
+                <Icons.Notifications />
               </Badge>
-            </IconButton>
+            </button>
           </Tooltip>
-        </Box>
+        </div>
 
         {/* Stats Cards */}
         {selectedProject && (
-          <Grid container spacing={3} mb={4}>
-            <Grid item xs={12} sm={6} md={3}>
+          <div className="EmployeeProject-stats-grid">
+            <div className="EmployeeProject-stat-item">
               <StatCard
-                icon={<DashboardIcon />}
+                icon={<Icons.Dashboard />}
                 value={stats.totalTasks}
                 label="Total Tasks"
                 color="#667eea"
                 subtext="This project"
               />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+            </div>
+            <div className="EmployeeProject-stat-item">
               <StatCard
-                icon={<CheckCircleIcon />}
+                icon={<Icons.CheckCircle />}
                 value={stats.completedTasks}
                 label="Completed"
                 color="#66BB6A"
                 trend={`${getTaskProgress()}% of total`}
               />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+            </div>
+            <div className="EmployeeProject-stat-item">
               <StatCard
-                icon={<UpdateIcon />}
+                icon={<Icons.Update />}
                 value={stats.inProgressTasks}
                 label="In Progress"
                 color="#29B6F6"
               />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+            </div>
+            <div className="EmployeeProject-stat-item">
               <StatCard
-                icon={<ScheduleIcon />}
+                icon={<Icons.Schedule />}
                 value={stats.pendingTasks}
                 label="Pending"
                 color="#FFA726"
               />
-            </Grid>
-          </Grid>
+            </div>
+          </div>
         )}
-      </Box>
+      </div>
 
       {loading.projects && (
-        <LinearProgress sx={{ 
-          mb: 3, 
-          borderRadius: 3,
-          height: 6,
-          background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)'
-        }} />
+        <LinearProgress />
       )}
 
       {/* PROJECT LIST */}
-      <Grid container spacing={3}>
+      <div className="EmployeeProject-grid">
         {projects.map((p) => (
-          <Grid item xs={12} md={6} lg={4} key={p._id}>
-            <Card
-              sx={{
-                cursor: "pointer",
-                transition: "all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",
-                border: selectedProject === p._id ? "2px solid" : "1px solid",
-                borderColor: selectedProject === p._id ? "#667eea" : "rgba(0,0,0,0.08)",
-                borderRadius: 3,
-                height: "100%",
-                position: 'relative',
-                overflow: 'visible',
-                background: selectedProject === p._id 
-                  ? 'linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%)'
-                  : 'white',
-                boxShadow: selectedProject === p._id 
-                  ? '0 20px 40px rgba(102, 126, 234, 0.15)'
-                  : '0 4px 20px rgba(0,0,0,0.05)',
-                "&:hover": {
-                  transform: "translateY(-8px)",
-                  boxShadow: "0 25px 50px rgba(0,0,0,0.1)",
-                  borderColor: alpha('#667eea', 0.5),
-                },
-              }}
+          <div className="EmployeeProject-grid-item" key={p._id}>
+            <div
+              className={`EmployeeProject-card ${selectedProject === p._id ? 'EmployeeProject-card-selected' : ''}`}
               onClick={() => handleSelectProject(p._id)}
             >
-              <Box sx={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: 4,
-                background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
-                borderTopLeftRadius: 12,
-                borderTopRightRadius: 12
-              }} />
+              <div className="EmployeeProject-card-highlight" />
               
-              <CardContent sx={{ p: 3 }}>
-                <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
-                  <Box>
-                    <Box display="flex" alignItems="center" gap={1} mb={1}>
-                      <FolderIcon sx={{ color: '#667eea', fontSize: 20 }} />
-                      <Typography variant="h6" fontWeight="700">
-                        {p.projectName}
-                      </Typography>
-                    </Box>
+              <div className="EmployeeProject-card-content">
+                <div className="EmployeeProject-card-header">
+                  <div className="EmployeeProject-card-title-section">
+                    <div className="EmployeeProject-card-title-row">
+                      <Icons.Folder />
+                      <h3 className="EmployeeProject-card-title">{p.projectName}</h3>
+                    </div>
                     <Chip
                       label={p.status}
-                      size="small"
-                      sx={{ 
-                        textTransform: 'capitalize',
-                        background: getStatusColor(p.status) + '15',
-                        color: getStatusColor(p.status),
-                        fontWeight: 600,
-                        border: `1px solid ${getStatusColor(p.status)}30`
-                      }}
+                      color={getStatusColor(p.status)}
                     />
-                  </Box>
-                  <IconButton size="small">
-                    <MoreVertIcon />
-                  </IconButton>
-                </Box>
+                  </div>
+                  <button className="EmployeeProject-icon-button EmployeeProject-card-menu">
+                    <Icons.MoreVert />
+                  </button>
+                </div>
                 
-                <Stack direction="row" spacing={1} mb={2} flexWrap="wrap" gap={1}>
+                <div className="EmployeeProject-chip-container">
                   <Chip
                     label={p.priority}
-                    size="small"
-                    sx={{ 
-                      textTransform: 'capitalize',
-                      background: getPriorityColor(p.priority) + '15',
-                      color: getPriorityColor(p.priority),
-                      border: `1px solid ${getPriorityColor(p.priority)}30`
-                    }}
+                    color={getPriorityColor(p.priority)}
                   />
                   <Chip
-                    icon={<GroupIcon />}
+                    icon={<Icons.Group />}
                     label={`${p.users?.length || 0}`}
-                    size="small"
                     variant="outlined"
-                    sx={{ borderColor: alpha('#000', 0.1) }}
                   />
                   <Chip
-                    icon={<TaskIcon />}
+                    icon={<Icons.Task />}
                     label={`${p.tasks?.length || 0}`}
-                    size="small"
                     variant="outlined"
-                    sx={{ borderColor: alpha('#000', 0.1) }}
                   />
-                </Stack>
+                </div>
                 
                 {p.description && (
-                  <Typography variant="body2" color="text.secondary" paragraph sx={{ mb: 2 }}>
+                  <p className="EmployeeProject-card-description">
                     {p.description.length > 120 
                       ? `${p.description.substring(0, 120)}...` 
                       : p.description}
-                  </Typography>
+                  </p>
                 )}
                 
-                <Box display="flex" justifyContent="space-between" alignItems="center" mt={3} pt={2} sx={{ borderTop: '1px solid rgba(0,0,0,0.08)' }}>
-                  <Box>
-                    <Typography variant="caption" color="text.secondary" display="block">
-                      <CalendarIcon sx={{ fontSize: 14, mr: 0.5, verticalAlign: 'middle' }} />
-                      {p.startDate ? new Date(p.startDate).toLocaleDateString() : 'No date'}
-                    </Typography>
-                  </Box>
-                  <Button
-                    size="small"
-                    endIcon={<ArrowForwardIcon />}
-                    sx={{
-                      background: selectedProject === p._id 
-                        ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                        : 'rgba(102, 126, 234, 0.1)',
-                      color: selectedProject === p._id ? 'white' : '#667eea',
-                      borderRadius: 2,
-                      '&:hover': {
-                        background: selectedProject === p._id 
-                          ? 'linear-gradient(135deg, #5a6fd8 0%, #6a3f8c 100%)'
-                          : 'rgba(102, 126, 234, 0.2)',
-                      }
-                    }}
+                <div className="EmployeeProject-card-footer">
+                  <div className="EmployeeProject-card-date">
+                    <Icons.CalendarToday />
+                    <span>{p.startDate ? new Date(p.startDate).toLocaleDateString() : 'No date'}</span>
+                  </div>
+                  <button
+                    className={`EmployeeProject-button EmployeeProject-button-sm ${selectedProject === p._id ? 'EmployeeProject-button-primary' : 'EmployeeProject-button-outline'}`}
                   >
                     View
-                  </Button>
-                </Box>
+                    <Icons.ArrowForward />
+                  </button>
+                </div>
                 
                 {/* Project PDF indicator */}
                 {p.pdfFile?.path && (
-                  <Box mt={2} pt={2} sx={{ borderTop: '1px solid rgba(0,0,0,0.08)' }}>
-                    <Box display="flex" alignItems="center" justifyContent="space-between">
-                      <Box display="flex" alignItems="center" gap={1}>
-                        <PdfIcon fontSize="small" sx={{ color: '#EF5350' }} />
-                        <Typography variant="caption" color="text.secondary">
-                          Document attached
-                        </Typography>
-                      </Box>
-                      <Stack direction="row" spacing={0.5}>
-                        <Tooltip title="View PDF">
-                          <IconButton
-                            size="small"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              viewPdf(p.pdfFile.path, p.pdfFile.filename);
-                            }}
-                            sx={{ color: '#667eea' }}
-                          >
-                            <VisibilityIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Download PDF">
-                          <IconButton
-                            size="small"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              downloadPdf(p.pdfFile.path, p.pdfFile.filename);
-                            }}
-                            sx={{ color: '#66BB6A' }}
-                          >
-                            <DownloadIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </Stack>
-                    </Box>
-                  </Box>
+                  <div className="EmployeeProject-card-pdf">
+                    <div className="EmployeeProject-pdf-info">
+                      <Icons.PictureAsPdf />
+                      <span className="EmployeeProject-pdf-text">Document attached</span>
+                    </div>
+                    <div className="EmployeeProject-pdf-actions">
+                      <Tooltip title="View PDF">
+                        <button
+                          className="EmployeeProject-icon-button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            viewPdf(p.pdfFile.path, p.pdfFile.filename);
+                          }}
+                        >
+                          <Icons.Visibility />
+                        </button>
+                      </Tooltip>
+                      <Tooltip title="Download PDF">
+                        <button
+                          className="EmployeeProject-icon-button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            downloadPdf(p.pdfFile.path, p.pdfFile.filename);
+                          }}
+                        >
+                          <Icons.Download />
+                        </button>
+                      </Tooltip>
+                    </div>
+                  </div>
                 )}
-              </CardContent>
-            </Card>
-          </Grid>
+              </div>
+            </div>
+          </div>
         ))}
-      </Grid>
+      </div>
 
       {/* TASK PANEL */}
       {selectedProject && projectDetails && (
-        <Paper elevation={0} sx={{ 
-          mt: 4,
-          borderRadius: 3,
-          background: 'white',
-          overflow: 'hidden',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.05)',
-          border: '1px solid rgba(255,255,255,0.2)'
-        }}>
-          <Box sx={{ 
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            color: 'white',
-            px: 3,
-            pt: 2,
-            pb: 1
-          }}>
-            <Tabs 
-              value={tabValue} 
-              onChange={(e, newValue) => setTabValue(newValue)}
-              textColor="inherit"
-              indicatorColor="secondary"
-              sx={{
-                '& .MuiTab-root': {
-                  color: alpha('#fff', 0.7),
-                  fontWeight: 600,
-                  fontSize: '0.95rem',
-                  '&.Mui-selected': {
-                    color: 'white',
-                  }
-                },
-                '& .MuiTabs-indicator': {
-                  backgroundColor: 'white',
-                  height: 3,
-                  borderRadius: '3px 3px 0 0'
-                }
-              }}
-            >
-              <Tab label="Tasks" icon={<TaskIcon />} iconPosition="start" />
-              <Tab label="Documents" icon={<PdfIcon />} iconPosition="start" />
-              <Tab label="Project Info" icon={<DescriptionIcon />} iconPosition="start" />
-            </Tabs>
-          </Box>
+        <div className="EmployeeProject-panel">
+          <div className="EmployeeProject-panel-header">
+            <div className="EmployeeProject-tabs">
+              <button 
+                className={`EmployeeProject-tab ${tabValue === 0 ? 'EmployeeProject-tab-active' : ''}`}
+                onClick={() => setTabValue(0)}
+              >
+                <Icons.Task />
+                Tasks
+              </button>
+              <button 
+                className={`EmployeeProject-tab ${tabValue === 1 ? 'EmployeeProject-tab-active' : ''}`}
+                onClick={() => setTabValue(1)}
+              >
+                <Icons.PictureAsPdf />
+                Documents
+              </button>
+              <button 
+                className={`EmployeeProject-tab ${tabValue === 2 ? 'EmployeeProject-tab-active' : ''}`}
+                onClick={() => setTabValue(2)}
+              >
+                <Icons.Description />
+                Project Info
+              </button>
+            </div>
+          </div>
 
-          <Box p={3}>
+          <div className="EmployeeProject-panel-content">
             {/* TASKS TAB */}
             {tabValue === 0 && (
               <>
-                <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
-                  <Box>
-                    <Typography variant="h4" fontWeight="800" gutterBottom>
-                      {projectDetails.projectName}
-                    </Typography>
-                    <Typography variant="body1" color="text.secondary">
-                      {projectDetails.description}
-                    </Typography>
-                  </Box>
-                  <Button
-                    variant="contained"
-                    startIcon={<AddIcon />}
+                <div className="EmployeeProject-panel-header-content">
+                  <div>
+                    <h2 className="EmployeeProject-panel-title">{projectDetails.projectName}</h2>
+                    <p className="EmployeeProject-panel-subtitle">{projectDetails.description}</p>
+                  </div>
+                  <button
+                    className="EmployeeProject-button EmployeeProject-button-primary"
                     onClick={() => setOpenTaskDialog(true)}
                     disabled={loading.tasks}
-                    sx={{
-                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                      borderRadius: 2,
-                      px: 3,
-                      py: 1.2,
-                      fontWeight: 600,
-                      '&:hover': {
-                        background: 'linear-gradient(135deg, #5a6fd8 0%, #6a3f8c 100%)',
-                        transform: 'translateY(-2px)',
-                        boxShadow: '0 8px 25px rgba(102, 126, 234, 0.4)'
-                      }
-                    }}
                   >
+                    <Icons.Add />
                     New Task
-                  </Button>
-                </Box>
+                  </button>
+                </div>
 
                 {/* Project Progress */}
-                <Card sx={{ 
-                  mb: 4, 
-                  borderRadius: 3,
-                  background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%)',
-                  border: '1px solid rgba(102, 126, 234, 0.1)'
-                }}>
-                  <CardContent>
-                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                      <Typography variant="h6" fontWeight="600">
-                        Project Progress
-                      </Typography>
-                      <Typography variant="h5" fontWeight="700" color="primary">
-                        {getTaskProgress()}%
-                      </Typography>
-                    </Box>
-                    <LinearProgress 
-                      variant="determinate" 
-                      value={getTaskProgress()} 
-                      sx={{ 
-                        height: 12, 
-                        borderRadius: 6,
-                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                        '& .MuiLinearProgress-bar': {
-                          background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
-                          borderRadius: 6
-                        }
-                      }}
-                    />
-                    <Box display="flex" justifyContent="space-between" mt={1}>
-                      <Typography variant="caption" color="text.secondary">
-                        {stats.completedTasks} of {stats.totalTasks} tasks completed
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {stats.pendingTasks} pending • {stats.inProgressTasks} in progress
-                      </Typography>
-                    </Box>
-                  </CardContent>
-                </Card>
+                <div className="EmployeeProject-progress-card">
+                  <div className="EmployeeProject-progress-header">
+                    <h4 className="EmployeeProject-progress-title">Project Progress</h4>
+                    <div className="EmployeeProject-progress-value">{getTaskProgress()}%</div>
+                  </div>
+                  <LinearProgress value={getTaskProgress()} />
+                  <div className="EmployeeProject-progress-footer">
+                    <span>{stats.completedTasks} of {stats.totalTasks} tasks completed</span>
+                    <span>{stats.pendingTasks} pending • {stats.inProgressTasks} in progress</span>
+                  </div>
+                </div>
 
                 {loading.tasks ? (
-                  <Box display="flex" justifyContent="center" my={8}>
-                    <CircularProgress size={60} thickness={4} sx={{ color: '#667eea' }} />
-                  </Box>
+                  <div className="EmployeeProject-loading">
+                    <CircularProgress />
+                  </div>
                 ) : tasks.length === 0 ? (
-                  <Card sx={{ 
-                    textAlign: 'center', 
-                    py: 8,
-                    background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.03) 0%, rgba(118, 75, 162, 0.03) 100%)',
-                    borderRadius: 3
-                  }}>
-                    <TaskIcon sx={{ fontSize: 64, color: alpha('#667eea', 0.3), mb: 2 }} />
-                    <Typography variant="h6" color="text.secondary" gutterBottom>
-                      No tasks yet
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                      Start by creating your first task
-                    </Typography>
-                    <Button
-                      variant="contained"
-                      startIcon={<AddIcon />}
+                  <div className="EmployeeProject-empty-state">
+                    <Icons.Task />
+                    <h3>No tasks yet</h3>
+                    <p>Start by creating your first task</p>
+                    <button
+                      className="EmployeeProject-button EmployeeProject-button-primary"
                       onClick={() => setOpenTaskDialog(true)}
-                      sx={{
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        borderRadius: 2,
-                        px: 3
-                      }}
                     >
+                      <Icons.Add />
                       Create First Task
-                    </Button>
-                  </Card>
+                    </button>
+                  </div>
                 ) : (
-                  <Grid container spacing={3}>
+                  <div className="EmployeeProject-tasks-list">
                     {tasks.map((t) => (
-                      <Grid item xs={12} key={t._id}>
-                        <Card sx={{ 
-                          borderRadius: 3,
-                          borderLeft: `4px solid ${getStatusColor(t.status)}`,
-                          transition: 'all 0.3s ease',
-                          '&:hover': {
-                            transform: 'translateY(-2px)',
-                            boxShadow: '0 12px 30px rgba(0,0,0,0.08)'
-                          }
-                        }}>
-                          <CardContent sx={{ p: 3 }}>
-                            <Box display="flex" justifyContent="space-between" alignItems="flex-start">
-                              <Box flex={1}>
-                                <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
-                                  <Box>
-                                    <Typography variant="h6" fontWeight="700" gutterBottom>
-                                      {t.title}
-                                    </Typography>
-                                    <Stack direction="row" spacing={1} alignItems="center">
-                                      <Chip
-                                        icon={getStatusIcon(t.status)}
-                                        label={t.status.replace(/_/g, ' ')}
-                                        size="small"
-                                        sx={{ 
-                                          textTransform: 'capitalize',
-                                          background: getStatusColor(t.status) + '15',
-                                          color: getStatusColor(t.status),
-                                          fontWeight: 600,
-                                          border: `1px solid ${getStatusColor(t.status)}30`
-                                        }}
-                                      />
-                                      <Chip
-                                        icon={<PriorityIcon />}
-                                        label={`Priority: ${t.priority}`}
-                                        size="small"
-                                        sx={{ 
-                                          textTransform: 'capitalize',
-                                          background: getPriorityColor(t.priority) + '15',
-                                          color: getPriorityColor(t.priority),
-                                          fontWeight: 600,
-                                          border: `1px solid ${getPriorityColor(t.priority)}30`
-                                        }}
-                                      />
-                                    </Stack>
-                                  </Box>
-                                  <Box display="flex" gap={1}>
-                                    {/* Task PDF buttons */}
-                                    {t.pdfFile?.path && (
-                                      <Stack direction="row" spacing={0.5}>
-                                        <Tooltip title="View PDF">
-                                          <IconButton
-                                            size="small"
-                                            onClick={() => viewPdf(t.pdfFile.path, t.pdfFile.filename)}
-                                            sx={{ color: '#667eea' }}
-                                          >
-                                            <VisibilityIcon fontSize="small" />
-                                          </IconButton>
-                                        </Tooltip>
-                                        <Tooltip title="Download PDF">
-                                          <IconButton
-                                            size="small"
-                                            onClick={() => downloadPdf(t.pdfFile.path, t.pdfFile.filename)}
-                                            sx={{ color: '#66BB6A' }}
-                                          >
-                                            <DownloadIcon fontSize="small" />
-                                          </IconButton>
-                                        </Tooltip>
-                                      </Stack>
-                                    )}
-                                    <Tooltip title="Update Status">
-                                      <IconButton
-                                        size="small"
-                                        onClick={() => handleOpenStatusDialog(t)}
-                                        sx={{ color: '#FFA726' }}
-                                      >
-                                        <UpdateIcon fontSize="small" />
-                                      </IconButton>
-                                    </Tooltip>
-                                    <Tooltip title="View Activity">
-                                      <IconButton
-                                        size="small"
-                                        onClick={() => handleLoadActivityLogs(t._id)}
-                                        sx={{ color: '#29B6F6' }}
-                                      >
-                                        <HistoryIcon fontSize="small" />
-                                      </IconButton>
-                                    </Tooltip>
-                                  </Box>
-                                </Box>
-                                
-                                {t.description && (
-                                  <Typography variant="body2" color="text.secondary" paragraph sx={{ mb: 2 }}>
-                                    {t.description}
-                                  </Typography>
-                                )}
-                                
-                                <Box display="flex" alignItems="center" gap={2} flexWrap="wrap" mb={3}>
-                                  <Box display="flex" alignItems="center" gap={0.5}>
-                                    <PersonIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
-                                    <Typography variant="body2" color="text.secondary">
-                                      {t.assignedTo?.name || "Unassigned"}
-                                    </Typography>
-                                  </Box>
-                                  {t.dueDate && (
-                                    <Box display="flex" alignItems="center" gap={0.5}>
-                                      <CalendarIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
-                                      <Typography variant="body2" color="text.secondary">
-                                        Due: {new Date(t.dueDate).toLocaleDateString()}
-                                      </Typography>
-                                    </Box>
-                                  )}
-                                  <Box display="flex" alignItems="center" gap={0.5}>
-                                    <AccessTimeIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
-                                    <Typography variant="body2" color="text.secondary">
-                                      Created: {new Date(t.createdAt).toLocaleDateString()}
-                                    </Typography>
-                                  </Box>
-                                </Box>
-
-                                {/* Existing remarks */}
-                                {t.remarks?.length > 0 && (
-                                  <Box mt={3}>
-                                    <Typography variant="subtitle2" fontWeight="bold" gutterBottom display="flex" alignItems="center" gap={1}>
-                                      <CommentIcon fontSize="small" />
-                                      Remarks ({t.remarks.length})
-                                    </Typography>
-                                    <Stack spacing={1.5}>
-                                      {t.remarks.map((r, idx) => (
-                                        <Paper
-                                          key={idx}
-                                          variant="outlined"
-                                          sx={{ 
-                                            p: 2, 
-                                            borderRadius: 2,
-                                            background: 'rgba(0,0,0,0.02)',
-                                            borderColor: 'rgba(0,0,0,0.08)'
-                                          }}
-                                        >
-                                          <Typography variant="body2" sx={{ mb: 1 }}>
-                                            {r.text}
-                                          </Typography>
-                                          <Box display="flex" justifyContent="space-between" alignItems="center">
-                                            <Box display="flex" alignItems="center" gap={1}>
-                                              <Avatar sx={{ width: 24, height: 24, fontSize: '0.8rem' }}>
-                                                {r.createdBy?.name?.charAt(0)}
-                                              </Avatar>
-                                              <Typography variant="caption" color="text.secondary">
-                                                {r.createdBy?.name}
-                                              </Typography>
-                                            </Box>
-                                            <Typography variant="caption" color="text.secondary">
-                                              {new Date(r.createdAt).toLocaleString()}
-                                            </Typography>
-                                          </Box>
-                                        </Paper>
-                                      ))}
-                                    </Stack>
-                                  </Box>
-                                )}
-                              </Box>
-                            </Box>
-
-                            {/* Add New Remark */}
-                            <Box mt={4} pt={3} sx={{ borderTop: '1px solid rgba(0,0,0,0.08)' }}>
-                              <Stack direction="row" spacing={1}>
-                                <TextField
-                                  size="small"
-                                  placeholder="Add a remark..."
-                                  fullWidth
-                                  value={t._newRemark || ""}
-                                  onChange={(e) =>
-                                    setTasks((prev) =>
-                                      prev.map((x) =>
-                                        x._id === t._id
-                                          ? { ...x, _newRemark: e.target.value }
-                                          : x
-                                      )
-                                    )
-                                  }
-                                  onKeyPress={(e) => {
-                                    if (e.key === 'Enter' && !e.shiftKey) {
-                                      e.preventDefault();
-                                      handleAddRemark(t._id, t._newRemark);
-                                    }
-                                  }}
-                                  sx={{
-                                    '& .MuiOutlinedInput-root': {
-                                      borderRadius: 2,
-                                    }
-                                  }}
+                      <div className="EmployeeProject-task-card" key={t._id} style={{ borderLeftColor: getStatusColor(t.status) }}>
+                        <div className="EmployeeProject-task-content">
+                          <div className="EmployeeProject-task-header">
+                            <div className="EmployeeProject-task-title-section">
+                              <h4 className="EmployeeProject-task-title">{t.title}</h4>
+                              <div className="EmployeeProject-task-chips">
+                                <Chip
+                                  icon={t.status === "completed" ? <Icons.CheckCircle /> : 
+                                        t.status === "in progress" ? <Icons.Update /> :
+                                        t.status === "pending" ? <Icons.Schedule /> :
+                                        t.status === "cancelled" ? <Icons.Cancel /> :
+                                        t.status === "on hold" ? <Icons.Pause /> : <Icons.Schedule />}
+                                  label={t.status.replace(/_/g, ' ')}
+                                  color={getStatusColor(t.status)}
                                 />
-                                <Button
-                                  variant="contained"
-                                  startIcon={<CommentIcon />}
-                                  onClick={() => handleAddRemark(t._id, t._newRemark)}
-                                  disabled={!t._newRemark?.trim()}
-                                  sx={{
-                                    borderRadius: 2,
-                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                    '&:hover': {
-                                      background: 'linear-gradient(135deg, #5a6fd8 0%, #6a3f8c 100%)',
-                                    }
-                                  }}
+                                <Chip
+                                  icon={<Icons.PriorityHigh />}
+                                  label={`Priority: ${t.priority}`}
+                                  color={getPriorityColor(t.priority)}
+                                />
+                              </div>
+                            </div>
+                            <div className="EmployeeProject-task-actions">
+                              {t.pdfFile?.path && (
+                                <div className="EmployeeProject-task-pdf-actions">
+                                  <Tooltip title="View PDF">
+                                    <button
+                                      className="EmployeeProject-icon-button"
+                                      onClick={() => viewPdf(t.pdfFile.path, t.pdfFile.filename)}
+                                    >
+                                      <Icons.Visibility />
+                                    </button>
+                                  </Tooltip>
+                                  <Tooltip title="Download PDF">
+                                    <button
+                                      className="EmployeeProject-icon-button"
+                                      onClick={() => downloadPdf(t.pdfFile.path, t.pdfFile.filename)}
+                                    >
+                                      <Icons.Download />
+                                    </button>
+                                  </Tooltip>
+                                </div>
+                              )}
+                              <Tooltip title="Update Status">
+                                <button
+                                  className="EmployeeProject-icon-button"
+                                  onClick={() => handleOpenStatusDialog(t)}
                                 >
-                                  Add
-                                </Button>
-                              </Stack>
-                            </Box>
-                          </CardContent>
-                        </Card>
-                      </Grid>
+                                  <Icons.Update />
+                                </button>
+                              </Tooltip>
+                              <Tooltip title="View Activity">
+                                <button
+                                  className="EmployeeProject-icon-button"
+                                  onClick={() => handleLoadActivityLogs(t._id)}
+                                >
+                                  <Icons.History />
+                                </button>
+                              </Tooltip>
+                            </div>
+                          </div>
+                          
+                          {t.description && (
+                            <p className="EmployeeProject-task-description">{t.description}</p>
+                          )}
+                          
+                          <div className="EmployeeProject-task-meta">
+                            <div className="EmployeeProject-task-meta-item">
+                              <Icons.Person />
+                              <span>{t.assignedTo?.name || "Unassigned"}</span>
+                            </div>
+                            {t.dueDate && (
+                              <div className="EmployeeProject-task-meta-item">
+                                <Icons.CalendarToday />
+                                <span>Due: {new Date(t.dueDate).toLocaleDateString()}</span>
+                              </div>
+                            )}
+                            <div className="EmployeeProject-task-meta-item">
+                              <Icons.AccessTime />
+                              <span>Created: {new Date(t.createdAt).toLocaleDateString()}</span>
+                            </div>
+                          </div>
+
+                          {/* Existing remarks */}
+                          {t.remarks?.length > 0 && (
+                            <div className="EmployeeProject-task-remarks">
+                              <h5 className="EmployeeProject-remarks-title">
+                                <Icons.Comment />
+                                Remarks ({t.remarks.length})
+                              </h5>
+                              <div className="EmployeeProject-remarks-list">
+                                {t.remarks.map((r, idx) => (
+                                  <div className="EmployeeProject-remark-item" key={idx}>
+                                    <p className="EmployeeProject-remark-text">{r.text}</p>
+                                    <div className="EmployeeProject-remark-footer">
+                                      <div className="EmployeeProject-remark-author">
+                                        <Avatar size="small">
+                                          {r.createdBy?.name?.charAt(0)}
+                                        </Avatar>
+                                        <span>{r.createdBy?.name}</span>
+                                      </div>
+                                      <span className="EmployeeProject-remark-date">
+                                        {new Date(r.createdAt).toLocaleString()}
+                                      </span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Add New Remark */}
+                        <div className="EmployeeProject-add-remark">
+                          <div className="EmployeeProject-remark-input-row">
+                            <input
+                              type="text"
+                              className="EmployeeProject-remark-input"
+                              placeholder="Add a remark..."
+                              value={t._newRemark || ""}
+                              onChange={(e) =>
+                                setTasks((prev) =>
+                                  prev.map((x) =>
+                                    x._id === t._id
+                                      ? { ...x, _newRemark: e.target.value }
+                                      : x
+                                  )
+                                )
+                              }
+                              onKeyPress={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                  e.preventDefault();
+                                  handleAddRemark(t._id, t._newRemark);
+                                }
+                              }}
+                            />
+                            <button
+                              className="EmployeeProject-button EmployeeProject-button-primary"
+                              onClick={() => handleAddRemark(t._id, t._newRemark)}
+                              disabled={!t._newRemark?.trim()}
+                            >
+                              <Icons.Comment />
+                              Add
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                     ))}
-                  </Grid>
+                  </div>
                 )}
               </>
             )}
 
             {/* DOCUMENTS TAB */}
             {tabValue === 1 && (
-              <Box>
-                <Typography variant="h4" fontWeight="800" gutterBottom>
-                  Project Documents
-                </Typography>
-                <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-                  All project-related documents and files
-                </Typography>
+              <div className="EmployeeProject-documents-tab">
+                <h2 className="EmployeeProject-documents-title">Project Documents</h2>
+                <p className="EmployeeProject-documents-subtitle">All project-related documents and files</p>
                 
                 {/* Project Document */}
                 {projectDetails.pdfFile?.path ? (
-                  <Card sx={{ mb: 3, borderRadius: 3 }}>
-                    <CardContent>
-                      <Box display="flex" justifyContent="space-between" alignItems="center">
-                        <Box display="flex" alignItems="center" gap={2}>
-                          <Box sx={{
-                            width: 60,
-                            height: 60,
-                            borderRadius: 2,
-                            background: 'linear-gradient(135deg, rgba(239, 83, 80, 0.1) 0%, rgba(239, 83, 80, 0.05) 100%)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            border: '1px solid rgba(239, 83, 80, 0.2)'
-                          }}>
-                            <PdfIcon sx={{ fontSize: 32, color: '#EF5350' }} />
-                          </Box>
-                          <Box>
-                            <Typography variant="h6" fontWeight="600">
-                              {projectDetails.pdfFile.filename || 'Project Document'}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              Main project document • Uploaded on: {new Date(projectDetails.createdAt).toLocaleDateString()}
-                            </Typography>
-                          </Box>
-                        </Box>
-                        <Stack direction="row" spacing={1}>
-                          <Button
-                            variant="outlined"
-                            startIcon={<VisibilityIcon />}
-                            onClick={() => viewPdf(projectDetails.pdfFile.path, projectDetails.pdfFile.filename)}
-                            sx={{ borderRadius: 2 }}
-                          >
-                            View
-                          </Button>
-                          <Button
-                            variant="contained"
-                            startIcon={<DownloadIcon />}
-                            onClick={() => downloadPdf(projectDetails.pdfFile.path, projectDetails.pdfFile.filename)}
-                            sx={{
-                              borderRadius: 2,
-                              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                              '&:hover': {
-                                background: 'linear-gradient(135deg, #5a6fd8 0%, #6a3f8c 100%)',
-                              }
-                            }}
-                          >
-                            Download
-                          </Button>
-                        </Stack>
-                      </Box>
-                    </CardContent>
-                  </Card>
+                  <div className="EmployeeProject-document-card">
+                    <div className="EmployeeProject-document-content">
+                      <div className="EmployeeProject-document-info">
+                        <div className="EmployeeProject-document-icon">
+                          <Icons.PictureAsPdf />
+                        </div>
+                        <div className="EmployeeProject-document-details">
+                          <h4>{projectDetails.pdfFile.filename || 'Project Document'}</h4>
+                          <p>Main project document • Uploaded on: {new Date(projectDetails.createdAt).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                      <div className="EmployeeProject-document-actions">
+                        <button
+                          className="EmployeeProject-button EmployeeProject-button-outline"
+                          onClick={() => viewPdf(projectDetails.pdfFile.path, projectDetails.pdfFile.filename)}
+                        >
+                          <Icons.Visibility />
+                          View
+                        </button>
+                        <button
+                          className="EmployeeProject-button EmployeeProject-button-primary"
+                          onClick={() => downloadPdf(projectDetails.pdfFile.path, projectDetails.pdfFile.filename)}
+                        >
+                          <Icons.Download />
+                          Download
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 ) : (
-                  <Alert severity="info" sx={{ mb: 3, borderRadius: 2 }}>
-                    No project document uploaded
-                  </Alert>
+                  <Alert severity="info">No project document uploaded</Alert>
                 )}
 
                 {/* Task Documents */}
-                <Typography variant="h6" fontWeight="700" gutterBottom>
+                <h3 className="EmployeeProject-task-documents-title">
                   Task Documents ({tasks.filter(t => t.pdfFile?.path).length})
-                </Typography>
+                </h3>
                 {tasks.filter(t => t.pdfFile?.path).length > 0 ? (
-                  <Grid container spacing={2}>
+                  <div className="EmployeeProject-task-documents-grid">
                     {tasks
                       .filter(task => task.pdfFile?.path)
                       .map((task) => (
-                        <Grid item xs={12} md={6} key={task._id}>
-                          <Card sx={{ borderRadius: 2, height: '100%' }}>
-                            <CardContent>
-                              <Box display="flex" justifyContent="space-between" alignItems="flex-start">
-                                <Box display="flex" alignItems="center" gap={2} flex={1}>
-                                  <FileIcon sx={{ fontSize: 32, color: '#29B6F6' }} />
-                                  <Box flex={1}>
-                                    <Typography variant="subtitle1" fontWeight="600">
-                                      {task.pdfFile.filename || 'Task Document'}
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary" display="block">
-                                      From: {task.title}
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary" display="block">
-                                      Assigned to: {task.assignedTo?.name || 'Unassigned'} • Status: 
-                                      <Chip
-                                        label={task.status}
-                                        size="small"
-                                        sx={{ 
-                                          ml: 1,
-                                          height: 16,
-                                          fontSize: '0.7rem',
-                                          textTransform: 'capitalize',
-                                          background: getStatusColor(task.status) + '15',
-                                          color: getStatusColor(task.status),
-                                          fontWeight: 500
-                                        }}
-                                      />
-                                    </Typography>
-                                  </Box>
-                                </Box>
-                                <Stack direction="row" spacing={0.5}>
-                                  <Tooltip title="View PDF">
-                                    <IconButton
-                                      size="small"
-                                      onClick={() => viewPdf(task.pdfFile.path, task.pdfFile.filename)}
-                                      sx={{ color: '#667eea' }}
-                                    >
-                                      <VisibilityIcon />
-                                    </IconButton>
-                                  </Tooltip>
-                                  <Tooltip title="Download">
-                                    <IconButton
-                                      size="small"
-                                      onClick={() => downloadPdf(task.pdfFile.path, task.pdfFile.filename)}
-                                      sx={{ color: '#66BB6A' }}
-                                    >
-                                      <DownloadIcon />
-                                    </IconButton>
-                                  </Tooltip>
-                                </Stack>
-                              </Box>
-                            </CardContent>
-                          </Card>
-                        </Grid>
+                        <div className="EmployeeProject-task-document-card" key={task._id}>
+                          <div className="EmployeeProject-task-document-content">
+                            <div className="EmployeeProject-task-document-header">
+                              <div className="EmployeeProject-task-document-info">
+                                <Icons.InsertDriveFile />
+                                <div className="EmployeeProject-task-document-text">
+                                  <h5>{task.pdfFile.filename || 'Task Document'}</h5>
+                                  <p>From: {task.title}</p>
+                                  <p>
+                                    Assigned to: {task.assignedTo?.name || 'Unassigned'} • Status: 
+                                    <Chip
+                                      label={task.status}
+                                      color={getStatusColor(task.status)}
+                                    />
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="EmployeeProject-task-document-buttons">
+                                <Tooltip title="View PDF">
+                                  <button
+                                    className="EmployeeProject-icon-button"
+                                    onClick={() => viewPdf(task.pdfFile.path, task.pdfFile.filename)}
+                                  >
+                                    <Icons.Visibility />
+                                  </button>
+                                </Tooltip>
+                                <Tooltip title="Download">
+                                  <button
+                                    className="EmployeeProject-icon-button"
+                                    onClick={() => downloadPdf(task.pdfFile.path, task.pdfFile.filename)}
+                                  >
+                                    <Icons.Download />
+                                  </button>
+                                </Tooltip>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       ))}
-                  </Grid>
+                  </div>
                 ) : (
-                  <Alert severity="info" sx={{ borderRadius: 2 }}>
-                    No task documents available
-                  </Alert>
+                  <Alert severity="info">No task documents available</Alert>
                 )}
-              </Box>
+              </div>
             )}
 
             {/* PROJECT INFO TAB */}
             {tabValue === 2 && (
-              <Box>
-                <Typography variant="h4" fontWeight="800" gutterBottom>
-                  Project Information
-                </Typography>
+              <div className="EmployeeProject-info-tab">
+                <h2 className="EmployeeProject-info-title">Project Information</h2>
                 
-                <Grid container spacing={3}>
-                  <Grid item xs={12} lg={8}>
-                    <Card sx={{ borderRadius: 3, mb: 3 }}>
-                      <CardContent>
-                        <Typography variant="h6" fontWeight="700" gutterBottom>
-                          Project Details
-                        </Typography>
-                        <Grid container spacing={3}>
-                          <Grid item xs={12} md={6}>
-                            <Box mb={2}>
-                              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                                Project Name
-                              </Typography>
-                              <Typography variant="body1" fontWeight="500">{projectDetails.projectName}</Typography>
-                            </Box>
-                            <Box mb={2}>
-                              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                                Status
-                              </Typography>
+                <div className="EmployeeProject-info-grid">
+                  <div className="EmployeeProject-info-main">
+                    <div className="EmployeeProject-info-card">
+                      <h3 className="EmployeeProject-info-card-title">Project Details</h3>
+                      <div className="EmployeeProject-info-details">
+                        <div className="EmployeeProject-info-row">
+                          <div className="EmployeeProject-info-column">
+                            <div className="EmployeeProject-info-item">
+                              <label>Project Name</label>
+                              <p>{projectDetails.projectName}</p>
+                            </div>
+                            <div className="EmployeeProject-info-item">
+                              <label>Status</label>
                               <Chip
                                 label={projectDetails.status}
-                                sx={{ 
-                                  textTransform: 'capitalize',
-                                  background: getStatusColor(projectDetails.status) + '15',
-                                  color: getStatusColor(projectDetails.status),
-                                  fontWeight: 600,
-                                  border: `1px solid ${getStatusColor(projectDetails.status)}30`
-                                }}
+                                color={getStatusColor(projectDetails.status)}
                               />
-                            </Box>
-                          </Grid>
-                          <Grid item xs={12} md={6}>
-                            <Box mb={2}>
-                              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                                Priority
-                              </Typography>
+                            </div>
+                          </div>
+                          <div className="EmployeeProject-info-column">
+                            <div className="EmployeeProject-info-item">
+                              <label>Priority</label>
                               <Chip
                                 label={projectDetails.priority}
-                                sx={{ 
-                                  textTransform: 'capitalize',
-                                  background: getPriorityColor(projectDetails.priority) + '15',
-                                  color: getPriorityColor(projectDetails.priority),
-                                  fontWeight: 600,
-                                  border: `1px solid ${getPriorityColor(projectDetails.priority)}30`
-                                }}
+                                color={getPriorityColor(projectDetails.priority)}
                               />
-                            </Box>
-                            <Box mb={2}>
-                              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                                Project Timeline
-                              </Typography>
-                              <Typography variant="body2" fontWeight="500">
+                            </div>
+                            <div className="EmployeeProject-info-item">
+                              <label>Project Timeline</label>
+                              <p>
                                 {projectDetails.startDate ? new Date(projectDetails.startDate).toLocaleDateString() : 'Not set'} - {projectDetails.endDate ? new Date(projectDetails.endDate).toLocaleDateString() : 'Not set'}
-                              </Typography>
-                            </Box>
-                          </Grid>
-                          <Grid item xs={12}>
-                            <Box mb={2}>
-                              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                                Description
-                              </Typography>
-                              <Typography variant="body1">{projectDetails.description}</Typography>
-                            </Box>
-                          </Grid>
-                        </Grid>
-                      </CardContent>
-                    </Card>
-                  </Grid>
+                              </p>
+                            </div>
+                          </div>
+                          <div className="EmployeeProject-info-full">
+                            <div className="EmployeeProject-info-item">
+                              <label>Description</label>
+                              <p>{projectDetails.description}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
-                  <Grid item xs={12} lg={4}>
-                    <Card sx={{ borderRadius: 3, height: '100%' }}>
-                      <CardContent>
-                        <Typography variant="h6" fontWeight="700" gutterBottom>
-                          Quick Stats
-                        </Typography>
-                        <Stack spacing={2}>
-                          <Box display="flex" justifyContent="space-between" alignItems="center">
-                            <Typography variant="body2" color="text.secondary">Total Tasks</Typography>
-                            <Typography variant="h6" fontWeight="700">{stats.totalTasks}</Typography>
-                          </Box>
-                          <Box display="flex" justifyContent="space-between" alignItems="center">
-                            <Typography variant="body2" color="text.secondary">Completed</Typography>
-                            <Typography variant="h6" fontWeight="700" color="#66BB6A">{stats.completedTasks}</Typography>
-                          </Box>
-                          <Box display="flex" justifyContent="space-between" alignItems="center">
-                            <Typography variant="body2" color="text.secondary">In Progress</Typography>
-                            <Typography variant="h6" fontWeight="700" color="#29B6F6">{stats.inProgressTasks}</Typography>
-                          </Box>
-                          <Box display="flex" justifyContent="space-between" alignItems="center">
-                            <Typography variant="body2" color="text.secondary">Pending</Typography>
-                            <Typography variant="h6" fontWeight="700" color="#FFA726">{stats.pendingTasks}</Typography>
-                          </Box>
-                          <Divider />
-                          <Box display="flex" justifyContent="space-between" alignItems="center">
-                            <Typography variant="body2" color="text.secondary">Team Members</Typography>
-                            <Typography variant="h6" fontWeight="700">{projectDetails.users?.length || 0}</Typography>
-                          </Box>
-                        </Stack>
-                      </CardContent>
-                    </Card>
-                  </Grid>
+                  <div className="EmployeeProject-info-sidebar">
+                    <div className="EmployeeProject-stats-card">
+                      <h3 className="EmployeeProject-stats-title">Quick Stats</h3>
+                      <div className="EmployeeProject-stats-list">
+                        <div className="EmployeeProject-stat-row">
+                          <span>Total Tasks</span>
+                          <strong>{stats.totalTasks}</strong>
+                        </div>
+                        <div className="EmployeeProject-stat-row">
+                          <span>Completed</span>
+                          <strong style={{ color: "#66BB6A" }}>{stats.completedTasks}</strong>
+                        </div>
+                        <div className="EmployeeProject-stat-row">
+                          <span>In Progress</span>
+                          <strong style={{ color: "#29B6F6" }}>{stats.inProgressTasks}</strong>
+                        </div>
+                        <div className="EmployeeProject-stat-row">
+                          <span>Pending</span>
+                          <strong style={{ color: "#FFA726" }}>{stats.pendingTasks}</strong>
+                        </div>
+                        <div className="EmployeeProject-stat-divider" />
+                        <div className="EmployeeProject-stat-row">
+                          <span>Team Members</span>
+                          <strong>{projectDetails.users?.length || 0}</strong>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
-                  <Grid item xs={12}>
-                    <Card sx={{ borderRadius: 3 }}>
-                      <CardContent>
-                        <Typography variant="h6" fontWeight="700" gutterBottom display="flex" alignItems="center" gap={1}>
-                          <GroupIcon />
-                          Team Members ({projectDetails.users?.length || 0})
-                        </Typography>
-                        <Grid container spacing={2}>
-                          {projectDetails.users?.map((user) => (
-                            <Grid item xs={12} sm={6} md={4} lg={3} key={user._id}>
-                              <Card variant="outlined" sx={{ borderRadius: 2, height: '100%' }}>
-                                <CardContent>
-                                  <Box display="flex" alignItems="center" gap={2}>
-                                    <Avatar sx={{ 
-                                      width: 48, 
-                                      height: 48,
-                                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                      fontSize: '1.2rem',
-                                      fontWeight: 600
-                                    }}>
-                                      {user.name?.charAt(0)}
-                                    </Avatar>
-                                    <Box>
-                                      <Typography variant="subtitle1" fontWeight="600">{user.name}</Typography>
-                                      <Typography variant="caption" color="text.secondary" display="block">
-                                        {user.email}
-                                      </Typography>
-                                      {user.role && (
-                                        <Chip
-                                          label={user.role}
-                                          size="small"
-                                          sx={{ 
-                                            mt: 0.5,
-                                            height: 20,
-                                            fontSize: '0.7rem',
-                                            background: 'rgba(0,0,0,0.05)'
-                                          }}
-                                        />
-                                      )}
-                                    </Box>
-                                  </Box>
-                                </CardContent>
-                              </Card>
-                            </Grid>
-                          ))}
-                        </Grid>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                </Grid>
-              </Box>
+                  <div className="EmployeeProject-info-full-width">
+                    <div className="EmployeeProject-team-card">
+                      <h3 className="EmployeeProject-team-title">
+                        <Icons.Group />
+                        Team Members ({projectDetails.users?.length || 0})
+                      </h3>
+                      <div className="EmployeeProject-team-grid">
+                        {projectDetails.users?.map((user) => (
+                          <div className="EmployeeProject-team-member" key={user._id}>
+                            <div className="EmployeeProject-team-member-content">
+                              <div className="EmployeeProject-team-member-info">
+                                <Avatar size="large">
+                                  {user.name?.charAt(0)}
+                                </Avatar>
+                                <div className="EmployeeProject-team-member-details">
+                                  <h5>{user.name}</h5>
+                                  <p>{user.email}</p>
+                                  {user.role && (
+                                    <Chip
+                                      label={user.role}
+                                      color="#9E9E9E"
+                                    />
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
-          </Box>
-        </Paper>
+          </div>
+        </div>
       )}
 
       {/* UPDATE STATUS DIALOG */}
-      <Dialog 
-        open={openStatusDialog} 
-        onClose={() => {
-          setOpenStatusDialog(false);
-          setSelectedTask(null);
-          setStatusRemark("");
-        }}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 3,
-            overflow: 'hidden'
-          }
-        }}
-      >
-        <DialogTitle sx={{ 
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white'
-        }}>
-          <Typography variant="h6" fontWeight="700">
-            Update Task Status
-          </Typography>
-        </DialogTitle>
-        <DialogContent>
-          <Stack spacing={3} mt={2}>
-            <Typography variant="body1" fontWeight="600">
-              Task: {selectedTask?.title}
-            </Typography>
-            <Box display="flex" alignItems="center" gap={1}>
-              <Typography variant="body2" color="text.secondary">
-                Current Status:
-              </Typography>
-              <Chip 
-                label={selectedTask?.status?.replace(/_/g, ' ')} 
-                size="small" 
-                sx={{ 
-                  textTransform: 'capitalize',
-                  background: getStatusColor(selectedTask?.status) + '15',
-                  color: getStatusColor(selectedTask?.status),
-                  fontWeight: 600
-                }}
-              />
-            </Box>
-            
-            <FormControl fullWidth>
-              <InputLabel>New Status *</InputLabel>
-              <Select
-                value={selectedTask?.status || ""}
-                label="New Status *"
-                onChange={(e) => setSelectedTask({
-                  ...selectedTask,
-                  status: e.target.value
-                })}
-                sx={{ borderRadius: 2 }}
-              >
-                {TASK_STATUS_OPTIONS.map((status) => (
-                  <MenuItem key={status.value} value={status.value}>
-                    <Box display="flex" alignItems="center" gap={2}>
-                      <Box sx={{ color: status.color }}>
-                        {status.icon}
-                      </Box>
-                      <Typography>{status.label}</Typography>
-                    </Box>
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+      {openStatusDialog && (
+        <div className="EmployeeProject-modal">
+          <div className="EmployeeProject-modal-backdrop" onClick={() => {
+            setOpenStatusDialog(false);
+            setSelectedTask(null);
+            setStatusRemark("");
+          }} />
+          <div className="EmployeeProject-modal-content EmployeeProject-modal-sm">
+            <div className="EmployeeProject-modal-header EmployeeProject-modal-header-primary">
+              <h3>Update Task Status</h3>
+            </div>
+            <div className="EmployeeProject-modal-body">
+              <div className="EmployeeProject-status-form">
+                <p className="EmployeeProject-status-task-title">
+                  <strong>Task:</strong> {selectedTask?.title}
+                </p>
+                <div className="EmployeeProject-status-current">
+                  <span>Current Status:</span>
+                  <Chip 
+                    label={selectedTask?.status?.replace(/_/g, ' ')} 
+                    color={getStatusColor(selectedTask?.status)}
+                  />
+                </div>
+                
+                <div className="EmployeeProject-form-group">
+                  <label>New Status *</label>
+                  <select
+                    className="EmployeeProject-select"
+                    value={selectedTask?.status || ""}
+                    onChange={(e) => setSelectedTask({
+                      ...selectedTask,
+                      status: e.target.value
+                    })}
+                  >
+                    {TASK_STATUS_OPTIONS.map((status) => (
+                      <option key={status.value} value={status.value}>
+                        {status.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-            <TextField
-              label="Remark (Optional)"
-              multiline
-              rows={3}
-              value={statusRemark}
-              onChange={(e) => setStatusRemark(e.target.value)}
-              fullWidth
-              placeholder="Add any remarks about this status change..."
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                }
-              }}
-            />
-          </Stack>
-        </DialogContent>
-        <DialogActions sx={{ p: 3, background: alpha('#f5f7fa', 0.8) }}>
-          <Button 
-            onClick={() => {
-              setOpenStatusDialog(false);
-              setSelectedTask(null);
-              setStatusRemark("");
-            }}
-            disabled={loading.tasks}
-            sx={{ borderRadius: 2 }}
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            onClick={() => handleUpdateTaskStatus(selectedTask._id, selectedTask.status)}
-            disabled={loading.tasks || !selectedTask?.status}
-            startIcon={loading.tasks ? <CircularProgress size={16} /> : <UpdateIcon />}
-            sx={{
-              borderRadius: 2,
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              '&:hover': {
-                background: 'linear-gradient(135deg, #5a6fd8 0%, #6a3f8c 100%)',
-              }
-            }}
-          >
-            {loading.tasks ? "Updating..." : "Update Status"}
-          </Button>
-        </DialogActions>
-      </Dialog>
+                <div className="EmployeeProject-form-group">
+                  <label>Remark (Optional)</label>
+                  <textarea
+                    className="EmployeeProject-textarea"
+                    rows="3"
+                    value={statusRemark}
+                    onChange={(e) => setStatusRemark(e.target.value)}
+                    placeholder="Add any remarks about this status change..."
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="EmployeeProject-modal-footer">
+              <button 
+                className="EmployeeProject-button EmployeeProject-button-outline"
+                onClick={() => {
+                  setOpenStatusDialog(false);
+                  setSelectedTask(null);
+                  setStatusRemark("");
+                }}
+                disabled={loading.tasks}
+              >
+                Cancel
+              </button>
+              <button
+                className="EmployeeProject-button EmployeeProject-button-primary"
+                onClick={() => handleUpdateTaskStatus(selectedTask._id, selectedTask.status)}
+                disabled={loading.tasks || !selectedTask?.status}
+              >
+                {loading.tasks ? "Updating..." : "Update Status"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ACTIVITY LOGS DRAWER */}
-      <Drawer
-        anchor="right"
-        open={openActivityDrawer}
-        onClose={() => setOpenActivityDrawer(false)}
-        PaperProps={{
-          sx: {
-            width: 450,
-            background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%)',
-            borderLeft: '1px solid rgba(255,255,255,0.3)'
-          }
-        }}
-      >
-        <Box sx={{ p: 3, height: '100%' }}>
-          <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-            <Typography variant="h6" fontWeight="700">
-              Activity Logs
-            </Typography>
-            <IconButton onClick={() => setOpenActivityDrawer(false)} size="small">
-              <CloseIcon />
-            </IconButton>
-          </Box>
-          <Typography variant="body1" fontWeight="600" color="primary" gutterBottom>
-            {selectedTask?.title}
-          </Typography>
-          <Divider sx={{ mb: 3 }} />
-          
-          <Box sx={{ overflow: 'auto', height: 'calc(100% - 100px)' }}>
-            <List>
-              {selectedTask?.activityLogs?.map((log, index) => (
-                <ListItem 
-                  key={index} 
-                  alignItems="flex-start"
-                  sx={{
-                    background: 'white',
-                    mb: 2,
-                    borderRadius: 2,
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                    border: '1px solid rgba(0,0,0,0.06)'
-                  }}
-                >
-                  <ListItemIcon>
-                    <Box sx={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: '50%',
-                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'white'
-                    }}>
-                      <HistoryIcon fontSize="small" />
-                    </Box>
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={
-                      <Typography variant="body2" fontWeight="500">
-                        {log.description}
-                      </Typography>
-                    }
-                    secondary={
-                      <>
-                        <Box display="flex" alignItems="center" gap={1} mt={1}>
-                          <PersonIcon sx={{ fontSize: 14 }} />
-                          <Typography variant="caption" color="text.primary">
-                            {log.performedBy?.name}
-                          </Typography>
-                        </Box>
-                        <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
-                          <AccessTimeIcon sx={{ fontSize: 12, mr: 0.5, verticalAlign: 'middle' }} />
+      {openActivityDrawer && (
+        <div className="EmployeeProject-drawer">
+          <div className="EmployeeProject-drawer-backdrop" onClick={() => setOpenActivityDrawer(false)} />
+          <div className="EmployeeProject-drawer-content EmployeeProject-drawer-right">
+            <div className="EmployeeProject-drawer-header">
+              <h3>Activity Logs</h3>
+              <button className="EmployeeProject-drawer-close" onClick={() => setOpenActivityDrawer(false)}>
+                <Icons.Close />
+              </button>
+            </div>
+            <div className="EmployeeProject-drawer-body">
+              <p className="EmployeeProject-activity-task-title">{selectedTask?.title}</p>
+              <div className="EmployeeProject-divider" />
+              
+              <div className="EmployeeProject-activity-list">
+                {selectedTask?.activityLogs?.map((log, index) => (
+                  <div className="EmployeeProject-activity-item" key={index}>
+                    <div className="EmployeeProject-activity-icon">
+                      <Icons.History />
+                    </div>
+                    <div className="EmployeeProject-activity-content">
+                      <p className="EmployeeProject-activity-description">{log.description}</p>
+                      <div className="EmployeeProject-activity-meta">
+                        <div className="EmployeeProject-activity-author">
+                          <Icons.Person />
+                          <span>{log.performedBy?.name}</span>
+                        </div>
+                        <span className="EmployeeProject-activity-date">
+                          <Icons.AccessTime />
                           {new Date(log.performedAt).toLocaleString()}
-                        </Typography>
-                        {log.remark && (
-                          <Paper variant="outlined" sx={{ p: 1.5, mt: 1.5, borderRadius: 1.5 }}>
-                            <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                              Remark: {log.remark}
-                            </Typography>
-                          </Paper>
-                        )}
-                      </>
-                    }
-                  />
-                </ListItem>
-              ))}
-              {(!selectedTask?.activityLogs || selectedTask.activityLogs.length === 0) && (
-                <Box textAlign="center" py={4}>
-                  <HistoryIcon sx={{ fontSize: 48, color: alpha('#667eea', 0.3), mb: 2 }} />
-                  <Typography variant="body2" color="text.secondary">
-                    No activity logs found.
-                  </Typography>
-                </Box>
-              )}
-            </List>
-          </Box>
-        </Box>
-      </Drawer>
+                        </span>
+                      </div>
+                      {log.remark && (
+                        <div className="EmployeeProject-activity-remark">
+                          <em>Remark: {log.remark}</em>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {(!selectedTask?.activityLogs || selectedTask.activityLogs.length === 0) && (
+                  <div className="EmployeeProject-empty-activity">
+                    <Icons.History />
+                    <p>No activity logs found.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* NOTIFICATIONS DRAWER */}
-      <Drawer
-        anchor="right"
-        open={openNotificationsDrawer}
-        onClose={() => setOpenNotificationsDrawer(false)}
-        PaperProps={{
-          sx: {
-            width: 450,
-            background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%)',
-            borderLeft: '1px solid rgba(255,255,255,0.3)'
-          }
-        }}
-      >
-        <Box sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
-          <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-            <Typography variant="h6" fontWeight="700">
-              Notifications
-            </Typography>
-            {notifications.length > 0 && (
-              <Tooltip title="Clear All">
-                <IconButton onClick={handleClearAllNotifications} size="small">
-                  <ClearAllIcon />
-                </IconButton>
-              </Tooltip>
-            )}
-          </Box>
-          <Divider sx={{ mb: 2 }} />
-          
-          <Box flex={1} overflow="auto">
-            <List>
-              {notifications.map((notification) => (
-                <ListItem 
-                  key={notification._id}
-                  alignItems="flex-start"
-                  sx={{
-                    background: notification.isRead ? 'white' : 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(102, 126, 234, 0.05) 100%)',
-                    borderRadius: 2,
-                    mb: 1,
-                    cursor: 'pointer',
-                    border: '1px solid',
-                    borderColor: notification.isRead ? 'rgba(0,0,0,0.08)' : alpha('#667eea', 0.2),
-                    transition: 'all 0.2s ease',
-                    '&:hover': {
-                      transform: 'translateX(4px)',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
-                    }
-                  }}
-                  onClick={() => handleMarkNotificationAsRead(notification._id)}
-                >
-                  <ListItemIcon>
-                    <Box sx={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: '50%',
-                      background: notification.isRead 
-                        ? 'rgba(0,0,0,0.06)' 
-                        : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: notification.isRead ? '#667eea' : 'white'
-                    }}>
-                      <NotificationsIcon fontSize="small" />
-                    </Box>
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={
-                      <Typography variant="subtitle2" fontWeight={notification.isRead ? "500" : "700"}>
-                        {notification.title}
-                      </Typography>
-                    }
-                    secondary={
-                      <>
-                        <Typography variant="body2" color="text.primary" sx={{ mt: 0.5, mb: 1 }}>
-                          {notification.message}
-                        </Typography>
-                        <Box display="flex" alignItems="center" gap={1}>
-                          <AccessTimeIcon sx={{ fontSize: 12 }} />
-                          <Typography variant="caption" color="text.secondary">
-                            {new Date(notification.createdAt).toLocaleString()}
-                          </Typography>
-                          {!notification.isRead && (
-                            <Chip
-                              label="New"
-                              size="small"
-                              sx={{ 
-                                height: 16,
-                                fontSize: '0.65rem',
-                                background: '#667eea',
-                                color: 'white',
-                                ml: 'auto'
-                              }}
-                            />
-                          )}
-                        </Box>
-                      </>
-                    }
-                  />
-                </ListItem>
-              ))}
-              {notifications.length === 0 && (
-                <Box textAlign="center" py={8}>
-                  <NotificationsIcon sx={{ fontSize: 64, color: alpha('#667eea', 0.3), mb: 2 }} />
-                  <Typography variant="body2" color="text.secondary">
-                    No notifications yet.
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    You'll see project updates here
-                  </Typography>
-                </Box>
+      {openNotificationsDrawer && (
+        <div className="EmployeeProject-drawer">
+          <div className="EmployeeProject-drawer-backdrop" onClick={() => setOpenNotificationsDrawer(false)} />
+          <div className="EmployeeProject-drawer-content EmployeeProject-drawer-right">
+            <div className="EmployeeProject-drawer-header">
+              <h3>Notifications</h3>
+              {notifications.length > 0 && (
+                <Tooltip title="Clear All">
+                  <button className="EmployeeProject-icon-button" onClick={handleClearAllNotifications}>
+                    <Icons.ClearAll />
+                  </button>
+                </Tooltip>
               )}
-            </List>
-          </Box>
-        </Box>
-      </Drawer>
+            </div>
+            <div className="EmployeeProject-drawer-body">
+              <div className="EmployeeProject-divider" />
+              
+              <div className="EmployeeProject-notifications-list">
+                {notifications.map((notification) => (
+                  <div 
+                    className={`EmployeeProject-notification-item ${notification.isRead ? '' : 'EmployeeProject-notification-unread'}`}
+                    key={notification._id}
+                    onClick={() => handleMarkNotificationAsRead(notification._id)}
+                  >
+                    <div className="EmployeeProject-notification-icon">
+                      <Icons.Notifications />
+                    </div>
+                    <div className="EmployeeProject-notification-content">
+                      <h5 className={notification.isRead ? '' : 'EmployeeProject-notification-title-unread'}>
+                        {notification.title}
+                      </h5>
+                      <p className="EmployeeProject-notification-message">{notification.message}</p>
+                      <div className="EmployeeProject-notification-footer">
+                        <span className="EmployeeProject-notification-date">
+                          <Icons.AccessTime />
+                          {new Date(notification.createdAt).toLocaleString()}
+                        </span>
+                        {!notification.isRead && (
+                          <Chip
+                            label="New"
+                            color="#667eea"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {notifications.length === 0 && (
+                  <div className="EmployeeProject-empty-notifications">
+                    <Icons.Notifications />
+                    <p>No notifications yet.</p>
+                    <small>You'll see project updates here</small>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ADD TASK DIALOG */}
-      <Dialog 
-        open={openTaskDialog} 
-        onClose={() => setOpenTaskDialog(false)}
-        maxWidth="md"
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 3,
-            overflow: 'hidden'
-          }
-        }}
-      >
-        <DialogTitle sx={{ 
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white'
-        }}>
-          <Typography variant="h6" fontWeight="700">
-            Create New Task
-          </Typography>
-        </DialogTitle>
-        <DialogContent>
-          <Stack spacing={3} mt={2}>
-            <TextField
-              label="Task Title *"
-              value={newTask.title}
-              onChange={(e) =>
-                setNewTask({ ...newTask, title: e.target.value })
-              }
-              error={!!taskErrors.title}
-              helperText={taskErrors.title}
-              fullWidth
-              required
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                }
-              }}
-            />
+      {openTaskDialog && (
+        <div className="EmployeeProject-modal">
+          <div className="EmployeeProject-modal-backdrop" onClick={() => setOpenTaskDialog(false)} />
+          <div className="EmployeeProject-modal-content EmployeeProject-modal-md">
+            <div className="EmployeeProject-modal-header EmployeeProject-modal-header-primary">
+              <h3>Create New Task</h3>
+            </div>
+            <div className="EmployeeProject-modal-body">
+              <div className="EmployeeProject-task-form">
+                <div className="EmployeeProject-form-group">
+                  <label>Task Title *</label>
+                  <input
+                    type="text"
+                    className={`EmployeeProject-input ${taskErrors.title ? 'EmployeeProject-input-error' : ''}`}
+                    value={newTask.title}
+                    onChange={(e) =>
+                      setNewTask({ ...newTask, title: e.target.value })
+                    }
+                    required
+                  />
+                  {taskErrors.title && (
+                    <span className="EmployeeProject-error-text">{taskErrors.title}</span>
+                  )}
+                </div>
 
-            <TextField
-              label="Description"
-              multiline
-              rows={3}
-              value={newTask.description}
-              onChange={(e) =>
-                setNewTask({ ...newTask, description: e.target.value })
-              }
-              fullWidth
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                }
-              }}
-            />
+                <div className="EmployeeProject-form-group">
+                  <label>Description</label>
+                  <textarea
+                    className="EmployeeProject-textarea"
+                    rows="3"
+                    value={newTask.description}
+                    onChange={(e) =>
+                      setNewTask({ ...newTask, description: e.target.value })
+                    }
+                  />
+                </div>
 
-            <FormControl fullWidth error={!!taskErrors.assignedTo}>
-              <InputLabel>Assign To *</InputLabel>
-              <Select
-                value={newTask.assignedTo}
-                label="Assign To *"
-                onChange={(e) =>
-                  setNewTask({ ...newTask, assignedTo: e.target.value })
-                }
-                sx={{ borderRadius: 2 }}
+                <div className="EmployeeProject-form-group">
+                  <label>Assign To *</label>
+                  <select
+                    className={`EmployeeProject-select ${taskErrors.assignedTo ? 'EmployeeProject-input-error' : ''}`}
+                    value={newTask.assignedTo}
+                    onChange={(e) =>
+                      setNewTask({ ...newTask, assignedTo: e.target.value })
+                    }
+                  >
+                    <option value="">Select a user</option>
+                    {projectUsers.map((u) => (
+                      <option key={u._id} value={u._id}>
+                        {u.name} ({u.email})
+                      </option>
+                    ))}
+                  </select>
+                  {taskErrors.assignedTo && (
+                    <span className="EmployeeProject-error-text">{taskErrors.assignedTo}</span>
+                  )}
+                </div>
+
+                <div className="EmployeeProject-form-group">
+                  <label>Due Date</label>
+                  <input
+                    type="date"
+                    className="EmployeeProject-input"
+                    value={newTask.dueDate}
+                    onChange={(e) =>
+                      setNewTask({ ...newTask, dueDate: e.target.value })
+                    }
+                  />
+                </div>
+
+                <div className="EmployeeProject-form-row">
+                  <div className="EmployeeProject-form-group">
+                    <label>Priority</label>
+                    <select
+                      className="EmployeeProject-select"
+                      value={newTask.priority}
+                      onChange={(e) =>
+                        setNewTask({ ...newTask, priority: e.target.value })
+                      }
+                    >
+                      <option value="Low">Low</option>
+                      <option value="Medium">Medium</option>
+                      <option value="High">High</option>
+                    </select>
+                  </div>
+
+                  <div className="EmployeeProject-form-group">
+                    <label>Initial Status</label>
+                    <select
+                      className="EmployeeProject-select"
+                      value={newTask.status}
+                      onChange={(e) =>
+                        setNewTask({ ...newTask, status: e.target.value })
+                      }
+                    >
+                      {TASK_STATUS_OPTIONS.map((status) => (
+                        <option key={status.value} value={status.value}>
+                          {status.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="EmployeeProject-form-group">
+                  <button
+                    className="EmployeeProject-button EmployeeProject-button-outline EmployeeProject-file-upload"
+                    onClick={() => document.getElementById('task-file-input').click()}
+                  >
+                    <Icons.CloudUpload />
+                    Upload Task File (PDF)
+                  </button>
+                  <input
+                    id="task-file-input"
+                    type="file"
+                    hidden
+                    accept=".pdf"
+                    onChange={handleFileChange}
+                  />
+                  {fileName && (
+                    <div className="EmployeeProject-file-info">
+                      <Icons.PictureAsPdf />
+                      <span>Selected: {fileName}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="EmployeeProject-modal-footer">
+              <button 
+                className="EmployeeProject-button EmployeeProject-button-outline"
+                onClick={() => setOpenTaskDialog(false)} 
+                disabled={loading.tasks}
               >
-                {projectUsers.map((u) => (
-                  <MenuItem key={u._id} value={u._id}>
-                    <Box display="flex" alignItems="center" gap={2}>
-                      <Avatar sx={{ 
-                        width: 32, 
-                        height: 32,
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        fontSize: '0.9rem',
-                        fontWeight: 600
-                      }}>
-                        {u.name?.charAt(0)}
-                      </Avatar>
-                      <Box>
-                        <Typography variant="body2">{u.name}</Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {u.email}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            <TextField
-              type="date"
-              label="Due Date"
-              InputLabelProps={{ shrink: true }}
-              value={newTask.dueDate}
-              onChange={(e) =>
-                setNewTask({ ...newTask, dueDate: e.target.value })
-              }
-              fullWidth
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                }
-              }}
-            />
-
-            <Box display="flex" gap={2}>
-              <FormControl fullWidth>
-                <InputLabel>Priority</InputLabel>
-                <Select
-                  value={newTask.priority}
-                  label="Priority"
-                  onChange={(e) =>
-                    setNewTask({ ...newTask, priority: e.target.value })
-                  }
-                  sx={{ borderRadius: 2 }}
-                >
-                  <MenuItem value="Low">
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <BoltIcon sx={{ color: '#66BB6A', fontSize: 18 }} />
-                      Low
-                    </Box>
-                  </MenuItem>
-                  <MenuItem value="Medium">
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <BoltIcon sx={{ color: '#FFA726', fontSize: 18 }} />
-                      Medium
-                    </Box>
-                  </MenuItem>
-                  <MenuItem value="High">
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <BoltIcon sx={{ color: '#EF5350', fontSize: 18 }} />
-                      High
-                    </Box>
-                  </MenuItem>
-                </Select>
-              </FormControl>
-
-              <FormControl fullWidth>
-                <InputLabel>Initial Status</InputLabel>
-                <Select
-                  value={newTask.status}
-                  label="Initial Status"
-                  onChange={(e) =>
-                    setNewTask({ ...newTask, status: e.target.value })
-                }
-                  sx={{ borderRadius: 2 }}
-                >
-                  {TASK_STATUS_OPTIONS.map((status) => (
-                    <MenuItem key={status.value} value={status.value}>
-                      <Box display="flex" alignItems="center" gap={2}>
-                        <Box sx={{ color: status.color }}>
-                          {status.icon}
-                        </Box>
-                        <Typography>{status.label}</Typography>
-                      </Box>
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Box>
-
-            <Box>
-              <Button
-                variant="outlined"
-                component="label"
-                startIcon={<CloudUploadIcon />}
-                sx={{ 
-                  mb: 1,
-                  borderRadius: 2,
-                  borderStyle: 'dashed'
-                }}
+                Cancel
+              </button>
+              <button
+                className="EmployeeProject-button EmployeeProject-button-primary"
+                onClick={handleAddTask}
+                disabled={loading.tasks}
               >
-                Upload Task File (PDF)
-                <input
-                  type="file"
-                  hidden
-                  accept=".pdf"
-                  onChange={handleFileChange}
-                />
-              </Button>
-              {fileName && (
-                <Box display="flex" alignItems="center" gap={1} mt={1}>
-                  <PdfIcon sx={{ color: '#EF5350', fontSize: 20 }} />
-                  <Typography variant="body2" color="text.secondary">
-                    Selected: {fileName}
-                  </Typography>
-                </Box>
-              )}
-            </Box>
-          </Stack>
-        </DialogContent>
-        <DialogActions sx={{ p: 3, background: alpha('#f5f7fa', 0.8) }}>
-          <Button 
-            onClick={() => setOpenTaskDialog(false)} 
-            disabled={loading.tasks}
-            sx={{ borderRadius: 2 }}
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            onClick={handleAddTask}
-            disabled={loading.tasks}
-            startIcon={loading.tasks ? <CircularProgress size={16} /> : <AddIcon />}
-            sx={{
-              borderRadius: 2,
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              '&:hover': {
-                background: 'linear-gradient(135deg, #5a6fd8 0%, #6a3f8c 100%)',
-              }
-            }}
-          >
-            {loading.tasks ? "Adding..." : "Create Task"}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+                {loading.tasks ? "Adding..." : "Create Task"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

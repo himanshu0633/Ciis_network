@@ -1,544 +1,771 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from "react";
+import axios from "../../../utils/axiosConfig";
+import './employee-leaves.css';
+
+// Icons
 import {
-  Box, Typography, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Paper, Button, TextField, MenuItem,
-  Select, FormControl, Snackbar, Chip, Stack, IconButton,
-  Tooltip, Dialog, DialogTitle, DialogContent, DialogActions,
-  CircularProgress, Avatar, Badge, Card, CardContent, Grid,
-  Fade, LinearProgress, useTheme, useMediaQuery, InputAdornment
-} from '@mui/material';
-import {
-  FiTrash2, FiFilter, FiCheckCircle, FiXCircle,
-  FiClock, FiCalendar, FiUsers, FiSearch, FiUser,
-  FiAlertCircle, FiChevronRight, FiList
-} from 'react-icons/fi';
-import axios from '../../../utils/axiosConfig';
-import { format, parseISO } from 'date-fns';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { styled } from '@mui/material/styles';
+  FiCalendar,
+  FiUsers,
+  FiClock,
+  FiCheckCircle,
+  FiXCircle,
+  FiAlertCircle,
+  FiTrendingUp,
+  FiSearch,
+  FiFilter,
+  FiRefreshCw,
+  FiDownload,
+  FiEye,
+  FiTrash2,
+  FiUser,
+  FiList,
+  FiChevronRight,
+  FiX,
+  FiSave
+} from "react-icons/fi";
 
-/* =========================
-   Styled Components
-   ========================= */
-const StatCard = styled(Card)(({ theme, active, color = 'primary' }) => ({
-  background: active
-    ? `linear-gradient(135deg, ${theme.palette[color].main}15, ${theme.palette[color].main}10)`
-    : `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
-  borderRadius: theme.shape.borderRadius * 2,
-  boxShadow: theme.shadows[2],
-  cursor: 'pointer',
-  borderLeft: active
-    ? `4px solid ${theme.palette[color].main}`
-    : `4px solid ${theme.palette.divider}`,
-  transition: theme.transitions.create(['all'], {
-    duration: theme.transitions.duration.standard,
-  }),
-  '&:hover': {
-    boxShadow: theme.shadows[6],
-    transform: 'translateY(-2px)',
-  },
-}));
+// Status Filter Component
+const StatusFilter = ({ selected, onChange }) => {
+  const options = [
+    { value: 'All', label: 'All Statuses' },
+    { value: 'Pending', label: 'Pending' },
+    { value: 'Approved', label: 'Approved' },
+    { value: 'Rejected', label: 'Rejected' },
+  ];
 
-const StatusChip = styled(Chip)(({ theme, status }) => ({
-  fontWeight: 600,
-  ...(status === 'Approved' && {
-    background: `${theme.palette.success.main}20`,
-    color: theme.palette.success.dark,
-    border: `1px solid ${theme.palette.success.main}40`,
-  }),
-  ...(status === 'Rejected' && {
-    background: `${theme.palette.error.main}20`,
-    color: theme.palette.error.dark,
-    border: `1px solid ${theme.palette.error.main}40`,
-  }),
-  ...(status === 'Pending' && {
-    background: `${theme.palette.warning.main}20`,
-    color: theme.palette.warning.dark,
-    border: `1px solid ${theme.palette.warning.main}40`,
-  }),
-}));
-
-const LeaveTypeChip = styled(Chip)(({ theme, type }) => ({
-  fontWeight: 500,
-  ...(type === 'Casual' && {
-    background: `${theme.palette.info.main}20`,
-    color: theme.palette.info.dark,
-  }),
-  ...(type === 'Sick' && {
-    background: `${theme.palette.secondary.main}20`,
-    color: theme.palette.secondary.dark,
-  }),
-  ...(type === 'Paid' && {
-    background: `${theme.palette.success.main}20`,
-    color: theme.palette.success.dark,
-  }),
-  ...(type === 'Unpaid' && {
-    background: `${theme.palette.warning.main}20`,
-    color: theme.palette.warning.dark,
-  }),
-}));
-
-const StyledTableRow = styled(TableRow)(({ theme, status }) => ({
-  transition: theme.transitions.create(['all'], {
-    duration: theme.transitions.duration.short,
-  }),
-  '&:hover': {
-    backgroundColor: theme.palette.action.hover,
-  },
-  ...(status === 'Approved' && {
-    borderLeft: `4px solid ${theme.palette.success.main}`,
-  }),
-  ...(status === 'Rejected' && {
-    borderLeft: `4px solid ${theme.palette.error.main}`,
-  }),
-  ...(status === 'Pending' && {
-    borderLeft: `4px solid ${theme.palette.warning.main}`,
-  }),
-}));
-
-const DurationBadge = styled(Box)(({ theme }) => ({
-  display: 'inline-block',
-  padding: '4px 12px',
-  borderRadius: 16,
-  fontSize: '0.75rem',
-  fontWeight: 600,
-  background: `${theme.palette.primary.main}20`,
-  color: theme.palette.primary.dark,
-}));
-
-const MobileLeaveCard = styled(Card)(({ theme, status }) => ({
-  borderRadius: theme.shape.borderRadius * 2,
-  borderLeft: `4px solid ${
-    status === 'Approved'
-      ? theme.palette.success.main
-      : status === 'Rejected'
-      ? theme.palette.error.main
-      : theme.palette.warning.main
-  }`,
-}));
-
-/* =========================
-   Helper Functions
-   ========================= */
-const normalizeRole = (role) => {
-  const r = String(role || '').toLowerCase();
-  if (r === 'hr') return 'HR';
-  if (r === 'admin') return 'ADMIN';
-  if (r === 'manager') return 'MANAGER';
-  return 'EMPLOYEE';
+  return (
+    <select
+      className="filter-select"
+      value={selected}
+      onChange={(e) => onChange(e.target.value)}
+    >
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
+  );
 };
 
-const buildHistory = (leave) => {
-  const arr = Array.isArray(leave.history) ? [...leave.history] : [];
-  if (!arr.length) {
-    arr.push({
-      action: leave.status || 'Pending',
-      by: leave.approvedBy || 'Employee',
-      role: 'admin',
-      at: leave.updatedAt || leave.createdAt,
-      remarks: leave.remarks || '',
-    });
-  }
-  return arr.map((h) => ({
-    action: String(h.action || '').toLowerCase(),
-    by: h.by || 'Employee',
-    role: String(h.role || 'employee').toLowerCase(),
-    at: h.at || leave.updatedAt || leave.createdAt,
-    remarks: h.remarks || '',
-  }));
+// Leave Type Filter Component
+const LeaveTypeFilter = ({ selected, onChange }) => {
+  const options = [
+    { value: 'all', label: 'All Types' },
+    { value: 'Casual', label: 'Casual' },
+    { value: 'Sick', label: 'Sick' },
+    { value: 'Paid', label: 'Paid' },
+    { value: 'Unpaid', label: 'Unpaid' },
+  ];
+
+  return (
+    <select
+      className="filter-select"
+      value={selected}
+      onChange={(e) => onChange(e.target.value)}
+    >
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
+  );
 };
 
-const getLatest = (leave) => {
-  const hist = buildHistory(leave);
-  return hist[hist.length - 1];
-};
-
-const renderLatestText = (leave) => {
-  const latest = getLatest(leave) || { action: 'pending', role: 'employee' };
-  const roleLabel = normalizeRole(latest.role);
-  if (latest.action === 'approved')
-    return { text: `Approved by ${roleLabel}`, color: 'success.main' };
-  if (latest.action === 'rejected')
-    return { text: `Rejected by ${roleLabel}`, color: 'error.main' };
-  return { text: 'Awaiting approval', color: 'warning.main' };
-};
-
-/* =========================
-   MAIN COMPONENT
-   ========================= */
-const EmppLeaves = () => {
+const EmployeeLeaves = () => {
   const [leaves, setLeaves] = useState([]);
-  const [filterDate, setFilterDate] = useState(null);
-  const [statusFilter, setStatusFilter] = useState('All');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedStat, setSelectedStat] = useState('All');
-  const [loading, setLoading] = useState(false);
-  const [actionLoading, setActionLoading] = useState(false);
-  const [notification, setNotification] = useState(null);
-  const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [filterDate, setFilterDate] = useState(new Date().toISOString().split('T')[0]);
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [leaveTypeFilter, setLeaveTypeFilter] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    type: "success",
+  });
+  const [stats, setStats] = useState({
+    total: 0,
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+  });
+  const [selectedStat, setSelectedStat] = useState("All");
+  const [deleteDialog, setDeleteDialog] = useState(null);
   const [statusDialog, setStatusDialog] = useState({
-    open: false, leaveId: null, newStatus: null, remarks: '',
+    open: false,
+    leaveId: null,
+    newStatus: null,
+    remarks: "",
   });
   const [historyDialog, setHistoryDialog] = useState({
-    open: false, title: '', items: [],
+    open: false,
+    title: "",
+    items: [],
   });
-  const [currentUserRole, setCurrentUserRole] = useState('');
-  const [stats, setStats] = useState({ total: 0, pending: 0, approved: 0, rejected: 0 });
+  const [currentUserRole, setCurrentUserRole] = useState("");
 
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-
-  /* Fetch Leaves */
   useEffect(() => {
     fetchLeaves();
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     setCurrentUserRole(user.role?.toLowerCase() || '');
-  }, [filterDate, statusFilter]);
+  }, [filterDate, statusFilter, leaveTypeFilter]);
 
   const fetchLeaves = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
       let url = '/leaves/all';
       const params = new URLSearchParams();
-      if (filterDate) params.append('date', format(filterDate, 'yyyy-MM-dd'));
+      if (filterDate) params.append('date', filterDate);
       if (statusFilter !== 'All') params.append('status', statusFilter);
+      if (leaveTypeFilter !== 'all') params.append('type', leaveTypeFilter);
+      
       if (params.toString()) url += `?${params}`;
+      
       const res = await axios.get(url);
-      const data = res.data.leaves || [];
+      const data = res.data.leaves || res.data.data || [];
       setLeaves(data);
+      
       const pending = data.filter(l => l.status === 'Pending').length;
       const approved = data.filter(l => l.status === 'Approved').length;
       const rejected = data.filter(l => l.status === 'Rejected').length;
-      setStats({ total: data.length, pending, approved, rejected });
-    } catch {
-      showNotification('Failed to fetch leave records', 'error');
-    } finally { setLoading(false); }
+      
+      setStats({
+        total: data.length,
+        pending,
+        approved,
+        rejected,
+      });
+    } catch (err) {
+      console.error("Failed to load leaves", err);
+      showSnackbar("Error loading leave data", "error");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const showNotification = (msg, type) => setNotification({ message: msg, severity: type });
+  const showSnackbar = (message, type = "success") => {
+    setSnackbar({ open: true, message, type });
+    setTimeout(() => {
+      setSnackbar({ ...snackbar, open: false });
+    }, 4000);
+  };
+
+  const clearFilters = () => {
+    setFilterDate(new Date().toISOString().split('T')[0]);
+    setStatusFilter("All");
+    setLeaveTypeFilter("all");
+    setSearchTerm("");
+    setSelectedStat("All");
+  };
+
+  const exportData = () => {
+    showSnackbar("Export feature coming soon!", "info");
+  };
 
   const handleStatFilter = (type) => {
     setSelectedStat(prev => (prev === type ? 'All' : type));
     setStatusFilter(type === 'All' ? 'All' : type);
   };
 
-  const canModify = ['admin', 'hr'].includes(currentUserRole);
+  const canModify = ['admin', 'hr', 'manager'].includes(currentUserRole);
 
-  const filteredLeaves = leaves.filter(l => {
-    const matchSearch = l.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      l.user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      l.type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      l.reason?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchStatus = selectedStat === 'All' || l.status === selectedStat;
-    return matchSearch && matchStatus;
-  });
+  const filteredLeaves = useMemo(() => {
+    let filtered = leaves;
 
-  const clearFilters = () => { setFilterDate(null); setSearchTerm(''); setSelectedStat('All'); setStatusFilter('All'); };
+    if (searchTerm) {
+      filtered = filtered.filter(
+        (leave) =>
+          leave.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          leave.user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          leave.type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          leave.reason?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'Approved': return <FiCheckCircle color={theme.palette.success.main} />;
-      case 'Rejected': return <FiXCircle color={theme.palette.error.main} />;
-      case 'Pending': return <FiClock color={theme.palette.warning.main} />;
-      default: return <FiClock color={theme.palette.text.secondary} />;
+    if (selectedStat !== 'All') {
+      filtered = filtered.filter((leave) => leave.status === selectedStat);
+    }
+
+    return filtered;
+  }, [leaves, searchTerm, selectedStat]);
+
+  const getInitials = (name) => {
+    if (!name) return 'U';
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  const formatDate = (dateStr) => {
+    return new Date(dateStr).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  const getLeaveTypeClass = (type) => {
+    if (!type) return "";
+    const typeLower = type.toLowerCase();
+    if (typeLower === 'casual') return 'leave-type-casual';
+    if (typeLower === 'sick') return 'leave-type-sick';
+    if (typeLower === 'paid') return 'leave-type-paid';
+    if (typeLower === 'unpaid') return 'leave-type-unpaid';
+    return "";
+  };
+
+  const getStatusClass = (status) => {
+    if (!status) return "";
+    const statusLower = status.toLowerCase();
+    if (statusLower === 'pending') return 'status-pending';
+    if (statusLower === 'approved') return 'status-approved';
+    if (statusLower === 'rejected') return 'status-rejected';
+    return "";
+  };
+
+  const getRowClass = (status) => {
+    if (!status) return "";
+    const statusLower = status.toLowerCase();
+    if (statusLower === 'pending') return 'row-pending';
+    if (statusLower === 'approved') return 'row-approved';
+    if (statusLower === 'rejected') return 'row-rejected';
+    return "";
+  };
+
+  const calculateDays = (startDate, endDate) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    return diffDays;
+  };
+
+  const openStatusDialog = (leaveId, newStatus) => {
+    if (canModify) {
+      setStatusDialog({
+        open: true,
+        leaveId,
+        newStatus,
+        remarks: "",
+      });
     }
   };
 
-  const getInitials = (name) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : 'U';
-  const getLeaveTypeIcon = (type) => {
-    switch (type) {
-      case 'Casual': return <FiUser color={theme.palette.info.main} />;
-      case 'Sick': return <FiAlertCircle color={theme.palette.secondary.main} />;
-      case 'Paid': return <FiCheckCircle color={theme.palette.success.main} />;
-      case 'Unpaid': return <FiClock color={theme.palette.warning.main} />;
-      default: return <FiCalendar color={theme.palette.grey[500]} />;
-    }
+  const closeStatusDialog = () => {
+    setStatusDialog({
+      open: false,
+      leaveId: null,
+      newStatus: null,
+      remarks: "",
+    });
   };
-
-  const openStatusDialog = (id, newStatus) => { if (canModify) setStatusDialog({ open: true, leaveId: id, newStatus, remarks: '' }); };
-  const closeStatusDialog = () => setStatusDialog({ open: false, leaveId: null, newStatus: null, remarks: '' });
 
   const confirmStatusChange = async () => {
     const { leaveId, newStatus, remarks } = statusDialog;
     try {
-      setActionLoading(true);
-      await axios.patch(`/leaves/status/${leaveId}`, { status: newStatus, remarks });
-      showNotification(`Leave ${newStatus.toLowerCase()} successfully`, 'success');
-      closeStatusDialog();
-      fetchLeaves();
-    } catch {
-      showNotification('Failed to update status', 'error');
-    } finally { setActionLoading(false); }
+      const res = await axios.patch(`/leaves/status/${leaveId}`, {
+        status: newStatus,
+        remarks,
+      });
+      
+      if (res.data.success) {
+        showSnackbar(`Leave ${newStatus.toLowerCase()} successfully`, "success");
+        fetchLeaves();
+        closeStatusDialog();
+      }
+    } catch (err) {
+      console.error("Failed to update status", err);
+      showSnackbar("Failed to update leave status", "error");
+    }
   };
 
   const handleDeleteLeave = async () => {
     try {
-      setActionLoading(true);
-      await axios.delete(`/leaves/${deleteConfirm}`);
-      showNotification('Leave deleted successfully', 'success');
-      fetchLeaves();
-    } catch {
-      showNotification('Failed to delete leave', 'error');
-    } finally {
-      setActionLoading(false);
-      setDeleteConfirm(null);
+      const res = await axios.delete(`/leaves/${deleteDialog}`);
+      
+      if (res.data.success) {
+        showSnackbar("Leave deleted successfully", "success");
+        fetchLeaves();
+        setDeleteDialog(null);
+      }
+    } catch (err) {
+      console.error("Failed to delete leave", err);
+      showSnackbar("Failed to delete leave", "error");
     }
   };
 
-  const openHistoryDialog = (leave) => setHistoryDialog({
-    open: true,
-    title: `${leave.user?.name || 'Employee'} — ${leave.type} Leave`,
-    items: buildHistory(leave),
-  });
-  const closeHistoryDialog = () => setHistoryDialog({ open: false, title: '', items: [] });
+  const openHistoryDialog = (leave) => {
+    const history = leave.history || [];
+    setHistoryDialog({
+      open: true,
+      title: `${leave.user?.name || 'Employee'} — ${leave.type} Leave`,
+      items: history.length > 0 ? history : [
+        {
+          action: leave.status || 'Pending',
+          by: leave.approvedBy || 'System',
+          role: 'System',
+          at: leave.updatedAt || leave.createdAt,
+          remarks: leave.remarks || '',
+        }
+      ],
+    });
+  };
 
-  /* =========================
-     UI Rendering
-     ========================= */
-  if (loading && !leaves.length)
-    return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}><LinearProgress sx={{ width: '100px' }} /></Box>;
+  const closeHistoryDialog = () => {
+    setHistoryDialog({
+      open: false,
+      title: "",
+      items: [],
+    });
+  };
+
+  const normalizeRole = (role) => {
+    if (!role) return 'Employee';
+    const r = role.toLowerCase();
+    if (r === 'hr') return 'HR Manager';
+    if (r === 'admin') return 'Administrator';
+    if (r === 'manager') return 'Team Manager';
+    return role.charAt(0).toUpperCase() + role.slice(1);
+  };
+
+  // Loading State
+  if (loading && leaves.length === 0) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
+        <p>Loading leave data...</p>
+      </div>
+    );
+  }
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Fade in={!loading} timeout={500}>
-        <Box sx={{ p: { xs: 2, md: 3 } }}>
+    <div className="employee-leaves">
+      {/* Header */}
+      <div className="leaves-header">
+        <div>
+          <h1 className="leaves-title">Leave Management</h1>
+          <p className="leaves-subtitle">
+            Review and manage employee leave requests
+          </p>
+        </div>
 
-          {/* HEADER + FILTERS */}
-          <Paper sx={{ p: 3, mb: 3, borderRadius: theme.shape.borderRadius * 2, boxShadow: theme.shadows[4] }}>
-            <Stack spacing={3}>
-              <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems="center">
-                <Box>
-                  <Typography variant="h4" fontWeight={800}>Leave Management</Typography>
-                  <Typography variant="body1" color="text.secondary">Review and manage employee leave requests</Typography>
-                </Box>
-                <Badge badgeContent={(filterDate || statusFilter !== 'All' || searchTerm) ? 1 : 0} color="primary">
-                  <Button variant="outlined" startIcon={<FiFilter />} onClick={clearFilters} sx={{ borderRadius: 3 }}>Clear Filters</Button>
-                </Badge>
-              </Stack>
+        {/* Action Bar */}
+        <div className="header-actions">
+          <button 
+            className="action-button"
+            onClick={fetchLeaves}
+            title="Refresh Data"
+          >
+            <FiRefreshCw size={20} />
+          </button>
+          <button 
+            className="action-button"
+            onClick={exportData}
+            title="Export Report"
+          >
+            <FiDownload size={20} />
+          </button>
+          <div className="date-chip" style={{
+            padding: '8px 16px',
+            border: '1px solid #1976d2',
+            borderRadius: '20px',
+            backgroundColor: 'white',
+            fontWeight: '600',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            marginLeft: 'auto'
+          }}>
+            <FiCalendar size={16} />
+            {formatDate(filterDate)}
+          </div>
+        </div>
+      </div>
 
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
-                <DatePicker
-                  label="Filter by Date"
-                  value={filterDate}
-                  onChange={setFilterDate}
-                  slotProps={{
-                    textField: {
-                      size: 'small',
-                      sx: { borderRadius: 3, minWidth: 200 },
-                      InputProps: {
-                        startAdornment: <InputAdornment position="start"><FiCalendar /></InputAdornment>,
-                      },
-                    },
-                  }}
-                />
+      {/* Filter Section */}
+      <div className="filter-section">
+        <div className="filter-header">
+          <FiFilter size={20} color="#1976d2" />
+          <h3>Filters & Search</h3>
+        </div>
+        
+        <div className="filter-grid">
+          <div className="filter-group">
+            <label className="filter-label">Filter by Date</label>
+            <input
+              type="date"
+              className="filter-input"
+              value={filterDate}
+              onChange={(e) => setFilterDate(e.target.value)}
+            />
+          </div>
+          
+          <div className="filter-group">
+            <label className="filter-label">Status</label>
+            <StatusFilter
+              selected={statusFilter}
+              onChange={setStatusFilter}
+            />
+          </div>
+          
+          <div className="filter-group">
+            <label className="filter-label">Leave Type</label>
+            <LeaveTypeFilter
+              selected={leaveTypeFilter}
+              onChange={setLeaveTypeFilter}
+            />
+          </div>
+          
+          <div className="filter-group">
+            <label className="filter-label">Search</label>
+            <div style={{ position: 'relative' }}>
+              <FiSearch 
+                size={18} 
+                style={{
+                  position: 'absolute',
+                  left: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: '#666'
+                }}
+              />
+              <input
+                type="text"
+                className="filter-input"
+                placeholder="Search leaves..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{ paddingLeft: '40px' }}
+              />
+            </div>
+          </div>
+          
+          <div className="filter-actions">
+            <button 
+              className="btn btn-outlined"
+              onClick={clearFilters}
+            >
+              Clear All
+            </button>
+            <button 
+              className="btn btn-contained"
+              onClick={fetchLeaves}
+            >
+              Apply Filters
+            </button>
+          </div>
+        </div>
+      </div>
 
-                <FormControl size="small" sx={{ minWidth: 180 }}>
-                  <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} sx={{ borderRadius: 3 }}>
-                    <MenuItem value="All">All Statuses</MenuItem>
-                    <MenuItem value="Pending">Pending</MenuItem>
-                    <MenuItem value="Approved">Approved</MenuItem>
-                    <MenuItem value="Rejected">Rejected</MenuItem>
-                  </Select>
-                </FormControl>
+      {/* Stat Cards */}
+      <div className="stats-container">
+        {[
+          { 
+            label: "Total Leaves", 
+            count: stats.total, 
+            color: "primary", 
+            type: "All", 
+            icon: <FiUsers />,
+            description: "Total leave requests",
+            statClass: "stat-card-primary",
+            iconClass: "stat-icon-primary"
+          },
+          { 
+            label: "Pending", 
+            count: stats.pending, 
+            color: "warning", 
+            type: "Pending", 
+            icon: <FiClock />,
+            description: "Awaiting approval",
+            statClass: "stat-card-warning",
+            iconClass: "stat-icon-warning"
+          },
+          { 
+            label: "Approved", 
+            count: stats.approved, 
+            color: "success", 
+            type: "Approved", 
+            icon: <FiCheckCircle />,
+            description: "Approved requests",
+            statClass: "stat-card-success",
+            iconClass: "stat-icon-success"
+          },
+          { 
+            label: "Rejected", 
+            count: stats.rejected, 
+            color: "error", 
+            type: "Rejected", 
+            icon: <FiXCircle />,
+            description: "Rejected requests",
+            statClass: "stat-card-error",
+            iconClass: "stat-icon-error"
+          },
+        ].map((stat) => (
+          <div 
+            key={stat.type}
+            className={`stat-card ${stat.statClass} ${selectedStat === stat.type ? 'stat-card-active' : ''}`}
+            onClick={() => handleStatFilter(stat.type)}
+          >
+            <div className="stat-content">
+              <div className={`stat-icon ${stat.iconClass}`}>
+                {stat.icon}
+              </div>
+              <div className="stat-info">
+                <div className="stat-value">{stat.count}</div>
+                <div className="stat-label">{stat.label}</div>
+                <div className="stat-description">{stat.description}</div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
 
-                <TextField
-                  placeholder="Search leaves..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  size="small"
-                  InputProps={{
-                    startAdornment: <InputAdornment position="start"><FiSearch /></InputAdornment>,
-                  }}
-                  sx={{ flex: 1, '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
-                />
-              </Stack>
-            </Stack>
-          </Paper>
+      {/* Leaves Table */}
+      <div className="leaves-table-container">
+        <div className="table-header">
+          <h3 className="table-title">Leave Requests</h3>
+          <div className="table-count">
+            {filteredLeaves.length} records found
+          </div>
+        </div>
 
-          {/* CLICKABLE STAT CARDS */}
-          <Grid container spacing={3} sx={{ mb: 4 }}>
-            {[
-              { label: 'Total Leaves', count: stats.total, color: 'primary', type: 'All', icon: <FiUsers /> },
-              { label: 'Pending', count: stats.pending, color: 'warning', type: 'Pending', icon: <FiClock /> },
-              { label: 'Approved', count: stats.approved, color: 'success', type: 'Approved', icon: <FiCheckCircle /> },
-              { label: 'Rejected', count: stats.rejected, color: 'error', type: 'Rejected', icon: <FiXCircle /> },
-            ].map((item) => (
-              <Grid item xs={6} md={3} key={item.type}>
-                <StatCard color={item.color} active={selectedStat === item.type} onClick={() => handleStatFilter(item.type)}>
-                  <CardContent>
-                    <Stack direction="row" spacing={2} alignItems="center">
-                      <Avatar sx={{ bgcolor: `${theme.palette[item.color].main}20`, color: theme.palette[item.color].main }}>{item.icon}</Avatar>
-                      <Box>
-                        <Typography variant="body2" color="text.secondary">{item.label}</Typography>
-                        <Typography variant="h4" fontWeight={700}>{item.count}</Typography>
-                      </Box>
-                    </Stack>
-                  </CardContent>
-                </StatCard>
-              </Grid>
-            ))}
-          </Grid>
+        <div style={{ overflowX: 'auto' }}>
+          <table className="leaves-table">
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>Leave Details</th>
+                <th>Duration</th>
+                <th>Status</th>
+                <th>History</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredLeaves.length ? (
+                filteredLeaves.map((leave) => {
+                  const days = calculateDays(leave.startDate, leave.endDate);
+                  return (
+                    <tr key={leave._id} className={getRowClass(leave.status)}>
+                      <td>
+                        <div className="employee-info">
+                          <div className="employee-avatar">
+                            {getInitials(leave.user?.name)}
+                          </div>
+                          <div className="employee-details">
+                            <div className="employee-name">
+                              {leave.user?.name || "N/A"}
+                            </div>
+                            <div className="employee-email">
+                              {leave.user?.email || "N/A"}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="leave-details">
+                          <div className="leave-type">
+                            <span className={`leave-type-chip ${getLeaveTypeClass(leave.type)}`}>
+                              {leave.type || "N/A"}
+                            </span>
+                          </div>
+                          <div className="leave-reason">
+                            {leave.reason || "No reason provided"}
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="duration-info">
+                          <div className="date-range">
+                            {formatDate(leave.startDate)}
+                          </div>
+                          <div className="date-separator">to</div>
+                          <div className="date-range">
+                            {formatDate(leave.endDate)}
+                          </div>
+                          <div className="days-badge">
+                            {days} day{days > 1 ? 's' : ''}
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <span className={`status-chip ${getStatusClass(leave.status)}`}>
+                          {leave.status || "Pending"}
+                        </span>
+                      </td>
+                      <td>
+                        <button 
+                          className="view-history-button"
+                          onClick={() => openHistoryDialog(leave)}
+                        >
+                          <FiList size={14} /> View History
+                        </button>
+                      </td>
+                      <td>
+                        <div className="actions-container">
+                          <select
+                            className="action-dropdown"
+                            value={leave.status || "Pending"}
+                            onChange={(e) => openStatusDialog(leave._id, e.target.value)}
+                            disabled={!canModify}
+                          >
+                            <option value="Pending">Pending</option>
+                            <option value="Approved">Approve</option>
+                            <option value="Rejected">Reject</option>
+                          </select>
+                          <button 
+                            className="delete-button"
+                            onClick={() => setDeleteDialog(leave._id)}
+                            title="Delete Leave"
+                          >
+                            <FiTrash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={6}>
+                    <div className="empty-state">
+                      <div className="empty-state-icon">
+                        <FiCalendar size={48} />
+                      </div>
+                      <h4 className="empty-state-title">No Leave Requests Found</h4>
+                      <p className="empty-state-text">
+                        Try adjusting your filters or search criteria
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-          {/* TABLE SECTION */}
-          <Paper sx={{ borderRadius: 3, overflow: 'hidden' }}>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell sx={{ fontWeight: 700 }}>Employee</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Leave Details</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Duration</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>History</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }} align="center">Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredLeaves.length > 0 ? (
-                    filteredLeaves.map((leave) => {
-                      const latest = renderLatestText(leave);
-                      return (
-                        <StyledTableRow key={leave._id} status={leave.status}>
-                          <TableCell>
-                            <Stack direction="row" spacing={2}>
-                              <Avatar>{getInitials(leave.user?.name)}</Avatar>
-                              <Box>
-                                <Typography variant="subtitle1" fontWeight={600}>{leave.user?.name}</Typography>
-                                <Typography variant="body2" color="text.secondary">{leave.user?.email}</Typography>
-                              </Box>
-                            </Stack>
-                          </TableCell>
+      {/* Delete Confirmation Dialog */}
+      {deleteDialog && (
+        <div className="dialog-overlay" onClick={() => setDeleteDialog(null)}>
+          <div className="dialog" onClick={e => e.stopPropagation()}>
+            <div className="dialog-header">
+              <h3 className="dialog-title">Confirm Delete</h3>
+              <button className="dialog-close" onClick={() => setDeleteDialog(null)}>
+                <FiX size={20} />
+              </button>
+            </div>
+            <div className="dialog-content">
+              <p>Are you sure you want to delete this leave request?</p>
+            </div>
+            <div className="dialog-actions">
+              <button className="btn btn-outlined" onClick={() => setDeleteDialog(null)}>
+                Cancel
+              </button>
+              <button className="btn btn-error" onClick={handleDeleteLeave}>
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-                          <TableCell>
-                            <Stack spacing={1}>
-                              <Stack direction="row" spacing={1} alignItems="center">
-                                {getLeaveTypeIcon(leave.type)}
-                                <LeaveTypeChip label={leave.type} type={leave.type} size="small" />
-                              </Stack>
-                              <Typography variant="body2" color="text.secondary">{leave.reason}</Typography>
-                            </Stack>
-                          </TableCell>
+      {/* Status Update Dialog */}
+      {statusDialog.open && (
+        <div className="dialog-overlay" onClick={closeStatusDialog}>
+          <div className="dialog" onClick={e => e.stopPropagation()}>
+            <div className="dialog-header">
+              <h3 className="dialog-title">
+                Update Status to {statusDialog.newStatus}
+              </h3>
+              <button className="dialog-close" onClick={closeStatusDialog}>
+                <FiX size={20} />
+              </button>
+            </div>
+            <div className="dialog-content">
+              <textarea
+                className="textarea"
+                placeholder="Remarks (optional)"
+                value={statusDialog.remarks}
+                onChange={(e) => setStatusDialog(prev => ({ 
+                  ...prev, 
+                  remarks: e.target.value 
+                }))}
+                rows={3}
+              />
+            </div>
+            <div className="dialog-actions">
+              <button className="btn btn-outlined" onClick={closeStatusDialog}>
+                Cancel
+              </button>
+              <button className="btn btn-contained" onClick={confirmStatusChange}>
+                <FiSave size={16} /> Update Status
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-                          <TableCell>
-                            <Stack spacing={0.5}>
-                              <Typography variant="body2" fontWeight={600}>{format(parseISO(leave.startDate), 'MMM dd')}</Typography>
-                              <Typography variant="body2" color="text.secondary">to</Typography>
-                              <Typography variant="body2" fontWeight={600}>{format(parseISO(leave.endDate), 'MMM dd')}</Typography>
-                              <DurationBadge>{leave.days} day{leave.days > 1 ? 's' : ''}</DurationBadge>
-                            </Stack>
-                          </TableCell>
+      {/* History Dialog */}
+      {historyDialog.open && (
+        <div className="dialog-overlay" onClick={closeHistoryDialog}>
+          <div className="dialog" onClick={e => e.stopPropagation()}>
+            <div className="dialog-header">
+              <h3 className="dialog-title">Action History</h3>
+              <button className="dialog-close" onClick={closeHistoryDialog}>
+                <FiX size={20} />
+              </button>
+            </div>
+            <div className="dialog-content">
+              <div className="history-list">
+                {historyDialog.items.length > 0 ? (
+                  historyDialog.items.map((item, index) => (
+                    <div key={index} className="history-item">
+                      <div className="history-action">
+                        {item.action.toUpperCase()} by {normalizeRole(item.role)}
+                      </div>
+                      <div className="history-details">
+                        {new Date(item.at).toLocaleString()}
+                      </div>
+                      {item.remarks && (
+                        <div className="history-remarks">
+                          "{item.remarks}"
+                        </div>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <p>No history available.</p>
+                )}
+              </div>
+            </div>
+            <div className="dialog-actions">
+              <button className="btn btn-contained" onClick={closeHistoryDialog}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-                          <TableCell>
-                            <StatusChip status={leave.status} label={leave.status} />
-                          </TableCell>
-
-                          <TableCell>
-                            <Button size="small" startIcon={<FiList />} variant="outlined" onClick={() => openHistoryDialog(leave)}>View</Button>
-                          </TableCell>
-
-                          <TableCell align="center">
-                            <Stack direction="row" spacing={1} justifyContent="center">
-                              <FormControl size="small" sx={{ minWidth: 140 }}>
-                                <Select
-                                  value={leave.status}
-                                  onChange={(e) => openStatusDialog(leave._id, e.target.value)}
-                                  disabled={!canModify}
-                                >
-                                  <MenuItem value="Pending">Pending</MenuItem>
-                                  <MenuItem value="Approved">Approved</MenuItem>
-                                  <MenuItem value="Rejected">Rejected</MenuItem>
-                                </Select>
-                              </FormControl>
-                              <Tooltip title="Delete Leave">
-                                <IconButton color="error" onClick={() => setDeleteConfirm(leave._id)}>
-                                  <FiTrash2 />
-                                </IconButton>
-                              </Tooltip>
-                            </Stack>
-                          </TableCell>
-                        </StyledTableRow>
-                      );
-                    })
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                        <FiCalendar size={48} color={theme.palette.text.secondary} />
-                        <Typography variant="h6" color="text.secondary">No Leave Requests Found</Typography>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Paper>
-        </Box>
-      </Fade>
-
-      {/* DELETE DIALOG */}
-      <Dialog open={!!deleteConfirm} onClose={() => setDeleteConfirm(null)} maxWidth="xs" fullWidth>
-        <DialogTitle><Typography variant="h6" fontWeight={700}>Confirm Delete</Typography></DialogTitle>
-        <DialogContent>
-          <Typography variant="body2">Are you sure you want to delete this leave request?</Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteConfirm(null)}>Cancel</Button>
-          <Button color="error" variant="contained" onClick={handleDeleteLeave}>Delete</Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* STATUS DIALOG */}
-      <Dialog open={statusDialog.open} onClose={closeStatusDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>Update Status to {statusDialog.newStatus}</DialogTitle>
-        <DialogContent>
-          <TextField label="Remarks (optional)" fullWidth multiline rows={3} value={statusDialog.remarks}
-            onChange={(e) => setStatusDialog(prev => ({ ...prev, remarks: e.target.value }))} />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeStatusDialog}>Cancel</Button>
-          <Button variant="contained" onClick={confirmStatusChange}>Update</Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* HISTORY DIALOG */}
-      <Dialog open={historyDialog.open} onClose={closeHistoryDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>Action History</DialogTitle>
-        <DialogContent dividers>
-          <Stack spacing={1}>
-            {historyDialog.items.length > 0 ? historyDialog.items.map((h, i) => (
-              <Typography key={i} variant="body2">
-                {h.action.toUpperCase()} by {normalizeRole(h.role)} {h.remarks && `– "${h.remarks}"`}
-              </Typography>
-            )) : <Typography variant="body2">No history available.</Typography>}
-          </Stack>
-        </DialogContent>
-        <DialogActions><Button onClick={closeHistoryDialog}>Close</Button></DialogActions>
-      </Dialog>
-
-      {/* SNACKBAR */}
-      <Snackbar
-        open={!!notification}
-        autoHideDuration={4000}
-        onClose={() => setNotification(null)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-      >
-        <AlertWrapper severity={notification?.severity}>
-          <Stack direction="row" alignItems="center" spacing={1}>
-            {notification?.severity === 'error' ? <FiXCircle /> : <FiCheckCircle />}
-            <Typography variant="body2">{notification?.message}</Typography>
-          </Stack>
-        </AlertWrapper>
-      </Snackbar>
-    </LocalizationProvider>
+      {/* Snackbar */}
+      {snackbar.open && (
+        <div className="snackbar">
+          <div className={`snackbar-content snackbar-${snackbar.type}`}>
+            {snackbar.type === "success" && <FiCheckCircle size={20} />}
+            {snackbar.type === "error" && <FiXCircle size={20} />}
+            {snackbar.type === "info" && <FiAlertCircle size={20} />}
+            <span>{snackbar.message}</span>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 
-const AlertWrapper = styled(Box)(({ theme, severity }) => ({
-  background: severity === 'error' ? theme.palette.error.main : theme.palette.success.main,
-  color: 'white',
-  borderRadius: 12,
-  padding: '8px 16px',
-}));
-
-export default EmppLeaves;
+export default EmployeeLeaves;

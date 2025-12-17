@@ -1,9 +1,6 @@
 @import "tailwindcss";
 
 
-* {
-  box-sizing: border-box;
-}
 
 .css-12tjcea-MuiInputBase-input-MuiOutlinedInput-input {
   padding: 0.75rem 0.875rem;

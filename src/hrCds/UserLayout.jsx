@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { styled, useTheme } from '@mui/material/styles';
 import {
   CssBaseline,
@@ -11,8 +11,8 @@ import { Outlet } from 'react-router-dom';
 import Header from './Header';
 import Sidebar from './Sidebar';
 
-const drawerWidthOpen = 240;
-const drawerWidthClosed = 72;
+const drawerWidthOpen = 260;
+const drawerWidthClosed = 70;
 
 const LayoutContainer = styled(Box)({
   display: 'flex',
@@ -21,8 +21,8 @@ const LayoutContainer = styled(Box)({
 });
 
 const MainContent = styled('main', {
-  shouldForwardProp: (prop) => prop !== 'open' && prop !== 'isMobile',
-})(({ theme, open, isMobile }) => ({
+  shouldForwardProp: (prop) => prop !== 'isMobile' && prop !== 'isSidebarHovered',
+})(({ theme, isMobile, isSidebarHovered }) => ({
   flexGrow: 1,
   padding: theme.spacing(3),
   minHeight: '100vh',
@@ -32,62 +32,104 @@ const MainContent = styled('main', {
     easing: theme.transitions.easing.sharp,
     duration: theme.transitions.duration.leavingScreen,
   }),
-  ...(open && !isMobile && {
-    width: `calc(100% - ${drawerWidthOpen}px)`,
-    marginLeft: `${drawerWidthOpen}px`,
-    transition: theme.transitions.create(['margin', 'width'], {
-      easing: theme.transitions.easing.easeOut,
-      duration: theme.transitions.duration.enteringScreen,
+  
+  // Desktop styles
+  ...(!isMobile && {
+    marginLeft: `${drawerWidthClosed}px`,
+    width: `calc(100% - ${drawerWidthClosed}px)`,
+    
+    // When sidebar is hovered (open)
+    ...(isSidebarHovered && {
+      marginLeft: `${drawerWidthOpen}px`,
+      width: `calc(100% - ${drawerWidthOpen}px)`,
+      transition: theme.transitions.create(['margin', 'width'], {
+        easing: theme.transitions.easing.easeOut,
+        duration: theme.transitions.duration.enteringScreen,
+      }),
     }),
   }),
-  ...(!open && !isMobile && {
-    width: `calc(100% - ${drawerWidthClosed}px)`,
-    marginLeft: `${drawerWidthClosed}px`,
+  
+  // Mobile styles
+  ...(isMobile && {
+    marginLeft: 0,
+    width: '100%',
   }),
 }));
 
 const UserLayout = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md')); // Changed to 'md' for better mobile handling
-
-  const toggleSidebar = () => {
-    setSidebarOpen((prev) => !prev);
-  };
-
-  // Close sidebar on mobile when route changes
-  const handleCloseMobileSidebar = () => {
-    if (isMobile) {
-      setSidebarOpen(false);
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  
+  // Handle sidebar hover
+  const handleSidebarMouseEnter = () => {
+    if (!isMobile) {
+      setIsSidebarHovered(true);
     }
   };
-
+  
+  const handleSidebarMouseLeave = () => {
+    if (!isMobile) {
+      setIsSidebarHovered(false);
+    }
+  };
+  
+  // Toggle mobile sidebar
+  const toggleMobileSidebar = () => {
+    setMobileSidebarOpen(!mobileSidebarOpen);
+  };
+  
+  // Close mobile sidebar when route changes
+  const handleCloseMobileSidebar = () => {
+    if (isMobile) {
+      setMobileSidebarOpen(false);
+    }
+  };
+  
+  // Auto-close sidebar on mobile when resizing to desktop
+  useEffect(() => {
+    if (!isMobile) {
+      setMobileSidebarOpen(false);
+    }
+  }, [isMobile]);
+  
   return (
     <LayoutContainer>
       <CssBaseline />
 
       <Header
-        toggleSidebar={toggleSidebar}
-        isSidebarOpen={sidebarOpen}
+        toggleSidebar={toggleMobileSidebar}
         isMobile={isMobile}
       />
 
-      {/* Permanent Sidebar for Desktop */}
+      {/* Desktop Sidebar (Always visible, hover-controlled) */}
       {!isMobile && (
-        <Sidebar
-          isOpen={sidebarOpen}
-          closeSidebar={toggleSidebar}
-          drawerWidthOpen={drawerWidthOpen}
-          drawerWidthClosed={drawerWidthClosed}
-        />
+        <Box
+          onMouseEnter={handleSidebarMouseEnter}
+          onMouseLeave={handleSidebarMouseLeave}
+          sx={{
+            position: 'fixed',
+            left: 0,
+            top: 64,
+            zIndex: theme.zIndex.drawer,
+          }}
+        >
+          <Sidebar
+            isOpen={isSidebarHovered}
+            closeSidebar={() => setIsSidebarHovered(false)}
+            drawerWidthOpen={drawerWidthOpen}
+            drawerWidthClosed={drawerWidthClosed}
+          />
+        </Box>
       )}
 
-      {/* Drawer for Mobile */}
+      {/* Mobile Drawer */}
       {isMobile && (
         <Drawer
           variant="temporary"
           anchor="left"
-          open={sidebarOpen}
+          open={mobileSidebarOpen}
           onClose={handleCloseMobileSidebar}
           ModalProps={{ 
             keepMounted: true,
@@ -97,6 +139,8 @@ const UserLayout = () => {
             '& .MuiDrawer-paper': {
               boxSizing: 'border-box',
               width: drawerWidthOpen,
+              top: 64,
+              height: 'calc(100% - 64px)',
             },
           }}
         >
@@ -108,11 +152,28 @@ const UserLayout = () => {
         </Drawer>
       )}
 
-      <MainContent open={sidebarOpen} isMobile={isMobile}>
+      <MainContent 
+        isMobile={isMobile} 
+        isSidebarHovered={isSidebarHovered}
+        sx={{ 
+          maxWidth: '100%', 
+          overflow: 'hidden',
+          padding: { 
+            xs: 1, 
+            sm: 2, 
+            md: 3 
+          },
+          mt: isMobile ? 7 : 8,
+          transition: theme.transitions.create(['margin', 'width'], {
+            easing: theme.transitions.easing.easeOut,
+            duration: theme.transitions.duration.standard,
+          }),
+        }}
+      >
         <Box sx={{ 
           maxWidth: '100%', 
           overflow: 'hidden',
-          padding: { xs: 1, sm: 2, md: 7 } // Responsive padding
+          padding: { xs: 1, sm: 2, md: 3 }
         }}>
           <Outlet />
         </Box>

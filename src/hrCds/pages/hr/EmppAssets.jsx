@@ -1,126 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import axios from '../../../utils/axiosConfig';
 import {
-  Box, Typography, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Paper, IconButton, Select, MenuItem,
-  FormControl, InputLabel, Button, TextField, Tooltip, Snackbar, Dialog,
-  DialogTitle, DialogContent, DialogActions, Card, CardContent, Grid,
-  Stack, Avatar, Chip, Fade, LinearProgress, useTheme, useMediaQuery,
-  Badge
-} from '@mui/material';
-import {
   FiEdit, FiTrash2, FiPackage, FiCheckCircle,
   FiXCircle, FiClock, FiMessageCircle, FiSearch, FiUsers
 } from 'react-icons/fi';
-import { styled } from '@mui/material/styles';
+import './EmpAssets.css';
 
-/* =========================
-   Styled Components
-   ========================= */
-const StatCard = styled(Card)(({ theme, active, color = 'primary' }) => ({
-  background: active
-    ? `linear-gradient(135deg, ${theme.palette[color].main}10, ${theme.palette[color].main}05)`
-    : `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
-  borderRadius: theme.shape.borderRadius * 2,
-  boxShadow: theme.shadows[2],
-  cursor: 'pointer',
-  borderLeft: active
-    ? `4px solid ${theme.palette[color].main}`
-    : `4px solid ${theme.palette.divider}`,
-  transition: theme.transitions.create(['all'], {
-    duration: theme.transitions.duration.standard,
-  }),
-  '&:hover': {
-    boxShadow: theme.shadows[6],
-    transform: 'translateY(-2px)',
-  },
-}));
-
-const StatusChip = styled(Chip)(({ theme, status }) => ({
-  fontWeight: 600,
-  ...(status === 'approved' && {
-    background: `${theme.palette.success.main}20`,
-    color: theme.palette.success.dark,
-    border: `1px solid ${theme.palette.success.main}40`,
-  }),
-  ...(status === 'pending' && {
-    background: `${theme.palette.warning.main}20`,
-    color: theme.palette.warning.dark,
-    border: `1px solid ${theme.palette.warning.main}40`,
-  }),
-  ...(status === 'rejected' && {
-    background: `${theme.palette.error.main}20`,
-    color: theme.palette.error.dark,
-    border: `1px solid ${theme.palette.error.main}40`,
-  }),
-}));
-
-const AssetTypeChip = styled(Chip)(({ theme, type }) => ({
-  fontWeight: 500,
-  ...(type === 'phone' && {
-    background: `${theme.palette.info.main}20`,
-    color: theme.palette.info.dark,
-  }),
-  ...(type === 'laptop' && {
-    background: `${theme.palette.primary.main}20`,
-    color: theme.palette.primary.dark,
-  }),
-  ...(type === 'desktop' && {
-    background: `${theme.palette.secondary.main}20`,
-    color: theme.palette.secondary.dark,
-  }),
-  ...(type === 'headphone' && {
-    background: `${theme.palette.success.main}20`,
-    color: theme.palette.success.dark,
-  }),
-  ...(type === 'sim' && {
-    background: `${theme.palette.warning.main}20`,
-    color: theme.palette.warning.dark,
-  }),
-}));
-
-const StyledTableRow = styled(TableRow)(({ theme, status }) => ({
-  transition: theme.transitions.create(['all'], {
-    duration: theme.transitions.duration.short,
-  }),
-  '&:hover': {
-    backgroundColor: theme.palette.action.hover,
-  },
-  ...(status === 'approved' && {
-    borderLeft: `4px solid ${theme.palette.success.main}`,
-  }),
-  ...(status === 'pending' && {
-    borderLeft: `4px solid ${theme.palette.warning.main}`,
-  }),
-  ...(status === 'rejected' && {
-    borderLeft: `4px solid ${theme.palette.error.main}`,
-  }),
-}));
-
-const CommentBadge = styled(Box)(({ theme, hasComment }) => ({
-  display: 'inline-block',
-  padding: '4px 8px',
-  borderRadius: 12,
-  fontSize: '0.75rem',
-  fontWeight: 500,
-  background: hasComment 
-    ? `${theme.palette.info.main}20` 
-    : `${theme.palette.grey[300]}20`,
-  color: hasComment 
-    ? theme.palette.info.dark 
-    : theme.palette.text.secondary,
-  cursor: 'pointer',
-  '&:hover': {
-    background: hasComment 
-      ? `${theme.palette.info.main}30` 
-      : `${theme.palette.grey[300]}30`,
-  },
-}));
-
-/* =========================
-   Main Component
-   ========================= */
-const EmppAssets = () => {
+const EmpAssets = () => {
   const [requests, setRequests] = useState([]);
   const [statusFilter, setStatusFilter] = useState('');
   const [selectedStat, setSelectedStat] = useState('All');
@@ -131,9 +17,6 @@ const EmppAssets = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [stats, setStats] = useState({ total: 0, pending: 0, approved: 0, rejected: 0 });
   const [searchTerm, setSearchTerm] = useState('');
-
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   useEffect(() => { fetchRequests(); }, [statusFilter]);
 
@@ -158,8 +41,9 @@ const EmppAssets = () => {
   };
 
   const handleStatFilter = (type) => {
-    setSelectedStat(prev => (prev === type ? 'All' : type));
-    setStatusFilter(type === 'All' ? '' : type.toLowerCase());
+    const newSelected = selectedStat === type ? 'All' : type;
+    setSelectedStat(newSelected);
+    setStatusFilter(newSelected === 'All' ? '' : newSelected.toLowerCase());
   };
 
   const handleDelete = async (id) => {
@@ -214,175 +98,234 @@ const EmppAssets = () => {
     req.adminComment?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (loading && !requests.length)
-    return <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}><LinearProgress sx={{ width: '100px' }} /></Box>;
+  const getStatusClass = (status) => {
+    switch(status) {
+      case 'approved': return 'chip-status-approved';
+      case 'pending': return 'chip-status-pending';
+      case 'rejected': return 'chip-status-rejected';
+      default: return '';
+    }
+  };
+
+  const getAssetClass = (assetName) => {
+    switch(assetName?.toLowerCase()) {
+      case 'phone': return 'chip-asset-phone';
+      case 'laptop': return 'chip-asset-laptop';
+      case 'desktop': return 'chip-asset-desktop';
+      case 'headphone': return 'chip-asset-headphone';
+      case 'sim': return 'chip-asset-sim';
+      default: return 'chip-asset-phone';
+    }
+  };
+
+  const getRowClass = (status) => {
+    switch(status) {
+      case 'approved': return 'table-row-approved';
+      case 'pending': return 'table-row-pending';
+      case 'rejected': return 'table-row-rejected';
+      default: return '';
+    }
+  };
+
+  const getAvatarClass = (type) => {
+    switch(type) {
+      case 'All': return 'avatar-primary';
+      case 'Pending': return 'avatar-warning';
+      case 'Approved': return 'avatar-success';
+      case 'Rejected': return 'avatar-error';
+      default: return '';
+    }
+  };
+
+  const getActiveClass = (type, selected) => {
+    if (selected !== type) return '';
+    switch(type) {
+      case 'All': return 'active active-primary';
+      case 'Pending': return 'active active-warning';
+      case 'Approved': return 'active active-success';
+      case 'Rejected': return 'active active-error';
+      default: return '';
+    }
+  };
+
+  if (loading && !requests.length) {
+    return (
+      <div className="loading-container">
+        <div className="loading-bar"></div>
+      </div>
+    );
+  }
 
   return (
-    <Fade in={!loading} timeout={500}>
-      <Box sx={{ p: { xs: 2, md: 3 } }}>
-        {/* Header Section */}
-        <Paper sx={{ p: 3, mb: 3, borderRadius: 3, boxShadow: 3 }}>
-          <Typography variant="h4" fontWeight={800}>Asset Requests Management</Typography>
-          <Typography color="text.secondary">Review and manage employee asset requests</Typography>
-        </Paper>
+    <div className="emp-assets-container">
+      {/* Header Section */}
+      <div className="emp-assets-header">
+        <h1>Asset Requests Management</h1>
+        <p>Review and manage employee asset requests</p>
+      </div>
 
-        {/* Clickable Stat Cards */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          {[
-            { label: 'Total Requests', count: stats.total, color: 'primary', type: 'All', icon: <FiUsers /> },
-            { label: 'Pending', count: stats.pending, color: 'warning', type: 'Pending', icon: <FiClock /> },
-            { label: 'Approved', count: stats.approved, color: 'success', type: 'Approved', icon: <FiCheckCircle /> },
-            { label: 'Rejected', count: stats.rejected, color: 'error', type: 'Rejected', icon: <FiXCircle /> },
-          ].map((item) => (
-            <Grid item xs={6} md={3} key={item.type}>
-              <StatCard
-                color={item.color}
-                active={selectedStat === item.type}
-                onClick={() => handleStatFilter(item.type)}
-              >
-                <CardContent>
-                  <Stack direction="row" alignItems="center" spacing={2}>
-                    <Avatar sx={{ bgcolor: `${theme.palette[item.color].main}20`, color: theme.palette[item.color].main }}>
-                      {item.icon}
-                    </Avatar>
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">{item.label}</Typography>
-                      <Typography variant="h4" fontWeight={700}>{item.count}</Typography>
-                    </Box>
-                  </Stack>
-                </CardContent>
-              </StatCard>
-            </Grid>
-          ))}
-        </Grid>
+      {/* Stats Cards */}
+      <div className="stats-grid">
+        {[
+          { label: 'Total Requests', count: stats.total, color: 'primary', type: 'All', icon: <FiUsers /> },
+          { label: 'Pending', count: stats.pending, color: 'warning', type: 'Pending', icon: <FiClock /> },
+          { label: 'Approved', count: stats.approved, color: 'success', type: 'Approved', icon: <FiCheckCircle /> },
+          { label: 'Rejected', count: stats.rejected, color: 'error', type: 'Rejected', icon: <FiXCircle /> },
+        ].map((item) => (
+          <div 
+            key={item.type}
+            className={`stat-card ${getActiveClass(item.type, selectedStat)}`}
+            onClick={() => handleStatFilter(item.type)}
+          >
+            <div className="stat-content">
+              <div className={`stat-avatar ${getAvatarClass(item.type)}`}>
+                {item.icon}
+              </div>
+              <div className="stat-info">
+                <h3>{item.label}</h3>
+                <h2>{item.count}</h2>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
 
-        {/* Search + Filter */}
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 3 }}>
-          <TextField
+      {/* Search */}
+      <div className="search-container">
+        <div className="search-input">
+          <FiSearch />
+          <input
+            type="text"
             placeholder="Search requests..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            InputProps={{
-              startAdornment: <FiSearch style={{ marginRight: 8, color: theme.palette.text.secondary }} />,
-            }}
-            sx={{ flex: 1, '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
           />
-        </Stack>
+        </div>
+      </div>
 
-        {/* Table Section */}
-        <Paper sx={{ borderRadius: 3, overflow: 'hidden' }}>
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 700 }}>Employee</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Asset</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Comment</TableCell>
-                  <TableCell align="center" sx={{ fontWeight: 700 }}>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredRequests.length > 0 ? (
-                  filteredRequests.map((req) => (
-                    <StyledTableRow key={req._id} status={req.status}>
-                      <TableCell>
-                        <Stack direction="row" spacing={2}>
-                          <Avatar>{getInitials(req.user?.name)}</Avatar>
-                          <Box>
-                            <Typography fontWeight={600}>{req.user?.name}</Typography>
-                            <Typography color="text.secondary" variant="body2">{req.user?.email}</Typography>
-                          </Box>
-                        </Stack>
-                      </TableCell>
-                      <TableCell>
-                        <AssetTypeChip label={req.assetName} type={req.assetName} />
-                      </TableCell>
-                      <TableCell>
-                        <StatusChip status={req.status} label={req.status.toUpperCase()} />
-                      </TableCell>
-                      <TableCell>
-                        <Tooltip title={req.adminComment || "No comment"}>
-                          <CommentBadge hasComment={!!req.adminComment}>
-                            <Stack direction="row" spacing={0.5} alignItems="center">
-                              <FiMessageCircle size={12} />
-                              <Typography variant="caption">{req.adminComment || 'Add Comment'}</Typography>
-                            </Stack>
-                          </CommentBadge>
-                        </Tooltip>
-                      </TableCell>
-                      <TableCell align="center">
-                        <Stack direction="row" spacing={1} justifyContent="center">
-                          <Tooltip title="Edit Comment">
-                            <IconButton color="info" onClick={() => handleCommentEditOpen(req)}>
-                              <FiEdit />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Delete Request">
-                            <IconButton color="error" onClick={() => handleDelete(req._id)}>
-                              <FiTrash2 />
-                            </IconButton>
-                          </Tooltip>
-                        </Stack>
-                      </TableCell>
-                    </StyledTableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
-                      <Typography>No Asset Requests Found</Typography>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Paper>
+      {/* Table Section */}
+      <div className="assets-table-container">
+        <table className="assets-table">
+          <thead>
+            <tr>
+              <th>Employee</th>
+              <th>Asset</th>
+              <th>Status</th>
+              <th>Comment</th>
+              <th style={{ textAlign: 'center' }}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredRequests.length > 0 ? (
+              filteredRequests.map((req) => (
+                <tr key={req._id} className={getRowClass(req.status)}>
+                  <td>
+                    <div className="employee-cell">
+                      <div className="employee-avatar">
+                        {getInitials(req.user?.name)}
+                      </div>
+                      <div className="employee-info">
+                        <h4>{req.user?.name}</h4>
+                        <p>{req.user?.email}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <span className={`chip ${getAssetClass(req.assetName)}`}>
+                      {req.assetName}
+                    </span>
+                  </td>
+                  <td>
+                    <span className={`chip ${getStatusClass(req.status)}`}>
+                      {req.status?.toUpperCase()}
+                    </span>
+                  </td>
+                  <td>
+                    <div 
+                      className={`comment-badge ${req.adminComment ? 'has-comment' : 'no-comment'}`}
+                      title={req.adminComment || "No comment"}
+                      onClick={() => handleCommentEditOpen(req)}
+                    >
+                      <FiMessageCircle size={12} />
+                      <span>{req.adminComment || 'Add Comment'}</span>
+                    </div>
+                  </td>
+                  <td className="actions-cell">
+                    <div className="actions-container">
+                      <button 
+                        className="icon-button edit"
+                        title="Edit Comment"
+                        onClick={() => handleCommentEditOpen(req)}
+                      >
+                        <FiEdit />
+                      </button>
+                      <button 
+                        className="icon-button delete"
+                        title="Delete Request"
+                        onClick={() => handleDelete(req._id)}
+                      >
+                        <FiTrash2 />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="5" className="empty-state">
+                  No Asset Requests Found
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
-        {/* Comment Dialog */}
-        <Dialog open={!!editingCommentReq} onClose={() => setEditingCommentReq(null)} fullWidth maxWidth="sm">
-          <DialogTitle>Edit Admin Comment</DialogTitle>
-          <DialogContent>
-            <TextField
-              fullWidth
-              multiline
-              rows={4}
-              label="Comment"
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setEditingCommentReq(null)}>Cancel</Button>
-            <Button variant="contained" onClick={handleCommentUpdate}>Save</Button>
-          </DialogActions>
-        </Dialog>
+      {/* Comment Dialog */}
+      {editingCommentReq && (
+        <div className="dialog-overlay">
+          <div className="dialog">
+            <div className="dialog-header">
+              <h2>Edit Admin Comment</h2>
+            </div>
+            <div className="dialog-body">
+              <textarea
+                className="textarea-field"
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                placeholder="Add your comment..."
+              />
+            </div>
+            <div className="dialog-footer">
+              <button 
+                className="btn btn-cancel"
+                onClick={() => setEditingCommentReq(null)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn btn-save"
+                onClick={handleCommentUpdate}
+                disabled={actionLoading}
+              >
+                {actionLoading ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-        {/* Snackbar */}
-        <Snackbar
-          open={!!notification}
-          autoHideDuration={4000}
-          onClose={() => setNotification(null)}
-          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-        >
-          <Card sx={{
-            background: notification?.severity === 'error'
-              ? theme.palette.error.main
-              : theme.palette.success.main,
-            color: 'white',
-            borderRadius: 2,
-          }}>
-            <CardContent>
-              <Stack direction="row" spacing={1} alignItems="center">
-                {notification?.severity === 'error' ? <FiXCircle /> : <FiCheckCircle />}
-                <Typography>{notification?.message}</Typography>
-              </Stack>
-            </CardContent>
-          </Card>
-        </Snackbar>
-      </Box>
-    </Fade>
+      {/* Snackbar Notification */}
+      {notification && (
+        <div className="snackbar">
+          <div className={`snackbar-content ${notification.severity}`}>
+            {notification.severity === 'error' ? <FiXCircle /> : <FiCheckCircle />}
+            <span>{notification.message}</span>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 
-export default EmppAssets;
+export default EmpAssets;
