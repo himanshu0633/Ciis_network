@@ -1,0 +1,1221 @@
+/* MyLeaves.css */
+
+/* Reset and base styles */
+.MyLeaves-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f8f9ff 0%, #eef1ff 100%);
+  padding: 24px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Loading State */
+.MyLeaves-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 80vh;
+  background: transparent;
+}
+
+.MyLeaves-loading-content {
+  text-align: center;
+  max-width: 400px;
+  padding: 40px;
+  background: white;
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.MyLeaves-loading-bar {
+  width: 300px;
+  height: 4px;
+  background: var(--gray-200);
+  border-radius: var(--border-radius-full);
+  overflow: hidden;
+  margin: 0 auto 24px;
+}
+
+.MyLeaves-loading-progress {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary-blue), var(--secondary-blue));
+  animation: loading 1.5s infinite ease-in-out;
+  width: 40%;
+  border-radius: var(--border-radius-full);
+}
+
+@keyframes loading {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(150%); }
+  100% { transform: translateX(350%); }
+}
+
+.MyLeaves-loading-text {
+  color: var(--gray-700);
+  font-size: 18px;
+  font-weight: 500;
+}
+
+/* Header Section */
+.MyLeaves-header {
+  background: white;
+  border-radius: var(--border-radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-md);
+  margin-bottom: 24px;
+}
+
+.MyLeaves-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.MyLeaves-header-text {
+  flex: 1;
+  min-width: 300px;
+}
+
+.MyLeaves-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin: 0 0 8px 0;
+  background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.MyLeaves-subtitle {
+  color: var(--gray-600);
+  font-size: 16px;
+  margin: 0;
+  font-weight: 400;
+}
+
+.MyLeaves-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.MyLeaves-search-container {
+  position: relative;
+  min-width: 300px;
+}
+
+.MyLeaves-search-input {
+  width: 100%;
+  padding: 12px 16px 12px 44px;
+  border: 2px solid var(--gray-200);
+  border-radius: var(--border-radius-full);
+  font-size: 14px;
+  transition: var(--transition);
+  background: var(--gray-50);
+  color: var(--gray-800);
+}
+
+.MyLeaves-search-input:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px var(--accent-blue);
+  background: white;
+}
+
+.MyLeaves-search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--gray-500);
+  font-size: 18px;
+}
+
+.MyLeaves-icon-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid var(--gray-200);
+  background: white;
+  color: var(--gray-700);
+  cursor: pointer;
+  transition: var(--transition);
+  font-size: 18px;
+}
+
+.MyLeaves-icon-button:hover {
+  border-color: var(--primary-blue);
+  color: var(--primary-blue);
+  background: var(--accent-blue);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.MyLeaves-icon-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.MyLeaves-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Active Filters */
+.MyLeaves-active-filters {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 16px;
+  background: var(--gray-50);
+  border-radius: var(--border-radius-md);
+  border-left: 4px solid var(--primary-blue);
+}
+
+.MyLeaves-active-filters-label {
+  color: var(--gray-700);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.MyLeaves-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.MyLeaves-filter-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: var(--border-radius-full);
+  font-size: 14px;
+  font-weight: 500;
+  transition: var(--transition-fast);
+}
+
+.MyLeaves-filter-chip.MyLeaves-primary {
+  background: var(--accent-blue);
+  color: var(--primary-blue);
+}
+
+.MyLeaves-filter-chip.MyLeaves-secondary {
+  background: var(--gray-100);
+  color: var(--gray-700);
+}
+
+.MyLeaves-filter-chip button {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  transition: var(--transition-fast);
+}
+
+.MyLeaves-filter-chip button:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* Stats Grid */
+.MyLeaves-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.MyLeaves-stat-card {
+  background: white;
+  border-radius: var(--border-radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+  cursor: pointer;
+  border: 2px solid transparent;
+  position: relative;
+  overflow: hidden;
+}
+
+.MyLeaves-stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--accent-blue);
+}
+
+.MyLeaves-stat-card.MyLeaves-active {
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px var(--accent-blue);
+}
+
+.MyLeaves-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+}
+
+.MyLeaves-stat-card.MyLeaves-primary::before {
+  background: linear-gradient(90deg, var(--primary-blue), var(--secondary-blue));
+}
+
+.MyLeaves-stat-card.MyLeaves-success::before {
+  background: linear-gradient(90deg, var(--success), var(--success-light));
+}
+
+.MyLeaves-stat-card.MyLeaves-warning::before {
+  background: linear-gradient(90deg, var(--warning), var(--warning-light));
+}
+
+.MyLeaves-stat-card.MyLeaves-error::before {
+  background: linear-gradient(90deg, var(--error), var(--error-light));
+}
+
+.MyLeaves-stat-card-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.MyLeaves-stat-icon-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--border-radius-full);
+  transition: var(--transition);
+}
+
+.MyLeaves-stat-icon-container.MyLeaves-primary {
+  background: var(--accent-blue);
+  color: var(--primary-blue);
+}
+
+.MyLeaves-stat-icon-container.MyLeaves-success {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.MyLeaves-stat-icon-container.MyLeaves-warning {
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+
+.MyLeaves-stat-icon-container.MyLeaves-error {
+  background: var(--error-bg);
+  color: var(--error);
+}
+
+.MyLeaves-stat-icon {
+  font-size: 24px;
+}
+
+.MyLeaves-stat-details {
+  flex: 1;
+}
+
+.MyLeaves-stat-label {
+  margin: 0 0 8px 0;
+  color: var(--gray-600);
+  font-size: 14px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.MyLeaves-stat-value {
+  margin: 0;
+  color: var(--gray-900);
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* Tabs Container */
+.MyLeaves-tabs-container {
+  background: white;
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+
+.MyLeaves-tabs-header {
+  display: flex;
+  background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+  padding: 0 20px;
+  gap: 1px;
+}
+
+.MyLeaves-tab {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 30px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+}
+
+.MyLeaves-tab:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.MyLeaves-tab.MyLeaves-active-tab {
+  background: white;
+  color: var(--primary-blue);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.MyLeaves-tab-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: white;
+  color: var(--primary-blue);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--border-radius-full);
+  min-width: 24px;
+  text-align: center;
+}
+
+/* Results Count */
+.MyLeaves-results-count {
+  padding: 24px 32px 0;
+  margin: 0;
+  color: var(--gray-700);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* Table Container */
+.MyLeaves-table-container {
+  padding: 0 32px 32px;
+  overflow-x: auto;
+}
+
+.MyLeaves-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 800px;
+  margin-top: 16px;
+}
+
+.MyLeaves-table thead {
+  background: var(--gray-50);
+}
+
+.MyLeaves-table th {
+  padding: 16px 20px;
+  text-align: left;
+  color: var(--gray-700);
+  font-weight: 600;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid var(--gray-200);
+}
+
+.MyLeaves-table tbody tr {
+  border-bottom: 1px solid var(--gray-200);
+  transition: var(--transition-fast);
+}
+
+.MyLeaves-table tbody tr:hover {
+  background: var(--gray-50);
+}
+
+.MyLeaves-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.MyLeaves-table td {
+  padding: 20px;
+  color: var(--gray-800);
+  font-size: 14px;
+  vertical-align: middle;
+}
+
+.MyLeaves-table-row strong {
+  color: var(--gray-900);
+  font-weight: 600;
+}
+
+/* Type Chips */
+.MyLeaves-type-chip {
+  display: inline-block;
+  padding: 6px 16px;
+  border-radius: var(--border-radius-full);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.MyLeaves-type-casual {
+  background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+  color: #1565c0;
+}
+
+.MyLeaves-type-sick {
+  background: linear-gradient(135deg, #f3e5f5, #e1bee7);
+  color: #7b1fa2;
+}
+
+.MyLeaves-type-paid {
+  background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+  color: #2e7d32;
+}
+
+.MyLeaves-type-unpaid {
+  background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+  color: #ef6c00;
+}
+
+.MyLeaves-type-other {
+  background: linear-gradient(135deg, #f5f5f5, #e0e0e0);
+  color: #616161;
+}
+
+/* Days Count */
+.MyLeaves-days-count {
+  color: var(--primary-blue);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.MyLeaves-reason-cell {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Status Chips */
+.MyLeaves-status-chip {
+  display: inline-block;
+  padding: 8px 20px;
+  border-radius: var(--border-radius-full);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.MyLeaves-status-approved {
+  background: linear-gradient(135deg, var(--success-bg), #e8f5e9);
+  color: var(--success);
+  border: 1px solid var(--success);
+}
+
+.MyLeaves-status-pending {
+  background: linear-gradient(135deg, var(--warning-bg), #fff3e0);
+  color: var(--warning);
+  border: 1px solid var(--warning);
+}
+
+.MyLeaves-status-rejected {
+  background: linear-gradient(135deg, var(--error-bg), #ffebee);
+  color: var(--error);
+  border: 1px solid var(--error);
+}
+
+/* History Button */
+.MyLeaves-history-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+  color: white;
+  border: none;
+  border-radius: var(--border-radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.MyLeaves-history-button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  background: linear-gradient(135deg, var(--primary-dark-blue), var(--primary-blue));
+}
+
+/* No Data States */
+.MyLeaves-no-data-cell,
+.MyLeaves-no-data-card {
+  text-align: center;
+  padding: 48px 24px;
+}
+
+.MyLeaves-no-data-cell {
+  color: var(--gray-500);
+}
+
+.MyLeaves-no-data-card {
+  background: white;
+  border-radius: var(--border-radius-lg);
+  padding: 48px 24px;
+  box-shadow: var(--shadow-sm);
+  margin: 32px;
+}
+
+.MyLeaves-no-data-icon {
+  font-size: 48px;
+  color: var(--gray-400);
+  margin-bottom: 16px;
+}
+
+.MyLeaves-no-data-cell h3,
+.MyLeaves-no-data-card h3 {
+  color: var(--gray-600);
+  margin: 0 0 8px 0;
+  font-size: 20px;
+}
+
+.MyLeaves-no-data-cell p,
+.MyLeaves-no-data-card p {
+  color: var(--gray-500);
+  margin: 0;
+  font-size: 14px;
+}
+
+/* Mobile Cards */
+.MyLeaves-mobile-cards {
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.MyLeaves-mobile-card {
+  background: white;
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: var(--transition);
+  border-left: 4px solid var(--gray-300);
+}
+
+.MyLeaves-mobile-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.MyLeaves-mobile-card-content {
+  padding: 20px;
+}
+
+.MyLeaves-mobile-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  gap: 12px;
+}
+
+.MyLeaves-mobile-card-header h3 {
+  margin: 0;
+  color: var(--gray-900);
+  font-size: 18px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.MyLeaves-mobile-status-chip {
+  padding: 6px 12px;
+  border-radius: var(--border-radius-full);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.MyLeaves-mobile-card-date {
+  color: var(--gray-600);
+  font-size: 14px;
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+.MyLeaves-mobile-card-reason {
+  color: var(--gray-700);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0 0 16px 0;
+  display: -webkit-box;
+  
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.MyLeaves-mobile-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.MyLeaves-mobile-days {
+  color: var(--primary-blue);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.MyLeaves-mobile-history-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+  color: white;
+  border: none;
+  border-radius: var(--border-radius-md);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.MyLeaves-mobile-history-button:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Apply Leave Tab */
+.MyLeaves-apply-tab {
+  padding: 32px;
+}
+
+.MyLeaves-apply-form-container {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.MyLeaves-form-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin: 0 0 8px 0;
+  background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-align: center;
+}
+
+.MyLeaves-form-subtitle {
+  color: var(--gray-600);
+  font-size: 16px;
+  margin: 0 0 32px 0;
+  text-align: center;
+}
+
+.MyLeaves-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.MyLeaves-form-select {
+  padding: 16px;
+  border: 2px solid var(--gray-200);
+  border-radius: var(--border-radius-md);
+  font-size: 16px;
+  color: var(--gray-800);
+  background: white;
+  transition: var(--transition);
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.MyLeaves-form-select:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px var(--accent-blue);
+}
+
+.MyLeaves-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.MyLeaves-form-field label {
+  color: var(--gray-700);
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.MyLeaves-form-input {
+  padding: 16px;
+  border: 2px solid var(--gray-200);
+  border-radius: var(--border-radius-md);
+  font-size: 16px;
+  color: var(--gray-800);
+  transition: var(--transition);
+}
+
+.MyLeaves-form-input:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px var(--accent-blue);
+}
+
+.MyLeaves-days-display {
+  text-align: center;
+  padding: 20px;
+  background: linear-gradient(135deg, var(--accent-blue), #e3f2fd);
+  border-radius: var(--border-radius-md);
+  margin: 16px 0;
+}
+
+.MyLeaves-days-display h3 {
+  margin: 0;
+  color: var(--primary-blue);
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.MyLeaves-form-textarea {
+  padding: 16px;
+  border: 2px solid var(--gray-200);
+  border-radius: var(--border-radius-md);
+  font-size: 16px;
+  color: var(--gray-800);
+  transition: var(--transition);
+  resize: vertical;
+  min-height: 120px;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.MyLeaves-form-textarea:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px var(--accent-blue);
+}
+
+.MyLeaves-submit-button {
+  padding: 18px 32px;
+  background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+  color: white;
+  border: none;
+  border-radius: var(--border-radius-md);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.MyLeaves-submit-button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  background: linear-gradient(135deg, var(--primary-dark-blue), var(--primary-blue));
+}
+
+/* Modal */
+.MyLeaves-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.MyLeaves-modal-content {
+  background: white;
+  border-radius: var(--border-radius-lg);
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: modalSlideUp 0.3s ease-out;
+  box-shadow: var(--shadow-xl);
+}
+
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.MyLeaves-modal-header {
+  padding: 32px 32px 16px;
+  text-align: center;
+  border-bottom: 2px solid var(--gray-200);
+}
+
+.MyLeaves-modal-header h2 {
+  margin: 0 0 8px 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--gray-900);
+}
+
+.MyLeaves-modal-header p {
+  margin: 0;
+  color: var(--gray-600);
+  font-size: 14px;
+}
+
+.MyLeaves-modal-body {
+  padding: 24px 32px;
+}
+
+.MyLeaves-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.MyLeaves-history-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.MyLeaves-history-list::-webkit-scrollbar-track {
+  background: var(--gray-100);
+  border-radius: 3px;
+}
+
+.MyLeaves-history-list::-webkit-scrollbar-thumb {
+  background: var(--gray-400);
+  border-radius: 3px;
+}
+
+.MyLeaves-history-list::-webkit-scrollbar-thumb:hover {
+  background: var(--gray-500);
+}
+
+.MyLeaves-history-item {
+  padding: 16px;
+  border-radius: var(--border-radius-md);
+  background: var(--gray-50);
+  border-left: 4px solid var(--gray-400);
+  transition: var(--transition-fast);
+}
+
+.MyLeaves-history-item:hover {
+  transform: translateX(4px);
+  background: var(--gray-100);
+}
+
+.MyLeaves-history-approved {
+  border-left-color: var(--success);
+  background: var(--success-bg);
+}
+
+.MyLeaves-history-rejected {
+  border-left-color: var(--error);
+  background: var(--error-bg);
+}
+
+.MyLeaves-history-applied {
+  border-left-color: var(--primary-blue);
+  background: var(--accent-blue);
+}
+
+.MyLeaves-history-pending {
+  border-left-color: var(--warning);
+  background: var(--warning-bg);
+}
+
+.MyLeaves-history-item p {
+  margin: 0;
+  color: var(--gray-800);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.MyLeaves-no-history {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--gray-500);
+}
+
+.MyLeaves-no-history-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  color: var(--gray-400);
+}
+
+.MyLeaves-no-history h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--gray-600);
+}
+
+.MyLeaves-modal-footer {
+  padding: 20px 32px 32px;
+  text-align: center;
+  border-top: 2px solid var(--gray-200);
+}
+
+.MyLeaves-modal-close-button {
+  padding: 12px 32px;
+  background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+  color: white;
+  border: none;
+  border-radius: var(--border-radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.MyLeaves-modal-close-button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  background: linear-gradient(135deg, var(--primary-dark-blue), var(--primary-blue));
+}
+
+/* Notification */
+.MyLeaves-notification {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: white;
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 300px;
+  max-width: 400px;
+  z-index: 1000;
+  animation: slideInRight 0.3s ease-out;
+  border-left: 4px solid var(--gray-400);
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.MyLeaves-notification-success {
+  border-left-color: var(--success);
+}
+
+.MyLeaves-notification-error {
+  border-left-color: var(--error);
+}
+
+.MyLeaves-notification-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.MyLeaves-notification-icon {
+  font-size: 20px;
+}
+
+.MyLeaves-notification-success .MyLeaves-notification-icon {
+  color: var(--success);
+}
+
+.MyLeaves-notification-error .MyLeaves-notification-icon {
+  color: var(--error);
+}
+
+.MyLeaves-notification-message {
+  color: var(--gray-800);
+  font-size: 14px;
+  font-weight: 500;
+  flex: 1;
+}
+
+.MyLeaves-notification-close {
+  background: none;
+  border: none;
+  color: var(--gray-500);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: var(--transition-fast);
+}
+
+.MyLeaves-notification-close:hover {
+  background: var(--gray-200);
+  color: var(--gray-700);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .MyLeaves-container {
+    padding: 16px;
+    padding-top: 40px;
+  }
+  
+  .MyLeaves-header {
+    padding: 20px;
+  }
+  
+  .MyLeaves-header-content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .MyLeaves-header-actions {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+  
+  .MyLeaves-search-container {
+    min-width: auto;
+    flex: 1;
+  }
+  
+  .MyLeaves-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  
+  .MyLeaves-stat-card {
+    padding: 20px;
+  }
+  
+  .MyLeaves-stat-value {
+    font-size: 28px;
+  }
+  
+  .MyLeaves-tabs-header {
+    flex-direction: column;
+    gap: 1px;
+  }
+  
+  .MyLeaves-tab {
+    justify-content: center;
+    padding: 16px;
+  }
+  
+  .MyLeaves-results-count {
+    padding: 20px 20px 0;
+  }
+  
+  .MyLeaves-table-container,
+  .MyLeaves-mobile-cards,
+  .MyLeaves-apply-tab {
+    padding: 20px;
+  }
+  
+  .MyLeaves-modal-content {
+    margin: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .MyLeaves-stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .MyLeaves-title {
+    font-size: 28px;
+  }
+  
+  .MyLeaves-form-title {
+    font-size: 24px;
+  }
+  
+  .MyLeaves-notification {
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    min-width: auto;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .MyLeaves-header-actions,
+  .MyLeaves-icon-button,
+  .MyLeaves-history-button,
+  .MyLeaves-mobile-history-button,
+  .MyLeaves-submit-button,
+  .MyLeaves-modal-close-button {
+    display: none !important;
+  }
+  
+  .MyLeaves-container {
+    background: white;
+    padding: 0;
+  }
+  
+  .MyLeaves-tabs-container {
+    box-shadow: none;
+  }
+}

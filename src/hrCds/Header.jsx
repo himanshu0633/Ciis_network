@@ -23,10 +23,9 @@ import axios from "axios";
 import API_URL from "../../src/config";
 import Swal from "sweetalert2";
 
-const Header = ({ toggleSidebar }) => {
+const Header = ({ toggleSidebar, isMobile }) => {
   const { user } = useAuth();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const navigate = useNavigate();
 
   const [notifications, setNotifications] = useState([]);
@@ -37,10 +36,10 @@ const Header = ({ toggleSidebar }) => {
 
   // Logo click handler
   const handleLogoClick = () => {
-    navigate("/cds/user-dashboard"); // या आपके dashboard का route
+    navigate("/cds/user-dashboard");
   };
 
-  // Remove all automatic fetching - only manual fetch on button click
+  // Fetch notifications only on button click
   const fetchNotifications = async () => {
     const token = localStorage.getItem("token");
     if (!token) return;
@@ -138,10 +137,10 @@ const Header = ({ toggleSidebar }) => {
       assignedTaskData.forEach((t) => {
         if (t.status?.toLowerCase() === "completed") return;
 
-        all.push({
-          msg: `📋 New Task Assigned: ${t.title} (${t.status})`,
-          time: t.createdAt,
-        });
+          all.push({
+            msg: `📋 New Task Assigned: ${t.title} (${t.status})`,
+            time: t.createdAt,
+          });
       });
 
       // Groups
@@ -251,13 +250,16 @@ const Header = ({ toggleSidebar }) => {
       >
         {/* LEFT */}
         <Box sx={{ display: "flex", alignItems: "center", gap: isMobile ? 1 : 2 }}>
-          <IconButton 
-            onClick={toggleSidebar} 
-            edge="start" 
-            size={isMobile ? "small" : "medium"}
-          >
-            <MenuIcon fontSize={isMobile ? "small" : "medium"} />
-          </IconButton>
+          {/* Show menu button only on mobile */}
+          {isMobile && (
+            <IconButton 
+              onClick={toggleSidebar} 
+              edge="start" 
+              size={isMobile ? "small" : "medium"}
+            >
+              <MenuIcon fontSize={isMobile ? "small" : "medium"} />
+            </IconButton>
+          )}
 
           <Typography
             variant="h6"

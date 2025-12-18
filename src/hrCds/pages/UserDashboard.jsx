@@ -1,21 +1,20 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import axios from '../../utils/axiosConfig';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { useNavigate } from "react-router-dom";
+import './UserDashboard.css';
+import useIsMobile from '../../hooks/useIsMobile';
 
 import {
-  FiClock, FiCalendar, FiTrendingUp, FiAward,
-  FiChevronLeft, FiChevronRight, FiPlay, FiSquare, FiRefreshCw,
-  FiUser, FiBriefcase, FiCheckCircle, FiAlertCircle,
-  FiBarChart2, FiPieChart, FiSun, FiMoon
+  FiClock, FiCalendar, FiChevronLeft, FiChevronRight,
+  FiPlay, FiSquare, FiRefreshCw, FiBriefcase, FiUser,
+  FiCheckCircle, FiAlertCircle, FiTrendingUp, FiActivity
 } from 'react-icons/fi';
 import {
-  MdToday, MdAccessTime, MdWork, MdBeachAccess, MdSick,
-  MdOutlineWatchLater, MdOutlineCrop54
+  MdWork, MdOutlineCrop54, MdBeachAccess, MdSick,
+  MdOutlineWatchLater, MdToday, MdAccessTime
 } from 'react-icons/md';
 
-import './UserDashboard.css';
 const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const monthNames = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -23,9 +22,9 @@ const monthNames = [
 ];
 
 const formatTime = seconds => {
-  const h = String(Math.floor(seconds / 3600)).padStart(2, '0');
-  const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
-  const s = String(seconds % 60).padStart(2, '0');
+  const h = String(Math.floor(seconds / 3600)).padStart(2, "0");
+  const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, "0");
+  const s = String(seconds % 60).padStart(2, "0");
   return `${h}:${m}:${s}`;
 };
 
@@ -34,7 +33,7 @@ const getCalendarGrid = (year, month) => {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const grid = [];
   let week = Array(firstDay).fill(null);
-  
+
   for (let day = 1; day <= daysInMonth; day++) {
     week.push(day);
     if (week.length === 7) {
@@ -42,720 +41,400 @@ const getCalendarGrid = (year, month) => {
       week = [];
     }
   }
-  
-  if (week.length) {
-    while (week.length < 7) week.push(null);
-    grid.push(week);
-  }
-  
+  while (week.length && week.length < 7) week.push(null);
+  if (week.length) grid.push(week);
+
   return grid;
 };
 
 const UserDashboard = () => {
   const [timer, setTimer] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
-  const [intervalId, setIntervalId] = useState(null);
+  const intervalRef = useRef(null);
+
   const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
   const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
-  const [markedDates, setMarkedDates] = useState([]);
-  const [monthlyPresentCount, setMonthlyPresentCount] = useState(0);
-  const [dailyTimeMap, setDailyTimeMap] = useState({});
-  const [leaveDates, setLeaveDates] = useState([]);
-  const [absentDates, setAbsentDates] = useState([]);
-  const [halfDayDates, setHalfDayDates] = useState([]);
-  const user = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null;
-  const [todayStatus, setTodayStatus] = useState(null);
-  const [stats, setStats] = useState({ 
-    totalDays: 0, 
-    presentDays: 0, 
-    averageTime: '00:00:00',
-    currentStreak: 0,
-    longestStreak: 0,
-    monthlyAverage: '00:00:00',
-    halfDays: 0
-  });
-  const [attendanceHistory, setAttendanceHistory] = useState([]);
-  const [showHistory, setShowHistory] = useState(false);
+
+  const [attendanceData, setAttendanceData] = useState([]);
+  const [leaveData, setLeaveData] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [recentActivity, setRecentActivity] = useState([]);
 
-  // Task status graph states
-  const [taskStats, setTaskStats] = useState({
-    total: 0,
-    pending: { count: 0, percentage: 0 },
-    inProgress: { count: 0, percentage: 0 },
-    completed: { count: 0, percentage: 0 },
-    overdue: { count: 0, percentage: 0 },
-    rejected: { count: 0, percentage: 0 },
-    onHold: { count: 0, percentage: 0 },
-    reopen: { count: 0, percentage: 0 },
-    cancelled: { count: 0, percentage: 0 }
-  });
-  
-  const [timeFilter, setTimeFilter] = useState('today');
-  const [graphLoading, setGraphLoading] = useState(false);
+  const user = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null;
+  const token = localStorage.getItem('token');
 
-  // New states for work hours analysis
-  const [workHoursData, setWorkHoursData] = useState({
-    averageDaily: '00:00:00',
-    weeklyTotal: '00:00:00',
-    monthlyTotal: '00:00:00',
-    overtime: '00:00:00'
-  });
+  const currentDate = new Date();
+  const currentMonth = currentDate.getMonth();
+  const currentYear = currentDate.getFullYear();
 
-  // Auto clock-out references
-  const autoClockOutTimeoutRef = useRef(null);
-  const autoClockOutIntervalRef = useRef(null);
+  const markedDates = useMemo(() => {
+    return attendanceData
+      .filter(record => record.status === 'PRESENT')
+      .map(record => {
+        const d = new Date(record.date);
+        return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+      });
+  }, [attendanceData]);
 
-  // ✅ Fetch Task Status Counts for Graph
-  const fetchTaskStatusCounts = async (period = 'today') => {
-    try {
-      setGraphLoading(true);
-      const token = localStorage.getItem('token');
-      
-      const response = await axios.get(`/task/status-counts?period=${period}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+  const halfDayDates = useMemo(() => {
+    return attendanceData
+      .filter(record => record.status === 'HALF DAY')
+      .map(record => {
+        const d = new Date(record.date);
+        return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+      });
+  }, [attendanceData]);
+
+  const absentDates = useMemo(() => {
+    return attendanceData
+      .filter(record => record.status === 'ABSENT')
+      .map(record => {
+        const d = new Date(record.date);
+        return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+      });
+  }, [attendanceData]);
+
+  const leaveDates = useMemo(() => {
+    const dates = [];
+    leaveData.forEach(leave => {
+      if (leave.status === 'APPROVED' || leave.status === 'Approved') {
+        const start = new Date(leave.startDate);
+        const end = new Date(leave.endDate);
+        const current = new Date(start);
+        
+        while (current <= end) {
+          dates.push(`${current.getFullYear()}-${current.getMonth()}-${current.getDate()}`);
+          current.setDate(current.getDate() + 1);
         }
-      });
-
-      if (response.data.success) {
-        setTaskStats(response.data.statusCounts);
-      } else {
-        // Set mock data for demo
-        setTaskStats({
-          total: 15,
-          pending: { count: 3, percentage: 20 },
-          inProgress: { count: 5, percentage: 33 },
-          completed: { count: 4, percentage: 27 },
-          overdue: { count: 2, percentage: 13 },
-          rejected: { count: 1, percentage: 7 },
-          onHold: { count: 0, percentage: 0 },
-          reopen: { count: 0, percentage: 0 },
-          cancelled: { count: 0, percentage: 0 }
-        });
       }
-      
-    } catch (err) {
-      console.error('❌ Error fetching task status counts:', err);
-      // Set mock data for demo purposes
-      setTaskStats({
-        total: 15,
-        pending: { count: 3, percentage: 20 },
-        inProgress: { count: 5, percentage: 33 },
-        completed: { count: 4, percentage: 27 },
-        overdue: { count: 2, percentage: 13 },
-        rejected: { count: 1, percentage: 7 },
-        onHold: { count: 0, percentage: 0 },
-        reopen: { count: 0, percentage: 0 },
-        cancelled: { count: 0, percentage: 0 }
-      });
-    } finally {
-      setGraphLoading(false);
-    }
-  };
+    });
+    return [...new Set(dates)];
+  }, [leaveData]);
 
-  // ✅ Handle Time Filter Change
-  const handleTimeFilterChange = (period) => {
-    setTimeFilter(period);
-    fetchTaskStatusCounts(period);
-  };
+  const monthlyStats = useMemo(() => {
+    const presentDays = attendanceData.filter(record => {
+      const d = new Date(record.date);
+      return d.getMonth() === currentMonth && 
+             d.getFullYear() === currentYear && 
+             record.status === 'PRESENT';
+    }).length;
 
-  // ✅ Refresh Graph Data
-  const handleRefreshGraph = () => {
-    fetchTaskStatusCounts(timeFilter);
-  };
+    const halfDays = attendanceData.filter(record => {
+      const d = new Date(record.date);
+      return d.getMonth() === currentMonth && 
+             d.getFullYear() === currentYear && 
+             record.status === 'HALF DAY';
+    }).length;
 
-  // ✅ Auto Clock-out Setup
-  const setupAutoClockOut = () => {
-    const now = new Date();
-    const targetTime = new Date();
-    targetTime.setHours(20, 0, 0, 0); // 8:00 PM
+    const absentDays = attendanceData.filter(record => {
+      const d = new Date(record.date);
+      return d.getMonth() === currentMonth && 
+             d.getFullYear() === currentYear && 
+             record.status === 'ABSENT';
+    }).length;
+
+    const leavesTaken = leaveDates.filter(dateStr => {
+      const [year, month] = dateStr.split('-').map(Number);
+      return month === currentMonth && year === currentYear;
+    }).length;
+
+    return {
+      presentDays,
+      halfDays,
+      absentDays,
+      leavesTaken
+    };
+  }, [attendanceData, leaveDates, currentMonth, currentYear]);
+
+  const getDayStatus = (day) => {
+    if (!day) return null;
     
-    if (now > targetTime) {
-      targetTime.setDate(targetTime.getDate() + 1);
-    }
+    const dateObj = new Date(calendarYear, calendarMonth, day);
+    const key = `${calendarYear}-${calendarMonth}-${day}`;
+    const dayOfWeek = dateObj.getDay();
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
     
-    const timeUntilTarget = targetTime.getTime() - now.getTime();
-
-    if (autoClockOutTimeoutRef.current) {
-      clearTimeout(autoClockOutTimeoutRef.current);
-    }
-
-    autoClockOutTimeoutRef.current = setTimeout(() => {
-      autoClockOut();
-      autoClockOutIntervalRef.current = setInterval(autoClockOut, 24 * 60 * 60 * 1000);
-    }, timeUntilTarget);
+    if (markedDates.includes(key)) return "present";
+    if (halfDayDates.includes(key)) return "halfday";
+    if (leaveDates.includes(key)) return "leave";
+    if (absentDates.includes(key)) return "absent";
+    if (isWeekend) return "weekend";
+    
+    return null;
   };
 
-  // ✅ Auto Clock-out Function
-  const autoClockOut = async () => {
+  const isToday = (day) => {
+    return day === currentDate.getDate() && 
+           calendarMonth === currentDate.getMonth() && 
+           calendarYear === currentDate.getFullYear();
+  };
+
+  const getDayIcon = (day) => {
+    const status = getDayStatus(day);
+    switch(status) {
+      case 'present': return '✓';
+      case 'halfday': return '½';
+      case 'leave': return 'L';
+      case 'absent': return '✗';
+      case 'weekend': return '⚭';
+      default: return '';
+    }
+  };
+
+  const fetchAttendanceData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      
-      const res = await axios.post('/attendance/out', {}, { 
-        headers: { Authorization: `Bearer ${token}` } 
-      });
-      
-      // Update local storage
-      localStorage.setItem('isRunning', 'false');
-      localStorage.removeItem('lastClockIn');
-      
-      // Update state if component is mounted
-      setIsRunning(false);
-      
-      const secs = res.data.data.totalTime.split(':').reduce((a, v, i) => 
-        (+v) + a * (i === 0 ? 3600 : i === 1 ? 60 : 1), 0);
-      
-      setTimer(secs);
-      
-      toast.success(`🕗 Auto Clock-out Completed: ${res.data.data.totalTime}`);
-      
-      // Refresh data
-      await fetchData();
-      await fetchStats();
-      await fetchAttendanceHistory();
-      
-    } catch (error) {
-      console.error('❌ Auto clock-out error:', error);
-      toast.error("❌ Auto clock-out failed");
-    }
-  };
-
-  // ✅ Check for missed clock-out on page load
-  const checkMissedClockOut = async () => {
-    const lastClockIn = localStorage.getItem('lastClockIn');
-    const isRunning = localStorage.getItem('isRunning') === 'true';
-    
-    if (isRunning && lastClockIn) {
-      const lastClockInDate = new Date(lastClockIn);
-      const now = new Date();
-      const today8PM = new Date();
-      today8PM.setHours(20, 0, 0, 0);
-      
-      // If last clock-in was before today's 8 PM and it's after 8 PM now
-      if (lastClockInDate < today8PM && now > today8PM) {
-        toast.info("🕗 Processing auto clock-out for previous session...");
-        await autoClockOut();
-      }
-    }
-  };
-
-  // ✅ Fetch Attendance History
-  const fetchAttendanceHistory = async () => {
-    const token = localStorage.getItem('token');
-    try {
-      const res = await axios.get('/attendance/history', {
+      setLoading(true);
+      const response = await axios.get('/attendance/list', {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setAttendanceHistory(res.data || []);
-    } catch (error) {
-      console.error('❌ Error fetching history:', error);
-    }
-  };
-
-  // ✅ Fetch leaves data
-  const fetchLeaves = async () => {
-    const token = localStorage.getItem('token');
-    try {
-      const res = await axios.get('/leaves/status', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const data = response.data?.data || [];
+      setAttendanceData(data);
       
-      if (res.data.leaves && Array.isArray(res.data.leaves)) {
-        const approvedLeaves = res.data.leaves.filter(leave => 
-          leave.status === 'Approved' || leave.status === 'APPROVED'
-        );
-        
-        const leaveDatesArray = [];
-        
-        approvedLeaves.forEach(leave => {
-          try {
-            const startDate = new Date(leave.startDate);
-            const endDate = new Date(leave.endDate);
-            
-            // Add all dates in the leave range
-            const currentDate = new Date(startDate);
-            while (currentDate <= endDate) {
-              const dateKey = `${currentDate.getFullYear()}-${currentDate.getMonth()}-${currentDate.getDate()}`;
-              leaveDatesArray.push(dateKey);
-              currentDate.setDate(currentDate.getDate() + 1);
-            }
-          } catch (err) {
-            console.error('❌ Error processing leave date:', err);
-          }
-        });
-        
-        setLeaveDates(leaveDatesArray);
-      } else {
-        setLeaveDates([]);
-      }
+      const sortedData = [...data].sort((a, b) => new Date(b.date) - new Date(a.date));
+      setRecentActivity(sortedData.slice(0, 5));
     } catch (error) {
-      console.error('❌ Error fetching leaves:', error);
-      setLeaveDates([]);
-    }
-  };
-
-  // ✅ Fetch Work Hours Analysis
-  const fetchWorkHoursAnalysis = async () => {
-    try {
-      // Mock data for work hours analysis
-      setWorkHoursData({
-        averageDaily: '08:15:00',
-        weeklyTotal: '41:15:00',
-        monthlyTotal: '165:00:00',
-        overtime: '05:30:00'
-      });
-    } catch (error) {
-      console.error('❌ Error fetching work hours analysis:', error);
-    }
-  };
-
-  // ✅ Fetch Stats
-  const fetchStats = async () => {
-    try {
-      // Mock stats data based on your attendance data
-      setStats({
-        totalDays: 45,
-        presentDays: 40,
-        averageTime: '08:15:00',
-        currentStreak: 5,
-        longestStreak: 15,
-        monthlyAverage: '08:20:00',
-        halfDays: 2
-      });
-    } catch (error) {
-      console.error('❌ Error fetching stats:', error);
-    }
-  };
-
-  // ✅ Main Data Fetching Function
-  const fetchData = async () => {
-    setLoading(true);
-    const token = localStorage.getItem('token');
-    try {
-      const [statusRes, listRes] = await Promise.all([
-        axios.get('/attendance/status', { 
-          headers: { Authorization: `Bearer ${token}` } 
-        }),
-        axios.get('/attendance/list', { 
-          headers: { Authorization: `Bearer ${token}` } 
-        })
-      ]);
-
-      setTodayStatus(statusRes.data);
-      
-      // Timer setup
-      if (statusRes.data.isClockedIn) {
-        const inTime = new Date(statusRes.data.inTime);
-        setTimer(Math.floor((Date.now() - inTime.getTime()) / 1000));
-        setIsRunning(true);
-        // Store clock-in state in localStorage
-        localStorage.setItem('isRunning', 'true');
-        localStorage.setItem('lastClockIn', statusRes.data.inTime);
-      } else if (statusRes.data.totalTime) {
-        const secs = statusRes.data.totalTime.split(':').reduce((a, v, i) => 
-          (+v) + a * (i === 0 ? 3600 : i === 1 ? 60 : 1), 0);
-        setTimer(secs);
-        localStorage.setItem('isRunning', 'false');
-      }
-
-      // Process attendance data
-      const dates = []; 
-      const timeMap = {}; 
-      const absentDatesArray = [];
-      const halfDayDatesArray = [];
-      let countPresent = 0;
-      const thisMonth = new Date().getMonth();
-      const today = new Date();
-      
-      if (listRes.data && listRes.data.data && Array.isArray(listRes.data.data)) {
-        listRes.data.data.forEach(e => {
-          try {
-            const d = new Date(e.date);
-            const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-            
-            if (e.status === 'PRESENT') {
-              dates.push(key);
-              if (e.totalTime) timeMap[key] = e.totalTime;
-              if (d.getMonth() === thisMonth) countPresent++;
-            } else if (e.status === 'ABSENT') {
-              absentDatesArray.push(key);
-            } else if (e.status === 'HALF DAY') {
-              halfDayDatesArray.push(key);
-              if (d.getMonth() === thisMonth) countPresent += 0.5;
-            }
-          } catch (err) {
-            console.error('❌ Error processing attendance record:', err);
-          }
-        });
-      }
-      
-      setMarkedDates([...new Set(dates)]);
-      setDailyTimeMap(timeMap);
-      setAbsentDates(absentDatesArray);
-      setHalfDayDates(halfDayDatesArray);
-      setMonthlyPresentCount(countPresent);
-      
-    } catch (error) {
-      console.error('❌ Error fetching data:', error);
+      console.error('Error fetching attendance:', error);
       toast.error('Failed to load attendance data');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    const initializeData = async () => {
-      try {
-        await fetchData();
-        await fetchStats();
-        await fetchAttendanceHistory();
-        await fetchLeaves();
-        await fetchTaskStatusCounts('today');
-        await fetchWorkHoursAnalysis();
-        
-        // Check for missed clock-out
-        await checkMissedClockOut();
-        
-        // Setup auto clock-out
-        setupAutoClockOut();
-      } catch (error) {
-        console.error('❌ Error initializing data:', error);
-      }
-    };
-    
-    initializeData();
-
-    // Cleanup function
-    return () => {
-      if (autoClockOutTimeoutRef.current) {
-        clearTimeout(autoClockOutTimeoutRef.current);
-      }
-      if (autoClockOutIntervalRef.current) {
-        clearInterval(autoClockOutIntervalRef.current);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    if (isRunning) {
-      const id = setInterval(() => setTimer(t => t + 1), 1000);
-      setIntervalId(id);
-      return () => clearInterval(id);
-    } else if (intervalId) {
-      clearInterval(intervalId);
-      setIntervalId(null);
-    }
-  }, [isRunning]);
-
-  // ✅ Clock In Function
-  const handleIn = async () => {
-    const today = new Date();
-    const key = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
-    
-    if (markedDates.includes(key) || halfDayDates.includes(key)) {
-      toast.warn("You have already clocked in today");
-      return;
-    }
-
+  const fetchLeaveData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.post('/attendance/in', {}, { 
-        headers: { Authorization: `Bearer ${token}` } 
+      const response = await axios.get('/leaves/status', {
+        headers: { Authorization: `Bearer ${token}` }
       });
-      
-      // Store clock-in state in localStorage
-      localStorage.setItem('isRunning', 'true');
-      localStorage.setItem('lastClockIn', new Date().toISOString());
-      
-      setTimer(0);
-      setIsRunning(true);
-      setMarkedDates(prev => [...prev, key]);
-      
-      // Setup auto clock-out for today
-      setupAutoClockOut();
-      
-      toast.success(`🟢 Clocked IN successfully! ${res.data.data.lateBy !== "00:00:00" ? `Late by ${res.data.data.lateBy}` : ""}`);
-      
-      await fetchData();
-      await fetchStats();
-      await fetchWorkHoursAnalysis();
+      setLeaveData(response.data?.leaves || []);
     } catch (error) {
-      console.error('Clock-in error:', error);
-      toast.error("❌ Clock-in failed. Please try again.");
+      console.error('Error fetching leaves:', error);
     }
   };
 
-  // ✅ Clock Out Function
-  const handleOut = async () => {
+  const fetchCurrentStatus = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.post('/attendance/out', {}, { 
-        headers: { Authorization: `Bearer ${token}` } 
-      });
-      
-      // Update local storage
-      localStorage.setItem('isRunning', 'false');
-      localStorage.removeItem('lastClockIn');
-      
-      setIsRunning(false);
-      const secs = res.data.data.totalTime.split(':').reduce((a, v, i) => 
-        (+v) + a * (i === 0 ? 3600 : i === 1 ? 60 : 1), 0);
-      setTimer(secs);
-      toast.success(`✅ Attendance Recorded: ${res.data.data.totalTime}`);
-      
-      await fetchData();
-      await fetchStats();
-      await fetchAttendanceHistory();
-      await fetchWorkHoursAnalysis();
-    } catch (error) {
-      console.error('Clock-out error:', error);
-      toast.error("❌ Clock-out failed. Please try again.");
-    }
-  };
-
-  // ✅ Handle Half Day Request
-  const handleHalfDay = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const today = new Date();
-      const key = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
-      
-      const res = await axios.post('/attendance/half-day', {}, {
+      const response = await axios.get('/attendance/status', {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      toast.success("✅ Half day marked successfully!");
-      
-      // Update local state
-      setHalfDayDates(prev => [...prev, key]);
-      setMonthlyPresentCount(prev => prev + 0.5);
-      
-      await fetchData();
-      await fetchStats();
-      await fetchWorkHoursAnalysis();
-      
+      if (response.data?.isClockedIn) {
+        const inTime = new Date(response.data.inTime);
+        setTimer(Math.floor((Date.now() - inTime.getTime()) / 1000));
+        setIsRunning(true);
+      } else {
+        setIsRunning(false);
+      }
     } catch (error) {
-      console.error('Half day error:', error);
-      toast.error("❌ Failed to mark half day");
+      console.error('Error fetching status:', error);
     }
   };
 
-  // ✅ Calendar Functions
+  const handleIn = async () => {
+    try {
+      await axios.post('/attendance/in', {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setIsRunning(true);
+      setTimer(0);
+      toast.success('Clocked in successfully!');
+      
+      await fetchCurrentStatus();
+      await fetchAttendanceData();
+    } catch (error) {
+      console.error('Clock-in error:', error);
+      toast.error('Clock-in failed');
+    }
+  };
+
+const handleOut = async () => {
+  try {
+    await axios.post(
+      "/attendance/out",
+      {},
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+
+    setIsRunning(false);
+    toast.success("Clocked out successfully!");
+
+    // ✅ Clear auth data (LOGOUT)
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+
+    // Optional: clear axios default header
+    delete axios.defaults.headers.common["Authorization"];
+
+    // ⏳ Small delay so toast is visible
+    setTimeout(() => {
+      navigate("/login"); // or "/" based on your routing
+    }, 1200);
+
+  } catch (error) {
+    console.error("Clock-out error:", error);
+    toast.error("Clock-out failed");
+  }
+};
+
   const handlePrevMonth = () => {
-    setCalendarMonth(m => {
-      if (m === 0) {
-        setCalendarYear(y => y - 1);
+    setCalendarMonth(prev => {
+      if (prev === 0) {
+        setCalendarYear(prevYear => prevYear - 1);
         return 11;
       }
-      return m - 1;
+      return prev - 1;
     });
   };
 
   const handleNextMonth = () => {
-    setCalendarMonth(m => {
-      if (m === 11) {
-        setCalendarYear(y => y + 1);
+    setCalendarMonth(prev => {
+      if (prev === 11) {
+        setCalendarYear(prevYear => prevYear + 1);
         return 0;
       }
-      return m + 1;
+      return prev + 1;
     });
   };
 
-  const calendarDays = getCalendarGrid(calendarYear, calendarMonth);
-  const today = new Date();
+  const resetToCurrentMonth = () => {
+    setCalendarMonth(currentDate.getMonth());
+    setCalendarYear(currentDate.getFullYear());
+  };
 
-  // ✅ Check different statuses for a day
-  const getDayStatus = (day) => {
-    if (!day) return null;
-    
-    try {
-      const dateKey = `${calendarYear}-${calendarMonth}-${day}`;
-      const dateObj = new Date(calendarYear, calendarMonth, day);
-      const dayOfWeek = dateObj.getDay();
-      
-      // Check if it's weekend
-      if (dayOfWeek === 0 || dayOfWeek === 6) {
-        return 'weekend';
-      }
-      
-      // Check if present (attendance marked)
-      if (markedDates.includes(dateKey)) {
-        return 'present';
-      }
-      
-      // Check if half day
-      if (halfDayDates.includes(dateKey)) {
-        return 'halfday';
-      }
-      
-      // Check if on approved leave
-      if (leaveDates.includes(dateKey)) {
-        return 'leave';
-      }
-      
-      // Check if absent (only for past dates that are not weekends and not on leave)
-      if (dateObj < today && !leaveDates.includes(dateKey) && dayOfWeek !== 0 && dayOfWeek !== 6) {
-        if (absentDates.includes(dateKey)) {
-          return 'absent';
-        }
-      }
-      
-      return null;
-    } catch (error) {
-      console.error('❌ Error in getDayStatus:', error);
-      return null;
+  const getStatusColor = (status) => {
+    switch(status) {
+      case 'PRESENT': return 'status-present';
+      case 'HALF DAY': return 'status-halfday';
+      case 'ABSENT': return 'status-absent';
+      default: return 'status-default';
     }
   };
 
-  const isToday = day => day === today.getDate() && 
-    calendarMonth === today.getMonth() && 
-    calendarYear === today.getFullYear();
+  useEffect(() => {
+    const loadData = async () => {
+      await fetchAttendanceData();
+      await fetchLeaveData();
+      await fetchCurrentStatus();
+    };
+    loadData();
+  }, []);
 
-  // ✅ Graph Data Preparation for Chart
-  const getGraphData = () => {
-    return [
-      { 
-        status: 'Pending', 
-        count: taskStats.pending.count, 
-        percentage: taskStats.pending.percentage,
-        color: '#ffc107',
-        icon: '⏳'
-      },
-      { 
-        status: 'In Progress', 
-        count: taskStats.inProgress.count, 
-        percentage: taskStats.inProgress.percentage,
-        color: '#17a2b8',
-        icon: '🔄'
-      },
-      { 
-        status: 'Completed', 
-        count: taskStats.completed.count, 
-        percentage: taskStats.completed.percentage,
-        color: '#28a745',
-        icon: '✅'
-      },
-      { 
-        status: 'Overdue', 
-        count: taskStats.overdue.count, 
-        percentage: taskStats.overdue.percentage,
-        color: '#dc3545',
-        icon: '⚠️'
-      },
-      { 
-        status: 'Rejected', 
-        count: taskStats.rejected.count, 
-        percentage: taskStats.rejected.percentage,
-        color: '#dc3545',
-        icon: '❌'
-      },
-      { 
-        status: 'On Hold', 
-        count: taskStats.onHold.count, 
-        percentage: taskStats.onHold.percentage,
-        color: '#6c757d',
-        icon: '⏸️'
-      },
-      { 
-        status: 'Reopen', 
-        count: taskStats.reopen.count, 
-        percentage: taskStats.reopen.percentage,
-        color: '#fd7e14',
-        icon: '↩️'
-      },
-      { 
-        status: 'Cancelled', 
-        count: taskStats.cancelled.count, 
-        percentage: taskStats.cancelled.percentage,
-        color: '#6c757d',
-        icon: '🚫'
-      }
-    ];
-  };
+  useEffect(() => {
+    if (isRunning) {
+      intervalRef.current = setInterval(() => {
+        setTimer(prev => prev + 1);
+      }, 1000);
+    } else {
+      clearInterval(intervalRef.current);
+    }
+    
+    return () => clearInterval(intervalRef.current);
+  }, [isRunning]);
 
-  // ✅ Calculate Bar Heights for Graph
-  const calculateBarHeight = (count) => {
-    const maxCount = Math.max(
-      taskStats.pending.count,
-      taskStats.inProgress.count,
-      taskStats.completed.count,
-      taskStats.overdue.count,
-      taskStats.rejected.count,
-      taskStats.onHold.count,
-      taskStats.reopen.count,
-      taskStats.cancelled.count
-    );
-    return maxCount > 0 ? (count / maxCount) * 100 : 0;
-  };
+  const calendarDays = getCalendarGrid(calendarYear, calendarMonth);
 
-  const navigate = useNavigate();
+
+  
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+return (
+  <div style={{
+    height: "100vh",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    textAlign: "center",
+    padding: "20px"
+  }}>
+<h2>
+  😄 Hi {user?.name || "User"}, <br /><br />
+  This dashboard does not work on mobile devices.  
+  Even your phone agrees: “Sorry, not my job.” <br /><br />
+  Please use a Desktop or Laptop  
+  for the best and complete experience
+</h2>
+
+  </div>
+);
+
+  }
 
   return (
     <div className="dashboard-container">
       <ToastContainer 
         position="top-right" 
-        autoClose={4000} 
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
+        autoClose={3000}
+        theme="colored"
         pauseOnHover
       />
-
-      {/* Enhanced Header Section */}
+      
+      {/* Header */}
       <div className="dashboard-header">
-        <div className="header-content">
-          <div className="user-info-section">
-            <div className="user-avatar">
-              {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
-            </div>     
-            <div className="user-details">
-              <h1 className="user-name">{user?.name || 'Loading...'}</h1>
-              <div className="user-meta">
-                <span className="user-role">
-                  <FiBriefcase size={14} />
-                  {user?.role || 'Employee'}
-                </span>
-                <span className="user-type">
-                  <FiUser size={14} />
-                  {user?.employeeType || 'Full-time'}
-                </span>
-              </div>
-              <span className="current-date">
-                {today.toLocaleDateString('en-US', {
-                  weekday: 'long',
-                  month: 'long',
-                  day: 'numeric',
-                  year: 'numeric'
-                })}
-              </span>
-            </div>
-          </div>
+        <div className="dashboard-header-content">
+        
+        <div className="dashboard-user-details">
+  <h1 className="dashboard-user-name">
+    Welcome back, {user?.name || 'User'}
+  </h1>
 
-          <div className="clock-section">
-            <div className="timer-display-large">
-              <div className="timer-value-large">{formatTime(timer)}</div>
-              <div className="timer-status">
-                {isRunning ? 'Active Timer' : 'Timer Stopped'}
+<p className="dashboard-user-welcome">
+  {new Date().getHours() < 12
+    ? 'Good morning! Let’s make today count.'
+    : new Date().getHours() < 18
+    ? 'Good afternoon! Stay focused and productive.'
+    : 'Good evening! Wrapping up strong.'}
+</p>
+
+
+  <div className="dashboard-user-tags">
+    <span className="dashboard-tag dashboard-tag-role">
+      <FiBriefcase size={14} />
+      {user?.role || 'Employee'}
+    </span>
+    <span className="dashboard-tag dashboard-tag-type">
+      <FiUser size={14} />
+      {user?.employeeType || 'Full-time'}
+    </span>
+  </div>
+
+  <div className="dashboard-date-info">
+    <MdToday size={14} />
+    {currentDate.toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      month: 'long', 
+      day: 'numeric', 
+      year: 'numeric' 
+    })}
+  </div>
+
+
+          </div>
+          
+          <div className="dashboard-clock-section">
+            <div className="dashboard-timer-display">
+              <div className="dashboard-timer-value">{formatTime(timer)}</div>
+              <div className={`dashboard-timer-status ${isRunning ? 'status-active-text' : 'status-inactive-text'}`}>
+                <div className={`dashboard-timer-dot ${isRunning ? 'dot-active' : 'dot-inactive'}`}></div>
+                {isRunning ? 'Active Timer • Live' : 'Timer Stopped'}
               </div>
             </div>
-            <div className="clock-buttons">
+            
+            <div className="dashboard-clock-buttons">
               <button
                 onClick={handleIn}
-                className={`clock-btn clock-in ${!isRunning ? 'active' : ''}`}
                 disabled={isRunning || loading}
+                className={`dashboard-btn dashboard-btn-clockin ${isRunning ? 'btn-disabled' : ''}`}
               >
                 <FiPlay size={20} />
                 Clock In
               </button>
               <button
                 onClick={handleOut}
-                className={`clock-btn clock-out ${isRunning ? 'active' : ''}`}
                 disabled={!isRunning || loading}
+                className={`dashboard-btn dashboard-btn-clockout ${!isRunning ? 'btn-disabled' : ''}`}
               >
                 <FiSquare size={20} />
                 Clock Out
@@ -765,284 +444,282 @@ const UserDashboard = () => {
         </div>
       </div>
 
-      {/* Main Dashboard Content */}
-      <div className="dashboard-content">
-        
-        {/* Left Column - Timer & Calendar */}
-        <div className="left-column">
-          
-          {/* Enhanced Calendar Card */}
-          <div className="calendar-card">
-            <div className="calendar-header">
-              <h3><FiCalendar /> {monthNames[calendarMonth]} {calendarYear}</h3>
-              <div className="calendar-controls">
-                <button onClick={handlePrevMonth} className="icon-btn">
-                  <FiChevronLeft />
-                </button>
-                <button 
-                  onClick={() => {
-                    setCalendarMonth(new Date().getMonth());
-                    setCalendarYear(new Date().getFullYear());
-                  }}
-                  className="btn-today"
-                >
-                  Today
-                </button>
-                <button onClick={handleNextMonth} className="icon-btn">
-                  <FiChevronRight />
-                </button>
+      {/* Current Month Stats */}
+      <div className="dashboard-stats-grid">
+        <div className="dashboard-stat-card stat-card-present">
+          <div className="stat-card-header">
+            <div className="stat-icon-container icon-present">
+              <MdWork className="stat-icon" />
+            </div>
+            <div className="stat-current-month">Current Month</div>
+          </div>
+          <div className="stat-value">{monthlyStats.presentDays}</div>
+          <div className="stat-label">Days Present</div>
+          <div className="stat-footer">
+            <FiTrendingUp className="stat-trend-icon" />
+            <span className="stat-month-text">Tracked in {monthNames[currentMonth]}</span>
+          </div>
+        </div>
+
+        <div className="dashboard-stat-card stat-card-halfday">
+          <div className="stat-card-header">
+            <div className="stat-icon-container icon-halfday">
+              <MdOutlineCrop54 className="stat-icon" />
+            </div>
+            <div className="stat-current-month">Current Month</div>
+          </div>
+          <div className="stat-value">{monthlyStats.halfDays}</div>
+          <div className="stat-label">Half Days</div>
+          <div className="stat-footer">
+            <FiActivity className="stat-trend-icon" />
+            <span className="stat-month-text">Tracked in {monthNames[currentMonth]}</span>
+          </div>
+        </div>
+
+        <div className="dashboard-stat-card stat-card-leave">
+          <div className="stat-card-header">
+            <div className="stat-icon-container icon-leave">
+              <MdBeachAccess className="stat-icon" />
+            </div>
+            <div className="stat-current-month">Current Month</div>
+          </div>
+          <div className="stat-value">{monthlyStats.leavesTaken}</div>
+          <div className="stat-label">Leaves Taken</div>
+          <div className="stat-footer">
+            <FiCheckCircle className="stat-trend-icon" />
+            <span className="stat-month-text">Approved in {monthNames[currentMonth]}</span>
+          </div>
+        </div>
+
+        <div className="dashboard-stat-card stat-card-absent">
+          <div className="stat-card-header">
+            <div className="stat-icon-container icon-absent">
+              <MdSick className="stat-icon" />
+            </div>
+            <div className="stat-current-month">Current Month</div>
+          </div>
+          <div className="stat-value">{monthlyStats.absentDays}</div>
+          <div className="stat-label">Absent Days</div>
+          <div className="stat-footer">
+            <FiAlertCircle className="stat-trend-icon" />
+            <span className="stat-month-text">Tracked in {monthNames[currentMonth]}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="dashboard-content-grid">
+        {/* Calendar */}
+        <div className="dashboard-calendar-card">
+          <div className="calendar-header">
+            <div className="calendar-title-section">
+              <div className="calendar-icon-container">
+                <FiCalendar className="calendar-icon" />
+              </div>
+              <div>
+                <h2 className="calendar-title">
+                  {monthNames[calendarMonth]} {calendarYear}
+                </h2>
+                <p className="calendar-subtitle">Attendance Calendar</p>
               </div>
             </div>
+            
+            <div className="calendar-controls">
+              <button
+                onClick={handlePrevMonth}
+                className="calendar-nav-btn"
+              >
+                <FiChevronLeft className="nav-icon" />
+              </button>
+              <button
+                onClick={resetToCurrentMonth}
+                className="calendar-today-btn"
+              >
+                Today
+              </button>
+              <button
+                onClick={handleNextMonth}
+                className="calendar-nav-btn"
+              >
+                <FiChevronRight className="nav-icon" />
+              </button>
+            </div>
+          </div>
 
-            <div className="calendar-grid">
-              <div className="calendar-week-header">
-                {daysOfWeek.map(day => (
-                  <div key={day} className="calendar-day-header">
-                    {day}
-                  </div>
-                ))}
-              </div>
-
-              {calendarDays.map((week, wi) => (
-                <div key={wi} className="calendar-week">
-                  {week.map((day, di) => {
-                    const dayStatus = getDayStatus(day);
-                    return (
-                      <div key={di} className="calendar-day-container">
-                        {day ? (
-                          <div 
-                            className={`calendar-day ${dayStatus || ''} ${isToday(day) ? 'today' : ''}`}
-                            title={dayStatus ? 
-                              dayStatus.charAt(0).toUpperCase() + dayStatus.slice(1) : 
-                              'No Record'
-                            }
-                          >
-                            {day}
-                            {dayStatus === 'leave' && (
-                              <div className="leave-indicator" title="On Leave"></div>
-                            )}
-                            {dayStatus === 'halfday' && (
-                              <div className="halfday-indicator" title="Half Day"></div>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="calendar-empty"></div>
-                        )}
-                      </div>
-                    );
-                  })}
+          <div className="calendar-body">
+            <div className="calendar-week-header">
+              {daysOfWeek.map(day => (
+                <div key={day} className="calendar-day-header">
+                  {day}
                 </div>
               ))}
             </div>
 
-            <div className="calendar-legend">
-              <div className="legend-item">
-                <div className="legend-color present"></div>
-                <span>Present</span>
-              </div>
-              <div className="legend-item">
-                <div className="legend-color halfday"></div>
-                <span>Half Day</span>
-              </div>
-              <div className="legend-item">
-                <div className="legend-color leave"></div>
-                <span>Leave</span>
-              </div>
-              <div className="legend-item">
-                <div className="legend-color absent"></div>
-                <span>Absent</span>
-              </div>
-              <div className="legend-item">
-                <div className="legend-color weekend"></div>
-                <span>Weekend</span>
-              </div>
+            <div className="calendar-grid">
+              {calendarDays.map((week, weekIndex) => (
+                <div key={weekIndex} className="calendar-week">
+                  {week.map((day, dayIndex) => (
+                    <div key={dayIndex} className="calendar-day-wrapper">
+                      {day ? (
+                        <div className="calendar-day-container">
+                          <div
+                            className={`calendar-day ${
+                              getDayStatus(day) || 'empty'
+                            } ${isToday(day) ? 'day-today' : ''}`}
+                            title={getDayStatus(day)?.charAt(0).toUpperCase() + getDayStatus(day)?.slice(1) || 'No Record'}
+                          >
+                            <span className="day-number">{day}</span>
+                            {getDayIcon(day) && (
+                              <span className="day-status-icon">{getDayIcon(day)}</span>
+                            )}
+                          </div>
+                          {isToday(day) && (
+                            <div className="today-indicator"></div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="calendar-empty-day"></div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="calendar-legend">
+            <div className="legend-item">
+              <div className="legend-color color-present"></div>
+              <span>Present</span>
+            </div>
+            <div className="legend-item">
+              <div className="legend-color color-halfday"></div>
+              <span>Half Day</span>
+            </div>
+            <div className="legend-item">
+              <div className="legend-color color-leave"></div>
+              <span>Leave</span>
+            </div>
+            <div className="legend-item">
+              <div className="legend-color color-absent"></div>
+              <span>Absent</span>
+            </div>
+            <div className="legend-item">
+              <div className="legend-color color-weekend"></div>
+              <span>Weekend</span>
             </div>
           </div>
         </div>
 
-        {/* Right Column - Stats & Graph */}
-        <div className="right-column">
-
-          {/* Stats Grid */}
-        
-
-          {/* Task Status Graph Card */}
-          <div className="graph-card-enhanced">
-            <div className="graph-header">
-              <div className="graph-title-section">
-                <FiBarChart2 size={20} />
-                <h3>Task Status Overview</h3>
-                <span className="total-tasks-badge">
-                  Total: {taskStats.total}
-                </span>
+        {/* Recent Activity */}
+        <div className="dashboard-activity-card">
+          <div className="activity-header">
+            <div className="activity-title-section">
+              <div className="activity-icon-container">
+                <MdOutlineWatchLater className="activity-icon" />
               </div>
-              
-              <div className="graph-controls">
-                <div className="time-filters">
-                  <button 
-                    className={`time-filter-btn ${timeFilter === 'today' ? 'active' : ''}`}
-                    onClick={() => handleTimeFilterChange('today')}
-                  >
-                    Today
-                  </button>
-                  <button 
-                    className={`time-filter-btn ${timeFilter === 'week' ? 'active' : ''}`}
-                    onClick={() => handleTimeFilterChange('week')}
-                  >
-                    This Week
-                  </button>
-                  <button 
-                    className={`time-filter-btn ${timeFilter === 'month' ? 'active' : ''}`}
-                    onClick={() => handleTimeFilterChange('month')}
-                  >
-                    This Month
-                  </button>
-                </div>
-                
-                <button 
-                  onClick={handleRefreshGraph}
-                  className="refresh-graph-btn"
-                  disabled={graphLoading}
-                >
-                  <FiRefreshCw size={14} className={graphLoading ? 'spinning' : ''} />
-                </button>
+              <div>
+                <h2 className="activity-title">Recent Activity</h2>
+                <p className="activity-subtitle">Latest attendance records</p>
               </div>
             </div>
+            <button
+              onClick={fetchAttendanceData}
+              disabled={loading}
+              className="activity-refresh-btn"
+            >
+              <FiRefreshCw className={`refresh-icon ${loading ? 'spinning' : ''}`} />
+            </button>
+          </div>
 
-            <div className="graph-content">
-              {graphLoading ? (
-                <div className="graph-loading-state">
-                  <div className="loading-spinner"></div>
-                  <p>Loading task statistics...</p>
-                </div>
-              ) : taskStats.total === 0 ? (
-                <div className="graph-empty-state">
-                  <FiPieChart size={48} />
-                  <p>No tasks found for {timeFilter}</p>
-                  <span>Tasks will appear here when assigned or created</span>
-                </div>
-              ) : (
-                <>
-                  {/* Bar Graph */}
-                  <div className="bar-graph-container">
-                    <div className="bar-graph">
-                      {getGraphData().map((item, index) => (
-                        <div key={item.status} className="bar-item">
-                          <div className="bar-label">
-                            <span className="bar-icon">{item.icon}</span>
-                            <span className="bar-status">{item.status}</span>
-                          </div>
-                          <div className="bar-wrapper">
-                            <div 
-                              className="bar-fill"
-                              style={{
-                                height: `${calculateBarHeight(item.count)}%`,
-                                backgroundColor: item.color
-                              }}
-                              title={`${item.count} tasks (${item.percentage}%)`}
-                            >
-                              <div className="bar-count">{item.count}</div>
-                            </div>
-                          </div>
-                          <div className="bar-percentage">{item.percentage}%</div>
-                        </div>
-                      ))}
+          <div className="activity-list">
+            {recentActivity.map((record, index) => {
+              const date = new Date(record.date);
+              const isCurrentMonth = date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+              
+              return (
+                <div key={index} className="activity-item">
+                  <div className="activity-item-content">
+                    <div className={`activity-status-icon ${getStatusColor(record.status)}`}>
+                      {record.status === 'PRESENT' && <FiCheckCircle className="status-icon" />}
+                      {record.status === 'HALF DAY' && <FiAlertCircle className="status-icon" />}
+                      {record.status === 'ABSENT' && <FiAlertCircle className="status-icon" />}
+                      {!['PRESENT', 'HALF DAY', 'ABSENT'].includes(record.status) && <FiClock className="status-icon" />}
+                    </div>
+                    <div className="activity-details">
+                      <div className="activity-date">
+                        {date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                        {isCurrentMonth && (
+                          <span className="current-month-badge">Current Month</span>
+                        )}
+                      </div>
+                      <div className="activity-time">
+                        <MdAccessTime size={12} />
+                        {record.totalTime || '--:--:--'}
+                      </div>
                     </div>
                   </div>
-
-                  {/* Statistics Summary */}
-                  <div className="graph-stats-summary">
-                    {getGraphData().map((item) => (
-                      <div key={item.status} className="stat-summary-item">
-                        <div 
-                          className="stat-color-indicator"
-                          style={{ backgroundColor: item.color }}
-                        ></div>
-                        <div className="stat-summary-content">
-                          <span className="stat-summary-label">{item.status}</span>
-                          <span className="stat-summary-value">
-                            {item.count} ({item.percentage}%)
-                          </span>
-                        </div>
-                      </div>
-                    ))}
+                  <div className={`activity-status ${getStatusColor(record.status)}`}>
+                    {record.status}
                   </div>
-                  
-                </>
-              )}
-            </div>
+                </div>
+              );
+            })}
             
+            {recentActivity.length === 0 && !loading && (
+              <div className="activity-empty-state">
+                <div className="empty-icon-container">
+                  <FiClock className="empty-icon" />
+                </div>
+                <p className="empty-title">No attendance records found</p>
+                <p className="empty-subtitle">Your attendance records will appear here</p>
+              </div>
+            )}
+            
+            {loading && (
+              <div className="activity-loading-state">
+                <div className="loading-spinner"></div>
+                <span className="loading-text">Loading records...</span>
+              </div>
+            )}
           </div>
-        </div>  
-
-
-        
-      </div>
-
-
-        <div className="stats-grid-enhanced">
-        <div
-          className="stat-card-enhanced present"
-          onClick={() => navigate("/cds/attendance")}
-          style={{ cursor: "pointer" }}
-        >
-          <div className="stat-icon-container">
-            <MdWork size={20} />
-          </div>
-          <div className="stat-content">
-            <div className="stat-value">{monthlyPresentCount}</div>
-            <div className="stat-label">Days Present</div>
-            <div className="stat-trend">This Month</div>
-          </div>
-        </div>
-
-        <div
-          className="stat-card-enhanced halfday"
-          onClick={() => navigate("/cds/attendance")}
-          style={{ cursor: "pointer" }}
-        >
-          <div className="stat-icon-container">
-            <MdOutlineCrop54 size={24} />
-          </div>
-          <div className="stat-content">
-            <div className="stat-value">{halfDayDates.length}</div>
-            <div className="stat-label">Half Days</div>
-            <div className="stat-trend">This Month</div>
-          </div>
-        </div>
-
-        <div
-          className="stat-card-enhanced leave"
-          onClick={() => navigate("/cds/attendance")}
-          style={{ cursor: "pointer" }}
-        >
-          <div className="stat-icon-container">
-            <MdBeachAccess size={24} />
-          </div>
-          <div className="stat-content">
-            <div className="stat-value">{leaveDates.length}</div>
-            <div className="stat-label">Leaves Taken</div>
-            <div className="stat-trend">Approved</div>
-          </div>
-        </div>
-
-        <div
-          className="stat-card-enhanced absent"
-          onClick={() => navigate("/cds/attendance")} 
-          style={{ cursor: "pointer" }}
-        >
-          <div className="stat-icon-container">
-            <MdSick size={24} />
-          </div>
-          <div className="stat-content">
-            <div className="stat-value">{absentDates.length}</div>
-            <div className="stat-label">Absent Days</div>
-            <div className="stat-trend">This Month</div>
-          </div>
+          
+          {/* {recentActivity.length > 0 && (
+            <div className="activity-footer">
+              <button className="activity-view-all">
+                View All Activity →
+              </button>
+            </div>
+          )} */}
         </div>
       </div>
 
-    </div>  
+      {/* Current Month Info */}
+      <div className="dashboard-month-info">
+        <div className="month-info-content">
+          <div className="month-info-left">
+            <div className="month-info-title">
+              <div className="month-info-icon">
+                <FiCalendar />
+              </div>
+              <h3>Current Month: {monthNames[currentMonth]} {currentYear}</h3>
+            </div>
+            <p className="month-info-description">
+              Stats show only this month's data. Calendar displays complete attendance history. 
+              <span className="month-info-note">Weekends with attendance show actual status color instead of gray.</span>
+            </p>
+          </div>
+          <div className="month-info-right">
+            <div className="month-current-day">{new Date().getDate()}</div>
+            <div className="month-current-info">
+              {monthNames[currentMonth].substring(0, 3)} • Today
+            </div>
+            <div className="month-day-count">
+              Day {currentDate.getDate()} of {new Date(currentYear, currentMonth + 1, 0).getDate()}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

@@ -1,52 +1,8 @@
-import React, { useState, useEffect, useMemo, useContext } from "react";
-import {
-  Box,
-  Typography,
-  Grid,
-  Card,
-  CardContent,
-  Avatar,
-  Stack,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  TextField,
-  Chip,
-  IconButton,
-  Tooltip,
-  Fade,
-  LinearProgress,
-  useTheme,
-  useMediaQuery,
-  Divider,
-  Paper,
-  Menu,
-  MenuItem,
-  ListItemIcon,
-  ListItemText,
-  Snackbar,
-  Alert,
-  CircularProgress,
-  FormControl,
-  InputLabel,
-  Select,
-  alpha,
-  Container,
-  InputAdornment,
-  Badge,
-  Tabs,
-  Tab,
-  Slide,
-  Fab,
-  Drawer,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemAvatar,
-  useScrollTrigger
-} from "@mui/material";
+import React, { useState, useEffect, useMemo } from "react";
+import axios from "../../../utils/axiosConfig";
+import './employee-directory.css';
+
+// Icons
 import {
   FiMail,
   FiPhone,
@@ -56,7 +12,6 @@ import {
   FiBriefcase,
   FiDollarSign,
   FiUsers,
-  FiHeart,
   FiAlertTriangle,
   FiSearch,
   FiX,
@@ -84,141 +39,36 @@ import {
   FiGrid,
   FiList
 } from "react-icons/fi";
-import axios from "../../../utils/axiosConfig";
 
-
-// Custom hook for scroll detection
-const useScrollDetection = () => {
-  const [isScrolled, setIsScrolled] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  return isScrolled;
-};
-
-// Enhanced Role Filter Component
-const RoleFilter = ({ selected, onChange, stats, variant = "desktop" }) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  
+// Role Filter Component
+const RoleFilter = ({ selected, onChange, stats }) => {
   const roleOptions = [
-    
+    { value: 'all', label: 'All Roles', count: stats.total },
     { value: 'admin', label: 'Admin', count: stats.admin, color: 'error' },
     { value: 'manager', label: 'Manager', count: stats.manager, color: 'warning' },
     { value: 'hr', label: 'HR', count: stats.hr, color: 'info' },
     { value: 'user', label: 'User', count: stats.user, color: 'success' }
   ];
 
-  if (variant === "mobile") {
-    return (
-      <List sx={{ py: 0 }}>
-        {roleOptions.map((option) => (
-          <ListItem key={option.value} disablePadding>
-            <ListItemButton
-              selected={selected === option.value}
-              onClick={() => onChange(option.value)}
-              sx={{
-                borderRadius: 2,
-                mx: 1,
-                mb: 0.5,
-                '&.Mui-selected': {
-                  backgroundColor: alpha(theme.palette[option.color].main, 0.1),
-                }
-              }}
-            >
-              <Stack direction="row" alignItems="center" spacing={2} sx={{ width: '100%' }}>
-                <Box
-                  sx={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: '50%',
-                    backgroundColor: theme.palette[option.color].main,
-                  }}
-                />
-                <Typography variant="body1" sx={{ flex: 1 }}>
-                  {option.label}
-                </Typography>
-                {option.count !== 'all' && (
-                  <Chip 
-                    label={option.count} 
-                    size="small" 
-                    sx={{ 
-                      height: 20,
-                      fontSize: '0.7rem',
-                      minWidth: 30,
-                      background: alpha(theme.palette[option.color].main, 0.1),
-                      color: theme.palette[option.color].main,
-                    }} 
-                  />
-                )}
-              </Stack>
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
-    );
-  }
-
   return (
-    <FormControl 
-      className="role-filter-control"
-      size="small"
-      sx={{ minWidth: isMobile ? '100%' : 200 }}
-    >
-      <InputLabel>Filter by Role</InputLabel>
-      <Select
+    <div className="role-filter">
+      <select
+        className="role-select"
         value={selected}
-        label="Filter by Role"
         onChange={(e) => onChange(e.target.value)}
-        className="role-filter-select"
       >
         {roleOptions.map((option) => (
-          <MenuItem key={option.value} value={option.value}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <Box
-                  sx={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: '50%',
-                    backgroundColor: theme.palette[option.color].main,
-                  }}
-                />
-                <span>{option.label}</span>
-              </Stack>
-              {option.count !== 'all' && (
-                <Chip 
-                  label={option.count} 
-                  size="small" 
-                  sx={{ 
-                    ml: 1,
-                    height: 20,
-                    fontSize: '0.7rem',
-                    minWidth: 30,
-                    background: alpha(theme.palette[option.color].main, 0.1),
-                    color: theme.palette[option.color].main,
-                  }} 
-                />
-              )}
-            </Box>
-          </MenuItem>
+          <option key={option.value} value={option.value}>
+            {option.label} ({option.count})
+          </option>
         ))}
-      </Select>
-    </FormControl>
+      </select>
+    </div>
   );
 };
 
-// Quick Stats Component for Mobile
+// Mobile Stats Component
 const MobileStats = ({ stats }) => {
-  const theme = useTheme();
-  
   const statItems = [
     { label: 'Total', count: stats.total, color: 'primary' },
     { label: 'Technical', count: stats.technical, color: 'success' },
@@ -227,26 +77,16 @@ const MobileStats = ({ stats }) => {
   ];
 
   return (
-    <Paper sx={{ p: 2, mb: 2, borderRadius: 3 }}>
-      <Grid container spacing={1}>
+    <div className="mobile-stats">
+      <div className="stats-grid">
         {statItems.map((stat) => (
-          <Grid item xs={3} key={stat.label}>
-            <Box sx={{ textAlign: 'center' }}>
-              <Typography 
-                variant="h6" 
-                fontWeight={800}
-                color={`${stat.color}.main`}
-              >
-                {stat.count}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {stat.label}
-              </Typography>
-            </Box>
-          </Grid>
+          <div key={stat.label} className="stat-item">
+            <div className="stat-value">{stat.count}</div>
+            <div className="stat-label">{stat.label}</div>
+          </div>
         ))}
-      </Grid>
-    </Paper>
+      </div>
+    </div>
   );
 };
 
@@ -267,12 +107,19 @@ const EmployeeDirectory = () => {
   const [deleting, setDeleting] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+  const [viewMode, setViewMode] = useState('grid');
+  const [isMobile, setIsMobile] = useState(false);
 
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isScrolled = useScrollDetection();
+  // Check if mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const roleOptions = [
     { value: 'user', label: 'User' },
@@ -305,7 +152,7 @@ const EmployeeDirectory = () => {
       const res = await axios.get("/users/all-users");
       setEmployees(res.data);
     } catch (err) {
-      console.error("❌ Failed to fetch users:", err);
+      console.error("Failed to fetch users:", err);
       showSnackbar('Failed to fetch employees', 'error');
     } finally {
       setLoading(false);
@@ -314,13 +161,20 @@ const EmployeeDirectory = () => {
 
   const showSnackbar = (message, severity = 'success') => {
     setSnackbar({ open: true, message, severity });
+    setTimeout(() => {
+      setSnackbar({ ...snackbar, open: false });
+    }, 6000);
   };
 
   const handleOpenUser = (user) => setSelectedUser(user);
   const handleCloseUser = () => setSelectedUser(null);
 
   const handleMenuOpen = (event, user) => {
-    setMenuAnchorEl(event.currentTarget);
+    const rect = event.currentTarget.getBoundingClientRect();
+    setMenuAnchorEl({
+      top: rect.bottom,
+      left: rect.left
+    });
     setSelectedMenuUser(user);
   };
 
@@ -354,7 +208,7 @@ const EmployeeDirectory = () => {
       setEditFormData({});
       showSnackbar('Employee updated successfully');
     } catch (err) {
-      console.error("❌ Failed to update user:", err);
+      console.error("Failed to update user:", err);
       showSnackbar('Failed to update employee', 'error');
     } finally {
       setSaving(false);
@@ -376,7 +230,7 @@ const EmployeeDirectory = () => {
       setUserToDelete(null);
       showSnackbar('Employee deleted successfully');
     } catch (err) {
-      console.error("❌ Failed to delete user:", err);
+      console.error("Failed to delete user:", err);
       const errorMessage = err.response?.data?.error || 'Failed to delete employee';
       showSnackbar(errorMessage, 'error');
     } finally {
@@ -444,1382 +298,920 @@ const EmployeeDirectory = () => {
 
   const getEmployeeTypeClass = (type) => {
     const typeLower = type?.toLowerCase();
-    if (typeLower === 'technical') return 'employee-type-chip employee-type-chip-technical';
-    if (typeLower === 'non-technical') return 'employee-type-chip employee-type-chip-non-technical';
-    if (typeLower === 'sales') return 'employee-type-chip employee-type-chip-sales';
-    if (typeLower === 'intern') return 'employee-type-chip employee-type-chip-intern';
-    return 'employee-type-chip';
+    if (typeLower === 'technical') return 'employee-tag employee-tag-technical';
+    if (typeLower === 'non-technical') return 'employee-tag employee-tag-non-technical';
+    if (typeLower === 'sales') return 'employee-tag employee-tag-sales';
+    if (typeLower === 'intern') return 'employee-tag employee-tag-intern';
+    return 'employee-tag';
   };
 
   const getRoleClass = (role) => {
-    if (role === 'admin') return 'role-chip role-chip-admin';
-    if (role === 'manager') return 'role-chip role-chip-manager';
-    if (role === 'hr') return 'role-chip role-chip-hr';
-    if (role === 'user') return 'role-chip role-chip-user';
-    if (role === 'SuperAdmin') return 'role-chip role-chip-superadmin';
-    return 'role-chip';
+    if (role === 'admin') return 'employee-tag employee-tag-admin';
+    if (role === 'manager') return 'employee-tag employee-tag-manager';
+    if (role === 'hr') return 'employee-tag employee-tag-hr';
+    if (role === 'user') return 'employee-tag employee-tag-user';
+    if (role === 'SuperAdmin') return 'employee-tag employee-tag-superadmin';
+    return 'employee-tag';
   };
 
-  const getStatCardClass = (color) => {
-    if (color === 'success') return 'gradient-stat-card gradient-stat-card-success';
-    if (color === 'warning') return 'gradient-stat-card gradient-stat-card-warning';
-    if (color === 'info') return 'gradient-stat-card gradient-stat-card-info';
-    if (color === 'secondary') return 'gradient-stat-card gradient-stat-card-secondary';
-    return 'gradient-stat-card';
-  };
-
-  // Enhanced Employee Card Component
- // Fixed EmployeeCard with forwardRef
-const EmployeeCard = React.forwardRef(({ emp }, ref) => (
-  <Card 
-    ref={ref}
-    className={`enhanced-employee-card ${isNewEmployee(emp) ? 'enhanced-employee-card-new' : ''} fade-in`}
-    onClick={() => handleOpenUser(emp)}
-  >
-    <CardContent sx={{ p: isMobile ? 2 : 3, position: 'relative' }}>
-      <IconButton 
-        size="small" 
-        onClick={(e) => {
-          e.stopPropagation();
-          handleMenuOpen(e, emp);
-        }}
-        className="menu-button-card"
+  // Employee Card Component
+  const EmployeeCard = ({ emp }) => {
+    const isNew = isNewEmployee(emp);
+    
+    return (
+      <div 
+        className={`employee-card ${isNew ? 'employee-card-new' : ''}`}
+        onClick={() => handleOpenUser(emp)}
       >
-        <FiMoreVertical size={16} />
-      </IconButton>
-
-      <Stack spacing={isMobile ? 2 : 2.5}>
-        <Stack direction="row" spacing={2} alignItems="flex-start">
-          <Badge
-            overlap="circular"
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-            badgeContent={
-              isNewEmployee(emp) ? (
-                <Box className="status-badge" />
-              ) : null
-            }
-          >
-            <Avatar 
-              src={emp.image} 
-              className="enhanced-avatar"
-              sx={{ width: isMobile ? 48 : 56, height: isMobile ? 48 : 56 }}
-            >
-              {getInitials(emp.name)}
-            </Avatar>
-          </Badge>
-          <Box sx={{ flex: 1, minWidth: 0, pr: 4 }}>
-            <Box sx={{ minWidth: 0 }}>
-              <Typography 
-                variant={isMobile ? "subtitle1" : "h6"} 
-                fontWeight={700} 
-                noWrap
-                className="gradient-text-dark"
-              >
-                {emp.name}
-              </Typography>
-              <Typography 
-                variant="body2" 
-                color="primary.main" 
-                fontWeight={600}
-                noWrap
-                sx={{ mt: 0.5 }}
-              >
-                {emp.jobRole || 'No role specified'}
-              </Typography>
-            </Box>
-            
-            <Stack direction="row" spacing={0.5} sx={{ mt: 1.5 }} flexWrap="wrap" gap={0.5}>
-              <Chip
-                label={emp.employeeType?.toUpperCase() || 'N/A'}
-                className={getEmployeeTypeClass(emp.employeeType)}
-                size="small"
-              />
-              <Chip
-                label={getRoleLabel(emp.role)}
-                className={getRoleClass(emp.role)}
-                size="small"
-              />
-            </Stack>
-          </Box>
-        </Stack>
-
-        <Divider sx={{ my: 1 }} />
-
-        <Stack spacing={isMobile ? 1 : 1.5}>
-          <Stack direction="row" spacing={1.5} alignItems="center">
-            <Box className="icon-container-primary">
-              <FiMail size={14} />
-            </Box>
-            <Typography variant="body2" noWrap sx={{ flex: 1, fontSize: isMobile ? '0.75rem' : '0.875rem' }}>
-              {emp.email || 'No email'}
-            </Typography>
-          </Stack>
-          
-          <Stack direction="row" spacing={1.5} alignItems="center">
-            <Box className="icon-container-success">
-              <FiPhone size={14} />
-            </Box>
-            <Typography variant="body2" sx={{ flex: 1, fontSize: isMobile ? '0.75rem' : '0.875rem' }}>
-              {formatPhoneNumber(emp.phone)}
-            </Typography>
-          </Stack>
-        </Stack>
-
-        <Button 
-          variant="outlined" 
-          fullWidth
-          size="small"
-          startIcon={<FiEye size={14} />}
+        <button 
+          className="employee-card-menu"
           onClick={(e) => {
             e.stopPropagation();
-            handleOpenUser(emp);
+            handleMenuOpen(e, emp);
           }}
-          className="action-button-outlined"
-          sx={{ fontSize: isMobile ? '0.75rem' : '0.875rem' }}
         >
-          View Profile
-        </Button>
-      </Stack>
-    </CardContent>
-  </Card>
-));
-
-// Fixed EmployeeListItem with forwardRef
-const EmployeeListItem = React.forwardRef(({ emp }, ref) => (
-  <Card 
-    ref={ref}
-    className={`employee-list-item ${isNewEmployee(emp) ? 'employee-list-item-new' : ''} fade-in`}
-    onClick={() => handleOpenUser(emp)}
-    sx={{ mb: 1 }}
-  >
-    <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-      <Stack direction="row" spacing={2} alignItems="center">
-        <Badge
-          overlap="circular"
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-          badgeContent={
-            isNewEmployee(emp) ? (
-              <Box className="status-badge" />
-            ) : null
-          }
-        >
-          <Avatar 
-            src={emp.image} 
-            sx={{ width: 48, height: 48 }}
+          <FiMoreVertical size={16} />
+        </button>
+        
+        <div className="employee-card-content">
+          <div className="employee-header">
+            <div className="employee-avatar">
+              {emp.image ? (
+                <img src={emp.image} alt={emp.name} />
+              ) : (
+                getInitials(emp.name)
+              )}
+            </div>
+            
+            <div className="employee-info">
+              <div className="employee-name">{emp.name || 'No Name'}</div>
+              <div className="employee-role">{emp.jobRole || 'No role specified'}</div>
+              
+              <div className="employee-tags">
+                {emp.employeeType && (
+                  <span className={getEmployeeTypeClass(emp.employeeType)}>
+                    {emp.employeeType.toUpperCase()}
+                  </span>
+                )}
+                {emp.role && (
+                  <span className={getRoleClass(emp.role)}>
+                    {getRoleLabel(emp.role)}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          <div className="employee-details">
+            <div className="detail-row">
+              <div className="detail-icon detail-icon-primary">
+                <FiMail size={12} />
+              </div>
+              <div className="detail-text">{emp.email || 'No email'}</div>
+            </div>
+            
+            <div className="detail-row">
+              <div className="detail-icon detail-icon-success">
+                <FiPhone size={12} />
+              </div>
+              <div className="detail-text">{formatPhoneNumber(emp.phone)}</div>
+            </div>
+          </div>
+          
+          <button 
+            className="view-profile-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleOpenUser(emp);
+            }}
           >
-            {getInitials(emp.name)}
-          </Avatar>
-        </Badge>
-        
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography variant="subtitle1" fontWeight={600} noWrap>
-            {emp.name}
-          </Typography>
-          <Typography variant="body2" color="text.secondary" noWrap>
-            {emp.jobRole || 'No role specified'}
-          </Typography>
-        </Box>
-        
-        <Stack direction="row" spacing={1} alignItems="center">
-          <Chip
-            label={emp.employeeType?.toUpperCase() || 'N/A'}
-            className={getEmployeeTypeClass(emp.employeeType)}
-            size="small"
-          />
-          <IconButton 
-            size="small" 
+            <FiEye size={14} /> View Profile
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  // Employee List Item Component
+  const EmployeeListItem = ({ emp }) => {
+    const isNew = isNewEmployee(emp);
+    
+    return (
+      <div 
+        className={`employee-list-item ${isNew ? 'employee-list-item-new' : ''}`}
+        onClick={() => handleOpenUser(emp)}
+      >
+        <div className="employee-list-content">
+          <div className="employee-avatar">
+            {emp.image ? (
+              <img src={emp.image} alt={emp.name} />
+            ) : (
+              getInitials(emp.name)
+            )}
+          </div>
+          
+          <div className="employee-info">
+            <div className="employee-name">{emp.name || 'No Name'}</div>
+            <div className="employee-role">{emp.jobRole || 'No role specified'}</div>
+          </div>
+          
+          <div className="employee-tags">
+            {emp.employeeType && (
+              <span className={getEmployeeTypeClass(emp.employeeType)}>
+                {emp.employeeType.toUpperCase()}
+              </span>
+            )}
+            {emp.role && (
+              <span className={getRoleClass(emp.role)}>
+                {getRoleLabel(emp.role)}
+              </span>
+            )}
+          </div>
+          
+          <button 
+            className="employee-card-menu"
             onClick={(e) => {
               e.stopPropagation();
               handleMenuOpen(e, emp);
             }}
           >
             <FiMoreVertical size={16} />
-          </IconButton>
-        </Stack>
-      </Stack>
-    </CardContent>
-  </Card>
-));
+          </button>
+        </div>
+      </div>
+    );
+  };
 
-  // List View Component
- 
+  // User Detail Modal
+  const UserDetailModal = () => {
+    if (!selectedUser) return null;
 
+    return (
+      <div className="modal-overlay" onClick={handleCloseUser}>
+        <div className="modal" onClick={e => e.stopPropagation()}>
+          <div className="modal-header">
+            <div className="modal-header-content">
+              <h2 className="modal-title">{selectedUser.name}</h2>
+              <div className="modal-subtitle">
+                <span className="employee-tag employee-tag-technical">
+                  {selectedUser.employeeType?.toUpperCase() || 'N/A'}
+                </span>
+                <span className={getRoleClass(selectedUser.role)}>
+                  {getRoleLabel(selectedUser.role)}
+                </span>
+              </div>
+            </div>
+            
+            <div>
+              <button 
+                className="btn btn-outlined"
+                onClick={() => handleEdit(selectedUser)}
+                style={{ marginRight: '8px' }}
+              >
+                <FiEdit size={14} /> Edit
+              </button>
+              <button className="modal-close" onClick={handleCloseUser}>
+                <FiX size={20} />
+              </button>
+            </div>
+          </div>
+          
+          <div className="modal-content">
+            <div className="modal-section">
+              <h3 className="section-title">
+                <FiUser /> Personal Information
+              </h3>
+              <div className="detail-grid">
+                <div className="detail-item">
+                  <div className="detail-label">Full Name</div>
+                  <div className="detail-value">{selectedUser.name || 'Not provided'}</div>
+                </div>
+                
+                <div className="detail-item">
+                  <div className="detail-label">System Role</div>
+                  <div className="detail-value">{getRoleLabel(selectedUser.role)}</div>
+                </div>
+                
+                <div className="detail-item">
+                  <div className="detail-label">Date of Birth</div>
+                  <div className="detail-value">
+                    {selectedUser.dob ? new Date(selectedUser.dob).toLocaleDateString() : 'Not provided'}
+                  </div>
+                </div>
+                
+                <div className="detail-item">
+                  <div className="detail-label">Email Address</div>
+                  <div className="detail-value">{selectedUser.email || 'Not provided'}</div>
+                </div>
+                
+                <div className="detail-item">
+                  <div className="detail-label">Phone Number</div>
+                  <div className="detail-value">{formatPhoneNumber(selectedUser.phone)}</div>
+                </div>
+                
+                <div className="detail-item">
+                  <div className="detail-label">Address</div>
+                  <div className="detail-value">{selectedUser.address || 'Not provided'}</div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Add more sections as needed */}
+          </div>
+          
+          <div className="modal-footer">
+            <button className="btn btn-outlined" onClick={handleCloseUser}>
+              Close
+            </button>
+            <button className="btn btn-contained" onClick={() => handleEdit(selectedUser)}>
+              <FiEdit size={14} /> Edit Profile
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Edit Employee Modal
+  const EditEmployeeModal = () => {
+    if (!editingUser) return null;
+
+    return (
+      <div className="modal-overlay" onClick={handleCancelEdit}>
+        <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '900px' }}>
+          <div className="modal-header">
+            <div className="modal-header-content">
+              <h2 className="modal-title">Edit Employee</h2>
+              <div className="modal-subtitle">{editingUser.name}</div>
+            </div>
+            <button className="modal-close" onClick={handleCancelEdit}>
+              <FiX size={20} />
+            </button>
+          </div>
+          
+          <div className="modal-content">
+            <form onSubmit={(e) => { e.preventDefault(); handleSaveEdit(); }}>
+              <div className="form-grid">
+                {/* Core Information */}
+                <div className="form-group">
+                  <label className="form-label">Full Name *</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={editFormData.name || ''}
+                    onChange={(e) => handleInputChange('name', e.target.value)}
+                    required
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label className="form-label">Email Address *</label>
+                  <input
+                    type="email"
+                    className="form-input"
+                    value={editFormData.email || ''}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    required
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label className="form-label">Phone Number</label>
+                  <input
+                    type="tel"
+                    className="form-input"
+                    value={editFormData.phone || ''}
+                    onChange={(e) => handleInputChange('phone', e.target.value)}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label className="form-label">System Role *</label>
+                  <select
+                    className="form-select"
+                    value={editFormData.role || 'user'}
+                    onChange={(e) => handleInputChange('role', e.target.value)}
+                    required
+                  >
+                    {roleOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className="form-group">
+                  <label className="form-label">Date of Birth</label>
+                  <input
+                    type="date"
+                    className="form-input"
+                    value={editFormData.dob ? new Date(editFormData.dob).toISOString().split('T')[0] : ''}
+                    onChange={(e) => handleInputChange('dob', e.target.value)}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label className="form-label">Gender</label>
+                  <select
+                    className="form-select"
+                    value={editFormData.gender || ''}
+                    onChange={(e) => handleInputChange('gender', e.target.value)}
+                  >
+                    <option value="">Select Gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                
+                {/* Address */}
+                <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                  <label className="form-label">Address</label>
+                  <textarea
+                    className="form-input form-textarea"
+                    value={editFormData.address || ''}
+                    onChange={(e) => handleInputChange('address', e.target.value)}
+                    rows="3"
+                  />
+                </div>
+                
+                {/* Job Information */}
+                <div className="form-group">
+                  <label className="form-label">Employee Type</label>
+                  <select
+                    className="form-select"
+                    value={editFormData.employeeType || ''}
+                    onChange={(e) => handleInputChange('employeeType', e.target.value)}
+                  >
+                    <option value="">Select Type</option>
+                    <option value="intern">Intern</option>
+                    <option value="technical">Technical</option>
+                    <option value="non-technical">Non-technical</option>
+                    <option value="sales">Sales</option>
+                  </select>
+                </div>
+                
+                <div className="form-group">
+                  <label className="form-label">Job Role</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={editFormData.jobRole || ''}
+                    onChange={(e) => handleInputChange('jobRole', e.target.value)}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label className="form-label">Salary</label>
+                  <input
+                    type="number"
+                    className="form-input"
+                    value={editFormData.salary || ''}
+                    onChange={(e) => handleInputChange('salary', e.target.value)}
+                  />
+                </div>
+                
+                {/* Bank Details */}
+                <div className="form-group">
+                  <label className="form-label">Bank Name</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={editFormData.bankName || ''}
+                    onChange={(e) => handleInputChange('bankName', e.target.value)}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label className="form-label">Account Number</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={editFormData.accountNumber || ''}
+                    onChange={(e) => handleInputChange('accountNumber', e.target.value)}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label className="form-label">IFSC Code</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={editFormData.ifsc || ''}
+                    onChange={(e) => handleInputChange('ifsc', e.target.value)}
+                  />
+                </div>
+                
+                {/* Family Details */}
+                <div className="form-group">
+                  <label className="form-label">Father's Name</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={editFormData.fatherName || ''}
+                    onChange={(e) => handleInputChange('fatherName', e.target.value)}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label className="form-label">Mother's Name</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={editFormData.motherName || ''}
+                    onChange={(e) => handleInputChange('motherName', e.target.value)}
+                  />
+                </div>
+                
+                {/* Emergency Contact */}
+                <div className="form-group">
+                  <label className="form-label">Emergency Contact Name</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={editFormData.emergencyName || ''}
+                    onChange={(e) => handleInputChange('emergencyName', e.target.value)}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label className="form-label">Emergency Phone</label>
+                  <input
+                    type="tel"
+                    className="form-input"
+                    value={editFormData.emergencyPhone || ''}
+                    onChange={(e) => handleInputChange('emergencyPhone', e.target.value)}
+                  />
+                </div>
+                
+                {/* Status */}
+                <div className="form-group">
+                  <label className="form-label">Account Status</label>
+                  <select
+                    className="form-select"
+                    value={editFormData.isActive ? 'active' : 'inactive'}
+                    onChange={(e) => handleInputChange('isActive', e.target.value === 'active')}
+                  >
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+                
+                {/* Additional Details */}
+                <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                  <label className="form-label">Additional Details</label>
+                  <textarea
+                    className="form-input form-textarea"
+                    value={editFormData.additionalDetails || ''}
+                    onChange={(e) => handleInputChange('additionalDetails', e.target.value)}
+                    rows="4"
+                  />
+                </div>
+              </div>
+            </form>
+          </div>
+          
+          <div className="modal-footer">
+            <button 
+              className="btn btn-outlined"
+              onClick={handleCancelEdit}
+              disabled={saving}
+            >
+              <FiX size={14} /> Cancel
+            </button>
+            <button 
+              className="btn btn-contained"
+              onClick={handleSaveEdit}
+              disabled={saving}
+            >
+              {saving ? (
+                <>
+                  <div className="spinner" style={{ width: '16px', height: '16px', marginRight: '8px' }} />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <FiSave size={14} /> Save Changes
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Delete Confirmation Modal
+  const DeleteConfirmationModal = () => {
+    if (!deleteConfirmOpen) return null;
+
+    return (
+      <div className="modal-overlay" onClick={() => !deleting && setDeleteConfirmOpen(false)}>
+        <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+          <div className="modal-header">
+            <div className="modal-header-content">
+              <h2 className="modal-title" style={{ color: '#d32f2f' }}>
+                <FiAlertTriangle style={{ marginRight: '8px' }} />
+                Confirm Delete
+              </h2>
+            </div>
+            {!deleting && (
+              <button className="modal-close" onClick={() => setDeleteConfirmOpen(false)}>
+                <FiX size={20} />
+              </button>
+            )}
+          </div>
+          
+          <div className="modal-content">
+            <p>
+              Are you sure you want to delete <strong>{userToDelete?.name}</strong>? 
+              This action cannot be undone and all associated data will be permanently removed.
+            </p>
+          </div>
+          
+          <div className="modal-footer">
+            <button 
+              className="btn btn-outlined"
+              onClick={() => setDeleteConfirmOpen(false)}
+              disabled={deleting}
+            >
+              Cancel
+            </button>
+            <button 
+              className="btn btn-error"
+              onClick={handleDeleteConfirm}
+              disabled={deleting}
+            >
+              {deleting ? (
+                <>
+                  <div className="spinner" style={{ width: '16px', height: '16px', marginRight: '8px' }} />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <FiTrash2 size={14} /> Delete Employee
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Context Menu
+  const ContextMenu = () => {
+    if (!menuAnchorEl || !selectedMenuUser) return null;
+
+    return (
+      <>
+        <div 
+          className="modal-overlay"
+          style={{ background: 'transparent', zIndex: 1099 }}
+          onClick={handleMenuClose}
+        />
+        <div 
+          className="context-menu"
+          style={{
+            position: 'fixed',
+            top: menuAnchorEl.top + 'px',
+            left: menuAnchorEl.left + 'px'
+          }}
+        >
+          <button className="menu-item" onClick={() => handleEdit(selectedMenuUser)}>
+            <FiEdit size={16} color="#1976d2" />
+            <span className="menu-item-text">Edit Employee</span>
+          </button>
+          <button className="menu-item" onClick={() => handleOpenUser(selectedMenuUser)}>
+            <FiEye size={16} color="#0288d1" />
+            <span className="menu-item-text">View Details</span>
+          </button>
+          <button className="menu-item" onClick={() => handleDeleteClick(selectedMenuUser)} style={{ color: '#d32f2f' }}>
+            <FiTrash2 size={16} color="#d32f2f" />
+            <span className="menu-item-text">Delete Employee</span>
+          </button>
+        </div>
+      </>
+    );
+  };
+
+  // Snackbar
+  const SnackbarAlert = () => {
+    if (!snackbar.open) return null;
+
+    return (
+      <div className="snackbar">
+        <div className={`alert alert-${snackbar.severity}`}>
+          {snackbar.severity === 'success' ? (
+            <FiCheckCircle size={20} />
+          ) : (
+            <FiAlertTriangle size={20} />
+          )}
+          <span>{snackbar.message}</span>
+          <button 
+            className="alert-close"
+            onClick={() => setSnackbar({ ...snackbar, open: false })}
+          >
+            <FiX size={16} />
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  // Loading State
   if (loading) {
     return (
-      <Box className="loading-container">
-        <CircularProgress size={40} />
-        <Typography variant="body1" color="text.secondary">
-          Loading employee directory...
-        </Typography>
-      </Box>
+      <div className="loading-container">
+        <div className="spinner"></div>
+        <p>Loading employee directory...</p>
+      </div>
     );
   }
 
   return (
-    <Fade in={!loading} timeout={600}>
-      <Box className="employee-directory-wrapper">
-        <Container 
-          maxWidth="xl" 
-          className={`employee-directory-container responsive-grid-container ${isScrolled ? 'scrolled' : ''}`}
-        >
-          {/* Enhanced Header Section */}
-          <Box className="enhanced-header">
-            <Stack spacing={3}>
-              <Box>
-                <Typography 
-                  variant={isMobile ? "h4" : "h3"} 
-                  fontWeight={800}
-                  gutterBottom
-                  className="gradient-text-primary"
-                >
-                  Employee Directory
-                </Typography>
-                <Typography variant={isMobile ? "body1" : "h6"} color="text.secondary" sx={{ mt: 1 }}>
-                  Find and connect with your colleagues across the organization
-                </Typography>
-              </Box>
-
-              {/* Mobile Stats */}
-              {isMobile && <MobileStats stats={stats} />}
-
-              {/* Action Bar */}
-              <Stack 
-                direction={{ xs: 'column', sm: 'row' }} 
-                spacing={2} 
-                alignItems={{ xs: 'stretch', sm: 'center' }}
-                justifyContent="space-between"
-              >
-                <Stack direction="row" spacing={1} alignItems="center" sx={{ width: { xs: '100%', sm: 'auto' } }}>
-                  <Chip
-                    icon={<FiUsers />}
-                    label={`${stats.total} Employees`}
-                    variant="outlined"
-                    sx={{ 
-                      fontWeight: 600,
-                      background: alpha(theme.palette.primary.main, 0.1),
-                    }}
-                  />
-                  
-                  {!isMobile && (
-                    <Stack direction="row" spacing={0.5}>
-                      <IconButton
-                        size="small"
-                        onClick={() => setViewMode('grid')}
-                        color={viewMode === 'grid' ? 'primary' : 'default'}
-                      >
-                        <FiGrid />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => setViewMode('list')}
-                        color={viewMode === 'list' ? 'primary' : 'default'}
-                      >
-                        <FiList />
-                      </IconButton>
-                    </Stack>
-                  )}
-                </Stack>
-                
-                {isMobile && (
-                  <Stack direction="row" spacing={1}>
-                    <Button
-                      variant="outlined"
-                      startIcon={<FiFilter />}
-                      onClick={() => setMobileFilterOpen(true)}
-                      fullWidth
-                    >
-                      Filters
-                    </Button>
-                    <IconButton
-                      onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
-                      color="primary"
-                    >
-                      {viewMode === 'grid' ? <FiList /> : <FiGrid />}
-                    </IconButton>
-                  </Stack>
-                )}
-              </Stack>
-
-              {/* Search and Filter Section */}
-              {!isMobile && (
-                <Paper sx={{ 
-                  p: 3, 
-                  borderRadius: theme.shape.borderRadius * 2,
-                  background: theme.palette.background.paper,
-                  boxShadow: theme.shadows[1],
-                }}>
-                  <Stack spacing={3}>
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                      <FiFilter size={20} color={theme.palette.primary.main} />
-                      <Typography variant="h6" fontWeight={600}>
-                        Search & Filter
-                      </Typography>
-                    </Stack>
-                    
-                    <Stack 
-                      direction={{ xs: 'column', sm: 'row' }} 
-                      spacing={2} 
-                      alignItems={{ xs: 'stretch', sm: 'center' }}
-                    >
-                      <TextField
-                        placeholder="Search employees by name, email, role, or job role..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="search-field"
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <FiSearch color={theme.palette.text.secondary} />
-                            </InputAdornment>
-                          ),
-                          endAdornment: searchTerm && (
-                            <IconButton 
-                              size="small" 
-                              onClick={() => setSearchTerm('')}
-                              sx={{ mr: -0.5 }}
-                            >
-                              <FiX size={16} />
-                            </IconButton>
-                          ),
-                        }}
-                        sx={{ flex: 1 }}
-                      />
-                      
-                      <RoleFilter
-                        selected={selectedRole}
-                        onChange={setSelectedRole}
-                        stats={stats}
-                      />
-                    </Stack>
-                  </Stack>
-                </Paper>
-              )}
-            </Stack>
-          </Box>
-
-          {/* Enhanced Statistics Cards - Hidden on mobile */}
-          {!isMobile && (
-            <Grid container spacing={3} sx={{ mb: 4 }}>
-              {[
-                { label: 'Total Employees', count: stats.total, color: 'primary', icon: <FiUsers />, trend: '+5%' },
-                { label: 'Technical Team', count: stats.technical, color: 'success', icon: <FiBriefcase />, trend: '+12%' },
-                { label: 'Non-Technical', count: stats.nonTechnical, color: 'warning', icon: <FiClock />, trend: '+3%' },
-                { label: 'Sales Team', count: stats.sales, color: 'info', icon: <FiTrendingUp />, trend: '+8%' },
-                { label: 'Interns', count: stats.intern, color: 'secondary', icon: <FiAward />, trend: '+15%' },
-              ].map((stat, index) => (
-                <Grid item xs={12} sm={6} md={2.4} key={stat.label}>
-                  <Card className={getStatCardClass(stat.color)}>
-                    <CardContent sx={{ p: 3 }}>
-                      <Stack spacing={2}>
-                        <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                          <Avatar
-                            sx={{
-                              bgcolor: alpha(theme.palette[stat.color].main, 0.1),
-                              color: theme.palette[stat.color].main,
-                              width: 48,
-                              height: 48,
-                            }}
-                          >
-                            {stat.icon}
-                          </Avatar>
-                          <Chip 
-                            label={stat.trend} 
-                            size="small"
-                            className={`trend-chip trend-chip-${stat.color}`}
-                          />
-                        </Stack>
-                        <Box>
-                          <Typography variant="body2" color="text.secondary" fontSize="0.8rem" fontWeight={600}>
-                            {stat.label}
-                          </Typography>
-                          <Typography variant="h3" fontWeight={800} lineHeight={1} sx={{ mt: 0.5 }}>
-                            {stat.count}
-                          </Typography>
-                        </Box>
-                      </Stack>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
-          )}
-
-          {/* Results Header */}
-          <Stack 
-            direction={{ xs: 'column', sm: 'row' }} 
-            justifyContent="space-between" 
-            alignItems={{ xs: 'flex-start', sm: 'center' }}
-            spacing={2}
-            sx={{ mb: 3 }}
-          >
-            <Box>
-              <Typography variant={isMobile ? "h5" : "h4"} fontWeight={800} gutterBottom className="gradient-text-dark">
-                Team Members
-              </Typography>
-              <Typography variant="body1" color="text.secondary">
-                {filteredEmployees.length} employee{filteredEmployees.length !== 1 ? 's' : ''} found
-                {selectedRole !== 'all' && ` • Filtered by ${getRoleLabel(selectedRole)}`}
-                {searchTerm && ` • Matching "${searchTerm}"`}
-              </Typography>
-            </Box>
+    <div className="employee-directory">
+      {/* Header */}
+      <div className="employee-directory-header">
+        <h1 className="employee-directory-title">Employee Directory</h1>
+        <p className="employee-directory-subtitle">
+          Find and connect with your colleagues across the organization
+        </p>
+        
+        {/* Mobile Stats */}
+        {isMobile && <MobileStats stats={stats} />}
+        
+        {/* Action Bar */}
+        <div className="action-bar" style={{ marginTop: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="total-count" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ 
+              padding: '6px 12px', 
+              border: '1px solid #1976d2', 
+              borderRadius: '16px',
+              backgroundColor: 'rgba(25, 118, 210, 0.1)',
+              fontWeight: '600',
+              fontSize: '0.875rem'
+            }}>
+              {stats.total} Employees
+            </span>
             
             {!isMobile && (
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Tabs 
-                  value={activeTab} 
-                  onChange={(e, newValue) => setActiveTab(newValue)}
-                  className="enhanced-tabs"
+              <div className="view-toggle" style={{ display: 'flex', gap: '4px' }}>
+                <button 
+                  className={viewMode === 'grid' ? 'btn btn-contained' : 'btn btn-outlined'}
+                  onClick={() => setViewMode('grid')}
+                  style={{ padding: '6px 12px', fontSize: '0.875rem' }}
                 >
-                  <Tab label="All" />
-                  <Tab label="Active" />
-                  <Tab label="New" />
-                </Tabs>
-              </Stack>
+                  <FiGrid size={14} />
+                </button>
+                <button 
+                  className={viewMode === 'list' ? 'btn btn-contained' : 'btn btn-outlined'}
+                  onClick={() => setViewMode('list')}
+                  style={{ padding: '6px 12px', fontSize: '0.875rem' }}
+                >
+                  <FiList size={14} />
+                </button>
+              </div>
             )}
-          </Stack>
-
-          {/* Mobile Search Bar */}
+          </div>
+          
           {isMobile && (
-            <Paper sx={{ p: 2, mb: 3, borderRadius: 3 }}>
-              <TextField
-                placeholder="Search employees..."
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button 
+                className="btn btn-outlined"
+                onClick={() => setMobileFilterOpen(true)}
+                style={{ padding: '8px 16px' }}
+              >
+                <FiFilter size={16} /> Filters
+              </button>
+              <button 
+                className="btn btn-contained"
+                onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+                style={{ padding: '8px 16px' }}
+              >
+                {viewMode === 'grid' ? <FiList size={16} /> : <FiGrid size={16} />}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Search and Filter Section */}
+      {!isMobile && (
+        <div className="search-filter-container">
+          <div className="search-filter-header">
+            <FiFilter size={20} color="#1976d2" />
+            <h3>Search & Filter</h3>
+          </div>
+          
+          <div className="search-row">
+            <div className="search-input-container">
+              <FiSearch className="search-icon" />
+              <input
+                type="text"
+                className="search-input"
+                placeholder="Search employees by name, email, role, or job role..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                fullWidth
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <FiSearch color={theme.palette.text.secondary} />
-                    </InputAdornment>
-                  ),
-                  endAdornment: searchTerm && (
-                    <IconButton 
-                      size="small" 
-                      onClick={() => setSearchTerm('')}
-                    >
-                      <FiX size={16} />
-                    </IconButton>
-                  ),
-                }}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                  }
-                }}
               />
-            </Paper>
-          )}
-
-          {/* Enhanced Employees Grid/List */}
-          {filteredEmployees.length === 0 ? (
-            <Paper className="empty-state-paper">
-              <Box sx={{ mb: 3 }}>
-                <FiUsers size={isMobile ? 48 : 64} color={alpha(theme.palette.text.secondary, 0.5)} />
-              </Box>
-              <Typography variant={isMobile ? "h6" : "h5"} fontWeight={700} color="text.secondary" gutterBottom>
-                No Employees Found
-              </Typography>
-              <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 400, mx: 'auto' }}>
-                {searchTerm || selectedRole !== 'all' 
-                  ? 'Try adjusting your search criteria or filters to find what you\'re looking for.' 
-                  : 'The employee directory is currently empty. Add your first team member to get started.'
-                }
-              </Typography>
-            </Paper>
-          ) : viewMode === 'grid' ? (
-            <Grid container spacing={isMobile ? 2 : 3}>
-              {filteredEmployees.map((emp) => (
-                <Grid item xs={12} sm={6} md={4} lg={3} key={emp._id}>
-                  <Slide direction="up" in timeout={500}>
-                    <EmployeeCard emp={emp} />
-                  </Slide>
-                </Grid>
-              ))}
-            </Grid>
-          ) : (
-            <Box>
-              {filteredEmployees.map((emp) => (
-                <Slide direction="up" in timeout={500} key={emp._id}>
-                  <EmployeeListItem emp={emp} />
-                </Slide>
-              ))}
-            </Box>
-          )}
-
-          {/* Mobile Filter Drawer */}
-          <Drawer
-            anchor="right"
-            open={mobileFilterOpen}
-            onClose={() => setMobileFilterOpen(false)}
-            PaperProps={{
-              sx: {
-                width: 280,
-                borderRadius: '20px 0 0 20px',
-              }
-            }}
-          >
-            <Box sx={{ p: 2 }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-                <Typography variant="h6" fontWeight={700}>
-                  Filters
-                </Typography>
-                <IconButton onClick={() => setMobileFilterOpen(false)}>
-                  <FiX />
-                </IconButton>
-              </Stack>
-              <Divider sx={{ mb: 2 }} />
-              <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 2, px: 1 }}>
-                Filter by Role
-              </Typography>
-              <RoleFilter
-                selected={selectedRole}
-                onChange={setSelectedRole}
-                stats={stats}
-                variant="mobile"
-              />
-            </Box>
-          </Drawer>
-
-          {/* Floating Action Button for Mobile */}
-          {isMobile && (
-            <Fab
-              color="primary"
-              className="mobile-fab"
-              onClick={() => setMobileFilterOpen(true)}
-            >
-              <FiFilter />
-            </Fab>
-          )}
-
-          {/* Rest of the dialogs and menus remain the same */}
-          {/* User Detail Dialog */}
-          <Dialog 
-            open={Boolean(selectedUser)} 
-            onClose={handleCloseUser} 
-            maxWidth="md" 
-            fullWidth
-            fullScreen={isMobile}
-            scroll="paper"
-            PaperProps={{
-              className: "dialog-paper-enhanced"
-            }}
-          >
-            {selectedUser && (
-              <>
-                <DialogTitle sx={{ pb: 2 }}>
-                  <Stack 
-                  direction="row" 
-                  justifyContent="space-between" 
-                  alignItems="flex-start"
-                  >
-                  <Box sx={{ pr: 2 }}>
-                    <Typography variant={isMobile ? "h5" : "h4"} fontWeight={800} gutterBottom>
-                      {selectedUser.name}
-                    </Typography>
-                    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" gap={1}>
-                      <Chip 
-                        label={selectedUser.jobRole || 'No role specified'} 
-                        color="primary"
-                        size="small"
-                        sx={{ fontWeight: 600 }}
-                      />
-                      <Chip
-                        label={selectedUser.employeeType?.toUpperCase() || 'N/A'}
-                        className={getEmployeeTypeClass(selectedUser.employeeType)}
-                        size="small"
-                      />
-                      <Chip
-                        label={getRoleLabel(selectedUser.role)}
-                        className={getRoleClass(selectedUser.role)}
-                        size="small"
-                      />
-                    </Stack>
-                  </Box>
-                  <Stack direction="row" spacing={1}>
-                    <Tooltip title="Edit Employee">
-                      <IconButton 
-                        onClick={() => handleEdit(selectedUser)}
-                        sx={{
-                          background: alpha(theme.palette.primary.main, 0.1),
-                          '&:hover': {
-                            background: alpha(theme.palette.primary.main, 0.2),
-                          }
-                        }}
-                      >
-                        <FiEdit />
-                      </IconButton>
-                    </Tooltip>
-                    <IconButton 
-                      onClick={handleCloseUser}
-                      sx={{
-                        background: alpha(theme.palette.error.main, 0.1),
-                        '&:hover': {
-                          background: alpha(theme.palette.error.main, 0.2),
-                        }
-                      }}
-                    >
-                      <FiX />
-                    </IconButton>
-                  </Stack>
-                  </Stack>
-                </DialogTitle>
-                
-                <DialogContent dividers>
-                  <Stack spacing={3}>
-                    {/* Personal Information */}
-                    <Box>
-                      <Typography variant="h6" fontWeight={600} gutterBottom sx={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: 1 
-                      }}>
-                        <FiUser />
-                        Personal Information
-                      </Typography>
-                      <Grid container spacing={2}>
-                        <Grid item xs={12} md={6}>
-                          <Box className="detail-item">
-                            <FiUser color={theme.palette.primary.main} />
-                            <Box>
-                              <Typography variant="body2" color="text.secondary">
-                                Full Name
-                              </Typography>
-                              <Typography variant="body1" fontWeight={600}>
-                                {selectedUser.name || 'Not provided'}
-                              </Typography>
-                            </Box>
-                          </Box>
-                          
-                          <Box className="detail-item">
-                            <FiShield color={theme.palette.primary.main} />
-                            <Box>
-                              <Typography variant="body2" color="text.secondary">
-                                System Role
-                              </Typography>
-                              <Typography variant="body1" fontWeight={600}>
-                                {getRoleLabel(selectedUser.role)}
-                              </Typography>
-                            </Box>
-                          </Box>
-
-                          <Box className="detail-item">
-                            <FiCalendar color={theme.palette.primary.main} />
-                            <Box>
-                              <Typography variant="body2" color="text.secondary">
-                                Date of Birth
-                              </Typography>
-                              <Typography variant="body1" fontWeight={600}>
-                                {selectedUser.dob ? new Date(selectedUser.dob).toLocaleDateString() : 'Not provided'}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </Grid>
-                        
-                        <Grid item xs={12} md={6}>
-                          <Box className="detail-item">
-                            <FiMail color={theme.palette.primary.main} />
-                            <Box>
-                              <Typography variant="body2" color="text.secondary">
-                                Email Address
-                              </Typography>
-                              <Typography variant="body1" fontWeight={600}>
-                                {selectedUser.email || 'Not provided'}
-                              </Typography>
-                            </Box>
-                          </Box>
-                          
-                          <Box className="detail-item">
-                            <FiPhone color={theme.palette.primary.main} />
-                            <Box>
-                              <Typography variant="body2" color="text.secondary">
-                                Phone Number
-                              </Typography>
-                              <Typography variant="body1" fontWeight={600}>
-                                {formatPhoneNumber(selectedUser.phone)}
-                              </Typography>
-                            </Box>
-                          </Box>
-                          
-                          <Box className="detail-item">
-                            <FiMapPin color={theme.palette.primary.main} />
-                            <Box>
-                              <Typography variant="body2" color="text.secondary">
-                                Address
-                              </Typography>
-                              <Typography variant="body1" fontWeight={600}>
-                                {selectedUser.address || 'Not provided'}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </Grid>
-                      </Grid>
-                    </Box>
-                  </Stack>
-                </DialogContent>
-                
-                <DialogActions sx={{ p: 3, gap: 1 }}>
-                  <Button 
-                    onClick={handleCloseUser}
-                    className="action-button-outlined"
-                  >
-                    Close
-                  </Button>
-                  <Button 
-                    variant="contained"
-                    startIcon={<FiEdit />}
-                    onClick={() => handleEdit(selectedUser)}
-                    className="action-button-contained"
-                  >
-                    Edit Profile
-                  </Button>
-                </DialogActions>
-              </>
-            )}
-          </Dialog>
-
-          {/* Edit Employee Dialog */}
-
-<Dialog 
-  open={Boolean(editingUser)} 
-  onClose={handleCancelEdit} 
-  maxWidth="md" 
-  fullWidth
-  fullScreen={isMobile}
-  scroll="paper"
-  PaperProps={{
-    className: "dialog-paper-enhanced"
-  }}
->
-  {editingUser && (
-    <>
-      <DialogTitle sx={{ pb: 2 }}>
-        <Stack direction="row" alignItems="center" spacing={2}>
-          <Box className="edit-icon-container">
-            <FiEdit size={20} />
-          </Box>
-          <Box>
-            <Typography variant={isMobile ? "h6" : "h5"} fontWeight={800}>
-              Edit Employee
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {editingUser.name}
-            </Typography>
-          </Box>
-        </Stack>
-      </DialogTitle>
-      
-      <DialogContent dividers>
-        <Stack spacing={3}>
-          {/* Core Information */}
-          <Box>
-            <Typography variant="h6" fontWeight={600} gutterBottom sx={{ color: theme.palette.primary.main }}>
-              Core Information
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="Full Name *"
-                  value={editFormData.name || ''}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
-                  fullWidth
-                  margin="normal"
-                  required
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: theme.shape.borderRadius * 2,
-                    }
-                  }}
-                />
-                
-                <TextField
-                  label="Email Address *"
-                  type="email"
-                  value={editFormData.email || ''}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  fullWidth
-                  margin="normal"
-                  required
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: theme.shape.borderRadius * 2,
-                    }
-                  }}
-                />
-                
-                <TextField
-                  label="Phone Number"
-                  value={editFormData.phone || ''}
-                  onChange={(e) => handleInputChange('phone', e.target.value)}
-                  fullWidth
-                  margin="normal"
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: theme.shape.borderRadius * 2,
-                    }
-                  }}
-                />
-              </Grid>
-              
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="System Role *"
-                  value={editFormData.role || 'user'}
-                  onChange={(e) => handleInputChange('role', e.target.value)}
-                  fullWidth
-                  margin="normal"
-                  select
-                  required
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: theme.shape.borderRadius * 2,
-                    }
-                  }}
-                >
-                  {roleOptions.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
-                      {option.label}
-                    </MenuItem>
-                  ))}
-                </TextField>
-                
-                <TextField
-                  label="Date of Birth"
-                  type="date"
-                  value={editFormData.dob ? new Date(editFormData.dob).toISOString().split('T')[0] : ''}
-                  onChange={(e) => handleInputChange('dob', e.target.value)}
-                  fullWidth
-                  margin="normal"
-                  InputLabelProps={{ shrink: true }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: theme.shape.borderRadius * 2,
-                    }
-                  }}
-                />
-                
-                <TextField
-                  label="Gender"
-                  value={editFormData.gender || ''}
-                  onChange={(e) => handleInputChange('gender', e.target.value)}
-                  fullWidth
-                  margin="normal"
-                  select
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: theme.shape.borderRadius * 2,
-                    }
-                  }}
-                >
-                  <MenuItem value="male">Male</MenuItem>
-                  <MenuItem value="female">Female</MenuItem>
-                  <MenuItem value="other">Other</MenuItem>
-                </TextField>
-              </Grid>
-            </Grid>
-          </Box>
-
-          <Divider />
-
-          {/* Address & Personal Details */}
-          <Box>
-            <Typography variant="h6" fontWeight={600} gutterBottom sx={{ color: theme.palette.primary.main }}>
-              Address & Personal Details
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <TextField
-                  label="Address"
-                  multiline
-                  rows={3}
-                  value={editFormData.address || ''}
-                  onChange={(e) => handleInputChange('address', e.target.value)}
-                  fullWidth
-                  margin="normal"
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: theme.shape.borderRadius * 2,
-                    }
-                  }}
-                />
-              </Grid>
-              
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="Marital Status"
-                  value={editFormData.maritalStatus || ''}
-                  onChange={(e) => handleInputChange('maritalStatus', e.target.value)}
-                  fullWidth
-                  margin="normal"
-                  select
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: theme.shape.borderRadius * 2,
-                    }
-                  }}
-                >
-                  <MenuItem value="single">Single</MenuItem>
-                  <MenuItem value="married">Married</MenuItem>
-                  <MenuItem value="divorced">Divorced</MenuItem>
-                  <MenuItem value="widowed">Widowed</MenuItem>
-                </TextField>
-              </Grid>
-              
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="Salary"
-                  value={editFormData.salary || ''}
-                  onChange={(e) => handleInputChange('salary', e.target.value)}
-                  fullWidth
-                  margin="normal"
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: theme.shape.borderRadius * 2,
-                    }
-                  }}
-                />
-              </Grid>
-            </Grid>
-          </Box>
-
-          <Divider />
-
-          {/* Job Information */}
-          <Box>
-            <Typography variant="h6" fontWeight={600} gutterBottom sx={{ color: theme.palette.primary.main }}>
-              Job Information
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="Employee Type"
-                  value={editFormData.employeeType || ''}
-                  onChange={(e) => handleInputChange('employeeType', e.target.value)}
-                  fullWidth
-                  margin="normal"
-                  select
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: theme.shape.borderRadius * 2,
-                    }
-                  }}
-                >
-                  <MenuItem value="intern">Intern</MenuItem>
-                  <MenuItem value="technical">Technical</MenuItem>
-                  <MenuItem value="non-technical">Non-technical</MenuItem>
-                  <MenuItem value="sales">Sales</MenuItem>
-                </TextField>
-                
-                <TextField
-                  label="Job Role"
-                  value={editFormData.jobRole || ''}
-                  onChange={(e) => handleInputChange('jobRole', e.target.value)}
-                  fullWidth
-                  margin="normal"
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: theme.shape.borderRadius * 2,
-                    }
-                  }}
-                />
-              </Grid>
-              
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="Properties"
-                  value={editFormData.properties ? editFormData.properties.join(', ') : ''}
-                  onChange={(e) => handleInputChange('properties', e.target.value.split(',').map(item => item.trim()))}
-                  fullWidth
-                  margin="normal"
-                  helperText="Enter comma separated values: sim, phone, laptop, desktop, headphones"
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: theme.shape.borderRadius * 2,
-                    }
-                  }}
-                />
-                
-                <TextField
-                  label="Property Owned"
-                  value={editFormData.propertyOwned || ''}
-                  onChange={(e) => handleInputChange('propertyOwned', e.target.value)}
-                  fullWidth
-                  margin="normal"
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: theme.shape.borderRadius * 2,
-                    }
-                  }}
-                />
-              </Grid>
-            </Grid>
-          </Box>
-
-          <Divider />
-
-          {/* Bank Details */}
-          <Box>
-            <Typography variant="h6" fontWeight={600} gutterBottom sx={{ color: theme.palette.primary.main }}>
-              Bank Details
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="Account Number"
-                  value={editFormData.accountNumber || ''}
-                  onChange={(e) => handleInputChange('accountNumber', e.target.value)}
-                  fullWidth
-                  margin="normal"
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: theme.shape.borderRadius * 2,
-                    }
-                  }}
-                />
-                
-                <TextField
-                  label="Bank Name"
-                  value={editFormData.bankName || ''}
-                  onChange={(e) => handleInputChange('bankName', e.target.value)}
-                  fullWidth
-                  margin="normal"
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: theme.shape.borderRadius * 2,
-                    }
-                  }}
-                />
-              </Grid>
-              
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="IFSC Code"
-                  value={editFormData.ifsc || ''}
-                  onChange={(e) => handleInputChange('ifsc', e.target.value)}
-                  fullWidth
-                  margin="normal"
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: theme.shape.borderRadius * 2,
-                    }
-                  }}
-                />
-                
-                <TextField
-                  label="Account Holder Name"
-                  value={editFormData.bankHolderName || ''}
-                  onChange={(e) => handleInputChange('bankHolderName', e.target.value)}
-                  fullWidth
-                  margin="normal"
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: theme.shape.borderRadius * 2,
-                    }
-                  }}
-                />
-              </Grid>
-            </Grid>
-          </Box>
-
-          <Divider />
-
-          {/* Family Details */}
-          <Box>
-            <Typography variant="h6" fontWeight={600} gutterBottom sx={{ color: theme.palette.primary.main }}>
-              Family Details
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="Father's Name"
-                  value={editFormData.fatherName || ''}
-                  onChange={(e) => handleInputChange('fatherName', e.target.value)}
-                  fullWidth
-                  margin="normal"
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: theme.shape.borderRadius * 2,
-                    }
-                  }}
-                />
-              </Grid>
-              
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="Mother's Name"
-                  value={editFormData.motherName || ''}
-                  onChange={(e) => handleInputChange('motherName', e.target.value)}
-                  fullWidth
-                  margin="normal"
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: theme.shape.borderRadius * 2,
-                    }
-                  }}
-                />
-              </Grid>
-            </Grid>
-          </Box>
-
-          <Divider />
-
-          {/* Emergency Contact */}
-          <Box>
-            <Typography variant="h6" fontWeight={600} gutterBottom sx={{ color: theme.palette.primary.main }}>
-              Emergency Contact
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="Emergency Contact Name"
-                  value={editFormData.emergencyName || ''}
-                  onChange={(e) => handleInputChange('emergencyName', e.target.value)}
-                  fullWidth
-                  margin="normal"
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: theme.shape.borderRadius * 2,
-                    }
-                  }}
-                />
-                
-                <TextField
-                  label="Emergency Phone"
-                  value={editFormData.emergencyPhone || ''}
-                  onChange={(e) => handleInputChange('emergencyPhone', e.target.value)}
-                  fullWidth
-                  margin="normal"
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: theme.shape.borderRadius * 2,
-                    }
-                  }}
-                />
-              </Grid>
-              
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="Emergency Relation"
-                  value={editFormData.emergencyRelation || ''}
-                  onChange={(e) => handleInputChange('emergencyRelation', e.target.value)}
-                  fullWidth
-                  margin="normal"
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: theme.shape.borderRadius * 2,
-                    }
-                  }}
-                />
-                
-                <TextField
-                  label="Emergency Address"
-                  multiline
-                  rows={2}
-                  value={editFormData.emergencyAddress || ''}
-                  onChange={(e) => handleInputChange('emergencyAddress', e.target.value)}
-                  fullWidth
-                  margin="normal"
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: theme.shape.borderRadius * 2,
-                    }
-                  }}
-                />
-              </Grid>
-            </Grid>
-          </Box>
-
-          <Divider />
-
-          {/* Additional Information */}
-          <Box>
-            <Typography variant="h6" fontWeight={600} gutterBottom sx={{ color: theme.palette.primary.main }}>
-              Additional Information
-            </Typography>
-            <TextField
-              label="Additional Details"
-              multiline
-              rows={3}
-              value={editFormData.additionalDetails || ''}
-              onChange={(e) => handleInputChange('additionalDetails', e.target.value)}
-              fullWidth
-              margin="normal"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: theme.shape.borderRadius * 2,
-                }
-              }}
+              {searchTerm && (
+                <button className="clear-search" onClick={() => setSearchTerm('')}>
+                  <FiX size={16} />
+                </button>
+              )}
+            </div>
+            
+            <RoleFilter
+              selected={selectedRole}
+              onChange={setSelectedRole}
+              stats={stats}
             />
-          </Box>
+          </div>
+        </div>
+      )}
 
-          <Divider />
+      {/* Statistics Cards */}
+      {!isMobile && (
+        <div className="stats-container">
+          {[
+            { label: 'Total Employees', count: stats.total, color: 'primary', icon: <FiUsers />, trend: '+5%' },
+            { label: 'Technical Team', count: stats.technical, color: 'success', icon: <FiBriefcase />, trend: '+12%' },
+            { label: 'Non-Technical', count: stats.nonTechnical, color: 'warning', icon: <FiClock />, trend: '+3%' },
+            { label: 'Sales Team', count: stats.sales, color: 'info', icon: <FiTrendingUp />, trend: '+8%' },
+            { label: 'Interns', count: stats.intern, color: 'secondary', icon: <FiAward />, trend: '+15%' },
+          ].map((stat, index) => (
+            <div key={index} className={`stat-card stat-card-${stat.color}`}>
+              <div className="stat-card-header">
+                <div className={`stat-icon stat-icon-${stat.color}`}>
+                  {stat.icon}
+                </div>
+                <span className={`trend-chip trend-chip-${stat.color}`}>
+                  {stat.trend}
+                </span>
+              </div>
+              <div className="stat-value">{stat.count}</div>
+              <div className="stat-label">{stat.label}</div>
+            </div>
+          ))}
+        </div>
+      )}
 
-          {/* Status */}
-          <Box>
-            <Typography variant="h6" fontWeight={600} gutterBottom sx={{ color: theme.palette.primary.main }}>
-              Status
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="Account Status"
-                  value={editFormData.isActive ? 'active' : 'inactive'}
-                  onChange={(e) => handleInputChange('isActive', e.target.value === 'active')}
-                  fullWidth
-                  margin="normal"
-                  select
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: theme.shape.borderRadius * 2,
-                    }
-                  }}
-                >
-                  <MenuItem value="active">Active</MenuItem>
-                  <MenuItem value="inactive">Inactive</MenuItem>
-                </TextField>
-              </Grid>
-            </Grid>
-          </Box>
-        </Stack>
-      </DialogContent>
-      
-      <DialogActions sx={{ p: 3, gap: 1 }}>
-        <Button 
-          onClick={handleCancelEdit}
-          disabled={saving}
-          className="action-button-outlined"
-          startIcon={<FiX />}
-        >
-          Cancel
-        </Button>
-        <Button 
-          variant="contained"
-          startIcon={saving ? <CircularProgress size={16} /> : <FiSave />}
-          onClick={handleSaveEdit}
-          disabled={saving}
-          className="action-button-contained"
-        >
-          {saving ? 'Saving...' : 'Save Changes'}
-        </Button>
-      </DialogActions>
-    </>
-  )}
-</Dialog>
+      {/* Results Header */}
+      <div className="results-header">
+        <div>
+          <h2 className="results-title">Team Members</h2>
+          <p className="results-count">
+            {filteredEmployees.length} employee{filteredEmployees.length !== 1 ? 's' : ''} found
+            {selectedRole !== 'all' && ` • Filtered by ${getRoleLabel(selectedRole)}`}
+            {searchTerm && ` • Matching "${searchTerm}"`}
+          </p>
+        </div>
+        
+        {!isMobile && (
+          <div className="tabs" style={{ display: 'flex', gap: '4px' }}>
+            <button 
+              className={activeTab === 0 ? 'btn btn-contained' : 'btn btn-outlined'}
+              onClick={() => setActiveTab(0)}
+              style={{ padding: '8px 16px' }}
+            >
+              All
+            </button>
+            <button 
+              className={activeTab === 1 ? 'btn btn-contained' : 'btn btn-outlined'}
+              onClick={() => setActiveTab(1)}
+              style={{ padding: '8px 16px' }}
+            >
+              Active
+            </button>
+            <button 
+              className={activeTab === 2 ? 'btn btn-contained' : 'btn btn-outlined'}
+              onClick={() => setActiveTab(2)}
+              style={{ padding: '8px 16px' }}
+            >
+              New
+            </button>
+          </div>
+        )}
+      </div>
 
-          {/* Context Menu */}
-          <Menu
-            anchorEl={menuAnchorEl}
-            open={Boolean(menuAnchorEl)}
-            onClose={handleMenuClose}
-            elevation={3}
-            PaperProps={{
-              sx: {
-                borderRadius: theme.shape.borderRadius * 2,
-                minWidth: 180,
-              }
+      {/* Mobile Search Bar */}
+      {isMobile && (
+        <div className="search-filter-container">
+          <div className="search-input-container">
+            <FiSearch className="search-icon" />
+            <input
+              type="text"
+              className="search-input"
+              placeholder="Search employees..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            {searchTerm && (
+              <button className="clear-search" onClick={() => setSearchTerm('')}>
+                <FiX size={16} />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Employees Grid/List */}
+      {filteredEmployees.length === 0 ? (
+        <div className="empty-state">
+          <div className="empty-state-icon">
+            <FiUsers size={isMobile ? 48 : 64} />
+          </div>
+          <h3 className="empty-state-title">No Employees Found</h3>
+          <p className="empty-state-text">
+            {searchTerm || selectedRole !== 'all' 
+              ? 'Try adjusting your search criteria or filters to find what you\'re looking for.' 
+              : 'The employee directory is currently empty. Add your first team member to get started.'
+            }
+          </p>
+        </div>
+      ) : viewMode === 'grid' ? (
+        <div className="employee-grid">
+          {filteredEmployees.map((emp) => (
+            <EmployeeCard key={emp._id} emp={emp} />
+          ))}
+        </div>
+      ) : (
+        <div className="employee-list">
+          {filteredEmployees.map((emp) => (
+            <EmployeeListItem key={emp._id} emp={emp} />
+          ))}
+        </div>
+      )}
+
+      {/* Mobile Filter Drawer */}
+      {isMobile && mobileFilterOpen && (
+        <div className="modal-overlay" onClick={() => setMobileFilterOpen(false)}>
+          <div 
+            className="modal" 
+            onClick={e => e.stopPropagation()}
+            style={{ 
+              marginLeft: 'auto',
+              maxWidth: '280px',
+              height: '100vh',
+              borderRadius: '20px 0 0 20px'
             }}
           >
-            <MenuItem onClick={() => handleEdit(selectedMenuUser)}>
-              <ListItemIcon>
-                <FiEdit size={18} color={theme.palette.primary.main} />
-              </ListItemIcon>
-              <ListItemText>
-                <Typography fontWeight={600}>Edit Employee</Typography>
-              </ListItemText>
-            </MenuItem>
-            <MenuItem onClick={() => handleOpenUser(selectedMenuUser)}>
-              <ListItemIcon>
-                <FiEye size={18} color={theme.palette.info.main} />
-              </ListItemIcon>
-              <ListItemText>
-                <Typography fontWeight={600}>View Details</Typography>
-              </ListItemText>
-            </MenuItem>
-            <MenuItem 
-              onClick={() => handleDeleteClick(selectedMenuUser)} 
-              sx={{ color: 'error.main' }}
-            >
-              <ListItemIcon>
-                <FiTrash2 size={18} color={theme.palette.error.main} />
-              </ListItemIcon>
-              <ListItemText>
-                <Typography fontWeight={600}>Delete Employee</Typography>
-              </ListItemText>
-            </MenuItem>
-          </Menu>
-
-          {/* Delete Confirmation Dialog */}
-          <Dialog
-            open={deleteConfirmOpen}
-            onClose={() => !deleting && setDeleteConfirmOpen(false)}
-            maxWidth="sm"
-            fullWidth
-            fullScreen={isMobile}
-            PaperProps={{
-              sx: {
-                borderRadius: isMobile ? 0 : theme.shape.borderRadius * 3,
-              }
-            }}
-          >
-            <DialogTitle sx={{ pb: 2 }}>
-              <Stack direction="row" alignItems="center" spacing={2} color="error.main">
-                <Box className="warning-icon-container">
-                  <FiAlertTriangle size={20} />
-                </Box>
-                <Typography variant="h6" fontWeight={800}>
-                  Confirm Delete
-                </Typography>
-              </Stack>
-            </DialogTitle>
-            <DialogContent>
-              <Typography>
-                Are you sure you want to delete <strong>{userToDelete?.name}</strong>? This action cannot be undone and all associated data will be permanently removed.
-              </Typography>
-            </DialogContent>
-            <DialogActions sx={{ p: 3, gap: 1 }}>
-              <Button 
-                onClick={() => setDeleteConfirmOpen(false)}
-                disabled={deleting}
-                className="action-button-outlined"
+            <div className="modal-header">
+              <h2 className="modal-title">Filters</h2>
+              <button className="modal-close" onClick={() => setMobileFilterOpen(false)}>
+                <FiX size={20} />
+              </button>
+            </div>
+            
+            <div className="modal-content">
+              <h3 className="section-title">Filter by Role</h3>
+              <select
+                className="form-select"
+                value={selectedRole}
+                onChange={(e) => {
+                  setSelectedRole(e.target.value);
+                  setMobileFilterOpen(false);
+                }}
               >
-                Cancel
-              </Button>
-              <Button 
-                variant="contained" 
-                color="error"
-                startIcon={deleting ? <CircularProgress size={16} /> : <FiTrash2 />}
-                onClick={handleDeleteConfirm}
-                disabled={deleting}
-                className="action-button-error"
-              >
-                {deleting ? 'Deleting...' : 'Delete Employee'}
-              </Button>
-            </DialogActions>
-          </Dialog>
+                <option value="all">All Roles</option>
+                <option value="admin">Admin ({stats.admin})</option>
+                <option value="manager">Manager ({stats.manager})</option>
+                <option value="hr">HR ({stats.hr})</option>
+                <option value="user">User ({stats.user})</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
 
-          {/* Enhanced Snackbar */}
-          <Snackbar
-            open={snackbar.open}
-            autoHideDuration={6000}
-            onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
-            anchorOrigin={{ vertical: isMobile ? 'top' : 'bottom', horizontal: 'right' }}
-          >
-            <Alert 
-              severity={snackbar.severity}
-              onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
-              className="snackbar-alert"
-              iconMapping={{
-                success: <FiCheckCircle />,
-                error: <FiAlertTriangle />,
-                warning: <FiAlertTriangle />,
-                info: <FiInfo />,
-              }}
-            >
-              {snackbar.message}
-            </Alert>
-          </Snackbar>
-        </Container>
-      </Box>
-    </Fade>
+      {/* Floating Action Button for Mobile */}
+      {isMobile && !mobileFilterOpen && (
+        <button 
+          className="btn btn-contained"
+          onClick={() => setMobileFilterOpen(true)}
+          style={{
+            position: 'fixed',
+            bottom: '24px',
+            right: '24px',
+            width: '56px',
+            height: '56px',
+            borderRadius: '50%',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+            zIndex: 100
+          }}
+        >
+          <FiFilter size={20} />
+        </button>
+      )}
+
+      {/* Modals */}
+      <UserDetailModal />
+      <EditEmployeeModal />
+      <DeleteConfirmationModal />
+      <ContextMenu />
+      <SnackbarAlert />
+    </div>
   );
 };
 

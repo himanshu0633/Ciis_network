@@ -865,10 +865,7 @@
 /* Modal/Dialog Styles */
 .emp-all-task-modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
   display: flex;
@@ -878,16 +875,21 @@
   padding: 1rem;
 }
 
+
 .emp-all-task-modal {
-  background: white;
+  background: #ffffff;
   border-radius: 1rem;
   width: 100%;
-  max-width: 700px;
-  max-height: 75vh;
+  max-width: 900px;        /* ⬅️ width thoda bada */
+  height: 85vh;            /* ⬅️ FIXED HEIGHT */
+  max-height: 85vh;
+  display: flex;           /* ⬅️ important */
+  flex-direction: column;
   overflow: hidden;
   border: 1px solid rgba(102, 126, 234, 0.2);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
 }
+
 
 .emp-all-task-modal-header {
   padding: 1.5rem;
@@ -957,14 +959,16 @@
 }
 
 .emp-all-task-modal-content {
-  padding: 1.5rem;
-  max-height: 70vh;
-  overflow-y: auto;
+  flex: 1;                 /* ⬅️ take remaining height */
+  overflow-y: auto;        /* ⬅️ scroll inside */
+  padding: 1rem;
 }
 
 /* Task List */
 .emp-all-task-list-container {
-  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .emp-all-task-list-header {
@@ -1101,4 +1105,42 @@
     border-radius:20px;
     max-height: 80vh;
   }
+}
+
+
+.emp-all-task-extra-filters {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.emp-all-task-extra-filters select {
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.emp-all-task-task-item.today-task {
+  background: #f0fdf4;
+  border-left-color: #22c55e !important;
+}
+
+.emp-all-task-date-picker {
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.emp-all-task-clear-date {
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.5rem;
+  border: none;
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 0.75rem;
+  cursor: pointer;
 }

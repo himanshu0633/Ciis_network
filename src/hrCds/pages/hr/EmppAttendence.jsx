@@ -1,34 +1,12 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import axios from "../../../utils/axiosConfig";
-import {
-  Box,
-  Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Button,
-  TextField,
-  Card,
-  CardContent,
-  Grid,
-  Stack,
-  Avatar,
-  Chip,
-  Fade,
-  LinearProgress,
-  useTheme,
-  useMediaQuery,
-  Snackbar,
-  InputAdornment,
-  IconButton,
-  Tooltip,
-  Container,
-  alpha,
-} from "@mui/material";
+import './employee-attendance.css';
+
+// Import export libraries
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
+
+// Icons
 import {
   FiCalendar,
   FiUsers,
@@ -42,148 +20,39 @@ import {
   FiRefreshCw,
   FiDownload,
   FiEye,
+  FiFileText,
+  FiImage,
 } from "react-icons/fi";
-import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
-import format from "date-fns/format";
-import EmployeeTypeFilter from "../../Filter/EmployeeTypeFilter";
-import { styled } from "@mui/material/styles";
 
-// Enhanced Styled Components
-const GradientStatCard = styled(Card)(({ theme, color = "primary", active }) => ({
-  background: active 
-    ? `linear-gradient(135deg, ${theme.palette[color].main}15, ${theme.palette[color].main}08)`
-    : theme.palette.background.paper,
-  borderRadius: theme.shape.borderRadius * 3,
-  boxShadow: active ? theme.shadows[8] : theme.shadows[2],
-  border: `1px solid ${active ? theme.palette[color].main + '40' : theme.palette.divider}`,
-  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-  cursor: "pointer",
-  transform: active ? "translateY(-4px)" : "translateY(0)",
-  position: "relative",
-  overflow: "hidden",
-  "&:hover": {
-    boxShadow: theme.shadows[8],
-    transform: "translateY(-4px)",
-    border: `1px solid ${theme.palette[color].main + '60'}`,
-  },
-  "&::before": active ? {
-    content: '""',
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 3,
-    background: `linear-gradient(90deg, ${theme.palette[color].main}, ${theme.palette[color].light})`,
-  } : {},
-}));
+// Employee Type Filter Component
+const EmployeeTypeFilter = ({ selected, onChange }) => {
+  const options = [
+    { value: 'all', label: 'All Types' },
+    { value: 'full-time', label: 'Full Time' },
+    { value: 'part-time', label: 'Part Time' },
+    { value: 'contract', label: 'Contract' },
+    { value: 'intern', label: 'Intern' },
+  ];
 
-const StatusChip = styled(Chip)(({ theme, status }) => ({
-  fontWeight: 700,
-  borderRadius: 20,
-  ...(status === "present" && {
-    background: `linear-gradient(45deg, ${theme.palette.success.main}, ${theme.palette.success.light})`,
-    color: theme.palette.success.contrastText,
-    boxShadow: `0 2px 8px ${theme.palette.success.main}40`,
-  }),
-  ...(status === "halfday" && {
-    background: `linear-gradient(45deg, ${theme.palette.warning.main}, ${theme.palette.warning.light})`,
-    color: theme.palette.warning.contrastText,
-    boxShadow: `0 2px 8px ${theme.palette.warning.main}40`,
-  }),
-  ...(status === "absent" && {
-    background: `linear-gradient(45deg, ${theme.palette.error.main}, ${theme.palette.error.light})`,
-    color: theme.palette.error.contrastText,
-    boxShadow: `0 2px 8px ${theme.palette.error.main}40`,
-  }),
-}));
+  return (
+    <select
+      className="filter-input"
+      value={selected}
+      onChange={(e) => onChange(e.target.value)}
+    >
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
+  );
+};
 
-const EmployeeTypeChip = styled(Chip)(({ theme, type }) => ({
-  fontWeight: 600,
-  borderRadius: 16,
-  fontSize: "0.75rem",
-  ...(type === "full-time" && {
-    background: `${theme.palette.success.main}15`,
-    color: theme.palette.success.dark,
-    border: `1px solid ${theme.palette.success.main}30`,
-  }),
-  ...(type === "part-time" && {
-    background: `${theme.palette.warning.main}15`,
-    color: theme.palette.warning.dark,
-    border: `1px solid ${theme.palette.warning.main}30`,
-  }),
-  ...(type === "contract" && {
-    background: `${theme.palette.info.main}15`,
-    color: theme.palette.info.dark,
-    border: `1px solid ${theme.palette.info.main}30`,
-  }),
-  ...(type === "intern" && {
-    background: `${theme.palette.secondary.main}15`,
-    color: theme.palette.secondary.dark,
-    border: `1px solid ${theme.palette.secondary.main}30`,
-  }),
-}));
-
-const StyledTableRow = styled(TableRow)(({ theme, status }) => ({
-  transition: "all 0.3s ease",
-  "&:hover": {
-    backgroundColor: theme.palette.action.hover,
-    transform: "scale(1.01)",
-  },
-  "& td": {
-    borderBottom: `1px solid ${theme.palette.divider}`,
-  },
-  ...(status === "present" && {
-    background: `${theme.palette.success.main}08`,
-    "&:hover": {
-      background: `${theme.palette.success.main}12`,
-    },
-  }),
-  ...(status === "halfday" && {
-    background: `${theme.palette.warning.main}08`,
-    "&:hover": {
-      background: `${theme.palette.warning.main}12`,
-    },
-  }),
-  ...(status === "absent" && {
-    background: `${theme.palette.error.main}08`,
-    "&:hover": {
-      background: `${theme.palette.error.main}12`,
-    },
-  }),
-}));
-
-const EnhancedHeader = styled(Box)(({ theme }) => ({
-  background: `linear-gradient(135deg, ${theme.palette.primary.main}15, ${theme.palette.secondary.main}10)`,
-  borderRadius: theme.shape.borderRadius * 3,
-  padding: theme.spacing(4),
-  marginBottom: theme.spacing(4),
-  border: `1px solid ${theme.palette.divider}`,
-  position: "relative",
-  overflow: "hidden",
-  "&::before": {
-    content: '""',
-    position: "absolute",
-    top: -50,
-    right: -50,
-    width: 120,
-    height: 120,
-    borderRadius: "50%",
-    background: `linear-gradient(45deg, ${theme.palette.primary.main}20, transparent)`,
-  },
-}));
-
-const FilterSection = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(3),
-  borderRadius: theme.shape.borderRadius * 2,
-  background: theme.palette.background.paper,
-  boxShadow: theme.shadows[1],
-  border: `1px solid ${theme.palette.divider}`,
-}));
-
-const EmppAttendence = () => {
+const EmployeeAttendance = () => {
   const [records, setRecords] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [allUsers, setAllUsers] = useState([]);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedEmployeeType, setSelectedEmployeeType] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -191,7 +60,7 @@ const EmppAttendence = () => {
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
-    severity: "success",
+    type: "success",
   });
   const [stats, setStats] = useState({
     total: 0,
@@ -201,28 +70,99 @@ const EmppAttendence = () => {
     onTime: 0,
     late: 0,
   });
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
 
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const tableRef = useRef(null);
+  const exportMenuRef = useRef(null);
 
   useEffect(() => {
-    fetchData(selectedDate);
-  }, [selectedDate]);
+    fetchAllUsers();
+  }, []);
 
-  const fetchData = async (date = new Date()) => {
+  useEffect(() => {
+    if (allUsers.length > 0) {
+      fetchAttendanceData(selectedDate);
+    }
+  }, [selectedDate, allUsers]);
+
+  // Close export menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
+        setExportMenuOpen(false);
+      }
+    };
+    
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const fetchAllUsers = async () => {
+    try {
+      const res = await axios.get('/users/all-users');
+      setAllUsers(res.data);
+    } catch (err) {
+      console.error("Failed to load users", err);
+      showSnackbar("Error loading users data", "error");
+    }
+  };
+
+  const fetchAttendanceData = async (date) => {
     setLoading(true);
     try {
-      const formatted = format(date, "yyyy-MM-dd");
+      const formatted = date;
       const res = await axios.get(`/attendance/all?date=${formatted}`);
-      setRecords(res.data.data);
-      calculateStats(res.data.data);
+      
+      // Combine attendance data with all users
+      const attendanceMap = {};
+      res.data.data.forEach(record => {
+        attendanceMap[record.user._id] = {
+          ...record,
+          status: record.status.toLowerCase()
+        };
+      });
+
+      // Create combined records
+      const combinedRecords = allUsers.map(user => {
+        const attendanceRecord = attendanceMap[user._id];
+        if (attendanceRecord) {
+          return {
+            ...attendanceRecord,
+            user: {
+              ...user,
+              employeeType: user.employeeType || 'technical'
+            }
+          };
+        } else {
+          // Create absent record for users without attendance
+          return {
+            _id: `absent_${user._id}_${date}`,
+            user: {
+              ...user,
+              employeeType: user.employeeType || 'technical'
+            },
+            date: date,
+            inTime: null,
+            outTime: null,
+            totalTime: "00:00:00",
+            lateBy: "00:00:00",
+            earlyLeave: "00:00:00",
+            overTime: "00:00:00",
+            status: "absent",
+            isClockedIn: false,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          };
+        }
+      });
+
+      setRecords(combinedRecords);
+      calculateStats(combinedRecords);
     } catch (err) {
       console.error("Failed to load attendance", err);
-      setSnackbar({
-        open: true,
-        message: "Error loading attendance data",
-        severity: "error",
-      });
+      showSnackbar("Error loading attendance data", "error");
     } finally {
       setLoading(false);
     }
@@ -235,6 +175,7 @@ const EmppAttendence = () => {
     const late = attendanceData.filter(
       (r) => r.lateBy && r.lateBy !== "00:00:00"
     ).length;
+    
     setStats({
       total: attendanceData.length,
       present,
@@ -251,13 +192,210 @@ const EmppAttendence = () => {
     setSearchTerm("");
   };
 
-  const exportData = () => {
-    // Implement export functionality
-    setSnackbar({
-      open: true,
-      message: "Export feature coming soon!",
-      severity: "info",
+const exportToPDF = async () => {
+  setExportMenuOpen(false);
+  setLoading(true);
+
+  try {
+    const input = tableRef.current;
+    input.classList.add("pdf-export");
+
+    const canvas = await html2canvas(input, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: "#ffffff",
+      width: input.scrollWidth,
+      height: input.scrollHeight,
     });
+
+    input.classList.remove("pdf-export");
+
+    const imgData = canvas.toDataURL("image/png");
+
+    const pdf = new jsPDF("landscape", "mm", "a4");
+
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+
+    const margin = 10;
+    const usableWidth = pdfWidth - margin * 2;
+    const usableHeight = pdfHeight - margin * 2;
+
+    const imgWidth = usableWidth;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+    let heightLeft = imgHeight;
+    let position = margin;
+
+    // 🔹 TITLE
+    pdf.setFontSize(16);
+    pdf.text(
+      `Attendance Report - ${formatExportDate(selectedDate)}`,
+      pdfWidth / 2,
+      8,
+      { align: "center" }
+    );
+
+    // 🔹 SUMMARY
+    pdf.setFontSize(10);
+    pdf.text(
+      `Total: ${stats.total} | Present: ${stats.present} | Absent: ${stats.absent} | Half Day: ${stats.halfDay}`,
+      margin,
+      15
+    );
+
+    position = 20;
+
+    // 🔹 FIRST PAGE
+    pdf.addImage(
+      imgData,
+      "PNG",
+      margin,
+      position,
+      imgWidth,
+      imgHeight
+    );
+
+    heightLeft -= usableHeight;
+
+    // 🔹 EXTRA PAGES
+    while (heightLeft > 0) {
+      pdf.addPage();
+      position = margin - heightLeft;
+
+      pdf.addImage(
+        imgData,
+        "PNG",
+        margin,
+        position,
+        imgWidth,
+        imgHeight
+      );
+
+      heightLeft -= usableHeight;
+    }
+
+    // 🔹 PAGE NUMBERS
+    const totalPages = pdf.internal.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      pdf.setPage(i);
+      pdf.setFontSize(8);
+      pdf.text(
+        `Page ${i} of ${totalPages}`,
+        pdfWidth - 20,
+        pdfHeight - 8
+      );
+    }
+
+    pdf.save(`attendance_report_${selectedDate}.pdf`);
+    showSnackbar("Full attendance PDF exported successfully!", "success");
+  } catch (error) {
+    console.error("PDF Export Error:", error);
+    showSnackbar("Failed to export PDF", "error");
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+  const exportToImage = async () => {
+    setExportMenuOpen(false);
+    setLoading(true);
+    
+    try {
+      const input = tableRef.current;
+      
+      // Add a temporary class for better image formatting
+      input.classList.add('image-export');
+      
+      const canvas = await html2canvas(input, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        width: input.scrollWidth,
+        height: input.scrollHeight,
+      });
+      
+      // Remove the temporary class
+      input.classList.remove('image-export');
+      
+      const image = canvas.toDataURL('image/jpeg', 1.0);
+      const link = document.createElement('a');
+      link.download = `attendance_report_${selectedDate}.jpg`;
+      link.href = image;
+      link.click();
+      
+      showSnackbar("Image exported successfully!", "success");
+    } catch (error) {
+      console.error("Error exporting to image:", error);
+      showSnackbar("Error exporting image", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const exportToCSV = () => {
+    setExportMenuOpen(false);
+    
+    // Create CSV content
+    const headers = ['Employee Name', 'Email', 'Employee Type', 'Date', 'Check In', 'Check Out', 'Total Time', 'Status', 'Late By'];
+    
+    const csvData = filteredRecords.map(record => [
+      record.user?.name || 'N/A',
+      record.user?.email || 'N/A',
+      record.user?.employeeType?.toUpperCase() || 'N/A',
+      formatDate(record.date),
+      formatTime(record.inTime),
+      formatTime(record.outTime),
+      record.totalTime || '00:00:00',
+      record.status.charAt(0).toUpperCase() + record.status.slice(1),
+      record.lateBy || '00:00:00'
+    ]);
+    
+    // Add summary row
+    csvData.push([]);
+    csvData.push(['SUMMARY', '', '', '', '', '', '', '', '']);
+    csvData.push(['Total Employees', stats.total, '', '', '', '', '', '', '']);
+    csvData.push(['Present', stats.present, '', '', '', '', '', '', '']);
+    csvData.push(['Absent', stats.absent, '', '', '', '', '', '', '']);
+    csvData.push(['Half Day', stats.halfDay, '', '', '', '', '', '', '']);
+    csvData.push(['Late Arrivals', stats.late, '', '', '', '', '', '', '']);
+    
+    // Convert to CSV string
+    const csvContent = [
+      headers.join(','),
+      ...csvData.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+    
+    // Create download link
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `attendance_report_${selectedDate}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showSnackbar("CSV exported successfully!", "success");
+  };
+
+  const formatExportDate = (dateStr) => {
+    return new Date(dateStr).toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
+  const showSnackbar = (message, type = "success") => {
+    setSnackbar({ open: true, message, type });
+    setTimeout(() => {
+      setSnackbar({ ...snackbar, open: false });
+    }, 4000);
   };
 
   const filteredRecords = useMemo(() => {
@@ -306,436 +444,382 @@ const EmppAttendence = () => {
     });
   };
 
-  const getInitials = (name) =>
-    name
-      ? name
-          .split(" ")
-          .map((n) => n[0])
-          .join("")
-          .toUpperCase()
-      : "U";
+  const getInitials = (name) => {
+    if (!name) return 'U';
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
+  const formatDate = (dateStr) => {
+    return new Date(dateStr).toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  const getStatusClass = (status) => {
+    if (status === "present") return "status-present";
+    if (status === "absent") return "status-absent";
+    if (status === "halfday") return "status-halfday";
+    return "";
+  };
+
+  const getEmployeeTypeClass = (type) => {
+    if (!type) return "";
+    const typeLower = type.toLowerCase();
+    if (typeLower.includes("full")) return "type-full-time";
+    if (typeLower.includes("part")) return "type-part-time";
+    if (typeLower.includes("contract")) return "type-contract";
+    if (typeLower.includes("intern")) return "type-intern";
+    return "";
+  };
+
+  const getRowClass = (status) => {
+    if (status === "present") return "row-present";
+    if (status === "absent") return "row-absent";
+    if (status === "halfday") return "row-halfday";
+    return "";
+  };
+
+  // Loading State
   if (loading && records.length === 0) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "50vh" }}>
-        <Box sx={{ width: "60%", textAlign: "center" }}>
-          <LinearProgress sx={{ height: 8, borderRadius: 4 }} />
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-            Loading attendance data...
-          </Typography>
-        </Box>
-      </Box>
+      <div className="loading-container">
+        <div className="loading-progress">
+          <div className="loading-progress-bar"></div>
+        </div>
+        <p>Loading attendance data...</p>
+      </div>
     );
   }
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Fade in={!loading} timeout={500}>
-        <Container maxWidth="xl" sx={{ py: { xs: 2, md: 3 } }}>
-          {/* Enhanced Header */}
-          <EnhancedHeader>
-            <Stack spacing={3}>
-              <Box>
-                <Typography 
-                  variant="h3" 
-                  fontWeight={800}
-                  sx={{
-                    background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                    backgroundClip: "text",
-                  }}
-                >
-                  Attendance Management
-                </Typography>
-                <Typography variant="h6" color="text.secondary" sx={{ mt: 1 }}>
-                  Monitor and manage employee attendance in real-time
-                </Typography>
-              </Box>
+    <div className="employee-attendance">
+      {/* Header */}
+      <div className="attendance-header">
+        <div>
+          <h1 className="attendance-title">Attendance Management</h1>
+          <p className="attendance-subtitle">
+            Monitor and manage employee attendance in real-time
+          </p>
+        </div>
 
-              {/* Action Bar */}
-              <Stack direction="row" spacing={2} alignItems="center">
-                <Tooltip title="Refresh Data">
-                  <IconButton 
-                    onClick={() => fetchData(selectedDate)}
-                    sx={{
-                      background: theme.palette.background.paper,
-                      boxShadow: theme.shadows[1],
-                      "&:hover": {
-                        background: theme.palette.action.hover,
-                      },
-                    }}
-                  >
-                    <FiRefreshCw />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Export Report">
-                  <IconButton 
-                    onClick={exportData}
-                    sx={{
-                      background: theme.palette.background.paper,
-                      boxShadow: theme.shadows[1],
-                      "&:hover": {
-                        background: theme.palette.action.hover,
-                      },
-                    }}
-                  >
-                    <FiDownload />
-                  </IconButton>
-                </Tooltip>
-                <Box sx={{ flex: 1 }} />
-                <Chip
-                  icon={<FiCalendar />}
-                  label={format(selectedDate, "MMMM d, yyyy")}
-                  variant="outlined"
-                  sx={{ fontWeight: 600 }}
-                />
-              </Stack>
-            </Stack>
-          </EnhancedHeader>
+        {/* Action Bar */}
+        <div className="header-actions">
+ 
+          {/* Export Button with Dropdown */}
+       <div className="export-container" ref={exportMenuRef}>
+  <button
+    className="export-trigger"
+    onClick={() => setExportMenuOpen(!exportMenuOpen)}
+    title="Export Report"
+  >
+    <FiDownload size={16} />
+    <span>Export</span>
+  </button>
 
-          {/* Filters Section */}
-          <FilterSection sx={{ mb: 4 }}>
-            <Stack spacing={3}>
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <FiFilter size={20} color={theme.palette.primary.main} />
-                <Typography variant="h6" fontWeight={600}>
-                  Filters & Search
-                </Typography>
-              </Stack>
-              
-              <Grid container spacing={3} alignItems="center">
-                <Grid item xs={12} md={3}>
-                  <DatePicker
-                    label="Select Date"
-                    value={selectedDate}
-                    onChange={(newDate) => setSelectedDate(newDate)}
-                    slotProps={{
-                      textField: {
-                        fullWidth: true,
-                        variant: "outlined",
-                      }
-                    }}
-                  />
-                </Grid>
-                <Grid item xs={12} md={2}>
-                  <EmployeeTypeFilter
-                    selected={selectedEmployeeType}
-                    onChange={setSelectedEmployeeType}
-                  />
-                </Grid>
-                <Grid item xs={12} md={4}>
-                  <TextField
-                    fullWidth
-                    placeholder="Search employees by name, email, or status..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <FiSearch size={18} />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                </Grid>
-                <Grid item xs={12} md={3}>
-                  <Stack direction="row" spacing={1}>
-                    <Button 
-                      variant="outlined" 
-                      onClick={clearFilters}
-                      fullWidth
-                    >
-                      Clear All
-                    </Button>
-                    <Button 
-                      variant="contained"
-                      onClick={() => fetchData(selectedDate)}
-                      fullWidth
-                    >
-                      Apply
-                    </Button>
-                  </Stack>
-                </Grid>
-              </Grid>
-            </Stack>
-          </FilterSection>
+  {exportMenuOpen && (
+    <div className="export-dropdown">
+      <button className="export-option" onClick={exportToPDF}>
+        <FiFileText size={16} />
+        <span>Export as PDF</span>
+      </button>
 
-          {/* Enhanced Stat Cards */}
-          <Grid container spacing={3} sx={{ mb: 4 }}>
-            {[
-              { 
-                label: "Total Employees", 
-                count: stats.total, 
-                color: "primary", 
-                value: "all", 
-                icon: <FiUsers />,
-                description: "Total tracked employees"
-              },
-              { 
-                label: "Present", 
-                count: stats.present, 
-                color: "success", 
-                value: "present", 
-                icon: <FiCheckCircle />,
-                description: "Employees present today"
-              },
-              { 
-                label: "Absent", 
-                count: stats.absent, 
-                color: "error", 
-                value: "absent", 
-                icon: <FiXCircle />,
-                description: "Employees absent today"
-              },
-              { 
-                label: "Half Day", 
-                count: stats.halfDay, 
-                color: "warning", 
-                value: "halfday", 
-                icon: <FiAlertCircle />,
-                description: "Employees on half day"
-              },
-              { 
-                label: "On Time", 
-                count: stats.onTime, 
-                color: "info", 
-                value: "ontime", 
-                icon: <FiClock />,
-                description: "Arrived on time"
-              },
-              { 
-                label: "Late Arrivals", 
-                count: stats.late, 
-                color: "secondary", 
-                value: "late", 
-                icon: <FiTrendingUp />,
-                description: "Arrived late today"
-              },
-            ].map((stat) => (
-              <Grid item xs={6} md={4} lg={2} key={stat.label}>
-                <GradientStatCard
-                  color={stat.color}
-                  active={statusFilter === stat.value}
-                  onClick={() =>
-                    setStatusFilter((prev) =>
-                      prev === stat.value ? "all" : stat.value
-                    )
-                  }
-                >
-                  <CardContent sx={{ p: 2.5 }}>
-                    <Stack spacing={2}>
-                      <Stack direction="row" alignItems="center" spacing={2}>
-                        <Avatar
-                          sx={{
-                            bgcolor: `${theme.palette[stat.color].main}20`,
-                            color: theme.palette[stat.color].main,
-                            width: 48,
-                            height: 48,
-                          }}
-                        >
-                          {stat.icon}
-                        </Avatar>
-                        <Box>
-                          <Typography variant="body2" color="text.secondary" fontSize="0.75rem">
-                            {stat.label}
-                          </Typography>
-                          <Typography variant="h4" fontWeight={800} lineHeight={1}>
-                            {stat.count}
-                          </Typography>
-                        </Box>
-                      </Stack>
-                      <Typography variant="caption" color="text.secondary" fontSize="0.7rem">
-                        {stat.description}
-                      </Typography>
-                    </Stack>
-                  </CardContent>
-                </GradientStatCard>
-              </Grid>
-            ))}
-          </Grid>
+      <button className="export-option" onClick={exportToImage}>
+        <FiImage size={16} />
+        <span>Export as Image (JPG)</span>
+      </button>
 
-          {/* Enhanced Attendance Table */}
-          <Paper 
-            sx={{ 
-              borderRadius: 4, 
-              boxShadow: theme.shadows[2],
-              border: `1px solid ${theme.palette.divider}`,
-              overflow: "hidden",
-            }}
-          >
-            <Box sx={{ p: 3, borderBottom: `1px solid ${theme.palette.divider}` }}>
-              <Stack direction="row" alignItems="center" justifyContent="space-between">
-                <Typography variant="h6" fontWeight={700}>
-                  Attendance Records
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {filteredRecords.length} records found
-                </Typography>
-              </Stack>
-            </Box>
+      <button className="export-option" onClick={exportToCSV}>
+        <FiDownload size={16} />
+        <span>Export as CSV</span>
+      </button>
+    </div>
+  )}
+</div>
 
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow sx={{ 
-                    backgroundColor: theme.palette.primary.main + "08",
-                    borderBottom: `2px solid ${theme.palette.divider}`,
-                  }}>
-                    <TableCell sx={{ fontWeight: 700, py: 3 }}>Employee</TableCell>
-                    <TableCell sx={{ fontWeight: 700, py: 3 }}>Type</TableCell>
-                    <TableCell sx={{ fontWeight: 700, py: 3 }}>Date</TableCell>
-                    <TableCell sx={{ fontWeight: 700, py: 3 }}>Check In</TableCell>
-                    <TableCell sx={{ fontWeight: 700, py: 3 }}>Check Out</TableCell>
-                    <TableCell sx={{ fontWeight: 700, py: 3 }}>Total Time</TableCell>
-                    <TableCell sx={{ fontWeight: 700, py: 3 }}>Status</TableCell>
-                    <TableCell sx={{ fontWeight: 700, py: 3 }}>Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredRecords.length ? (
-                    filteredRecords.map((rec) => (
-                      <StyledTableRow key={rec._id} status={rec.status}>
-                        <TableCell sx={{ py: 2.5 }}>
-                          <Stack direction="row" spacing={2} alignItems="center">
-                            <Avatar
-                              sx={{
-                                background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                                fontWeight: 600,
-                              }}
-                            >
-                              {getInitials(rec.user?.name)}
-                            </Avatar>
-                            <Box>
-                              <Typography fontWeight={600} fontSize="0.95rem">
-                                {rec.user?.name || "N/A"}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary" fontSize="0.75rem">
-                                {rec.user?.email || "N/A"}
-                              </Typography>
-                            </Box>
-                          </Stack>
-                        </TableCell>
-                        <TableCell sx={{ py: 2.5 }}>
-                          <EmployeeTypeChip
-                            label={rec.user?.employeeType?.toUpperCase() || "N/A"}
-                            type={rec.user?.employeeType?.toLowerCase()}
-                            size="small"
-                          />
-                        </TableCell>
-                        <TableCell sx={{ py: 2.5 }}>
-                          <Typography fontWeight={500} fontSize="0.9rem">
-                            {new Date(rec.date).toLocaleDateString("en-US", {
-                              weekday: "short",
-                              month: "short",
-                              day: "numeric",
-                            })}
-                          </Typography>
-                        </TableCell>
-                        <TableCell sx={{ py: 2.5 }}>
-                          <Typography fontWeight={500}>
-                            {formatTime(rec.inTime)}
-                          </Typography>
-                        </TableCell>
-                        <TableCell sx={{ py: 2.5 }}>
-                          <Typography fontWeight={500}>
-                            {formatTime(rec.outTime)}
-                          </Typography>
-                        </TableCell>
-                        <TableCell sx={{ py: 2.5 }}>
-                          <Chip 
-                            label={rec.totalTime || "00:00:00"} 
-                            size="small"
-                            variant="outlined"
-                          />
-                        </TableCell>
-                        <TableCell sx={{ py: 2.5 }}>
-                          <StatusChip
-                            label={
-                              rec.status.charAt(0).toUpperCase() + rec.status.slice(1)
-                            }
-                            status={rec.status}
-                            size="small"
-                          />
-                        </TableCell>
-                        <TableCell sx={{ py: 2.5 }}>
-                          <Tooltip title="View Details">
-                            <IconButton size="small" sx={{ 
-                              background: theme.palette.action.hover,
-                              "&:hover": {
-                                background: theme.palette.primary.main,
-                                color: "white",
-                              }
-                            }}>
-                              <FiEye size={16} />
-                            </IconButton>
-                          </Tooltip>
-                        </TableCell>
-                      </StyledTableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={8} align="center" sx={{ py: 6 }}>
-                        <Box sx={{ textAlign: "center" }}>
-                          <FiCalendar size={48} color={theme.palette.text.secondary} />
-                          <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
-                            No Records Found
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            Try adjusting your filters or search criteria
-                          </Typography>
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Paper>
+          
+          <div className="date-chip">
+            <FiCalendar size={16} />
+            {new Date(selectedDate).toLocaleDateString("en-US", {
+              month: "long",
+              day: "numeric",
+              year: "numeric",
+            })}
+          </div>
+        </div>
+      </div>
 
-          {/* Enhanced Snackbar */}
-          <Snackbar
-            open={snackbar.open}
-            autoHideDuration={4000}
-            onClose={() => setSnackbar({ ...snackbar, open: false })}
-            anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-          >
-            <Card
-              sx={{
-                background: `linear-gradient(135deg, ${
-                  snackbar.severity === "error" 
-                    ? theme.palette.error.main 
-                    : snackbar.severity === "warning"
-                    ? theme.palette.warning.main
-                    : theme.palette.success.main
-                }, ${
-                  snackbar.severity === "error" 
-                    ? theme.palette.error.dark 
-                    : snackbar.severity === "warning"
-                    ? theme.palette.warning.dark
-                    : theme.palette.success.dark
-                })`,
-                color: "#fff",
-                borderRadius: 3,
-                boxShadow: theme.shadows[8],
-              }}
+      {/* Filter Section */}
+      <div className="filter-section">
+        <div className="filter-header">
+          <FiFilter size={20} color="#1976d2" />
+          <h3>Filters & Search</h3>
+        </div>
+        
+        <div className="filter-grid">
+          <div className="filter-group">
+            <label className="filter-label">Select Date</label>
+            <input
+              type="date"
+              className="filter-input"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+            />
+          </div>
+          
+          <div className="filter-group">
+            <label className="filter-label">Employee Type</label>
+            <EmployeeTypeFilter
+              selected={selectedEmployeeType}
+              onChange={setSelectedEmployeeType}
+            />
+          </div>
+          
+          <div className="filter-group">
+            <label className="filter-label">Search</label>
+            <div style={{ position: 'relative' }}>
+              <FiSearch 
+                size={18} 
+                style={{
+                  position: 'absolute',
+                  left: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: '#666'
+                }}
+              />
+              <input
+                type="text"
+                className="filter-input"
+                placeholder="Search employees..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{ paddingLeft: '40px' }}
+              />
+            </div>
+          </div>
+          
+          <div className="filter-actions">
+            <button 
+              className="btn btn-outlined"
+              onClick={clearFilters}
             >
-              <CardContent sx={{ py: 2, px: 3 }}>
-                <Stack direction="row" spacing={2} alignItems="center">
-                  {snackbar.severity === "error" && <FiXCircle size={20} />}
-                  {snackbar.severity === "success" && <FiCheckCircle size={20} />}
-                  {snackbar.severity === "info" && <FiAlertCircle size={20} />}
-                  <Typography variant="body2" fontWeight={500}>
-                    {snackbar.message}
-                  </Typography>
-                </Stack>
-              </CardContent>
-            </Card>
-          </Snackbar>
-        </Container>
-      </Fade>
-    </LocalizationProvider>
+              Clear All
+            </button>
+            <button 
+              className="btn btn-contained"
+              onClick={() => fetchAttendanceData(selectedDate)}
+            >
+              Apply Filters
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Stat Cards */}
+      <div className="stats-container">
+        {[
+          { 
+            label: "Total Employees", 
+            count: stats.total, 
+            color: "primary", 
+            value: "all", 
+            icon: <FiUsers />,
+            description: "Total tracked employees",
+            statClass: "stat-card-primary",
+            iconClass: "stat-icon-primary"
+          },
+          { 
+            label: "Present", 
+            count: stats.present, 
+            color: "success", 
+            value: "present", 
+            icon: <FiCheckCircle />,
+            description: "Employees present today",
+            statClass: "stat-card-success",
+            iconClass: "stat-icon-success"
+          },
+          { 
+            label: "Absent", 
+            count: stats.absent, 
+            color: "error", 
+            value: "absent", 
+            icon: <FiXCircle />,
+            description: "Employees absent today",
+            statClass: "stat-card-error",
+            iconClass: "stat-icon-error"
+          },
+          { 
+            label: "Half Day", 
+            count: stats.halfDay, 
+            color: "warning", 
+            value: "halfday", 
+            icon: <FiAlertCircle />,
+            description: "Employees on half day",
+            statClass: "stat-card-warning",
+            iconClass: "stat-icon-warning"
+          },
+          { 
+            label: "On Time", 
+            count: stats.onTime, 
+            color: "info", 
+            value: "ontime", 
+            icon: <FiClock />,
+            description: "Arrived on time",
+            statClass: "stat-card-info",
+            iconClass: "stat-icon-info"
+          },
+          { 
+            label: "Late Arrivals", 
+            count: stats.late, 
+            color: "secondary", 
+            value: "late", 
+            icon: <FiTrendingUp />,
+            description: "Arrived late today",
+            statClass: "stat-card-secondary",
+            iconClass: "stat-icon-secondary"
+          },
+        ].map((stat) => (
+          <div 
+            key={stat.label}
+            className={`stat-card ${stat.statClass} ${statusFilter === stat.value ? 'stat-card-active' : ''}`}
+            onClick={() =>
+              setStatusFilter((prev) =>
+                prev === stat.value ? "all" : stat.value
+              )
+            }
+          >
+            <div className="stat-content">
+              <div className={`stat-icon ${stat.iconClass}`}>
+                {stat.icon}
+              </div>
+              <div className="stat-info">
+                <div className="stat-value">{stat.count}</div>
+                <div className="stat-label">{stat.label}</div>
+                <div className="stat-description">{stat.description}</div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Attendance Table */}
+      <div className="attendance-table-container" ref={tableRef}>
+        <div className="table-header">
+          <h3 className="table-title">Attendance Records</h3>
+          <div className="table-count">
+            {filteredRecords.length} records found • 
+            <span style={{ marginLeft: '8px', fontWeight: 'bold' }}>
+              Date: {formatExportDate(selectedDate)}
+            </span>
+          </div>
+        </div>
+
+        <div style={{ overflowX: 'auto' }}>
+          <table className="attendance-table">
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>Type</th>
+                <th>Date</th>
+                <th>Check In</th>
+                <th>Check Out</th>
+                <th>Total Time</th>
+                <th>Status</th>
+    
+              </tr>
+            </thead>
+            <tbody>
+              {filteredRecords.length ? (
+                filteredRecords.map((rec) => (
+                  <tr key={rec._id} className={getRowClass(rec.status)}>
+                    <td>
+                      <div className="employee-info">
+                        <div className="employee-avatar">
+                          {getInitials(rec.user?.name)}
+                        </div>
+                        <div className="employee-details">
+                          <div className="employee-name">
+                            {rec.user?.name || "N/A"}
+                          </div>
+                          <div className="employee-email">
+                            {rec.user?.email || "N/A"}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <span className={`type-chip ${getEmployeeTypeClass(rec.user?.employeeType)}`}>
+                        {rec.user?.employeeType?.toUpperCase() || "N/A"}
+                      </span>
+                    </td>
+                    <td>
+                      <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>
+                        {formatDate(rec.date)}
+                      </div>
+                    </td>
+                    <td>
+                      <div style={{ fontWeight: 500 }}>
+                        {formatTime(rec.inTime)}
+                      </div>
+                    </td>
+                    <td>
+                      <div style={{ fontWeight: 500 }}>
+                        {formatTime(rec.outTime)}
+                      </div>
+                    </td>
+                    <td>
+                      <span className="time-chip">
+                        {rec.totalTime || "00:00:00"}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`status-chip ${getStatusClass(rec.status)}`}>
+                        {rec.status.charAt(0).toUpperCase() + rec.status.slice(1)}
+                      </span>
+                    </td>
+                
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={8}>
+                    <div className="empty-state">
+                      <div className="empty-state-icon">
+                        <FiCalendar size={48} />
+                      </div>
+                      <h4 className="empty-state-title">No Records Found</h4>
+                      <p className="empty-state-text">
+                        Try adjusting your filters or search criteria
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Snackbar */}
+      {snackbar.open && (
+        <div className="snackbar">
+          <div className={`snackbar-content snackbar-${snackbar.type}`}>
+            {snackbar.type === "success" && <FiCheckCircle size={20} />}
+            {snackbar.type === "error" && <FiXCircle size={20} />}
+            {snackbar.type === "info" && <FiAlertCircle size={20} />}
+            <span>{snackbar.message}</span>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 
-export default EmppAttendence;
+export default EmployeeAttendance;

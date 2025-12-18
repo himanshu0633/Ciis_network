@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -12,12 +12,14 @@ import {
   IconButton,
   Divider,
   Typography,
-  Collapse
+  Collapse,
+  useMediaQuery,
+  useTheme
 } from '@mui/material';
 import {
   ExpandLess,
   ExpandMore,
-  LogoutOutlined // Changed from LogoutIcon
+  LogoutOutlined
 } from '@mui/icons-material';
 import Swal from "sweetalert2";
 import {
@@ -30,7 +32,6 @@ const drawerWidthOpen = 260;
 const drawerWidthClosed = 70;
 
 const SidebarContainer = styled(Box)(({ theme }) => ({
-  width: drawerWidthOpen,
   flexShrink: 0,
   whiteSpace: 'nowrap',
   boxSizing: 'border-box',
@@ -42,7 +43,7 @@ const SidebarContainer = styled(Box)(({ theme }) => ({
   left: 0,
   zIndex: theme.zIndex.drawer,
   overflowY: 'auto',
-  transition: 'width 0.3s ease',
+  transition: 'width 0.3s ease, transform 0.3s ease',
   '&::-webkit-scrollbar': { 
     width: 6,
     display: 'none'
@@ -59,10 +60,30 @@ const SidebarContainer = styled(Box)(({ theme }) => ({
   },
 }));
 
-const CollapsedSidebar = styled(SidebarContainer)({
-  width: drawerWidthClosed,
-  overflowX: 'hidden',
-});
+const MobileSidebarContainer = styled(Box)(({ theme }) => ({
+  width: drawerWidthOpen,
+  flexShrink: 0,
+  whiteSpace: 'nowrap',
+  boxSizing: 'border-box',
+  backgroundColor: theme.palette.background.paper,
+  borderRight: `1px solid ${theme.palette.divider}`,
+  height: 'calc(100vh - 64px)',
+  overflowY: 'auto',
+  '&::-webkit-scrollbar': { 
+    width: 6,
+    display: 'none'
+  },
+  '&:hover::-webkit-scrollbar': {
+    display: 'block'
+  },
+  '&::-webkit-scrollbar-track': {
+    background: theme.palette.background.default,
+  },
+  '&::-webkit-scrollbar-thumb': {
+    background: theme.palette.action.hover,
+    borderRadius: 3,
+  },
+}));
 
 const StyledListItem = styled(ListItem)({
   padding: 0,
@@ -113,13 +134,19 @@ const CollapsedHeading = styled(Box)(({ theme }) => ({
   justifyContent: 'center',
 }));
 
-const Sidebar = ({ isOpen = true, closeSidebar }) => {
+const Sidebar = ({ isMobile = false }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const theme = useTheme();
   const [userRole, setUserRole] = useState('');
   const [openSections, setOpenSections] = useState({});
+  const [isHovered, setIsHovered] = useState(false);
+  const sidebarRef = useRef(null);
+  const hoverTimer = useRef(null);
+  const leaveTimer = useRef(null);
 
-  const SidebarComponent = isOpen ? SidebarContainer : CollapsedSidebar;
+  // Mobile पर always open रहेगा, Desktop पर hover-based
+  const isSidebarOpen = isMobile ? true : isHovered;
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user'));
@@ -128,9 +155,48 @@ const Sidebar = ({ isOpen = true, closeSidebar }) => {
     }
   }, []);
 
+  useEffect(() => {
+    // Cleanup timers on unmount
+    return () => {
+      if (hoverTimer.current) clearTimeout(hoverTimer.current);
+      if (leaveTimer.current) clearTimeout(leaveTimer.current);
+    };
+  }, []);
+
+  const handleMouseEnter = () => {
+    if (isMobile) return; // Mobile पर hover नहीं चाहिए
+    
+    if (leaveTimer.current) {
+      clearTimeout(leaveTimer.current);
+      leaveTimer.current = null;
+    }
+    
+    hoverTimer.current = setTimeout(() => {
+      setIsHovered(true);
+    }, 50);
+  };
+
+  const handleMouseLeave = () => {
+    if (isMobile) return; // Mobile पर hover नहीं चाहिए
+    
+    if (hoverTimer.current) {
+      clearTimeout(hoverTimer.current);
+      hoverTimer.current = null;
+    }
+    
+    leaveTimer.current = setTimeout(() => {
+      setIsHovered(false);
+    }, 100);
+  };
+
   const handleNavigate = (path) => {
     navigate(path);
-    if (closeSidebar) closeSidebar();
+    // Mobile पर navigation के बाद sidebar close हो सकता है (अगर drawer है)
+    if (isMobile) {
+      // ये parent component handle करेगा
+    } else {
+      setIsHovered(false);
+    }
   };
 
   const handleSectionToggle = (section) => {
@@ -176,9 +242,7 @@ const Sidebar = ({ isOpen = true, closeSidebar }) => {
     }
   };
 
-  // -----------------------------
-  // ENHANCED MENU STRUCTURE WITH PROPER ROLE CONTROL
-  // -----------------------------
+  // Menu Structure
   const menuSections = [
     {
       id: 'main',
@@ -218,13 +282,13 @@ const Sidebar = ({ isOpen = true, closeSidebar }) => {
           icon: <FaGraduationCap />, 
           name: 'Create Task', 
           path: '/cds/task-management', 
-          roles: ['user', 'hr', 'manager'] // ❌ Admin can't see
+          roles: ['user', 'hr', 'manager']
         },
         { 
           icon: <FaTasks />, 
           name: 'Employee Project', 
           path: '/cds/project', 
-          roles: ['user', 'hr', 'manager'] // ❌ Admin can't see
+          roles: ['user', 'hr', 'manager']
         },
       ]
     },
@@ -236,20 +300,20 @@ const Sidebar = ({ isOpen = true, closeSidebar }) => {
           icon: <FaBell />, 
           name: 'Alerts', 
           path: '/cds/alert', 
-          roles: ['user', 'hr', 'manager', 'admin', 'SuperAdmin'] // ✅ Everyone
+          roles: ['user', 'hr', 'manager', 'admin', 'SuperAdmin']
         },
         { 
           icon: <FaTasks />, 
           name: 'Employee Meeting', 
           path: '/cds/employee-meeting', 
-          roles: ['user', 'hr', 'manager', 'admin', 'SuperAdmin'] // ✅ Everyone
+          roles: ['user', 'hr', 'manager', 'admin', 'SuperAdmin']
         },
       ]
     },
     {
       id: 'admin',
       heading: 'Administration',
-      roles: ['hr', 'manager', 'admin', 'SuperAdmin'], // Only these roles can see this section
+      roles: ['hr', 'manager', 'admin', 'SuperAdmin'],
       items: [
         { 
           icon: <FaUser />, 
@@ -281,7 +345,7 @@ const Sidebar = ({ isOpen = true, closeSidebar }) => {
           path: '/cds/admin/admin-task-create', 
           roles: ['hr', 'manager', 'admin', 'SuperAdmin'] 
         },
-         { 
+        { 
           icon: <FaTasks />, 
           name: 'Client', 
           path: '/cds/admin/emp-client', 
@@ -318,11 +382,9 @@ const Sidebar = ({ isOpen = true, closeSidebar }) => {
   // Filter menu sections based on user role
   const getFilteredMenuSections = () => {
     return menuSections.filter(section => {
-      // If section has specific roles, check if user role is included
       if (section.roles) {
         return section.roles.includes(userRole);
       }
-      // If no roles specified, show to all
       return true;
     });
   };
@@ -336,12 +398,13 @@ const Sidebar = ({ isOpen = true, closeSidebar }) => {
 
     if (filteredItems.length === 0) return null;
 
-    const isSectionOpen = openSections[section.id] || !isOpen;
+    // Mobile पर always open दिखाना है, desktop पर conditional
+    const shouldShowFull = isMobile ? true : isSidebarOpen;
 
     return (
       <Box key={section.id}>
         {/* Section Heading */}
-        {isOpen ? (
+        {shouldShowFull ? (
           <SectionHeading>
             {section.heading}
           </SectionHeading>
@@ -366,7 +429,7 @@ const Sidebar = ({ isOpen = true, closeSidebar }) => {
         <List sx={{ py: 0 }}>
           {filteredItems.map((item, idx) => (
             <StyledListItem key={`${section.id}-${idx}`} disablePadding>
-              {isOpen ? (
+              {shouldShowFull ? (
                 <StyledListItemButton
                   selected={location.pathname === item.path}
                   onClick={() => handleNavigate(item.path)}
@@ -401,39 +464,70 @@ const Sidebar = ({ isOpen = true, closeSidebar }) => {
     );
   };
 
+  // Mobile और Desktop के लिए अलग containers
+  const Container = isMobile ? MobileSidebarContainer : SidebarContainer;
+
   return (
-    <SidebarComponent>
+    <Container
+      ref={sidebarRef}
+      onMouseEnter={isMobile ? undefined : handleMouseEnter}
+      onMouseLeave={isMobile ? undefined : handleMouseLeave}
+      sx={!isMobile ? {
+        width: isSidebarOpen ? drawerWidthOpen : drawerWidthClosed,
+      } : undefined}
+    >
       {/* Menu Sections */}
       {filteredSections.map(renderMenuSection)}
 
       {/* Logout Section */}
       <Box sx={{ mt: 'auto', p: 2 }}>
         <Divider sx={{ mb: 2 }} />
-        <Tooltip title="Logout" placement="right">
-          <IconButton
+        
+        {/* Mobile पर always full view में दिखाना है */}
+        {isMobile || isSidebarOpen ? (
+          <StyledListItemButton
             onClick={handleLogout}
             sx={{
-              width: '100%',
-              justifyContent: isOpen ? 'flex-start' : 'center',
               color: 'text.secondary',
-              padding: isOpen ? '8px 16px' : '8px',
-              borderRadius: 2,
               '&:hover': { 
                 color: 'error.main',
                 backgroundColor: 'action.hover'
               }
             }}
           >
-            <LogoutOutlined sx={{ mr: isOpen ? 2 : 0, fontSize: '1.2rem' }} />
-            {isOpen && (
-              <Typography variant="body2" fontWeight={500}>
-                Logout
-              </Typography>
-            )}
-          </IconButton>
-        </Tooltip>
+            <StyledListItemIcon>
+              <LogoutOutlined sx={{ fontSize: '1.2rem' }} />
+            </StyledListItemIcon>
+            <ListItemText
+              primary="Logout"
+              primaryTypographyProps={{ 
+                variant: 'body2', 
+                fontWeight: 500 
+              }}
+            />
+          </StyledListItemButton>
+        ) : (
+          <Tooltip title="Logout" placement="right">
+            <IconButton
+              onClick={handleLogout}
+              sx={{
+                width: '100%',
+                justifyContent: 'center',
+                color: 'text.secondary',
+                padding: '8px',
+                borderRadius: 2,
+                '&:hover': { 
+                  color: 'error.main',
+                  backgroundColor: 'action.hover'
+                }
+              }}
+            >
+              <LogoutOutlined sx={{ fontSize: '1.2rem' }} />
+            </IconButton>
+          </Tooltip>
+        )}
       </Box>
-    </SidebarComponent>
+    </Container>
   );
 };
 

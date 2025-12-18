@@ -1,182 +1,106 @@
 import React, { useEffect, useState, useMemo } from "react";
 import axios from "../../utils/axiosConfig";
-import {
-  Box,
-  Typography,
-  Paper,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  TextField,
-  IconButton,
-  Snackbar,
-  MenuItem,
-  Stack,
-  Card,
-  CardContent,
-  Grid,
-  Avatar,
-  Fade,
-  Tooltip,
-  Chip,
-  useTheme,
-  FormControl,
-  Select,
-  InputLabel,
-  Checkbox,
-  ListItemText,
-  LinearProgress,
-  InputAdornment,
-  ToggleButton,
-  ToggleButtonGroup,
-  Badge,
-  CircularProgress,
-  Divider,
-} from "@mui/material";
-import {
-  FiAlertCircle,
-  FiAlertTriangle,
-  FiInfo,
-  FiPlus,
-  FiEdit,
-  FiTrash2,
-  FiBell,
-  FiClock,
-  FiTrendingUp,
-  FiUsers,
-  FiUser,
-  FiSearch,
-  FiEye,
-  FiEyeOff,
-  FiFilter,
-  FiGlobe,
-  FiUserCheck,
-  FiChevronDown,
-  FiChevronUp,
-  FiRefreshCw,
-} from "react-icons/fi";
-import { styled, keyframes } from "@mui/material/styles";
+import "../Css/Alerts.css";
 
-/* -----------------------------------
- 🔹 Animations
------------------------------------- */
-const fadeIn = keyframes`
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-`;
+// Icons as React components
+const FiAlertCircle = () => <span className="Alerts-icon">⚠️</span>;
+const FiAlertTriangle = () => <span className="Alerts-icon">⚠️</span>;
+const FiInfo = () => <span className="Alerts-icon">ℹ️</span>;
+const FiPlus = () => <span className="Alerts-icon">➕</span>;
+const FiEdit = () => <span className="Alerts-icon">✏️</span>;
+const FiTrash2 = () => <span className="Alerts-icon">🗑️</span>;
+const FiBell = () => <span className="Alerts-icon">🔔</span>;
+const FiClock = () => <span className="Alerts-icon">⏰</span>;
+const FiTrendingUp = () => <span className="Alerts-icon">📈</span>;
+const FiUsers = () => <span className="Alerts-icon">👥</span>;
+const FiUser = () => <span className="Alerts-icon">👤</span>;
+const FiSearch = () => <span className="Alerts-icon">🔍</span>;
+const FiEye = () => <span className="Alerts-icon">👁️</span>;
+const FiEyeOff = () => <span className="Alerts-icon">🚫</span>;
+const FiFilter = () => <span className="Alerts-icon">🔧</span>;
+const FiGlobe = () => <span className="Alerts-icon">🌍</span>;
+const FiUserCheck = () => <span className="Alerts-icon">✅👤</span>;
+const FiChevronDown = () => <span className="Alerts-icon">⌄</span>;
+const FiChevronUp = () => <span className="Alerts-icon">⌃</span>;
+const FiRefreshCw = () => <span className="Alerts-icon">🔄</span>;
 
-const slideIn = keyframes`
-  from { opacity: 0; transform: translateX(-20px); }
-  to { opacity: 1; transform: translateX(0); }
-`;
+// Custom Components
+const Badge = ({ children, badgeContent, color = "error", size = "small" }) => (
+  <div className="Alerts-badge">
+    {children}
+    {badgeContent > 0 && (
+      <span className={`Alerts-badge-content Alerts-badge-${color}`}>
+        {badgeContent > 99 ? "99+" : badgeContent}
+      </span>
+    )}
+  </div>
+);
 
-const pulse = keyframes`
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
-`;
+const Chip = ({ label, color, icon, size = "medium", variant = "default", onClick, onDelete }) => (
+  <span 
+    className={`Alerts-chip Alerts-chip-${size} Alerts-chip-${variant}`}
+    style={{ 
+      backgroundColor: variant === "outlined" ? "transparent" : color ? `${color}20` : undefined,
+      color: color || undefined,
+      borderColor: color ? `${color}30` : undefined
+    }}
+    onClick={onClick}
+  >
+    {icon && <span className="Alerts-chip-icon">{icon}</span>}
+    {label}
+    {onDelete && (
+      <button className="Alerts-chip-delete" onClick={onDelete}>
+        ×
+      </button>
+    )}
+  </span>
+);
 
-/* -----------------------------------
- 🔹 Styled Components
------------------------------------- */
-const GradientHeader = styled(Paper)(({ theme }) => ({
-  borderRadius: theme.shape.borderRadius * 3,
-  padding: theme.spacing(4),
-  marginBottom: theme.spacing(4),
-  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-  boxShadow: '0 12px 40px rgba(102, 126, 234, 0.3)',
-  position: 'relative',
-  overflow: 'hidden',
-  '&::before': {
-    content: '""',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    background: 'linear-gradient(45deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
-  },
-}));
+const Avatar = ({ children, color, size = "medium" }) => (
+  <div 
+    className={`Alerts-avatar Alerts-avatar-${size}`}
+    style={{ 
+      backgroundColor: color ? `${color}20` : undefined,
+      color: color || undefined
+    }}
+  >
+    {children}
+  </div>
+);
 
-const StatCard = styled(Card)(({ theme, color = "primary", active }) => ({
-  borderRadius: theme.shape.borderRadius * 3,
-  boxShadow: active ? '0 12px 32px rgba(0,0,0,0.15)' : '0 8px 24px rgba(0,0,0,0.08)',
-  background: `linear-gradient(135deg, ${theme.palette.background.paper}, ${theme.palette.background.default})`,
-  border: active ? `2px solid ${theme.palette[color].main}` : '1px solid transparent',
-  overflow: "hidden",
-  cursor: "pointer",
-  position: "relative",
-  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-  transform: active ? 'translateY(-4px)' : 'translateY(0)',
-  "&::before": {
-    content: '""',
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: "4px",
-    background: `linear-gradient(90deg, ${theme.palette[color].main}, ${theme.palette[color].light})`,
-  },
-  "&:hover": {
-    transform: "translateY(-6px)",
-    boxShadow: "0 16px 40px rgba(0,0,0,0.12)",
-  },
-}));
+const Tooltip = ({ title, children }) => (
+  <div className="Alerts-tooltip">
+    {children}
+    <span className="Alerts-tooltip-text">{title}</span>
+  </div>
+);
 
-const AlertCard = styled(Card)(({ theme, type, isread }) => ({
-  borderRadius: theme.shape.borderRadius * 3,
-  boxShadow: theme.shadows[2],
-  animation: `${fadeIn} 0.5s ease-out`,
-  borderLeft: `6px solid ${theme.palette[type].main}`,
-  backgroundColor: isread ? theme.palette.background.default : theme.palette.background.paper,
-  transition: 'all 0.3s ease',
-  position: 'relative',
-  '&:hover': {
-    transform: 'translateY(-4px)',
-    boxShadow: theme.shadows[8],
-    borderLeftWidth: '8px',
-  },
-  '&::after': {
-    content: '""',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: '100%',
-    background: isread ? 'transparent' : `linear-gradient(90deg, ${theme.palette[type].light}10, transparent)`,
-    pointerEvents: 'none',
-  },
-}));
+const CircularProgress = ({ size = 40 }) => (
+  <div className="Alerts-circular-progress" style={{ width: size, height: size }}>
+    <div className="Alerts-circular-progress-inner" />
+  </div>
+);
 
-const SearchField = styled(TextField)(({ theme }) => ({
-  '& .MuiOutlinedInput-root': {
-    borderRadius: theme.shape.borderRadius * 2,
-    backgroundColor: theme.palette.background.paper,
-    transition: 'all 0.3s ease',
-    '&:hover': {
-      backgroundColor: theme.palette.action.hover,
-    },
-    '&.Mui-focused': {
-      backgroundColor: theme.palette.background.paper,
-      boxShadow: `0 0 0 2px ${theme.palette.primary.main}20`,
-    },
-  },
-}));
+const LinearProgress = ({ value }) => (
+  <div className="Alerts-linear-progress">
+    <div 
+      className="Alerts-linear-progress-bar" 
+      style={{ width: `${value}%` }}
+    />
+  </div>
+);
 
-const AssigneeBadge = styled(Chip)(({ theme }) => ({
-  borderRadius: theme.shape.borderRadius * 1.5,
-  fontWeight: 500,
-  '&.user-badge': {
-    background: `linear-gradient(135deg, ${theme.palette.primary.light}20, ${theme.palette.primary.main}20)`,
-    border: `1px solid ${theme.palette.primary.main}30`,
-  },
-  '&.group-badge': {
-    background: `linear-gradient(135deg, ${theme.palette.secondary.light}20, ${theme.palette.secondary.main}20)`,
-    border: `1px solid ${theme.palette.secondary.main}30`,
-  },
-}));
+const Checkbox = ({ checked, onChange }) => (
+  <label className="Alerts-checkbox">
+    <input 
+      type="checkbox" 
+      checked={checked} 
+      onChange={onChange} 
+      className="Alerts-checkbox-input"
+    />
+    <span className="Alerts-checkbox-checkmark" />
+  </label>
+);
 
 /* -----------------------------------
  🔹 Component
@@ -207,14 +131,12 @@ const Alerts = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [userSearch, setUserSearch] = useState("");
   const [groupSearch, setGroupSearch] = useState("");
-  const [viewMode, setViewMode] = useState("all"); // 'all', 'assigned', 'unread'
+  const [viewMode, setViewMode] = useState("all");
   const [expandedAlert, setExpandedAlert] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  const theme = useTheme();
   const token = localStorage.getItem("token");
   const canManage = ["admin", "hr", "manager"].includes(role?.toLowerCase());
-
   const headers = { headers: { Authorization: `Bearer ${token}` } };
 
   /* -----------------------------------
@@ -242,7 +164,7 @@ const Alerts = () => {
       console.error("Error fetching data:", error);
       setNotification({
         message: error.response?.data?.message || "Failed to load alerts",
-        severity: "error",
+        type: "error",
       });
     } finally {
       setLoading(false);
@@ -272,7 +194,6 @@ const Alerts = () => {
         const parsed = JSON.parse(storedUser);
         const userRole = parsed.role || parsed.user?.role || "";
         setRole(userRole.toLowerCase());
-        // Store user ID for read status tracking
         const userId = parsed._id || parsed.user?._id || "";
         if (userId) localStorage.setItem("userId", userId);
       } catch (error) {
@@ -314,11 +235,6 @@ const Alerts = () => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleMultiSelectChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
-
   const handleUserSelect = (userId) => {
     setForm(prev => {
       const isSelected = prev.assignedUsers.includes(userId);
@@ -343,9 +259,9 @@ const Alerts = () => {
 
   const handleSubmit = async () => {
     if (!canManage)
-      return setNotification({ message: "Unauthorized", severity: "error" });
+      return setNotification({ message: "Unauthorized", type: "error" });
     if (!form.message.trim())
-      return setNotification({ message: "Message required", severity: "error" });
+      return setNotification({ message: "Message required", type: "error" });
 
     try {
       const payload = {
@@ -358,27 +274,27 @@ const Alerts = () => {
         setAlerts((prev) =>
           prev.map((a) => (a._id === editId ? res.data.alert : a))
         );
-        setNotification({ message: "Alert updated successfully", severity: "success" });
+        setNotification({ message: "Alert updated successfully", type: "success" });
       } else {
         const res = await axios.post("/alerts", payload, headers);
         setAlerts((prev) => [res.data.alert, ...prev]);
-        setNotification({ message: "Alert created successfully", severity: "success" });
+        setNotification({ message: "Alert created successfully", type: "success" });
       }
       calculateStats(alerts);
       setOpen(false);
-      setTimeout(() => fetchData(), 500); // Refresh data with delay
+      setTimeout(() => fetchData(), 500);
     } catch (error) {
       console.error("Error saving alert:", error);
       setNotification({ 
         message: error.response?.data?.message || "Error saving alert", 
-        severity: "error" 
+        type: "error" 
       });
     }
   };
 
   const handleDelete = async (id) => {
     if (!canManage)
-      return setNotification({ message: "Unauthorized", severity: "error" });
+      return setNotification({ message: "Unauthorized", type: "error" });
     
     if (!window.confirm("Are you sure you want to delete this alert?")) return;
     
@@ -387,11 +303,11 @@ const Alerts = () => {
       const updated = alerts.filter((a) => a._id !== id);
       setAlerts(updated);
       calculateStats(updated);
-      setNotification({ message: "Alert deleted successfully", severity: "success" });
+      setNotification({ message: "Alert deleted successfully", type: "success" });
     } catch (error) {
       setNotification({ 
         message: error.response?.data?.message || "Delete failed", 
-        severity: "error" 
+        type: "error" 
       });
     }
   };
@@ -413,12 +329,11 @@ const Alerts = () => {
         return alert;
       }));
       
-      // Update unread count
       setStats(prev => ({ ...prev, unread: Math.max(0, prev.unread - 1) }));
       
       setNotification({ 
         message: "Marked as read", 
-        severity: "success" 
+        type: "success" 
       });
     } catch (error) {
       console.error("Error marking as read:", error);
@@ -431,7 +346,6 @@ const Alerts = () => {
   const filteredAlerts = useMemo(() => {
     let filtered = alerts;
     
-    // Apply search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(alert => 
@@ -440,12 +354,10 @@ const Alerts = () => {
       );
     }
     
-    // Apply type filter
     if (filterType !== "all") {
       filtered = filtered.filter((a) => a.type === filterType);
     }
     
-    // Apply view mode filter
     if (viewMode === "unread") {
       const userId = localStorage.getItem("userId");
       filtered = filtered.filter(alert => 
@@ -522,736 +434,540 @@ const Alerts = () => {
     setExpandedAlert(expandedAlert === alertId ? null : alertId);
   };
 
-  if (loading)
+  const getTypeColor = (type) => {
+    switch(type) {
+      case "info": return "#29B6F6";
+      case "warning": return "#FFA726";
+      case "error": return "#EF5350";
+      default: return "#667eea";
+    }
+  };
+
+  const getSeverityColor = (severity) => {
+    switch(severity) {
+      case "error": return "#EF5350";
+      case "warning": return "#FFA726";
+      case "success": return "#66BB6A";
+      default: return "#667eea";
+    }
+  };
+
+  if (loading) {
     return (
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: "50vh",
-          flexDirection: 'column',
-          gap: 2,
-        }}
-      >
-        <CircularProgress size={60} />
-        <Typography color="text.secondary">
-          Loading alerts...
-        </Typography>
-      </Box>
+      <div className="Alerts-loading-container">
+        <CircularProgress />
+        <p className="Alerts-loading-text">Loading alerts...</p>
+      </div>
     );
+  }
 
   return (
-    <Fade in timeout={600}>
-      <Box sx={{ p: { xs: 2, md: 4 } }}>
-        {/* Enhanced Header with Gradient */}
-        <GradientHeader>
-          <Stack
-            direction={{ xs: "column", sm: "row" }}
-            alignItems="center"
-            justifyContent="space-between"
-            spacing={3}
-          >
-            <Box sx={{ position: 'relative', zIndex: 1 }}>
-              <Typography
-                variant="h3"
-                fontWeight={900}
-                sx={{
-                  background: 'linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%)',
-                  WebkitBackgroundClip: "text",
-                  backgroundClip: "text",
-                  color: "transparent",
-                  mb: 1,
-                }}
+    <div className="Alerts-container">
+      {/* Enhanced Header with Gradient */}
+      <div className="Alerts-gradient-header">
+        <div className="Alerts-header-content">
+          <div className="Alerts-header-text">
+            <h1 className="Alerts-title">System Alerts</h1>
+            <p className="Alerts-subtitle">Real-time notifications & announcements</p>
+          </div>
+          <div className="Alerts-header-actions">
+            <Tooltip title="Refresh">
+              <button 
+                className={`Alerts-icon-button Alerts-refresh-button ${refreshing ? 'Alerts-refreshing' : ''}`}
+                onClick={fetchData} 
+                disabled={refreshing}
               >
-                System Alerts
-              </Typography>
-              <Typography variant="h6" sx={{ color: 'rgba(255,255,255,0.9)' }}>
-                Real-time notifications & announcements
-              </Typography>
-            </Box>
-            <Stack direction="row" spacing={2} alignItems="center" sx={{ zIndex: 1 }}>
-              <Tooltip title="Refresh">
-                <IconButton 
-                  onClick={fetchData} 
-                  disabled={refreshing}
-                  sx={{ 
-                    backgroundColor: 'rgba(255,255,255,0.1)',
-                    color: 'white',
-                    '&:hover': { backgroundColor: 'rgba(255,255,255,0.2)' }
-                  }}
-                >
-                  <FiRefreshCw className={refreshing ? 'spin' : ''} />
-                </IconButton>
-              </Tooltip>
-              {canManage && (
-                <Button
-                  variant="contained"
-                  startIcon={<FiPlus />}
-                  onClick={() => handleOpen()}
-                  sx={{ 
-                    borderRadius: 3,
-                    background: 'linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%)',
-                    color: '#667eea',
-                    fontWeight: 600,
-                    '&:hover': {
-                      background: 'linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%)',
-                      transform: 'translateY(-2px)',
-                    }
-                  }}
-                >
-                  New Alert
-                </Button>
-              )}
-            </Stack>
-          </Stack>
-        </GradientHeader>
+                <FiRefreshCw />
+              </button>
+            </Tooltip>
+            {canManage && (
+              <button
+                className="Alerts-button Alerts-button-primary Alerts-new-alert-button"
+                onClick={() => handleOpen()}
+              >
+                <FiPlus />
+                New Alert
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
 
-        {/* Stats & Filters Section */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          {/* Search Bar */}
-          <Grid item xs={12} md={6}>
-            <SearchField
-              fullWidth
+      {/* Stats & Filters Section */}
+      <div className="Alerts-stats-filters">
+        {/* Search Bar */}
+        <div className="Alerts-search-container">
+          <div className="Alerts-search-field">
+            <FiSearch />
+            <input
+              type="text"
               placeholder="Search alerts by message or type..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <FiSearch color={theme.palette.text.secondary} />
-                  </InputAdornment>
-                ),
-                endAdornment: searchQuery && (
-                  <InputAdornment position="end">
-                    <IconButton size="small" onClick={() => setSearchQuery('')}>
-                      ✕
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
+              className="Alerts-search-input"
             />
-          </Grid>
+            {searchQuery && (
+              <button className="Alerts-search-clear" onClick={() => setSearchQuery('')}>
+                ✕
+              </button>
+            )}
+          </div>
+        </div>
 
-          {/* View Mode Toggle */}
-          <Grid item xs={12} md={6}>
-            <Paper sx={{ p: 2, borderRadius: 3 }}>
-              <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
-                <Typography variant="subtitle2" color="text.secondary">
-                  View:
-                </Typography>
-                <ToggleButtonGroup
-                  value={viewMode}
-                  exclusive
-                  onChange={(e, newView) => newView && setViewMode(newView)}
-                  size="small"
-                >
-                  <ToggleButton value="all">
-                    <FiEye size={16} />
-                    <Typography variant="caption" sx={{ ml: 1 }}>
-                      All
-                    </Typography>
-                  </ToggleButton>
-                  <ToggleButton value="assigned">
-                    <FiUserCheck size={16} />
-                    <Typography variant="caption" sx={{ ml: 1 }}>
-                      Assigned
-                    </Typography>
-                  </ToggleButton>
-                  <ToggleButton value="unread">
-                    <Badge badgeContent={stats.unread} color="error" size="small">
-                      <FiBell size={16} />
-                    </Badge>
-                    <Typography variant="caption" sx={{ ml: 1 }}>
-                      Unread
-                    </Typography>
-                  </ToggleButton>
-                </ToggleButtonGroup>
-              </Stack>
-            </Paper>
-          </Grid>
+        {/* View Mode Toggle */}
+        <div className="Alerts-view-mode-container">
+          <div className="Alerts-view-mode-card">
+            <span className="Alerts-view-mode-label">View:</span>
+            <div className="Alerts-toggle-button-group">
+              <button 
+                className={`Alerts-toggle-button ${viewMode === 'all' ? 'Alerts-toggle-button-active' : ''}`}
+                onClick={() => setViewMode('all')}
+              >
+                <FiEye />
+                <span>All</span>
+              </button>
+              <button 
+                className={`Alerts-toggle-button ${viewMode === 'assigned' ? 'Alerts-toggle-button-active' : ''}`}
+                onClick={() => setViewMode('assigned')}
+              >
+                <FiUserCheck />
+                <span>Assigned</span>
+              </button>
+              <button 
+                className={`Alerts-toggle-button ${viewMode === 'unread' ? 'Alerts-toggle-button-active' : ''}`}
+                onClick={() => setViewMode('unread')}
+              >
+                <Badge badgeContent={stats.unread}>
+                  <FiBell />
+                </Badge>
+                <span>Unread</span>
+              </button>
+            </div>
+          </div>
+        </div>
 
-          {/* Stat Cards */}
+        {/* Stat Cards */}
+        <div className="Alerts-stats-grid">
           {[
             { 
               key: "total", 
               label: "Total Alerts", 
-              color: "primary", 
+              color: "#667eea", 
               icon: <FiBell />,
               active: filterType === "all" && viewMode === "all"
             },
             { 
               key: "info", 
               label: "Information", 
-              color: "info", 
+              color: "#29B6F6", 
               icon: <FiInfo />,
               active: filterType === "info"
             },
             { 
               key: "warning", 
               label: "Warnings", 
-              color: "warning", 
+              color: "#FFA726", 
               icon: <FiAlertTriangle />,
               active: filterType === "warning"
             },
             { 
               key: "error", 
               label: "Errors", 
-              color: "error", 
+              color: "#EF5350", 
               icon: <FiAlertCircle />,
               active: filterType === "error"
             },
           ].map((s) => (
-            <Grid item xs={6} md={3} key={s.key}>
-              <StatCard
-                color={s.color}
-                active={s.active}
-                onClick={() => {
-                  setFilterType(s.key === "total" ? "all" : s.key);
-                  setViewMode("all");
-                }}
-              >
-                <CardContent>
-                  <Stack
-                    direction="row"
-                    alignItems="center"
-                    justifyContent="space-between"
-                  >
-                    <Box>
-                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
-                        {s.label}
-                      </Typography>
-                      <Typography variant="h3" fontWeight={800}>
-                        {stats[s.key]}
-                      </Typography>
-                    </Box>
-                    <Avatar
-                      sx={{
-                        bgcolor: `${theme.palette[s.color].main}20`,
-                        color: theme.palette[s.color].main,
-                        width: 48,
-                        height: 48,
-                      }}
-                    >
-                      {s.icon}
-                    </Avatar>
-                  </Stack>
-                </CardContent>
-              </StatCard>
-            </Grid>
+            <div 
+              key={s.key} 
+              className={`Alerts-stat-card ${s.active ? 'Alerts-stat-card-active' : ''}`}
+              style={{ borderTopColor: s.color }}
+              onClick={() => {
+                setFilterType(s.key === "total" ? "all" : s.key);
+                setViewMode("all");
+              }}
+            >
+              <div className="Alerts-stat-content">
+                <div className="Alerts-stat-text">
+                  <span className="Alerts-stat-label">{s.label}</span>
+                  <h3 className="Alerts-stat-value">{stats[s.key]}</h3>
+                </div>
+                <Avatar color={s.color}>
+                  {s.icon}
+                </Avatar>
+              </div>
+            </div>
           ))}
-        </Grid>
+        </div>
+      </div>
 
-        {/* Alerts List */}
-        <Paper sx={{ borderRadius: 4, p: 3, position: 'relative' }}>
-          <Stack spacing={3}>
-            {/* Header */}
-            <Stack direction="row" justifyContent="space-between" alignItems="center">
-              <Box>
-                <Typography variant="h6" fontWeight={600}>
-                  Alerts ({filteredAlerts.length})
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {viewMode === 'unread' ? 'Showing unread alerts' : 
-                   viewMode === 'assigned' ? 'Showing assigned alerts' : 
-                   'Showing all alerts'}
-                </Typography>
-              </Box>
-              <Chip
-                icon={<FiFilter />}
-                label={`Filter: ${filterType === 'all' ? 'All Types' : filterType}`}
-                onClick={() => setFilterType('all')}
-                variant="outlined"
-                sx={{ cursor: 'pointer' }}
-              />
-            </Stack>
+      {/* Alerts List */}
+      <div className="Alerts-list-container">
+        <div className="Alerts-list-header">
+          <div>
+            <h2 className="Alerts-list-title">Alerts ({filteredAlerts.length})</h2>
+            <p className="Alerts-list-subtitle">
+              {viewMode === 'unread' ? 'Showing unread alerts' : 
+               viewMode === 'assigned' ? 'Showing assigned alerts' : 
+               'Showing all alerts'}
+            </p>
+          </div>
+          <Chip
+            icon={<FiFilter />}
+            label={`Filter: ${filterType === 'all' ? 'All Types' : filterType}`}
+            onClick={() => setFilterType('all')}
+            variant="outlined"
+          />
+        </div>
 
-            {/* Alerts */}
-            {filteredAlerts.length === 0 ? (
-              <Box textAlign="center" py={8}>
-                <FiBell size={64} color={theme.palette.text.disabled} />
-                <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
-                  No Alerts Found
-                </Typography>
-                <Typography color="text.secondary">
-                  {searchQuery ? 'Try a different search term' : 
-                   viewMode === 'unread' ? 'You have no unread alerts' : 
-                   'No alerts match your current filters'}
-                </Typography>
-              </Box>
-            ) : (
-              filteredAlerts.map((alert) => {
-                const assignedUsers = alert.assignedUsers || [];
-                const assignedGroups = alert.assignedGroups || [];
-                const unread = isAlertUnread(alert);
-                const expanded = expandedAlert === alert._id;
-                
-                return (
-                  <AlertCard key={alert._id} type={alert.type} isread={!unread}>
-                    <CardContent>
-                      <Stack spacing={2}>
-                        {/* Header Row */}
-                        <Stack
-                          direction={{ xs: "column", sm: "row" }}
-                          alignItems={{ xs: "flex-start", sm: "center" }}
-                          justifyContent="space-between"
-                          spacing={2}
-                        >
-                          <Stack direction="row" spacing={1} alignItems="center">
-                            <Chip
-                              label={alert.type}
-                              size="small"
-                              sx={{
-                                fontWeight: 700,
-                                textTransform: "uppercase",
-                                fontSize: '0.7rem',
-                                letterSpacing: '0.5px',
-                                background: theme.palette[alert.type].main,
-                                color: 'white',
-                              }}
-                            />
-                            {unread && (
-                              <Chip
-                                size="small"
-                                label="NEW"
-                                color="error"
-                                sx={{ fontWeight: 700 }}
-                              />
-                            )}
-                            <Typography variant="caption" color="text.secondary">
-                              <FiClock size={12} style={{ marginRight: 4 }} />
-                              {formatDate(alert.createdAt)}
-                            </Typography>
-                          </Stack>
-                          
-                          <Stack direction="row" spacing={1}>
-                            {unread && (
-                              <Tooltip title="Mark as read">
-                                <IconButton
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleMarkAsRead(alert._id);
-                                  }}
-                                  size="small"
-                                  sx={{ 
-                                    backgroundColor: `${theme.palette.success.main}15`,
-                                    color: theme.palette.success.main,
-                                    '&:hover': {
-                                      backgroundColor: `${theme.palette.success.main}25`,
-                                    }
-                                  }}
-                                >
-                                  <FiEye size={16} />
-                                </IconButton>
-                              </Tooltip>
-                            )}
-                            {canManage && (
-                              <>
-                                <Tooltip title="Edit">
-                                  <IconButton
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleOpen(alert);
-                                    }}
-                                    color="primary"
-                                    size="small"
-                                  >
-                                    <FiEdit />
-                                  </IconButton>
-                                </Tooltip>
-                                <Tooltip title="Delete">
-                                  <IconButton
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleDelete(alert._id);
-                                    }}
-                                    color="error"
-                                    size="small"
-                                  >
-                                    <FiTrash2 />
-                                  </IconButton>
-                                </Tooltip>
-                              </>
-                            )}
-                            <Tooltip title={expanded ? "Collapse" : "Expand"}>
-                              <IconButton
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleAlertExpansion(alert._id);
-                                }}
-                                size="small"
-                              >
-                                {expanded ? <FiChevronUp /> : <FiChevronDown />}
-                              </IconButton>
-                            </Tooltip>
-                          </Stack>
-                        </Stack>
-
-                        {/* Message */}
-                        <Typography 
-                          variant="body1" 
-                          sx={{ 
-                            fontWeight: unread ? 600 : 400,
-                            color: unread ? 'text.primary' : 'text.secondary',
-                          }}
-                        >
-                          {alert.message}
-                        </Typography>
-
-                        {/* Assigned Users & Groups (Collapsible) */}
-                        {(expanded || assignedUsers.length > 0 || assignedGroups.length > 0) && (
-                          <Box sx={{ animation: `${slideIn} 0.3s ease-out` }}>
-                            <Divider sx={{ my: 1 }} />
-                            <Stack spacing={1}>
-                              <Typography variant="caption" color="text.secondary" fontWeight={500}>
-                                ASSIGNED TO:
-                              </Typography>
-                              <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
-                                {assignedUsers.length > 0 ? (
-                                  assignedUsers.map((user, index) => (
-                                    <AssigneeBadge
-                                      key={index}
-                                      className="user-badge"
-                                      icon={<FiUser size={12} />}
-                                      label={getUserNameById(user)}
-                                      size="small"
-                                    />
-                                  ))
-                                ) : (
-                                  <AssigneeBadge
-                                    className="user-badge"
-                                    icon={<FiGlobe size={12} />}
-                                    label="All Users"
-                                    size="small"
-                                  />
-                                )}
-                                
-                                {assignedGroups.length > 0 && (
-                                  assignedGroups.map((group, index) => (
-                                    <AssigneeBadge
-                                      key={index}
-                                      className="group-badge"
-                                      icon={<FiUsers size={12} />}
-                                      label={getGroupNameById(group)}
-                                      size="small"
-                                    />
-                                  ))
-                                )}
-                              </Stack>
-                            </Stack>
-                          </Box>
-                        )}
-                      </Stack>
-                    </CardContent>
-                  </AlertCard>
-                );
-              })
-            )}
-          </Stack>
-        </Paper>
-
-        {/* Enhanced Dialog */}
-        <Dialog 
-          open={open} 
-          onClose={handleClose} 
-          fullWidth 
-          maxWidth="md"
-          PaperProps={{
-            sx: {
-              borderRadius: 4,
-              overflow: 'hidden',
-            }
-          }}
-        >
-          <DialogTitle sx={{ 
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            color: 'white',
-            pb: 2
-          }}>
-            <Typography variant="h5" fontWeight={600}>
-              {editId ? "✏️ Edit Alert" : "🆕 Create New Alert"}
-            </Typography>
-            <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5 }}>
-              {editId ? "Update your alert details" : "Create a new system alert"}
-            </Typography>
-          </DialogTitle>
-          
-          <DialogContent sx={{ mt: 3 }}>
-            <Stack spacing={3}>
-              {/* Alert Type Selection */}
-              <FormControl fullWidth>
-                <InputLabel>Alert Type *</InputLabel>
-                <Select
-                  label="Alert Type *"
-                  name="type"
-                  value={form.type}
-                  onChange={handleChange}
-                  sx={{
-                    '& .MuiSelect-select': {
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1,
-                    }
-                  }}
-                >
-                  <MenuItem value="info">
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <FiInfo color={theme.palette.info.main} />
-                      <Box>
-                        <Typography>Information</Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          General updates and announcements
-                        </Typography>
-                      </Box>
-                    </Stack>
-                  </MenuItem>
-                  <MenuItem value="warning">
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <FiAlertTriangle color={theme.palette.warning.main} />
-                      <Box>
-                        <Typography>Warning</Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Important notices requiring attention
-                        </Typography>
-                      </Box>
-                    </Stack>
-                  </MenuItem>
-                  <MenuItem value="error">
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <FiAlertCircle color={theme.palette.error.main} />
-                      <Box>
-                        <Typography>Error / Critical</Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Urgent issues requiring immediate action
-                        </Typography>
-                      </Box>
-                    </Stack>
-                  </MenuItem>
-                </Select>
-              </FormControl>
+        <div className="Alerts-list">
+          {filteredAlerts.length === 0 ? (
+            <div className="Alerts-empty-state">
+              <FiBell />
+              <h3>No Alerts Found</h3>
+              <p>
+                {searchQuery ? 'Try a different search term' : 
+                 viewMode === 'unread' ? 'You have no unread alerts' : 
+                 'No alerts match your current filters'}
+              </p>
+            </div>
+          ) : (
+            filteredAlerts.map((alert) => {
+              const assignedUsers = alert.assignedUsers || [];
+              const assignedGroups = alert.assignedGroups || [];
+              const unread = isAlertUnread(alert);
+              const expanded = expandedAlert === alert._id;
+              const typeColor = getTypeColor(alert.type);
               
-              {/* Message */}
-              <TextField
-                label="Alert Message *"
-                name="message"
-                multiline
-                rows={4}
-                value={form.message}
-                onChange={handleChange}
-                fullWidth
-                placeholder="Enter your alert message here..."
-                required
-                InputProps={{
-                  sx: { borderRadius: 2 }
-                }}
-              />
-
-              {/* Assign Users Section */}
-              <Paper variant="outlined" sx={{ p: 2, borderRadius: 3 }}>
-                <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-                  📋 Assign Users
-                </Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>
-                  Select specific users or leave empty for all users
-                </Typography>
-                
-                {/* User Search */}
-                <SearchField
-                  fullWidth
-                  placeholder="Search users by name, email, or role..."
-                  value={userSearch}
-                  onChange={(e) => setUserSearch(e.target.value)}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <FiSearch color={theme.palette.text.secondary} />
-                      </InputAdornment>
-                    ),
-                    sx: { borderRadius: 2 }
-                  }}
-                  sx={{ mb: 2 }}
-                />
-                
-                {/* Selected Users Chips */}
-                {form.assignedUsers.length > 0 && (
-                  <Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: 'wrap', gap: 1 }}>
-                    {form.assignedUsers.map(userId => {
-                      const user = users.find(u => u._id === userId);
-                      return user ? (
+              return (
+                <div 
+                  key={alert._id} 
+                  className={`Alerts-alert-card ${unread ? 'Alerts-alert-unread' : ''}`}
+                  style={{ borderLeftColor: typeColor }}
+                >
+                  <div className="Alerts-alert-content">
+                    <div className="Alerts-alert-header">
+                      <div className="Alerts-alert-meta">
                         <Chip
-                          key={userId}
-                          label={user.name || user.email}
-                          onDelete={() => handleUserSelect(userId)}
+                          label={alert.type}
                           size="small"
-                          sx={{
-                            background: `linear-gradient(135deg, ${theme.palette.primary.light}20, ${theme.palette.primary.main}20)`,
+                          style={{ 
+                            backgroundColor: typeColor,
+                            color: 'white'
                           }}
                         />
-                      ) : null;
-                    })}
-                  </Stack>
-                )}
+                        {unread && (
+                          <Chip
+                            size="small"
+                            label="NEW"
+                            color="#EF5350"
+                          />
+                        )}
+                        <span className="Alerts-alert-date">
+                          <FiClock />
+                          {formatDate(alert.createdAt)}
+                        </span>
+                      </div>
+                      
+                      <div className="Alerts-alert-actions">
+                        {unread && (
+                          <Tooltip title="Mark as read">
+                            <button
+                              className="Alerts-icon-button Alerts-read-button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleMarkAsRead(alert._id);
+                              }}
+                            >
+                              <FiEye />
+                            </button>
+                          </Tooltip>
+                        )}
+                        {canManage && (
+                          <>
+                            <Tooltip title="Edit">
+                              <button
+                                className="Alerts-icon-button Alerts-edit-button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpen(alert);
+                                }}
+                              >
+                                <FiEdit />
+                              </button>
+                            </Tooltip>
+                            <Tooltip title="Delete">
+                              <button
+                                className="Alerts-icon-button Alerts-delete-button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDelete(alert._id);
+                                }}
+                              >
+                                <FiTrash2 />
+                              </button>
+                            </Tooltip>
+                          </>
+                        )}
+                        <Tooltip title={expanded ? "Collapse" : "Expand"}>
+                          <button
+                            className="Alerts-icon-button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleAlertExpansion(alert._id);
+                            }}
+                          >
+                            {expanded ? <FiChevronUp /> : <FiChevronDown />}
+                          </button>
+                        </Tooltip>
+                      </div>
+                    </div>
+
+                    <p className={`Alerts-alert-message ${unread ? 'Alerts-alert-message-unread' : ''}`}>
+                      {alert.message}
+                    </p>
+
+                    {(expanded || assignedUsers.length > 0 || assignedGroups.length > 0) && (
+                      <div className="Alerts-alert-details">
+                        <div className="Alerts-divider" />
+                        <div className="Alerts-assignments">
+                          <span className="Alerts-assignments-label">ASSIGNED TO:</span>
+                          <div className="Alerts-assignments-list">
+                            {assignedUsers.length > 0 ? (
+                              assignedUsers.map((user, index) => (
+                                <Chip
+                                  key={index}
+                                  icon={<FiUser />}
+                                  label={getUserNameById(user)}
+                                  size="small"
+                                  style={{ 
+                                    backgroundColor: '#667eea20',
+                                    color: '#667eea',
+                                    borderColor: '#667eea30'
+                                  }}
+                                />
+                              ))
+                            ) : (
+                              <Chip
+                                icon={<FiGlobe />}
+                                label="All Users"
+                                size="small"
+                                style={{ 
+                                  backgroundColor: '#667eea20',
+                                  color: '#667eea',
+                                  borderColor: '#667eea30'
+                                }}
+                              />
+                            )}
+                            
+                            {assignedGroups.length > 0 && (
+                              assignedGroups.map((group, index) => (
+                                <Chip
+                                  key={index}
+                                  icon={<FiUsers />}
+                                  label={getGroupNameById(group)}
+                                  size="small"
+                                  style={{ 
+                                    backgroundColor: '#764ba220',
+                                    color: '#764ba2',
+                                    borderColor: '#764ba230'
+                                  }}
+                                />
+                              ))
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+
+      {/* Enhanced Dialog */}
+      {open && (
+        <div className="Alerts-modal">
+          <div className="Alerts-modal-backdrop" onClick={handleClose} />
+          <div className="Alerts-modal-content Alerts-modal-md">
+            <div className="Alerts-modal-header Alerts-modal-header-primary">
+              <div className="Alerts-modal-title">
+                <h2>{editId ? "✏️ Edit Alert" : "🆕 Create New Alert"}</h2>
+                <p>{editId ? "Update your alert details" : "Create a new system alert"}</p>
+              </div>
+            </div>
+            
+            <div className="Alerts-modal-body">
+              <div className="Alerts-form">
+                {/* Alert Type Selection */}
+                <div className="Alerts-form-group">
+                  <label>Alert Type *</label>
+                  <select
+                    name="type"
+                    value={form.type}
+                    onChange={handleChange}
+                    className="Alerts-select"
+                  >
+                    <option value="info">
+                      Information - General updates and announcements
+                    </option>
+                    <option value="warning">
+                      Warning - Important notices requiring attention
+                    </option>
+                    <option value="error">
+                      Error / Critical - Urgent issues requiring immediate action
+                    </option>
+                  </select>
+                </div>
                 
-                {/* Users List */}
-                <Box sx={{ maxHeight: 200, overflow: 'auto', border: `1px solid ${theme.palette.divider}`, borderRadius: 2, p: 1 }}>
-                  {filteredUsers.length === 0 ? (
-                    <Typography color="text.secondary" sx={{ p: 2, textAlign: 'center' }}>
-                      No users found
-                    </Typography>
-                  ) : (
-                    filteredUsers.map((user) => (
-                      <Paper
-                        key={user._id}
-                        sx={{
-                          p: 1.5,
-                          mb: 1,
-                          cursor: 'pointer',
-                          transition: 'all 0.2s',
-                          border: form.assignedUsers.includes(user._id) 
-                            ? `2px solid ${theme.palette.primary.main}`
-                            : `1px solid ${theme.palette.divider}`,
-                          backgroundColor: form.assignedUsers.includes(user._id) 
-                            ? `${theme.palette.primary.main}10`
-                            : 'transparent',
-                          borderRadius: 2,
-                          '&:hover': {
-                            backgroundColor: `${theme.palette.primary.main}05`,
-                            transform: 'translateY(-1px)',
-                          }
-                        }}
-                        onClick={() => handleUserSelect(user._id)}
-                      >
-                        <Stack direction="row" alignItems="center" spacing={2}>
+                {/* Message */}
+                <div className="Alerts-form-group">
+                  <label>Alert Message *</label>
+                  <textarea
+                    name="message"
+                    rows="4"
+                    value={form.message}
+                    onChange={handleChange}
+                    className="Alerts-textarea"
+                    placeholder="Enter your alert message here..."
+                    required
+                  />
+                </div>
+
+                {/* Assign Users Section */}
+                <div className="Alerts-assign-section">
+                  <h3 className="Alerts-assign-title">📋 Assign Users</h3>
+                  <p className="Alerts-assign-subtitle">
+                    Select specific users or leave empty for all users
+                  </p>
+                  
+                  {/* User Search */}
+                  <div className="Alerts-search-field">
+                    <FiSearch />
+                    <input
+                      type="text"
+                      placeholder="Search users by name, email, or role..."
+                      value={userSearch}
+                      onChange={(e) => setUserSearch(e.target.value)}
+                      className="Alerts-search-input"
+                    />
+                  </div>
+                  
+                  {/* Selected Users Chips */}
+                  {form.assignedUsers.length > 0 && (
+                    <div className="Alerts-selected-chips">
+                      {form.assignedUsers.map(userId => {
+                        const user = users.find(u => u._id === userId);
+                        return user ? (
+                          <Chip
+                            key={userId}
+                            label={user.name || user.email}
+                            onDelete={() => handleUserSelect(userId)}
+                            size="small"
+                            style={{ backgroundColor: '#667eea20' }}
+                          />
+                        ) : null;
+                      })}
+                    </div>
+                  )}
+                  
+                  {/* Users List */}
+                  <div className="Alerts-users-list">
+                    {filteredUsers.length === 0 ? (
+                      <div className="Alerts-empty-list">
+                        No users found
+                      </div>
+                    ) : (
+                      filteredUsers.map((user) => (
+                        <div
+                          key={user._id}
+                          className={`Alerts-user-item ${form.assignedUsers.includes(user._id) ? 'Alerts-user-item-selected' : ''}`}
+                          onClick={() => handleUserSelect(user._id)}
+                        >
                           <Checkbox
                             checked={form.assignedUsers.includes(user._id)}
                             onChange={() => handleUserSelect(user._id)}
                           />
-                          <Avatar
-                            sx={{
-                              width: 32,
-                              height: 32,
-                              bgcolor: theme.palette.primary.light,
-                              color: theme.palette.primary.main,
-                              fontSize: '0.875rem'
-                            }}
-                          >
-                            
+                          <Avatar size="small" color="#667eea">
+                            {user.name?.charAt(0) || user.email?.charAt(0)}
                           </Avatar>
-                          <Box sx={{ flex: 1 }}>
-                            <Typography variant="body2" fontWeight={500}>
-                              {user.name || user.email}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
+                          <div className="Alerts-user-info">
+                            <p className="Alerts-user-name">{user.name || user.email}</p>
+                            <p className="Alerts-user-details">
                               {user.email} • {user.role || 'User'}
-                            </Typography>
-                          </Box>
-                        </Stack>
-                      </Paper>
-                    ))
-                  )}
-                </Box>
-              </Paper>
+                            </p>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
 
-              {/* Assign Groups Section */}
-              <Paper variant="outlined" sx={{ p: 2, borderRadius: 3 }}>
-                <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-                  👥 Assign Groups
-                </Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>
-                  Select specific groups or leave empty for all groups
-                </Typography>
-                
-                {/* Group Search */}
-                <SearchField
-                  fullWidth
-                  placeholder="Search groups by name..."
-                  value={groupSearch}
-                  onChange={(e) => setGroupSearch(e.target.value)}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <FiSearch color={theme.palette.text.secondary} />
-                      </InputAdornment>
-                    ),
-                    sx: { borderRadius: 2 }
-                  }}
-                  sx={{ mb: 2 }}
-                />
-                
-                {/* Selected Groups Chips */}
-                {form.assignedGroups.length > 0 && (
-                  <Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: 'wrap', gap: 1 }}>
-                    {form.assignedGroups.map(groupId => {
-                      const group = groups.find(g => g._id === groupId);
-                      return group ? (
-                        <Chip
-                          key={groupId}
-                          label={group.name}
-                          onDelete={() => handleGroupSelect(groupId)}
-                          size="small"
-                          sx={{
-                            background: `linear-gradient(135deg, ${theme.palette.secondary.light}20, ${theme.palette.secondary.main}20)`,
-                          }}
-                        />
-                      ) : null;
-                    })}
-                  </Stack>
-                )}
-                
-                {/* Groups List */}
-                <Box sx={{ maxHeight: 200, overflow: 'auto', border: `1px solid ${theme.palette.divider}`, borderRadius: 2, p: 1 }}>
-                  {filteredGroups.length === 0 ? (
-                    <Typography color="text.secondary" sx={{ p: 2, textAlign: 'center' }}>
-                      No groups found
-                    </Typography>
-                  ) : (
-                    filteredGroups.map((group) => (
-                      <Paper
-                        key={group._id}
-                        sx={{
-                          p: 1.5,
-                          mb: 1,
-                          cursor: 'pointer',
-                          transition: 'all 0.2s',
-                          border: form.assignedGroups.includes(group._id) 
-                            ? `2px solid ${theme.palette.secondary.main}`
-                            : `1px solid ${theme.palette.divider}`,
-                          backgroundColor: form.assignedGroups.includes(group._id) 
-                            ? `${theme.palette.secondary.main}10`
-                            : 'transparent',
-                          borderRadius: 2,
-                          '&:hover': {
-                            backgroundColor: `${theme.palette.secondary.main}05`,
-                            transform: 'translateY(-1px)',
-                          }
-                        }}
-                        onClick={() => handleGroupSelect(group._id)}
-                      >
-                        <Stack direction="row" alignItems="center" spacing={2}>
+                {/* Assign Groups Section */}
+                <div className="Alerts-assign-section">
+                  <h3 className="Alerts-assign-title">👥 Assign Groups</h3>
+                  <p className="Alerts-assign-subtitle">
+                    Select specific groups or leave empty for all groups
+                  </p>
+                  
+                  {/* Group Search */}
+                  <div className="Alerts-search-field">
+                    <FiSearch />
+                    <input
+                      type="text"
+                      placeholder="Search groups by name..."
+                      value={groupSearch}
+                      onChange={(e) => setGroupSearch(e.target.value)}
+                      className="Alerts-search-input"
+                    />
+                  </div>
+                  
+                  {/* Selected Groups Chips */}
+                  {form.assignedGroups.length > 0 && (
+                    <div className="Alerts-selected-chips">
+                      {form.assignedGroups.map(groupId => {
+                        const group = groups.find(g => g._id === groupId);
+                        return group ? (
+                          <Chip
+                            key={groupId}
+                            label={group.name}
+                            onDelete={() => handleGroupSelect(groupId)}
+                            size="small"
+                            style={{ backgroundColor: '#764ba220' }}
+                          />
+                        ) : null;
+                      })}
+                    </div>
+                  )}
+                  
+                  {/* Groups List */}
+                  <div className="Alerts-groups-list">
+                    {filteredGroups.length === 0 ? (
+                      <div className="Alerts-empty-list">
+                        No groups found
+                      </div>
+                    ) : (
+                      filteredGroups.map((group) => (
+                        <div
+                          key={group._id}
+                          className={`Alerts-group-item ${form.assignedGroups.includes(group._id) ? 'Alerts-group-item-selected' : ''}`}
+                          onClick={() => handleGroupSelect(group._id)}
+                        >
                           <Checkbox
                             checked={form.assignedGroups.includes(group._id)}
                             onChange={() => handleGroupSelect(group._id)}
                           />
-                          <Avatar
-                            sx={{
-                              width: 32,
-                              height: 32,
-                              bgcolor: theme.palette.secondary.light,
-                              color: theme.palette.secondary.main,
-                            }}
-                          >
-                            <FiUsers size={16} />
+                          <Avatar size="small" color="#764ba2">
+                            <FiUsers />
                           </Avatar>
-                          <Box sx={{ flex: 1 }}>
-                            <Typography variant="body2" fontWeight={500}>
-                              {group.name}
-                            </Typography>
+                          <div className="Alerts-group-info">
+                            <p className="Alerts-group-name">{group.name}</p>
                             {group.description && (
-                              <Typography variant="caption" color="text.secondary">
-                                {group.description}
-                              </Typography>
+                              <p className="Alerts-group-description">{group.description}</p>
                             )}
-                          </Box>
+                          </div>
                           {group.members && (
                             <Chip
                               size="small"
@@ -1259,91 +975,68 @@ const Alerts = () => {
                               variant="outlined"
                             />
                           )}
-                        </Stack>
-                      </Paper>
-                    ))
-                  )}
-                </Box>
-              </Paper>
-            </Stack>
-          </DialogContent>
-          
-          <DialogActions sx={{ px: 3, pb: 3 }}>
-            <Button 
-              onClick={handleClose} 
-              variant="outlined"
-              sx={{ borderRadius: 2 }}
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleSubmit} 
-              variant="contained"
-              disabled={!form.message.trim()}
-              sx={{ 
-                borderRadius: 2,
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                '&:hover': {
-                  background: 'linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)',
-                  transform: 'translateY(-2px)',
-                },
-                '&.Mui-disabled': {
-                  background: theme.palette.action.disabledBackground,
-                }
-              }}
-            >
-              {editId ? "Update Alert" : "Create Alert"}
-            </Button>
-          </DialogActions>
-        </Dialog>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="Alerts-modal-footer">
+              <button 
+                className="Alerts-button Alerts-button-outline"
+                onClick={handleClose}
+              >
+                Cancel
+              </button>
+              <button 
+                className="Alerts-button Alerts-button-primary"
+                onClick={handleSubmit}
+                disabled={!form.message.trim()}
+              >
+                {editId ? "Update Alert" : "Create Alert"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-        {/* Enhanced Snackbar */}
-        <Snackbar
-          open={!!notification}
-          autoHideDuration={4000}
-          onClose={() => setNotification(null)}
-          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-          sx={{ 
-            '& .MuiSnackbarContent-root': {
-              borderRadius: 3,
-              boxShadow: theme.shadows[8],
-            }
-          }}
-        >
-          <Card
-            sx={{
-              background: 
-                notification?.severity === "error" 
-                  ? `linear-gradient(135deg, ${theme.palette.error.dark} 0%, ${theme.palette.error.main} 100%)` :
-                notification?.severity === "warning"
-                  ? `linear-gradient(135deg, ${theme.palette.warning.dark} 0%, ${theme.palette.warning.main} 100%)`
-                  : `linear-gradient(135deg, ${theme.palette.success.dark} 0%, ${theme.palette.success.main} 100%)`,
-              color: "white",
-              borderRadius: 3,
-              overflow: 'hidden',
-              boxShadow: theme.shadows[8],
+      {/* Enhanced Notification */}
+      {notification && (
+        <div className="Alerts-notification">
+          <div 
+            className={`Alerts-notification-card Alerts-notification-${notification.type}`}
+            style={{ 
+              background: `linear-gradient(135deg, ${getSeverityColor(notification.type)} 0%, ${getSeverityColor(notification.type)}80 100%)`
             }}
           >
-            <CardContent sx={{ display: "flex", alignItems: "center", gap: 2, p: 2.5 }}>
-              {notification?.severity === "error" ? (
-                <FiAlertCircle size={24} />
-              ) : notification?.severity === "warning" ? (
-                <FiAlertTriangle size={24} />
+            <div className="Alerts-notification-content">
+              {notification.type === "error" ? (
+                <FiAlertCircle />
+              ) : notification.type === "warning" ? (
+                <FiAlertTriangle />
               ) : (
-                <FiTrendingUp size={24} />
+                <FiTrendingUp />
               )}
-              <Box>
-                <Typography variant="subtitle2" fontWeight={600}>
-                  {notification?.severity === "error" ? "Error" : 
-                   notification?.severity === "warning" ? "Warning" : "Success"}
-                </Typography>
-                <Typography variant="body2">{notification?.message}</Typography>
-              </Box>
-            </CardContent>
-          </Card>
-        </Snackbar>
-      </Box>
-    </Fade>
+              <div>
+                <p className="Alerts-notification-title">
+                  {notification.type === "error" ? "Error" : 
+                   notification.type === "warning" ? "Warning" : "Success"}
+                </p>
+                <p className="Alerts-notification-message">{notification.message}</p>
+              </div>
+              <button 
+                className="Alerts-notification-close"
+                onClick={() => setNotification(null)}
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

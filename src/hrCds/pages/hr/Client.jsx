@@ -1,212 +1,52 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import API_URL from '../../../config';
-import { useTheme } from '@mui/material/styles';
+import './client-management.css';
+import './utility.css';
+// Import icons from react-icons
 import {
-  Box,
-  Card,
-  CardContent,
-  CardHeader,
-  Typography,
-  TextField,
-  Button,
-  Chip,
-  LinearProgress,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Select,
-  Checkbox,
-  ListItemText,
-  FormControlLabel,
-  Grid,
-  Paper,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Alert,
-  Snackbar,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  CircularProgress,
-  Divider,
-  Tooltip,
-  Switch,
-  FormGroup,
-  Avatar,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemSecondaryAction,
-  Stack,
-  Fade,
-  Badge,
-  Modal,
-  InputAdornment,
-  OutlinedInput,
-  Pagination,
-  useMediaQuery,
-} from '@mui/material';
-import {
-  Add as AddIcon,
-  Delete as DeleteIcon,
-  Refresh as RefreshIcon,
-  People as PeopleIcon,
-  Business as BusinessIcon,
-  LocationOn as LocationIcon,
-  Person as PersonIcon,
-  Work as WorkIcon,
-  TrendingUp as TrendingUpIcon,
-  CheckCircle as CheckCircleIcon,
-  PauseCircle as PauseCircleIcon,
-  Cancel as CancelIcon,
-  Save as SaveIcon,
-  Clear as ClearIcon,
-  Notifications as NotificationsIcon,
-  FilterList as FilterIcon,
-  Edit as EditIcon,
-  Visibility as VisibilityIcon,
-  Search as SearchIcon,
-  Close as CloseIcon,
-  CalendarToday as CalendarIcon,
-  Menu as MenuIcon
-} from '@mui/icons-material';
-import FilterListIcon from "@mui/icons-material/FilterList";
-import PlaceIcon from "@mui/icons-material/Place";
-import TaskAltIcon from "@mui/icons-material/TaskAlt";
+  FiBell,
+  FiCheckCircle,
+  FiClock,
+  FiAlertCircle,
+  FiXCircle,
+  FiUsers,
+  FiTrendingUp,
+  FiInfo,
+  FiPlus,
+  FiRefreshCw,
+  FiEdit,
+  FiEye,
+  FiTrash2,
+  FiSearch,
+  FiFilter,
+  FiX,
+  FiSave,
+  FiCalendar,
+  FiUser,
+  FiBriefcase,
+  FiMapPin,
+  FiActivity,
+  FiChevronDown,
+  FiChevronUp
+} from 'react-icons/fi';
 
-import { styled } from '@mui/material/styles';
-import { FiBell, FiCheckCircle, FiClock, FiAlertCircle, FiXCircle, FiUsers, FiTrendingUp, FiInfo } from 'react-icons/fi';
+// Import from react-icons/fa for additional icons if needed
+import { FaTasks, FaProjectDiagram, FaCity } from 'react-icons/fa';
 
-// Enhanced Styled Components with responsive design
-const DashboardContainer = styled(Box)(({ theme }) => ({
-  padding: theme.spacing(2),
-  backgroundColor: theme.palette.background.default,
-  minHeight: '100vh',
-  [theme.breakpoints.down('sm')]: {
-    padding: theme.spacing(1),
-  }
-}));
-
-const HeaderCard = styled(Card)(({ theme }) => ({
-  background: `linear-gradient(135deg, ${theme.palette.primary.main}15 0%, ${theme.palette.primary.main}05 100%)`,
-  color: theme.palette.text.primary,
-  marginBottom: theme.spacing(3),
-  borderRadius: theme.spacing(2),
-  border: `1px solid ${theme.palette.divider}`,
-  boxShadow: theme.shadows[2],
-  '&:hover': {
-    boxShadow: theme.shadows[4],
-    transform: 'translateY(-2px)',
-    transition: 'all 0.3s ease'
-  },
-  [theme.breakpoints.down('sm')]: {
-    borderRadius: theme.spacing(1.5),
-    marginBottom: theme.spacing(2),
-  }
-}));
-
-const StatCard = styled(Card)(({ theme, color = 'primary' }) => ({
-  background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
-  borderRadius: theme.spacing(2),
-  boxShadow: theme.shadows[2],
-  transition: theme.transitions.create(['all'], {
-    duration: theme.transitions.duration.standard,
-  }),
-  borderLeft: `4px solid ${theme.palette[color].main}`,
-  '&:hover': {
-    boxShadow: theme.shadows[6],
-    transform: 'translateY(-2px)',
-  },
-  [theme.breakpoints.down('sm')]: {
-    borderRadius: theme.spacing(1.5),
-  }
-}));
-
-const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
-  borderRadius: theme.spacing(2),
-  boxShadow: theme.shadows[1],
-  border: `1px solid ${theme.palette.divider}`,
-  width: '100%',
-  overflowX: 'auto',
-  [theme.breakpoints.down('sm')]: {
-    borderRadius: theme.spacing(1),
-  },
-  '&::-webkit-scrollbar': {
-    width: 8,
-    height: 8
-  },
-  '&::-webkit-scrollbar-track': {
-    background: '#f1f5f9',
-    borderRadius: 4
-  },
-  '&::-webkit-scrollbar-thumb': {
-    background: '#cbd5e1',
-    borderRadius: 4,
-    '&:hover': {
-      background: '#94a3b8'
-    }
-  }
-}));
-
-const StatusChip = styled(Chip)(({ status, theme }) => ({
-  fontWeight: 600,
-  backgroundColor: 
-    status === 'Active' ? `${theme.palette.success.main}20` :
-    status === 'On Hold' ? `${theme.palette.warning.main}20` :
-    `${theme.palette.grey[300]}20`,
-  color: 
-    status === 'Active' ? theme.palette.success.dark :
-    status === 'On Hold' ? theme.palette.warning.dark :
-    theme.palette.grey[700],
-  border: `1px solid ${
-    status === 'Active' ? `${theme.palette.success.main}40` :
-    status === 'On Hold' ? `${theme.palette.warning.main}40` :
-    `${theme.palette.grey[300]}40`
-  }`
-}));
-
-const ProgressBar = styled(LinearProgress)(({ value, theme }) => ({
-  height: 8,
-  borderRadius: 4,
-  backgroundColor: theme.palette.grey[200],
-  '& .MuiLinearProgress-bar': {
-    backgroundColor: 
-      value >= 100 ? theme.palette.success.main :
-      value >= 70 ? theme.palette.primary.main :
-      value >= 40 ? theme.palette.warning.main :
-      theme.palette.info.main,
-    borderRadius: 4
-  }
-}));
-
-const ActionButton = styled(IconButton)(({ theme }) => ({
-  transition: theme.transitions.create(['all'], {
-    duration: theme.transitions.duration.short,
-  }),
-  '&:hover': {
-    transform: 'scale(1.1)',
-  },
-}));
-
-// Task Details Modal Component
 const TaskDetailsModal = ({ task, open, onClose, projectManagers = [] }) => {
+  if (!open) return null;
+
   const getAssigneeDetails = (assigneeName) => {
     return projectManagers.find(pm => pm.name === assigneeName);
   };
 
   const getPriorityColor = (priority) => {
     switch (priority) {
-      case 'High': return 'error';
-      case 'Medium': return 'warning';
-      case 'Low': return 'info';
-      default: return 'default';
+      case 'High': return 'badge--error';
+      case 'Medium': return 'badge--warning';
+      case 'Low': return 'badge--info';
+      default: return '';
     }
   };
 
@@ -222,120 +62,96 @@ const TaskDetailsModal = ({ task, open, onClose, projectManagers = [] }) => {
   const assigneeDetails = getAssigneeDetails(task.assignee);
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>
-        <Box display="flex" alignItems="center" justifyContent="space-between">
-          <Typography variant="h6">Task Details</Typography>
-          <IconButton onClick={onClose} size="small">
-            <CloseIcon />
-          </IconButton>
-        </Box>
-      </DialogTitle>
-      <DialogContent>
-        <Stack spacing={2} sx={{ mt: 1 }}>
-          <Box>
-            <Typography variant="body2" color="textSecondary">Task Name</Typography>
-            <Typography variant="body1" fontWeight="bold">{task.name}</Typography>
-          </Box>
-          
-          <Grid container spacing={2}>
-            <Grid item xs={6}>
-              <Typography variant="body2" color="textSecondary">Status</Typography>
-              <Chip
-                label={task.completed ? 'Completed' : 'Pending'}
-                color={task.completed ? 'success' : 'default'}
-                size="small"
-                sx={{ mt: 0.5 }}
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <Typography variant="body2" color="textSecondary">Priority</Typography>
-              <Chip
-                label={task.priority}
-                color={getPriorityColor(task.priority)}
-                size="small"
-                sx={{ mt: 0.5 }}
-              />
-            </Grid>
-          </Grid>
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <div className="modal__header">
+          <h3>Task Details</h3>
+          <button className="action-button" onClick={onClose}>
+            <FiX />
+          </button>
+        </div>
+        <div className="modal__content">
+          <div className="form-group">
+            <label className="form-label">Task Name</label>
+            <p className="text-large">{task.name}</p>
+          </div>
+
+          <div className="grid-2">
+            <div className="form-group">
+              <label className="form-label">Status</label>
+              <div className={`badge ${task.completed ? 'badge--success' : ''}`}>
+                {task.completed ? 'Completed' : 'Pending'}
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Priority</label>
+              <div className={`badge ${getPriorityColor(task.priority)}`}>
+                {task.priority}
+              </div>
+            </div>
+          </div>
 
           {task.dueDate && (
-            <Box>
-              <Typography variant="body2" color="textSecondary">Due Date</Typography>
-              <Box display="flex" alignItems="center" gap={1}>
-                <Typography variant="body1">
-                  {new Date(task.dueDate).toLocaleDateString()}
-                </Typography>
+            <div className="form-group">
+              <label className="form-label">Due Date</label>
+              <div className="flex-align-center gap-1">
+                <p>{new Date(task.dueDate).toLocaleDateString()}</p>
                 {isOverdue(task.dueDate) && !task.completed && (
-                  <Chip
-                    label="Overdue"
-                    color="error"
-                    size="small"
-                  />
+                  <div className="badge badge--error">Overdue</div>
                 )}
-              </Box>
-            </Box>
+              </div>
+            </div>
           )}
 
           {task.assignee && (
-            <Box>
-              <Typography variant="body2" color="textSecondary">Assigned To</Typography>
-              <Box display="flex" alignItems="center" gap={1} sx={{ mt: 1 }}>
+            <div className="form-group">
+              <label className="form-label">Assigned To</label>
+              <div className="flex-align-center gap-1 mt-1">
                 {assigneeDetails ? (
                   <>
-                    <Avatar 
-                      sx={{ 
-                        width: 32, 
-                        height: 32,
-                        fontSize: '0.8rem',
-                        bgcolor: 'primary.main'
-                      }}
-                    >
+                    <div className="avatar avatar--primary">
                       {assigneeDetails.name?.charAt(0)?.toUpperCase() || 'U'}
-                    </Avatar>
-                    <Box>
-                      <Typography variant="body1" fontWeight="medium">
-                        {assigneeDetails.name}
-                      </Typography>
+                    </div>
+                    <div>
+                      <p className="text-bold">{assigneeDetails.name}</p>
                       {assigneeDetails.email && (
-                        <Typography variant="caption" color="textSecondary">
-                          {assigneeDetails.email}
-                        </Typography>
+                        <small className="text-muted">{assigneeDetails.email}</small>
                       )}
-                    </Box>
+                    </div>
                   </>
                 ) : (
-                  <Typography variant="body1">{task.assignee}</Typography>
+                  <p>{task.assignee}</p>
                 )}
-              </Box>
-            </Box>
+              </div>
+            </div>
           )}
 
-          <Box>
-            <Typography variant="body2" color="textSecondary">Created</Typography>
-            <Typography variant="body1">
-              {new Date(task.createdAt).toLocaleDateString()} at {new Date(task.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </Typography>
-          </Box>
+          <div className="form-group">
+            <label className="form-label">Created</label>
+            <p>
+              {new Date(task.createdAt).toLocaleDateString()} at{' '}
+              {new Date(task.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </p>
+          </div>
 
           {task.completed && task.completedAt && (
-            <Box>
-              <Typography variant="body2" color="textSecondary">Completed</Typography>
-              <Typography variant="body1">
-                {new Date(task.completedAt).toLocaleDateString()} at {new Date(task.completedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </Typography>
-            </Box>
+            <div className="form-group">
+              <label className="form-label">Completed</label>
+              <p>
+                {new Date(task.completedAt).toLocaleDateString()} at{' '}
+                {new Date(task.completedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </p>
+            </div>
           )}
-        </Stack>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Close</Button>
-      </DialogActions>
-    </Dialog>
+        </div>
+        <div className="modal__footer">
+          <button className="btn btn--outlined" onClick={onClose}>Close</button>
+        </div>
+      </div>
+    </div>
   );
 };
 
-// Service Progress Card Component
 const ServiceProgressCard = ({ service, clientId, clientProjectManagers = [], onTaskUpdate, api }) => {
   const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState({
@@ -527,10 +343,10 @@ const ServiceProgressCard = ({ service, clientId, clientProjectManagers = [], on
 
   const getPriorityColor = (priority) => {
     switch (priority) {
-      case 'High': return 'error';
-      case 'Medium': return 'warning';
-      case 'Low': return 'info';
-      default: return 'default';
+      case 'High': return 'badge--error';
+      case 'Medium': return 'badge--warning';
+      case 'Low': return 'badge--info';
+      default: return '';
     }
   };
 
@@ -545,81 +361,70 @@ const ServiceProgressCard = ({ service, clientId, clientProjectManagers = [], on
 
   if (loading) {
     return (
-      <Card sx={{ mb: 2, border: `1px solid`, borderColor: 'divider' }}>
-        <CardContent>
-          <Box display="flex" justifyContent="center" alignItems="center" py={3}>
-            <CircularProgress size={24} />
-            <Typography variant="body2" sx={{ ml: 2 }}>
-              Loading tasks...
-            </Typography>
-          </Box>
-        </CardContent>
-      </Card>
+      <div className="card">
+        <div className="card__content">
+          <div className="flex-align-center justify-center py-3">
+            <div className="spinner"></div>
+            <p className="ml-2">Loading tasks...</p>
+          </div>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card sx={{ mb: 2, border: `1px solid`, borderColor: 'divider', transition: 'all 0.3s ease' }}>
-      <CardContent>
-        <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
-          <Box sx={{ flexGrow: 1 }}>
-            <Typography variant="h6" fontWeight="bold" gutterBottom>
-              {service}
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
+    <div className="card mb-2">
+      <div className="card__content">
+        <div className="flex-align-center justify-between mb-2">
+          <div className="flex-grow-1">
+            <h4 className="mb-1">{service}</h4>
+            <p className="text-muted">
               {completedTasks} / {totalTasks} tasks completed
-            </Typography>
-          </Box>
-          <Box display="flex" alignItems="center" gap={1}>
-            <Chip 
-              label={`${Math.round(progressPercentage)}%`} 
-              color={
-                progressPercentage >= 100 ? 'success' :
-                progressPercentage >= 70 ? 'primary' :
-                progressPercentage >= 40 ? 'warning' : 'default'
-              }
-              variant="outlined"
-              size="small"
-            />
-            <Tooltip title="Add Task">
-              <IconButton 
-                size="small" 
-                color="primary"
-                onClick={() => setShowAddTask(!showAddTask)}
-                sx={{ 
-                  border: '1px solid',
-                  borderColor: 'primary.main',
-                  '&:hover': { backgroundColor: 'primary.main', color: 'white' }
-                }}
-              >
-                <AddIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Refresh Tasks">
-              <IconButton 
-                size="small" 
-                onClick={fetchTasks}
-              >
-                <RefreshIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          </Box>
-        </Box>
+            </p>
+          </div>
+          <div className="flex-align-center gap-1">
+            <div className={`badge ${
+              progressPercentage >= 100 ? 'badge--success' :
+              progressPercentage >= 70 ? 'badge--info' :
+              progressPercentage >= 40 ? 'badge--warning' : ''
+            }`}>
+              {Math.round(progressPercentage)}%
+            </div>
+            <button 
+              className="action-button action-button--primary"
+              onClick={() => setShowAddTask(!showAddTask)}
+              title="Add Task"
+            >
+              <FiPlus />
+            </button>
+            <button 
+              className="action-button"
+              onClick={fetchTasks}
+              title="Refresh Tasks"
+            >
+              <FiRefreshCw />
+            </button>
+          </div>
+        </div>
 
-        <ProgressBar 
-          variant="determinate" 
-          value={progressPercentage} 
-          sx={{ mb: 2 }}
-        />
+        <div className="progress-bar mb-2">
+          <div 
+            className={`progress-bar__fill ${
+              progressPercentage >= 100 ? 'progress-bar__fill--success' :
+              progressPercentage >= 70 ? 'progress-bar__fill--primary' :
+              progressPercentage >= 40 ? 'progress-bar__fill--warning' : 'progress-bar__fill--info'
+            }`}
+            style={{ width: `${progressPercentage}%` }}
+          ></div>
+        </div>
 
         {(showAddTask || editTask) && (
-          <Card variant="outlined" sx={{ mb: 2, p: 2, backgroundColor: 'grey.50' }}>
-            <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
-              {editTask ? 'Edit Task' : 'Add New Task'}
-            </Typography>
-            <Box display="flex" flexDirection="column" gap={2}>
-              <TextField
-                size="small"
+          <div className="card mb-2 p-2 bg-grey-50">
+            <h5 className="mb-2">{editTask ? 'Edit Task' : 'Add New Task'}</h5>
+            <div className="space-y-2">
+              <input
+                type="text"
+                className="form-input"
                 placeholder="Enter task name..."
                 value={editTask ? editTask.name : newTask.name}
                 onChange={(e) => {
@@ -631,15 +436,13 @@ const ServiceProgressCard = ({ service, clientId, clientProjectManagers = [], on
                 }}
                 onKeyPress={handleKeyPress}
                 autoFocus
-                required
               />
               
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    size="small"
-                    label="Due Date"
+              <div className="grid-2 gap-2">
+                <div>
+                  <input
                     type="date"
+                    className="form-input"
                     value={editTask ? (editTask.dueDate ? new Date(editTask.dueDate).toISOString().split('T')[0] : '') : newTask.dueDate}
                     onChange={(e) => {
                       if (editTask) {
@@ -648,78 +451,52 @@ const ServiceProgressCard = ({ service, clientId, clientProjectManagers = [], on
                         setNewTask({ ...newTask, dueDate: e.target.value });
                       }
                     }}
-                    InputLabelProps={{ shrink: true }}
-                    fullWidth
                   />
-                </Grid>
+                </div>
                 
-                <Grid item xs={12} sm={6}>
-                  <FormControl size="small" fullWidth>
-                    <InputLabel>Assignee</InputLabel>
-                    <Select
-                      value={editTask ? editTask.assignee : newTask.assignee}
-                      label="Assignee"
-                      onChange={(e) => {
-                        if (editTask) {
-                          setEditTask({ ...editTask, assignee: e.target.value });
-                        } else {
-                          setNewTask({ ...newTask, assignee: e.target.value });
-                        }
-                      }}
-                    >
-                      <MenuItem value="">
-                        <em>None</em>
-                      </MenuItem>
-                      {clientProjectManagers.map((pm) => (
-                        <MenuItem key={pm.id || pm._id || pm.name} value={pm.name}>
-                          <Box display="flex" alignItems="center" width="100%">
-                            <Avatar 
-                              sx={{ 
-                                width: 24, 
-                                height: 24, 
-                                mr: 1,
-                                fontSize: '0.7rem',
-                                bgcolor: 'primary.main'
-                              }}
-                            >
-                              {pm.name?.charAt(0)?.toUpperCase() || 'U'}
-                            </Avatar>
-                            <Typography variant="body2" noWrap>
-                              {pm.name}
-                            </Typography>
-                          </Box>
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-                
-                <Grid item xs={12}>
-                  <FormControl size="small" fullWidth>
-                    <InputLabel>Priority</InputLabel>
-                    <Select
-                      value={editTask ? editTask.priority : newTask.priority}
-                      label="Priority"
-                      onChange={(e) => {
-                        if (editTask) {
-                          setEditTask({ ...editTask, priority: e.target.value });
-                        } else {
-                          setNewTask({ ...newTask, priority: e.target.value });
-                        }
-                      }}
-                    >
-                      <MenuItem value="Low">Low</MenuItem>
-                      <MenuItem value="Medium">Medium</MenuItem>
-                      <MenuItem value="High">High</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-              </Grid>
+                <div>
+                  <select
+                    className="form-input"
+                    value={editTask ? editTask.assignee : newTask.assignee}
+                    onChange={(e) => {
+                      if (editTask) {
+                        setEditTask({ ...editTask, assignee: e.target.value });
+                      } else {
+                        setNewTask({ ...newTask, assignee: e.target.value });
+                      }
+                    }}
+                  >
+                    <option value="">Select Assignee</option>
+                    {clientProjectManagers.map((pm) => (
+                      <option key={pm.id || pm._id || pm.name} value={pm.name}>
+                        {pm.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
               
-              <Box display="flex" gap={1} justifyContent="flex-end">
-                <Button 
-                  size="small" 
-                  variant="outlined" 
+              <div>
+                <select
+                  className="form-input"
+                  value={editTask ? editTask.priority : newTask.priority}
+                  onChange={(e) => {
+                    if (editTask) {
+                      setEditTask({ ...editTask, priority: e.target.value });
+                    } else {
+                      setNewTask({ ...newTask, priority: e.target.value });
+                    }
+                  }}
+                >
+                  <option value="Low">Low</option>
+                  <option value="Medium">Medium</option>
+                  <option value="High">High</option>
+                </select>
+              </div>
+              
+              <div className="flex justify-end gap-1">
+                <button 
+                  className="btn btn--outlined"
                   onClick={() => {
                     if (editTask) {
                       setEditTask(null);
@@ -735,155 +512,99 @@ const ServiceProgressCard = ({ service, clientId, clientProjectManagers = [], on
                   }}
                 >
                   Cancel
-                </Button>
-                <Button 
-                  size="small" 
-                  variant="contained" 
+                </button>
+                <button 
+                  className="btn btn--primary"
                   onClick={editTask ? handleEditTask : handleAddTask}
                   disabled={editTask ? !editTask.name.trim() : !newTask.name.trim()}
-                  startIcon={editTask ? <SaveIcon /> : <AddIcon />}
                 >
                   {editTask ? 'Save Changes' : 'Add Task'}
-                </Button>
-              </Box>
-            </Box>
-          </Card>
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
-        <Box>
-          <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
-            Tasks ({totalTasks}):
-          </Typography>
+        <div>
+          <h5 className="mb-2">Tasks ({totalTasks}):</h5>
           {tasks.length > 0 ? (
-            <List dense sx={{ maxHeight: 300, overflow: 'auto' }}>
+            <div className="task-list">
               {tasks.map((task) => (
-                <ListItem 
-                  key={task._id || task.id} 
-                  sx={{ 
-                    px: 1,
-                    py: 0.5,
-                    mb: 0.5,
-                    borderRadius: 1,
-                    backgroundColor: 'grey.50',
-                    '&:hover': {
-                      backgroundColor: 'grey.100'
-                    }
-                  }}
-                  secondaryAction={
-                    <Box display="flex" alignItems="center" gap={0.5}>
-                      <Tooltip title="View Details">
-                        <IconButton 
-                          edge="end" 
-                          size="small"
-                          onClick={() => setShowTaskDetails({ open: true, task })}
-                        >
-                          <VisibilityIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Edit Task">
-                        <IconButton 
-                          edge="end" 
-                          size="small" 
-                          color="primary"
-                          onClick={() => setEditTask(task)}
-                        >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Delete Task">
-                        <IconButton 
-                          edge="end" 
-                          size="small" 
-                          color="error"
-                          onClick={() => deleteTask(task)}
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
-                  }
-                >
-                  <ListItemIcon sx={{ minWidth: 40 }}>
-                    <Checkbox
+                <div key={task._id || task.id} className="task-item">
+                  <div className="task-item__checkbox">
+                    <input
+                      type="checkbox"
                       checked={task.completed}
                       onChange={() => toggleTaskCompletion(task)}
-                      size="small"
-                      color="primary"
                     />
-                  </ListItemIcon>
-                  <Box sx={{ flexGrow: 1 }}>
-                    <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
-                      <Typography 
-                        variant="body2" 
-                        sx={{ 
-                          textDecoration: task.completed ? 'line-through' : 'none',
-                          color: task.completed ? 'text.secondary' : 'text.primary',
-                        }}
-                      >
+                  </div>
+                  <div className="task-item__content">
+                    <div className="flex-align-center gap-1 flex-wrap">
+                      <p className={task.completed ? 'text-line-through text-muted' : ''}>
                         {task.name}
-                      </Typography>
+                      </p>
                       
                       {task.priority && task.priority !== 'Medium' && (
-                        <Chip
-                          label={task.priority}
-                          size="small"
-                          color={getPriorityColor(task.priority)}
-                          sx={{ height: 20 }}
-                        />
+                        <div className={`badge ${getPriorityColor(task.priority)}`}>
+                          {task.priority}
+                        </div>
                       )}
                       
                       {task.assignee && (
-                        <Tooltip title={`Assigned to: ${task.assignee}`}>
-                          <Chip
-                            label={task.assignee}
-                            size="small"
-                            variant="outlined"
-                            sx={{ height: 20 }}
-                          />
-                        </Tooltip>
+                        <div className="badge" title={`Assigned to: ${task.assignee}`}>
+                          {task.assignee}
+                        </div>
                       )}
                       
                       {task.dueDate && (
-                        <Tooltip title={`Due: ${new Date(task.dueDate).toLocaleDateString()}`}>
-                          <Chip
-                            label={new Date(task.dueDate).toLocaleDateString()}
-                            size="small"
-                            color={isOverdue(task.dueDate) && !task.completed ? 'error' : 'default'}
-                            variant="outlined"
-                            sx={{ height: 20, fontSize: 11, borderRadius: 1, fontWeight: 600 }}
-                          />
-                        </Tooltip>
+                        <div className="badge" title={`Due: ${new Date(task.dueDate).toLocaleDateString()}`}>
+                          {new Date(task.dueDate).toLocaleDateString()}
+                        </div>
                       )}
-                    </Box>
+                    </div>
                     
-                    <Typography variant="caption" color="textSecondary">
+                    <small className="text-muted">
                       Added: {new Date(task.createdAt).toLocaleDateString()}
                       {task.completed && task.completedAt && (
                         <> • Completed: {new Date(task.completedAt).toLocaleDateString()}</>
                       )}
-                    </Typography>
-                  </Box>
-                </ListItem>
+                    </small>
+                  </div>
+                  <div className="task-item__actions">
+                    <button 
+                      className="action-button"
+                      onClick={() => setShowTaskDetails({ open: true, task })}
+                      title="View Details"
+                    >
+                      <FiEye />
+                    </button>
+                    <button 
+                      className="action-button action-button--primary"
+                      onClick={() => setEditTask(task)}
+                      title="Edit Task"
+                    >
+                      <FiEdit />
+                    </button>
+                    <button 
+                      className="action-button action-button--error"
+                      onClick={() => deleteTask(task)}
+                      title="Delete Task"
+                    >
+                      <FiTrash2 />
+                    </button>
+                  </div>
+                </div>
               ))}
-            </List>
+            </div>
           ) : (
-            <Box 
-              sx={{ 
-                textAlign: 'center', 
-                py: 3, 
-                border: '1px dashed',
-                borderColor: 'divider',
-                borderRadius: 1,
-                backgroundColor: 'grey.50'
-              }}
-            >
-              <Typography variant="body2" color="textSecondary">
+            <div className="text-center py-3 border-dashed border rounded bg-grey-50">
+              <p className="text-muted">
                 No tasks added yet. Click the + icon to add tasks.
-              </Typography>
-            </Box>
+              </p>
+            </div>
           )}
-        </Box>
-      </CardContent>
+        </div>
+      </div>
 
       {showTaskDetails.open && (
         <TaskDetailsModal
@@ -893,11 +614,10 @@ const ServiceProgressCard = ({ service, clientId, clientProjectManagers = [], on
           projectManagers={clientProjectManagers}
         />
       )}
-    </Card>
+    </div>
   );
 };
 
-// Services Modal Component
 const ServicesModal = ({ open, onClose, services, onAddService, onDeleteService }) => {
   const [newService, setNewService] = useState('');
 
@@ -909,111 +629,85 @@ const ServicesModal = ({ open, onClose, services, onAddService, onDeleteService 
     }
   };
 
+  if (!open) return null;
+
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>
-        <Box display="flex" alignItems="center">
-          <WorkIcon sx={{ mr: 1 }} />
-          Manage Services
-        </Box>
-      </DialogTitle>
-      <DialogContent>
-        <Box component="form" onSubmit={handleSubmit} sx={{ mb: 3, mt: 1 }}>
-          <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} sm={8}>
-              <TextField
-                fullWidth
-                label="New Service Name"
-                value={newService}
-                onChange={(e) => setNewService(e.target.value)}
-                placeholder="Enter service name"
-                required
-              />
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                fullWidth
-                startIcon={<AddIcon />}
-                sx={{ borderRadius: 2 }}
-              >
-                Add Service
-              </Button>
-            </Grid>
-          </Grid>
-        </Box>
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <div className="modal__header">
+          <h3>Manage Services</h3>
+          <button className="action-button" onClick={onClose}>
+            <FiX />
+          </button>
+        </div>
+        <div className="modal__content">
+          <form onSubmit={handleSubmit} className="mb-3">
+            <div className="grid-2 gap-2">
+              <div>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="New Service Name"
+                  value={newService}
+                  onChange={(e) => setNewService(e.target.value)}
+                  required
+                />
+              </div>
+              <div>
+                <button type="submit" className="btn btn--primary w-100">
+                  <FiPlus /> Add Service
+                </button>
+              </div>
+            </div>
+          </form>
 
-        <Divider sx={{ my: 2 }} />
+          <hr className="my-2" />
 
-        <Typography variant="h6" gutterBottom>
-          All Services ({services.length})
-        </Typography>
-        
-        {services.length > 0 ? (
-          <List>
-            {services.map((service) => (
-              <ListItem
-                key={service._id}
-                sx={{
-                  border: 1,
-                  borderColor: 'grey.200',
-                  borderRadius: 1,
-                  mb: 1,
-                  '&:hover': { 
-                    backgroundColor: 'action.hover',
-                    transform: 'translateY(-1px)',
-                    transition: 'all 0.2s ease'
-                  }
-                }}
-              >
-                <ListItemIcon>
-                  <WorkIcon color="primary" />
-                </ListItemIcon>
-                <Box sx={{ flexGrow: 1 }}>
-                  <Typography variant="body1" fontWeight="medium">
-                    {service.servicename}
-                  </Typography>
-                  <Typography variant="caption" color="textSecondary">
-                    Created: {new Date(service.createdAt).toLocaleDateString()}
-                  </Typography>
-                </Box>
-                <ListItemSecondaryAction>
-                  <Tooltip title="Delete Service">
-                    <ActionButton
-                      edge="end"
-                      color="error"
+          <h4 className="mb-2">All Services ({services.length})</h4>
+          
+          {services.length > 0 ? (
+            <div className="service-list">
+              {services.map((service) => (
+                <div key={service._id} className="service-item">
+                  <div className="service-item__icon">
+                    <FiBriefcase />
+                  </div>
+                  <div className="service-item__content">
+                    <p className="font-bold">{service.servicename}</p>
+                    <small className="text-muted">
+                      Created: {new Date(service.createdAt).toLocaleDateString()}
+                    </small>
+                  </div>
+                  <div className="service-item__actions">
+                    <button
+                      className="action-button action-button--error"
                       onClick={() => onDeleteService(service._id, service.servicename)}
-                      sx={{ ml: 1 }}
+                      title="Delete Service"
                     >
-                      <DeleteIcon />
-                    </ActionButton>
-                  </Tooltip>
-                </ListItemSecondaryAction>
-              </ListItem>
-            ))}
-          </List>
-        ) : (
-          <Box textAlign="center" py={3}>
-            <WorkIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-            <Typography variant="h6" color="textSecondary" gutterBottom>
-              No Services Found
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              Add your first service using the form above
-            </Typography>
-          </Box>
-        )}
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Close</Button>
-      </DialogActions>
-    </Dialog>
+                      <FiTrash2 />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-3">
+              <FiBriefcase className="text-4xl text-muted mb-2" />
+              <h5 className="text-muted">No Services Found</h5>
+              <p className="text-muted">
+                Add your first service using the form above
+              </p>
+            </div>
+          )}
+        </div>
+        <div className="modal__footer">
+          <button className="btn btn--outlined" onClick={onClose}>Close</button>
+        </div>
+      </div>
+    </div>
   );
 };
 
-// Add Client Modal Component - FIXED VERSION
 const AddClientModal = ({ 
   open, 
   onClose, 
@@ -1026,7 +720,7 @@ const AddClientModal = ({
     client: '',
     company: '',
     city: '',
-    projectManagers: [], // Store manager IDs
+    projectManagers: [],
     services: [],
     status: 'Active',
     progress: '',
@@ -1038,34 +732,78 @@ const AddClientModal = ({
   });
 
   const [managerSearch, setManagerSearch] = useState('');
+  const [teamOpen, setTeamOpen] = useState(false);
+  const [servicesOpen, setServicesOpen] = useState(false);
 
-  const handleSubmit = (e) => {
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.dropdown-container')) {
+        setTeamOpen(false);
+        setServicesOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (newClient.client && newClient.company && newClient.city && newClient.projectManagers.length > 0) {
-      // Get selected manager IDs
-      const selectedManagerIds = newClient.projectManagers;
-      
-      // Get full manager objects for the selected IDs
-      const selectedManagers = projectManagers.filter(pm => 
-        selectedManagerIds.includes(pm._id)
-      );
-      
-      // Format project managers for backend
-      const formattedProjectManagers = selectedManagers.map(pm => ({
-        _id: pm._id,
-        name: pm.name,
-        email: pm.email,
-        role: pm.role
-      }));
-      
-      // Prepare data for backend with proper format
-      const clientData = {
-        ...newClient,
-        projectManagers: formattedProjectManagers, // Send full manager objects
-        projectManager: selectedManagers.map(pm => pm.name) // Also include names array for compatibility
-      };
-      
-      onAddClient(clientData);
+
+    if (
+      newClient.client &&
+      newClient.company &&
+      newClient.city &&
+      newClient.projectManagers.length > 0
+    ) {
+      try {
+        const selectedManagerIds = newClient.projectManagers;
+
+        const selectedManagers = projectManagers.filter(pm =>
+          selectedManagerIds.includes(pm._id)
+        );
+
+        const formattedProjectManagers = selectedManagers.map(pm => ({
+          _id: pm._id,
+          name: pm.name,
+          email: pm.email,
+          role: pm.role
+        }));
+
+        const clientData = {
+          ...newClient,
+          projectManagers: formattedProjectManagers,
+          projectManager: selectedManagers.map(pm => pm.name)
+        };
+
+        // ✅ Save client
+        await onAddClient(clientData);
+
+        // ✅ Reset form
+        setNewClient({
+          client: '',
+          company: '',
+          city: '',
+          projectManagers: [],
+          services: [],
+          status: 'Active',
+          progress: '',
+          email: '',
+          phone: '',
+          address: '',
+          description: '',
+          notes: ''
+        });
+
+        // ✅ Save hone ke baad page refresh
+        window.location.reload();
+
+      } catch (error) {
+        console.error("Error adding client:", error);
+      }
     }
   };
 
@@ -1074,287 +812,345 @@ const AddClientModal = ({
     manager.email?.toLowerCase().includes(managerSearch.toLowerCase())
   );
 
-  return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>
-        <Box display="flex" alignItems="center" justifyContent="space-between">
-          <Box display="flex" alignItems="center">
-            <AddIcon sx={{ mr: 1 }} />
-            Add New Client
-          </Box>
-          <IconButton onClick={onClose} size="small">
-            <CloseIcon />
-          </IconButton>
-        </Box>
-      </DialogTitle>
-      <DialogContent>
-        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Client Name *"
-                value={newClient.client}
-                onChange={(e) => setNewClient({...newClient, client: e.target.value})}
-                required
-                disabled={loading}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Company *"
-                value={newClient.company}
-                onChange={(e) => setNewClient({...newClient, company: e.target.value})}
-                required
-                disabled={loading}
-              />
-            </Grid>
+  if (!open) return null;
 
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="City *"
-                value={newClient.city}
-                onChange={(e) => setNewClient({...newClient, city: e.target.value})}
-                required
-                disabled={loading}
-              />
-            </Grid>
-            
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth required>
-                <InputLabel>Status</InputLabel>
-                <Select
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal modal-lg" onClick={e => e.stopPropagation()}>
+        <div className="modal__header">
+          <h3>Add New Client</h3>
+          <button className="action-button" onClick={onClose} disabled={loading}>
+            <FiX />
+          </button>
+        </div>
+        <div className="modal__content">
+          <form onSubmit={handleSubmit} className="dropdown-container">
+            <div className="grid-2 gap-2">
+              <div className="form-group">
+                <label className="form-label">Client Name *</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={newClient.client}
+                  onChange={(e) => setNewClient({...newClient, client: e.target.value})}
+                  required
+                  disabled={loading}
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Company *</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={newClient.company}
+                  onChange={(e) => setNewClient({...newClient, company: e.target.value})}
+                  required
+                  disabled={loading}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">City *</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={newClient.city}
+                  onChange={(e) => setNewClient({...newClient, city: e.target.value})}
+                  required
+                  disabled={loading}
+                />
+              </div>
+              
+              <div className="form-group">
+                <label className="form-label">Status *</label>
+                <select
+                  className="form-input"
                   value={newClient.status}
-                  label="Status *"
                   onChange={(e) => setNewClient({...newClient, status: e.target.value})}
                   disabled={loading}
                 >
-                  <MenuItem value="Active">Active</MenuItem>
-                  <MenuItem value="On Hold">On Hold</MenuItem>
-                  <MenuItem value="Inactive">Inactive</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
+                  <option value="Active">Active</option>
+                  <option value="On Hold">On Hold</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
+              </div>
 
-            {/* Project Managers - FIXED: Store IDs not names */}
-            <Grid item xs={12}>
-              <FormControl fullWidth required>
-                <InputLabel>Project Managers *</InputLabel>
-                <Select
-                  multiple
-                  value={newClient.projectManagers}
-                  onChange={(e) => setNewClient({...newClient, projectManagers: e.target.value})}
-                  input={<OutlinedInput label="Project Managers *" />}
-                  renderValue={(selectedIds) => {
-                    const selectedManagers = projectManagers.filter(pm => 
-                      selectedIds.includes(pm._id)
-                    );
-                    return selectedManagers.map(pm => pm.name).join(', ');
-                  }}
-                  MenuProps={{
-                    PaperProps: {
-                      style: {
-                        maxHeight: 400,
-                      },
-                    },
-                  }}
-                  disabled={loading}
-                >
-                  <MenuItem disabled>
-                    <TextField
-                      fullWidth
-                      size="small"
-                      placeholder="Search project managers..."
-                      value={managerSearch}
-                      onChange={(e) => setManagerSearch(e.target.value)}
-                      onClick={(e) => e.stopPropagation()}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <SearchIcon fontSize="small" />
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                  </MenuItem>
-                  
-                  {filteredManagers.length > 0 ? (
-                    filteredManagers.map((manager) => (
-                      <MenuItem key={manager._id} value={manager._id}>
-                        <Checkbox checked={newClient.projectManagers.includes(manager._id)} />
-                        <Box display="flex" alignItems="center" sx={{ ml: 1, width: '100%' }}>
-                          <Avatar 
-                            sx={{ 
-                              width: 32, 
-                              height: 32, 
-                              mr: 2,
-                              fontSize: '0.8rem',
-                              bgcolor: 'primary.main'
+              {/* Team Dropdown */}
+              <div className="form-group col-span-2">
+                <label className="form-label">Team *</label>
+                <div className="relative">
+                  <div
+                    className="form-input cursor-pointer flex justify-between items-center"
+                    onClick={() => setTeamOpen(!teamOpen)}
+                  >
+                    <span>
+                      {newClient.projectManagers.length === 0
+                        ? "Select team members"
+                        : `${newClient.projectManagers.length} selected`}
+                    </span>
+                    <span className={`transition-transform ${teamOpen ? 'rotate-180' : ''}`}>
+                      <FiChevronDown />
+                    </span>
+                  </div>
+
+                  {teamOpen && (
+                    <div className="absolute z-10 w-full mt-1 border rounded bg-white shadow-lg max-h-60 overflow-auto">
+                      <div className="sticky top-0 bg-white p-2 border-b">
+                        <input
+                          type="text"
+                          className="form-input"
+                          placeholder="Search users..."
+                          value={managerSearch}
+                          onChange={(e) => setManagerSearch(e.target.value)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+                      
+                      <div className="max-h-48 overflow-y-auto">
+                        {filteredManagers.length > 0 ? (
+                          filteredManagers.map((manager) => (
+                            <label
+                              key={manager._id}
+                              className="flex items-center gap-3 p-3 hover:bg-grey-50 cursor-pointer border-b"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={newClient.projectManagers.includes(manager._id)}
+                                onChange={(e) => {
+                                  const checked = e.target.checked;
+                                  setNewClient(prev => ({
+                                    ...prev,
+                                    projectManagers: checked
+                                      ? [...prev.projectManagers, manager._id]
+                                      : prev.projectManagers.filter(id => id !== manager._id)
+                                  }));
+                                }}
+                                disabled={loading}
+                              />
+                              <div className="flex items-center gap-3 flex-1">
+                                <div className="avatar avatar--primary">
+                                  {manager.name?.charAt(0)?.toUpperCase() || 'U'}
+                                </div>
+                                <div className="flex-1">
+                                  <span className="font-medium">{manager.name}</span>
+                                  <div className="flex items-center gap-2 text-sm text-muted">
+                                    <span>{manager.role}</span>
+                                    <span>•</span>
+                                    <span>{manager.email}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </label>
+                          ))
+                        ) : (
+                          <div className="p-4 text-center text-muted">
+                            No managers found
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Selected Managers Preview */}
+                {newClient.projectManagers.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {newClient.projectManagers.map(managerId => {
+                      const manager = projectManagers.find(pm => pm._id === managerId);
+                      if (!manager) return null;
+                      return (
+                        <div key={managerId} className="badge badge--primary flex items-center gap-1">
+                          <span>{manager.name}</span>
+                          <button
+                            type="button"
+                            className="ml-1 hover:text-white"
+                            onClick={() => {
+                              setNewClient(prev => ({
+                                ...prev,
+                                projectManagers: prev.projectManagers.filter(id => id !== managerId)
+                              }));
                             }}
                           >
-                            {manager.name?.charAt(0)?.toUpperCase() || 'U'}
-                          </Avatar>
-                          <Box sx={{ flex: 1, minWidth: 0 }}>
-                            <Typography variant="body2" noWrap fontWeight="medium">
-                              {manager.name}
-                            </Typography>
-                            <Typography variant="caption" color="textSecondary" noWrap display="block">
-                              ID: {manager._id?.slice(-8)}
-                            </Typography>
-                            <Typography variant="caption" color="textSecondary" noWrap display="block">
-                              {manager.role} • {manager.email}
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </MenuItem>
-                    ))
-                  ) : (
-                    <MenuItem disabled>
-                      <Typography variant="body2" color="textSecondary" align="center">
-                        No project managers found
-                      </Typography>
-                    </MenuItem>
+                            <FiX size={14} />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Services Dropdown */}
+              <div className="form-group col-span-2">
+                <label className="form-label">Services</label>
+                <div className="relative">
+                  <div 
+                    className="form-input cursor-pointer flex justify-between items-center"
+                    onClick={() => setServicesOpen(!servicesOpen)}
+                  >
+                    <span>
+                      {newClient.services.length === 0
+                        ? "Select services"
+                        : `${newClient.services.length} selected`}
+                    </span>
+                    <span className={`transition-transform ${servicesOpen ? 'rotate-180' : ''}`}>
+                      <FiChevronDown />
+                    </span>
+                  </div>
+
+                  {servicesOpen && (
+                    <div className="absolute z-10 w-full mt-1 border rounded bg-white shadow-lg max-h-60 overflow-auto">
+                      <div className="p-2">
+                        {services.length > 0 ? (
+                          services.map((service) => (
+                            <label
+                              key={service._id}
+                              className="flex items-center p-3 hover:bg-grey-50 cursor-pointer border-b"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <input
+                                type="checkbox"
+                                id={`service-${service._id}`}
+                                checked={newClient.services.includes(service.servicename)}
+                                onChange={(e) => {
+                                  const isChecked = e.target.checked;
+                                  setNewClient(prev => ({
+                                    ...prev,
+                                    services: isChecked
+                                      ? [...prev.services, service.servicename]
+                                      : prev.services.filter(s => s !== service.servicename)
+                                  }));
+                                }}
+                                disabled={loading || services.length === 0}
+                              />
+                              <label htmlFor={`service-${service._id}`} className="ml-3 cursor-pointer flex-1">
+                                <div className="font-medium">{service.servicename}</div>
+                                <small className="text-muted">
+                                  Created: {new Date(service.createdAt).toLocaleDateString()}
+                                </small>
+                              </label>
+                            </label>
+                          ))
+                        ) : (
+                          <div className="p-4 text-center text-muted">
+                            No services available
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   )}
-                </Select>
-              </FormControl>
-              <Typography variant="caption" color="textSecondary" sx={{ mt: 1, display: 'block' }}>
-                Select one or more project managers *
-              </Typography>
-            </Grid>
+                </div>
+                
+                {/* Selected Services Preview */}
+                {newClient.services.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {newClient.services.map((serviceName, index) => (
+                      <div key={index} className="badge badge--info flex items-center gap-1">
+                        <span>{serviceName}</span>
+                        <button
+                          type="button"
+                          className="ml-1 hover:text-white"
+                          onClick={() => {
+                            setNewClient(prev => ({
+                              ...prev,
+                              services: prev.services.filter(s => s !== serviceName)
+                            }));
+                          }}
+                        >
+                          <FiX size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
-            {/* Description */}
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Description"
-                multiline
-                rows={3}
-                value={newClient.description}
-                onChange={(e) => setNewClient({...newClient, description: e.target.value})}
-                placeholder="Enter client description..."
-                helperText="Brief description about the client and project"
-                disabled={loading}
-              />
-            </Grid>
+              <div className="form-group col-span-2">
+                <label className="form-label">Description</label>
+                <textarea
+                  className="form-input"
+                  rows="3"
+                  value={newClient.description}
+                  onChange={(e) => setNewClient({...newClient, description: e.target.value})}
+                  placeholder="Enter client description..."
+                  disabled={loading}
+                />
+              </div>
 
-            {/* Services */}
-            <Grid item xs={12}>
-              <FormControl fullWidth>
-                <InputLabel>Services</InputLabel>
-                <Select
-                  multiple
-                  value={newClient.services}
-                  onChange={(e) => setNewClient({...newClient, services: e.target.value})}
-                  input={<OutlinedInput label="Services" />}
-                  renderValue={(selected) => selected.join(', ')}
-                  disabled={loading || services.length === 0}
-                >
-                  {services.map((service) => (
-                    <MenuItem key={service._id} value={service.servicename}>
-                      <Checkbox checked={newClient.services.includes(service.servicename)} />
-                      <ListItemText primary={service.servicename} />
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              {services.length === 0 && (
-                <Typography variant="caption" color="textSecondary">
-                  No services available. Please add services first.
-                </Typography>
-              )}
-            </Grid>
+              <div className="form-group">
+                <label className="form-label">Email</label>
+                <input
+                  type="email"
+                  className="form-input"
+                  value={newClient.email}
+                  onChange={(e) => setNewClient({...newClient, email: e.target.value})}
+                  disabled={loading}
+                />
+              </div>
 
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Email"
-                type="email"
-                value={newClient.email}
-                onChange={(e) => setNewClient({...newClient, email: e.target.value})}
-                disabled={loading}
-              />
-            </Grid>
+              <div className="form-group">
+                <label className="form-label">Phone</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={newClient.phone}
+                  onChange={(e) => setNewClient({...newClient, phone: e.target.value})}
+                  disabled={loading}
+                />
+              </div>
 
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Phone"
-                value={newClient.phone}
-                onChange={(e) => setNewClient({...newClient, phone: e.target.value})}
-                disabled={loading}
-              />
-            </Grid>
+              <div className="form-group col-span-2">
+                <label className="form-label">Address</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={newClient.address}
+                  onChange={(e) => setNewClient({...newClient, address: e.target.value})}
+                  disabled={loading}
+                />
+              </div>
 
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Address"
-                value={newClient.address}
-                onChange={(e) => setNewClient({...newClient, address: e.target.value})}
-                disabled={loading}
-              />
-            </Grid>
-
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Progress"
-                value={newClient.progress}
-                onChange={(e) => setNewClient({...newClient, progress: e.target.value})}
-                placeholder="28/40 (70%)"
-                helperText="Format: completed/total (percentage)"
-                disabled={loading}
-              />
-            </Grid>
-
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Notes"
-                multiline
-                rows={2}
-                value={newClient.notes}
-                onChange={(e) => setNewClient({...newClient, notes: e.target.value})}
-                placeholder="Additional notes..."
-                disabled={loading}
-              />
-            </Grid>
-          </Grid>
-        </Box>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} disabled={loading}>
-          Cancel
-        </Button>
-        <Button 
-          onClick={handleSubmit}
-          variant="contained" 
-          color="primary"
-          startIcon={loading ? <CircularProgress size={20} /> : <AddIcon />}
-          disabled={
-            loading || 
-            !newClient.client || 
-            !newClient.company || 
-            !newClient.city || 
-            newClient.projectManagers.length === 0 ||
-            services.length === 0
-          }
-        >
-          {loading ? 'Adding Client...' : 
-           services.length === 0 ? 'Add Services First' : 'Add Client'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+              <div className="form-group col-span-2">
+                <label className="form-label">Notes</label>
+                <textarea
+                  className="form-input"
+                  rows="2"
+                  value={newClient.notes}
+                  onChange={(e) => setNewClient({...newClient, notes: e.target.value})}
+                  placeholder="Additional notes..."
+                  disabled={loading}
+                />
+              </div>
+            </div>
+          </form>
+        </div>
+        <div className="modal__footer">
+          <button className="btn btn--outlined" onClick={onClose} disabled={loading}>
+            Cancel
+          </button>
+          <button 
+            className="btn btn--primary"
+            onClick={handleSubmit}
+            disabled={
+              loading || 
+              !newClient.client || 
+              !newClient.company || 
+              !newClient.city || 
+              newClient.projectManagers.length === 0 ||
+              services.length === 0
+            }
+          >
+            {loading ? 'Adding Client...' : 
+             services.length === 0 ? 'Add Services First' : 'Add Client'}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 };
 
 const ClientManagement = () => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
-  
   const [clients, setClients] = useState([]);
   const [services, setServices] = useState([]);
   const [projectManagers, setProjectManagers] = useState([]);
@@ -1367,12 +1163,11 @@ const ClientManagement = () => {
   const [viewDialog, setViewDialog] = useState({ open: false, client: null });
   const [servicesModal, setServicesModal] = useState(false);
   const [addClientModal, setAddClientModal] = useState(false);
-  const [taskCounts, setTaskCounts] = useState({}); 
+  const [taskCounts, setTaskCounts] = useState({});
   
-  // Filter and pagination state
   const [filters, setFilters] = useState({
     page: 1,
-    limit: isMobile ? 5 : isTablet ? 8 : 10,
+    limit: 10,
     sortBy: 'createdAt',
     sortOrder: 'desc',
     search: '',
@@ -1385,28 +1180,24 @@ const ClientManagement = () => {
     currentPage: 1,
     totalPages: 1,
     totalItems: 0,
-    itemsPerPage: isMobile ? 5 : isTablet ? 8 : 10
+    itemsPerPage: 10
   });
 
-  // Create axios instance with base URL
   const api = axios.create({
     baseURL: `${API_URL}/clientsservice`,
     timeout: 10000,
   });
 
-  // Tasks API instance
   const tasksApi = axios.create({
     baseURL: `${API_URL}/clienttasks`,
     timeout: 10000,
   });
 
-  // Users API instance
   const usersApi = axios.create({
     baseURL: `${API_URL}/users`,
     timeout: 10000,
   });
 
-  // Add request interceptor to include auth token
   useEffect(() => {
     const requestInterceptor = api.interceptors.request.use(
       (config) => {
@@ -1454,15 +1245,6 @@ const ClientManagement = () => {
     };
   }, []);
 
-  // Update limit when screen size changes
-  useEffect(() => {
-    const newLimit = isMobile ? 5 : isTablet ? 8 : 10;
-    if (filters.limit !== newLimit) {
-      handleFilterChange('limit', newLimit);
-    }
-  }, [isMobile, isTablet]);
-
-  // Filter change handler
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({
       ...prev,
@@ -1471,17 +1253,13 @@ const ClientManagement = () => {
     }));
   };
 
-  // Helper function to get full manager objects from names
   const getFullManagerObjects = (managerData) => {
     if (!managerData) return [];
     
-    // If managerData is already an array of objects
     if (Array.isArray(managerData) && managerData.length > 0) {
-      // Check if first element is an object
       if (typeof managerData[0] === 'object') {
         return managerData;
       }
-      // If it's an array of strings (names)
       if (typeof managerData[0] === 'string') {
         return managerData.map(name => {
           const manager = projectManagers.find(pm => pm.name === name);
@@ -1493,12 +1271,10 @@ const ClientManagement = () => {
     return [];
   };
 
-  // Fetch all data from backend with error handling
   const fetchData = async () => {
     try {
       setLoading(true);
       
-      // Fetch all data in parallel
       const [clientsRes, servicesRes, usersRes] = await Promise.all([
         api.get('/', { params: filters }),
         api.get('/services'),
@@ -1508,22 +1284,17 @@ const ClientManagement = () => {
         })
       ]);
       
-      // Handle services response
       if (servicesRes.data?.success) {
         setServices(servicesRes.data.data || []);
       }
       
-      // Handle users response
       if (usersRes.data) {
         setProjectManagers(usersRes.data);
         
-        // Handle clients response
         if (clientsRes.data?.success) {
           const clientsData = clientsRes.data.data || [];
           
-          // Enhance clients data with full manager objects
           const enhancedClients = clientsData.map(client => {
-            // Get project managers data (could be in projectManagers or projectManager field)
             const managerData = client.projectManagers || client.projectManager || [];
             const fullManagerObjects = getFullManagerObjects(managerData);
             
@@ -1557,7 +1328,6 @@ const ClientManagement = () => {
       const errorMessage = err.response?.data?.message || err.message || 'Data fetch failed';
       setError(errorMessage);
       
-      // Set empty arrays on error
       setClients([]);
       setServices([]);
       setProjectManagers([]);
@@ -1566,12 +1336,10 @@ const ClientManagement = () => {
     }
   };
 
-  // Fetch data when filters change
   useEffect(() => {
     fetchData();
   }, [filters]);
 
-  // Fetch tasks for a client
   const fetchClientTasks = async (clientId) => {
     try {
       const response = await tasksApi.get(`/client/${clientId}`);
@@ -1590,7 +1358,6 @@ const ClientManagement = () => {
     }
   };
 
-  // Calculate tasks for all clients
   const calculateTasksForAll = async () => {
     const counts = {};
     let totalPending = 0;
@@ -1617,7 +1384,6 @@ const ClientManagement = () => {
     }));
   };
 
-  // Calculate overdue tasks from backend
   const calculateOverdueTasks = async () => {
     let totalOverdue = 0;
     for (const client of clients) {
@@ -1633,12 +1399,10 @@ const ClientManagement = () => {
     return totalOverdue;
   };
 
-  // Update tasks statistics when clients change
   useEffect(() => {
     if (clients.length > 0) {
       calculateTasksForAll();
       
-      // Calculate overdue tasks
       calculateOverdueTasks().then(overdue => {
         setTasksStats(prev => ({
           ...prev,
@@ -1654,13 +1418,11 @@ const ClientManagement = () => {
     }
   }, [clients]);
 
-  // State for tasks statistics
   const [tasksStats, setTasksStats] = useState({
     pendingTasks: 0,
     overdueTasks: 0
   });
 
-  // Add new service
   const handleAddService = async (serviceName) => {
     if (!serviceName.trim()) return;
 
@@ -1680,26 +1442,21 @@ const ClientManagement = () => {
     }
   };
 
-  // Add new client - FIXED VERSION
   const handleAddClient = async (clientData) => {
     try {
       setAddLoading(true);
       
-      // IMPORTANT: Backend expects projectManagers as an array of objects with _id field
-      // Also include projectManager field with names for compatibility
       const backendClientData = {
         ...clientData,
         client: clientData.client,
         company: clientData.company,
         city: clientData.city,
-        // Send projectManagers as array of objects with _id
         projectManagers: clientData.projectManagers.map(pm => ({
           _id: pm._id,
           name: pm.name,
           email: pm.email,
           role: pm.role
         })),
-        // Also include projectManager as array of names for compatibility
         projectManager: clientData.projectManagers.map(pm => pm.name),
         services: clientData.services,
         status: clientData.status,
@@ -1711,12 +1468,9 @@ const ClientManagement = () => {
         notes: clientData.notes
       };
       
-      console.log('Sending to backend:', backendClientData);
-      
       const response = await api.post('/', backendClientData);
       
       if (response.data.success) {
-        // Store the full manager objects in the response
         const fullClientData = {
           ...response.data.data,
           projectManagers: clientData.projectManagers
@@ -1739,7 +1493,6 @@ const ClientManagement = () => {
     }
   };
 
-  // Update client
   const handleUpdateClient = async (clientId, updateData) => {
     try {
       const response = await api.put(`/${clientId}`, updateData);
@@ -1756,7 +1509,6 @@ const ClientManagement = () => {
     }
   };
 
-  // Delete confirmation dialog
   const handleDeleteClick = (type, id, name) => {
     setDeleteDialog({ open: true, type, id, name });
   };
@@ -1766,7 +1518,6 @@ const ClientManagement = () => {
     
     try {
       if (type === 'client') {
-        // First delete all tasks for this client
         try {
           const tasksResponse = await tasksApi.get(`/client/${id}`);
           if (tasksResponse.data.success && tasksResponse.data.data.tasks) {
@@ -1778,7 +1529,6 @@ const ClientManagement = () => {
           console.warn('Error deleting client tasks:', taskError);
         }
         
-        // Then delete the client
         const response = await api.delete(`/${id}`);
         if (response.data.success) {
           setSuccess('Client deleted successfully!');
@@ -1803,7 +1553,6 @@ const ClientManagement = () => {
     setDeleteDialog({ open: false, type: '', id: '', name: '' });
   };
 
-  // Edit client dialog
   const handleEditClick = (client) => {
     setEditDialog({ 
       open: true, 
@@ -1817,7 +1566,6 @@ const ClientManagement = () => {
   const handleEditSave = () => {
     const { client } = editDialog;
     
-    // Format project managers for backend
     const formattedProjectManagers = client.projectManagers.map(pm => ({
       _id: pm._id || pm.id,
       name: pm.name,
@@ -1845,12 +1593,10 @@ const ClientManagement = () => {
     handleUpdateClient(client._id, updateData);
   };
 
-  // View client details
   const handleViewClick = (client) => {
     setViewDialog({ open: true, client });
   };
 
-  // Get project managers details
   const getProjectManagersDetails = (client) => {
     if (!client) return [];
     
@@ -1865,782 +1611,400 @@ const ClientManagement = () => {
     });
   };
 
-  // Helper function to render manager information with ID
   const renderManagerInfo = (manager) => {
     return (
-      <Box sx={{ 
-        p: 1.5, 
-        border: '1px solid', 
-        borderColor: 'divider', 
-        borderRadius: 1, 
-        mb: 1,
-        backgroundColor: 'grey.50'
-      }}>
-        <Box display="flex" alignItems="center" mb={1}>
-          <Avatar 
-            sx={{ 
-              width: 32, 
-              height: 32, 
-              mr: 2,
-              fontSize: '0.8rem',
-              bgcolor: 'primary.main'
-            }}
-          >
+      <div className="manager-info">
+        <div className="flex-align-center mb-1">
+          <div className="avatar avatar--primary mr-2">
             {manager.name?.charAt(0)?.toUpperCase() || 'U'}
-          </Avatar>
-          <Box>
-            <Typography variant="subtitle2" fontWeight="bold">
-              {manager.name}
-            </Typography>
-            <Typography variant="caption" color="textSecondary">
+          </div>
+          <div>
+            <p className="font-bold">{manager.name}</p>
+            <small className="text-muted">
               ID: {manager._id?.slice(-8) || manager.id?.slice(-8) || 'N/A'}
-            </Typography>
-          </Box>
-        </Box>
-        <Grid container spacing={1}>
+            </small>
+          </div>
+        </div>
+        <div className="grid-2 gap-1">
           {manager.email && (
-            <Grid item xs={12}>
-              <Typography variant="caption" color="textSecondary">Email:</Typography>
-              <Typography variant="caption" sx={{ ml: 1 }}>
-                {manager.email}
-              </Typography>
-            </Grid>
+            <div>
+              <small className="text-muted">Email:</small>
+              <small className="ml-1">{manager.email}</small>
+            </div>
           )}
           {manager.role && (
-            <Grid item xs={12}>
-              <Typography variant="caption" color="textSecondary">Role:</Typography>
-              <Typography variant="caption" sx={{ ml: 1 }}>
-                {manager.role}
-              </Typography>
-            </Grid>
+            <div>
+              <small className="text-muted">Role:</small>
+              <small className="ml-1">{manager.role}</small>
+            </div>
           )}
-        </Grid>
-      </Box>
+        </div>
+      </div>
     );
   };
 
-  // Handle task updates for services
   const handleTaskUpdate = (serviceName, tasks) => {
     console.log(`Tasks updated for ${serviceName}:`, tasks);
   };
 
-  if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-        <Box textAlign="center">
-          <CircularProgress size={60} />
-          <Typography variant="h6" sx={{ mt: 2 }}>
-            Loading client data...
-          </Typography>
-        </Box>
-      </Box>
-    );
-  }
+
 
   return (
-    <DashboardContainer>
+    <div className="client-management">
       {/* Header */}
-      <HeaderCard>
-        <CardContent>
-          <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }} spacing={2}>
-            <Box display="flex" alignItems="center">
-              <PeopleIcon sx={{ fontSize: { xs: 30, md: 40 }, mr: 2, color: 'primary.main' }} />
-              <Box>
-                <Typography variant={isMobile ? "h5" : "h4"} fontWeight="bold">
-                  Client Management
-                </Typography>
-                <Typography variant={isMobile ? "body2" : "subtitle1"} color="text.secondary">
-                  Manage clients and services
-                </Typography>
-              </Box>
-            </Box>
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} width={{ xs: '100%', md: 'auto' }}>
-              <Button
-                startIcon={<WorkIcon />}
+      <div className="client-management-header">
+        <div className="card__content">
+          <div className="flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="flex-align-center">
+              <FiUsers className="text-3xl md:text-4xl mr-4 text-primary" />
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold">Client Management</h1>
+                <p className="text-muted">Manage clients and services</p>
+              </div>
+            </div>
+            <div className="flex-col sm:flex-row gap-2 w-full md:w-auto">
+              <button
+                className="btn btn--outlined w-full sm:w-auto"
                 onClick={() => setServicesModal(true)}
-                variant="outlined"
-                sx={{ borderRadius: 2 }}
-                fullWidth={isMobile}
               >
-                Services ({services.length})
-              </Button>
-              <Button
-                startIcon={<AddIcon />}
+                <FiBriefcase /> Services ({services.length})
+              </button>
+              <button
+                className="btn btn--primary w-full sm:w-auto"
                 onClick={() => setAddClientModal(true)}
-                variant="contained"
-                sx={{ borderRadius: 2 }}
                 disabled={services.length === 0}
-                fullWidth={isMobile}
               >
-                Add Client
-              </Button>
-              <Button
-                startIcon={<RefreshIcon />}
+                <FiPlus /> Add Client
+              </button>
+              <button
+                className="btn btn--outlined w-full sm:w-auto"
                 onClick={fetchData}
-                variant="outlined"
-                sx={{ borderRadius: 2 }}
-                fullWidth={isMobile}
               >
-                Refresh
-              </Button>
-            </Stack>
-          </Stack>
-        </CardContent>
-      </HeaderCard>
+                <FiRefreshCw /> Refresh
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      {/* Statistics Cards - Responsive */}
-      <Grid container spacing={2} sx={{ mb: 4 }}>
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-4">
         {[
-          { label: 'Total Clients', value: pagination.totalItems || clients.length, color: 'primary', icon: <PeopleIcon /> },
+          { label: 'Total Clients', value: pagination.totalItems || clients.length, color: 'primary', icon: <FiUsers /> },
           { label: 'Active Clients', value: clients.filter(c => c.status === 'Active').length, color: 'success', icon: <FiCheckCircle /> },
           { label: 'Pending Tasks', value: tasksStats.pendingTasks, color: 'warning', icon: <FiClock /> },
           { label: 'Overdue Tasks', value: tasksStats.overdueTasks, color: 'error', icon: <FiAlertCircle /> },
-          { label: 'Services', value: services.length, color: 'info', icon: <WorkIcon /> },
+          { label: 'Services', value: services.length, color: 'info', icon: <FiBriefcase /> },
         ].map((stat, index) => (
-          <Grid item xs={6} sm={4} md={2.4} key={index}>
-            <StatCard color={stat.color}>
-              <CardContent>
-                <Stack direction="row" alignItems="center" spacing={2}>
-                  <Avatar sx={{ 
-                    bgcolor: `${theme.palette[stat.color].main}20`, 
-                    color: theme.palette[stat.color].main,
-                    width: { xs: 36, md: 44 },
-                    height: { xs: 36, md: 44 }
-                  }}>
-                    {stat.icon}
-                  </Avatar>
-                  <Box>
-                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', md: '0.8rem' } }}>
-                      {stat.label}
-                    </Typography>
-                    <Typography variant="h6" fontWeight={700} sx={{ fontSize: { xs: '1.1rem', md: '1.5rem' } }}>
-                      {stat.value}
-                    </Typography>
-                  </Box>
-                </Stack>
-              </CardContent>
-            </StatCard>
-          </Grid>
+          <div key={index} className={`stat-card stat-card--${stat.color}`}>
+            <div className="card__content">
+              <div className="flex-align-center gap-2">
+                <div className={`avatar avatar--${stat.color}`}>
+                  {stat.icon}
+                </div>
+                <div>
+                  <small className="text-muted">{stat.label}</small>
+                  <p className="text-2xl font-bold">{stat.value}</p>
+                </div>
+              </div>
+            </div>
+          </div>
         ))}
-      </Grid>
+      </div>
 
       {/* Notifications */}
-      <Snackbar open={!!error} autoHideDuration={6000} onClose={() => setError('')}>
-        <Alert severity="error" onClose={() => setError('')}>
+      {error && (
+        <div className="alert alert--error">
           {error}
-        </Alert>
-      </Snackbar>
+        </div>
+      )}
 
-      <Snackbar open={!!success} autoHideDuration={3000} onClose={() => setSuccess('')}>
-        <Alert severity="success" onClose={() => setSuccess('')}>
+      {success && (
+        <div className="alert alert--success">
           {success}
-        </Alert>
-      </Snackbar>
+        </div>
+      )}
 
       {/* Main Content Card */}
-      <Card sx={{ 
-        width: "100%", 
-        borderRadius: { xs: 2, md: 4 },
-        boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-        border: '1px solid',
-        borderColor: 'divider',
-        overflow: 'hidden',
-      }}>
-        {/* Enhanced Header */}
-        <CardHeader
-          title={
-            <Box display="flex" alignItems="center" justifyContent="space-between">
-              <Box display="flex" alignItems="center" gap={2}>
-                <Box sx={{
-                  width: { xs: 40, md: 50 },
-                  height: { xs: 40, md: 50 },
-                  borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 4px 6px rgba(102, 126, 234, 0.3)'
-                }}>
-                  <PeopleIcon sx={{ color: 'white', fontSize: { xs: 20, md: 24 } }} />
-                </Box>
-                <Box>
-                  <Typography variant={isMobile ? "h6" : "h5"} fontWeight="bold" color="white">
-                    Client Portfolio
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)', mt: 0.5 }}>
-                    Total {pagination.totalItems} clients • {clients.filter(c => c.status === 'Active').length} active
-                  </Typography>
-                </Box>
-              </Box>
+      <div className="card">
+        <div className="card__header bg-gradient">
+          <div className="flex-align-center justify-between">
+            <div className="flex-align-center gap-2">
+              <div className="avatar-circle">
+                <FiUsers />
+              </div>
+              <div>
+                <h2 className="text-white">Client Portfolio</h2>
+                <p className="text-white text-opacity-80">
+                  Total {pagination.totalItems} clients • {clients.filter(c => c.status === 'Active').length} active
+                </p>
+              </div>
+            </div>
+            
+            <div className="hidden md:flex items-center gap-2">
+              <div className="active-indicator">
+                <FiActivity />
+                <span>{clients.filter(c => c.status === 'Active').length} Active</span>
+              </div>
               
-              {!isMobile && (
-                <Box display="flex" gap={2} alignItems="center">
-                  <Box sx={{
-                    background: 'rgba(255,255,255,0.15)',
-                    backdropFilter: 'blur(10px)',
-                    borderRadius: 3,
-                    px: 2,
-                    py: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1
-                  }}>
-                    <TrendingUpIcon sx={{ fontSize: 18, color: '#4ade80' }} />
-                    <Typography variant="body2" sx={{ color: 'white', fontWeight: 'medium' }}>
-                      {clients.filter(c => c.status === 'Active').length} Active
-                    </Typography>
-                  </Box>
-                  
-                  <IconButton 
-                    onClick={fetchData}
-                    sx={{
-                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                      color: 'white',
-                      '&:hover': {
-                        background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
-                        transform: 'rotate(45deg)'
-                      },
-                      transition: 'all 0.3s ease',
-                      boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)'
-                    }}
-                  >
-                    <RefreshIcon />
-                  </IconButton>
-                </Box>
-              )}
-            </Box>
-          }
-          sx={{ 
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            color: 'white',
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-            py: { xs: 1.5, md: 2.5 }
-          }}
-        />
-        
-        {/* Enhanced Filter Bar - Responsive */}
-        <Box sx={{ 
-          p: { xs: 2, md: 3 }, 
-          background: 'linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)',
-          borderBottom: '1px solid',
-          borderColor: 'divider'
-        }}>
-          <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} md={3}>
-              <TextField
-                fullWidth
-                size="small"
-                placeholder="Search clients..."
-                value={filters.search}
-                onChange={(e) => handleFilterChange('search', e.target.value)}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 3,
-                    background: 'white',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-                    '&:hover': {
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
-                    }
-                  }
-                }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon sx={{ color: '#667eea' }} />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            </Grid>
-            
-            <Grid item xs={6} sm={4} md={2}>
-              <FormControl fullWidth size="small">
-                <Select
-                  value={filters.status}
-                  onChange={(e) => handleFilterChange('status', e.target.value)}
-                  displayEmpty
-                  sx={{
-                    borderRadius: 3,
-                    background: 'white',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-                    '& .MuiOutlinedInput-notchedOutline': {
-                      borderColor: 'transparent'
-                    }
-                  }}
-                >
-                  <MenuItem value="">All Status</MenuItem>
-                  <MenuItem value="Active">Active</MenuItem>
-                  <MenuItem value="On Hold">On Hold</MenuItem>
-                  <MenuItem value="Inactive">Inactive</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={6} sm={4} md={2.5}>
-              <FormControl fullWidth size="small">
-                <Select
-                  value={filters.projectManager}
-                  onChange={(e) => handleFilterChange('projectManager', e.target.value)}
-                  displayEmpty
-                  sx={{
-                    borderRadius: 3,
-                    background: 'white',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-                    '& .MuiOutlinedInput-notchedOutline': {
-                      borderColor: 'transparent'
-                    }
-                  }}
-                >
-                  <MenuItem value="">All Managers</MenuItem>
-                  {projectManagers.map((manager) => (
-                    <MenuItem key={manager._id || manager.id} value={manager.name}>
-                      <Box display="flex" alignItems="center" gap={1}>
-                        <Avatar sx={{ width: 24, height: 24, fontSize: 12, bgcolor: '#667eea' }}>
-                          {manager.name.charAt(0)}
-                        </Avatar>
-                        <Typography variant="body2" noWrap>
-                          {manager.name}
-                        </Typography>
-                      </Box>
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={6} sm={4} md={2.5}>
-              <FormControl fullWidth size="small">
-                <Select
-                  value={filters.service}
-                  onChange={(e) => handleFilterChange('service', e.target.value)}
-                  displayEmpty
-                  sx={{
-                    borderRadius: 3,
-                    background: 'white',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-                    '& .MuiOutlinedInput-notchedOutline': {
-                      borderColor: 'transparent'
-                    }
-                  }}
-                >
-                  <MenuItem value="">All Services</MenuItem>
-                  {services.map((service) => (
-                    <MenuItem key={service._id} value={service.servicename}>
-                      <Chip 
-                        size="small" 
-                        label={service.servicename} 
-                        sx={{ 
-                          background: 'linear-gradient(135deg, #667eea20 0%, #764ba220 100%)',
-                          color: '#667eea',
-                          border: '1px solid',
-                          borderColor: '#667eea40'
-                        }}
-                      />
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={6} sm={4} md={2}>
-              <Button
-                fullWidth
-                variant="contained"
-                onClick={() => setAddClientModal(true)}
-                startIcon={<AddIcon />}
-                disabled={services.length === 0}
-                sx={{
-                  height: 40,
-                  borderRadius: 3,
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  color: 'white',
-                  textTransform: 'none',
-                  fontWeight: 'bold',
-                  boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
-                  '&:hover': {
-                    background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
-                    boxShadow: '0 6px 16px rgba(102, 126, 234, 0.4)',
-                    transform: 'translateY(-2px)'
-                  },
-                  transition: 'all 0.3s ease',
-                  '&:disabled': {
-                    background: 'grey',
-                    boxShadow: 'none'
-                  }
-                }}
+              <button 
+                className="refresh-button"
+                onClick={fetchData}
               >
-                New Client
-              </Button>
-            </Grid>
-          </Grid>
-        </Box>
+                <FiRefreshCw />
+              </button>
+            </div>
+          </div>
+        </div>
         
-        <CardContent sx={{ p: 0 }}>
+        {/* Filter Bar */}
+        <div className="filter-bar">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
+            <div className="md:col-span-1">
+              <div className="search-input">
+                <FiSearch />
+                <input
+                  type="text"
+                  placeholder="Search clients..."
+                  value={filters.search}
+                  onChange={(e) => handleFilterChange('search', e.target.value)}
+                />
+              </div>
+            </div>
+            
+            <div>
+              <select
+                className="form-input"
+                value={filters.status}
+                onChange={(e) => handleFilterChange('status', e.target.value)}
+              >
+                <option value="">All Status</option>
+                <option value="Active">Active</option>
+                <option value="On Hold">On Hold</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+            </div>
+            
+            <div>
+              <select
+                className="form-input"
+                value={filters.projectManager}
+                onChange={(e) => handleFilterChange('projectManager', e.target.value)}
+              >
+                <option value="">All Managers</option>
+                {projectManagers.map((manager) => (
+                  <option key={manager._id || manager.id} value={manager.name}>
+                    {manager.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
+              <select
+                className="form-input"
+                value={filters.service}
+                onChange={(e) => handleFilterChange('service', e.target.value)}
+              >
+                <option value="">All Services</option>
+                {services.map((service) => (
+                  <option key={service._id} value={service.servicename}>
+                    {service.servicename}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
+              <button
+                className="btn btn--primary w-full"
+                onClick={() => setAddClientModal(true)}
+                disabled={services.length === 0}
+              >
+                <FiPlus /> New Client
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <div className="card__content p-0">
           {clients.length > 0 ? (
             <>
-              {/* Enhanced Table Container */}
-              <StyledTableContainer sx={{ maxHeight: 600 }}>
-                <Table stickyHeader>
-                  <TableHead>
-                    <TableRow sx={{ 
-                      background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)',
-                      '& th': {
-                        fontWeight: 'bold',
-                        color: '#1e293b',
-                        fontSize: '0.875rem',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.5px',
-                        borderBottom: '2px solid',
-                        borderColor: '#e2e8f0',
-                        py: 2,
-                        display: isMobile ? 'none' : 'table-cell'
-                      }
-                    }}>
-                      <TableCell sx={{ display: { xs: 'table-cell', sm: 'table-cell' } }}>Client</TableCell>
-                      <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Company</TableCell>
-                      <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Services</TableCell>
-                      <TableCell>Status</TableCell>
-                      <TableCell>Progress</TableCell>
-                      <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Tasks</TableCell>
-                      <TableCell align="center">Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
+              {/* Table Container */}
+              <div className="table-container">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Client</th>
+                      <th className="hidden sm:table-cell">Company</th>
+                      <th className="hidden md:table-cell">Services</th>
+                      <th>Status</th>
+                      <th>Progress</th>
+                      <th className="hidden sm:table-cell">Tasks</th>
+                      <th className="text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
                     {clients.map((client) => {
                       const stats = taskCounts[client._id] || { total: 0, completed: 0, pending: 0 };
                       const pending = stats.pending || 0;
                       const progress = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
                       
                       return (
-                        <TableRow 
-                          key={client._id}
-                          hover
-                          sx={{ 
-                            transition: 'all 0.2s ease',
-                            '&:hover': {
-                              background: 'linear-gradient(90deg, rgba(102, 126, 234, 0.04) 0%, rgba(118, 75, 162, 0.04) 100%)',
-                            },
-                            '&:nth-of-type(even)': {
-                              background: '#fafafa'
-                            }
-                          }}
-                        >
-                          {/* Client Cell - Always visible */}
-                          <TableCell sx={{ display: { xs: 'table-cell', sm: 'table-cell' } }}>
-                            <Box display="flex" alignItems="center" gap={2}>
-                              <Avatar 
-                                sx={{ 
-                                  width: { xs: 32, sm: 36 }, 
-                                  height: { xs: 32, sm: 36 }, 
-                                  bgcolor: '#667eea',
-                                  fontSize: { xs: 12, sm: 14 },
-                                  fontWeight: 'bold'
-                                }}
-                              >
+                        <tr key={client._id}>
+                          <td>
+                            <div className="flex-align-center gap-2">
+                              <div className="avatar avatar--primary">
                                 {client.client?.charAt(0) || 'C'}
-                              </Avatar>
-                              <Box>
-                                <Typography variant="body1" fontWeight="600" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
-                                  {client.client || 'N/A'}
-                                </Typography>
-                                <Typography variant="caption" color="textSecondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
+                              </div>
+                              <div>
+                                <p className="font-bold">{client.client || 'N/A'}</p>
+                                <small className="text-muted hidden sm:block">
                                   ID: {client.clientId || client._id?.slice(-6)}
-                                </Typography>
-                                <Typography variant="caption" color="textSecondary" sx={{ display: { xs: 'block', sm: 'none' } }}>
+                                </small>
+                                <small className="text-muted sm:hidden">
                                   {client.company || 'N/A'}
-                                </Typography>
-                              </Box>
-                            </Box>
-                          </TableCell>
+                                </small>
+                              </div>
+                            </div>
+                          </td>
                           
-                          {/* Company Cell - Hidden on mobile */}
-                          <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
-                            <Box>
-                              <Typography variant="body2" fontWeight="medium">
-                                {client.company || 'N/A'}
-                              </Typography>
-                              <Typography variant="caption" color="textSecondary">
-                                {client.email || 'No email'}
-                              </Typography>
-                            </Box>
-                          </TableCell>
+                          <td className="hidden sm:table-cell">
+                            <div>
+                              <p className="font-medium">{client.company || 'N/A'}</p>
+                              <small className="text-muted">{client.email || 'No email'}</small>
+                            </div>
+                          </td>
                           
-                          {/* Services Cell - Hidden on mobile and tablet */}
-                          <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
-                            <Box display="flex" flexWrap="wrap" gap={0.5} maxWidth={200}>
+                          <td className="hidden md:table-cell">
+                            <div className="flex flex-wrap gap-1 max-w-xs">
                               {Array.isArray(client.services) && client.services.slice(0, 2).map((service, idx) => (
-                                <Chip 
-                                  key={idx}
-                                  size="small"
-                                  label={service}
-                                  sx={{
-                                    background: 'linear-gradient(135deg, #667eea10 0%, #764ba210 100%)',
-                                    color: '#667eea',
-                                    border: '1px solid',
-                                    borderColor: '#667eea30',
-                                    fontWeight: '500',
-                                    fontSize: '0.7rem'
-                                  }}
-                                />
+                                <div key={idx} className="badge badge--info">
+                                  {service}
+                                </div>
                               ))}
                               {Array.isArray(client.services) && client.services.length > 2 && (
-                                <Chip 
-                                  size="small"
-                                  label={`+${client.services.length - 2}`}
-                                  sx={{
-                                    background: '#e2e8f0',
-                                    color: '#64748b'
-                                  }}
-                                />
+                                <div className="badge">
+                                  +{client.services.length - 2}
+                                </div>
                               )}
-                            </Box>
-                          </TableCell>
+                            </div>
+                          </td>
                           
-                          {/* Status Cell - Always visible */}
-                          <TableCell>
-                            <Box sx={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 1,
-                              px: { xs: 1, sm: 2 },
-                              py: 0.5,
-                              borderRadius: 20,
-                              background: client.status === 'Active' 
-                                ? 'linear-gradient(135deg, #10b98120 0%, #05966920 100%)'
-                                : client.status === 'On Hold'
-                                ? 'linear-gradient(135deg, #f59e0b20 0%, #d9770620 100%)'
-                                : 'linear-gradient(135deg, #ef444420 0%, #dc262620 100%)',
-                              border: '1px solid',
-                              borderColor: client.status === 'Active'
-                                ? '#10b98140'
-                                : client.status === 'On Hold'
-                                ? '#f59e0b40'
-                                : '#ef444440'
-                            }}>
-                              <Box sx={{
-                                width: 6,
-                                height: 6,
-                                borderRadius: '50%',
-                                bgcolor: client.status === 'Active'
-                                  ? '#10b981'
-                                  : client.status === 'On Hold'
-                                  ? '#f59e0b'
-                                  : '#ef4444'
-                              }} />
-                              <Typography variant="caption" fontWeight="bold" sx={{
-                                color: client.status === 'Active'
-                                  ? '#059669'
-                                  : client.status === 'On Hold'
-                                  ? '#d97706'
-                                  : '#dc2626',
-                                fontSize: { xs: '0.65rem', sm: '0.75rem' }
-                              }}>
-                                {client.status || 'Unknown'}
-                              </Typography>
-                            </Box>
-                          </TableCell>
+                          <td>
+                            <div className={`status-chip status-chip--${client.status === 'Active' ? 'active' : client.status === 'On Hold' ? 'on-hold' : 'default'}`}>
+                              {client.status || 'Unknown'}
+                            </div>
+                          </td>
                           
-                          {/* Progress Cell - Always visible */}
-                          <TableCell>
-                            <Box sx={{ minWidth: { xs: 80, sm: 120 } }}>
-                              <Box display="flex" justifyContent="space-between" alignItems="center" mb={0.5}>
-                                <Typography variant="body2" fontWeight="medium" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
-                                  {progress}%
-                                </Typography>
-                                <Typography variant="caption" color="textSecondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
+                          <td>
+                            <div className="w-20 sm:w-32">
+                              <div className="flex justify-between items-center mb-1">
+                                <p className="font-medium">{progress}%</p>
+                                <small className="text-muted hidden sm:block">
                                   {stats.completed}/{stats.total}
-                                </Typography>
-                              </Box>
-                              <LinearProgress 
-                                variant="determinate" 
-                                value={progress}
-                                sx={{
-                                  height: 6,
-                                  borderRadius: 4,
-                                  bgcolor: '#e2e8f0',
-                                  '& .MuiLinearProgress-bar': {
-                                    borderRadius: 4,
-                                    background: progress > 70 
-                                      ? 'linear-gradient(90deg, #10b981 0%, #059669 100%)'
-                                      : progress > 30
-                                      ? 'linear-gradient(90deg, #f59e0b 0%, #d97706 100%)'
-                                      : 'linear-gradient(90deg, #ef4444 0%, #dc2626 100%)'
-                                  }
-                                }}
-                              />
-                            </Box>
-                          </TableCell>
+                                </small>
+                              </div>
+                              <div className="progress-bar">
+                                <div 
+                                  className={`progress-bar__fill ${
+                                    progress > 70 ? 'progress-bar__fill--success' :
+                                    progress > 30 ? 'progress-bar__fill--warning' :
+                                    'progress-bar__fill--error'
+                                  }`}
+                                  style={{ width: `${progress}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                          </td>
                           
-                          {/* Tasks Cell - Hidden on mobile */}
-                          <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
-                            <Box display="flex" alignItems="center" gap={1}>
-                              <Chip 
-                                icon={<TaskAltIcon />}
-                                label={pending}
-                                size="small"
-                                sx={{
-                                  background: pending > 0 
-                                    ? 'linear-gradient(135deg, #f59e0b20 0%, #d9770620 100%)'
-                                    : 'linear-gradient(135deg, #10b98120 0%, #05966920 100%)',
-                                  color: pending > 0 ? '#d97706' : '#059669',
-                                  fontWeight: 'bold',
-                                  border: '1px solid',
-                                  borderColor: pending > 0 ? '#f59e0b40' : '#10b98140'
-                                }}
-                              />
-                              <Typography variant="caption" color="textSecondary">
-                                pending
-                              </Typography>
-                            </Box>
-                          </TableCell>
+                          <td className="hidden sm:table-cell">
+                            <div className="flex-align-center gap-1">
+                              <div className={`badge ${pending > 0 ? 'badge--warning' : 'badge--success'}`}>
+                                {pending}
+                              </div>
+                              <small className="text-muted">pending</small>
+                            </div>
+                          </td>
                           
-                          {/* Actions Cell - Always visible */}
-                          <TableCell align="center">
-                            <Box display="flex" gap={1} justifyContent="center">
-                              <IconButton 
-                                size="small"
+                          <td className="text-center">
+                            <div className="flex gap-1 justify-center">
+                              <button 
+                                className="action-button action-button--primary"
                                 onClick={() => handleViewClick(client)}
-                                sx={{
-                                  background: 'linear-gradient(135deg, #667eea10 0%, #764ba210 100%)',
-                                  color: '#667eea',
-                                  '&:hover': {
-                                    background: '#667eea',
-                                    color: 'white',
-                                  }
-                                }}
+                                title="View Details"
                               >
-                                <VisibilityIcon fontSize="small" />
-                              </IconButton>
-                              <IconButton 
-                                size="small"
+                                <FiEye />
+                              </button>
+                              <button 
+                                className="action-button action-button--success"
                                 onClick={() => handleEditClick(client)}
-                                sx={{
-                                  background: 'linear-gradient(135deg, #10b98110 0%, #05966910 100%)',
-                                  color: '#10b981',
-                                  '&:hover': {
-                                    background: '#10b981',
-                                    color: 'white',
-                                  }
-                                }}
+                                title="Edit Client"
                               >
-                                <EditIcon fontSize="small" />
-                              </IconButton>
-                            </Box>
-                          </TableCell>
-                        </TableRow>
+                                <FiEdit />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
                       );
                     })}
-                  </TableBody>
-                </Table>
-              </StyledTableContainer>
+                  </tbody>
+                </table>
+              </div>
               
-              {/* Enhanced Pagination */}
-              <Box sx={{ 
-                py: 2, 
-                px: { xs: 2, md: 3 }, 
-                display: 'flex', 
-                flexDirection: { xs: 'column', sm: 'row' },
-                justifyContent: 'space-between', 
-                alignItems: 'center', 
-                gap: 2,
-                background: 'linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)',
-                borderTop: '1px solid',
-                borderColor: '#e2e8f0'
-              }}>
-                <Box display="flex" alignItems="center" gap={2}>
-                  <FormControl size="small" sx={{ width: { xs: '100%', sm: 100 } }}>
-                    <Select
-                      value={filters.limit}
-                      onChange={(e) => handleFilterChange('limit', e.target.value)}
-                      sx={{ borderRadius: 2 }}
-                    >
-                      <MenuItem value={5}>5 per page</MenuItem>
-                      <MenuItem value={10}>10 per page</MenuItem>
-                      <MenuItem value={25}>25 per page</MenuItem>
-                      <MenuItem value={50}>50 per page</MenuItem>
-                    </Select>
-                  </FormControl>
-                  <Typography variant="body2" color="#64748b">
+              {/* Pagination */}
+              <div className="pagination-container">
+                <div className="flex items-center gap-2">
+                  <select
+                    className="form-input w-32"
+                    value={filters.limit}
+                    onChange={(e) => handleFilterChange('limit', e.target.value)}
+                  >
+                    <option value={5}>5 per page</option>
+                    <option value={10}>10 per page</option>
+                    <option value={25}>25 per page</option>
+                    <option value={50}>50 per page</option>
+                  </select>
+                  <p className="text-muted">
                     Showing <strong>{((filters.page - 1) * filters.limit) + 1}-{Math.min(filters.page * filters.limit, pagination.totalItems)}</strong> of <strong>{pagination.totalItems}</strong>
-                  </Typography>
-                </Box>
+                  </p>
+                </div>
                 
-                <Pagination
-                  count={pagination.totalPages}
-                  page={filters.page}
-                  onChange={(event, value) => handleFilterChange('page', value)}
-                  shape="rounded"
-                  showFirstButton
-                  showLastButton
-                  size={isMobile ? "small" : "medium"}
-                  sx={{
-                    '& .MuiPaginationItem-root': {
-                      borderRadius: 2,
-                      '&:hover': {
-                        background: '#667eea20'
-                      }
-                    },
-                    '& .Mui-selected': {
-                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                      color: 'white',
-                      fontWeight: 'bold',
-                      '&:hover': {
-                        background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)'
-                      }
-                    }
-                  }}
-                />
-              </Box>
+                <div className="pagination">
+                  {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((page) => (
+                    <button
+                      key={page}
+                      className={`pagination__item ${page === filters.page ? 'pagination__item--active' : ''}`}
+                      onClick={() => handleFilterChange('page', page)}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </>
           ) : (
-            <Box textAlign="center" py={8}>
-              <Box sx={{
-                width: { xs: 80, md: 120 },
-                height: { xs: 80, md: 120 },
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                mx: 'auto',
-                mb: 3
-              }}>
-                <PeopleIcon sx={{ fontSize: { xs: 32, md: 48 }, color: '#94a3b8' }} />
-              </Box>
-              <Typography variant="h6" color="#64748b" fontWeight="bold" gutterBottom>
-                No Clients Found
-              </Typography>
-              <Typography variant="body2" color="#94a3b8" sx={{ maxWidth: 400, mx: 'auto', px: 2 }} gutterBottom>
-                {services.length === 0 
-                  ? 'Add services first to create clients' 
-                  : 'Add your first client to start managing your portfolio'
-                }
-              </Typography>
-              <Button 
-                variant="contained" 
-                startIcon={services.length === 0 ? <WorkIcon /> : <AddIcon />}
-                onClick={() => services.length === 0 ? setServicesModal(true) : setAddClientModal(true)}
-                sx={{ 
-                  mt: 3,
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  borderRadius: 3,
-                  px: 4,
-                  py: 1.5,
-                  fontWeight: 'bold',
-                  boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
-                  '&:hover': {
-                    background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
-                    boxShadow: '0 6px 16px rgba(102, 126, 234, 0.4)',
+            <div className="text-center py-8">
+              <div className="empty-state">
+                <FiUsers className="text-5xl text-muted mb-3" />
+                <h3 className="text-muted font-bold mb-2">No Clients Found</h3>
+                <p className="text-muted max-w-md mx-auto px-2 mb-4">
+                  {services.length === 0 
+                    ? 'Add services first to create clients' 
+                    : 'Add your first client to start managing your portfolio'
                   }
-                }}
-              >
-                {services.length === 0 ? 'Add Services First' : 'Create First Client'}
-              </Button>
-            </Box>
+                </p>
+                <button 
+                  className="btn btn--primary"
+                  onClick={() => services.length === 0 ? setServicesModal(true) : setAddClientModal(true)}
+                >
+                  {services.length === 0 ? 'Add Services First' : 'Create First Client'}
+                </button>
+              </div>
+            </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Add Client Modal */}
       <AddClientModal
@@ -2662,457 +2026,404 @@ const ClientManagement = () => {
       />
 
       {/* Delete Confirmation Dialog */}
-      <Dialog 
-        open={deleteDialog.open} 
-        onClose={handleDeleteCancel}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>
-          Delete {deleteDialog.type === 'client' ? 'Client' : 'Service'}
-        </DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to delete {deleteDialog.type} "{deleteDialog.name}"?
-            {deleteDialog.type === 'client' && ' This action will also delete all associated tasks.'}
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleDeleteCancel}>Cancel</Button>
-          <Button 
-            onClick={handleDeleteConfirm} 
-            color="error" 
-            variant="contained"
-            startIcon={<DeleteIcon />}
-            sx={{ borderRadius: 2 }}
-          >
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {deleteDialog.open && (
+        <div className="modal-overlay" onClick={handleDeleteCancel}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal__header">
+              <h3>Delete {deleteDialog.type === 'client' ? 'Client' : 'Service'}</h3>
+            </div>
+            <div className="modal__content">
+              <p>
+                Are you sure you want to delete {deleteDialog.type} "{deleteDialog.name}"?
+                {deleteDialog.type === 'client' && ' This action will also delete all associated tasks.'}
+              </p>
+            </div>
+            <div className="modal__footer">
+              <button className="btn btn--outlined" onClick={handleDeleteCancel}>Cancel</button>
+              <button 
+                className="btn btn--error"
+                onClick={handleDeleteConfirm}
+              >
+                <FiTrash2 /> Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* View Client Dialog */}
-      <Dialog 
-        open={viewDialog.open} 
-        onClose={() => setViewDialog({ open: false, client: null })}
-        maxWidth="md"
-        fullWidth
-        scroll="paper"
-        sx={{
-          '& .MuiDialog-paper': {
-            maxHeight: '90vh'
-          }
-        }}
-      >
-        <DialogTitle>
-          <Box display="flex" alignItems="center" justifyContent="space-between">
-            <Typography variant="h5" fontWeight="bold">
-              Client Details & Task Management
-            </Typography>
-            <IconButton onClick={() => setViewDialog({ open: false, client: null })}>
-              <ClearIcon />
-            </IconButton>
-          </Box>
-        </DialogTitle>
-        <DialogContent dividers>
-          {viewDialog.client && (
-            <Stack spacing={3}>
-              {/* Basic Information */}
-              <Box>
-                <Typography variant="h6" fontWeight={600} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <BusinessIcon />
-                  Basic Information
-                </Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
-                    <Box sx={{ mb: 2 }}>
-                      <Typography variant="body2" color="text.secondary">Client Name</Typography>
-                      <Typography variant="body1" fontWeight={600}>{viewDialog.client.client}</Typography>
-                    </Box>
-                    <Box sx={{ mb: 2 }}>
-                      <Typography variant="body2" color="text.secondary">Company</Typography>
-                      <Typography variant="body1" fontWeight={600}>{viewDialog.client.company}</Typography>
-                    </Box>
-                    <Box sx={{ mb: 2 }}>
-                      <Typography variant="body2" color="text.secondary">City</Typography>
-                      <Typography variant="body1" fontWeight={600}>{viewDialog.client.city}</Typography>
-                    </Box>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Box sx={{ mb: 2 }}>
-                      <Typography variant="body2" color="text.secondary">Status</Typography>
-                      <StatusChip label={viewDialog.client.status} status={viewDialog.client.status} />
-                    </Box>
-                    <Box sx={{ mb: 2 }}>
-                      <Typography variant="body2" color="textSecondary">Progress</Typography>
-                      <Typography variant="body1" fontWeight={600}>{viewDialog.client.progress}</Typography>
-                    </Box>
-                    {viewDialog.client.email && (
-                      <Box sx={{ mb: 2 }}>
-                        <Typography variant="body2" color="textSecondary">Email</Typography>
-                        <Typography variant="body1" fontWeight={600}>{viewDialog.client.email}</Typography>
-                      </Box>
+      {viewDialog.open && viewDialog.client && (
+        <div className="modal-overlay" onClick={() => setViewDialog({ open: false, client: null })}>
+          <div className="modal modal-lg" onClick={e => e.stopPropagation()}>
+            <div className="modal__header">
+              <h3>Client Details & Task Management</h3>
+              <button className="action-button" onClick={() => setViewDialog({ open: false, client: null })}>
+                <FiX />
+              </button>
+            </div>
+            <div className="modal__content">
+              <div className="space-y-3">
+                {/* Basic Information */}
+                <div>
+                  <h4 className="flex-align-center gap-1 mb-2">
+                    <FiBriefcase /> Basic Information
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <div>
+                      <p className="text-muted">Client Name</p>
+                      <p className="font-bold">{viewDialog.client.client}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted">Company</p>
+                      <p className="font-bold">{viewDialog.client.company}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted">City</p>
+                      <p className="font-bold">{viewDialog.client.city}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted">Status</p>
+                      <div className={`status-chip status-chip--${viewDialog.client.status === 'Active' ? 'active' : viewDialog.client.status === 'On Hold' ? 'on-hold' : 'default'}`}>
+                        {viewDialog.client.status}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Project Managers */}
+                <div>
+                  <h4 className="flex-align-center gap-1 mb-2">
+                    <FiUsers /> Team
+                  </h4>
+                  <p className="text-muted mb-2">
+                    These managers will appear in task assignment dropdowns
+                  </p>
+                  <div>
+                    {(() => {
+                      const managers = getProjectManagersDetails(viewDialog.client);
+                      return managers.length > 0 ? (
+                        managers.map((manager, idx) => (
+                          <React.Fragment key={idx}>
+                            {renderManagerInfo(manager)}
+                          </React.Fragment>
+                        ))
+                      ) : (
+                        <div className="empty-state">
+                          <p className="text-muted">No project managers assigned</p>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </div>
+
+                {/* Services Progress Section */}
+                {viewDialog.client.services && viewDialog.client.services.length > 0 && (
+                  <div>
+                    <h4 className="flex-align-center gap-1 mb-2">
+                      <FiTrendingUp /> Services & Task Management
+                    </h4>
+                    <p className="text-muted mb-2">
+                      Add tasks with due dates and assign them to project managers
+                    </p>
+                    
+                    {viewDialog.client.services.map((service, index) => {
+                      const clientProjectManagers = getProjectManagersDetails(viewDialog.client);
+                      return (
+                        <ServiceProgressCard
+                          key={index}
+                          service={service}
+                          clientId={viewDialog.client._id}
+                          clientProjectManagers={clientProjectManagers}
+                          onTaskUpdate={handleTaskUpdate}
+                          api={tasksApi}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Additional Information */}
+                <div>
+                  <h4 className="flex-align-center gap-1 mb-2">
+                    <FiMapPin /> Additional Information
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {viewDialog.client.phone && (
+                      <div>
+                        <p className="text-muted">Phone</p>
+                        <p className="font-bold">{viewDialog.client.phone}</p>
+                      </div>
                     )}
-                  </Grid>
-                </Grid>
-              </Box>
-
-              {/* Project Managers */}
-              <Box>
-                <Typography variant="h6" fontWeight={600} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <PeopleIcon />
-                  Project Managers
-                </Typography>
-                <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-                  These managers will appear in task assignment dropdowns
-                </Typography>
-                <Box>
-                  {(() => {
-                    const managers = getProjectManagersDetails(viewDialog.client);
-                    return managers.length > 0 ? (
-                      managers.map((manager, idx) => (
-                        <React.Fragment key={idx}>
-                          {renderManagerInfo(manager)}
-                        </React.Fragment>
-                      ))
-                    ) : (
-                      <Box sx={{ 
-                        p: 2, 
-                        border: '1px dashed', 
-                        borderColor: 'divider', 
-                        borderRadius: 1,
-                        textAlign: 'center',
-                        backgroundColor: 'grey.50'
-                      }}>
-                        <Typography variant="body2" color="textSecondary">
-                          No project managers assigned
-                        </Typography>
-                      </Box>
-                    );
-                  })()}
-                </Box>
-              </Box>
-
-              {/* Services Progress Section */}
-              {viewDialog.client.services && viewDialog.client.services.length > 0 && (
-                <Box>
-                  <Typography variant="h6" fontWeight={600} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <TrendingUpIcon />
-                    Services & Task Management
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-                    Add tasks with due dates and assign them to project managers
-                  </Typography>
-                  
-                  {viewDialog.client.services.map((service, index) => {
-                    const clientProjectManagers = getProjectManagersDetails(viewDialog.client);
-                    return (
-                      <ServiceProgressCard
-                        key={index}
-                        service={service}
-                        clientId={viewDialog.client._id}
-                        clientProjectManagers={clientProjectManagers}
-                        onTaskUpdate={handleTaskUpdate}
-                        api={tasksApi}
-                      />
-                    );
-                  })}
-                </Box>
-              )}
-
-              {/* Additional Information */}
-              <Box>
-                <Typography variant="h6" fontWeight={600} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <LocationIcon />
-                  Additional Information
-                </Typography>
-                <Grid container spacing={2}>
-                  {viewDialog.client.phone && (
-                    <Grid item xs={12} sm={6}>
-                      <Typography variant="body2" color="textSecondary">Phone</Typography>
-                      <Typography variant="body1" fontWeight={600}>{viewDialog.client.phone}</Typography>
-                    </Grid>
-                  )}
-                  {viewDialog.client.address && (
-                    <Grid item xs={12} sm={6}>
-                      <Typography variant="body2" color="textSecondary">Address</Typography>
-                      <Typography variant="body1" fontWeight={600}>{viewDialog.client.address}</Typography>
-                    </Grid>
-                  )}
-                  {viewDialog.client.description && (
-                    <Grid item xs={12}>
-                      <Typography variant="body2" color="textSecondary">Description</Typography>
-                      <Typography variant="body1" fontWeight={600}>{viewDialog.client.description}</Typography>
-                    </Grid>
-                  )}
-                  {viewDialog.client.notes && (
-                    <Grid item xs={12}>
-                      <Typography variant="body2" color="textSecondary">Notes</Typography>
-                      <Typography variant="body1" fontWeight={600}>{viewDialog.client.notes}</Typography>
-                    </Grid>
-                  )}
-                </Grid>
-              </Box>
-            </Stack>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setViewDialog({ open: false, client: null })}>Close</Button>
-        </DialogActions>
-      </Dialog>
+                    {viewDialog.client.address && (
+                      <div>
+                        <p className="text-muted">Address</p>
+                        <p className="font-bold">{viewDialog.client.address}</p>
+                      </div>
+                    )}
+                    {viewDialog.client.description && (
+                      <div className="md:col-span-2">
+                        <p className="text-muted">Description</p>
+                        <p className="font-bold">{viewDialog.client.description}</p>
+                      </div>
+                    )}
+                    {viewDialog.client.notes && (
+                      <div className="md:col-span-2">
+                        <p className="text-muted">Notes</p>
+                        <p className="font-bold">{viewDialog.client.notes}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="modal__footer">
+              <button className="btn btn--outlined" onClick={() => setViewDialog({ open: false, client: null })}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Edit Client Dialog */}
-      <Dialog 
-        open={editDialog.open} 
-        onClose={() => setEditDialog({ open: false, client: null })}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>
-          Edit Client
-        </DialogTitle>
-        <DialogContent>
-          {editDialog.client && (
-            <Grid container spacing={2} sx={{ mt: 1 }}>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Client Name *"
-                  value={editDialog.client.client}
-                  onChange={(e) => setEditDialog({
-                    ...editDialog,
-                    client: { ...editDialog.client, client: e.target.value }
-                  })}
-                  required
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Company *"
-                  value={editDialog.client.company}
-                  onChange={(e) => setEditDialog({
-                    ...editDialog,
-                    client: { ...editDialog.client, company: e.target.value }
-                  })}
-                  required
-                />
-              </Grid>
+      {editDialog.open && editDialog.client && (
+        <div className="modal-overlay" onClick={() => setEditDialog({ open: false, client: null })}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal__header">
+              <h3>Edit Client</h3>
+            </div>
+            <div className="modal__content">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div className="form-group">
+                  <label className="form-label">Client Name *</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={editDialog.client.client}
+                    onChange={(e) => setEditDialog({
+                      ...editDialog,
+                      client: { ...editDialog.client, client: e.target.value }
+                    })}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Company *</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={editDialog.client.company}
+                    onChange={(e) => setEditDialog({
+                      ...editDialog,
+                      client: { ...editDialog.client, company: e.target.value }
+                    })}
+                    required
+                  />
+                </div>
 
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="City *"
-                  value={editDialog.client.city}
-                  onChange={(e) => setEditDialog({
-                    ...editDialog,
-                    client: { ...editDialog.client, city: e.target.value }
-                  })}
-                  required
-                />
-              </Grid>
+                <div className="form-group">
+                  <label className="form-label">City *</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={editDialog.client.city}
+                    onChange={(e) => setEditDialog({
+                      ...editDialog,
+                      client: { ...editDialog.client, city: e.target.value }
+                    })}
+                    required
+                  />
+                </div>
 
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth>
-                  <InputLabel>Status</InputLabel>
-                  <Select
+                <div className="form-group">
+                  <label className="form-label">Status</label>
+                  <select
+                    className="form-input"
                     value={editDialog.client.status}
-                    label="Status"
                     onChange={(e) => setEditDialog({
                       ...editDialog,
                       client: { ...editDialog.client, status: e.target.value }
                     })}
                   >
-                    <MenuItem value="Active">Active</MenuItem>
-                    <MenuItem value="On Hold">On Hold</MenuItem>
-                    <MenuItem value="Inactive">Inactive</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
+                    <option value="Active">Active</option>
+                    <option value="On Hold">On Hold</option>
+                    <option value="Inactive">Inactive</option>
+                  </select>
+                </div>
 
-              {/* Project Managers */}
-              <Grid item xs={12}>
-                <FormControl fullWidth required>
-                  <InputLabel>Project Managers *</InputLabel>
-                  <Select
-                    multiple
-                    value={editDialog.client.projectManagers.map(pm => pm._id || pm.id)}
-                    onChange={(e) => {
-                      const selectedIds = e.target.value;
-                      const selectedManagers = projectManagers.filter(pm => 
-                        selectedIds.includes(pm._id)
-                      ).map(pm => ({
-                        _id: pm._id,
-                        name: pm.name,
-                        email: pm.email,
-                        role: pm.role
-                      }));
-                      
-                      setEditDialog({
-                        ...editDialog,
-                        client: { ...editDialog.client, projectManagers: selectedManagers }
-                      });
-                    }}
-                    input={<OutlinedInput label="Project Managers *" />}
-                    renderValue={(selected) => {
-                      const selectedManagers = projectManagers.filter(pm => 
-                        selected.includes(pm._id)
-                      );
-                      return selectedManagers.map(pm => pm.name).join(', ');
-                    }}
-                  >
+                {/* Project Managers */}
+                <div className="form-group md:col-span-2">
+                  <label className="form-label">Team *</label>
+                  <div className="max-h-40 overflow-auto">
                     {projectManagers.map((manager) => (
-                      <MenuItem key={manager._id} value={manager._id}>
-                        <Checkbox checked={editDialog.client.projectManagers.some(pm => pm._id === manager._id || pm.id === manager._id)} />
-                        <Box display="flex" alignItems="center" sx={{ ml: 1, width: '100%' }}>
-                          <Avatar 
-                            sx={{ 
-                              width: 32, 
-                              height: 32, 
-                              mr: 2,
-                              fontSize: '0.8rem',
-                              bgcolor: 'primary.main'
-                            }}
-                          >
+                      <div key={manager._id} className="flex items-center p-2 hover:bg-grey-50">
+                        <input
+                          type="checkbox"
+                          id={`edit-manager-${manager._id}`}
+                          checked={editDialog.client.projectManagers.some(pm => pm._id === manager._id || pm.id === manager._id)}
+                          onChange={(e) => {
+                            const isChecked = e.target.checked;
+                            setEditDialog({
+                              ...editDialog,
+                              client: {
+                                ...editDialog.client,
+                                projectManagers: isChecked
+                                  ? [...editDialog.client.projectManagers, {
+                                      _id: manager._id,
+                                      name: manager.name,
+                                      email: manager.email,
+                                      role: manager.role
+                                    }]
+                                  : editDialog.client.projectManagers.filter(pm => pm._id !== manager._id)
+                              }
+                            });
+                          }}
+                        />
+                        <div className="flex items-center ml-2 w-full">
+                          <div className="avatar avatar--primary mr-2">
                             {manager.name?.charAt(0)?.toUpperCase() || 'U'}
-                          </Avatar>
-                          <Box sx={{ flex: 1, minWidth: 0 }}>
-                            <Typography variant="body2" noWrap fontWeight="medium">
-                              {manager.name}
-                            </Typography>
-                            <Typography variant="caption" color="textSecondary" noWrap display="block">
+                          </div>
+                          <div>
+                            <p className="font-bold">{manager.name}</p>
+                            <small className="text-muted">
                               {manager.role} • {manager.email}
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </MenuItem>
+                            </small>
+                          </div>
+                        </div>
+                      </div>
                     ))}
-                  </Select>
-                </FormControl>
-              </Grid>
+                  </div>
+                </div>
 
-              {/* Services */}
-              <Grid item xs={12}>
-                <FormControl fullWidth>
-                  <InputLabel>Services</InputLabel>
-                  <Select
-                    multiple
-                    value={editDialog.client.services || []}
+                {/* Services */}
+                <div className="form-group md:col-span-2">
+                  <label className="form-label">Services</label>
+                  <div className="max-h-40 overflow-auto">
+                    {services.map((service) => (
+                      <div key={service._id} className="flex items-center p-1">
+                        <input
+                          type="checkbox"
+                          id={`edit-service-${service._id}`}
+                          checked={(editDialog.client.services || []).includes(service.servicename)}
+                          onChange={(e) => {
+                            const isChecked = e.target.checked;
+                            setEditDialog({
+                              ...editDialog,
+                              client: {
+                                ...editDialog.client,
+                                services: isChecked
+                                  ? [...(editDialog.client.services || []), service.servicename]
+                                  : (editDialog.client.services || []).filter(s => s !== service.servicename)
+                              }
+                            });
+                          }}
+                        />
+                        <label htmlFor={`edit-service-${service._id}`} className="ml-2">
+                          {service.servicename}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="form-group md:col-span-2">
+                  <label className="form-label">Progress</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={editDialog.client.progress}
                     onChange={(e) => setEditDialog({
                       ...editDialog,
-                      client: { ...editDialog.client, services: e.target.value }
+                      client: { ...editDialog.client, progress: e.target.value }
                     })}
-                    input={<OutlinedInput label="Services" />}
-                    renderValue={(selected) => selected.join(', ')}
-                  >
-                    {services.map((service) => (
-                      <MenuItem key={service._id} value={service.servicename}>
-                        <Checkbox checked={(editDialog.client.services || []).includes(service.servicename)} />
-                        <ListItemText primary={service.servicename} />
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
+                    placeholder="28/40 (70%)"
+                  />
+                </div>
 
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Progress"
-                  value={editDialog.client.progress}
-                  onChange={(e) => setEditDialog({
-                    ...editDialog,
-                    client: { ...editDialog.client, progress: e.target.value }
-                  })}
-                  placeholder="28/40 (70%)"
-                  helperText="Format: completed/total (percentage)"
-                />
-              </Grid>
+                <div className="form-group">
+                  <label className="form-label">Email</label>
+                  <input
+                    type="email"
+                    className="form-input"
+                    value={editDialog.client.email || ''}
+                    onChange={(e) => setEditDialog({
+                      ...editDialog,
+                      client: { ...editDialog.client, email: e.target.value }
+                    })}
+                  />
+                </div>
 
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Email"
-                  value={editDialog.client.email || ''}
-                  onChange={(e) => setEditDialog({
-                    ...editDialog,
-                    client: { ...editDialog.client, email: e.target.value }
-                  })}
-                />
-              </Grid>
+                <div className="form-group">
+                  <label className="form-label">Phone</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={editDialog.client.phone || ''}
+                    onChange={(e) => setEditDialog({
+                      ...editDialog,
+                      client: { ...editDialog.client, phone: e.target.value }
+                    })}
+                  />
+                </div>
 
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Phone"
-                  value={editDialog.client.phone || ''}
-                  onChange={(e) => setEditDialog({
-                    ...editDialog,
-                    client: { ...editDialog.client, phone: e.target.value }
-                  })}
-                />
-              </Grid>
+                <div className="form-group md:col-span-2">
+                  <label className="form-label">Address</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={editDialog.client.address || ''}
+                    onChange={(e) => setEditDialog({
+                      ...editDialog,
+                      client: { ...editDialog.client, address: e.target.value }
+                    })}
+                  />
+                </div>
 
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Address"
-                  value={editDialog.client.address || ''}
-                  onChange={(e) => setEditDialog({
-                    ...editDialog,
-                    client: { ...editDialog.client, address: e.target.value }
-                  })}
-                />
-              </Grid>
+                <div className="form-group md:col-span-2">
+                  <label className="form-label">Description</label>
+                  <textarea
+                    className="form-input"
+                    rows="3"
+                    value={editDialog.client.description || ''}
+                    onChange={(e) => setEditDialog({
+                      ...editDialog,
+                      client: { ...editDialog.client, description: e.target.value }
+                    })}
+                    placeholder="Enter client description..."
+                  />
+                </div>
 
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Description"
-                  multiline
-                  rows={3}
-                  value={editDialog.client.description || ''}
-                  onChange={(e) => setEditDialog({
-                    ...editDialog,
-                    client: { ...editDialog.client, description: e.target.value }
-                  })}
-                  placeholder="Enter client description..."
-                />
-              </Grid>
-
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Notes"
-                  multiline
-                  rows={2}
-                  value={editDialog.client.notes || ''}
-                  onChange={(e) => setEditDialog({
-                    ...editDialog,
-                    client: { ...editDialog.client, notes: e.target.value }
-                  })}
-                  placeholder="Additional notes..."
-                />
-              </Grid>
-            </Grid>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setEditDialog({ open: false, client: null })}>
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleEditSave} 
-            color="primary" 
-            variant="contained"
-            startIcon={<SaveIcon />}
-            disabled={!editDialog.client?.client || !editDialog.client?.company || !editDialog.client?.city || !editDialog.client?.projectManagers?.length}
-          >
-            Save Changes
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </DashboardContainer>
+                <div className="form-group md:col-span-2">
+                  <label className="form-label">Notes</label>
+                  <textarea
+                    className="form-input"
+                    rows="2"
+                    value={editDialog.client.notes || ''}
+                    onChange={(e) => setEditDialog({
+                      ...editDialog,
+                      client: { ...editDialog.client, notes: e.target.value }
+                    })}
+                    placeholder="Additional notes..."
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="modal__footer">
+              <button className="btn btn--outlined" onClick={() => setEditDialog({ open: false, client: null })}>
+                Cancel
+              </button>
+              <button 
+                className="btn btn--primary"
+                onClick={handleEditSave}
+                disabled={!editDialog.client?.client || !editDialog.client?.company || !editDialog.client?.city || !editDialog.client?.projectManagers?.length}
+              >
+                <FiSave /> Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

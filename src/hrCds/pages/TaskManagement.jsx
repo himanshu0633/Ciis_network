@@ -17,9 +17,8 @@ import {
   FiCheck, FiX, FiAlertCircle, FiUser, FiBell, FiRefreshCw,
   FiMessageSquare, FiActivity, FiDownload, FiClock, FiCheckCircle,
   FiXCircle, FiFilter, FiSearch, FiLogOut, FiMessageCircle,
-  FiChevronLeft, FiChevronRight, FiX as FiClose, FiBarChart2,
-  FiTrendingUp, FiList, FiPause, FiTarget, FiUsers, FiSlash,
-  FiImage, FiCamera, FiTrash2, FiZoomIn, FiCheckSquare,
+  FiBarChart2, FiTrendingUp, FiList, FiPause, FiTarget, FiUsers,
+  FiSlash, FiImage, FiCamera, FiTrash2, FiZoomIn, FiCheckSquare,
   FiGlobe, FiSun, FiRotateCcw
 } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
@@ -31,20 +30,18 @@ const StatCard = styled(Card, {
 })(({ theme, color = 'primary', clickable = true, active = false }) => ({
   background: active 
     ? `linear-gradient(135deg, ${theme.palette[color].main}15 0%, ${theme.palette[color].main}08 100%)`
-    : `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
+    : theme.palette.background.paper,
   borderRadius: theme.shape.borderRadius * 2,
-  boxShadow: active ? theme.shadows[4] : theme.shadows[2],
+  boxShadow: theme.shadows[2],
   transition: theme.transitions.create(['all'], {
     duration: theme.transitions.duration.standard,
   }),
   borderLeft: `4px solid ${theme.palette[color].main}`,
-  border: active ? `2px solid ${theme.palette[color].main}` : 'none',
   height: '100%',
   cursor: clickable ? 'pointer' : 'default',
   '&:hover': clickable ? {
-    boxShadow: theme.shadows[6],
-    transform: 'translateY(-4px)',
-    backgroundColor: `${theme.palette[color].main}08`,
+    boxShadow: theme.shadows[4],
+    transform: 'translateY(-2px)',
   } : {},
 }));
 
@@ -60,86 +57,53 @@ const StatusChip = styled(Chip, {
   ...(status === 'pending' && {
     background: `${theme.palette.warning.main}15`,
     color: theme.palette.warning.dark,
-    border: `1px solid ${theme.palette.warning.main}30`,
   }),
   ...(status === 'in-progress' && {
     background: `${theme.palette.info.main}15`,
     color: theme.palette.info.dark,
-    border: `1px solid ${theme.palette.info.main}30`,
   }),
   ...(status === 'completed' && {
     background: `${theme.palette.success.main}15`,
     color: theme.palette.success.dark,
-    border: `1px solid ${theme.palette.success.main}30`,
   }),
   ...(status === 'rejected' && {
     background: `${theme.palette.error.main}15`,
     color: theme.palette.error.dark,
-    border: `1px solid ${theme.palette.error.main}30`,
   }),
   ...(status === 'onhold' && {
     background: `${theme.palette.warning.light}25`,
     color: theme.palette.warning.dark,
-    border: `1px solid ${theme.palette.warning.main}30`,
   }),
   ...(status === 'reopen' && {
     background: `${theme.palette.secondary.main}15`,
     color: theme.palette.secondary.dark,
-    border: `1px solid ${theme.palette.secondary.main}30`,
   }),
   ...(status === 'cancelled' && {
     background: `${theme.palette.grey[500]}20`,
     color: theme.palette.grey[700],
-    border: `1px solid ${theme.palette.grey[400]}30`,
   }),
   ...(status === 'overdue' && {
     background: `${theme.palette.error.main}20`,
     color: theme.palette.error.dark,
-    border: `1px solid ${theme.palette.error.main}40`,
   }),
 }));
 
-const PriorityChip = styled(Chip, {
-  shouldForwardProp: (prop) => prop !== 'priority'
-})(({ theme, priority }) => ({
+const PriorityChip = styled(Chip)(({ theme }) => ({
   fontWeight: 500,
   fontSize: '0.65rem',
-  ...(priority === 'high' && {
-    background: `${theme.palette.error.main}15`,
-    color: theme.palette.error.dark,
-    border: `1px solid ${theme.palette.error.main}30`,
-  }),
-  ...(priority === 'medium' && {
-    background: `${theme.palette.warning.main}15`,
-    color: theme.palette.warning.dark,
-    border: `1px solid ${theme.palette.warning.main}30`,
-  }),
-  ...(priority === 'low' && {
-    background: `${theme.palette.success.main}15`,
-    color: theme.palette.success.dark,
-    border: `1px solid ${theme.palette.success.main}30`,
-  }),
+  borderRadius: theme.shape.borderRadius * 2,
 }));
 
-const MobileTaskCard = styled(Card, {
-  shouldForwardProp: (prop) => prop !== 'status'
-})(({ theme, status }) => ({
+const MobileTaskCard = styled(Card)(({ theme }) => ({
   borderRadius: theme.shape.borderRadius * 2,
   boxShadow: theme.shadows[1],
   cursor: 'pointer',
   transition: theme.transitions.create(['all'], {
     duration: theme.transitions.duration.standard,
   }),
-  borderLeft: `4px solid ${status === 'completed' ? theme.palette.success.main :
-    status === 'in-progress' ? theme.palette.info.main :
-      status === 'pending' ? theme.palette.warning.main :
-      status === 'overdue' ? theme.palette.error.main :
-        theme.palette.error.main
-    }`,
-  marginBottom: theme.spacing(2),
+  marginBottom: theme.spacing(1.5),
   '&:hover': {
-    boxShadow: theme.shadows[4],
-    transform: 'translateY(-2px)',
+    boxShadow: theme.shadows[3],
   },
 }));
 
@@ -148,64 +112,37 @@ const ActionButton = styled(IconButton)(({ theme }) => ({
     duration: theme.transitions.duration.short,
   }),
   '&:hover': {
-    transform: 'scale(1.1)',
+    backgroundColor: theme.palette.action.hover,
   },
 }));
 
-const CalendarFilterButton = styled(Button, {
-  shouldForwardProp: (prop) => prop !== 'active'
-})(({ theme, active }) => ({
+const CalendarFilterButton = styled(Button)(({ theme }) => ({
   borderRadius: theme.shape.borderRadius,
-  border: `1px solid ${active ? theme.palette.primary.main : theme.palette.divider}`,
-  background: active ? `${theme.palette.primary.main}15` : 'transparent',
-  color: active ? theme.palette.primary.main : theme.palette.text.secondary,
-  fontWeight: active ? 600 : 400,
   textTransform: 'none',
   minWidth: 'auto',
-  padding: '4px 16px',
-  '&:hover': {
-    borderColor: theme.palette.primary.main,
-    backgroundColor: `${theme.palette.primary.main}08`,
-  },
+  padding: theme.spacing(0.5, 2),
 }));
 
-const TimeFilterButton = styled(Button, {
-  shouldForwardProp: (prop) => prop !== 'active'
-})(({ theme, active }) => ({
+const TimeFilterButton = styled(Button)(({ theme }) => ({
   borderRadius: theme.shape.borderRadius,
-  border: `1px solid ${active ? theme.palette.primary.main : theme.palette.divider}`,
-  backgroundColor: active ? `${theme.palette.primary.main}22` : "transparent",
-  color: active ? theme.palette.primary.main : theme.palette.text.secondary,
-  fontWeight: active ? 700 : 500,
   textTransform: "none",
   minWidth: "auto",
-  padding: "4px 10px",
+  padding: theme.spacing(0.5, 1.5),
   fontSize: "0.75rem",
-  transition: "all 0.25s ease",
-  "&:hover": {
-    borderColor: theme.palette.primary.main,
-    backgroundColor: active
-      ? `${theme.palette.primary.main}33`
-      : `${theme.palette.primary.main}12`,
-    color: theme.palette.primary.main,
-    transform: "translateY(-2px)",
-  },
+  transition: "all 0.2s ease",
 }));
 
 // Image Upload Components
-const ImageUploadArea = styled(Box, {
-  shouldForwardProp: (prop) => prop !== 'isDragActive'
-})(({ theme, isDragActive }) => ({
-  border: `2px dashed ${isDragActive ? theme.palette.primary.main : theme.palette.divider}`,
+const ImageUploadArea = styled(Box)(({ theme }) => ({
+  border: `2px dashed ${theme.palette.divider}`,
   borderRadius: theme.shape.borderRadius * 2,
   padding: theme.spacing(3),
   textAlign: 'center',
-  backgroundColor: isDragActive ? `${theme.palette.primary.main}08` : theme.palette.background.paper,
+  backgroundColor: theme.palette.background.paper,
   cursor: 'pointer',
   transition: 'all 0.3s ease',
   '&:hover': {
     borderColor: theme.palette.primary.main,
-    backgroundColor: `${theme.palette.primary.main}04`,
   },
 }));
 
@@ -215,15 +152,11 @@ const ImagePreview = styled(Box)(({ theme }) => ({
   overflow: 'hidden',
   cursor: 'pointer',
   transition: 'all 0.3s ease',
-  '&:hover': {
-    transform: 'scale(1.02)',
-    boxShadow: theme.shadows[4],
-  },
 }));
 
 const ImagePreviewContainer = styled(Box)(({ theme }) => ({
   display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))',
   gap: theme.spacing(1),
   marginTop: theme.spacing(2),
 }));
@@ -241,14 +174,11 @@ const RemoveImageButton = styled(IconButton)(({ theme }) => ({
   },
 }));
 
-const ZoomModal = styled(Modal)(({ theme }) => ({
+const ZoomModal = styled(Modal)({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  '& .MuiBackdrop-root': {
-    backgroundColor: 'rgba(0, 0, 0, 0.9)',
-  },
-}));
+});
 
 // Status constants
 const statusColors = {
@@ -284,7 +214,7 @@ const getStatusColor = (status, theme) => {
     'cancelled': theme.palette.grey[700],
     'overdue': theme.palette.error.dark
   };
-  return colors[status] || alpha(theme.palette.text.secondary, 0.3);
+  return colors[status] || theme.palette.text.secondary;
 };
 
 const UserCreateTask = () => {
@@ -296,14 +226,13 @@ const UserCreateTask = () => {
   const [userName, setUserName] = useState('');
   const [authError, setAuthError] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [statsLoading, setStatsLoading] = useState(false);
 
   // Task Management States
   const [myTasksGrouped, setMyTasksGrouped] = useState({});
   const [statusFilter, setStatusFilter] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Enhanced Stats State
+  // Stats State
   const [taskStats, setTaskStats] = useState({
     total: 0,
     pending: { count: 0, percentage: 0 },
@@ -349,8 +278,6 @@ const UserCreateTask = () => {
     priorityDays: '1',
     files: null,
     voiceNote: null,
-    assignedUsers: [],
-    assignedGroups: []
   });
 
   const [pendingStatusChange, setPendingStatusChange] = useState({ taskId: null, status: '' });
@@ -364,7 +291,7 @@ const UserCreateTask = () => {
   const navigate = useNavigate();
 
   // User authentication check
-  const fetchUserData = () => {
+  const fetchUserData = useCallback(() => {
     try {
       const userStr = localStorage.getItem('user');
       if (!userStr) {
@@ -379,7 +306,7 @@ const UserCreateTask = () => {
       }
 
       const user = JSON.parse(userStr);
-      if (!user || !user.role || !user.id || !user.name) {
+      if (!user?.role || !user?.id || !user?.name) {
         setAuthError(true);
         setSnackbar({
           open: true,
@@ -394,11 +321,6 @@ const UserCreateTask = () => {
       setUserId(user.id);
       setUserName(user.name);
       setAuthError(false);
-      
-      setNewTask(prev => ({
-        ...prev,
-        assignedUsers: [user.id]
-      }));
     } catch (error) {
       console.error('Error parsing user data:', error);
       setAuthError(true);
@@ -409,33 +331,23 @@ const UserCreateTask = () => {
       });
       setLoading(false);
     }
-  };
+  }, []);
 
   // Get individual user status for a task
   const getUserStatusForTask = useCallback((task, userId) => {
     if (!task || !userId) return 'pending';
     
-    // First check statusByUser array
     const userStatus = task.statusByUser?.find(s => {
-      if (typeof s.user === 'string') {
-        return s.user === userId;
-      } else if (s.user && typeof s.user === 'object') {
-        return s.user._id === userId;
-      }
+      if (typeof s.user === 'string') return s.user === userId;
+      if (s.user && typeof s.user === 'object') return s.user._id === userId;
       return false;
     });
     
-    if (userStatus) {
-      return userStatus.status || 'pending';
-    }
+    if (userStatus) return userStatus.status || 'pending';
     
-    // Fallback to statusInfo array
     const statusInfo = task.statusInfo?.find(s => s.userId === userId);
-    if (statusInfo) {
-      return statusInfo.status || 'pending';
-    }
+    if (statusInfo) return statusInfo.status || 'pending';
     
-    // Final fallback
     return 'pending';
   }, []);
 
@@ -477,7 +389,6 @@ const UserCreateTask = () => {
           statusCounts[myStatus]++;
         }
 
-        // Check overdue - only for pending and in-progress tasks
         if (task.dueDateTime && 
             new Date(task.dueDateTime) < new Date() && 
             (myStatus === 'pending' || myStatus === 'in-progress')) {
@@ -512,30 +423,19 @@ const UserCreateTask = () => {
     try {
       const params = new URLSearchParams();
       
-      if (statusFilter && statusFilter !== 'all') {
-        params.append('status', statusFilter);
-      }
-      
-      if (searchTerm) {
-        params.append('search', searchTerm);
-      }
-      
-      if (timeFilter && timeFilter !== 'all') {
-        params.append('period', timeFilter);
-      }
+      if (statusFilter && statusFilter !== 'all') params.append('status', statusFilter);
+      if (searchTerm) params.append('search', searchTerm);
+      if (timeFilter && timeFilter !== 'all') params.append('period', timeFilter);
 
       const url = `/task/my?${params.toString()}`;
-      console.log('🔍 Fetching tasks with URL:', url);
-      
       const res = await axios.get(url);
       const tasks = res.data.groupedTasks || {};
-      console.log('📦 Fetched tasks:', tasks);
       
       setMyTasksGrouped(tasks);
       calculateStatsFromTasks(tasks);
 
     } catch (err) {
-      console.error('❌ Error fetching tasks:', err);
+      console.error('Error fetching tasks:', err);
       if (err.response?.status === 401) {
         setAuthError(true);
         setSnackbar({
@@ -575,7 +475,7 @@ const UserCreateTask = () => {
   // Clear all filters
   const clearAllFilters = () => {
     setStatusFilter('');
-    setTimeFilter('today');
+    setTimeFilter('all');
     setSelectedDate(null);
     setDateRange({ start: null, end: null });
     setSearchTerm('');
@@ -610,7 +510,6 @@ const UserCreateTask = () => {
       return;
     }
 
-    // For single image upload, replace existing image
     const newImage = {
       file: imageFiles[0],
       preview: URL.createObjectURL(imageFiles[0]),
@@ -618,8 +517,7 @@ const UserCreateTask = () => {
       size: imageFiles[0].size
     };
 
-    // Clear existing images and add new one
-    remarkImages.forEach(image => URL.revokeObjectURL(image.preview)); // Clean up memory
+    remarkImages.forEach(image => URL.revokeObjectURL(image.preview));
     setRemarkImages([newImage]);
   };
 
@@ -661,12 +559,11 @@ const UserCreateTask = () => {
       const formData = new FormData();
       formData.append('text', newRemark.trim());
 
-      // Append all images
-      remarkImages.forEach((image, index) => {
+      remarkImages.forEach((image) => {
         formData.append('image', image.file);
       });
 
-      const response = await axios.post(`/task/${taskId}/remarks`, formData, {
+      await axios.post(`/task/${taskId}/remarks`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         }
@@ -678,7 +575,7 @@ const UserCreateTask = () => {
       
       setSnackbar({ 
         open: true, 
-        message: `Remark added successfully${remarkImages.length > 0 ? ' with ' + remarkImages.length + ' image(s)' : ''}`, 
+        message: `Remark added successfully${remarkImages.length > 0 ? ' with image' : ''}`, 
         severity: 'success' 
       });
 
@@ -691,7 +588,7 @@ const UserCreateTask = () => {
   };
 
   // Enhanced Notifications Functions
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     if (authError || !userId) return;
     
     try {
@@ -701,7 +598,7 @@ const UserCreateTask = () => {
     } catch (error) {
       console.error('Error fetching notifications:', error);
     }
-  };
+  }, [authError, userId]);
 
   const markNotificationAsRead = async (notificationId) => {
     try {
@@ -755,7 +652,6 @@ const UserCreateTask = () => {
 
         if (!taskDate) return false;
 
-        // Single date filter
         if (selectedDate && !dateRange.start && !dateRange.end) {
           const selected = new Date(selectedDate);
           return (
@@ -765,7 +661,6 @@ const UserCreateTask = () => {
           );
         }
 
-        // Date range filter
         if (dateRange.start && dateRange.end) {
           const start = new Date(dateRange.start);
           const end = new Date(dateRange.end);
@@ -833,7 +728,7 @@ const UserCreateTask = () => {
       });
 
     } catch (err) {
-      console.error("❌ Error in handleStatusChange:", err.response || err);
+      console.error("Error in handleStatusChange:", err.response || err);
       if (err.response?.status === 401) {
         setAuthError(true);
         setSnackbar({
@@ -865,7 +760,6 @@ const UserCreateTask = () => {
         chunks.current = [];
 
         const file = new File([blob], "voice-note.webm", { type: "audio/webm" });
-
         setNewTask({ ...newTask, voiceNote: file });
       };
 
@@ -873,7 +767,11 @@ const UserCreateTask = () => {
       setIsRecording(true);
     } catch (err) {
       console.error("Error:", err);
-      alert("Microphone access denied.");
+      setSnackbar({
+        open: true,
+        message: 'Microphone access denied',
+        severity: 'error'
+      });
     }
   };
 
@@ -923,19 +821,6 @@ const UserCreateTask = () => {
       formData.append('priorityDays', newTask.priorityDays || '1');
       formData.append('priority', newTask.priority);
 
-      // Determine which endpoint to use based on assignment type
-      const isAssigningToOthers = newTask.assignedUsers && 
-                                  newTask.assignedUsers.length > 0 && 
-                                  !newTask.assignedUsers.includes(userId);
-
-      const endpoint = isAssigningToOthers ? '/task/create-for-others' : '/task/create-self';
-
-      // Only include assignment data when assigning to others
-      if (isAssigningToOthers) {
-        formData.append('assignedUsers', JSON.stringify(newTask.assignedUsers));
-        formData.append('assignedGroups', JSON.stringify(newTask.assignedGroups || []));
-      }
-
       if (newTask.files) {
         for (let i = 0; i < newTask.files.length; i++) {
           formData.append('files', newTask.files[i]);
@@ -946,7 +831,7 @@ const UserCreateTask = () => {
         formData.append('voiceNote', newTask.voiceNote);
       }
 
-      await axios.post(endpoint, formData, {
+      await axios.post('/task/create-self', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         }
@@ -955,7 +840,7 @@ const UserCreateTask = () => {
       setOpenDialog(false);
       setSnackbar({ 
         open: true, 
-        message: `Task ${isAssigningToOthers ? 'assigned' : 'created'} successfully`, 
+        message: 'Task created successfully', 
         severity: 'success' 
       });
       
@@ -968,8 +853,6 @@ const UserCreateTask = () => {
         priorityDays: '1', 
         files: null, 
         voiceNote: null,
-        assignedUsers: [userId],
-        assignedGroups: []
       });
 
       // Refresh tasks list
@@ -1009,7 +892,7 @@ const UserCreateTask = () => {
     return new Date(dueDateTime) < new Date();
   };
 
-  // ✅ FIXED: Enhanced Statistics Cards Component
+  // Enhanced Statistics Cards Component
   const renderStatisticsCards = () => {
     const statsData = [
       {
@@ -1094,246 +977,83 @@ const UserCreateTask = () => {
     ];
 
     return (
-      <Grid container spacing={2} sx={{ mb: 4 }}>
+      <Grid container spacing={isMobile ? 1 : 2} sx={{ mb: 3 }}>
         {statsData
           .filter(stat => stat.title === "Total Tasks" || stat.value > 0)
           .map((stat, index) => {
-            // Get color gradient based on status
-            const getGradient = (color) => {
-              const gradients = {
-                'primary': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                'success': 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                'info': 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)',
-                'warning': 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                'secondary': 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-                'grey': 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)',
-                'error': 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
-              };
-              return gradients[color] || gradients['primary'];
-            };
-
             const isActive = stat.status === statusFilter;
             
             return (
               <Grid item xs={6} sm={4} md={3} key={index}>
-                <Box 
-                  component={Card}
+                <StatCard
+                  color={stat.color}
+                  clickable={stat.clickable}
+                  active={isActive}
                   onClick={() => stat.clickable && handleStatsCardClick(stat.status)}
-                  sx={{
-                    height: '100%',
-                    borderRadius: 3,
-                    border: isActive 
-                      ? `2px solid ${stat.color === 'primary' ? '#667eea' : theme.palette[stat.color]?.main || theme.palette.primary.main}`
-                      : `1px solid rgba(102, 126, 234, 0.1)`,
-                    background: isActive
-                      ? stat.color === 'primary'
-                        ? 'linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.04) 100%)'
-                        : `${alpha(theme.palette[stat.color]?.main || theme.palette.primary.main, 0.06)}`
-                      : 'rgba(255, 255, 255, 0.7)',
-                    backdropFilter: 'blur(10px)',
-                    transition: 'all 0.3s ease',
-                    cursor: stat.clickable ? 'pointer' : 'default',
-                    '&:hover': stat.clickable ? {
-                      transform: 'translateY(-4px)',
-                      boxShadow: `0 12px 24px ${alpha(
-                        stat.color === 'primary' ? '#667eea' : theme.palette[stat.color]?.main || theme.palette.primary.main, 
-                        0.15
-                      )}`,
-                      borderColor: stat.color === 'primary' ? '#667eea' : theme.palette[stat.color]?.main || theme.palette.primary.main,
-                    } : {},
-                    position: 'relative',
-                    overflow: 'hidden',
-                    '&::before': stat.clickable && isActive ? {
-                      content: '""',
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      height: 3,
-                      background: getGradient(stat.color),
-                    } : {}
-                  }}
                 >
-                  <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
-                    <Stack spacing={1.5}>
-                      {/* Header */}
+                  <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                    <Stack spacing={1}>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <Box>
                           <Typography 
                             variant="caption" 
                             color="text.secondary" 
                             fontWeight={600}
-                            sx={{ 
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.5px',
-                              fontSize: '0.7rem'
-                            }}
+                            sx={{ fontSize: '0.7rem' }}
                           >
                             {stat.title}
                           </Typography>
                           <Typography 
-                            variant="h4" 
-                            fontWeight={800} 
-                            sx={{ 
-                              mt: 0.5,
-                              background: getGradient(stat.color),
-                              backgroundClip: 'text',
-                              WebkitBackgroundClip: 'text',
-                              WebkitTextFillColor: 'transparent',
-                              lineHeight: 1.2
-                            }}
+                            variant="h5" 
+                            fontWeight={700} 
+                            sx={{ mt: 0.5 }}
                           >
                             {stat.value}
                           </Typography>
                         </Box>
                         <Box sx={{ 
-                          p: 1.5, 
-                          borderRadius: 2.5,
-                          background: getGradient(stat.color),
-                          color: '#fff',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          boxShadow: `0 4px 12px ${alpha(
-                            stat.color === 'primary' ? '#667eea' : theme.palette[stat.color]?.main || theme.palette.primary.main, 
-                            0.3
-                          )}`,
-                          position: 'relative',
-                          '&::after': {
-                            content: '""',
-                            position: 'absolute',
-                            inset: 0,
-                            borderRadius: 'inherit',
-                            background: 'linear-gradient(135deg, rgba(255,255,255,0.2), transparent)',
-                          }
+                          p: 1, 
+                          borderRadius: 2,
+                          bgcolor: `${theme.palette[stat.color].main}15`,
+                          color: theme.palette[stat.color].main,
                         }}>
-                          {React.createElement(stat.icon, { size: 20 })}
+                          {React.createElement(stat.icon, { size: 18 })}
                         </Box>
                       </Box>
 
-                      {/* Progress Bar */}
                       {stat.percentage !== undefined && (
-                        <Box sx={{ mt: 1 }}>
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-                            <Typography variant="caption" fontWeight={600} color="text.secondary">
+                        <Box>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                            <Typography variant="caption" color="text.secondary">
                               Progress
                             </Typography>
-                            <Typography 
-                              variant="caption" 
-                              fontWeight={700}
-                              sx={{
-                                background: getGradient(stat.color),
-                                backgroundClip: 'text',
-                                WebkitBackgroundClip: 'text',
-                                WebkitTextFillColor: 'transparent'
-                              }}
-                            >
+                            <Typography variant="caption" fontWeight={600}>
                               {stat.percentage}%
                             </Typography>
                           </Box>
                           <Box sx={{ 
                             width: '100%', 
-                            height: 6, 
-                            borderRadius: 3, 
-                            bgcolor: 'rgba(102, 126, 234, 0.1)',
+                            height: 4, 
+                            borderRadius: 2, 
+                            bgcolor: 'action.hover',
                             overflow: 'hidden'
                           }}>
                             <Box sx={{ 
                               width: `${stat.percentage}%`, 
                               height: '100%', 
-                              borderRadius: 3,
-                              background: getGradient(stat.color),
-                              position: 'relative',
-                              '&::after': {
-                                content: '""',
-                                position: 'absolute',
-                                top: 0,
-                                left: 0,
-                                right: 0,
-                                bottom: 0,
-                                background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)',
-                                animation: 'shimmer 2s infinite',
-                                '@keyframes shimmer': {
-                                  '0%': { transform: 'translateX(-100%)' },
-                                  '100%': { transform: 'translateX(100%)' }
-                                }
-                              }
+                              borderRadius: 2,
+                              bgcolor: theme.palette[stat.color].main,
                             }} />
                           </Box>
                         </Box>
                       )}
 
-                      {/* Description */}
-                      <Typography 
-                        variant="caption" 
-                        color="text.secondary"
-                        sx={{ 
-                          fontSize: '0.75rem',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 0.5
-                        }}
-                      >
-                        <FiInfo size={12} />
+                      <Typography variant="caption" color="text.secondary">
                         {stat.description}
                       </Typography>
-
-                      {/* Clickable Indicator */}
-                      {stat.clickable && (
-                        <Box sx={{ 
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          pt: 1,
-                          borderTop: '1px solid rgba(102, 126, 234, 0.1)'
-                        }}>
-                          <Typography 
-                            variant="caption" 
-                            sx={{ 
-                              fontStyle: 'italic',
-                              fontSize: '0.7rem',
-                              background: isActive 
-                                ? getGradient(stat.color)
-                                : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                              backgroundClip: 'text',
-                              WebkitBackgroundClip: 'text',
-                              WebkitTextFillColor: 'transparent',
-                              fontWeight: 600
-                            }}
-                          >
-                            {isActive ? '✓ Active filter' : 'Click to filter'}
-                          </Typography>
-                          {isActive && (
-                            <Box
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleStatsCardClick(null);
-                              }}
-                              sx={{
-                                width: 20,
-                                height: 20,
-                                borderRadius: '50%',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                background: 'rgba(239, 68, 68, 0.1)',
-                                color: '#ef4444',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                '&:hover': {
-                                  background: '#ef4444',
-                                  color: '#fff'
-                                }
-                              }}
-                            >
-                              <FiX size={12} />
-                            </Box>
-                          )}
-                        </Box>
-                      )}
                     </Stack>
                   </CardContent>
-                </Box>
+                </StatCard>
               </Grid>
             );
           })}
@@ -1341,31 +1061,12 @@ const UserCreateTask = () => {
     );
   };
 
-  // ✅ Enhanced Time Filter Component
+  // Enhanced Time Filter Component
   const renderTimeFilter = () => (
     <Box sx={{ mb: 3 }}>
-      <Box 
-        sx={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center',
-          mb: 2 
-        }}
-      >
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Box>
-          <Typography
-            variant="subtitle2"
-            fontWeight={700}
-            sx={{ 
-              textTransform: 'uppercase',
-              letterSpacing: '1px',
-              fontSize: '0.8rem',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              backgroundClip: 'text',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent'
-            }}
-          >
+          <Typography variant="subtitle2" fontWeight={600}>
             Filter by Time Period
           </Typography>
           <Typography variant="caption" color="text.secondary">
@@ -1378,22 +1079,13 @@ const UserCreateTask = () => {
             variant="text"
             onClick={() => handleTimeFilterChange('all')}
             startIcon={<FiRotateCcw size={14} />}
-            sx={{
-              color: '#6b7280',
-              fontWeight: 600,
-              fontSize: '0.75rem',
-              '&:hover': {
-                color: '#667eea',
-                background: 'rgba(102, 126, 234, 0.1)'
-              }
-            }}
           >
             Reset to All Time
           </Button>
         )}
       </Box>
 
-      <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
         {[
           { value: "all", label: "All Time", icon: FiGlobe },
           { value: "today", label: "Today", icon: FiSun },
@@ -1406,43 +1098,16 @@ const UserCreateTask = () => {
           const isActive = timeFilter === period.value;
           
           return (
-            <Button
+            <TimeFilterButton
               key={period.value}
               variant={isActive ? "contained" : "outlined"}
               onClick={() => handleTimeFilterChange(period.value)}
               size="small"
               startIcon={React.createElement(period.icon, { size: 14 })}
-              sx={{
-                borderRadius: 3,
-                textTransform: 'none',
-                fontWeight: 600,
-                px: 2,
-                py: 1,
-                fontSize: '0.8125rem',
-                minWidth: 'fit-content',
-                ...(isActive ? {
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
-                  '&:hover': {
-                    background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4090 100%)',
-                    boxShadow: '0 6px 16px rgba(102, 126, 234, 0.4)',
-                    transform: 'translateY(-1px)'
-                  }
-                } : {
-                  borderColor: 'rgba(102, 126, 234, 0.2)',
-                  color: '#6b7280',
-                  '&:hover': {
-                    borderColor: '#667eea',
-                    color: '#667eea',
-                    background: 'rgba(102, 126, 234, 0.05)',
-                    transform: 'translateY(-1px)'
-                  }
-                }),
-                transition: 'all 0.2s ease'
-              }}
+              active={isActive}
             >
               {period.label}
-            </Button>
+            </TimeFilterButton>
           );
         })}
       </Box>
@@ -1457,10 +1122,6 @@ const UserCreateTask = () => {
           <ActionButton 
             size="small" 
             onClick={() => fetchTaskRemarks(task._id)}
-            sx={{ 
-              color: theme.palette.info.main,
-              '&:hover': { backgroundColor: `${theme.palette.info.main}10` }
-            }}
           >
             <FiMessageSquare size={isSmallMobile ? 14 : 16} />
           </ActionButton>
@@ -1470,10 +1131,6 @@ const UserCreateTask = () => {
           <ActionButton 
             size="small" 
             onClick={() => fetchActivityLogs(task._id)}
-            sx={{ 
-              color: theme.palette.primary.main,
-              '&:hover': { backgroundColor: `${theme.palette.primary.main}10` }
-            }}
           >
             <FiActivity size={isSmallMobile ? 14 : 16} />
           </ActionButton>
@@ -1483,12 +1140,8 @@ const UserCreateTask = () => {
           <Tooltip title="Download Files">
             <ActionButton
               size="small"
-              href={`http://localhost:3000/${task.files[0].path || task.files[0]}`}
+              href={`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/${task.files[0].path || task.files[0]}`}
               target="_blank"
-              sx={{ 
-                color: theme.palette.success.main,
-                '&:hover': { backgroundColor: `${theme.palette.success.main}10` }
-              }}
             >
               <FiDownload size={isSmallMobile ? 14 : 16} />
             </ActionButton>
@@ -1540,33 +1193,23 @@ const UserCreateTask = () => {
       maxWidth="md"
       fullWidth
       fullScreen={isSmallMobile}
-      PaperProps={{ sx: { borderRadius: isSmallMobile ? 0 : 2 } }}
     >
-      <DialogTitle sx={{ 
-        background: `linear-gradient(135deg, ${theme.palette.info.main}15 0%, ${theme.palette.info.main}05 100%)`,
-        pb: 2
-      }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <FiMessageSquare color={theme.palette.info.main} />
-            <Typography variant="h6" fontWeight={600}>Task Remarks</Typography>
-          </Box>
-          <Typography variant="body2" color="text.secondary">
-            {remarksDialog.remarks.length} remark(s)
-          </Typography>
+      <DialogTitle>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <FiMessageSquare />
+          <Typography variant="h6">Task Remarks</Typography>
         </Box>
       </DialogTitle>
       
       <DialogContent>
         <Stack spacing={3} sx={{ mt: 1 }}>
           {/* Add New Remark Section */}
-          <Card variant="outlined" sx={{ borderRadius: 2 }}>
-            <CardContent sx={{ p: 3 }}>
-              <Typography variant="h6" gutterBottom fontWeight={600}>
+          <Card variant="outlined">
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
                 Add New Remark
               </Typography>
               
-              {/* Text Input */}
               <TextField
                 fullWidth
                 multiline
@@ -1574,13 +1217,13 @@ const UserCreateTask = () => {
                 label="Your Remark"
                 value={newRemark}
                 onChange={(e) => setNewRemark(e.target.value)}
-                placeholder="Enter your remark here... (Optional if uploading images)"
+                placeholder="Enter your remark here..."
                 sx={{ mb: 2 }}
               />
 
               {/* Image Upload Section */}
               <Box>
-                <Typography variant="subtitle2" gutterBottom fontWeight={600}>
+                <Typography variant="subtitle2" gutterBottom>
                   Attach Images (Optional)
                 </Typography>
                 
@@ -1588,15 +1231,14 @@ const UserCreateTask = () => {
                   onDragOver={handleDragOver}
                   onDrop={handleDrop}
                   onClick={() => document.getElementById('remark-image-upload').click()}
-                  isDragActive={false}
                 >
                   <Stack spacing={1} alignItems="center">
                     <FiImage size={32} color={theme.palette.primary.main} />
-                    <Typography variant="body1" fontWeight={600}>
+                    <Typography variant="body1">
                       Click to upload or drag & drop
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      Supports JPG, PNG, GIF • Max 5 images • 1MB each
+                      Supports JPG, PNG, GIF
                     </Typography>
                     <Button
                       variant="outlined"
@@ -1610,7 +1252,6 @@ const UserCreateTask = () => {
                   <input
                     id="remark-image-upload"
                     type="file"
-                    multiple
                     accept="image/*"
                     onChange={handleRemarkImageUpload}
                     style={{ display: 'none' }}
@@ -1620,8 +1261,8 @@ const UserCreateTask = () => {
                 {/* Image Previews */}
                 {remarkImages.length > 0 && (
                   <Box sx={{ mt: 2 }}>
-                    <Typography variant="subtitle2" gutterBottom fontWeight={600}>
-                      Selected Images ({remarkImages.length}/5)
+                    <Typography variant="subtitle2" gutterBottom>
+                      Selected Image
                     </Typography>
                     <ImagePreviewContainer>
                       {remarkImages.map((image, index) => (
@@ -1633,7 +1274,6 @@ const UserCreateTask = () => {
                               width: '100%',
                               height: 80,
                               objectFit: 'cover',
-                              display: 'block'
                             }}
                             onClick={() => setZoomImage(image.preview)}
                           />
@@ -1660,12 +1300,11 @@ const UserCreateTask = () => {
                   onClick={async () => {
                     await addRemark(remarksDialog.taskId);
                     
-                    // Handle status change if pending
                     if (pendingStatusChange.status) {
                       await handleStatusChange(
                         pendingStatusChange.taskId, 
                         pendingStatusChange.status, 
-                        newRemark || 'Status changed with image upload'
+                        newRemark || 'Status changed'
                       );
                       setPendingStatusChange({ taskId: null, status: '' });
                     }
@@ -1673,7 +1312,6 @@ const UserCreateTask = () => {
                   disabled={isUploadingRemark || (!newRemark.trim() && remarkImages.length === 0)}
                   startIcon={isUploadingRemark ? <CircularProgress size={16} /> : <FiMessageSquare />}
                   fullWidth
-                  sx={{ borderRadius: 2 }}
                 >
                   {isUploadingRemark ? 'Uploading...' : 
                    pendingStatusChange.status ? 'Save Remark & Update Status' : 'Add Remark'}
@@ -1684,94 +1322,60 @@ const UserCreateTask = () => {
 
           {/* Remarks History */}
           <Box>
-            <Typography variant="h6" gutterBottom fontWeight={600}>
+            <Typography variant="h6" gutterBottom>
               Remarks History
             </Typography>
             
             {remarksDialog.remarks.length > 0 ? (
               <Stack spacing={2}>
                 {remarksDialog.remarks.map((remark, index) => (
-                  <Card key={index} variant="outlined" sx={{ borderRadius: 2 }}>
-                    <CardContent sx={{ p: 2 }}>
+                  <Card key={index} variant="outlined">
+                    <CardContent>
                       <Stack spacing={1.5}>
-                        {/* User Info and Date */}
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                            <Avatar 
-                              sx={{ 
-                                width: 36, 
-                                height: 36, 
-                                bgcolor: theme.palette.primary.main,
-                                fontSize: '0.875rem'
-                              }}
-                            >
+                            <Avatar sx={{ width: 36, height: 36 }}>
                               {remark.user?.name?.charAt(0)?.toUpperCase() || 'U'}
                             </Avatar>
                             <Box>
-                              <Typography variant="subtitle2" fontWeight={600}>
+                              <Typography variant="subtitle2">
                                 {remark.user?.name || 'Unknown User'}
                               </Typography>
                               <Typography variant="caption" color="text.secondary">
-                                {remark.user?.role || 'User'} • {new Date(remark.createdAt).toLocaleDateString()} at {' '}
+                                {new Date(remark.createdAt).toLocaleDateString()} at {' '}
                                 {new Date(remark.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               </Typography>
                             </Box>
                           </Box>
                         </Box>
 
-                        {/* Remark Text */}
                         {remark.text && (
                           <Typography variant="body2" sx={{ 
-                            mt: 0.5,
                             p: 1.5,
-                            backgroundColor: theme.palette.background.default,
+                            backgroundColor: 'background.default',
                             borderRadius: 1,
-                            borderLeft: `3px solid ${theme.palette.primary.main}`
                           }}>
                             {remark.text}
                           </Typography>
                         )}
 
-                        {/* Remark Image */}
                         {remark.image && (
                           <Box sx={{ mt: 1 }}>
-                            <Typography variant="caption" fontWeight={600} display="block" gutterBottom>
+                            <Typography variant="caption" display="block" gutterBottom>
                               Attached Image:
                             </Typography>
                             <ImagePreview 
-                              sx={{ 
-                                maxWidth: 200,
-                                borderRadius: 1
-                              }}
-                              onClick={() => setZoomImage(`http://localhost:3000/${remark.image}`)}
+                              onClick={() => setZoomImage(`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/${remark.image}`)}
                             >
                               <img
-                                src={`http://localhost:3000/${remark.image}`}
+                                src={`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/${remark.image}`}
                                 alt="Remark attachment"
                                 style={{
                                   width: '100%',
                                   height: 'auto',
                                   borderRadius: theme.shape.borderRadius,
-                                  cursor: 'pointer'
                                 }}
                               />
-                              <Tooltip title="Zoom">
-                                <IconButton
-                                  size="small"
-                                  sx={{
-                                    position: 'absolute',
-                                    bottom: 4,
-                                    right: 4,
-                                    backgroundColor: 'rgba(0,0,0,0.6)',
-                                    color: 'white',
-                                    '&:hover': {
-                                      backgroundColor: 'rgba(0,0,0,0.8)',
-                                    }
-                                  }}
-                                >
-                                  <FiZoomIn size={14} />
-                                </IconButton>
-                              </Tooltip>
                             </ImagePreview>
                           </Box>
                         )}
@@ -1784,11 +1388,8 @@ const UserCreateTask = () => {
               <Card variant="outlined" sx={{ textAlign: 'center', py: 4 }}>
                 <CardContent>
                   <FiMessageSquare size={48} color={theme.palette.text.secondary} />
-                  <Typography variant="h6" color="text.secondary" sx={{ mt: 2, fontWeight: 600 }}>
+                  <Typography variant="h6" color="text.secondary" sx={{ mt: 2 }}>
                     No remarks yet
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                    Be the first to add a remark for this task
                   </Typography>
                 </CardContent>
               </Card>
@@ -1804,14 +1405,12 @@ const UserCreateTask = () => {
     <ZoomModal
       open={!!zoomImage}
       onClose={() => setZoomImage(null)}
-      closeAfterTransition
     >
       <Fade in={!!zoomImage}>
         <Box sx={{ 
           position: 'relative',
           maxWidth: '90vw',
           maxHeight: '90vh',
-          outline: 'none'
         }}>
           <IconButton
             onClick={() => setZoomImage(null)}
@@ -1822,9 +1421,6 @@ const UserCreateTask = () => {
               backgroundColor: 'rgba(0,0,0,0.6)',
               color: 'white',
               zIndex: 1,
-              '&:hover': {
-                backgroundColor: 'rgba(0,0,0,0.8)',
-              }
             }}
           >
             <FiX size={20} />
@@ -1837,7 +1433,6 @@ const UserCreateTask = () => {
               height: 'auto',
               maxHeight: '90vh',
               objectFit: 'contain',
-              borderRadius: theme.shape.borderRadius
             }}
           />
         </Box>
@@ -1852,94 +1447,64 @@ const UserCreateTask = () => {
     return Object.entries(tasksToRender).map(([dateKey, tasks]) => (
       <Box key={dateKey} sx={{ mt: 3 }}>
         <Typography 
-          component="div" 
           variant="h6" 
-          fontWeight={600} 
           gutterBottom 
           sx={{
-            color: 'text.primary',
-            borderBottom: `2px solid ${theme.palette.primary.main}20`,
-            pb: 1,
-            background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
             p: 2,
             borderRadius: 2,
-            fontSize: isSmallMobile ? '1rem' : '1.125rem'
+            bgcolor: 'background.paper',
           }}
         >
-          <Box component="span" sx={{ mr: 1 }}>📅</Box>
-          {dateKey}
+          📅 {dateKey}
         </Typography>
         <TableContainer 
           component={Paper} 
           sx={{ 
-            borderRadius: theme.shape.borderRadius * 2, 
-            overflow: 'hidden',
-            maxWidth: '100%'
+            borderRadius: 2,
           }}
         >
           <Table>
             <TableHead>
-              <TableRow sx={{ 
-                background: `linear-gradient(135deg, ${theme.palette.primary.main}15 0%, ${theme.palette.primary.main}05 100%)` 
-              }}>
-                <TableCell sx={{ fontWeight: 700, fontSize: isSmallMobile ? '0.8rem' : '0.9rem', py: 2 }}>Title</TableCell>
-                <TableCell sx={{ fontWeight: 700, fontSize: isSmallMobile ? '0.8rem' : '0.9rem', py: 2 }}>Description</TableCell>
-                <TableCell sx={{ fontWeight: 700, fontSize: isSmallMobile ? '0.8rem' : '0.9rem', py: 2 }}>Due Date</TableCell>
-                <TableCell sx={{ fontWeight: 700, fontSize: isSmallMobile ? '0.8rem' : '0.9rem', py: 2 }}>Priority</TableCell>
-                <TableCell sx={{ fontWeight: 700, fontSize: isSmallMobile ? '0.8rem' : '0.9rem', py: 2 }}>Status</TableCell>
-                <TableCell sx={{ fontWeight: 700, fontSize: isSmallMobile ? '0.8rem' : '0.9rem', py: 2 }}>Files</TableCell>
-                <TableCell sx={{ fontWeight: 700, fontSize: isSmallMobile ? '0.8rem' : '0.9rem', py: 2 }}>Actions</TableCell>
-                <TableCell sx={{ fontWeight: 700, fontSize: isSmallMobile ? '0.8rem' : '0.9rem', py: 2 }}>Change Status</TableCell>
+              <TableRow sx={{ bgcolor: 'action.hover' }}>
+                <TableCell sx={{ fontWeight: 700 }}>Title</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Description</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Due Date</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Priority</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Files</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Actions</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Change Status</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {tasks.map((task) => {
                 const myStatus = getUserStatusForTask(task, userId);
                 const statusColor = statusColors[myStatus] || 'grey';
-                const statusColorMain = theme.palette[statusColor]?.main || theme.palette.grey[500];
 
                 return (
-                  <TableRow key={task._id} sx={{ 
-                    background: `${statusColorMain}05`,
-                    borderLeft: `4px solid ${statusColorMain}`,
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                    '&:hover': {
-                      backgroundColor: `${theme.palette.primary.main}08`,
-                    }
-                  }}>
-                    <TableCell sx={{ py: 1.5 }}>
-                      <Typography variant="body2" fontWeight={600} sx={{ fontSize: isSmallMobile ? '0.8rem' : '0.875rem' }}>
+                  <TableRow key={task._id} hover>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight={600}>
                         {task.title}
                       </Typography>
                     </TableCell>
-                    <TableCell sx={{ py: 1.5, maxWidth: 200 }}>
+                    <TableCell sx={{ maxWidth: 200 }}>
                       <Tooltip title={task.description}>
-                        <Typography variant="body2" sx={{
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                          fontSize: isSmallMobile ? '0.8rem' : '0.875rem'
-                        }}>
+                        <Typography variant="body2" noWrap>
                           {task.description}
                         </Typography>
                       </Tooltip>
                     </TableCell>
-                    <TableCell sx={{ py: 1.5 }}>
+                    <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <FiCalendar size={14} color={theme.palette.text.secondary} />
+                        <FiCalendar size={14} />
                         <Typography
                           variant="body2"
                           color={isOverdue(task.dueDateTime) ? 'error' : 'text.primary'}
                           fontWeight={500}
-                          sx={{ fontSize: isSmallMobile ? '0.8rem' : '0.875rem' }}
                         >
                           {task.dueDateTime
-                            ? new Date(task.dueDateTime).toLocaleDateString('en-IN', {
-                                day: 'numeric',
-                                month: 'short',
-                                year: 'numeric'
-                              })
+                            ? new Date(task.dueDateTime).toLocaleDateString()
                             : '—'}
                         </Typography>
                         {isOverdue(task.dueDateTime) && (
@@ -1947,70 +1512,41 @@ const UserCreateTask = () => {
                         )}
                       </Box>
                     </TableCell>
-                    <TableCell sx={{ py: 1.5 }}>
+                    <TableCell>
                       <PriorityChip
                         label={task.priority || 'medium'}
-                        priority={task.priority || 'medium'}
+                        sx={{
+                          bgcolor: `${theme.palette[task.priority === 'high' ? 'error' : task.priority === 'medium' ? 'warning' : 'success'].main}15`,
+                          color: theme.palette[task.priority === 'high' ? 'error' : task.priority === 'medium' ? 'warning' : 'success'].main,
+                        }}
                         size="small"
                       />
                     </TableCell>
-                    <TableCell sx={{ py: 1.5 }}>
+                    <TableCell>
                       <StatusChip
-                        label={myStatus.charAt(0).toUpperCase() + myStatus.slice(1)}
+                        label={myStatus}
                         status={myStatus}
                         size="small"
                       />
                     </TableCell>
-                    <TableCell sx={{ py: 1.5 }}>
+                    <TableCell>
                       {task.files?.length > 0 && (
                         <Tooltip title={`${task.files.length} file(s)`}>
                           <ActionButton
                             size="small"
-                            href={`http://localhost:3000/${task.files[0].path || task.files[0]}`}
+                            href={`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/${task.files[0].path || task.files[0]}`}
                             target="_blank"
-                            sx={{
-                              color: theme.palette.primary.main,
-                              mr: 1,
-                              '&:hover': { bgcolor: `${theme.palette.primary.main}10` }
-                            }}
                           >
                             <FiDownload size={16} />
                           </ActionButton>
                         </Tooltip>
                       )}
-
-                      {task.voiceNote?.path ? (
-                        <Tooltip title="Voice Note">
-                          <ActionButton
-                            size="small"
-                            href={`http://localhost:3000/${task.voiceNote.path}`}
-                            target="_blank"
-                            sx={{
-                              color: theme.palette.success.main,
-                              '&:hover': { bgcolor: `${theme.palette.success.main}10` }
-                            }}
-                          >
-                            <FiMic size={16} />
-                          </ActionButton>
-                        </Tooltip>
-                      ) : null}
-
-                      {!task.files?.length && !task.voiceNote?.path && (
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          fontWeight={500}
-                          sx={{ fontSize: '0.8rem' }}
-                        >
-                          -
-                        </Typography>
-                      )}
                     </TableCell>
 
-                    <TableCell sx={{ py: 1.5 }}>
+                    <TableCell>
                       {renderActionButtons(task)}
                     </TableCell>
-                    <TableCell sx={{ py: 1.5 }}>
+                    <TableCell>
                       {renderStatusSelect(task)}
                     </TableCell>
                   </TableRow>
@@ -2030,44 +1566,30 @@ const UserCreateTask = () => {
     return Object.entries(tasksToRender).map(([dateKey, tasks]) => (
       <Box key={dateKey} sx={{ mt: 3 }}>
         <Typography 
-          component="div"
           variant="h6" 
-          fontWeight={600} 
           gutterBottom 
           sx={{
-            color: 'text.primary',
-            borderBottom: `2px solid ${theme.palette.primary.main}20`,
-            pb: 1,
-            background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
             p: 2,
-            borderRadius: 2,
-            fontSize: '1rem'
+            bgcolor: 'background.paper',
           }}
         >
-          <Box component="span" sx={{ mr: 1 }}>📅</Box>
-          {dateKey}
+          📅 {dateKey}
         </Typography>
         <Stack spacing={2}>
           {tasks.map((task) => {
             const myStatus = getUserStatusForTask(task, userId);
+            const statusColor = getStatusColor(myStatus, theme);
 
             return (
-              <MobileTaskCard key={task._id} status={myStatus}>
-                <CardContent sx={{ p: 2 }}>
+              <MobileTaskCard key={task._id}>
+                <CardContent>
                   <Stack spacing={2}>
-                    {/* Header Section */}
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1 }}>
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography variant="h6" fontWeight={600} sx={{ 
-                          fontSize: '1rem',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
-                        }}>
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="h6" fontWeight={600} noWrap>
                           {task.title}
                         </Typography>
                         <Typography variant="body2" color="text.secondary" sx={{ 
-                          mb: 1,
                           display: '-webkit-box',
                           WebkitLineClamp: 2,
                           WebkitBoxOrient: 'vertical',
@@ -2083,52 +1605,23 @@ const UserCreateTask = () => {
                       />
                     </Box>
 
-                    {/* Info Row */}
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <FiCalendar size={14} color={theme.palette.text.secondary} />
-                        <Typography variant="body2" color={isOverdue(task.dueDateTime) ? 'error' : 'text.primary'} fontWeight={500}>
+                        <FiCalendar size={14} />
+                        <Typography variant="body2" color={isOverdue(task.dueDateTime) ? 'error' : 'text.primary'}>
                           {task.dueDateTime ? new Date(task.dueDateTime).toLocaleDateString() : 'No date'}
                         </Typography>
                       </Box>
                       <PriorityChip
                         label={task.priority || 'medium'}
-                        priority={task.priority || 'medium'}
+                        sx={{
+                          bgcolor: `${theme.palette[task.priority === 'high' ? 'error' : task.priority === 'medium' ? 'warning' : 'success'].main}15`,
+                          color: theme.palette[task.priority === 'high' ? 'error' : task.priority === 'medium' ? 'warning' : 'success'].main,
+                        }}
                         size="small"
                       />
                     </Box>
 
-                    {/* Files Section */}
-                    {task.files?.length > 0 && (
-                      <Box>
-                        <Typography variant="caption" color="text.secondary" display="block" gutterBottom fontWeight={600}>
-                          Files:
-                        </Typography>
-                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                          {task.files.slice(0, 2).map((file, i) => (
-                            <Tooltip title="Download" key={i}>
-                              <ActionButton
-                                size="small"
-                                href={`http://localhost:3000/${file.path || file}`}
-                                target="_blank"
-                                sx={{
-                                  color: theme.palette.primary.main,
-                                }}
-                              >
-                                <FiDownload size={14} />
-                              </ActionButton>
-                            </Tooltip>
-                          ))}
-                          {task.files.length > 2 && (
-                            <Typography variant="caption" color="text.secondary">
-                              +{task.files.length - 2} more
-                            </Typography>
-                          )}
-                        </Box>
-                      </Box>
-                    )}
-
-                    {/* Action Buttons Row */}
                     <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', justifyContent: 'space-between' }}>
                       <Box sx={{ display: 'flex', gap: 0.5 }}>
                         {renderActionButtons(task)}
@@ -2152,21 +1645,19 @@ const UserCreateTask = () => {
     
     if (Object.keys(tasksToRender).length === 0) {
       return (
-        <Box sx={{ textAlign: 'center', py: 6, px: 2 }}>
+        <Box sx={{ textAlign: 'center', py: 6 }}>
           <FiCalendar size={isMobile ? 48 : 64} color={theme.palette.text.secondary} />
-          <Typography variant="h6" color="text.secondary" sx={{ mt: 2, fontWeight: 600 }}>
-            {statusFilter ? `No ${statusFilter} tasks found` : 
-             selectedDate || dateRange.start || dateRange.end ? 'No tasks found for selected date' : 'No tasks found'}
+          <Typography variant="h6" color="text.secondary" sx={{ mt: 2 }}>
+            {statusFilter ? `No ${statusFilter} tasks found` : 'No tasks found'}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            {statusFilter ? `Try changing your status filter` :
-             selectedDate || dateRange.start || dateRange.end ? 'Try changing your date filter' : 'You have no tasks assigned yet'}
+            {statusFilter ? 'Try changing your status filter' : 'You have no tasks assigned yet'}
           </Typography>
           {(statusFilter || selectedDate || dateRange.start || dateRange.end) && (
             <Button
               variant="outlined"
               onClick={clearAllFilters}
-              sx={{ mt: 2, borderRadius: 2 }}
+              sx={{ mt: 2 }}
             >
               Clear All Filters
             </Button>
@@ -2175,7 +1666,7 @@ const UserCreateTask = () => {
             variant="contained"
             startIcon={<FiPlus />}
             onClick={() => setOpenDialog(true)}
-            sx={{ mt: 2, borderRadius: 2, ml: (statusFilter || selectedDate || dateRange.start || dateRange.end) ? 1 : 0 }}
+            sx={{ mt: 2, ml: (statusFilter || selectedDate || dateRange.start || dateRange.end) ? 1 : 0 }}
           >
             Create New Task
           </Button>
@@ -2183,11 +1674,7 @@ const UserCreateTask = () => {
       );
     }
 
-    return (
-      <>
-        {isMobile ? renderMobileCards(groupedTasks) : renderDesktopTable(groupedTasks)}
-      </>
-    );
+    return isMobile ? renderMobileCards(groupedTasks) : renderDesktopTable(groupedTasks);
   };
 
   // Enhanced Notifications Panel
@@ -2195,7 +1682,6 @@ const UserCreateTask = () => {
     <Modal
       open={notificationsOpen}
       onClose={() => setNotificationsOpen(false)}
-      closeAfterTransition
     >
       <Box sx={{
         position: 'absolute',
@@ -2209,19 +1695,13 @@ const UserCreateTask = () => {
         boxShadow: 24,
         overflow: 'hidden',
       }}>
-        <Box sx={{ 
-          p: 2, 
-          borderBottom: 1, 
-          borderColor: 'divider',
-          background: `linear-gradient(135deg, ${theme.palette.primary.main}15 0%, ${theme.palette.primary.main}05 100%)`
-        }}>
+        <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="h6" fontWeight={600}>Notifications</Typography>
+            <Typography variant="h6">Notifications</Typography>
             <Button 
               onClick={markAllNotificationsAsRead} 
               size="small"
               disabled={unreadNotificationCount === 0}
-              sx={{ borderRadius: 1 }}
             >
               Mark all as read
             </Button>
@@ -2236,16 +1716,9 @@ const UserCreateTask = () => {
                   variant="outlined"
                   sx={{ 
                     bgcolor: notification.isRead ? 'background.default' : 'action.hover',
-                    borderLeft: notification.isRead ? null : `4px solid ${theme.palette.primary.main}`,
-                    borderRadius: 1,
-                    transition: 'all 0.2s ease',
-                    '&:hover': {
-                      transform: 'translateY(-1px)',
-                      boxShadow: theme.shadows[1]
-                    }
                   }}
                 >
-                  <CardContent sx={{ py: 1, '&:last-child': { pb: 1 } }}>
+                  <CardContent>
                     <Stack spacing={1}>
                       <Typography variant="subtitle2" fontWeight={600}>
                         {notification.title}
@@ -2261,7 +1734,6 @@ const UserCreateTask = () => {
                           <Button 
                             size="small" 
                             onClick={() => markNotificationAsRead(notification._id)}
-                            sx={{ borderRadius: 1 }}
                           >
                             Mark read
                           </Button>
@@ -2275,7 +1747,7 @@ const UserCreateTask = () => {
           ) : (
             <Box sx={{ textAlign: 'center', py: 4 }}>
               <FiBell size={32} color={theme.palette.text.secondary} />
-              <Typography variant="body1" color="text.secondary" sx={{ mt: 1, fontWeight: 600 }}>
+              <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
                 No notifications
               </Typography>
             </Box>
@@ -2293,41 +1765,27 @@ const UserCreateTask = () => {
       maxWidth="lg"
       fullWidth
       fullScreen={isSmallMobile}
-      PaperProps={{ sx: { borderRadius: isSmallMobile ? 0 : 2 } }}
     >
-      <DialogTitle sx={{ 
-        background: `linear-gradient(135deg, ${theme.palette.primary.main}15 0%, ${theme.palette.primary.main}05 100%)` 
-      }}>
+      <DialogTitle>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <FiActivity color={theme.palette.primary.main} />
-          <Typography variant="h6" fontWeight={600}>Activity Logs</Typography>
+          <FiActivity />
+          <Typography variant="h6">Activity Logs</Typography>
         </Box>
       </DialogTitle>
       <DialogContent>
         {activityLogs.length > 0 ? (
           <Stack spacing={1}>
             {activityLogs.map((log, index) => (
-              <Card key={index} variant="outlined" sx={{ borderRadius: 1 }}>
-                <CardContent sx={{ py: 1.5 }}>
+              <Card key={index} variant="outlined">
+                <CardContent>
                   <Stack spacing={1}>
-                    <Box sx={{ 
-                      display: 'flex', 
-                      flexDirection: { xs: 'column', sm: 'row' }, 
-                      justifyContent: 'space-between', 
-                      alignItems: { xs: 'flex-start', sm: 'center' }, 
-                      gap: 1 
-                    }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                        <Avatar sx={{ 
-                          width: 32, 
-                          height: 32, 
-                          fontSize: '0.875rem',
-                          bgcolor: theme.palette.primary.main 
-                        }}>
+                        <Avatar sx={{ width: 32, height: 32 }}>
                           {log.user?.name?.charAt(0)?.toUpperCase() || 'U'}
                         </Avatar>
                         <Box>
-                          <Typography variant="subtitle2" fontWeight={600}>
+                          <Typography variant="subtitle2">
                             {log.user?.name || 'Unknown User'}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
@@ -2339,7 +1797,7 @@ const UserCreateTask = () => {
                         {new Date(log.createdAt).toLocaleDateString()} at {new Date(log.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                       </Typography>
                     </Box>
-                    <Typography variant="body2" sx={{ mt: 0.5 }}>
+                    <Typography variant="body2">
                       {log.description}
                     </Typography>
                   </Stack>
@@ -2348,7 +1806,7 @@ const UserCreateTask = () => {
             ))}
           </Stack>
         ) : (
-          <Typography color="text.secondary" textAlign="center" py={3} fontWeight={500}>
+          <Typography color="text.secondary" textAlign="center" py={3}>
             No activity logs found for this task
           </Typography>
         )}
@@ -2363,25 +1821,16 @@ const UserCreateTask = () => {
       onClose={() => setCalendarFilterOpen(false)}
       maxWidth="sm"
       fullWidth
-      PaperProps={{
-        sx: { borderRadius: 2 }
-      }}
     >
-      <DialogTitle sx={{ 
-        pb: 2, 
-        borderBottom: 1, 
-        borderColor: 'divider',
-        background: `linear-gradient(135deg, ${theme.palette.primary.main}15 0%, ${theme.palette.primary.main}05 100%)`
-      }}>
+      <DialogTitle>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <FiCalendar color={theme.palette.primary.main} />
-          <Typography variant="h6" fontWeight={600}>Filter by Date</Typography>
+          <FiCalendar />
+          <Typography variant="h6">Filter by Date</Typography>
         </Box>
       </DialogTitle>
 
-      <DialogContent sx={{ p: 3 }}>
+      <DialogContent>
         <Stack spacing={3}>
-          {/* Date Type Selection */}
           <FormControl fullWidth>
             <InputLabel>Filter By</InputLabel>
             <Select
@@ -2394,9 +1843,8 @@ const UserCreateTask = () => {
             </Select>
           </FormControl>
 
-          {/* Single Date Selection */}
           <Box>
-            <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+            <Typography variant="subtitle1" gutterBottom>
               Select Specific Date
             </Typography>
             <DatePicker
@@ -2411,9 +1859,8 @@ const UserCreateTask = () => {
             />
           </Box>
 
-          {/* Date Range Selection */}
           <Box>
-            <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+            <Typography variant="subtitle1" gutterBottom>
               Or Select Date Range
             </Typography>
             <Grid container spacing={2}>
@@ -2440,9 +1887,8 @@ const UserCreateTask = () => {
             </Grid>
           </Box>
 
-          {/* Quick Filters */}
           <Box>
-            <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+            <Typography variant="subtitle1" gutterBottom>
               Quick Filters
             </Typography>
             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
@@ -2452,7 +1898,6 @@ const UserCreateTask = () => {
                   setSelectedDate(today);
                   setDateRange({ start: null, end: null });
                 }}
-                active={selectedDate && new Date(selectedDate).toDateString() === new Date().toDateString()}
               >
                 Today
               </CalendarFilterButton>
@@ -2463,7 +1908,6 @@ const UserCreateTask = () => {
                   setSelectedDate(tomorrow);
                   setDateRange({ start: null, end: null });
                 }}
-                active={selectedDate && new Date(selectedDate).toDateString() === new Date(new Date().setDate(new Date().getDate() + 1)).toDateString()}
               >
                 Tomorrow
               </CalendarFilterButton>
@@ -2475,7 +1919,6 @@ const UserCreateTask = () => {
                   setSelectedDate(null);
                   setDateRange({ start, end });
                 }}
-                active={dateRange.start && dateRange.end && new Date(dateRange.start).toDateString() === new Date().toDateString()}
               >
                 Next 7 Days
               </CalendarFilterButton>
@@ -2484,19 +1927,16 @@ const UserCreateTask = () => {
         </Stack>
       </DialogContent>
 
-      <DialogActions sx={{ p: 3, borderTop: 1, borderColor: 'divider' }}>
+      <DialogActions>
         <Button
           onClick={clearDateFilter}
           variant="outlined"
-          startIcon={<FiClose />}
-          sx={{ borderRadius: 1 }}
         >
           Clear Filter
         </Button>
         <Button
           onClick={() => setCalendarFilterOpen(false)}
           variant="contained"
-          sx={{ borderRadius: 1 }}
         >
           Apply Filter
         </Button>
@@ -2512,311 +1952,116 @@ const UserCreateTask = () => {
       maxWidth="md" 
       fullWidth
       fullScreen={isMobile}
-      PaperProps={{
-        sx: {
-          borderRadius: isMobile ? 0 : 2,
-        }
-      }}
     >
-      <DialogTitle sx={{ 
-        pb: 3, 
-        position: 'relative',
-        overflow: 'hidden',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        },
-        '&::after': {
-          content: '""',
-          position: 'absolute',
-          top: -50,
-          right: -50,
-          width: 100,
-          height: 100,
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)',
-        }
-      }}>
-        <Box sx={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: 2, 
-          position: 'relative',
-          zIndex: 1 
-        }}>
-          <Box sx={{ 
-            p: 1.5, 
-            borderRadius: 3,
-            background: 'rgba(255,255,255,0.15)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255,255,255,0.2)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-          }}>
-            <FiPlus size={22} color="white" />
-          </Box>
-          <Box sx={{ flex: 1 }}>
-            <Typography 
-              component="div"
-              variant="h4" 
-              fontWeight={800}
-              sx={{ 
-                letterSpacing: '-0.5px',
-                textShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                mb: 0.5,
-                color: 'white'
-              }}
-            >
-              Create Personal Task
-            </Typography>
-            <Box sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: 1.5,
-              flexWrap: 'wrap'
-            }}>
-              <Typography 
-                variant="body2" 
-                sx={{ 
-                  opacity: 0.95,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 0.5,
-                  background: 'rgba(255,255,255,0.1)',
-                  px: 1.5,
-                  py: 0.5,
-                  borderRadius: 2,
-                  backdropFilter: 'blur(4px)',
-                  color: 'white'
-                }}
-              >
-                <FiUser size={14} />
-                This task will be assigned to: 
-                <Box component="span" sx={{ fontWeight: 600, ml: 0.5 }}>
-                  {userName}
-                </Box>
-              </Typography>
-              
-              <Box sx={{ 
-                display: 'flex',
-                alignItems: 'center',
-                gap: 0.5,
-                background: 'rgba(255,255,255,0.1)',
-                px: 1.5,
-                py: 0.5,
-                borderRadius: 2,
-                backdropFilter: 'blur(4px)',
-                color: 'white'
-              }}>
-                <Box sx={{ 
-                  width: 8, 
-                  height: 8, 
-                  borderRadius: '50%', 
-                  background: 'rgba(255,255,255,0.8)',
-                  animation: 'pulse 2s infinite',
-                  '@keyframes pulse': {
-                    '0%': { opacity: 1 },
-                    '50%': { opacity: 0.5 },
-                    '100%': { opacity: 1 }
-                  }
-                }} />
-                <Typography variant="caption">Ready</Typography>
-              </Box>
-            </Box>
-          </Box>
-          
-          {/* Decorative corner */}
-          <Box sx={{
-            position: 'absolute',
-            bottom: -10,
-            right: -10,
-            width: 80,
-            height: 80,
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 70%)',
-            zIndex: 0
-          }} />
+      <DialogTitle>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <FiPlus />
+          <Typography variant="h4">Create Personal Task</Typography>
         </Box>
+        <Typography variant="body2" color="text.secondary">
+          This task will be automatically assigned to you ({userName})
+        </Typography>
       </DialogTitle>
-      <DialogContent sx={{ p: 0 }}>
-        <Box sx={{ p: isMobile ? 2 : 3 }}>
-          <Stack spacing={isMobile ? 2 : 3}>
-            {/* Assignment Info */}
-            <Alert severity="info" sx={{ borderRadius: 1 }}>
-              <Typography variant="body2" fontWeight={600}>
-                This task will be automatically assigned to you ({userName})
-              </Typography>
-            </Alert>
+      <DialogContent>
+        <Stack spacing={3}>
+          <Alert severity="info">
+            This task will be automatically assigned to you ({userName})
+          </Alert>
 
-            {/* Basic Information */}
-            <Box sx={{ 
-              p: isMobile ? 2 : 3, 
-              borderRadius: 1, 
-              border: 1, 
-              borderColor: 'divider',
-              background: 'white',
-            }}>
-              <Typography variant="h6" fontWeight={600} sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                <FiInfo size={18} color={theme.palette.primary.main} />
-                Task Details
-              </Typography>
-              
-              <Stack spacing={2}>
-                <TextField
-                  fullWidth
-                  label="Task Title *"
-                  value={newTask.title}
-                  onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-                  variant="outlined"
-                  placeholder="Enter a descriptive task title"
-                  sx={{ borderRadius: 1 }}
-                  size={isMobile ? "small" : "medium"}
-                />
+          <TextField
+            fullWidth
+            label="Task Title *"
+            value={newTask.title}
+            onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+            placeholder="Enter a descriptive task title"
+          />
 
-                <TextField
-                  fullWidth
-                  label="Description *"
-                  multiline
-                  rows={isMobile ? 3 : 4}
-                  value={newTask.description}
-                  onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-                  variant="outlined"
-                  placeholder="Provide detailed description of the task..."
-                  sx={{ borderRadius: 1 }}
-                  size={isMobile ? "small" : "medium"}
-                />
+          <TextField
+            fullWidth
+            label="Description *"
+            multiline
+            rows={4}
+            value={newTask.description}
+            onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+            placeholder="Provide detailed description of the task..."
+          />
 
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
-                    <DateTimePicker
-                      label="Due Date & Time *"
-                      value={newTask.dueDateTime}
-                      onChange={(dateTime) => setNewTask({ ...newTask, dueDateTime: dateTime })}
-                      minDate={new Date()}
-                      renderInput={(params) => (
-                        <TextField 
-                          {...params} 
-                          fullWidth 
-                          sx={{ borderRadius: 1 }}
-                          size={isMobile ? "small" : "medium"}
-                        />
-                      )}
-                    />
-                  </Grid>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6}>
+              <DateTimePicker
+                label="Due Date & Time *"
+                value={newTask.dueDateTime}
+                onChange={(dateTime) => setNewTask({ ...newTask, dueDateTime: dateTime })}
+                minDate={new Date()}
+                renderInput={(params) => (
+                  <TextField {...params} fullWidth />
+                )}
+              />
+            </Grid>
 
-                  <Grid item xs={12} sm={6}>
-                    <FormControl fullWidth>
-                      <InputLabel>Priority</InputLabel>
-                      <Select
-                        value={newTask.priority}
-                        onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
-                        label="Priority"
-                        sx={{ borderRadius: 1 }}
-                        size={isMobile ? "small" : "medium"}
-                      >
-                        <MenuItem value="low">Low</MenuItem>
-                        <MenuItem value="medium">Medium</MenuItem>
-                        <MenuItem value="high">High</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                </Grid>
-
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="Priority Days"
-                      value={newTask.priorityDays}
-                      onChange={(e) => setNewTask({ ...newTask, priorityDays: e.target.value })}
-                      variant="outlined"
-                      placeholder="Enter priority days"
-                      sx={{ borderRadius: 1 }}
-                      size={isMobile ? "small" : "medium"}
-                    />
-                  </Grid>
-                </Grid>
-              </Stack>
-            </Box>
-
-            {/* File Uploads */}
-            <Box sx={{ 
-              p: isMobile ? 2 : 3, 
-              borderRadius: 1, 
-              border: 1, 
-              borderColor: 'divider',
-              background: 'white',
-            }}>
-              <Typography variant="h6" fontWeight={600} sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                <FiPaperclip size={18} color={theme.palette.primary.main} />
-                Attachments (Optional)
-              </Typography>
-              
-              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1 }}>
-                <Button 
-                  variant="outlined" 
-                  component="label" 
-                  startIcon={<FiFileText />}
-                  sx={{ 
-                    borderRadius: 1,
-                    py: 1,
-                    borderStyle: 'dashed',
-                    fontSize: '0.875rem'
-                  }}
-                  fullWidth={isMobile}
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>Priority</InputLabel>
+                <Select
+                  value={newTask.priority}
+                  onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
+                  label="Priority"
                 >
-                  Upload Files
-                  <input
-                    type="file"
-                    multiple
-                    hidden
-                    onChange={(e) => setNewTask({ ...newTask, files: e.target.files })}
-                  />
-                </Button>
+                  <MenuItem value="low">Low</MenuItem>
+                  <MenuItem value="medium">Medium</MenuItem>
+                  <MenuItem value="high">High</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
 
-                <Button
-                  variant={isRecording ? "contained" : "outlined"}
-                  startIcon={<FiMic />}
-                  onClick={isRecording ? stopRecording : startRecording}
-                  sx={{
-                    borderRadius: 1,
-                    py: 1,
-                    borderStyle: isRecording ? "solid" : "dashed",
-                    fontSize: "0.875rem",
-                    background: isRecording ? "rgba(255,0,0,0.2)" : "",
-                  }}
-                  fullWidth={isMobile}
-                >
-                  {isRecording ? "Stop Recording..." : "Record Voice"}
-                </Button>
-              </Box>
+          <TextField
+            fullWidth
+            label="Priority Days"
+            value={newTask.priorityDays}
+            onChange={(e) => setNewTask({ ...newTask, priorityDays: e.target.value })}
+            placeholder="Enter priority days"
+          />
+
+          <Box>
+            <Typography variant="h6" gutterBottom>
+              Attachments (Optional)
+            </Typography>
+            
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1 }}>
+              <Button 
+                variant="outlined" 
+                component="label" 
+                startIcon={<FiFileText />}
+                fullWidth={isMobile}
+              >
+                Upload Files
+                <input
+                  type="file"
+                  multiple
+                  hidden
+                  onChange={(e) => setNewTask({ ...newTask, files: e.target.files })}
+                />
+              </Button>
+
+              <Button
+                variant={isRecording ? "contained" : "outlined"}
+                color={isRecording ? "error" : "primary"}
+                startIcon={<FiMic />}
+                onClick={isRecording ? stopRecording : startRecording}
+                fullWidth={isMobile}
+              >
+                {isRecording ? "Stop Recording" : "Record Voice"}
+              </Button>
             </Box>
-          </Stack>
-        </Box>
+          </Box>
+        </Stack>
       </DialogContent>
 
-      <DialogActions sx={{ 
-        p: isMobile ? 2 : 3, 
-        borderTop: 1, 
-        borderColor: 'divider',
-        flexDirection: isMobile ? 'column' : 'row',
-        gap: isMobile ? 1 : 0
-      }}>
+      <DialogActions>
         <Button
           onClick={() => setOpenDialog(false)}
           variant="outlined"
-          sx={{ 
-            borderRadius: 1,
-            px: 3,
-          }}
-          fullWidth={isMobile}
         >
           Cancel
         </Button>
@@ -2826,12 +2071,6 @@ const UserCreateTask = () => {
           variant="contained"
           disabled={!newTask.title || !newTask.description || !newTask.dueDateTime || isCreatingTask}
           startIcon={isCreatingTask ? <CircularProgress size={16} color="inherit" /> : <FiCheck />}
-          sx={{ 
-            borderRadius: 1,
-            px: 3,
-            minWidth: isMobile ? 'auto' : '120px'
-          }}
-          fullWidth={isMobile}
         >
           {isCreatingTask ? 'Creating...' : 'Create Task'}
         </Button>
@@ -2846,14 +2085,14 @@ const UserCreateTask = () => {
 
   useEffect(() => {
     fetchUserData();
-  }, []);
+  }, [fetchUserData]);
 
   useEffect(() => {
     if (!authError && userId) {
       fetchMyTasks();
       fetchNotifications();
     }
-  }, [authError, userId]);
+  }, [authError, userId, fetchMyTasks, fetchNotifications]);
 
   if (authError) {
     return (
@@ -2864,11 +2103,10 @@ const UserCreateTask = () => {
         minHeight: '50vh',
         flexDirection: 'column',
         gap: 3,
-        p: 2
       }}>
-        <Card sx={{ p: 4, textAlign: 'center', maxWidth: 400, borderRadius: 3, width: '100%' }}>
+        <Card sx={{ p: 4, textAlign: 'center', maxWidth: 400, width: '100%' }}>
           <CardContent>
-            <FiAlertCircle size={48} color={theme.palette.error.main} style={{ marginBottom: 16 }} />
+            <FiAlertCircle size={48} color={theme.palette.error.main} />
             <Typography variant="h5" color="error" gutterBottom>
               Authentication Required
             </Typography>
@@ -2879,7 +2117,6 @@ const UserCreateTask = () => {
               variant="contained"
               onClick={handleLogout}
               startIcon={<FiUser />}
-              sx={{ borderRadius: 2 }}
               fullWidth
             >
               Go to Login
@@ -2899,10 +2136,9 @@ const UserCreateTask = () => {
         minHeight: '50vh',
         flexDirection: 'column',
         gap: 2,
-        p: 2
       }}>
-        <CircularProgress size={isMobile ? 32 : 40} />
-        <Typography variant="h6" color="text.secondary" fontWeight={600} sx={{ textAlign: 'center' }}>
+        <CircularProgress />
+        <Typography variant="h6" color="text.secondary">
           Loading Tasks...
         </Typography>
       </Box>
@@ -2911,929 +2147,179 @@ const UserCreateTask = () => {
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Fade in={!loading} timeout={500}>
-        <Box sx={{ 
-          p: { xs: 1, sm: 2, md: 3 }, 
-          maxWidth: 1400, 
-          margin: '0 auto',
-          // ✅ Yeh line add karein:
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          minHeight: '100vh'
-        }}>
-          {/* Header */}
-          <Paper
-            sx={{
-              p: { xs: 2.5, sm: 3.5 },
-              mb: 4,
-              borderRadius: { xs: 3, sm: 4 },
-              background: 'rgba(255, 255, 255, 0.95)',
-              border: `1px solid rgba(102, 126, 234, 0.15)`,
-              boxShadow: '0 8px 32px rgba(102, 126, 234, 0.08)',
-              position: 'relative',
-              overflow: 'hidden',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: 4,
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              },
-              '&::after': {
-                content: '""',
-                position: 'absolute',
-                top: -100,
-                right: -100,
-                width: 200,
-                height: 200,
-                borderRadius: '50%',
-                background: 'radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%)',
-              }
-            }}
-          >
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: { xs: "column", md: "row" },
-                gap: { xs: 3, md: 0 },
-                justifyContent: 'space-between',
-                alignItems: { xs: "flex-start", md: "center" }
-              }}
-            >
-              {/* Left Section: Title & Info with Stats */}
-              <Box sx={{ flex: 1, maxWidth: { md: '60%' } }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                  <Box
-                    sx={{
-                      width: 56,
-                      height: 56,
-                      borderRadius: 3,
-                      background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
-                      position: 'relative',
-                      '&::after': {
-                        content: '""',
-                        position: 'absolute',
-                        inset: -2,
-                        borderRadius: 'inherit',
-                        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                        opacity: 0.4,
-                        filter: 'blur(4px)',
-                        zIndex: -1
-                      }
-                    }}
-                  >
-                    <FiCheckSquare size={28} color="#fff" />
-                  </Box>
-                  <Box>
-                    <Typography 
-                      component="div"
-                      variant="h3" 
-                      fontWeight={800} 
-                      gutterBottom 
-                      sx={{ 
-                        fontSize: { xs: '1.75rem', sm: '2.25rem', md: '2.5rem' },
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        backgroundClip: 'text',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        letterSpacing: '-0.5px',
-                        lineHeight: 1.2
-                      }}
-                    >
-                      My Task Management
-                    </Typography>
-                    <Typography 
-                      variant="subtitle1" 
-                      color="text.secondary"
-                      sx={{ 
-                        fontSize: { xs: '0.875rem', sm: '1rem' },
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1
-                      }}
-                    >
-                      <FiBarChart2 size={16} color="#667eea" />
-                      Manage and track your personal tasks efficiently
-                    </Typography>
-                  </Box>
-                </Box>
-                
-                {/* Quick Stats with gradient accents */}
-                <Box sx={{ 
-                  display: 'flex', 
-                  gap: 2, 
-                  mt: 3,
-                  flexWrap: 'wrap'
-                }}>
-                  <Box sx={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: 1,
-                    p: 1.5,
-                    borderRadius: 2,
-                    background: 'rgba(102, 126, 234, 0.06)',
-                    border: '1px solid rgba(102, 126, 234, 0.1)'
-                  }}>
-                    <Box sx={{ 
-                      width: 8, 
-                      height: 8, 
-                      borderRadius: '50%', 
-                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' 
-                    }} />
-                    <Typography variant="caption" fontWeight={600} color="text.secondary">
-                      <Box component="span" sx={{ color: '#111827', fontSize: '0.9rem', fontWeight: 700 }}>
-                        24
-                      </Box>{' '}
-                      Completed
-                    </Typography>
-                  </Box>
-                  <Box sx={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: 1,
-                    p: 1.5,
-                    borderRadius: 2,
-                    background: 'rgba(245, 158, 11, 0.06)',
-                    border: '1px solid rgba(245, 158, 11, 0.1)'
-                  }}>
-                    <Box sx={{ 
-                      width: 8, 
-                      height: 8, 
-                      borderRadius: '50%', 
-                      background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' 
-                    }} />
-                    <Typography variant="caption" fontWeight={600} color="text.secondary">
-                      <Box component="span" sx={{ color: '#111827', fontSize: '0.9rem', fontWeight: 700 }}>
-                        8
-                      </Box>{' '}
-                      In Progress
-                    </Typography>
-                  </Box>
-                  <Box sx={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: 1,
-                    p: 1.5,
-                    borderRadius: 2,
-                    background: 'rgba(239, 68, 68, 0.06)',
-                    border: '1px solid rgba(239, 68, 68, 0.1)'
-                  }}>
-                    <Box sx={{ 
-                      width: 8, 
-                      height: 8, 
-                      borderRadius: '50%', 
-                      background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' 
-                    }} />
-                    <Typography variant="caption" fontWeight={600} color="text.secondary">
-                      <Box component="span" sx={{ color: '#111827', fontSize: '0.9rem', fontWeight: 700 }}>
-                        3
-                      </Box>{' '}
-                      Overdue
-                    </Typography>
-                  </Box>
-                </Box>
-              </Box>
-
-              {/* Right Section: Action Buttons */}
-              <Box sx={{ 
-                display: 'flex',
-                flexDirection: { xs: "column", sm: "row" }, 
-                gap: 1.5, 
-                alignItems: "center",
-                width: { xs: '100%', md: 'auto' },
-                mt: { xs: 2, md: 0 }
-              }}>
-                {/* Notifications Badge */}
-                <Tooltip title="Notifications" arrow>
-                  <Box sx={{ position: 'relative' }}>
-                    <IconButton
-                      onClick={() => setNotificationsOpen(true)}
-                      sx={{
-                        width: 44,
-                        height: 44,
-                        borderRadius: 2.5,
-                        background: 'rgba(255, 255, 255, 0.8)',
-                        border: '1px solid rgba(102, 126, 234, 0.2)',
-                        backdropFilter: 'blur(8px)',
-                        '&:hover': {
-                          background: 'rgba(102, 126, 234, 0.1)',
-                          borderColor: '#667eea',
-                          transform: 'translateY(-2px)',
-                          boxShadow: '0 6px 16px rgba(102, 126, 234, 0.2)',
-                          transition: 'all 0.3s ease'
-                        }
-                      }}
-                    >
-                      <FiBell size={20} color="#667eea" />
-                    </IconButton>
-                    {unreadNotificationCount > 0 && (
-                      <Badge
-                        badgeContent={unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}
-                        color="error"
-                        sx={{
-                          position: 'absolute',
-                          top: -4,
-                          right: -4,
-                          '& .MuiBadge-badge': {
-                            fontSize: '0.65rem',
-                            fontWeight: 700,
-                            minWidth: 20,
-                            height: 20,
-                            borderRadius: 10,
-                            background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                            animation: 'pulse 2s infinite',
-                            '@keyframes pulse': {
-                              '0%': { boxShadow: '0 0 0 0 rgba(239, 68, 68, 0.7)' },
-                              '70%': { boxShadow: '0 0 0 6px rgba(239, 68, 68, 0)' },
-                              '100%': { boxShadow: '0 0 0 0 rgba(239, 68, 68, 0)' }
-                            }
-                          }
-                        }}
-                      />
-                    )}
-                  </Box>
-                </Tooltip>
-
-                {/* Action Buttons Group */}
-                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                  {/* Clear All Filters Button */}
-                  {(statusFilter || timeFilter !== 'today' || selectedDate || dateRange.start || dateRange.end) && (
-                    <Tooltip title="Clear All Filters" arrow>
-                      <Button
-                        variant="outlined"
-                        onClick={clearAllFilters}
-                        startIcon={<FiX size={18} color="#9ca3af" />}
-                        sx={{
-                          borderRadius: 3,
-                          textTransform: "none",
-                          fontWeight: 600,
-                          px: 2.5,
-                          py: 1.25,
-                          fontSize: '0.875rem',
-                          borderWidth: 2,
-                          borderColor: 'rgba(156, 163, 175, 0.3)',
-                          color: '#6b7280',
-                          '&:hover': {
-                            borderColor: '#ef4444',
-                            color: '#ef4444',
-                            backgroundColor: 'rgba(239, 68, 68, 0.04)',
-                            transform: 'translateY(-1px)',
-                            boxShadow: '0 4px 12px rgba(239, 68, 68, 0.1)'
-                          }
-                        }}
-                      >
-                        Clear All
-                      </Button>
-                    </Tooltip>
-                  )}
-
-                  {/* Create Task Button */}
-                  <Tooltip title="Create New Task" arrow>
-                    <Button
-                      variant="contained"
-                      startIcon={
-                        <Box sx={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          justifyContent: 'center',
-                          transition: 'transform 0.3s ease'
-                        }}>
-                          <FiPlus size={20} color="#fff" />
-                        </Box>
-                      }
-                      onClick={() => setOpenDialog(true)}
-                      sx={{
-                        borderRadius: 3,
-                        textTransform: "none",
-                        fontWeight: 700,
-                        px: 3.5,
-                        py: 1.5,
-                        fontSize: '0.9375rem',
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        boxShadow: '0 4px 14px rgba(102, 126, 234, 0.4)',
-                        position: 'relative',
-                        overflow: 'hidden',
-                        '&::before': {
-                          content: '""',
-                          position: 'absolute',
-                          top: 0,
-                          left: -100,
-                          width: 100,
-                          height: '100%',
-                          background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)',
-                          transition: 'left 0.7s ease',
-                        },
-                        '&:hover': {
-                          transform: 'translateY(-2px)',
-                          boxShadow: '0 8px 25px rgba(102, 126, 234, 0.6)',
-                          '&::before': {
-                            left: '100%',
-                          },
-                          '& .MuiButton-startIcon': {
-                            transform: 'rotate(90deg)',
-                          }
-                        },
-                        '&:active': {
-                          transform: 'translateY(0)',
-                          boxShadow: '0 2px 10px rgba(102, 126, 234, 0.4)',
-                        }
-                      }}
-                    >
-                      Create Task
-                    </Button>
-                  </Tooltip>
-                </Box>
-              </Box>
-            </Box>
-
-            {/* Decorative corner accent */}
-            <Box sx={{
-              position: 'absolute',
-              bottom: -20,
-              left: -20,
-              width: 100,
-              height: 100,
-              borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(118, 75, 162, 0.1) 0%, transparent 70%)',
-              zIndex: 0
-            }} />
-          </Paper>
-
-          {/* ✅ FIXED: Statistics Section */}
-          <Paper 
-            sx={{
-              p: { xs: 2.5, sm: 3.5 },
-              mb: 3,
-              borderRadius: { xs: 3, sm: 4 },
-              boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-              border: `1px solid ${theme.palette.divider}`,
-              background: `linear-gradient(145deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.default, 0.5)} 100%)`,
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                boxShadow: '0 6px 25px rgba(0,0,0,0.12)',
-              }
-            }}
-          >
-            {/* Header Section */}
-            <Box 
-              sx={{ 
-                display: 'flex',
-                alignItems: 'center', 
-                justifyContent: 'space-between',
-                mb: 3,
-                pb: 2,
-                borderBottom: `2px solid ${alpha(theme.palette.primary.main, 0.1)}`
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <Box
-                  sx={{
-                    p: 1.2,
-                    borderRadius: 2,
-                    bgcolor: alpha(theme.palette.primary.main, 0.1),
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                >
-                  <FiBarChart2 
-                    size={20} 
-                    color={theme.palette.primary.main} 
-                  />
-                </Box>
-                <Box>
-                  <Typography 
-                    variant="h6" 
-                    fontWeight={700}
-                    sx={{ 
-                      color: theme.palette.text.primary,
-                      letterSpacing: '-0.2px'
-                    }}
-                  >
-                    Task Statistics
-                  </Typography>
-                  <Typography 
-                    variant="caption" 
-                    sx={{ 
-                      color: theme.palette.text.secondary,
-                      display: { xs: 'none', sm: 'block' }
-                    }}
-                  >
-                    Overview of your task performance
-                  </Typography>
-                </Box>
-              </Box>
-              
-              {statsLoading && (
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <CircularProgress 
-                    size={20} 
-                    thickness={5}
-                    sx={{ 
-                      color: theme.palette.primary.main,
-                      mr: 1 
-                    }} 
-                  />
-                  <Typography variant="caption" color="text.secondary">
-                    Loading...
-                  </Typography>
-                </Box>
-              )}
-            </Box>
-
-            {/* Time Filter Section */}
-            <Box sx={{ mb: 3 }}>
-              {renderTimeFilter()}
-            </Box>
-
-            {/* Statistics Cards Section */}
-            <Box sx={{ mb: 3 }}>
-              {renderStatisticsCards()}
-            </Box>
-
-            {/* Active Filter Summary */}
-            {(statusFilter || timeFilter !== 'today') && (
-              <Fade in={true}>
-                <Alert 
-                  severity="info" 
-                  icon={<FiFilter size={18} />}
-                  sx={{ 
-                    mt: 2,
-                    borderRadius: 2,
-                    bgcolor: alpha(theme.palette.info.light, 0.1),
-                    border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                    '& .MuiAlert-icon': {
-                      alignItems: 'center',
-                      color: theme.palette.info.main
-                    }
-                  }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Typography variant="body2" fontWeight={600}>
-                      <Box component="span" sx={{ color: 'text.primary' }}>
-                        Active Filters:
-                      </Box>
-                      <Box component="span" sx={{ ml: 1, color: 'text.secondary' }}>
-                        {statusFilter && (
-                          <Chip
-                            size="small"
-                            label={statusFilter.replace('-', ' ')}
-                            onDelete={() => setStatusFilter('')}
-                            sx={{
-                              mx: 0.5,
-                              bgcolor: alpha(theme.palette.primary.main, 0.1),
-                              color: theme.palette.primary.main,
-                              fontWeight: 500,
-                              '& .MuiChip-deleteIcon': {
-                                color: theme.palette.primary.main,
-                                '&:hover': {
-                                  color: theme.palette.primary.dark
-                                }
-                              }
-                            }}
-                          />
-                        )}
-                        {timeFilter !== 'today' && (
-                          <Chip
-                            size="small"
-                            label={`Time: ${timeFilter}`}
-                            onDelete={() => setTimeFilter('today')}
-                            sx={{
-                              mx: 0.5,
-                              bgcolor: alpha(theme.palette.secondary.main, 0.1),
-                              color: theme.palette.secondary.main,
-                              fontWeight: 500,
-                              '& .MuiChip-deleteIcon': {
-                                color: theme.palette.secondary.main,
-                                '&:hover': {
-                                  color: theme.palette.secondary.dark
-                                }
-                              }
-                            }}
-                          />
-                        )}
-                      </Box>
-                    </Typography>
-                    <Button
-                      size="small"
-                      variant="text"
-                      onClick={() => {
-                        setStatusFilter('');
-                        setTimeFilter('today');
-                      }}
-                      sx={{
-                        ml: 2,
-                        color: theme.palette.info.main,
-                        '&:hover': {
-                          bgcolor: alpha(theme.palette.info.main, 0.1)
-                        }
-                      }}
-                    >
-                      Clear All
-                    </Button>
-                  </Box>
-                </Alert>
-              </Fade>
-            )}
-
-            {/* Optional: Add a subtle footer */}
-            <Box sx={{ 
-              mt: 3, 
-              pt: 2, 
-              borderTop: `1px dashed ${theme.palette.divider}`,
-              display: 'flex',
-              justifyContent: 'flex-end'
-            }}>
-              <Typography variant="caption" color="text.secondary">
-                Last updated: Just now
+      <Box sx={{ p: { xs: 1, sm: 2, md: 3 }, maxWidth: 1400, margin: '0 auto' }}>
+        {/* Header */}
+        <Paper sx={{ p: { xs: 2, sm: 3 }, mb: 3, borderRadius: 2 }}>
+          <Box sx={{ display: 'flex', flexDirection: { xs: "column", md: "row" }, gap: 3, justifyContent: 'space-between', alignItems: { xs: "flex-start", md: "center" } }}>
+            <Box>
+              <Typography variant="h4" fontWeight={700} gutterBottom>
+                My Task Management
               </Typography>
-            </Box>
-          </Paper>
-
-          {/* Tasks Section */}
-          <Paper 
-            sx={{
-              borderRadius: { xs: 3, sm: 4 },
-              boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-              overflow: 'hidden',
-              border: `1px solid ${theme.palette.divider}`,
-              transition: 'transform 0.2s ease, boxShadow 0.2s ease',
-              '&:hover': {
-                boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-              }
-            }}
-          >
-            {/* Enhanced Filter Header */}
-            <Box 
-              sx={{ 
-                p: { xs: 2.5, sm: 3, md: 3.5 },
-                borderBottom: `2px solid ${alpha(theme.palette.primary.main, 0.08)}`,
-                background: `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.9)} 0%, ${alpha(theme.palette.background.default, 0.4)} 100%)`,
-                backdropFilter: 'blur(10px)'
-              }}
-            >
-              <Box
-                sx={{
-                  display: 'flex',
-                  flexDirection: { xs: 'column', md: 'row' },
-                  gap: { xs: 2, md: 0 },
-                  justifyContent: 'space-between',
-                  alignItems: { xs: 'flex-start', md: 'center' },
-                  mb: 2
-                }}
-              >
-                {/* Title Section */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                  <Box
-                    sx={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: 2,
-                      bgcolor: alpha(theme.palette.primary.main, 0.1),
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      border: `2px solid ${alpha(theme.palette.primary.main, 0.2)}`
-                    }}
-                  >
-                    <FiCheckSquare size={20} color={theme.palette.primary.main} />
-                  </Box>
-                  <Box>
-                    <Typography 
-                      variant="h5" 
-                      fontWeight={800}
-                      sx={{ 
-                        color: theme.palette.text.primary,
-                        letterSpacing: '-0.3px',
-                        lineHeight: 1.2
-                      }}
-                    >
-                      My Tasks
-                      {statusFilter && (
-                        <Chip
-                          label={statusFilter.replace('-', ' ')}
-                          size="small"
-                          sx={{
-                            ml: 1.5,
-                            height: 24,
-                            fontWeight: 600,
-                            bgcolor: alpha(theme.palette.primary.main, 0.1),
-                            color: theme.palette.primary.main,
-                            '& .MuiChip-label': { px: 1.5 }
-                          }}
-                        />
-                      )}
-                    </Typography>
-                    <Typography 
-                      variant="caption" 
-                      sx={{ 
-                        color: theme.palette.text.secondary,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 0.5
-                      }}
-                    >
-                      <FiInfo size={12} />
-                      Manage and track your assigned tasks
-                    </Typography>
-                  </Box>
+              <Typography variant="body1" color="text.secondary">
+                Manage and track your personal tasks efficiently
+              </Typography>
+              
+              <Box sx={{ display: 'flex', gap: 2, mt: 2, flexWrap: 'wrap' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'success.main' }} />
+                  <Typography variant="body2" color="text.secondary">
+                    {taskStats.completed.count} Completed
+                  </Typography>
                 </Box>
-                
-                {/* Action Buttons Section */}
-                <Box 
-                  sx={{ 
-                    display: 'flex',
-                    gap: 1.5, 
-                    alignItems: 'center',
-                    width: { xs: '100%', md: 'auto' },
-                    mt: { xs: 1, md: 0 }
-                  }}
-                >
-                  {/* Calendar Filter Button */}
-                  <Tooltip title="Filter by Date" arrow>
-                    <Button
-                      variant={selectedDate || dateRange.start || dateRange.end ? "contained" : "outlined"}
-                      onClick={() => setCalendarFilterOpen(true)}
-                      startIcon={<FiCalendar size={16} />}
-                      size="small"
-                      sx={{
-                        borderRadius: 2,
-                        textTransform: 'none',
-                        fontWeight: 600,
-                        px: 2,
-                        minWidth: 'fit-content',
-                        ...(selectedDate || dateRange.start || dateRange.end ? {
-                          bgcolor: theme.palette.primary.main,
-                          '&:hover': {
-                            bgcolor: theme.palette.primary.dark,
-                          }
-                        } : {})
-                      }}
-                    >
-                      {getDateFilterSummary() || 'Date Filter'}
-                    </Button>
-                  </Tooltip>
-
-                  {/* Status Filter */}
-                  <FormControl size="small" sx={{ minWidth: 160 }}>
-                    <InputLabel sx={{ fontWeight: 500 }}>Status</InputLabel>
-                    <Select
-                      value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value)}
-                      input={<OutlinedInput label="Status" />}
-                      sx={{ 
-                        borderRadius: 2,
-                        fontWeight: 500,
-                        '& .MuiSelect-select': {
-                          py: 1.25
-                        }
-                      }}
-                      renderValue={(selected) => (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Box
-                            sx={{
-                              width: 8,
-                              height: 8,
-                              borderRadius: '50%',
-                              bgcolor: getStatusColor(selected, theme),
-                            }}
-                          />
-                          <Typography variant="body2" fontWeight={500}>
-                            {selected ? selected.replace('-', ' ') : 'All Status'}
-                          </Typography>
-                        </Box>
-                      )}
-                    >
-                      <MenuItem value="">
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                          <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: alpha(theme.palette.text.secondary, 0.3) }} />
-                          <Typography>All Status</Typography>
-                        </Box>
-                      </MenuItem>
-                      {[
-                        { value: 'pending', color: theme.palette.warning.main },
-                        { value: 'in-progress', color: theme.palette.info.main },
-                        { value: 'completed', color: theme.palette.success.main },
-                        { value: 'rejected', color: theme.palette.error.main },
-                        { value: 'onhold', color: theme.palette.grey[500] },
-                        { value: 'reopen', color: theme.palette.warning.dark },
-                        { value: 'cancelled', color: theme.palette.grey[700] },
-                        { value: 'overdue', color: theme.palette.error.dark }
-                      ].map((status) => (
-                        <MenuItem key={status.value} value={status.value}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                            <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: status.color }} />
-                            <Typography>{status.value.replace('-', ' ')}</Typography>
-                          </Box>
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-
-                  {/* Action Buttons Group */}
-                  <Box sx={{ display: 'flex', gap: 0.5, ml: 0.5 }}>
-                    {(selectedDate || dateRange.start || dateRange.end) && (
-                      <Tooltip title="Clear Date Filter" arrow>
-                        <IconButton
-                          size="small"
-                          onClick={clearDateFilter}
-                          sx={{
-                            borderRadius: 2,
-                            bgcolor: alpha(theme.palette.error.main, 0.1),
-                            color: theme.palette.error.main,
-                            '&:hover': {
-                              bgcolor: theme.palette.error.main,
-                              color: theme.palette.error.contrastText,
-                            }
-                          }}
-                        >
-                          <FiX size={18} />
-                        </IconButton>
-                      </Tooltip>
-                    )}
-
-                    <Tooltip title="Refresh" arrow>
-                      <IconButton
-                        size="small"
-                        onClick={() => fetchMyTasks()}
-                        sx={{
-                          borderRadius: 2,
-                          bgcolor: alpha(theme.palette.primary.main, 0.1),
-                          color: theme.palette.primary.main,
-                          '&:hover': {
-                            bgcolor: theme.palette.primary.main,
-                            color: theme.palette.primary.contrastText,
-                            animation: 'spin 0.6s ease',
-                            '@keyframes spin': {
-                              '0%': { transform: 'rotate(0deg)' },
-                              '100%': { transform: 'rotate(360deg)' }
-                            }
-                          }
-                        }}
-                      >
-                        <FiRefreshCw size={18} />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'info.main' }} />
+                  <Typography variant="body2" color="text.secondary">
+                    {taskStats.inProgress.count} In Progress
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'error.main' }} />
+                  <Typography variant="body2" color="text.secondary">
+                    {taskStats.overdue.count} Overdue
+                  </Typography>
                 </Box>
               </Box>
-
-              {/* Enhanced Date Filter Summary */}
-              {(selectedDate || dateRange.start || dateRange.end) && (
-                <Fade in={true}>
-                  <Box 
-                    sx={{ 
-                      mt: 2.5,
-                      p: 2,
-                      borderRadius: 2,
-                      bgcolor: alpha(theme.palette.primary.main, 0.06),
-                      border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: 1
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                      <Box
-                        sx={{
-                          p: 0.75,
-                          borderRadius: 1,
-                          bgcolor: alpha(theme.palette.primary.main, 0.1),
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}
-                      >
-                        <FiFilter size={16} color={theme.palette.primary.main} />
-                      </Box>
-                      <Box>
-                        <Typography variant="caption" fontWeight={600} color="text.secondary">
-                          ACTIVE DATE FILTER
-                        </Typography>
-                        <Typography variant="body2" fontWeight={600} color="primary.main">
-                          {getDateFilterSummary()}
-                        </Typography>
-                      </Box>
-                    </Box>
-                    <Button
-                      size="small"
-                      variant="text"
-                      onClick={clearDateFilter}
-                      startIcon={<FiX size={14} />}
-                      sx={{
-                        color: theme.palette.text.secondary,
-                        fontWeight: 500,
-                        '&:hover': {
-                          color: theme.palette.error.main,
-                          bgcolor: alpha(theme.palette.error.main, 0.1)
-                        }
-                      }}
-                    >
-                      Clear
-                    </Button>
-                  </Box>
-                </Fade>
-              )}
             </Box>
 
-            {/* Tasks Content Area */}
-            <Box 
-              sx={{ 
-                p: { xs: 2, sm: 2.5, md: 3 },
-                minHeight: 400,
-                bgcolor: alpha(theme.palette.background.default, 0.4)
-              }}
-            >
-              {renderGroupedTasks(myTasksGrouped)}
-              
-              {/* Empty State (if needed) */}
-              {(!myTasksGrouped || Object.keys(myTasksGrouped).length === 0) && (
-                <Box 
-                  sx={{ 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    alignItems: 'center', 
-                    justifyContent: 'center',
-                    py: 8,
-                    textAlign: 'center'
-                  }}
+            <Box sx={{ display: 'flex', gap: 1.5, alignItems: "center" }}>
+              <Tooltip title="Notifications">
+                <IconButton
+                  onClick={() => setNotificationsOpen(true)}
+                  sx={{ position: 'relative' }}
                 >
-                  <Box
-                    sx={{
-                      width: 80,
-                      height: 80,
-                      borderRadius: '50%',
-                      bgcolor: alpha(theme.palette.grey[300], 0.3),
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      mb: 2
-                    }}
-                  >
-                    <FiCheckSquare size={36} color={theme.palette.grey[500]} />
-                  </Box>
-                  <Typography variant="h6" color="text.secondary" gutterBottom>
-                    No tasks found
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 300 }}>
-                    {statusFilter 
-                      ? `No ${statusFilter.replace('-', ' ')} tasks found for the selected date`
-                      : 'Try adjusting your filters or create a new task'}
-                  </Typography>
-                </Box>
-              )}
+                  <FiBell />
+                  {unreadNotificationCount > 0 && (
+                    <Badge
+                      badgeContent={unreadNotificationCount}
+                      color="error"
+                      sx={{
+                        position: 'absolute',
+                        top: 4,
+                        right: 4,
+                      }}
+                    />
+                  )}
+                </IconButton>
+              </Tooltip>
+
+              <Button
+                variant="contained"
+                startIcon={<FiPlus />}
+                onClick={() => setOpenDialog(true)}
+                sx={{ borderRadius: 2 }}
+              >
+                Create Task
+              </Button>
             </Box>
-          </Paper>
+          </Box>
+        </Paper>
 
-          {/* DIALOGS */}
-          {renderCreateTaskDialog()}
-          {renderCalendarFilterDialog()}
-          {renderNotificationsPanel()}
-          {renderRemarksDialog()}
-          {renderActivityLogsDialog()}
-          {renderImageZoomModal()}
+        {/* Statistics Section */}
+        <Paper sx={{ p: { xs: 2, sm: 3 }, mb: 3, borderRadius: 2 }}>
+          <Typography variant="h6" fontWeight={600} gutterBottom>
+            Task Statistics
+          </Typography>
+          
+          {renderTimeFilter()}
+          {renderStatisticsCards()}
 
-          {/* Enhanced Snackbar */}
-          <Snackbar
-            open={snackbar.open}
-            autoHideDuration={4000}
-            onClose={() => setSnackbar({ ...snackbar, open: false })}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-          >
-            <Card sx={{
-              minWidth: 280,
-              background: snackbar.severity === 'error'
-                ? theme.palette.error.main
-                : snackbar.severity === 'warning'
-                ? theme.palette.warning.main
-                : theme.palette.success.main,
-              color: 'white',
-              borderRadius: 1
-            }}>
-              <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                  {snackbar.severity === 'error' ?
-                    <FiXCircle size={18} /> :
-                    snackbar.severity === 'warning' ?
-                    <FiAlertCircle size={18} /> :
-                    <FiCheckCircle size={18} />
-                  }
-                  <Typography variant="body2" fontWeight={600} sx={{ flex: 1 }}>
-                    {snackbar.message}
-                  </Typography>
-                </Box>
-              </CardContent>
-            </Card>
-          </Snackbar>
-        </Box>
-      </Fade>
+          {(statusFilter || timeFilter !== 'all') && (
+            <Alert severity="info" sx={{ mt: 2 }}>
+              <Typography variant="body2">
+                Active Filters:
+                {statusFilter && (
+                  <Chip
+                    size="small"
+                    label={statusFilter.replace('-', ' ')}
+                    onDelete={() => setStatusFilter('')}
+                    sx={{ mx: 0.5 }}
+                  />
+                )}
+                {timeFilter !== 'all' && (
+                  <Chip
+                    size="small"
+                    label={`Time: ${timeFilter}`}
+                    onDelete={() => setTimeFilter('all')}
+                    sx={{ mx: 0.5 }}
+                  />
+                )}
+              </Typography>
+            </Alert>
+          )}
+        </Paper>
+
+        {/* Tasks Section */}
+        <Paper sx={{ borderRadius: 2, overflow: 'hidden' }}>
+          <Box sx={{ p: { xs: 2, sm: 3 }, borderBottom: 1, borderColor: 'divider' }}>
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2, justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' } }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <FiCheckSquare />
+                <Typography variant="h5" fontWeight={700}>
+                  My Tasks
+                </Typography>
+              </Box>
+              
+              <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', width: { xs: '100%', md: 'auto' } }}>
+                <Button
+                  variant="outlined"
+                  onClick={() => setCalendarFilterOpen(true)}
+                  startIcon={<FiCalendar />}
+                  size="small"
+                >
+                  {getDateFilterSummary() || 'Date Filter'}
+                </Button>
+
+                <FormControl size="small" sx={{ minWidth: 120 }}>
+                  <InputLabel>Status</InputLabel>
+                  <Select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    label="Status"
+                  >
+                    <MenuItem value="">All Status</MenuItem>
+                    <MenuItem value="pending">Pending</MenuItem>
+                    <MenuItem value="in-progress">In Progress</MenuItem>
+                    <MenuItem value="completed">Completed</MenuItem>
+                    <MenuItem value="rejected">Rejected</MenuItem>
+                    <MenuItem value="onhold">On Hold</MenuItem>
+                    <MenuItem value="reopen">Reopen</MenuItem>
+                    <MenuItem value="cancelled">Cancelled</MenuItem>
+                    <MenuItem value="overdue">Overdue</MenuItem>
+                  </Select>
+                </FormControl>
+
+                <IconButton onClick={fetchMyTasks}>
+                  <FiRefreshCw />
+                </IconButton>
+              </Box>
+            </Box>
+          </Box>
+
+          <Box sx={{ p: { xs: 2, sm: 3 } }}>
+            {renderGroupedTasks(myTasksGrouped)}
+          </Box>
+        </Paper>
+
+        {/* DIALOGS */}
+        {renderCreateTaskDialog()}
+        {renderCalendarFilterDialog()}
+        {renderNotificationsPanel()}
+        {renderRemarksDialog()}
+        {renderActivityLogsDialog()}
+        {renderImageZoomModal()}
+
+        {/* Snackbar */}
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={4000}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert severity={snackbar.severity} sx={{ width: '100%' }}>
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
+      </Box>
     </LocalizationProvider>
   );
 };
