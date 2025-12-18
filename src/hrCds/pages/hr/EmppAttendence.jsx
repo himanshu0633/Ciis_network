@@ -3,8 +3,8 @@ import axios from "../../../utils/axiosConfig";
 import './employee-attendance.css';
 
 // Import export libraries
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
+// import jsPDF from "jspdf";
+// import html2canvas from "html2canvas";
 
 // Icons
 import {
@@ -379,7 +379,7 @@ const exportToPDF = async () => {
     link.click();
     document.body.removeChild(link);
     
-    showSnackbar("CSV exported successfully!", "success");
+    // showSnackbar("CSV exported successfully!", "success");
   };
 
   const formatExportDate = (dateStr) => {
@@ -512,16 +512,22 @@ const exportToPDF = async () => {
         {/* Action Bar */}
         <div className="header-actions">
  
-          {/* Export Button with Dropdown */}
-       <div className="export-container" ref={exportMenuRef}>
-  <button
+                    {/* Export Button with Dropdown */}
+                  <div className="export-container" ref={exportMenuRef}>
+  {/* <button
     className="export-trigger"
     onClick={() => setExportMenuOpen(!exportMenuOpen)}
     title="Export Report"
   >
     <FiDownload size={16} />
     <span>Export</span>
-  </button>
+  </button> */}
+
+
+   <button className="export-option" onClick={exportToCSV}>
+        <FiDownload size={16} />
+        <span>Export as CSV</span>
+      </button>
 
   {exportMenuOpen && (
     <div className="export-dropdown">
@@ -541,7 +547,7 @@ const exportToPDF = async () => {
       </button>
     </div>
   )}
-</div>
+        </div>
 
           
           <div className="date-chip">
