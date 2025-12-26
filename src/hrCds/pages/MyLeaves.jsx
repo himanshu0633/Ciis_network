@@ -307,7 +307,9 @@ const MyLeaves = () => {
             color: "error",
             filter: "Rejected",
           },
-        ].map((stat) => (
+        ]
+        .filter(stat => stat.value > 0)
+        .map((stat) => (
           <div
             key={stat.key}
             className={`MyLeaves-stat-card ${statusFilter === stat.filter ? "MyLeaves-active" : ""}`}

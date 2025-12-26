@@ -421,6 +421,7 @@
   background: var(--success-bg);
   color: var(--success);
   border: 1px solid var(--success);
+  margin-left: -16px;
 }
 
 .MyAssets-no-properties {
@@ -707,6 +708,7 @@
   color: var(--gray-400);
   margin-bottom: 16px;
   opacity: 0.5;
+  margin-left: 450px;
 }
 
 .MyAssets-no-data-cell h3,
@@ -722,6 +724,13 @@
   margin: 0;
   font-size: 14px;
 }
+
+@media (max-width: 1024px) {
+  .MyAssets-no-data-icon {
+    margin-left: 360px;     /* ⬅ tablet */
+  }
+}
+
 
 /* Mobile Cards */
 .MyAssets-mobile-cards {
@@ -924,6 +933,22 @@
     padding-top: 40px;
   }
   
+.MyAssets-property-icon {
+    width: 35px;
+    height: 35px;
+    min-width: 35px;
+    min-height: 35px;
+    font-size: 18px;
+    flex-shrink: 0;            /* ⬅ stretch fix */
+  }
+
+  .MyAssets-no-data-icon {
+    margin-left: 0;     /* ⬅ mobile */
+    display: block;
+    margin-right: auto;
+    margin-left: auto; /* ⬅ center on mobile */
+  }
+
   .MyAssets-header {
     padding: 20px;
   }
@@ -991,15 +1016,91 @@
 
 @media (max-width: 480px) {
   .MyAssets-stats-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr); /* 2 columns */
+    gap: 10px;
+  }
+
+  .MyAssets-stat-avatar.MyAssets-primary {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    margin: 0 auto 6px;
+  }
+
+  .MyAssets-stat-label {
+    font-size: 10px;
+  }
+
+  .MyAssets-stat-value {
+    font-size: 18px;
+  }
+
+  .MyAssets-stat-avatar.MyAssets-warning {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    margin: 0 auto 6px;
+  }
+
+  
+  .MyAssets-stat-card {
+    padding: 10px 8px;
+    text-align: center;
+  }
+
+  /* First card – left */
+  .MyAssets-stat-card[data-key="first"] {
+    order: 1;
+  }
+
+  /* Second card – right */
+  .MyAssets-stat-card[data-key="second"] {
+    order: 2;
+  }
+
+  /* Remaining cards – full width */
+  .MyAssets-stat-card[data-key="third"],
+  .MyAssets-stat-card[data-key="fourth"] {
+    grid-column: 1 / -1; /* full row */
+    order: 3;
   }
   
   .MyAssets-title {
-    font-size: 28px;
+    font-size: 24px;
+  }
+
+  .MyAssets-subtitle {
+    font-size: 13px;
+    line-height: 1.5;
+    max-width: 80%;
   }
   
   .MyAssets-card-title {
-    font-size: 20px;
+    font-size: 15px;
+  }
+
+  .MyAssets-requests-title-section h2 {
+    font-size: 15px;
+  }
+
+  .MyAssets-mobile-status-chip {
+    padding: 4px; 
+    margin: -3vh;
+  }
+
+  .MyAssets-mobile-asset-icon.MyAssets-primary {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    margin: 0 auto 6px;
+  }
+
+  .MyAssets-status-approved {
+    padding: 4px; 
+    margin: -1vh;
   }
 }
 

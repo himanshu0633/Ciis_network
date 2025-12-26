@@ -100,39 +100,39 @@ const EmpAssets = () => {
 
   const getStatusClass = (status) => {
     switch(status) {
-      case 'approved': return 'chip-status-approved';
-      case 'pending': return 'chip-status-pending';
-      case 'rejected': return 'chip-status-rejected';
+      case 'approved': return 'EmpAssets-chip-status-approved';
+      case 'pending': return 'EmpAssets-chip-status-pending';
+      case 'rejected': return 'EmpAssets-chip-status-rejected';
       default: return '';
     }
   };
 
   const getAssetClass = (assetName) => {
     switch(assetName?.toLowerCase()) {
-      case 'phone': return 'chip-asset-phone';
-      case 'laptop': return 'chip-asset-laptop';
-      case 'desktop': return 'chip-asset-desktop';
-      case 'headphone': return 'chip-asset-headphone';
-      case 'sim': return 'chip-asset-sim';
-      default: return 'chip-asset-phone';
+      case 'phone': return 'EmpAssets-chip-asset-phone';
+      case 'laptop': return 'EmpAssets-chip-asset-laptop';
+      case 'desktop': return 'EmpAssets-chip-asset-desktop';
+      case 'headphone': return 'EmpAssets-chip-asset-headphone';
+      case 'sim': return 'EmpAssets-chip-asset-sim';
+      default: return 'EmpAssets-chip-asset-phone';
     }
   };
 
   const getRowClass = (status) => {
     switch(status) {
-      case 'approved': return 'table-row-approved';
-      case 'pending': return 'table-row-pending';
-      case 'rejected': return 'table-row-rejected';
+      case 'approved': return 'EmpAssets-table-row-approved';
+      case 'pending': return 'EmpAssets-table-row-pending';
+      case 'rejected': return 'EmpAssets-table-row-rejected';
       default: return '';
     }
   };
 
   const getAvatarClass = (type) => {
     switch(type) {
-      case 'All': return 'avatar-primary';
-      case 'Pending': return 'avatar-warning';
-      case 'Approved': return 'avatar-success';
-      case 'Rejected': return 'avatar-error';
+      case 'All': return 'EmpAssets-avatar-primary';
+      case 'Pending': return 'EmpAssets-avatar-warning';
+      case 'Approved': return 'EmpAssets-avatar-success';
+      case 'Rejected': return 'EmpAssets-avatar-error';
       default: return '';
     }
   };
@@ -140,48 +140,49 @@ const EmpAssets = () => {
   const getActiveClass = (type, selected) => {
     if (selected !== type) return '';
     switch(type) {
-      case 'All': return 'active active-primary';
-      case 'Pending': return 'active active-warning';
-      case 'Approved': return 'active active-success';
-      case 'Rejected': return 'active active-error';
+      case 'All': return 'EmpAssets-active EmpAssets-active-primary';
+      case 'Pending': return 'EmpAssets-active EmpAssets-active-warning';
+      case 'Approved': return 'EmpAssets-active EmpAssets-active-success';
+      case 'Rejected': return 'EmpAssets-active EmpAssets-active-error';
       default: return '';
     }
   };
 
   if (loading && !requests.length) {
     return (
-      <div className="loading-container">
-        <div className="loading-bar"></div>
+      <div className="EmpAssets-loading-container">
+        <div className="EmpAssets-loading-bar"></div>
       </div>
     );
   }
 
   return (
-    <div className="emp-assets-container">
+    <div className="EmpAssets-container">
       {/* Header Section */}
-      <div className="emp-assets-header">
+      <div className="EmpAssets-header">
         <h1>Asset Requests Management</h1>
         <p>Review and manage employee asset requests</p>
       </div>
 
       {/* Stats Cards */}
-      <div className="stats-grid">
+      <div className="EmpAssets-stats-grid">
         {[
           { label: 'Total Requests', count: stats.total, color: 'primary', type: 'All', icon: <FiUsers /> },
           { label: 'Pending', count: stats.pending, color: 'warning', type: 'Pending', icon: <FiClock /> },
           { label: 'Approved', count: stats.approved, color: 'success', type: 'Approved', icon: <FiCheckCircle /> },
           { label: 'Rejected', count: stats.rejected, color: 'error', type: 'Rejected', icon: <FiXCircle /> },
-        ].map((item) => (
+        ]  
+        .map((item) => (
           <div 
             key={item.type}
-            className={`stat-card ${getActiveClass(item.type, selectedStat)}`}
+            className={`EmpAssets-stat-card ${getActiveClass(item.type, selectedStat)}`}
             onClick={() => handleStatFilter(item.type)}
           >
-            <div className="stat-content">
-              <div className={`stat-avatar ${getAvatarClass(item.type)}`}>
+            <div className="EmpAssets-stat-content">
+              <div className={`EmpAssets-stat-avatar ${getAvatarClass(item.type)}`}>
                 {item.icon}
               </div>
-              <div className="stat-info">
+              <div className="EmpAssets-stat-info">
                 <h3>{item.label}</h3>
                 <h2>{item.count}</h2>
               </div>
@@ -191,8 +192,8 @@ const EmpAssets = () => {
       </div>
 
       {/* Search */}
-      <div className="search-container">
-        <div className="search-input">
+      <div className="EmpAssets-search-container">
+        <div className="EmpAssets-search-input">
           <FiSearch />
           <input
             type="text"
@@ -204,8 +205,8 @@ const EmpAssets = () => {
       </div>
 
       {/* Table Section */}
-      <div className="assets-table-container">
-        <table className="assets-table">
+      <div className="EmpAssets-table-container">
+        <table className="EmpAssets-table">
           <thead>
             <tr>
               <th>Employee</th>
@@ -220,29 +221,29 @@ const EmpAssets = () => {
               filteredRequests.map((req) => (
                 <tr key={req._id} className={getRowClass(req.status)}>
                   <td>
-                    <div className="employee-cell">
-                      <div className="employee-avatar">
+                    <div className="EmpAssets-employee-cell">
+                      <div className="EmpAssets-employee-avatar">
                         {getInitials(req.user?.name)}
                       </div>
-                      <div className="employee-info">
+                      <div className="EmpAssets-employee-info">
                         <h4>{req.user?.name}</h4>
                         <p>{req.user?.email}</p>
                       </div>
                     </div>
                   </td>
                   <td>
-                    <span className={`chip ${getAssetClass(req.assetName)}`}>
+                    <span className={`EmpAssets-chip ${getAssetClass(req.assetName)}`}>
                       {req.assetName}
                     </span>
                   </td>
                   <td>
-                    <span className={`chip ${getStatusClass(req.status)}`}>
+                    <span className={`EmpAssets-chip ${getStatusClass(req.status)}`}>
                       {req.status?.toUpperCase()}
                     </span>
                   </td>
                   <td>
                     <div 
-                      className={`comment-badge ${req.adminComment ? 'has-comment' : 'no-comment'}`}
+                      className={`EmpAssets-comment-badge ${req.adminComment ? 'EmpAssets-has-comment' : 'EmpAssets-no-comment'}`}
                       title={req.adminComment || "No comment"}
                       onClick={() => handleCommentEditOpen(req)}
                     >
@@ -250,17 +251,17 @@ const EmpAssets = () => {
                       <span>{req.adminComment || 'Add Comment'}</span>
                     </div>
                   </td>
-                  <td className="actions-cell">
-                    <div className="actions-container">
+                  <td className="EmpAssets-actions-cell">
+                    <div className="EmpAssets-actions-container">
                       <button 
-                        className="icon-button edit"
+                        className="EmpAssets-icon-button EmpAssets-edit"
                         title="Edit Comment"
                         onClick={() => handleCommentEditOpen(req)}
                       >
                         <FiEdit />
                       </button>
                       <button 
-                        className="icon-button delete"
+                        className="EmpAssets-icon-button EmpAssets-delete"
                         title="Delete Request"
                         onClick={() => handleDelete(req._id)}
                       >
@@ -272,7 +273,7 @@ const EmpAssets = () => {
               ))
             ) : (
               <tr>
-                <td colSpan="5" className="empty-state">
+                <td colSpan="5" className="EmpAssets-empty-state">
                   No Asset Requests Found
                 </td>
               </tr>
@@ -283,28 +284,28 @@ const EmpAssets = () => {
 
       {/* Comment Dialog */}
       {editingCommentReq && (
-        <div className="dialog-overlay">
-          <div className="dialog">
-            <div className="dialog-header">
+        <div className="EmpAssets-dialog-overlay">
+          <div className="EmpAssets-dialog">
+            <div className="EmpAssets-dialog-header">
               <h2>Edit Admin Comment</h2>
             </div>
-            <div className="dialog-body">
+            <div className="EmpAssets-dialog-body">
               <textarea
-                className="textarea-field"
+                className="EmpAssets-textarea-field"
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
                 placeholder="Add your comment..."
               />
             </div>
-            <div className="dialog-footer">
+            <div className="EmpAssets-dialog-footer">
               <button 
-                className="btn btn-cancel"
+                className="EmpAssets-btn EmpAssets-btn-cancel"
                 onClick={() => setEditingCommentReq(null)}
               >
                 Cancel
               </button>
               <button 
-                className="btn btn-save"
+                className="EmpAssets-btn EmpAssets-btn-save"
                 onClick={handleCommentUpdate}
                 disabled={actionLoading}
               >
@@ -317,8 +318,8 @@ const EmpAssets = () => {
 
       {/* Snackbar Notification */}
       {notification && (
-        <div className="snackbar">
-          <div className={`snackbar-content ${notification.severity}`}>
+        <div className="EmpAssets-snackbar">
+          <div className={`EmpAssets-snackbar-content ${notification.severity}`}>
             {notification.severity === 'error' ? <FiXCircle /> : <FiCheckCircle />}
             <span>{notification.message}</span>
           </div>

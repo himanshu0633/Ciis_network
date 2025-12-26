@@ -577,7 +577,9 @@ const Alerts = () => {
               icon: <FiAlertCircle />,
               active: filterType === "error"
             },
-          ].map((s) => (
+          ]
+          .filter(stat => stat.value > 0)
+          .map((s) => (
             <div 
               key={s.key} 
               className={`Alerts-stat-card ${s.active ? 'Alerts-stat-card-active' : ''}`}

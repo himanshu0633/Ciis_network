@@ -487,67 +487,76 @@ const Attendance = () => {
 
       {/* Stats Cards */}
       <div className="Attendance-stats-grid">
-        {[
-          {
-            key: "present",
-            label: "Present Days",
-            value: stats.present,
-            icon: FiCheckCircle,
-            color: "success",
-            extra: `${stats.percentage}%`,
-          },
-          {
-            key: "absent",
-            label: "Absent Days",
-            value: stats.absent,
-            icon: FiMinusCircle,
-            color: "error",
-          },
-          {
-            key: "halfDay",
-            label: "Half Days",
-            value: stats.halfDay,
-            icon: FiAlertCircle,
-            color: "warning",
-          },
-          {
-            key: "total",
-            label: "Total Records",
-            value: stats.total,
-            icon: FiBarChart2,
-            color: "info",
-          },
-        ].map((stat) => (
-          <div
-            key={stat.key}
-            className={`Attendance-stat-card ${
-              statusFilter === stat.key.toUpperCase() ? "Attendance-active" : ""
-            }`}
-            onClick={() =>
-              setStatusFilter(
-                statusFilter === stat.key.toUpperCase()
-                  ? "ALL"
-                  : stat.key.toUpperCase()
-              )
-            }
-          >
-            <div className="Attendance-stat-card-content">
-              <div className="Attendance-stat-icon-container">
-                <stat.icon className={`Attendance-stat-icon Attendance-${stat.color}`} />
-              </div>
-              <div className="Attendance-stat-details">
-                <p className="Attendance-stat-label">{stat.label}</p>
-                <div className="Attendance-stat-value-container">
-                  <h3 className="Attendance-stat-value">{stat.value}</h3>
-                  {stat.extra && (
-                    <span className="Attendance-stat-extra">{stat.extra}</span>
-                  )}
-                </div>
-              </div>
+  {[
+    {
+      key: "present",
+      label: "Present Days",
+      value: stats.present,
+      icon: FiCheckCircle,
+      color: "success",
+      extra: `${stats.percentage}%`,
+    },
+    {
+      key: "absent",
+      label: "Absent Days",
+      value: stats.absent,
+      icon: FiMinusCircle,
+      color: "error",
+    },
+    {
+      key: "halfDay",
+      label: "Half Days",
+      value: stats.halfDay,
+      icon: FiAlertCircle,
+      color: "warning",
+    },
+    {
+      key: "total",
+      label: "Total Records",
+      value: stats.total,
+      icon: FiBarChart2,
+      color: "info",
+    },
+  ]
+    .filter(stat => stat.value > 0)   // 👈 IMPORTANT LINE
+    .map((stat) => (
+      <div
+        key={stat.key}
+        className={`Attendance-stat-card ${
+          statusFilter === stat.key.toUpperCase()
+            ? "Attendance-active"
+            : ""
+        }`}
+        onClick={() =>
+          setStatusFilter(
+            statusFilter === stat.key.toUpperCase()
+              ? "ALL"
+              : stat.key.toUpperCase()
+          )
+        }
+      >
+        <div className="Attendance-stat-card-content">
+          <div className="Attendance-stat-icon-container">
+            <stat.icon
+              className={`Attendance-stat-icon Attendance-${stat.color}`}
+            />
+          </div>
+          <div className="Attendance-stat-details">
+            <p className="Attendance-stat-label">{stat.label}</p>
+            <div className="Attendance-stat-value-container">
+              <h3 className="Attendance-stat-value">{stat.value}</h3>
+              {stat.extra && (
+                <span className="Attendance-stat-extra">
+                  {stat.extra}
+                </span>
+              )}
             </div>
           </div>
-        ))}
+        </div>
       </div>
+    ))}
+</div>
+
 
       {/* Active Filters Display */}
       {(statusFilter !== "ALL" || timeRange !== "ALL") && (

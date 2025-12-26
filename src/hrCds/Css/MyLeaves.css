@@ -1180,11 +1180,67 @@
 
 @media (max-width: 480px) {
   .MyLeaves-stats-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr); /* 2 columns */
+    gap: 10px;
+  }
+
+  .MyLeaves-stat-card {
+    padding: 10px 8px;
+    text-align: center;
+  }
+
+  /* First card – left */
+  .MyLeaves-stat-card[data-key="approved"] {
+    order: 1;
+  }
+
+  /* Second card – right */
+  .MyLeaves-stat-card[data-key="pending"] {
+    order: 2;
+  }
+
+  /* Remaining / total – full width */
+  .MyLeaves-stat-card[data-key="rejected"],
+  .MyLeaves-stat-card[data-key="total"] {
+    grid-column: 1 / -1;
+    order: 3;
+  }
+
+  .MyLeaves-stat-icon-container.MyLeaves-primary {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    margin: 0 auto 6px;
+  }
+  .MyLeaves-stat-icon-container.MyLeaves-warning {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    margin: 0 auto 6px;
+  }
+
+  .MyLeaves-stat-label {
+    font-size: 9px;
+  }
+
+  .MyLeaves-stat-value {
+    font-size: 15px;
   }
   
+  .MyLeaves-tabs-header {
+    padding: 10px;
+    border-radius: 5px;
+  }
+
   .MyLeaves-title {
-    font-size: 28px;
+    font-size: 22px;
+  }
+
+  .MyLeaves-subtitle {
+    font-size: 12px;
+    line-height: 1.4;
   }
   
   .MyLeaves-form-title {

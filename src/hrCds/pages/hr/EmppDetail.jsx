@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import axios from "../../../utils/axiosConfig";
 import './employee-directory.css';
-
-// Icons
 import {
   FiMail,
   FiPhone,
@@ -40,8 +38,7 @@ import {
   FiList
 } from "react-icons/fi";
 
-// Role Filter Component
-const RoleFilter = ({ selected, onChange, stats }) => {
+const EmployeeDirectoryRoleFilter = ({ selected, onChange, stats }) => {
   const roleOptions = [
     { value: 'all', label: 'All Roles', count: stats.total },
     { value: 'admin', label: 'Admin', count: stats.admin, color: 'error' },
@@ -51,9 +48,9 @@ const RoleFilter = ({ selected, onChange, stats }) => {
   ];
 
   return (
-    <div className="role-filter">
+    <div className="EmployeeDirectory-role-filter">
       <select
-        className="role-select"
+        className="EmployeeDirectory-role-select"
         value={selected}
         onChange={(e) => onChange(e.target.value)}
       >
@@ -67,8 +64,7 @@ const RoleFilter = ({ selected, onChange, stats }) => {
   );
 };
 
-// Mobile Stats Component
-const MobileStats = ({ stats }) => {
+const EmployeeDirectoryMobileStats = ({ stats }) => {
   const statItems = [
     { label: 'Total', count: stats.total, color: 'primary' },
     { label: 'Technical', count: stats.technical, color: 'success' },
@@ -77,12 +73,12 @@ const MobileStats = ({ stats }) => {
   ];
 
   return (
-    <div className="mobile-stats">
-      <div className="stats-grid">
+    <div className="EmployeeDirectory-mobile-stats">
+      <div className="EmployeeDirectory-stats-grid">
         {statItems.map((stat) => (
-          <div key={stat.label} className="stat-item">
-            <div className="stat-value">{stat.count}</div>
-            <div className="stat-label">{stat.label}</div>
+          <div key={stat.label} className="EmployeeDirectory-stat-item">
+            <div className="EmployeeDirectory-stat-value">{stat.count}</div>
+            <div className="EmployeeDirectory-stat-label">{stat.label}</div>
           </div>
         ))}
       </div>
@@ -110,7 +106,6 @@ const EmployeeDirectory = () => {
   const [viewMode, setViewMode] = useState('grid');
   const [isMobile, setIsMobile] = useState(false);
 
-  // Check if mobile
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768);
@@ -298,33 +293,32 @@ const EmployeeDirectory = () => {
 
   const getEmployeeTypeClass = (type) => {
     const typeLower = type?.toLowerCase();
-    if (typeLower === 'technical') return 'employee-tag employee-tag-technical';
-    if (typeLower === 'non-technical') return 'employee-tag employee-tag-non-technical';
-    if (typeLower === 'sales') return 'employee-tag employee-tag-sales';
-    if (typeLower === 'intern') return 'employee-tag employee-tag-intern';
-    return 'employee-tag';
+    if (typeLower === 'technical') return 'EmployeeDirectory-employee-tag EmployeeDirectory-employee-tag-technical';
+    if (typeLower === 'non-technical') return 'EmployeeDirectory-employee-tag EmployeeDirectory-employee-tag-non-technical';
+    if (typeLower === 'sales') return 'EmployeeDirectory-employee-tag EmployeeDirectory-employee-tag-sales';
+    if (typeLower === 'intern') return 'EmployeeDirectory-employee-tag EmployeeDirectory-employee-tag-intern';
+    return 'EmployeeDirectory-employee-tag';
   };
 
   const getRoleClass = (role) => {
-    if (role === 'admin') return 'employee-tag employee-tag-admin';
-    if (role === 'manager') return 'employee-tag employee-tag-manager';
-    if (role === 'hr') return 'employee-tag employee-tag-hr';
-    if (role === 'user') return 'employee-tag employee-tag-user';
-    if (role === 'SuperAdmin') return 'employee-tag employee-tag-superadmin';
-    return 'employee-tag';
+    if (role === 'admin') return 'EmployeeDirectory-employee-tag EmployeeDirectory-employee-tag-admin';
+    if (role === 'manager') return 'EmployeeDirectory-employee-tag EmployeeDirectory-employee-tag-manager';
+    if (role === 'hr') return 'EmployeeDirectory-employee-tag EmployeeDirectory-employee-tag-hr';
+    if (role === 'user') return 'EmployeeDirectory-employee-tag EmployeeDirectory-employee-tag-user';
+    if (role === 'SuperAdmin') return 'EmployeeDirectory-employee-tag EmployeeDirectory-employee-tag-superadmin';
+    return 'EmployeeDirectory-employee-tag';
   };
 
-  // Employee Card Component
-  const EmployeeCard = ({ emp }) => {
+  const EmployeeDirectoryEmployeeCard = ({ emp }) => {
     const isNew = isNewEmployee(emp);
     
     return (
       <div 
-        className={`employee-card ${isNew ? 'employee-card-new' : ''}`}
+        className={`EmployeeDirectory-employee-card ${isNew ? 'EmployeeDirectory-employee-card-new' : ''}`}
         onClick={() => handleOpenUser(emp)}
       >
         <button 
-          className="employee-card-menu"
+          className="EmployeeDirectory-employee-card-menu"
           onClick={(e) => {
             e.stopPropagation();
             handleMenuOpen(e, emp);
@@ -333,9 +327,9 @@ const EmployeeDirectory = () => {
           <FiMoreVertical size={16} />
         </button>
         
-        <div className="employee-card-content">
-          <div className="employee-header">
-            <div className="employee-avatar">
+        <div className="EmployeeDirectory-employee-card-content">
+          <div className="EmployeeDirectory-employee-header">
+            <div className="EmployeeDirectory-employee-avatar">
               {emp.image ? (
                 <img src={emp.image} alt={emp.name} />
               ) : (
@@ -343,11 +337,11 @@ const EmployeeDirectory = () => {
               )}
             </div>
             
-            <div className="employee-info">
-              <div className="employee-name">{emp.name || 'No Name'}</div>
-              <div className="employee-role">{emp.jobRole || 'No role specified'}</div>
+            <div className="EmployeeDirectory-employee-info">
+              <div className="EmployeeDirectory-employee-name">{emp.name || 'No Name'}</div>
+              <div className="EmployeeDirectory-employee-role">{emp.jobRole || 'No role specified'}</div>
               
-              <div className="employee-tags">
+              <div className="EmployeeDirectory-employee-tags">
                 {emp.employeeType && (
                   <span className={getEmployeeTypeClass(emp.employeeType)}>
                     {emp.employeeType.toUpperCase()}
@@ -362,24 +356,24 @@ const EmployeeDirectory = () => {
             </div>
           </div>
           
-          <div className="employee-details">
-            <div className="detail-row">
-              <div className="detail-icon detail-icon-primary">
+          <div className="EmployeeDirectory-employee-details">
+            <div className="EmployeeDirectory-detail-row">
+              <div className="EmployeeDirectory-detail-icon EmployeeDirectory-detail-icon-primary">
                 <FiMail size={12} />
               </div>
-              <div className="detail-text">{emp.email || 'No email'}</div>
+              <div className="EmployeeDirectory-detail-text">{emp.email || 'No email'}</div>
             </div>
             
-            <div className="detail-row">
-              <div className="detail-icon detail-icon-success">
+            <div className="EmployeeDirectory-detail-row">
+              <div className="EmployeeDirectory-detail-icon EmployeeDirectory-detail-icon-success">
                 <FiPhone size={12} />
               </div>
-              <div className="detail-text">{formatPhoneNumber(emp.phone)}</div>
+              <div className="EmployeeDirectory-detail-text">{formatPhoneNumber(emp.phone)}</div>
             </div>
           </div>
           
           <button 
-            className="view-profile-btn"
+            className="EmployeeDirectory-view-profile-btn"
             onClick={(e) => {
               e.stopPropagation();
               handleOpenUser(emp);
@@ -392,17 +386,16 @@ const EmployeeDirectory = () => {
     );
   };
 
-  // Employee List Item Component
-  const EmployeeListItem = ({ emp }) => {
+  const EmployeeDirectoryEmployeeListItem = ({ emp }) => {
     const isNew = isNewEmployee(emp);
     
     return (
       <div 
-        className={`employee-list-item ${isNew ? 'employee-list-item-new' : ''}`}
+        className={`EmployeeDirectory-employee-list-item ${isNew ? 'EmployeeDirectory-employee-list-item-new' : ''}`}
         onClick={() => handleOpenUser(emp)}
       >
-        <div className="employee-list-content">
-          <div className="employee-avatar">
+        <div className="EmployeeDirectory-employee-list-content">
+          <div className="EmployeeDirectory-employee-avatar">
             {emp.image ? (
               <img src={emp.image} alt={emp.name} />
             ) : (
@@ -410,12 +403,12 @@ const EmployeeDirectory = () => {
             )}
           </div>
           
-          <div className="employee-info">
-            <div className="employee-name">{emp.name || 'No Name'}</div>
-            <div className="employee-role">{emp.jobRole || 'No role specified'}</div>
+          <div className="EmployeeDirectory-employee-info">
+            <div className="EmployeeDirectory-employee-name">{emp.name || 'No Name'}</div>
+            <div className="EmployeeDirectory-employee-role">{emp.jobRole || 'No role specified'}</div>
           </div>
           
-          <div className="employee-tags">
+          <div className="EmployeeDirectory-employee-tags">
             {emp.employeeType && (
               <span className={getEmployeeTypeClass(emp.employeeType)}>
                 {emp.employeeType.toUpperCase()}
@@ -429,7 +422,7 @@ const EmployeeDirectory = () => {
           </div>
           
           <button 
-            className="employee-card-menu"
+            className="EmployeeDirectory-employee-card-menu"
             onClick={(e) => {
               e.stopPropagation();
               handleMenuOpen(e, emp);
@@ -442,18 +435,17 @@ const EmployeeDirectory = () => {
     );
   };
 
-  // User Detail Modal
-  const UserDetailModal = () => {
+  const EmployeeDirectoryUserDetailModal = () => {
     if (!selectedUser) return null;
 
     return (
-      <div className="modal-overlay" onClick={handleCloseUser}>
-        <div className="modal" onClick={e => e.stopPropagation()}>
-          <div className="modal-header">
-            <div className="modal-header-content">
-              <h2 className="modal-title">{selectedUser.name}</h2>
-              <div className="modal-subtitle">
-                <span className="employee-tag employee-tag-technical">
+      <div className="EmployeeDirectory-modal-overlay" onClick={handleCloseUser}>
+        <div className="EmployeeDirectory-modal" onClick={e => e.stopPropagation()}>
+          <div className="EmployeeDirectory-modal-header">
+            <div className="EmployeeDirectory-modal-header-content">
+              <h2 className="EmployeeDirectory-modal-title">{selectedUser.name}</h2>
+              <div className="EmployeeDirectory-modal-subtitle">
+                <span className="EmployeeDirectory-employee-tag EmployeeDirectory-employee-tag-technical">
                   {selectedUser.employeeType?.toUpperCase() || 'N/A'}
                 </span>
                 <span className={getRoleClass(selectedUser.role)}>
@@ -464,66 +456,64 @@ const EmployeeDirectory = () => {
             
             <div>
               <button 
-                className="btn btn-outlined"
+                className="EmployeeDirectory-btn EmployeeDirectory-btn-outlined"
                 onClick={() => handleEdit(selectedUser)}
                 style={{ marginRight: '8px' }}
               >
                 <FiEdit size={14} /> Edit
               </button>
-              <button className="modal-close" onClick={handleCloseUser}>
+              <button className="EmployeeDirectory-modal-close" onClick={handleCloseUser}>
                 <FiX size={20} />
               </button>
             </div>
           </div>
           
-          <div className="modal-content">
-            <div className="modal-section">
-              <h3 className="section-title">
+          <div className="EmployeeDirectory-modal-content">
+            <div className="EmployeeDirectory-modal-section">
+              <h3 className="EmployeeDirectory-section-title">
                 <FiUser /> Personal Information
               </h3>
-              <div className="detail-grid">
-                <div className="detail-item">
-                  <div className="detail-label">Full Name</div>
-                  <div className="detail-value">{selectedUser.name || 'Not provided'}</div>
+              <div className="EmployeeDirectory-detail-grid">
+                <div className="EmployeeDirectory-detail-item">
+                  <div className="EmployeeDirectory-detail-label">Full Name</div>
+                  <div className="EmployeeDirectory-detail-value">{selectedUser.name || 'Not provided'}</div>
                 </div>
                 
-                <div className="detail-item">
-                  <div className="detail-label">System Role</div>
-                  <div className="detail-value">{getRoleLabel(selectedUser.role)}</div>
+                <div className="EmployeeDirectory-detail-item">
+                  <div className="EmployeeDirectory-detail-label">System Role</div>
+                  <div className="EmployeeDirectory-detail-value">{getRoleLabel(selectedUser.role)}</div>
                 </div>
                 
-                <div className="detail-item">
-                  <div className="detail-label">Date of Birth</div>
-                  <div className="detail-value">
+                <div className="EmployeeDirectory-detail-item">
+                  <div className="EmployeeDirectory-detail-label">Date of Birth</div>
+                  <div className="EmployeeDirectory-detail-value">
                     {selectedUser.dob ? new Date(selectedUser.dob).toLocaleDateString() : 'Not provided'}
                   </div>
                 </div>
                 
-                <div className="detail-item">
-                  <div className="detail-label">Email Address</div>
-                  <div className="detail-value">{selectedUser.email || 'Not provided'}</div>
+                <div className="EmployeeDirectory-detail-item">
+                  <div className="EmployeeDirectory-detail-label">Email Address</div>
+                  <div className="EmployeeDirectory-detail-value">{selectedUser.email || 'Not provided'}</div>
                 </div>
                 
-                <div className="detail-item">
-                  <div className="detail-label">Phone Number</div>
-                  <div className="detail-value">{formatPhoneNumber(selectedUser.phone)}</div>
+                <div className="EmployeeDirectory-detail-item">
+                  <div className="EmployeeDirectory-detail-label">Phone Number</div>
+                  <div className="EmployeeDirectory-detail-value">{formatPhoneNumber(selectedUser.phone)}</div>
                 </div>
                 
-                <div className="detail-item">
-                  <div className="detail-label">Address</div>
-                  <div className="detail-value">{selectedUser.address || 'Not provided'}</div>
+                <div className="EmployeeDirectory-detail-item">
+                  <div className="EmployeeDirectory-detail-label">Address</div>
+                  <div className="EmployeeDirectory-detail-value">{selectedUser.address || 'Not provided'}</div>
                 </div>
               </div>
             </div>
-            
-            {/* Add more sections as needed */}
           </div>
           
-          <div className="modal-footer">
-            <button className="btn btn-outlined" onClick={handleCloseUser}>
+          <div className="EmployeeDirectory-modal-footer">
+            <button className="EmployeeDirectory-btn EmployeeDirectory-btn-outlined" onClick={handleCloseUser}>
               Close
             </button>
-            <button className="btn btn-contained" onClick={() => handleEdit(selectedUser)}>
+            <button className="EmployeeDirectory-btn EmployeeDirectory-btn-contained" onClick={() => handleEdit(selectedUser)}>
               <FiEdit size={14} /> Edit Profile
             </button>
           </div>
@@ -532,63 +522,61 @@ const EmployeeDirectory = () => {
     );
   };
 
-  // Edit Employee Modal
-  const EditEmployeeModal = () => {
+  const EmployeeDirectoryEditEmployeeModal = () => {
     if (!editingUser) return null;
 
     return (
-      <div className="modal-overlay" onClick={handleCancelEdit}>
-        <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '900px' }}>
-          <div className="modal-header">
-            <div className="modal-header-content">
-              <h2 className="modal-title">Edit Employee</h2>
-              <div className="modal-subtitle">{editingUser.name}</div>
+      <div className="EmployeeDirectory-modal-overlay" onClick={handleCancelEdit}>
+        <div className="EmployeeDirectory-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '900px' }}>
+          <div className="EmployeeDirectory-modal-header">
+            <div className="EmployeeDirectory-modal-header-content">
+              <h2 className="EmployeeDirectory-modal-title">Edit Employee</h2>
+              <div className="EmployeeDirectory-modal-subtitle">{editingUser.name}</div>
             </div>
-            <button className="modal-close" onClick={handleCancelEdit}>
+            <button className="EmployeeDirectory-modal-close" onClick={handleCancelEdit}>
               <FiX size={20} />
             </button>
           </div>
           
-          <div className="modal-content">
+          <div className="EmployeeDirectory-modal-content">
             <form onSubmit={(e) => { e.preventDefault(); handleSaveEdit(); }}>
-              <div className="form-grid">
-                {/* Core Information */}
-                <div className="form-group">
-                  <label className="form-label">Full Name *</label>
+              <div className="EmployeeDirectory-form-grid">
+                <div className="EmployeeDirectory-form-group">
+                  <label className="EmployeeDirectory-form-label">Full Name *</label>
                   <input
                     type="text"
-                    className="form-input"
+                    className="EmployeeDirectory-form-input"
                     value={editFormData.name || ''}
                     onChange={(e) => handleInputChange('name', e.target.value)}
                     required
                   />
                 </div>
                 
-                <div className="form-group">
-                  <label className="form-label">Email Address *</label>
+                <div className="EmployeeDirectory-form-group">
+                  <label className="EmployeeDirectory-form-label">Email Address *</label>
                   <input
                     type="email"
-                    className="form-input"
+                    className="EmployeeDirectory-form-input"
                     value={editFormData.email || ''}
                     onChange={(e) => handleInputChange('email', e.target.value)}
                     required
                   />
                 </div>
                 
-                <div className="form-group">
-                  <label className="form-label">Phone Number</label>
+                <div className="EmployeeDirectory-form-group">
+                  <label className="EmployeeDirectory-form-label">Phone Number</label>
                   <input
                     type="tel"
-                    className="form-input"
+                    className="EmployeeDirectory-form-input"
                     value={editFormData.phone || ''}
                     onChange={(e) => handleInputChange('phone', e.target.value)}
                   />
                 </div>
                 
-                <div className="form-group">
-                  <label className="form-label">System Role *</label>
+                <div className="EmployeeDirectory-form-group">
+                  <label className="EmployeeDirectory-form-label">System Role *</label>
                   <select
-                    className="form-select"
+                    className="EmployeeDirectory-form-select"
                     value={editFormData.role || 'user'}
                     onChange={(e) => handleInputChange('role', e.target.value)}
                     required
@@ -601,20 +589,20 @@ const EmployeeDirectory = () => {
                   </select>
                 </div>
                 
-                <div className="form-group">
-                  <label className="form-label">Date of Birth</label>
+                <div className="EmployeeDirectory-form-group">
+                  <label className="EmployeeDirectory-form-label">Date of Birth</label>
                   <input
                     type="date"
-                    className="form-input"
+                    className="EmployeeDirectory-form-input"
                     value={editFormData.dob ? new Date(editFormData.dob).toISOString().split('T')[0] : ''}
                     onChange={(e) => handleInputChange('dob', e.target.value)}
                   />
                 </div>
                 
-                <div className="form-group">
-                  <label className="form-label">Gender</label>
+                <div className="EmployeeDirectory-form-group">
+                  <label className="EmployeeDirectory-form-label">Gender</label>
                   <select
-                    className="form-select"
+                    className="EmployeeDirectory-form-select"
                     value={editFormData.gender || ''}
                     onChange={(e) => handleInputChange('gender', e.target.value)}
                   >
@@ -625,22 +613,20 @@ const EmployeeDirectory = () => {
                   </select>
                 </div>
                 
-                {/* Address */}
-                <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                  <label className="form-label">Address</label>
+                <div className="EmployeeDirectory-form-group" style={{ gridColumn: '1 / -1' }}>
+                  <label className="EmployeeDirectory-form-label">Address</label>
                   <textarea
-                    className="form-input form-textarea"
+                    className="EmployeeDirectory-form-input EmployeeDirectory-form-textarea"
                     value={editFormData.address || ''}
                     onChange={(e) => handleInputChange('address', e.target.value)}
                     rows="3"
                   />
                 </div>
                 
-                {/* Job Information */}
-                <div className="form-group">
-                  <label className="form-label">Employee Type</label>
+                <div className="EmployeeDirectory-form-group">
+                  <label className="EmployeeDirectory-form-label">Employee Type</label>
                   <select
-                    className="form-select"
+                    className="EmployeeDirectory-form-select"
                     value={editFormData.employeeType || ''}
                     onChange={(e) => handleInputChange('employeeType', e.target.value)}
                   >
@@ -652,104 +638,100 @@ const EmployeeDirectory = () => {
                   </select>
                 </div>
                 
-                <div className="form-group">
-                  <label className="form-label">Job Role</label>
+                <div className="EmployeeDirectory-form-group">
+                  <label className="EmployeeDirectory-form-label">Job Role</label>
                   <input
                     type="text"
-                    className="form-input"
+                    className="EmployeeDirectory-form-input"
                     value={editFormData.jobRole || ''}
                     onChange={(e) => handleInputChange('jobRole', e.target.value)}
                   />
                 </div>
                 
-                <div className="form-group">
-                  <label className="form-label">Salary</label>
+                <div className="EmployeeDirectory-form-group">
+                  <label className="EmployeeDirectory-form-label">Salary</label>
                   <input
                     type="number"
-                    className="form-input"
+                    className="EmployeeDirectory-form-input"
                     value={editFormData.salary || ''}
                     onChange={(e) => handleInputChange('salary', e.target.value)}
                   />
                 </div>
                 
-                {/* Bank Details */}
-                <div className="form-group">
-                  <label className="form-label">Bank Name</label>
+                <div className="EmployeeDirectory-form-group">
+                  <label className="EmployeeDirectory-form-label">Bank Name</label>
                   <input
                     type="text"
-                    className="form-input"
+                    className="EmployeeDirectory-form-input"
                     value={editFormData.bankName || ''}
                     onChange={(e) => handleInputChange('bankName', e.target.value)}
                   />
                 </div>
                 
-                <div className="form-group">
-                  <label className="form-label">Account Number</label>
+                <div className="EmployeeDirectory-form-group">
+                  <label className="EmployeeDirectory-form-label">Account Number</label>
                   <input
                     type="text"
-                    className="form-input"
+                    className="EmployeeDirectory-form-input"
                     value={editFormData.accountNumber || ''}
                     onChange={(e) => handleInputChange('accountNumber', e.target.value)}
                   />
                 </div>
                 
-                <div className="form-group">
-                  <label className="form-label">IFSC Code</label>
+                <div className="EmployeeDirectory-form-group">
+                  <label className="EmployeeDirectory-form-label">IFSC Code</label>
                   <input
                     type="text"
-                    className="form-input"
+                    className="EmployeeDirectory-form-input"
                     value={editFormData.ifsc || ''}
                     onChange={(e) => handleInputChange('ifsc', e.target.value)}
                   />
                 </div>
                 
-                {/* Family Details */}
-                <div className="form-group">
-                  <label className="form-label">Father's Name</label>
+                <div className="EmployeeDirectory-form-group">
+                  <label className="EmployeeDirectory-form-label">Father's Name</label>
                   <input
                     type="text"
-                    className="form-input"
+                    className="EmployeeDirectory-form-input"
                     value={editFormData.fatherName || ''}
                     onChange={(e) => handleInputChange('fatherName', e.target.value)}
                   />
                 </div>
                 
-                <div className="form-group">
-                  <label className="form-label">Mother's Name</label>
+                <div className="EmployeeDirectory-form-group">
+                  <label className="EmployeeDirectory-form-label">Mother's Name</label>
                   <input
                     type="text"
-                    className="form-input"
+                    className="EmployeeDirectory-form-input"
                     value={editFormData.motherName || ''}
                     onChange={(e) => handleInputChange('motherName', e.target.value)}
                   />
                 </div>
                 
-                {/* Emergency Contact */}
-                <div className="form-group">
-                  <label className="form-label">Emergency Contact Name</label>
+                <div className="EmployeeDirectory-form-group">
+                  <label className="EmployeeDirectory-form-label">Emergency Contact Name</label>
                   <input
                     type="text"
-                    className="form-input"
+                    className="EmployeeDirectory-form-input"
                     value={editFormData.emergencyName || ''}
                     onChange={(e) => handleInputChange('emergencyName', e.target.value)}
                   />
                 </div>
                 
-                <div className="form-group">
-                  <label className="form-label">Emergency Phone</label>
+                <div className="EmployeeDirectory-form-group">
+                  <label className="EmployeeDirectory-form-label">Emergency Phone</label>
                   <input
                     type="tel"
-                    className="form-input"
+                    className="EmployeeDirectory-form-input"
                     value={editFormData.emergencyPhone || ''}
                     onChange={(e) => handleInputChange('emergencyPhone', e.target.value)}
                   />
                 </div>
                 
-                {/* Status */}
-                <div className="form-group">
-                  <label className="form-label">Account Status</label>
+                <div className="EmployeeDirectory-form-group">
+                  <label className="EmployeeDirectory-form-label">Account Status</label>
                   <select
-                    className="form-select"
+                    className="EmployeeDirectory-form-select"
                     value={editFormData.isActive ? 'active' : 'inactive'}
                     onChange={(e) => handleInputChange('isActive', e.target.value === 'active')}
                   >
@@ -758,11 +740,10 @@ const EmployeeDirectory = () => {
                   </select>
                 </div>
                 
-                {/* Additional Details */}
-                <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                  <label className="form-label">Additional Details</label>
+                <div className="EmployeeDirectory-form-group" style={{ gridColumn: '1 / -1' }}>
+                  <label className="EmployeeDirectory-form-label">Additional Details</label>
                   <textarea
-                    className="form-input form-textarea"
+                    className="EmployeeDirectory-form-input EmployeeDirectory-form-textarea"
                     value={editFormData.additionalDetails || ''}
                     onChange={(e) => handleInputChange('additionalDetails', e.target.value)}
                     rows="4"
@@ -772,22 +753,22 @@ const EmployeeDirectory = () => {
             </form>
           </div>
           
-          <div className="modal-footer">
+          <div className="EmployeeDirectory-modal-footer">
             <button 
-              className="btn btn-outlined"
+              className="EmployeeDirectory-btn EmployeeDirectory-btn-outlined"
               onClick={handleCancelEdit}
               disabled={saving}
             >
               <FiX size={14} /> Cancel
             </button>
             <button 
-              className="btn btn-contained"
+              className="EmployeeDirectory-btn EmployeeDirectory-btn-contained"
               onClick={handleSaveEdit}
               disabled={saving}
             >
               {saving ? (
                 <>
-                  <div className="spinner" style={{ width: '16px', height: '16px', marginRight: '8px' }} />
+                  <div className="EmployeeDirectory-spinner" style={{ width: '16px', height: '16px', marginRight: '8px' }} />
                   Saving...
                 </>
               ) : (
@@ -802,50 +783,49 @@ const EmployeeDirectory = () => {
     );
   };
 
-  // Delete Confirmation Modal
-  const DeleteConfirmationModal = () => {
+  const EmployeeDirectoryDeleteConfirmationModal = () => {
     if (!deleteConfirmOpen) return null;
 
     return (
-      <div className="modal-overlay" onClick={() => !deleting && setDeleteConfirmOpen(false)}>
-        <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px' }}>
-          <div className="modal-header">
-            <div className="modal-header-content">
-              <h2 className="modal-title" style={{ color: '#d32f2f' }}>
+      <div className="EmployeeDirectory-modal-overlay" onClick={() => !deleting && setDeleteConfirmOpen(false)}>
+        <div className="EmployeeDirectory-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+          <div className="EmployeeDirectory-modal-header">
+            <div className="EmployeeDirectory-modal-header-content">
+              <h2 className="EmployeeDirectory-modal-title" style={{ color: '#d32f2f' }}>
                 <FiAlertTriangle style={{ marginRight: '8px' }} />
                 Confirm Delete
               </h2>
             </div>
             {!deleting && (
-              <button className="modal-close" onClick={() => setDeleteConfirmOpen(false)}>
+              <button className="EmployeeDirectory-modal-close" onClick={() => setDeleteConfirmOpen(false)}>
                 <FiX size={20} />
               </button>
             )}
           </div>
           
-          <div className="modal-content">
+          <div className="EmployeeDirectory-modal-content">
             <p>
               Are you sure you want to delete <strong>{userToDelete?.name}</strong>? 
               This action cannot be undone and all associated data will be permanently removed.
             </p>
           </div>
           
-          <div className="modal-footer">
+          <div className="EmployeeDirectory-modal-footer">
             <button 
-              className="btn btn-outlined"
+              className="EmployeeDirectory-btn EmployeeDirectory-btn-outlined"
               onClick={() => setDeleteConfirmOpen(false)}
               disabled={deleting}
             >
               Cancel
             </button>
             <button 
-              className="btn btn-error"
+              className="EmployeeDirectory-btn EmployeeDirectory-btn-error"
               onClick={handleDeleteConfirm}
               disabled={deleting}
             >
               {deleting ? (
                 <>
-                  <div className="spinner" style={{ width: '16px', height: '16px', marginRight: '8px' }} />
+                  <div className="EmployeeDirectory-spinner" style={{ width: '16px', height: '16px', marginRight: '8px' }} />
                   Deleting...
                 </>
               ) : (
@@ -860,49 +840,47 @@ const EmployeeDirectory = () => {
     );
   };
 
-  // Context Menu
-  const ContextMenu = () => {
+  const EmployeeDirectoryContextMenu = () => {
     if (!menuAnchorEl || !selectedMenuUser) return null;
 
     return (
       <>
         <div 
-          className="modal-overlay"
+          className="EmployeeDirectory-modal-overlay"
           style={{ background: 'transparent', zIndex: 1099 }}
           onClick={handleMenuClose}
         />
         <div 
-          className="context-menu"
+          className="EmployeeDirectory-context-menu"
           style={{
             position: 'fixed',
             top: menuAnchorEl.top + 'px',
             left: menuAnchorEl.left + 'px'
           }}
         >
-          <button className="menu-item" onClick={() => handleEdit(selectedMenuUser)}>
+          <button className="EmployeeDirectory-menu-item" onClick={() => handleEdit(selectedMenuUser)}>
             <FiEdit size={16} color="#1976d2" />
-            <span className="menu-item-text">Edit Employee</span>
+            <span className="EmployeeDirectory-menu-item-text">Edit Employee</span>
           </button>
-          <button className="menu-item" onClick={() => handleOpenUser(selectedMenuUser)}>
+          <button className="EmployeeDirectory-menu-item" onClick={() => handleOpenUser(selectedMenuUser)}>
             <FiEye size={16} color="#0288d1" />
-            <span className="menu-item-text">View Details</span>
+            <span className="EmployeeDirectory-menu-item-text">View Details</span>
           </button>
-          <button className="menu-item" onClick={() => handleDeleteClick(selectedMenuUser)} style={{ color: '#d32f2f' }}>
+          <button className="EmployeeDirectory-menu-item" onClick={() => handleDeleteClick(selectedMenuUser)} style={{ color: '#d32f2f' }}>
             <FiTrash2 size={16} color="#d32f2f" />
-            <span className="menu-item-text">Delete Employee</span>
+            <span className="EmployeeDirectory-menu-item-text">Delete Employee</span>
           </button>
         </div>
       </>
     );
   };
 
-  // Snackbar
-  const SnackbarAlert = () => {
+  const EmployeeDirectorySnackbarAlert = () => {
     if (!snackbar.open) return null;
 
     return (
-      <div className="snackbar">
-        <div className={`alert alert-${snackbar.severity}`}>
+      <div className="EmployeeDirectory-snackbar">
+        <div className={`EmployeeDirectory-alert EmployeeDirectory-alert-${snackbar.severity}`}>
           {snackbar.severity === 'success' ? (
             <FiCheckCircle size={20} />
           ) : (
@@ -910,7 +888,7 @@ const EmployeeDirectory = () => {
           )}
           <span>{snackbar.message}</span>
           <button 
-            className="alert-close"
+            className="EmployeeDirectory-alert-close"
             onClick={() => setSnackbar({ ...snackbar, open: false })}
           >
             <FiX size={16} />
@@ -920,31 +898,27 @@ const EmployeeDirectory = () => {
     );
   };
 
-  // Loading State
   if (loading) {
     return (
-      <div className="loading-container">
-        <div className="spinner"></div>
+      <div className="EmployeeDirectory-loading-container">
+        <div className="EmployeeDirectory-spinner"></div>
         <p>Loading employee directory...</p>
       </div>
     );
   }
 
   return (
-    <div className="employee-directory">
-      {/* Header */}
-      <div className="employee-directory-header">
-        <h1 className="employee-directory-title">Employee Directory</h1>
-        <p className="employee-directory-subtitle">
+    <div className="EmployeeDirectory">
+      <div className="EmployeeDirectory-header">
+        <h1 className="EmployeeDirectory-title">Employee Directory</h1>
+        <p className="EmployeeDirectory-subtitle">
           Find and connect with your colleagues across the organization
         </p>
         
-        {/* Mobile Stats */}
-        {isMobile && <MobileStats stats={stats} />}
+        {isMobile && <EmployeeDirectoryMobileStats stats={stats} />}
         
-        {/* Action Bar */}
-        <div className="action-bar" style={{ marginTop: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div className="total-count" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="EmployeeDirectory-action-bar" style={{ marginTop: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="EmployeeDirectory-total-count" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ 
               padding: '6px 12px', 
               border: '1px solid #1976d2', 
@@ -957,16 +931,16 @@ const EmployeeDirectory = () => {
             </span>
             
             {!isMobile && (
-              <div className="view-toggle" style={{ display: 'flex', gap: '4px' }}>
+              <div className="EmployeeDirectory-view-toggle" style={{ display: 'flex', gap: '4px' }}>
                 <button 
-                  className={viewMode === 'grid' ? 'btn btn-contained' : 'btn btn-outlined'}
+                  className={viewMode === 'grid' ? 'EmployeeDirectory-btn EmployeeDirectory-btn-contained' : 'EmployeeDirectory-btn EmployeeDirectory-btn-outlined'}
                   onClick={() => setViewMode('grid')}
                   style={{ padding: '6px 12px', fontSize: '0.875rem' }}
                 >
                   <FiGrid size={14} />
                 </button>
                 <button 
-                  className={viewMode === 'list' ? 'btn btn-contained' : 'btn btn-outlined'}
+                  className={viewMode === 'list' ? 'EmployeeDirectory-btn EmployeeDirectory-btn-contained' : 'EmployeeDirectory-btn EmployeeDirectory-btn-outlined'}
                   onClick={() => setViewMode('list')}
                   style={{ padding: '6px 12px', fontSize: '0.875rem' }}
                 >
@@ -979,14 +953,14 @@ const EmployeeDirectory = () => {
           {isMobile && (
             <div style={{ display: 'flex', gap: '8px' }}>
               <button 
-                className="btn btn-outlined"
+                className="EmployeeDirectory-btn EmployeeDirectory-btn-outlined"
                 onClick={() => setMobileFilterOpen(true)}
                 style={{ padding: '8px 16px' }}
               >
                 <FiFilter size={16} /> Filters
               </button>
               <button 
-                className="btn btn-contained"
+                className="EmployeeDirectory-btn EmployeeDirectory-btn-contained"
                 onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
                 style={{ padding: '8px 16px' }}
               >
@@ -997,32 +971,31 @@ const EmployeeDirectory = () => {
         </div>
       </div>
 
-      {/* Search and Filter Section */}
       {!isMobile && (
-        <div className="search-filter-container">
-          <div className="search-filter-header">
+        <div className="EmployeeDirectory-search-filter-container">
+          <div className="EmployeeDirectory-search-filter-header">
             <FiFilter size={20} color="#1976d2" />
             <h3>Search & Filter</h3>
           </div>
           
-          <div className="search-row">
-            <div className="search-input-container">
-              <FiSearch className="search-icon" />
+          <div className="EmployeeDirectory-search-row">
+            <div className="EmployeeDirectory-search-input-container">
+              <FiSearch className="EmployeeDirectory-search-icon" />
               <input
                 type="text"
-                className="search-input"
+                className="EmployeeDirectory-search-input"
                 placeholder="Search employees by name, email, role, or job role..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
               {searchTerm && (
-                <button className="clear-search" onClick={() => setSearchTerm('')}>
+                <button className="EmployeeDirectory-clear-search" onClick={() => setSearchTerm('')}>
                   <FiX size={16} />
                 </button>
               )}
             </div>
             
-            <RoleFilter
+            <EmployeeDirectoryRoleFilter
               selected={selectedRole}
               onChange={setSelectedRole}
               stats={stats}
@@ -1031,37 +1004,36 @@ const EmployeeDirectory = () => {
         </div>
       )}
 
-      {/* Statistics Cards */}
       {!isMobile && (
-        <div className="stats-container">
+        <div className="EmployeeDirectory-stats-container">
           {[
             { label: 'Total Employees', count: stats.total, color: 'primary', icon: <FiUsers />, trend: '+5%' },
             { label: 'Technical Team', count: stats.technical, color: 'success', icon: <FiBriefcase />, trend: '+12%' },
             { label: 'Non-Technical', count: stats.nonTechnical, color: 'warning', icon: <FiClock />, trend: '+3%' },
             { label: 'Sales Team', count: stats.sales, color: 'info', icon: <FiTrendingUp />, trend: '+8%' },
             { label: 'Interns', count: stats.intern, color: 'secondary', icon: <FiAward />, trend: '+15%' },
-          ].map((stat, index) => (
-            <div key={index} className={`stat-card stat-card-${stat.color}`}>
-              <div className="stat-card-header">
-                <div className={`stat-icon stat-icon-${stat.color}`}>
+          ]
+          .map((stat, index) => (
+            <div key={index} className={`EmployeeDirectory-stat-card EmployeeDirectory-stat-card-${stat.color}`}>
+              <div className="EmployeeDirectory-stat-card-header">
+                <div className={`EmployeeDirectory-stat-icon EmployeeDirectory-stat-icon-${stat.color}`}>
                   {stat.icon}
                 </div>
-                <span className={`trend-chip trend-chip-${stat.color}`}>
+                <span className={`EmployeeDirectory-trend-chip EmployeeDirectory-trend-chip-${stat.color}`}>
                   {stat.trend}
                 </span>
               </div>
-              <div className="stat-value">{stat.count}</div>
-              <div className="stat-label">{stat.label}</div>
+              <div className="EmployeeDirectory-stat-value">{stat.count}</div>
+              <div className="EmployeeDirectory-stat-label">{stat.label}</div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Results Header */}
-      <div className="results-header">
+      <div className="EmployeeDirectory-results-header">
         <div>
-          <h2 className="results-title">Team Members</h2>
-          <p className="results-count">
+          <h2 className="EmployeeDirectory-results-title">Team Members</h2>
+          <p className="EmployeeDirectory-results-count">
             {filteredEmployees.length} employee{filteredEmployees.length !== 1 ? 's' : ''} found
             {selectedRole !== 'all' && ` • Filtered by ${getRoleLabel(selectedRole)}`}
             {searchTerm && ` • Matching "${searchTerm}"`}
@@ -1069,23 +1041,23 @@ const EmployeeDirectory = () => {
         </div>
         
         {!isMobile && (
-          <div className="tabs" style={{ display: 'flex', gap: '4px' }}>
+          <div className="EmployeeDirectory-tabs" style={{ display: 'flex', gap: '4px' }}>
             <button 
-              className={activeTab === 0 ? 'btn btn-contained' : 'btn btn-outlined'}
+              className={activeTab === 0 ? 'EmployeeDirectory-btn EmployeeDirectory-btn-contained' : 'EmployeeDirectory-btn EmployeeDirectory-btn-outlined'}
               onClick={() => setActiveTab(0)}
               style={{ padding: '8px 16px' }}
             >
               All
             </button>
             <button 
-              className={activeTab === 1 ? 'btn btn-contained' : 'btn btn-outlined'}
+              className={activeTab === 1 ? 'EmployeeDirectory-btn EmployeeDirectory-btn-contained' : 'EmployeeDirectory-btn EmployeeDirectory-btn-outlined'}
               onClick={() => setActiveTab(1)}
               style={{ padding: '8px 16px' }}
             >
               Active
             </button>
             <button 
-              className={activeTab === 2 ? 'btn btn-contained' : 'btn btn-outlined'}
+              className={activeTab === 2 ? 'EmployeeDirectory-btn EmployeeDirectory-btn-contained' : 'EmployeeDirectory-btn EmployeeDirectory-btn-outlined'}
               onClick={() => setActiveTab(2)}
               style={{ padding: '8px 16px' }}
             >
@@ -1095,20 +1067,19 @@ const EmployeeDirectory = () => {
         )}
       </div>
 
-      {/* Mobile Search Bar */}
       {isMobile && (
-        <div className="search-filter-container">
-          <div className="search-input-container">
-            <FiSearch className="search-icon" />
+        <div className="EmployeeDirectory-search-filter-container">
+          <div className="EmployeeDirectory-search-input-container">
+            <FiSearch className="EmployeeDirectory-search-icon" />
             <input
               type="text"
-              className="search-input"
+              className="EmployeeDirectory-search-input"
               placeholder="Search employees..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
             {searchTerm && (
-              <button className="clear-search" onClick={() => setSearchTerm('')}>
+              <button className="EmployeeDirectory-clear-search" onClick={() => setSearchTerm('')}>
                 <FiX size={16} />
               </button>
             )}
@@ -1116,14 +1087,13 @@ const EmployeeDirectory = () => {
         </div>
       )}
 
-      {/* Employees Grid/List */}
       {filteredEmployees.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-state-icon">
+        <div className="EmployeeDirectory-empty-state">
+          <div className="EmployeeDirectory-empty-state-icon">
             <FiUsers size={isMobile ? 48 : 64} />
           </div>
-          <h3 className="empty-state-title">No Employees Found</h3>
-          <p className="empty-state-text">
+          <h3 className="EmployeeDirectory-empty-state-title">No Employees Found</h3>
+          <p className="EmployeeDirectory-empty-state-text">
             {searchTerm || selectedRole !== 'all' 
               ? 'Try adjusting your search criteria or filters to find what you\'re looking for.' 
               : 'The employee directory is currently empty. Add your first team member to get started.'
@@ -1131,24 +1101,23 @@ const EmployeeDirectory = () => {
           </p>
         </div>
       ) : viewMode === 'grid' ? (
-        <div className="employee-grid">
+        <div className="EmployeeDirectory-employee-grid">
           {filteredEmployees.map((emp) => (
-            <EmployeeCard key={emp._id} emp={emp} />
+            <EmployeeDirectoryEmployeeCard key={emp._id} emp={emp} />
           ))}
         </div>
       ) : (
-        <div className="employee-list">
+        <div className="EmployeeDirectory-employee-list">
           {filteredEmployees.map((emp) => (
-            <EmployeeListItem key={emp._id} emp={emp} />
+            <EmployeeDirectoryEmployeeListItem key={emp._id} emp={emp} />
           ))}
         </div>
       )}
 
-      {/* Mobile Filter Drawer */}
       {isMobile && mobileFilterOpen && (
-        <div className="modal-overlay" onClick={() => setMobileFilterOpen(false)}>
+        <div className="EmployeeDirectory-modal-overlay" onClick={() => setMobileFilterOpen(false)}>
           <div 
-            className="modal" 
+            className="EmployeeDirectory-modal" 
             onClick={e => e.stopPropagation()}
             style={{ 
               marginLeft: 'auto',
@@ -1157,17 +1126,17 @@ const EmployeeDirectory = () => {
               borderRadius: '20px 0 0 20px'
             }}
           >
-            <div className="modal-header">
-              <h2 className="modal-title">Filters</h2>
-              <button className="modal-close" onClick={() => setMobileFilterOpen(false)}>
+            <div className="EmployeeDirectory-modal-header">
+              <h2 className="EmployeeDirectory-modal-title">Filters</h2>
+              <button className="EmployeeDirectory-modal-close" onClick={() => setMobileFilterOpen(false)}>
                 <FiX size={20} />
               </button>
             </div>
             
-            <div className="modal-content">
-              <h3 className="section-title">Filter by Role</h3>
+            <div className="EmployeeDirectory-modal-content">
+              <h3 className="EmployeeDirectory-section-title">Filter by Role</h3>
               <select
-                className="form-select"
+                className="EmployeeDirectory-form-select"
                 value={selectedRole}
                 onChange={(e) => {
                   setSelectedRole(e.target.value);
@@ -1185,10 +1154,9 @@ const EmployeeDirectory = () => {
         </div>
       )}
 
-      {/* Floating Action Button for Mobile */}
       {isMobile && !mobileFilterOpen && (
         <button 
-          className="btn btn-contained"
+          className="EmployeeDirectory-btn EmployeeDirectory-btn-contained"
           onClick={() => setMobileFilterOpen(true)}
           style={{
             position: 'fixed',
@@ -1205,12 +1173,11 @@ const EmployeeDirectory = () => {
         </button>
       )}
 
-      {/* Modals */}
-      <UserDetailModal />
-      <EditEmployeeModal />
-      <DeleteConfirmationModal />
-      <ContextMenu />
-      <SnackbarAlert />
+      <EmployeeDirectoryUserDetailModal />
+      <EmployeeDirectoryEditEmployeeModal />
+      <EmployeeDirectoryDeleteConfirmationModal />
+      <EmployeeDirectoryContextMenu />
+      <EmployeeDirectorySnackbarAlert />
     </div>
   );
 };

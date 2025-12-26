@@ -8,7 +8,8 @@ import useIsMobile from '../../hooks/useIsMobile';
 import {
   FiClock, FiCalendar, FiChevronLeft, FiChevronRight,
   FiPlay, FiSquare, FiRefreshCw, FiBriefcase, FiUser,
-  FiCheckCircle, FiAlertCircle, FiTrendingUp, FiActivity
+  FiCheckCircle, FiAlertCircle, FiTrendingUp, FiActivity,
+  FiX
 } from 'react-icons/fi';
 import {
   MdWork, MdOutlineCrop54, MdBeachAccess, MdSick,
@@ -59,6 +60,10 @@ const UserDashboard = () => {
   const [leaveData, setLeaveData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [recentActivity, setRecentActivity] = useState([]);
+  
+  // State for confirmation popup
+  const [showClockOutConfirm, setShowClockOutConfirm] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const user = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null;
   const token = localStorage.getItem('token');
@@ -247,36 +252,47 @@ const UserDashboard = () => {
     }
   };
 
-const handleOut = async () => {
-  try {
-    await axios.post(
-      "/attendance/out",
-      {},
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
+  const confirmClockOut = () => {
+    setShowClockOutConfirm(true);
+  };
 
-    setIsRunning(false);
-    toast.success("Clocked out successfully!");
+  const cancelClockOut = () => {
+    setShowClockOutConfirm(false);
+  };
 
-    // ✅ Clear auth data (LOGOUT)
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+  const handleClockOut = async () => {
+    try {
+      setIsProcessing(true);
+      await axios.post(
+        "/attendance/out",
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
-    // Optional: clear axios default header
-    delete axios.defaults.headers.common["Authorization"];
+      setIsRunning(false);
+      setShowClockOutConfirm(false);
+      toast.success("Clocked out successfully!");
 
-    // ⏳ Small delay so toast is visible
-    setTimeout(() => {
-      navigate("/login"); // or "/" based on your routing
-    }, 1200);
+      // Clear auth data (LOGOUT)
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
 
-  } catch (error) {
-    console.error("Clock-out error:", error);
-    toast.error("Clock-out failed");
-  }
-};
+      // Optional: clear axios default header
+      delete axios.defaults.headers.common["Authorization"];
+
+      // Small delay so toast is visible
+      setTimeout(() => {
+        window.location.href = "/login"; // or use navigate("/login") if using react-router
+      }, 1200);
+
+    } catch (error) {
+      console.error("Clock-out error:", error);
+      toast.error("Clock-out failed");
+      setIsProcessing(false);
+    }
+  };
 
   const handlePrevMonth = () => {
     setCalendarMonth(prev => {
@@ -335,31 +351,27 @@ const handleOut = async () => {
 
   const calendarDays = getCalendarGrid(calendarYear, calendarMonth);
 
-
-  
   const isMobile = useIsMobile();
 
   if (isMobile) {
-return (
-  <div style={{
-    height: "100vh",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    textAlign: "center",
-    padding: "20px"
-  }}>
-<h2>
-  😄 Hi {user?.name || "User"}, <br /><br />
-  This dashboard does not work on mobile devices.  
-  Even your phone agrees: “Sorry, not my job.” <br /><br />
-  Please use a Desktop or Laptop  
-  for the best and complete experience
-</h2>
-
-  </div>
-);
-
+    return (
+      <div style={{
+        height: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        textAlign: "center",
+        padding: "20px"
+      }}>
+        <h2>
+          😄 Hi {user?.name || "User"}, <br /><br />
+          This dashboard does not work on mobile devices.  
+          Even your phone agrees: "Sorry, not my job." <br /><br />
+          Please use a Desktop or Laptop  
+          for the best and complete experience
+        </h2>
+      </div>
+    );
   }
 
   return (
@@ -371,46 +383,90 @@ return (
         pauseOnHover
       />
       
+      {/* Clock Out Confirmation Popup */}
+      {showClockOutConfirm && (
+        <div className="confirmation-overlay">
+          <div className="confirmation-popup">
+            <button 
+              className="confirmation-close-btn"
+              onClick={cancelClockOut}
+              disabled={isProcessing}
+            >
+              <FiX size={20} />
+            </button>
+            
+            
+            <h3 className="confirmation-title">Confirm Clock Out</h3>
+            
+            <p className="confirmation-message">
+              Are you sure you want to clock out? 
+              <br />
+              <span className="confirmation-warning">
+                This will log you out of the system.
+              </span>
+            </p>
+            
+            <div className="confirmation-timer">
+              <FiClock size={16} />
+              <span>Current session: {formatTime(timer)}</span>
+            </div>
+            
+            <div className="confirmation-buttons">
+              <button
+                className="confirmation-btn confirmation-btn-cancel"
+                onClick={cancelClockOut}
+                disabled={isProcessing}
+              >
+                Cancel
+              </button>
+              <button
+                className="confirmation-btn confirmation-btn-confirm"
+                onClick={handleClockOut}
+                disabled={isProcessing}
+              >
+                {isProcessing ? 'Processing...' : 'Confirm Clock Out'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Header */}
       <div className="dashboard-header">
         <div className="dashboard-header-content">
-        
-        <div className="dashboard-user-details">
-  <h1 className="dashboard-user-name">
-    Welcome back, {user?.name || 'User'}
-  </h1>
+          <div className="dashboard-user-details">
+            <h1 className="dashboard-user-name">
+              Welcome back, {user?.name || 'User'}
+            </h1>
 
-<p className="dashboard-user-welcome">
-  {new Date().getHours() < 12
-    ? 'Good morning! Let’s make today count.'
-    : new Date().getHours() < 18
-    ? 'Good afternoon! Stay focused and productive.'
-    : 'Good evening! Wrapping up strong.'}
-</p>
+            <p className="dashboard-user-welcome">
+              {new Date().getHours() < 12
+                ? 'Good morning! Let\'s make today count.'
+                : new Date().getHours() < 18
+                ? 'Good afternoon! Stay focused and productive.'
+                : 'Good evening! Wrapping up strong.'}
+            </p>
 
+            <div className="dashboard-user-tags">
+              <span className="dashboard-tag dashboard-tag-role">
+                <FiBriefcase size={14} />
+                {user?.role || 'Employee'}
+              </span>
+              <span className="dashboard-tag dashboard-tag-type">
+                <FiUser size={14} />
+                {user?.employeeType || 'Full-time'}
+              </span>
+            </div>
 
-  <div className="dashboard-user-tags">
-    <span className="dashboard-tag dashboard-tag-role">
-      <FiBriefcase size={14} />
-      {user?.role || 'Employee'}
-    </span>
-    <span className="dashboard-tag dashboard-tag-type">
-      <FiUser size={14} />
-      {user?.employeeType || 'Full-time'}
-    </span>
-  </div>
-
-  <div className="dashboard-date-info">
-    <MdToday size={14} />
-    {currentDate.toLocaleDateString('en-US', { 
-      weekday: 'long', 
-      month: 'long', 
-      day: 'numeric', 
-      year: 'numeric' 
-    })}
-  </div>
-
-
+            <div className="dashboard-date-info">
+              <MdToday size={14} />
+              {currentDate.toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                month: 'long', 
+                day: 'numeric', 
+                year: 'numeric' 
+              })}
+            </div>
           </div>
           
           <div className="dashboard-clock-section">
@@ -432,7 +488,7 @@ return (
                 Clock In
               </button>
               <button
-                onClick={handleOut}
+                onClick={confirmClockOut}
                 disabled={!isRunning || loading}
                 className={`dashboard-btn dashboard-btn-clockout ${!isRunning ? 'btn-disabled' : ''}`}
               >
@@ -682,14 +738,6 @@ return (
               </div>
             )}
           </div>
-          
-          {/* {recentActivity.length > 0 && (
-            <div className="activity-footer">
-              <button className="activity-view-all">
-                View All Activity →
-              </button>
-            </div>
-          )} */}
         </div>
       </div>
 

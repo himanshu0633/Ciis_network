@@ -1,17 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import axios from '../../utils/axiosConfig';
-import {
-  Box, Typography, Paper, Button, Dialog, DialogTitle, DialogContent,
-  DialogActions, TextField, FormControl, InputLabel, Select, MenuItem,
-  Chip, Stack, Card, CardContent, Avatar, CircularProgress,
-  Snackbar, Grid, Alert, Table, TableBody, TableCell,
-  TableContainer, TableHead, TableRow, IconButton, Tooltip,
-  Badge, OutlinedInput, Fade, Modal, useTheme, useMediaQuery
-} from '@mui/material';
-import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { useNavigate } from 'react-router-dom';
 import {
   FiPlus, FiCalendar, FiInfo, FiPaperclip, FiMic, FiFileText,
   FiCheck, FiX, FiAlertCircle, FiUser, FiBell, FiRefreshCw,
@@ -21,166 +10,50 @@ import {
   FiSlash, FiImage, FiCamera, FiTrash2, FiZoomIn, FiCheckSquare,
   FiGlobe, FiSun, FiRotateCcw
 } from 'react-icons/fi';
-import { useNavigate } from 'react-router-dom';
-import { styled, alpha } from '@mui/material/styles';
 
-// Enhanced Styled Components
-const StatCard = styled(Card, {
-  shouldForwardProp: (prop) => !['color', 'clickable', 'active'].includes(prop)
-})(({ theme, color = 'primary', clickable = true, active = false }) => ({
-  background: active 
-    ? `linear-gradient(135deg, ${theme.palette[color].main}15 0%, ${theme.palette[color].main}08 100%)`
-    : theme.palette.background.paper,
-  borderRadius: theme.shape.borderRadius * 2,
-  boxShadow: theme.shadows[2],
-  transition: theme.transitions.create(['all'], {
-    duration: theme.transitions.duration.standard,
-  }),
-  borderLeft: `4px solid ${theme.palette[color].main}`,
-  height: '100%',
-  cursor: clickable ? 'pointer' : 'default',
-  '&:hover': clickable ? {
-    boxShadow: theme.shadows[4],
-    transform: 'translateY(-2px)',
-  } : {},
-}));
+import "../Css/TaskManagement.css";
 
-const StatusChip = styled(Chip, {
-  shouldForwardProp: (prop) => prop !== 'status'
-})(({ theme, status }) => ({
-  fontWeight: 600,
-  fontSize: '0.7rem',
-  minWidth: 80,
-  borderRadius: theme.shape.borderRadius * 2,
-  textTransform: 'uppercase',
-  letterSpacing: 0.3,
-  ...(status === 'pending' && {
-    background: `${theme.palette.warning.main}15`,
-    color: theme.palette.warning.dark,
-  }),
-  ...(status === 'in-progress' && {
-    background: `${theme.palette.info.main}15`,
-    color: theme.palette.info.dark,
-  }),
-  ...(status === 'completed' && {
-    background: `${theme.palette.success.main}15`,
-    color: theme.palette.success.dark,
-  }),
-  ...(status === 'rejected' && {
-    background: `${theme.palette.error.main}15`,
-    color: theme.palette.error.dark,
-  }),
-  ...(status === 'onhold' && {
-    background: `${theme.palette.warning.light}25`,
-    color: theme.palette.warning.dark,
-  }),
-  ...(status === 'reopen' && {
-    background: `${theme.palette.secondary.main}15`,
-    color: theme.palette.secondary.dark,
-  }),
-  ...(status === 'cancelled' && {
-    background: `${theme.palette.grey[500]}20`,
-    color: theme.palette.grey[700],
-  }),
-  ...(status === 'overdue' && {
-    background: `${theme.palette.error.main}20`,
-    color: theme.palette.error.dark,
-  }),
-}));
+const StatCard = ({ color = 'primary', clickable = true, active = false, children, onClick }) => {
+  return (
+    <div 
+      className={`user-create-task-stat-card ${active ? 'active' : ''}`}
+      style={{ borderLeftColor: getColorValue(color) }}
+      onClick={clickable ? onClick : undefined}
+    >
+      {children}
+    </div>
+  );
+};
 
-const PriorityChip = styled(Chip)(({ theme }) => ({
-  fontWeight: 500,
-  fontSize: '0.65rem',
-  borderRadius: theme.shape.borderRadius * 2,
-}));
+const StatusChip = ({ status, label }) => {
+  return (
+    <div className={`user-create-task-status-chip ${status}`}>
+      {label}
+    </div>
+  );
+};
 
-const MobileTaskCard = styled(Card)(({ theme }) => ({
-  borderRadius: theme.shape.borderRadius * 2,
-  boxShadow: theme.shadows[1],
-  cursor: 'pointer',
-  transition: theme.transitions.create(['all'], {
-    duration: theme.transitions.duration.standard,
-  }),
-  marginBottom: theme.spacing(1.5),
-  '&:hover': {
-    boxShadow: theme.shadows[3],
-  },
-}));
+const PriorityChip = ({ priority }) => {
+  return (
+    <div className={`user-create-task-priority-chip ${priority}`}>
+      {priority}
+    </div>
+  );
+};
 
-const ActionButton = styled(IconButton)(({ theme }) => ({
-  transition: theme.transitions.create(['all'], {
-    duration: theme.transitions.duration.short,
-  }),
-  '&:hover': {
-    backgroundColor: theme.palette.action.hover,
-  },
-}));
+const getColorValue = (color) => {
+  const colors = {
+    primary: '#1976d2',
+    success: '#4caf50',
+    warning: '#ff9800',
+    info: '#2196f3',
+    error: '#f44336',
+    secondary: '#9c27b0',
+    grey: '#9e9e9e'
+  };
+  return colors[color] || '#1976d2';
+};
 
-const CalendarFilterButton = styled(Button)(({ theme }) => ({
-  borderRadius: theme.shape.borderRadius,
-  textTransform: 'none',
-  minWidth: 'auto',
-  padding: theme.spacing(0.5, 2),
-}));
-
-const TimeFilterButton = styled(Button)(({ theme }) => ({
-  borderRadius: theme.shape.borderRadius,
-  textTransform: "none",
-  minWidth: "auto",
-  padding: theme.spacing(0.5, 1.5),
-  fontSize: "0.75rem",
-  transition: "all 0.2s ease",
-}));
-
-// Image Upload Components
-const ImageUploadArea = styled(Box)(({ theme }) => ({
-  border: `2px dashed ${theme.palette.divider}`,
-  borderRadius: theme.shape.borderRadius * 2,
-  padding: theme.spacing(3),
-  textAlign: 'center',
-  backgroundColor: theme.palette.background.paper,
-  cursor: 'pointer',
-  transition: 'all 0.3s ease',
-  '&:hover': {
-    borderColor: theme.palette.primary.main,
-  },
-}));
-
-const ImagePreview = styled(Box)(({ theme }) => ({
-  position: 'relative',
-  borderRadius: theme.shape.borderRadius,
-  overflow: 'hidden',
-  cursor: 'pointer',
-  transition: 'all 0.3s ease',
-}));
-
-const ImagePreviewContainer = styled(Box)(({ theme }) => ({
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))',
-  gap: theme.spacing(1),
-  marginTop: theme.spacing(2),
-}));
-
-const RemoveImageButton = styled(IconButton)(({ theme }) => ({
-  position: 'absolute',
-  top: 4,
-  right: 4,
-  backgroundColor: theme.palette.error.main,
-  color: 'white',
-  width: 24,
-  height: 24,
-  '&:hover': {
-    backgroundColor: theme.palette.error.dark,
-  },
-}));
-
-const ZoomModal = styled(Modal)({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-});
-
-// Status constants
 const statusColors = {
   pending: 'warning',
   'in-progress': 'info',
@@ -190,31 +63,6 @@ const statusColors = {
   reopen: 'secondary',
   cancelled: 'grey',
   overdue: 'error'
-};
-
-const statusIcons = {
-  pending: FiClock,
-  'in-progress': FiAlertCircle,
-  completed: FiCheckCircle,
-  rejected: FiXCircle,
-  onhold: FiClock,
-  reopen: FiRefreshCw,
-  cancelled: FiXCircle,
-  overdue: FiAlertCircle
-};
-
-const getStatusColor = (status, theme) => {
-  const colors = {
-    'pending': theme.palette.warning.main,
-    'in-progress': theme.palette.info.main,
-    'completed': theme.palette.success.main,
-    'rejected': theme.palette.error.main,
-    'onhold': theme.palette.grey[500],
-    'reopen': theme.palette.warning.dark,
-    'cancelled': theme.palette.grey[700],
-    'overdue': theme.palette.error.dark
-  };
-  return colors[status] || theme.palette.text.secondary;
 };
 
 const UserCreateTask = () => {
@@ -227,12 +75,10 @@ const UserCreateTask = () => {
   const [authError, setAuthError] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Task Management States
   const [myTasksGrouped, setMyTasksGrouped] = useState({});
   const [statusFilter, setStatusFilter] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Stats State
   const [taskStats, setTaskStats] = useState({
     total: 0,
     pending: { count: 0, percentage: 0 },
@@ -245,10 +91,7 @@ const UserCreateTask = () => {
     overdue: { count: 0, percentage: 0 }
   });
 
-  // Time Filter State
   const [timeFilter, setTimeFilter] = useState("all");
-
-  // Enhanced Features States
   const [notifications, setNotifications] = useState([]);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
   const [remarksDialog, setRemarksDialog] = useState({ open: false, taskId: null, remarks: [] });
@@ -260,7 +103,6 @@ const UserCreateTask = () => {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [zoomImage, setZoomImage] = useState(null);
 
-  // Calendar Filter States
   const [calendarFilterOpen, setCalendarFilterOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [dateFilterType, setDateFilterType] = useState('dueDate');
@@ -269,7 +111,6 @@ const UserCreateTask = () => {
     end: null
   });
 
-  // Task form state
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
@@ -285,12 +126,21 @@ const UserCreateTask = () => {
   const mediaRecorderRef = useRef(null);
   const chunks = useRef([]);
 
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
+  const snackbarTimerRef = useRef(null);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isTablet, setIsTablet] = useState(window.innerWidth >= 768 && window.innerWidth < 1024);
 
-  // User authentication check
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+      setIsTablet(window.innerWidth >= 768 && window.innerWidth < 1024);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const fetchUserData = useCallback(() => {
     try {
       const userStr = localStorage.getItem('user');
@@ -333,7 +183,22 @@ const UserCreateTask = () => {
     }
   }, []);
 
-  // Get individual user status for a task
+  const showSnackbar = (message, severity = 'info') => {
+    if (snackbarTimerRef.current) {
+      clearTimeout(snackbarTimerRef.current);
+    }
+
+    setSnackbar({
+      open: true,
+      message,
+      severity
+    });
+
+    snackbarTimerRef.current = setTimeout(() => {
+      setSnackbar(prev => ({ ...prev, open: false }));
+    }, 3000);
+  };
+
   const getUserStatusForTask = useCallback((task, userId) => {
     if (!task || !userId) return 'pending';
     
@@ -351,7 +216,6 @@ const UserCreateTask = () => {
     return 'pending';
   }, []);
 
-  // Calculate stats from tasks data
   const calculateStatsFromTasks = useCallback((tasks) => {
     if (!tasks || Object.keys(tasks).length === 0) {
       setTaskStats({
@@ -412,7 +276,6 @@ const UserCreateTask = () => {
     });
   }, [userId, getUserStatusForTask]);
 
-  // Fetch tasks with proper filtering
   const fetchMyTasks = useCallback(async () => {
     if (authError || !userId) {
       setLoading(false);
@@ -438,55 +301,42 @@ const UserCreateTask = () => {
       console.error('Error fetching tasks:', err);
       if (err.response?.status === 401) {
         setAuthError(true);
-        setSnackbar({
-          open: true,
-          message: 'Session expired. Please log in again.',
-          severity: 'error'
-        });
+        showSnackbar('Session expired. Please log in again.', 'error');
       } else {
-        setSnackbar({ open: true, message: 'Failed to load tasks', severity: 'error' });
+        showSnackbar('Failed to load tasks', 'error');
       }
     } finally {
       setLoading(false);
     }
   }, [authError, userId, statusFilter, searchTerm, timeFilter, calculateStatsFromTasks]);
 
-  // Handle Time Filter Change
   const handleTimeFilterChange = (period) => {
     setTimeFilter(period);
   };
 
-  // Handle Status Filter from Stats Cards
   const handleStatsCardClick = (status) => {
     if (status) {
       const newStatusFilter = statusFilter === status ? '' : status;
       setStatusFilter(newStatusFilter);
       
-      setSnackbar({
-        open: true,
-        message: newStatusFilter 
+      showSnackbar(
+        newStatusFilter 
           ? `Filtering tasks by: ${status.replace('-', ' ')}` 
           : 'Cleared status filter',
-        severity: 'info'
-      });
+        'info'
+      );
     }
   };
 
-  // Clear all filters
   const clearAllFilters = () => {
     setStatusFilter('');
     setTimeFilter('all');
     setSelectedDate(null);
     setDateRange({ start: null, end: null });
     setSearchTerm('');
-    setSnackbar({
-      open: true,
-      message: 'All filters cleared',
-      severity: 'info'
-    });
+    showSnackbar('All filters cleared', 'info');
   };
 
-  // Enhanced Remarks Functions with Image Upload
   const fetchTaskRemarks = async (taskId) => {
     try {
       const res = await axios.get(`/task/${taskId}/remarks`);
@@ -497,7 +347,7 @@ const UserCreateTask = () => {
       });
     } catch (error) {
       console.error('Error fetching remarks:', error);
-      setSnackbar({ open: true, message: 'Failed to load remarks', severity: 'error' });
+      showSnackbar('Failed to load remarks', 'error');
     }
   };
 
@@ -506,7 +356,7 @@ const UserCreateTask = () => {
     const imageFiles = files.filter(file => file.type.startsWith('image/'));
     
     if (imageFiles.length === 0) {
-      setSnackbar({ open: true, message: 'Please select valid image files', severity: 'warning' });
+      showSnackbar('Please select valid image files', 'warning');
       return;
     }
 
@@ -549,7 +399,7 @@ const UserCreateTask = () => {
 
   const addRemark = async (taskId) => {
     if (!newRemark.trim() && remarkImages.length === 0) {
-      setSnackbar({ open: true, message: 'Please enter a remark or upload an image', severity: 'warning' });
+      showSnackbar('Please enter a remark or upload an image', 'warning');
       return;
     }
     
@@ -573,21 +423,19 @@ const UserCreateTask = () => {
       setRemarkImages([]);
       fetchTaskRemarks(taskId);
       
-      setSnackbar({ 
-        open: true, 
-        message: `Remark added successfully${remarkImages.length > 0 ? ' with image' : ''}`, 
-        severity: 'success' 
-      });
+      showSnackbar(
+        `Remark added successfully${remarkImages.length > 0 ? ' with image' : ''}`, 
+        'success'
+      );
 
     } catch (error) {
       console.error('Error adding remark:', error);
-      setSnackbar({ open: true, message: 'Failed to add remark', severity: 'error' });
+      showSnackbar('Failed to add remark', 'error');
     } finally {
       setIsUploadingRemark(false);
     }
   };
 
-  // Enhanced Notifications Functions
   const fetchNotifications = useCallback(async () => {
     if (authError || !userId) return;
     
@@ -604,7 +452,7 @@ const UserCreateTask = () => {
     try {
       await axios.patch(`/task/notifications/${notificationId}/read`);
       fetchNotifications();
-      setSnackbar({ open: true, message: 'Notification marked as read', severity: 'success' });
+      showSnackbar('Notification marked as read', 'success');
     } catch (error) {
       console.error('Error marking notification as read:', error);
     }
@@ -614,13 +462,12 @@ const UserCreateTask = () => {
     try {
       await axios.patch('/task/notifications/read-all');
       fetchNotifications();
-      setSnackbar({ open: true, message: 'All notifications marked as read', severity: 'success' });
+      showSnackbar('All notifications marked as read', 'success');
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
     }
   };
 
-  // Enhanced Activity Logs Functions
   const fetchActivityLogs = async (taskId) => {
     try {
       const res = await axios.get(`/task/${taskId}/activity-logs`);
@@ -628,11 +475,10 @@ const UserCreateTask = () => {
       setActivityDialog({ open: true, taskId });
     } catch (error) {
       console.error('Error fetching activity logs:', error);
-      setSnackbar({ open: true, message: 'Failed to load activity logs', severity: 'error' });
+      showSnackbar('Failed to load activity logs', 'error');
     }
   };
 
-  // Calendar Filter Functions
   const applyDateFilter = useCallback((tasks) => {
     if (!selectedDate && !dateRange.start && !dateRange.end) {
       return tasks;
@@ -696,19 +542,13 @@ const UserCreateTask = () => {
     return null;
   };
 
-  // Memoized filtered tasks for better performance
   const filteredTasks = useMemo(() => {
     return applyDateFilter(myTasksGrouped);
   }, [myTasksGrouped, applyDateFilter]);
 
-  // Status Change Handler
   const handleStatusChange = async (taskId, newStatus, remarks = '') => {
     if (authError || !userId) {
-      setSnackbar({
-        open: true,
-        message: 'Please log in to update task status',
-        severity: 'error'
-      });
+      showSnackbar('Please log in to update task status', 'error');
       return;
     }
 
@@ -721,27 +561,15 @@ const UserCreateTask = () => {
       fetchMyTasks();
       fetchNotifications();
       
-      setSnackbar({ 
-        open: true, 
-        message: 'Status updated successfully', 
-        severity: 'success' 
-      });
+      showSnackbar('Status updated successfully', 'success');
 
     } catch (err) {
       console.error("Error in handleStatusChange:", err.response || err);
       if (err.response?.status === 401) {
         setAuthError(true);
-        setSnackbar({
-          open: true,
-          message: 'Session expired. Please log in again.',
-          severity: 'error'
-        });
+        showSnackbar('Session expired. Please log in again.', 'error');
       } else {
-        setSnackbar({ 
-          open: true, 
-          message: err?.response?.data?.error || 'Failed to update status', 
-          severity: 'error' 
-        });
+        showSnackbar(err?.response?.data?.error || 'Failed to update status', 'error');
       }
     }
   };
@@ -767,11 +595,7 @@ const UserCreateTask = () => {
       setIsRecording(true);
     } catch (err) {
       console.error("Error:", err);
-      setSnackbar({
-        open: true,
-        message: 'Microphone access denied',
-        severity: 'error'
-      });
+      showSnackbar('Microphone access denied', 'error');
     }
   };
 
@@ -782,32 +606,19 @@ const UserCreateTask = () => {
     }
   };
 
-  // Task creation handler
   const handleCreateTask = async () => {
     if (authError || !userId) {
-      setSnackbar({
-        open: true,
-        message: 'Please log in to create tasks',
-        severity: 'error'
-      });
+      showSnackbar('Please log in to create tasks', 'error');
       return;
     }
 
     if (!newTask.title || !newTask.description || !newTask.dueDateTime) {
-      setSnackbar({
-        open: true,
-        message: 'Please fill all required fields (Title, Description, Due Date)',
-        severity: 'error'
-      });
+      showSnackbar('Please fill all required fields (Title, Description, Due Date)', 'error');
       return;
     }
 
     if (newTask.dueDateTime && new Date(newTask.dueDateTime) < new Date()) {
-      setSnackbar({
-        open: true,
-        message: 'Due date cannot be in the past',
-        severity: 'error'
-      });
+      showSnackbar('Due date cannot be in the past', 'error');
       return;
     }
 
@@ -838,13 +649,8 @@ const UserCreateTask = () => {
       });
 
       setOpenDialog(false);
-      setSnackbar({ 
-        open: true, 
-        message: 'Task created successfully', 
-        severity: 'success' 
-      });
+      showSnackbar('Task created successfully', 'success');
       
-      // Reset form
       setNewTask({
         title: '', 
         description: '', 
@@ -855,7 +661,6 @@ const UserCreateTask = () => {
         voiceNote: null,
       });
 
-      // Refresh tasks list
       fetchMyTasks();
       fetchNotifications();
 
@@ -864,17 +669,9 @@ const UserCreateTask = () => {
       
       if (err.response?.status === 401) {
         setAuthError(true);
-        setSnackbar({
-          open: true,
-          message: 'Session expired. Please log in again.',
-          severity: 'error'
-        });
+        showSnackbar('Session expired. Please log in again.', 'error');
       } else {
-        setSnackbar({ 
-          open: true, 
-          message: err?.response?.data?.error || 'Task creation failed', 
-          severity: 'error' 
-        });
+        showSnackbar(err?.response?.data?.error || 'Task creation failed', 'error');
       }
     } finally {
       setIsCreatingTask(false);
@@ -892,7 +689,6 @@ const UserCreateTask = () => {
     return new Date(dueDateTime) < new Date();
   };
 
-  // Enhanced Statistics Cards Component
   const renderStatisticsCards = () => {
     const statsData = [
       {
@@ -977,115 +773,97 @@ const UserCreateTask = () => {
     ];
 
     return (
-      <Grid container spacing={isMobile ? 1 : 2} sx={{ mb: 3 }}>
+      <div className="user-create-task-grid-container">
         {statsData
-          .filter(stat => stat.title === "Total Tasks" || stat.value > 0)
+          .filter(stat => stat.value > 0)
           .map((stat, index) => {
             const isActive = stat.status === statusFilter;
             
             return (
-              <Grid item xs={6} sm={4} md={3} key={index}>
-                <StatCard
-                  color={stat.color}
-                  clickable={stat.clickable}
-                  active={isActive}
-                  onClick={() => stat.clickable && handleStatsCardClick(stat.status)}
-                >
-                  <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                    <Stack spacing={1}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <Box>
-                          <Typography 
-                            variant="caption" 
-                            color="text.secondary" 
-                            fontWeight={600}
-                            sx={{ fontSize: '0.7rem' }}
-                          >
-                            {stat.title}
-                          </Typography>
-                          <Typography 
-                            variant="h5" 
-                            fontWeight={700} 
-                            sx={{ mt: 0.5 }}
-                          >
-                            {stat.value}
-                          </Typography>
-                        </Box>
-                        <Box sx={{ 
-                          p: 1, 
-                          borderRadius: 2,
-                          bgcolor: `${theme.palette[stat.color].main}15`,
-                          color: theme.palette[stat.color].main,
-                        }}>
-                          {React.createElement(stat.icon, { size: 18 })}
-                        </Box>
-                      </Box>
+              <StatCard
+                key={index}
+                color={stat.color}
+                clickable={stat.clickable}
+                active={isActive}
+                onClick={() => stat.clickable && handleStatsCardClick(stat.status)}
+              >
+                <div className="user-create-task-stat-card-content">
+                  <div className="user-create-task-stat-card-header">
+                    <div>
+                      <div className="user-create-task-stat-card-title">
+                        {stat.title}
+                      </div>
+                      <div className="user-create-task-stat-card-value">
+                        {stat.value}
+                      </div>
+                    </div>
+                    <div 
+                      className="user-create-task-stat-card-icon"
+                      style={{
+                        backgroundColor: `${getColorValue(stat.color)}15`,
+                        color: getColorValue(stat.color)
+                      }}
+                    >
+                      {React.createElement(stat.icon, { size: isMobile ? 16 : 18 })}
+                    </div>
+                  </div>
 
-                      {stat.percentage !== undefined && (
-                        <Box>
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                            <Typography variant="caption" color="text.secondary">
-                              Progress
-                            </Typography>
-                            <Typography variant="caption" fontWeight={600}>
-                              {stat.percentage}%
-                            </Typography>
-                          </Box>
-                          <Box sx={{ 
-                            width: '100%', 
-                            height: 4, 
-                            borderRadius: 2, 
-                            bgcolor: 'action.hover',
-                            overflow: 'hidden'
-                          }}>
-                            <Box sx={{ 
-                              width: `${stat.percentage}%`, 
-                              height: '100%', 
-                              borderRadius: 2,
-                              bgcolor: theme.palette[stat.color].main,
-                            }} />
-                          </Box>
-                        </Box>
-                      )}
+                  {stat.percentage !== undefined && (
+                    <div className="user-create-task-progress-container">
+                      <div className="user-create-task-progress-header">
+                        <div className="user-create-task-progress-label">
+                          Progress
+                        </div>
+                        <div className="user-create-task-progress-percentage">
+                          {stat.percentage}%
+                        </div>
+                      </div>
+                      <div className="user-create-task-progress-bar">
+                        <div 
+                          className="user-create-task-progress-fill"
+                          style={{
+                            width: `${stat.percentage}%`,
+                            backgroundColor: getColorValue(stat.color)
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
 
-                      <Typography variant="caption" color="text.secondary">
-                        {stat.description}
-                      </Typography>
-                    </Stack>
-                  </CardContent>
-                </StatCard>
-              </Grid>
+                  <div className="user-create-task-stat-card-description">
+                    {stat.description}
+                  </div>
+                </div>
+              </StatCard>
             );
           })}
-      </Grid>
+      </div>
     );
   };
 
-  // Enhanced Time Filter Component
   const renderTimeFilter = () => (
-    <Box sx={{ mb: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Box>
-          <Typography variant="subtitle2" fontWeight={600}>
+    <div className="user-create-task-time-filter">
+      <div className="user-create-task-time-filter-header">
+        <div>
+          <div className="user-create-task-time-filter-title">
             Filter by Time Period
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
+          </div>
+          <div className="user-create-task-time-filter-subtitle">
             Select a timeframe to view task statistics
-          </Typography>
-        </Box>
+          </div>
+        </div>
         {timeFilter !== 'all' && (
-          <Button
-            size="small"
-            variant="text"
+          <button
+            className="user-create-task-button user-create-task-button-text"
             onClick={() => handleTimeFilterChange('all')}
-            startIcon={<FiRotateCcw size={14} />}
           >
-            Reset to All Time
-          </Button>
+            <FiRotateCcw size={14} />
+            {!isMobile && "Reset to All Time"}
+          </button>
         )}
-      </Box>
+      </div>
 
-      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+      <div className="user-create-task-time-filter-buttons">
         {[
           { value: "all", label: "All Time", icon: FiGlobe },
           { value: "today", label: "Today", icon: FiSun },
@@ -1098,205 +876,203 @@ const UserCreateTask = () => {
           const isActive = timeFilter === period.value;
           
           return (
-            <TimeFilterButton
+            <button
               key={period.value}
-              variant={isActive ? "contained" : "outlined"}
+              className={`user-create-task-time-filter-button ${isActive ? 'active' : ''}`}
               onClick={() => handleTimeFilterChange(period.value)}
-              size="small"
-              startIcon={React.createElement(period.icon, { size: 14 })}
-              active={isActive}
             >
-              {period.label}
-            </TimeFilterButton>
+              {React.createElement(period.icon, { size: isMobile ? 12 : 14 })}
+              {isMobile ? period.label.split(' ')[0] : period.label}
+            </button>
           );
         })}
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 
-  // Enhanced table cell with new action buttons
   const renderActionButtons = (task) => {
     return (
-      <Box sx={{ display: 'flex', gap: 0.5 }}>
-        <Tooltip title="View Remarks">
-          <ActionButton 
-            size="small" 
-            onClick={() => fetchTaskRemarks(task._id)}
-          >
-            <FiMessageSquare size={isSmallMobile ? 14 : 16} />
-          </ActionButton>
-        </Tooltip>
+      <div className="user-create-task-action-buttons">
+        <button 
+          className="user-create-task-action-button"
+          onClick={() => fetchTaskRemarks(task._id)}
+          title="View Remarks"
+        >
+          <FiMessageSquare size={isMobile ? 14 : 16} />
+        </button>
 
-        <Tooltip title="Activity Logs">
-          <ActionButton 
-            size="small" 
-            onClick={() => fetchActivityLogs(task._id)}
-          >
-            <FiActivity size={isSmallMobile ? 14 : 16} />
-          </ActionButton>
-        </Tooltip>
+        <button 
+          className="user-create-task-action-button"
+          onClick={() => fetchActivityLogs(task._id)}
+          title="Activity Logs"
+        >
+          <FiActivity size={isMobile ? 14 : 16} />
+        </button>
 
         {task.files?.length > 0 && (
-          <Tooltip title="Download Files">
-            <ActionButton
-              size="small"
-              href={`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/${task.files[0].path || task.files[0]}`}
-              target="_blank"
-            >
-              <FiDownload size={isSmallMobile ? 14 : 16} />
-            </ActionButton>
-          </Tooltip>
+          <a
+            className="user-create-task-action-button"
+            href={`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/${task.files[0].path || task.files[0]}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Download Files"
+          >
+            <FiDownload size={isMobile ? 14 : 16} />
+          </a>
         )}
-      </Box>
+      </div>
     );
   };
 
-  // Status Select Component
   const renderStatusSelect = (task) => {
     const myStatus = getUserStatusForTask(task, userId);
     
     return (
-      <FormControl size="small" sx={{ minWidth: isSmallMobile ? 100 : 120 }}>
-        <Select
-          value={myStatus}
-          onChange={(e) => {
-            const selectedStatus = e.target.value;
-            if (["completed", "onhold", "reopen", "cancelled", "rejected"].includes(selectedStatus)) {
-              setPendingStatusChange({ taskId: task._id, status: selectedStatus });
-              setRemarksDialog({ open: true, taskId: task._id, remarks: [] });
-            } else {
-              handleStatusChange(task._id, selectedStatus);
-            }
-          }}
-        >
-          <MenuItem value="pending">Pending</MenuItem>
-          <MenuItem value="in-progress">In Progress</MenuItem>
-          <MenuItem value="completed">Completed</MenuItem>
-          <MenuItem value="rejected">Rejected</MenuItem>
-          <MenuItem value="onhold">On Hold</MenuItem>
-          <MenuItem value="reopen">Reopen</MenuItem>
-          <MenuItem value="cancelled">Cancelled</MenuItem>
-        </Select>
-      </FormControl>
+      <select
+        value={myStatus}
+        onChange={(e) => {
+          const selectedStatus = e.target.value;
+          if (["completed", "onhold", "reopen", "cancelled", "rejected"].includes(selectedStatus)) {
+            setPendingStatusChange({ taskId: task._id, status: selectedStatus });
+            setRemarksDialog({ open: true, taskId: task._id, remarks: [] });
+          } else {
+            handleStatusChange(task._id, selectedStatus);
+          }
+        }}
+        className="user-create-task-select"
+        style={{ minWidth: isMobile ? '90px' : '100px' }}
+      >
+        <option value="pending">Pending</option>
+        <option value="in-progress">In Progress</option>
+        <option value="completed">Completed</option>
+        <option value="rejected">Rejected</option>
+        <option value="onhold">On Hold</option>
+        <option value="reopen">Reopen</option>
+        <option value="cancelled">Cancelled</option>
+      </select>
     );
   };
 
-  // Enhanced Remarks Dialog with Image Upload
   const renderRemarksDialog = () => (
-    <Dialog 
-      open={remarksDialog.open} 
-      onClose={() => {
-        setRemarksDialog({ open: false, taskId: null, remarks: [] });
-        setRemarkImages([]);
-        setNewRemark('');
-      }}
-      maxWidth="md"
-      fullWidth
-      fullScreen={isSmallMobile}
-    >
-      <DialogTitle>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <FiMessageSquare />
-          <Typography variant="h6">Task Remarks</Typography>
-        </Box>
-      </DialogTitle>
-      
-      <DialogContent>
-        <Stack spacing={3} sx={{ mt: 1 }}>
-          {/* Add New Remark Section */}
-          <Card variant="outlined">
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Add New Remark
-              </Typography>
-              
-              <TextField
-                fullWidth
-                multiline
-                rows={3}
-                label="Your Remark"
-                value={newRemark}
-                onChange={(e) => setNewRemark(e.target.value)}
-                placeholder="Enter your remark here..."
-                sx={{ mb: 2 }}
-              />
-
-              {/* Image Upload Section */}
-              <Box>
-                <Typography variant="subtitle2" gutterBottom>
-                  Attach Images (Optional)
-                </Typography>
+    <div className="user-create-task-dialog-overlay" style={{ display: remarksDialog.open ? 'flex' : 'none' }}>
+      <div className={`user-create-task-dialog ${isMobile ? 'mobile-dialog' : ''}`} style={{ maxWidth: isMobile ? '95%' : isTablet ? '700px' : '800px', width: isMobile ? '95%' : 'auto' }}>
+        <div className="user-create-task-dialog-title">
+          <div className="user-create-task-flex user-create-task-align-center user-create-task-gap-1">
+            <FiMessageSquare />
+            <div>Task Remarks</div>
+          </div>
+        </div>
+        
+        <div className="user-create-task-dialog-content">
+          <div className="user-create-task-flex user-create-task-flex-column user-create-task-gap-3">
+            {/* Add New Remark Section */}
+            <div className="user-create-task-paper">
+              <div className="user-create-task-paper-content">
+                <div style={{ marginBottom: isMobile ? '12px' : '16px', fontWeight: 600 }}>Add New Remark</div>
                 
-                <ImageUploadArea
-                  onDragOver={handleDragOver}
-                  onDrop={handleDrop}
-                  onClick={() => document.getElementById('remark-image-upload').click()}
-                >
-                  <Stack spacing={1} alignItems="center">
-                    <FiImage size={32} color={theme.palette.primary.main} />
-                    <Typography variant="body1">
-                      Click to upload or drag & drop
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Supports JPG, PNG, GIF
-                    </Typography>
-                    <Button
-                      variant="outlined"
-                      startIcon={<FiCamera />}
-                      sx={{ mt: 1 }}
-                    >
-                      Choose Images
-                    </Button>
-                  </Stack>
+                <textarea
+                  className="user-create-task-input"
+                  rows={isMobile ? 2 : 3}
+                  placeholder="Enter your remark here..."
+                  value={newRemark}
+                  onChange={(e) => setNewRemark(e.target.value)}
+                  style={{ marginBottom: isMobile ? '12px' : '16px', width: '100%' }}
+                />
+
+                {/* Image Upload Section */}
+                <div style={{ marginBottom: isMobile ? '12px' : '16px' }}>
+                  <div style={{ marginBottom: isMobile ? '6px' : '8px', fontWeight: 600 }}>Attach Images (Optional)</div>
                   
-                  <input
-                    id="remark-image-upload"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleRemarkImageUpload}
-                    style={{ display: 'none' }}
-                  />
-                </ImageUploadArea>
+                  <div
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                    onClick={() => document.getElementById('remark-image-upload').click()}
+                    style={{
+                      border: '2px dashed #ccc',
+                      borderRadius: isMobile ? '6px' : '8px',
+                      padding: isMobile ? '16px' : '24px',
+                      textAlign: 'center',
+                      backgroundColor: 'white',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease'
+                    }}
+                  >
+                    <div className="user-create-task-flex user-create-task-flex-column user-create-task-align-center user-create-task-gap-1">
+                      <FiImage size={isMobile ? 24 : 32} color="#1976d2" />
+                      <div style={{ fontSize: isMobile ? '14px' : '16px' }}>Click to upload or drag & drop</div>
+                      <div style={{ fontSize: isMobile ? '11px' : '12px', color: '#666' }}>
+                        Supports JPG, PNG, GIF
+                      </div>
+                      <button
+                        className="user-create-task-button user-create-task-button-outlined"
+                        style={{ marginTop: '8px', padding: isMobile ? '8px 12px' : '10px 16px' }}
+                      >
+                        <FiCamera />
+                        {!isMobile && "Choose Images"}
+                      </button>
+                    </div>
+                    
+                    <input
+                      id="remark-image-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleRemarkImageUpload}
+                      style={{ display: 'none' }}
+                    />
+                  </div>
 
-                {/* Image Previews */}
-                {remarkImages.length > 0 && (
-                  <Box sx={{ mt: 2 }}>
-                    <Typography variant="subtitle2" gutterBottom>
-                      Selected Image
-                    </Typography>
-                    <ImagePreviewContainer>
-                      {remarkImages.map((image, index) => (
-                        <ImagePreview key={index}>
-                          <img
-                            src={image.preview}
-                            alt={`Preview ${index + 1}`}
-                            style={{
-                              width: '100%',
-                              height: 80,
-                              objectFit: 'cover',
-                            }}
-                            onClick={() => setZoomImage(image.preview)}
-                          />
-                          <RemoveImageButton
-                            size="small"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleRemoveRemarkImage(index);
-                            }}
-                          >
-                            <FiX size={14} />
-                          </RemoveImageButton>
-                        </ImagePreview>
-                      ))}
-                    </ImagePreviewContainer>
-                  </Box>
-                )}
-              </Box>
+                  {/* Image Previews */}
+                  {remarkImages.length > 0 && (
+                    <div style={{ marginTop: isMobile ? '12px' : '16px' }}>
+                      <div style={{ marginBottom: isMobile ? '6px' : '8px', fontWeight: 600 }}>Selected Image</div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: isMobile ? '6px' : '8px' }}>
+                        {remarkImages.map((image, index) => (
+                          <div key={index} style={{ position: 'relative' }}>
+                            <img
+                              src={image.preview}
+                              alt={`Preview ${index + 1}`}
+                              style={{
+                                width: '100%',
+                                height: isMobile ? '60px' : '80px',
+                                objectFit: 'cover',
+                                borderRadius: '4px'
+                              }}
+                              onClick={() => setZoomImage(image.preview)}
+                            />
+                            <button
+                              style={{
+                                position: 'absolute',
+                                top: '4px',
+                                right: '4px',
+                                backgroundColor: '#f44336',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '50%',
+                                width: isMobile ? '20px' : '24px',
+                                height: isMobile ? '20px' : '24px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: isMobile ? '12px' : '14px'
+                              }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemoveRemarkImage(index);
+                              }}
+                            >
+                              <FiX size={isMobile ? 12 : 14} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
 
-              {/* Submit Button */}
-              <Box sx={{ mt: 2 }}>
-                <Button
-                  variant="contained"
+                {/* Submit Button */}
+                <button
+                  className="user-create-task-button user-create-task-button-contained"
                   onClick={async () => {
                     await addRemark(remarksDialog.taskId);
                     
@@ -1310,333 +1086,326 @@ const UserCreateTask = () => {
                     }
                   }}
                   disabled={isUploadingRemark || (!newRemark.trim() && remarkImages.length === 0)}
-                  startIcon={isUploadingRemark ? <CircularProgress size={16} /> : <FiMessageSquare />}
-                  fullWidth
+                  style={{ width: '100%', padding: isMobile ? '10px' : '12px' }}
                 >
-                  {isUploadingRemark ? 'Uploading...' : 
-                   pendingStatusChange.status ? 'Save Remark & Update Status' : 'Add Remark'}
-                </Button>
-              </Box>
-            </CardContent>
-          </Card>
+                  {isUploadingRemark ? (
+                    'Uploading...'
+                  ) : pendingStatusChange.status ? (
+                    isMobile ? 'Save & Update' : 'Save Remark & Update Status'
+                  ) : (
+                    <>
+                      <FiMessageSquare />
+                      {isMobile ? 'Add Remark' : 'Add Remark'}
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
 
-          {/* Remarks History */}
-          <Box>
-            <Typography variant="h6" gutterBottom>
-              Remarks History
-            </Typography>
-            
-            {remarksDialog.remarks.length > 0 ? (
-              <Stack spacing={2}>
-                {remarksDialog.remarks.map((remark, index) => (
-                  <Card key={index} variant="outlined">
-                    <CardContent>
-                      <Stack spacing={1.5}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                            <Avatar sx={{ width: 36, height: 36 }}>
-                              {remark.user?.name?.charAt(0)?.toUpperCase() || 'U'}
-                            </Avatar>
-                            <Box>
-                              <Typography variant="subtitle2">
-                                {remark.user?.name || 'Unknown User'}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                {new Date(remark.createdAt).toLocaleDateString()} at {' '}
-                                {new Date(remark.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </Box>
+            {/* Remarks History */}
+            <div>
+              <div style={{ marginBottom: isMobile ? '12px' : '16px', fontWeight: 600 }}>Remarks History</div>
+              
+              {remarksDialog.remarks.length > 0 ? (
+                <div className="user-create-task-flex user-create-task-flex-column user-create-task-gap-2">
+                  {remarksDialog.remarks.map((remark, index) => (
+                    <div key={index} className="user-create-task-paper">
+                      <div className="user-create-task-paper-content">
+                        <div className="user-create-task-flex user-create-task-flex-column user-create-task-gap-1.5">
+                          <div className="user-create-task-flex user-create-task-justify-between user-create-task-align-center user-create-task-gap-1">
+                            <div className="user-create-task-flex user-create-task-align-center user-create-task-gap-1.5">
+                              <div style={{
+                                width: isMobile ? '32px' : '36px',
+                                height: isMobile ? '32px' : '36px',
+                                borderRadius: '50%',
+                                backgroundColor: '#f0f0f0',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontWeight: 600,
+                                fontSize: isMobile ? '14px' : '16px'
+                              }}>
+                                {remark.user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                              </div>
+                              <div>
+                                <div style={{ fontWeight: 600, fontSize: isMobile ? '14px' : '16px' }}>
+                                  {remark.user?.name || 'Unknown User'}
+                                </div>
+                                <div style={{ fontSize: isMobile ? '11px' : '12px', color: '#666' }}>
+                                  {new Date(remark.createdAt).toLocaleDateString()} at {' '}
+                                  {new Date(remark.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
 
-                        {remark.text && (
-                          <Typography variant="body2" sx={{ 
-                            p: 1.5,
-                            backgroundColor: 'background.default',
-                            borderRadius: 1,
-                          }}>
-                            {remark.text}
-                          </Typography>
-                        )}
+                          {remark.text && (
+                            <div style={{ 
+                              padding: isMobile ? '8px' : '12px',
+                              backgroundColor: '#fafafa',
+                              borderRadius: '4px',
+                              fontSize: isMobile ? '13px' : '14px'
+                            }}>
+                              {remark.text}
+                            </div>
+                          )}
 
-                        {remark.image && (
-                          <Box sx={{ mt: 1 }}>
-                            <Typography variant="caption" display="block" gutterBottom>
-                              Attached Image:
-                            </Typography>
-                            <ImagePreview 
-                              onClick={() => setZoomImage(`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/${remark.image}`)}
-                            >
-                              <img
-                                src={`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/${remark.image}`}
-                                alt="Remark attachment"
-                                style={{
-                                  width: '100%',
-                                  height: 'auto',
-                                  borderRadius: theme.shape.borderRadius,
-                                }}
-                              />
-                            </ImagePreview>
-                          </Box>
-                        )}
-                      </Stack>
-                    </CardContent>
-                  </Card>
-                ))}
-              </Stack>
-            ) : (
-              <Card variant="outlined" sx={{ textAlign: 'center', py: 4 }}>
-                <CardContent>
-                  <FiMessageSquare size={48} color={theme.palette.text.secondary} />
-                  <Typography variant="h6" color="text.secondary" sx={{ mt: 2 }}>
+                          {remark.image && (
+                            <div style={{ marginTop: isMobile ? '6px' : '8px' }}>
+                              <div style={{ fontSize: isMobile ? '11px' : '12px', marginBottom: '4px' }}>
+                                Attached Image:
+                              </div>
+                              <div 
+                                onClick={() => setZoomImage(`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/${remark.image}`)}
+                                style={{ cursor: 'pointer' }}
+                              >
+                                <img
+                                  src={`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/${remark.image}`}
+                                  alt="Remark attachment"
+                                  style={{
+                                    width: '100%',
+                                    height: 'auto',
+                                    borderRadius: '4px',
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="user-create-task-paper" style={{ textAlign: 'center', padding: isMobile ? '24px' : '32px' }}>
+                  <FiMessageSquare size={isMobile ? 32 : 48} color="#666" />
+                  <div style={{ marginTop: isMobile ? '12px' : '16px', color: '#666', fontWeight: 600 }}>
                     No remarks yet
-                  </Typography>
-                </CardContent>
-              </Card>
-            )}
-          </Box>
-        </Stack>
-      </DialogContent>
-    </Dialog>
-  );
-
-  // Image Zoom Modal
-  const renderImageZoomModal = () => (
-    <ZoomModal
-      open={!!zoomImage}
-      onClose={() => setZoomImage(null)}
-    >
-      <Fade in={!!zoomImage}>
-        <Box sx={{ 
-          position: 'relative',
-          maxWidth: '90vw',
-          maxHeight: '90vh',
-        }}>
-          <IconButton
-            onClick={() => setZoomImage(null)}
-            sx={{
-              position: 'absolute',
-              top: 16,
-              right: 16,
-              backgroundColor: 'rgba(0,0,0,0.6)',
-              color: 'white',
-              zIndex: 1,
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        
+        <div className="user-create-task-dialog-actions">
+          <button
+            className="user-create-task-button user-create-task-button-outlined"
+            onClick={() => {
+              setRemarksDialog({ open: false, taskId: null, remarks: [] });
+              setRemarkImages([]);
+              setNewRemark('');
             }}
+            style={{ padding: isMobile ? '8px 12px' : '10px 16px' }}
           >
-            <FiX size={20} />
-          </IconButton>
-          <img
-            src={zoomImage}
-            alt="Zoomed view"
-            style={{
-              width: '100%',
-              height: 'auto',
-              maxHeight: '90vh',
-              objectFit: 'contain',
-            }}
-          />
-        </Box>
-      </Fade>
-    </ZoomModal>
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
   );
 
-  // Render Desktop Table
+  const renderImageZoomModal = () => (
+    <div className="user-create-task-dialog-overlay" style={{ display: zoomImage ? 'flex' : 'none' }}>
+      <div style={{ 
+        position: 'relative',
+        maxWidth: '90vw',
+        maxHeight: '90vh',
+      }}>
+        <button
+          onClick={() => setZoomImage(null)}
+          style={{
+            position: 'absolute',
+            top: '16px',
+            right: '16px',
+            backgroundColor: 'rgba(0,0,0,0.6)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '50%',
+            width: isMobile ? '32px' : '36px',
+            height: isMobile ? '32px' : '36px',
+            cursor: 'pointer',
+            zIndex: 1,
+          }}
+        >
+          <FiX size={isMobile ? 16 : 20} />
+        </button>
+        <img
+          src={zoomImage}
+          alt="Zoomed view"
+          style={{
+            width: '100%',
+            height: 'auto',
+            maxHeight: '90vh',
+            objectFit: 'contain',
+          }}
+        />
+      </div>
+    </div>
+  );
+
   const renderDesktopTable = (groupedTasks) => {
     const tasksToRender = applyDateFilter(groupedTasks);
     
     return Object.entries(tasksToRender).map(([dateKey, tasks]) => (
-      <Box key={dateKey} sx={{ mt: 3 }}>
-        <Typography 
-          variant="h6" 
-          gutterBottom 
-          sx={{
-            p: 2,
-            borderRadius: 2,
-            bgcolor: 'background.paper',
-          }}
-        >
+      <div key={dateKey} style={{ marginTop: '24px' }}>
+        <div style={{ 
+          padding: isMobile ? '12px' : '16px',
+          borderRadius: isMobile ? '6px' : '8px',
+          backgroundColor: 'white',
+          marginBottom: '16px',
+          fontSize: isMobile ? '14px' : '16px'
+        }}>
           📅 {dateKey}
-        </Typography>
-        <TableContainer 
-          component={Paper} 
-          sx={{ 
-            borderRadius: 2,
-          }}
-        >
-          <Table>
-            <TableHead>
-              <TableRow sx={{ bgcolor: 'action.hover' }}>
-                <TableCell sx={{ fontWeight: 700 }}>Title</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Description</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Due Date</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Priority</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Files</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Actions</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Change Status</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
+        </div>
+        <div className="user-create-task-table-container">
+          <table className="user-create-task-table">
+            <thead>
+              <tr style={{ backgroundColor: '#f5f5f5' }}>
+                <th style={{ padding: isMobile ? '8px' : '12px' }}>Title</th>
+                {!isMobile && <th style={{ padding: isMobile ? '8px' : '12px' }}>Description</th>}
+                <th style={{ padding: isMobile ? '8px' : '12px' }}>Due Date</th>
+                <th style={{ padding: isMobile ? '8px' : '12px' }}>Priority</th>
+                <th style={{ padding: isMobile ? '8px' : '12px' }}>Status</th>
+                <th style={{ padding: isMobile ? '8px' : '12px' }}>Files</th>
+                <th style={{ padding: isMobile ? '8px' : '12px' }}>Actions</th>
+                <th style={{ padding: isMobile ? '8px' : '12px' }}>Change Status</th>
+              </tr>
+            </thead>
+            <tbody>
               {tasks.map((task) => {
                 const myStatus = getUserStatusForTask(task, userId);
-                const statusColor = statusColors[myStatus] || 'grey';
 
                 return (
-                  <TableRow key={task._id} hover>
-                    <TableCell>
-                      <Typography variant="body2" fontWeight={600}>
+                  <tr key={task._id} className="user-create-task-table-row">
+                    <td style={{ padding: isMobile ? '8px' : '12px' }}>
+                      <div style={{ fontWeight: 600, fontSize: isMobile ? '13px' : '14px' }}>
                         {task.title}
-                      </Typography>
-                    </TableCell>
-                    <TableCell sx={{ maxWidth: 200 }}>
-                      <Tooltip title={task.description}>
-                        <Typography variant="body2" noWrap>
+                      </div>
+                      {isMobile && (
+                        <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+                          {task.description.length > 50 ? task.description.substring(0, 50) + '...' : task.description}
+                        </div>
+                      )}
+                    </td>
+                    {!isMobile && (
+                      <td style={{ padding: '12px', maxWidth: '200px' }}>
+                        <div style={{ fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {task.description}
-                        </Typography>
-                      </Tooltip>
-                    </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <FiCalendar size={14} />
-                        <Typography
-                          variant="body2"
-                          color={isOverdue(task.dueDateTime) ? 'error' : 'text.primary'}
-                          fontWeight={500}
-                        >
+                        </div>
+                      </td>
+                    )}
+                    <td style={{ padding: isMobile ? '8px' : '12px' }}>
+                      <div className="user-create-task-flex user-create-task-align-center user-create-task-gap-1">
+                        <FiCalendar size={isMobile ? 12 : 14} />
+                        <div style={{
+                          fontSize: isMobile ? '13px' : '14px',
+                          color: isOverdue(task.dueDateTime) ? '#c62828' : '#333',
+                          fontWeight: 500
+                        }}>
                           {task.dueDateTime
                             ? new Date(task.dueDateTime).toLocaleDateString()
                             : '—'}
-                        </Typography>
+                        </div>
                         {isOverdue(task.dueDateTime) && (
-                          <FiAlertCircle size={14} color={theme.palette.error.main} />
+                          <FiAlertCircle size={isMobile ? 12 : 14} color="#c62828" />
                         )}
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <PriorityChip
-                        label={task.priority || 'medium'}
-                        sx={{
-                          bgcolor: `${theme.palette[task.priority === 'high' ? 'error' : task.priority === 'medium' ? 'warning' : 'success'].main}15`,
-                          color: theme.palette[task.priority === 'high' ? 'error' : task.priority === 'medium' ? 'warning' : 'success'].main,
-                        }}
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <StatusChip
-                        label={myStatus}
-                        status={myStatus}
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell>
+                      </div>
+                    </td>
+                    <td style={{ padding: isMobile ? '8px' : '12px' }}>
+                      <PriorityChip priority={task.priority || 'medium'} />
+                    </td>
+                    <td style={{ padding: isMobile ? '8px' : '12px' }}>
+                      <StatusChip status={myStatus} label={myStatus} />
+                    </td>
+                    <td style={{ padding: isMobile ? '8px' : '12px' }}>
                       {task.files?.length > 0 && (
-                        <Tooltip title={`${task.files.length} file(s)`}>
-                          <ActionButton
-                            size="small"
-                            href={`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/${task.files[0].path || task.files[0]}`}
-                            target="_blank"
-                          >
-                            <FiDownload size={16} />
-                          </ActionButton>
-                        </Tooltip>
+                        <a
+                          className="user-create-task-action-button"
+                          href={`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/${task.files[0].path || task.files[0]}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title={`${task.files.length} file(s)`}
+                        >
+                          <FiDownload size={isMobile ? 14 : 16} />
+                        </a>
                       )}
-                    </TableCell>
+                    </td>
 
-                    <TableCell>
+                    <td style={{ padding: isMobile ? '8px' : '12px' }}>
                       {renderActionButtons(task)}
-                    </TableCell>
-                    <TableCell>
+                    </td>
+                    <td style={{ padding: isMobile ? '8px' : '12px' }}>
                       {renderStatusSelect(task)}
-                    </TableCell>
-                  </TableRow>
+                    </td>
+                  </tr>
                 );
               })}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Box>
+            </tbody>
+          </table>
+        </div>
+      </div>
     ));
   };
 
-  // Enhanced mobile cards with action buttons
   const renderMobileCards = (groupedTasks) => {
     const tasksToRender = applyDateFilter(groupedTasks);
     
     return Object.entries(tasksToRender).map(([dateKey, tasks]) => (
-      <Box key={dateKey} sx={{ mt: 3 }}>
-        <Typography 
-          variant="h6" 
-          gutterBottom 
-          sx={{
-            p: 2,
-            bgcolor: 'background.paper',
-          }}
-        >
+      <div key={dateKey} style={{ marginTop: isMobile ? '16px' : '20px' }}>
+        <div style={{ 
+          padding: isMobile ? '12px' : '16px',
+          backgroundColor: 'white',
+          marginBottom: isMobile ? '8px' : '12px',
+          fontSize: isMobile ? '14px' : '16px'
+        }}>
           📅 {dateKey}
-        </Typography>
-        <Stack spacing={2}>
+        </div>
+        <div className="user-create-task-flex user-create-task-flex-column user-create-task-gap-2">
           {tasks.map((task) => {
             const myStatus = getUserStatusForTask(task, userId);
-            const statusColor = getStatusColor(myStatus, theme);
 
             return (
-              <MobileTaskCard key={task._id}>
-                <CardContent>
-                  <Stack spacing={2}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1 }}>
-                      <Box sx={{ flex: 1 }}>
-                        <Typography variant="h6" fontWeight={600} noWrap>
+              <div key={task._id} className="user-create-task-mobile-card">
+                <div className="user-create-task-mobile-card-content">
+                  <div className="user-create-task-flex user-create-task-flex-column user-create-task-gap-2">
+                    <div className="user-create-task-mobile-card-header">
+                      <div style={{ flex: 1 }}>
+                        <div className="user-create-task-mobile-card-title">
                           {task.title}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ 
-                          display: '-webkit-box',
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical',
-                          overflow: 'hidden'
-                        }}>
+                        </div>
+                        <div className="user-create-task-mobile-card-description">
                           {task.description}
-                        </Typography>
-                      </Box>
-                      <StatusChip
-                        label={myStatus}
-                        status={myStatus}
-                        size="small"
-                      />
-                    </Box>
+                        </div>
+                      </div>
+                      <StatusChip status={myStatus} label={myStatus} />
+                    </div>
 
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <FiCalendar size={14} />
-                        <Typography variant="body2" color={isOverdue(task.dueDateTime) ? 'error' : 'text.primary'}>
+                    <div className="user-create-task-mobile-card-details">
+                      <div className="user-create-task-flex user-create-task-align-center user-create-task-gap-1">
+                        <FiCalendar size={isMobile ? 12 : 14} />
+                        <div style={{ fontSize: isMobile ? '13px' : '14px', color: isOverdue(task.dueDateTime) ? '#c62828' : '#333' }}>
                           {task.dueDateTime ? new Date(task.dueDateTime).toLocaleDateString() : 'No date'}
-                        </Typography>
-                      </Box>
-                      <PriorityChip
-                        label={task.priority || 'medium'}
-                        sx={{
-                          bgcolor: `${theme.palette[task.priority === 'high' ? 'error' : task.priority === 'medium' ? 'warning' : 'success'].main}15`,
-                          color: theme.palette[task.priority === 'high' ? 'error' : task.priority === 'medium' ? 'warning' : 'success'].main,
-                        }}
-                        size="small"
-                      />
-                    </Box>
+                        </div>
+                      </div>
+                      <PriorityChip priority={task.priority || 'medium'} />
+                    </div>
 
-                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', justifyContent: 'space-between' }}>
-                      <Box sx={{ display: 'flex', gap: 0.5 }}>
+                    <div className="user-create-task-mobile-card-actions">
+                      <div className="user-create-task-flex user-create-task-gap-1">
                         {renderActionButtons(task)}
-                      </Box>
-                      <Box sx={{ minWidth: 100 }}>
+                      </div>
+                      <div style={{ minWidth: isMobile ? '90px' : '100px' }}>
                         {renderStatusSelect(task)}
-                      </Box>
-                    </Box>
-                  </Stack>
-                </CardContent>
-              </MobileTaskCard>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             );
           })}
-        </Stack>
-      </Box>
+        </div>
+      </div>
     ));
   };
 
@@ -1645,440 +1414,477 @@ const UserCreateTask = () => {
     
     if (Object.keys(tasksToRender).length === 0) {
       return (
-        <Box sx={{ textAlign: 'center', py: 6 }}>
-          <FiCalendar size={isMobile ? 48 : 64} color={theme.palette.text.secondary} />
-          <Typography variant="h6" color="text.secondary" sx={{ mt: 2 }}>
+        <div className="user-create-task-empty-state">
+          <div className="user-create-task-empty-state-icon">
+            <FiCalendar size={isMobile ? 36 : 48} color="#666" />
+          </div>
+
+          <div className="user-create-task-empty-state-title">
             {statusFilter ? `No ${statusFilter} tasks found` : 'No tasks found'}
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            {statusFilter ? 'Try changing your status filter' : 'You have no tasks assigned yet'}
-          </Typography>
-          {(statusFilter || selectedDate || dateRange.start || dateRange.end) && (
-            <Button
-              variant="outlined"
-              onClick={clearAllFilters}
-              sx={{ mt: 2 }}
-            >
-              Clear All Filters
-            </Button>
-          )}
-          <Button
-            variant="contained"
-            startIcon={<FiPlus />}
-            onClick={() => setOpenDialog(true)}
-            sx={{ mt: 2, ml: (statusFilter || selectedDate || dateRange.start || dateRange.end) ? 1 : 0 }}
-          >
-            Create New Task
-          </Button>
-        </Box>
+          </div>
+
+          <div className="user-create-task-empty-state-subtitle">
+            {statusFilter
+              ? 'Try changing your status filter'
+              : 'You have no tasks assigned yet'}
+          </div>
+        </div>
       );
     }
 
     return isMobile ? renderMobileCards(groupedTasks) : renderDesktopTable(groupedTasks);
   };
 
-  // Enhanced Notifications Panel
   const renderNotificationsPanel = () => (
-    <Modal
-      open={notificationsOpen}
-      onClose={() => setNotificationsOpen(false)}
-    >
-      <Box sx={{
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        width: isSmallMobile ? '90%' : 400,
-        maxHeight: '80vh',
-        bgcolor: 'background.paper',
-        borderRadius: 2,
-        boxShadow: 24,
-        overflow: 'hidden',
+    <div className="user-create-task-dialog-overlay" style={{ display: notificationsOpen ? 'flex' : 'none' }}>
+      <div className={`user-create-task-dialog ${isMobile ? 'mobile-dialog' : ''}`} style={{ 
+        width: isMobile ? '90%' : isTablet ? '400px' : '400px',
+        maxHeight: isMobile ? '80vh' : '70vh'
       }}>
-        <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="h6">Notifications</Typography>
-            <Button 
+        <div style={{ 
+          padding: isMobile ? '12px 16px' : '16px 20px', 
+          borderBottom: '1px solid #e0e0e0' 
+        }}>
+          <div className="user-create-task-flex user-create-task-justify-between user-create-task-align-center">
+            <div style={{ fontWeight: 600, fontSize: isMobile ? '16px' : '18px' }}>Notifications</div>
+            <button 
+              className="user-create-task-button user-create-task-button-text"
               onClick={markAllNotificationsAsRead} 
-              size="small"
               disabled={unreadNotificationCount === 0}
+              style={{ padding: isMobile ? '6px 8px' : '8px 12px' }}
             >
-              Mark all as read
-            </Button>
-          </Box>
-        </Box>
-        <Box sx={{ maxHeight: '60vh', overflow: 'auto', p: 1 }}>
+              {isMobile ? 'Mark All' : 'Mark all as read'}
+            </button>
+          </div>
+        </div>
+        <div style={{ 
+          maxHeight: isMobile ? 'calc(80vh - 120px)' : 'calc(70vh - 120px)', 
+          overflow: 'auto', 
+          padding: isMobile ? '8px' : '12px' 
+        }}>
           {notifications.length > 0 ? (
-            <Stack spacing={1}>
+            <div className="user-create-task-flex user-create-task-flex-column user-create-task-gap-1">
               {notifications.map((notification) => (
-                <Card 
+                <div 
                   key={notification._id} 
-                  variant="outlined"
-                  sx={{ 
-                    bgcolor: notification.isRead ? 'background.default' : 'action.hover',
+                  className="user-create-task-paper"
+                  style={{ 
+                    backgroundColor: notification.isRead ? '#fafafa' : '#f5f5f5',
+                    padding: isMobile ? '12px' : '16px'
                   }}
                 >
-                  <CardContent>
-                    <Stack spacing={1}>
-                      <Typography variant="subtitle2" fontWeight={600}>
+                  <div className="user-create-task-paper-content">
+                    <div className="user-create-task-flex user-create-task-flex-column user-create-task-gap-1">
+                      <div style={{ fontWeight: 600, fontSize: isMobile ? '14px' : '16px' }}>
                         {notification.title}
-                      </Typography>
-                      <Typography variant="body2">
+                      </div>
+                      <div style={{ fontSize: isMobile ? '13px' : '14px' }}>
                         {notification.message}
-                      </Typography>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Typography variant="caption" color="text.secondary">
+                      </div>
+                      <div className="user-create-task-flex user-create-task-justify-between user-create-task-align-center">
+                        <div style={{ fontSize: isMobile ? '11px' : '12px', color: '#666' }}>
                           {new Date(notification.createdAt).toLocaleDateString()}
-                        </Typography>
+                        </div>
                         {!notification.isRead && (
-                          <Button 
-                            size="small" 
+                          <button 
+                            className="user-create-task-button user-create-task-button-text"
                             onClick={() => markNotificationAsRead(notification._id)}
+                            style={{ padding: isMobile ? '4px 6px' : '6px 8px' }}
                           >
-                            Mark read
-                          </Button>
+                            {isMobile ? 'Read' : 'Mark read'}
+                          </button>
                         )}
-                      </Box>
-                    </Stack>
-                  </CardContent>
-                </Card>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               ))}
-            </Stack>
+            </div>
           ) : (
-            <Box sx={{ textAlign: 'center', py: 4 }}>
-              <FiBell size={32} color={theme.palette.text.secondary} />
-              <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
+            <div style={{ textAlign: 'center', padding: isMobile ? '24px' : '32px' }}>
+              <FiBell size={isMobile ? 24 : 32} color="#666" />
+              <div style={{ marginTop: isMobile ? '8px' : '12px', color: '#666', fontSize: isMobile ? '14px' : '16px' }}>
                 No notifications
-              </Typography>
-            </Box>
+              </div>
+            </div>
           )}
-        </Box>
-      </Box>
-    </Modal>
+        </div>
+        
+        <div className="user-create-task-dialog-actions">
+          <button
+            className="user-create-task-button user-create-task-button-outlined"
+            onClick={() => setNotificationsOpen(false)}
+            style={{ padding: isMobile ? '8px 12px' : '10px 16px' }}
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
   );
 
-  // Enhanced Activity Logs Dialog
   const renderActivityLogsDialog = () => (
-    <Dialog 
-      open={activityDialog.open} 
-      onClose={() => setActivityDialog({ open: false, taskId: null })}
-      maxWidth="lg"
-      fullWidth
-      fullScreen={isSmallMobile}
-    >
-      <DialogTitle>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <FiActivity />
-          <Typography variant="h6">Activity Logs</Typography>
-        </Box>
-      </DialogTitle>
-      <DialogContent>
-        {activityLogs.length > 0 ? (
-          <Stack spacing={1}>
-            {activityLogs.map((log, index) => (
-              <Card key={index} variant="outlined">
-                <CardContent>
-                  <Stack spacing={1}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                        <Avatar sx={{ width: 32, height: 32 }}>
-                          {log.user?.name?.charAt(0)?.toUpperCase() || 'U'}
-                        </Avatar>
-                        <Box>
-                          <Typography variant="subtitle2">
-                            {log.user?.name || 'Unknown User'}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {log.user?.role || 'User'}
-                          </Typography>
-                        </Box>
-                      </Box>
-                      <Typography variant="caption" color="text.secondary">
-                        {new Date(log.createdAt).toLocaleDateString()} at {new Date(log.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                      </Typography>
-                    </Box>
-                    <Typography variant="body2">
-                      {log.description}
-                    </Typography>
-                  </Stack>
-                </CardContent>
-              </Card>
-            ))}
-          </Stack>
-        ) : (
-          <Typography color="text.secondary" textAlign="center" py={3}>
-            No activity logs found for this task
-          </Typography>
-        )}
-      </DialogContent>
-    </Dialog>
+    <div className="user-create-task-dialog-overlay" style={{ display: activityDialog.open ? 'flex' : 'none' }}>
+      <div className={`user-create-task-dialog ${isMobile ? 'mobile-dialog' : ''}`} style={{ 
+        maxWidth: isMobile ? '95%' : isTablet ? '700px' : '800px',
+        width: isMobile ? '95%' : 'auto'
+      }}>
+        <div className="user-create-task-dialog-title">
+          <div className="user-create-task-flex user-create-task-align-center user-create-task-gap-1">
+            <FiActivity />
+            <div>Activity Logs</div>
+          </div>
+        </div>
+        <div className="user-create-task-dialog-content">
+          {activityLogs.length > 0 ? (
+            <div className="user-create-task-flex user-create-task-flex-column user-create-task-gap-1">
+              {activityLogs.map((log, index) => (
+                <div key={index} className="user-create-task-paper">
+                  <div className="user-create-task-paper-content">
+                    <div className="user-create-task-flex user-create-task-flex-column user-create-task-gap-1">
+                      <div className="user-create-task-flex user-create-task-justify-between user-create-task-align-center user-create-task-gap-1">
+                        <div className="user-create-task-flex user-create-task-align-center user-create-task-gap-1.5">
+                          <div style={{
+                            width: isMobile ? '28px' : '32px',
+                            height: isMobile ? '28px' : '32px',
+                            borderRadius: '50%',
+                            backgroundColor: '#f0f0f0',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: 600,
+                            fontSize: isMobile ? '12px' : '14px'
+                          }}>
+                            {log.user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                          </div>
+                          <div>
+                            <div style={{ fontWeight: 600, fontSize: isMobile ? '13px' : '14px' }}>
+                              {log.user?.name || 'Unknown User'}
+                            </div>
+                            <div style={{ fontSize: isMobile ? '11px' : '12px', color: '#666' }}>
+                              {log.user?.role || 'User'}
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{ fontSize: isMobile ? '11px' : '12px', color: '#666' }}>
+                          {new Date(log.createdAt).toLocaleDateString()} at {new Date(log.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </div>
+                      </div>
+                      <div style={{ fontSize: isMobile ? '13px' : '14px' }}>
+                        {log.description}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ color: '#666', textAlign: 'center', padding: isMobile ? '20px' : '24px' }}>
+              No activity logs found for this task
+            </div>
+          )}
+        </div>
+        
+        <div className="user-create-task-dialog-actions">
+          <button
+            className="user-create-task-button user-create-task-button-outlined"
+            onClick={() => setActivityDialog({ open: false, taskId: null })}
+            style={{ padding: isMobile ? '8px 12px' : '10px 16px' }}
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
   );
 
-  // Calendar Filter Dialog
   const renderCalendarFilterDialog = () => (
-    <Dialog
-      open={calendarFilterOpen}
-      onClose={() => setCalendarFilterOpen(false)}
-      maxWidth="sm"
-      fullWidth
-    >
-      <DialogTitle>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <FiCalendar />
-          <Typography variant="h6">Filter by Date</Typography>
-        </Box>
-      </DialogTitle>
+    <div className="user-create-task-dialog-overlay" style={{ display: calendarFilterOpen ? 'flex' : 'none' }}>
+      <div className={`user-create-task-dialog ${isMobile ? 'mobile-dialog' : ''}`} style={{ 
+        maxWidth: isMobile ? '95%' : isTablet ? '450px' : '500px',
+        width: isMobile ? '95%' : 'auto'
+      }}>
+        <div className="user-create-task-dialog-title">
+          <div className="user-create-task-flex user-create-task-align-center user-create-task-gap-1">
+            <FiCalendar />
+            <div>Filter by Date</div>
+          </div>
+        </div>
 
-      <DialogContent>
-        <Stack spacing={3}>
-          <FormControl fullWidth>
-            <InputLabel>Filter By</InputLabel>
-            <Select
-              value={dateFilterType}
-              onChange={(e) => setDateFilterType(e.target.value)}
-              label="Filter By"
-            > 
-              <MenuItem value="createdDate">Created Date</MenuItem>
-              <MenuItem value="dueDate">Due Date</MenuItem>
-            </Select>
-          </FormControl>
+        <div className="user-create-task-dialog-content">
+          <div className="user-create-task-flex user-create-task-flex-column user-create-task-gap-3">
+            <div className="user-create-task-form-control">
+              <label>Filter By</label>
+              <select
+                className="user-create-task-select"
+                value={dateFilterType}
+                onChange={(e) => setDateFilterType(e.target.value)}
+              >
+                <option value="createdDate">Created Date</option>
+                <option value="dueDate">Due Date</option>
+              </select>
+            </div>
 
-          <Box>
-            <Typography variant="subtitle1" gutterBottom>
-              Select Specific Date
-            </Typography>
-            <DatePicker
-              value={selectedDate}
-              onChange={(newValue) => {
-                setSelectedDate(newValue);
-                setDateRange({ start: null, end: null });
-              }}
-              renderInput={(params) => (
-                <TextField {...params} fullWidth />
-              )}
-            />
-          </Box>
-
-          <Box>
-            <Typography variant="subtitle1" gutterBottom>
-              Or Select Date Range
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={6}>
-                <DatePicker
-                  label="Start Date"
-                  value={dateRange.start}
-                  onChange={(newValue) => setDateRange(prev => ({ ...prev, start: newValue }))}
-                  renderInput={(params) => (
-                    <TextField {...params} fullWidth />
-                  )}
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <DatePicker
-                  label="End Date"
-                  value={dateRange.end}
-                  onChange={(newValue) => setDateRange(prev => ({ ...prev, end: newValue }))}
-                  renderInput={(params) => (
-                    <TextField {...params} fullWidth />
-                  )}
-                />
-              </Grid>
-            </Grid>
-          </Box>
-
-          <Box>
-            <Typography variant="subtitle1" gutterBottom>
-              Quick Filters
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-              <CalendarFilterButton
-                onClick={() => {
-                  const today = new Date();
-                  setSelectedDate(today);
+            <div>
+              <div style={{ marginBottom: '8px', fontWeight: 600, fontSize: isMobile ? '14px' : '16px' }}>Select Specific Date</div>
+              <input
+                type="date"
+                className="user-create-task-input"
+                value={selectedDate ? new Date(selectedDate).toISOString().split('T')[0] : ''}
+                onChange={(e) => {
+                  setSelectedDate(e.target.value);
                   setDateRange({ start: null, end: null });
                 }}
-              >
-                Today
-              </CalendarFilterButton>
-              <CalendarFilterButton
-                onClick={() => {
-                  const tomorrow = new Date();
-                  tomorrow.setDate(tomorrow.getDate() + 1);
-                  setSelectedDate(tomorrow);
-                  setDateRange({ start: null, end: null });
-                }}
-              >
-                Tomorrow
-              </CalendarFilterButton>
-              <CalendarFilterButton
-                onClick={() => {
-                  const start = new Date();
-                  const end = new Date();
-                  end.setDate(end.getDate() + 7);
-                  setSelectedDate(null);
-                  setDateRange({ start, end });
-                }}
-              >
-                Next 7 Days
-              </CalendarFilterButton>
-            </Box>
-          </Box>
-        </Stack>
-      </DialogContent>
+              />
+            </div>
 
-      <DialogActions>
-        <Button
-          onClick={clearDateFilter}
-          variant="outlined"
-        >
-          Clear Filter
-        </Button>
-        <Button
-          onClick={() => setCalendarFilterOpen(false)}
-          variant="contained"
-        >
-          Apply Filter
-        </Button>
-      </DialogActions>
-    </Dialog>
+            <div>
+              <div style={{ marginBottom: '8px', fontWeight: 600, fontSize: isMobile ? '14px' : '16px' }}>Or Select Date Range</div>
+              <div className="user-create-task-flex user-create-task-gap-2">
+                <div style={{ flex: 1 }}>
+                  <input
+                    type="date"
+                    className="user-create-task-input"
+                    placeholder="Start Date"
+                    value={dateRange.start ? new Date(dateRange.start).toISOString().split('T')[0] : ''}
+                    onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <input
+                    type="date"
+                    className="user-create-task-input"
+                    placeholder="End Date"
+                    value={dateRange.end ? new Date(dateRange.end).toISOString().split('T')[0] : ''}
+                    onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div style={{ marginBottom: '8px', fontWeight: 600, fontSize: isMobile ? '14px' : '16px' }}>Quick Filters</div>
+              <div className="user-create-task-flex user-create-task-gap-1 user-create-task-flex-wrap">
+                <button
+                  className="user-create-task-button user-create-task-button-outlined"
+                  onClick={() => {
+                    const today = new Date();
+                    setSelectedDate(today.toISOString().split('T')[0]);
+                    setDateRange({ start: null, end: null });
+                  }}
+                  style={{ padding: isMobile ? '8px 12px' : '10px 16px' }}
+                >
+                  Today
+                </button>
+                <button
+                  className="user-create-task-button user-create-task-button-outlined"
+                  onClick={() => {
+                    const tomorrow = new Date();
+                    tomorrow.setDate(tomorrow.getDate() + 1);
+                    setSelectedDate(tomorrow.toISOString().split('T')[0]);
+                    setDateRange({ start: null, end: null });
+                  }}
+                  style={{ padding: isMobile ? '8px 12px' : '10px 16px' }}
+                >
+                  Tomorrow
+                </button>
+                <button
+                  className="user-create-task-button user-create-task-button-outlined"
+                  onClick={() => {
+                    const start = new Date();
+                    const end = new Date();
+                    end.setDate(end.getDate() + 7);
+                    setSelectedDate(null);
+                    setDateRange({ 
+                      start: start.toISOString().split('T')[0], 
+                      end: end.toISOString().split('T')[0] 
+                    });
+                  }}
+                  style={{ padding: isMobile ? '8px 12px' : '10px 16px' }}
+                >
+                  Next 7 Days
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="user-create-task-dialog-actions">
+          <button
+            className="user-create-task-button user-create-task-button-outlined"
+            onClick={clearDateFilter}
+            style={{ padding: isMobile ? '8px 12px' : '10px 16px' }}
+          >
+            Clear Filter
+          </button>
+          <button
+            className="user-create-task-button user-create-task-button-contained"
+            onClick={() => setCalendarFilterOpen(false)}
+            style={{ padding: isMobile ? '8px 12px' : '10px 16px' }}
+          >
+            Apply Filter
+          </button>
+        </div>
+      </div>
+    </div>
   );
 
-  // CREATE TASK DIALOG
   const renderCreateTaskDialog = () => (
-    <Dialog 
-      open={openDialog} 
-      onClose={() => setOpenDialog(false)} 
-      maxWidth="md" 
-      fullWidth
-      fullScreen={isMobile}
-    >
-      <DialogTitle>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <FiPlus />
-          <Typography variant="h4">Create Personal Task</Typography>
-        </Box>
-        <Typography variant="body2" color="text.secondary">
-          This task will be automatically assigned to you ({userName})
-        </Typography>
-      </DialogTitle>
-      <DialogContent>
-        <Stack spacing={3}>
-          <Alert severity="info">
+    <div className="user-create-task-dialog-overlay" style={{ display: openDialog ? 'flex' : 'none' }}>
+      <div className={`user-create-task-dialog ${isMobile ? 'mobile-dialog' : ''}`} style={{ 
+        maxWidth: isMobile ? '95%' : isTablet ? '550px' : '600px',
+        width: isMobile ? '95%' : 'auto'
+      }}>
+        <div className="user-create-task-dialog-title">
+          <div className="user-create-task-flex user-create-task-align-center user-create-task-gap-2">
+            <FiPlus size={isMobile ? 18 : 24} />
+            <div style={{ fontSize: isMobile ? '18px' : '24px' }}>Create Personal Task</div>
+          </div>
+          <div style={{ fontSize: isMobile ? '12px' : '14px', color: '#666', marginTop: '4px' }}>
             This task will be automatically assigned to you ({userName})
-          </Alert>
+          </div>
+        </div>
+        
+        <div className="user-create-task-dialog-content">
+          <div className="user-create-task-flex user-create-task-flex-column user-create-task-gap-3">
+            <div className="user-create-task-alert info" style={{ padding: isMobile ? '12px' : '16px' }}>
+              This task will be automatically assigned to you ({userName})
+            </div>
 
-          <TextField
-            fullWidth
-            label="Task Title *"
-            value={newTask.title}
-            onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-            placeholder="Enter a descriptive task title"
-          />
-
-          <TextField
-            fullWidth
-            label="Description *"
-            multiline
-            rows={4}
-            value={newTask.description}
-            onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-            placeholder="Provide detailed description of the task..."
-          />
-
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <DateTimePicker
-                label="Due Date & Time *"
-                value={newTask.dueDateTime}
-                onChange={(dateTime) => setNewTask({ ...newTask, dueDateTime: dateTime })}
-                minDate={new Date()}
-                renderInput={(params) => (
-                  <TextField {...params} fullWidth />
-                )}
+            <div className="user-create-task-form-control">
+              <label>Task Title *</label>
+              <input
+                type="text"
+                className="user-create-task-input"
+                placeholder="Enter a descriptive task title"
+                value={newTask.title}
+                onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
               />
-            </Grid>
+            </div>
 
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
-                <InputLabel>Priority</InputLabel>
-                <Select
+            <div className="user-create-task-form-control">
+              <label>Description *</label>
+              <textarea
+                className="user-create-task-input"
+                rows={isMobile ? 3 : 4}
+                placeholder="Provide detailed description of the task..."
+                value={newTask.description}
+                onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+              />
+            </div>
+
+            <div className={`user-create-task-flex ${isMobile ? 'user-create-task-flex-column' : 'user-create-task-gap-2'}`}>
+              <div className="user-create-task-form-control" style={{ flex: 1 }}>
+                <label>Due Date & Time *</label>
+                <input
+                  type="datetime-local"
+                  className="user-create-task-input"
+                  value={newTask.dueDateTime ? new Date(newTask.dueDateTime).toISOString().slice(0, 16) : ''}
+                  onChange={(e) => setNewTask({ ...newTask, dueDateTime: e.target.value })}
+                  min={new Date().toISOString().slice(0, 16)}
+                />
+              </div>
+
+              <div className="user-create-task-form-control" style={{ flex: 1 }}>
+                <label>Priority</label>
+                <select
+                  className="user-create-task-select"
                   value={newTask.priority}
                   onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
-                  label="Priority"
                 >
-                  <MenuItem value="low">Low</MenuItem>
-                  <MenuItem value="medium">Medium</MenuItem>
-                  <MenuItem value="high">High</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-          </Grid>
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
+            </div>
 
-          <TextField
-            fullWidth
-            label="Priority Days"
-            value={newTask.priorityDays}
-            onChange={(e) => setNewTask({ ...newTask, priorityDays: e.target.value })}
-            placeholder="Enter priority days"
-          />
+            <div className="user-create-task-form-control">
+              <label>Priority Days</label>
+              <input
+                type="number"
+                className="user-create-task-input"
+                placeholder="Enter priority days"
+                value={newTask.priorityDays}
+                onChange={(e) => setNewTask({ ...newTask, priorityDays: e.target.value })}
+              />
+            </div>
 
-          <Box>
-            <Typography variant="h6" gutterBottom>
-              Attachments (Optional)
-            </Typography>
-            
-            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1 }}>
-              <Button 
-                variant="outlined" 
-                component="label" 
-                startIcon={<FiFileText />}
-                fullWidth={isMobile}
-              >
-                Upload Files
-                <input
-                  type="file"
-                  multiple
-                  hidden
-                  onChange={(e) => setNewTask({ ...newTask, files: e.target.files })}
-                />
-              </Button>
+            <div>
+              <div style={{ marginBottom: '8px', fontWeight: 600, fontSize: isMobile ? '14px' : '16px' }}>Attachments (Optional)</div>
+              
+              <div className={`user-create-task-flex ${isMobile ? 'user-create-task-flex-column user-create-task-gap-2' : 'user-create-task-gap-2'}`}>
+                <button 
+                  className="user-create-task-button user-create-task-button-outlined"
+                  onClick={() => document.getElementById('file-upload').click()}
+                  style={{ flex: 1, padding: isMobile ? '10px' : '12px' }}
+                >
+                  <FiFileText />
+                  {isMobile ? 'Upload' : 'Upload Files'}
+                  <input
+                    id="file-upload"
+                    type="file"
+                    multiple
+                    style={{ display: 'none' }}
+                    onChange={(e) => setNewTask({ ...newTask, files: e.target.files })}
+                  />
+                </button>
 
-              <Button
-                variant={isRecording ? "contained" : "outlined"}
-                color={isRecording ? "error" : "primary"}
-                startIcon={<FiMic />}
-                onClick={isRecording ? stopRecording : startRecording}
-                fullWidth={isMobile}
-              >
-                {isRecording ? "Stop Recording" : "Record Voice"}
-              </Button>
-            </Box>
-          </Box>
-        </Stack>
-      </DialogContent>
+                <button
+                  className={`user-create-task-button ${isRecording ? 'user-create-task-button-contained' : 'user-create-task-button-outlined'}`}
+                  onClick={isRecording ? stopRecording : startRecording}
+                  style={{ 
+                    flex: 1,
+                    padding: isMobile ? '10px' : '12px',
+                    backgroundColor: isRecording ? '#f44336' : undefined,
+                    borderColor: isRecording ? '#f44336' : undefined
+                  }}
+                >
+                  <FiMic />
+                  {isRecording ? "Stop" : (isMobile ? "Record" : "Record Voice")}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
 
-      <DialogActions>
-        <Button
-          onClick={() => setOpenDialog(false)}
-          variant="outlined"
-        >
-          Cancel
-        </Button>
+        <div className="user-create-task-dialog-actions">
+          <button
+            className="user-create-task-button user-create-task-button-outlined"
+            onClick={() => setOpenDialog(false)}
+            style={{ padding: isMobile ? '8px 12px' : '10px 16px' }}
+          >
+            Cancel
+          </button>
 
-        <Button
-          onClick={handleCreateTask}
-          variant="contained"
-          disabled={!newTask.title || !newTask.description || !newTask.dueDateTime || isCreatingTask}
-          startIcon={isCreatingTask ? <CircularProgress size={16} color="inherit" /> : <FiCheck />}
-        >
-          {isCreatingTask ? 'Creating...' : 'Create Task'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+          <button
+            className="user-create-task-button user-create-task-button-contained"
+            onClick={handleCreateTask}
+            disabled={!newTask.title || !newTask.description || !newTask.dueDateTime || isCreatingTask}
+            style={{ padding: isMobile ? '8px 12px' : '10px 16px' }}
+          >
+            {isCreatingTask ? (
+              'Creating...'
+            ) : (
+              <>
+                <FiCheck size={isMobile ? 14 : 16} />
+                {isMobile ? 'Create' : 'Create Task'}
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 
-  // Effects
+  useEffect(() => {
+    return () => {
+      if (snackbarTimerRef.current) {
+        clearTimeout(snackbarTimerRef.current);
+      }
+    };
+  }, []);
+
   useEffect(() => {
     fetchMyTasks();
   }, [statusFilter, searchTerm, timeFilter, fetchMyTasks]);
@@ -2096,231 +1902,258 @@ const UserCreateTask = () => {
 
   if (authError) {
     return (
-      <Box sx={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '50vh',
-        flexDirection: 'column',
-        gap: 3,
-      }}>
-        <Card sx={{ p: 4, textAlign: 'center', maxWidth: 400, width: '100%' }}>
-          <CardContent>
-            <FiAlertCircle size={48} color={theme.palette.error.main} />
-            <Typography variant="h5" color="error" gutterBottom>
-              Authentication Required
-            </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-              Please log in to access tasks.
-            </Typography>
-            <Button
-              variant="contained"
-              onClick={handleLogout}
-              startIcon={<FiUser />}
-              fullWidth
-            >
-              Go to Login
-            </Button>
-          </CardContent>
-        </Card>
-      </Box>
+      <div className="user-create-task-error-container">
+        <div className="user-create-task-error-card">
+          <FiAlertCircle size={isMobile ? 36 : 48} color="#f44336" />
+          <div style={{ marginTop: '16px', color: '#f44336', fontWeight: 600, fontSize: isMobile ? '18px' : '20px' }}>
+            Authentication Required
+          </div>
+          <div style={{ marginTop: '8px', color: '#666', marginBottom: '24px', fontSize: isMobile ? '14px' : '16px' }}>
+            Please log in to access tasks.
+          </div>
+          <button
+            className="user-create-task-button user-create-task-button-contained"
+            onClick={handleLogout}
+            style={{ width: '100%', padding: isMobile ? '10px' : '12px' }}
+          >
+            <FiUser />
+            {isMobile ? 'Login' : 'Go to Login'}
+          </button>
+        </div>
+      </div>
     );
   }
 
   if (loading) {
     return (
-      <Box sx={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '50vh',
-        flexDirection: 'column',
-        gap: 2,
-      }}>
-        <CircularProgress />
-        <Typography variant="h6" color="text.secondary">
+      <div className="user-create-task-loading-container">
+        <div style={{ 
+          width: isMobile ? '30px' : '40px', 
+          height: isMobile ? '30px' : '40px', 
+          border: '3px solid #f3f3f3', 
+          borderTop: '3px solid #1976d2', 
+          borderRadius: '50%', 
+          animation: 'spin 1s linear infinite' 
+        }}></div>
+        <div style={{ fontSize: isMobile ? '16px' : '18px', color: '#666' }}>
           Loading Tasks...
-        </Typography>
-      </Box>
+        </div>
+        
+        <style jsx>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
+      </div>
     );
   }
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Box sx={{ p: { xs: 1, sm: 2, md: 3 }, maxWidth: 1400, margin: '0 auto' }}>
-        {/* Header */}
-        <Paper sx={{ p: { xs: 2, sm: 3 }, mb: 3, borderRadius: 2 }}>
-          <Box sx={{ display: 'flex', flexDirection: { xs: "column", md: "row" }, gap: 3, justifyContent: 'space-between', alignItems: { xs: "flex-start", md: "center" } }}>
-            <Box>
-              <Typography variant="h4" fontWeight={700} gutterBottom>
-                My Task Management
-              </Typography>
-              <Typography variant="body1" color="text.secondary">
-                Manage and track your personal tasks efficiently
-              </Typography>
-              
-              <Box sx={{ display: 'flex', gap: 2, mt: 2, flexWrap: 'wrap' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'success.main' }} />
-                  <Typography variant="body2" color="text.secondary">
-                    {taskStats.completed.count} Completed
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'info.main' }} />
-                  <Typography variant="body2" color="text.secondary">
-                    {taskStats.inProgress.count} In Progress
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'error.main' }} />
-                  <Typography variant="body2" color="text.secondary">
-                    {taskStats.overdue.count} Overdue
-                  </Typography>
-                </Box>
-              </Box>
-            </Box>
+    <div className="user-create-task-container">
+      {/* Snackbar - Positioned at the top */}
+      {snackbar.open && (
+        <div className="user-create-task-snackbar-top">
+          <div className={`user-create-task-snackbar-content user-create-task-snackbar-${snackbar.severity}`}>
+            <div className="user-create-task-snackbar-message">
+              {snackbar.message}
+            </div>
+            <button
+              className="user-create-task-snackbar-close"
+              onClick={() => setSnackbar({ ...snackbar, open: false })}
+            >
+              <FiX size={isMobile ? 16 : 18} />
+            </button>
+          </div>
+        </div>
+      )}
 
-            <Box sx={{ display: 'flex', gap: 1.5, alignItems: "center" }}>
-              <Tooltip title="Notifications">
-                <IconButton
-                  onClick={() => setNotificationsOpen(true)}
-                  sx={{ position: 'relative' }}
-                >
-                  <FiBell />
-                  {unreadNotificationCount > 0 && (
-                    <Badge
-                      badgeContent={unreadNotificationCount}
-                      color="error"
-                      sx={{
-                        position: 'absolute',
-                        top: 4,
-                        right: 4,
-                      }}
-                    />
-                  )}
-                </IconButton>
-              </Tooltip>
+      {/* Header */}
+      <div className="user-create-task-header">
+        <div className={`user-create-task-header-row ${isMobile ? 'user-create-task-flex-column' : ''}`}>
+          
+          {/* LEFT: Title + subtitle + stats */}
+          <div className="user-create-task-header-left" style={isMobile ? { marginBottom: '16px' } : {}}>
+            <div className="user-create-task-title" style={{ fontSize: isMobile ? '24px' : isTablet ? '28px' : '32px' }}>
+              My Task Management
+            </div>
 
-              <Button
-                variant="contained"
-                startIcon={<FiPlus />}
-                onClick={() => setOpenDialog(true)}
-                sx={{ borderRadius: 2 }}
-              >
-                Create Task
-              </Button>
-            </Box>
-          </Box>
-        </Paper>
+            <div className="user-create-task-subtitle" style={{ fontSize: isMobile ? '14px' : '16px' }}>
+              Manage and track your personal tasks efficiently
+            </div>
 
-        {/* Statistics Section */}
-        <Paper sx={{ p: { xs: 2, sm: 3 }, mb: 3, borderRadius: 2 }}>
-          <Typography variant="h6" fontWeight={600} gutterBottom>
+            <div className="user-create-task-stats-indicators">
+              <div className="user-create-task-stat-indicator">
+                <div className="user-create-task-stat-dot" style={{ backgroundColor: '#4caf50' }}></div>
+                <div className="user-create-task-stat-label" style={{ fontSize: isMobile ? '12px' : '14px' }}>
+                  {taskStats.completed.count} Completed
+                </div>
+              </div>
+
+              <div className="user-create-task-stat-indicator">
+                <div className="user-create-task-stat-dot" style={{ backgroundColor: '#2196f3' }}></div>
+                <div className="user-create-task-stat-label" style={{ fontSize: isMobile ? '12px' : '14px' }}>
+                  {taskStats.inProgress.count} In Progress
+                </div>
+              </div>
+
+              <div className="user-create-task-stat-indicator">
+                <div className="user-create-task-stat-dot" style={{ backgroundColor: '#f44336' }}></div>
+                <div className="user-create-task-stat-label" style={{ fontSize: isMobile ? '12px' : '14px' }}>
+                  {taskStats.overdue.count} Overdue
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT: Notification + Create Task */}
+          <div className={`user-create-task-header-actions ${isMobile ? 'user-create-task-flex-row user-create-task-justify-between' : ''}`}>
+            <button
+              className="user-create-task-action-button"
+              onClick={() => setNotificationsOpen(true)}
+              style={{ position: 'relative' }}
+            >
+              <FiBell size={isMobile ? 18 : 20} />
+              {unreadNotificationCount > 0 && (
+                <span className="user-create-task-notification-badge">
+                  {unreadNotificationCount}
+                </span>
+              )}
+            </button>
+
+            <button
+              className="user-create-task-button user-create-task-button-contained"
+              onClick={() => setOpenDialog(true)}
+              style={{ padding: isMobile ? '10px 14px' : '12px 20px' }}
+            >
+              <FiPlus size={isMobile ? 16 : 18} />
+              {isMobile ? 'Create' : 'Create Task'}
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      {/* Statistics Section */}
+      <div className="user-create-task-paper">
+        <div className="user-create-task-paper-content">
+          <div style={{ marginBottom: '16px', fontWeight: 600, fontSize: isMobile ? '16px' : '18px' }}>
             Task Statistics
-          </Typography>
+          </div>
           
           {renderTimeFilter()}
           {renderStatisticsCards()}
 
           {(statusFilter || timeFilter !== 'all') && (
-            <Alert severity="info" sx={{ mt: 2 }}>
-              <Typography variant="body2">
+            <div className="user-create-task-alert info" style={{ marginTop: '16px', padding: isMobile ? '12px' : '16px' }}>
+              <div style={{ fontSize: isMobile ? '13px' : '14px' }}>
                 Active Filters:
                 {statusFilter && (
-                  <Chip
-                    size="small"
-                    label={statusFilter.replace('-', ' ')}
-                    onDelete={() => setStatusFilter('')}
-                    sx={{ mx: 0.5 }}
-                  />
+                  <div className="user-create-task-status-chip" style={{ display: 'inline-flex', margin: '0 4px', padding: '2px 8px' }}>
+                    {statusFilter.replace('-', ' ')}
+                    <button
+                      onClick={() => setStatusFilter('')}
+                      style={{ marginLeft: '4px', background: 'none', border: 'none', cursor: 'pointer' }}
+                    >
+                      ×
+                    </button>
+                  </div>
                 )}
                 {timeFilter !== 'all' && (
-                  <Chip
-                    size="small"
-                    label={`Time: ${timeFilter}`}
-                    onDelete={() => setTimeFilter('all')}
-                    sx={{ mx: 0.5 }}
-                  />
+                  <div className="user-create-task-priority-chip" style={{ display: 'inline-flex', margin: '0 4px', padding: '2px 8px' }}>
+                    Time: {timeFilter}
+                    <button
+                      onClick={() => setTimeFilter('all')}
+                      style={{ marginLeft: '4px', background: 'none', border: 'none', cursor: 'pointer' }}
+                    >
+                      ×
+                    </button>
+                  </div>
                 )}
-              </Typography>
-            </Alert>
+              </div>
+            </div>
           )}
-        </Paper>
+        </div>
+      </div>
 
-        {/* Tasks Section */}
-        <Paper sx={{ borderRadius: 2, overflow: 'hidden' }}>
-          <Box sx={{ p: { xs: 2, sm: 3 }, borderBottom: 1, borderColor: 'divider' }}>
-            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2, justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' } }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <FiCheckSquare />
-                <Typography variant="h5" fontWeight={700}>
-                  My Tasks
-                </Typography>
-              </Box>
-              
-              <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', width: { xs: '100%', md: 'auto' } }}>
-                <Button
-                  variant="outlined"
+      {/* Tasks Section */}
+      <div className="user-create-task-paper">
+        <div style={{ 
+          padding: isMobile ? '12px 16px' : '16px 24px', 
+          borderBottom: '1px solid #e0e0e0' 
+        }}>
+          <div className="user-create-task-flex user-create-task-flex-column user-create-task-gap-2">
+            <div className="user-create-task-flex user-create-task-align-center user-create-task-gap-1.5">
+              <FiCheckSquare size={isMobile ? 18 : 20} />
+              <div style={{ fontSize: isMobile ? '18px' : '20px', fontWeight: 700 }}>
+                My Tasks
+              </div>
+            </div>
+            
+            <div className={`user-create-task-flex ${isMobile ? 'user-create-task-flex-column user-create-task-gap-2' : 'user-create-task-justify-between user-create-task-align-center'}`}>
+              <div className="user-create-task-flex user-create-task-gap-1.5 user-create-task-align-center">
+                <button
+                  className="user-create-task-button user-create-task-button-outlined"
                   onClick={() => setCalendarFilterOpen(true)}
-                  startIcon={<FiCalendar />}
-                  size="small"
+                  style={{ padding: isMobile ? '8px 12px' : '10px 16px' }}
                 >
+                  <FiCalendar size={isMobile ? 14 : 16} />
                   {getDateFilterSummary() || 'Date Filter'}
-                </Button>
+                </button>
 
-                <FormControl size="small" sx={{ minWidth: 120 }}>
-                  <InputLabel>Status</InputLabel>
-                  <Select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    label="Status"
-                  >
-                    <MenuItem value="">All Status</MenuItem>
-                    <MenuItem value="pending">Pending</MenuItem>
-                    <MenuItem value="in-progress">In Progress</MenuItem>
-                    <MenuItem value="completed">Completed</MenuItem>
-                    <MenuItem value="rejected">Rejected</MenuItem>
-                    <MenuItem value="onhold">On Hold</MenuItem>
-                    <MenuItem value="reopen">Reopen</MenuItem>
-                    <MenuItem value="cancelled">Cancelled</MenuItem>
-                    <MenuItem value="overdue">Overdue</MenuItem>
-                  </Select>
-                </FormControl>
+                <select
+                  className="user-create-task-select"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  style={{ minWidth: isMobile ? '100px' : '120px' }}
+                >
+                  <option value="">All Status</option>
+                  <option value="pending">Pending</option>
+                  <option value="in-progress">In Progress</option>
+                  <option value="completed">Completed</option>
+                  <option value="rejected">Rejected</option>
+                  <option value="onhold">On Hold</option>
+                  <option value="reopen">Reopen</option>
+                  <option value="cancelled">Cancelled</option>
+                  <option value="overdue">Overdue</option>
+                </select>
 
-                <IconButton onClick={fetchMyTasks}>
-                  <FiRefreshCw />
-                </IconButton>
-              </Box>
-            </Box>
-          </Box>
+                <button
+                  className="user-create-task-action-button"
+                  onClick={fetchMyTasks}
+                >
+                  <FiRefreshCw size={isMobile ? 14 : 16} />
+                </button>
+              </div>
 
-          <Box sx={{ p: { xs: 2, sm: 3 } }}>
-            {renderGroupedTasks(myTasksGrouped)}
-          </Box>
-        </Paper>
+              {/* Clear All Filters button - aligned to the right */}
+              {(statusFilter || selectedDate || dateRange.start || dateRange.end) && (
+                <button
+                  className="user-create-task-button user-create-task-button-outlined"
+                  onClick={clearAllFilters}
+                  style={{ padding: isMobile ? '8px 12px' : '10px 16px' }}
+                >
+                  <FiRotateCcw size={isMobile ? 12 : 14} />
+                  {isMobile ? 'Clear All' : 'Clear All Filters'}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
 
-        {/* DIALOGS */}
-        {renderCreateTaskDialog()}
-        {renderCalendarFilterDialog()}
-        {renderNotificationsPanel()}
-        {renderRemarksDialog()}
-        {renderActivityLogsDialog()}
-        {renderImageZoomModal()}
+        <div className="user-create-task-paper-content">
+          {renderGroupedTasks(myTasksGrouped)}
+        </div>
+      </div>
 
-        {/* Snackbar */}
-        <Snackbar
-          open={snackbar.open}
-          autoHideDuration={4000}
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        >
-          <Alert severity={snackbar.severity} sx={{ width: '100%' }}>
-            {snackbar.message}
-          </Alert>
-        </Snackbar>
-      </Box>
-    </LocalizationProvider>
+      {/* DIALOGS */}
+      {renderCreateTaskDialog()}
+      {renderCalendarFilterDialog()}
+      {renderNotificationsPanel()}
+      {renderRemarksDialog()}
+      {renderActivityLogsDialog()}
+      {renderImageZoomModal()}
+    </div>
   );
 };
 
