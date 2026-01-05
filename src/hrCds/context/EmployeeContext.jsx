@@ -1,45 +1,51 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 
-const EmployeeContext = createContext();
+// 1. Create context with null default
+export const AuthContext = createContext(null);
 
-export const useEmployees = () => useContext(EmployeeContext);
+// 2. Safe custom hook
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('❌ useAuth must be used within an <AuthProvider>');
+  }
+  return context;
+};
 
-export const EmployeeProvider = ({ children }) => {
-  const [employees, setEmployees] = useState([]);
-  const [notification, setNotification] = useState(null);
+// 3. Provider
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Load from localStorage on mount
   useEffect(() => {
-    const stored = localStorage.getItem('employees');
-    if (stored) setEmployees(JSON.parse(stored));
+    const storedUser = localStorage.getItem('user');
+    const token = localStorage.getItem('token');
+    if (storedUser && token) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+        setIsAuthenticated(true);
+      } catch (error) {
+        console.error('⚠️ Failed to parse user from localStorage:', error);
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+      }
+    }
   }, []);
 
-  // Save to localStorage on change
-  useEffect(() => {
-    localStorage.setItem('employees', JSON.stringify(employees));
-  }, [employees]);
-
-  // CRUD operations
-  const addEmployee = (employee) => {
-    setEmployees(prev => [...prev, { ...employee, id: Date.now() }]);
-    setNotification('Employee added!');
-  };
-
-  const updateEmployee = (id, updated) => {
-    setEmployees(prev => prev.map(e => e.id === id ? { ...e, ...updated } : e));
-    setNotification('Employee updated!');
-  };
-
-  const deleteEmployee = (id) => {
-    setEmployees(prev => prev.filter(e => e.id !== id));
-    setNotification('Employee deleted!');
-  };
-
-  const clearNotification = () => setNotification(null);
+  // useEffect(() => {
+  //   if (user) {
+  //     localStorage.setItem('user', JSON.stringify(user));
+  //   } else {
+  //     localStorage.removeItem('user');
+  //     localStorage.removeItem('token');
+  //     setIsAuthenticated(false);
+  //   }
+  // }, [user]);
 
   return (
-    <EmployeeContext.Provider value={{ employees, addEmployee, updateEmployee, deleteEmployee, notification, clearNotification }}>
+    <AuthContext.Provider value={{ user, setUser, isAuthenticated, setIsAuthenticated }}>
       {children}
-    </EmployeeContext.Provider>
+    </AuthContext.Provider>
   );
-}; 
+};

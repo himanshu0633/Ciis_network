@@ -878,7 +878,7 @@ const AddClientModal = ({
               {/* Team Dropdown */}
               <div className="form-group col-span-2">
                 <label className="form-label">Team *</label>
-                <div className="relative">
+                <div className="dropdown-wrapper">
                   <div
                     className="form-input cursor-pointer flex justify-between items-center"
                     onClick={() => setTeamOpen(!teamOpen)}
@@ -888,14 +888,14 @@ const AddClientModal = ({
                         ? "Select team members"
                         : `${newClient.projectManagers.length} selected`}
                     </span>
-                    <span className={`transition-transform ${teamOpen ? 'rotate-180' : ''}`}>
+                    <span className={`dropdown-arrow ${teamOpen ? 'dropdown-arrow--open' : ''}`}>
                       <FiChevronDown />
                     </span>
                   </div>
 
                   {teamOpen && (
-                    <div className="absolute z-10 w-full mt-1 border rounded bg-white shadow-lg max-h-60 overflow-auto">
-                      <div className="sticky top-0 bg-white p-2 border-b">
+                    <div className="dropdown-content">
+                      <div className="dropdown-search">
                         <input
                           type="text"
                           className="form-input"
@@ -906,12 +906,12 @@ const AddClientModal = ({
                         />
                       </div>
                       
-                      <div className="max-h-48 overflow-y-auto">
+                      <div className="dropdown-list">
                         {filteredManagers.length > 0 ? (
                           filteredManagers.map((manager) => (
                             <label
                               key={manager._id}
-                              className="flex items-center gap-3 p-3 hover:bg-grey-50 cursor-pointer border-b"
+                              className="dropdown-item"
                               onClick={(e) => e.stopPropagation()}
                             >
                               <input
@@ -928,13 +928,13 @@ const AddClientModal = ({
                                 }}
                                 disabled={loading}
                               />
-                              <div className="flex items-center gap-3 flex-1">
+                              <div className="dropdown-item-content">
                                 <div className="avatar avatar--primary">
                                   {manager.name?.charAt(0)?.toUpperCase() || 'U'}
                                 </div>
-                                <div className="flex-1">
+                                <div>
                                   <span className="font-medium">{manager.name}</span>
-                                  <div className="flex items-center gap-2 text-sm text-muted">
+                                  <div className="dropdown-item-details">
                                     <span>{manager.role}</span>
                                     <span>•</span>
                                     <span>{manager.email}</span>
@@ -944,7 +944,7 @@ const AddClientModal = ({
                             </label>
                           ))
                         ) : (
-                          <div className="p-4 text-center text-muted">
+                          <div className="dropdown-empty">
                             No managers found
                           </div>
                         )}
@@ -955,16 +955,16 @@ const AddClientModal = ({
                 
                 {/* Selected Managers Preview */}
                 {newClient.projectManagers.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1">
+                  <div className="selected-items-preview">
                     {newClient.projectManagers.map(managerId => {
                       const manager = projectManagers.find(pm => pm._id === managerId);
                       if (!manager) return null;
                       return (
-                        <div key={managerId} className="badge badge--primary flex items-center gap-1">
+                        <div key={managerId} className="selected-item">
                           <span>{manager.name}</span>
                           <button
                             type="button"
-                            className="ml-1 hover:text-white"
+                            className="selected-item-remove"
                             onClick={() => {
                               setNewClient(prev => ({
                                 ...prev,
@@ -972,7 +972,7 @@ const AddClientModal = ({
                               }));
                             }}
                           >
-                            <FiX size={14} />
+                            <FiX />
                           </button>
                         </div>
                       );
@@ -984,7 +984,7 @@ const AddClientModal = ({
               {/* Services Dropdown */}
               <div className="form-group col-span-2">
                 <label className="form-label">Services</label>
-                <div className="relative">
+                <div className="dropdown-wrapper">
                   <div 
                     className="form-input cursor-pointer flex justify-between items-center"
                     onClick={() => setServicesOpen(!servicesOpen)}
@@ -994,19 +994,19 @@ const AddClientModal = ({
                         ? "Select services"
                         : `${newClient.services.length} selected`}
                     </span>
-                    <span className={`transition-transform ${servicesOpen ? 'rotate-180' : ''}`}>
+                    <span className={`dropdown-arrow ${servicesOpen ? 'dropdown-arrow--open' : ''}`}>
                       <FiChevronDown />
                     </span>
                   </div>
 
                   {servicesOpen && (
-                    <div className="absolute z-10 w-full mt-1 border rounded bg-white shadow-lg max-h-60 overflow-auto">
-                      <div className="p-2">
+                    <div className="dropdown-content">
+                      <div className="dropdown-list">
                         {services.length > 0 ? (
                           services.map((service) => (
                             <label
                               key={service._id}
-                              className="flex items-center p-3 hover:bg-grey-50 cursor-pointer border-b"
+                              className="dropdown-item"
                               onClick={(e) => e.stopPropagation()}
                             >
                               <input
@@ -1024,7 +1024,7 @@ const AddClientModal = ({
                                 }}
                                 disabled={loading || services.length === 0}
                               />
-                              <label htmlFor={`service-${service._id}`} className="ml-3 cursor-pointer flex-1">
+                              <label htmlFor={`service-${service._id}`} className="dropdown-item-content">
                                 <div className="font-medium">{service.servicename}</div>
                                 <small className="text-muted">
                                   Created: {new Date(service.createdAt).toLocaleDateString()}
@@ -1033,7 +1033,7 @@ const AddClientModal = ({
                             </label>
                           ))
                         ) : (
-                          <div className="p-4 text-center text-muted">
+                          <div className="dropdown-empty">
                             No services available
                           </div>
                         )}
@@ -1044,13 +1044,13 @@ const AddClientModal = ({
                 
                 {/* Selected Services Preview */}
                 {newClient.services.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1">
+                  <div className="selected-items-preview">
                     {newClient.services.map((serviceName, index) => (
-                      <div key={index} className="badge badge--info flex items-center gap-1">
+                      <div key={index} className="selected-item selected-item--info">
                         <span>{serviceName}</span>
                         <button
                           type="button"
-                          className="ml-1 hover:text-white"
+                          className="selected-item-remove"
                           onClick={() => {
                             setNewClient(prev => ({
                               ...prev,
@@ -1058,7 +1058,7 @@ const AddClientModal = ({
                             }));
                           }}
                         >
-                          <FiX size={14} />
+                          <FiX />
                         </button>
                       </div>
                     ))}
@@ -1614,10 +1614,8 @@ const ClientManagement = () => {
   const renderManagerInfo = (manager) => {
     return (
       <div className="manager-info">
-        <div className="flex-align-center mb-1">
-          <div className="avatar avatar--primary mr-2">
-            {manager.name?.charAt(0)?.toUpperCase() || 'U'}
-          </div>
+        <div className="manager-header">
+          <div className="avatar avatar--primary"></div>
           <div>
             <p className="font-bold">{manager.name}</p>
             <small className="text-muted">
@@ -1625,17 +1623,17 @@ const ClientManagement = () => {
             </small>
           </div>
         </div>
-        <div className="grid-2 gap-1">
+        <div className="manager-details">
           {manager.email && (
             <div>
               <small className="text-muted">Email:</small>
-              <small className="ml-1">{manager.email}</small>
+              <small>{manager.email}</small>
             </div>
           )}
           {manager.role && (
             <div>
               <small className="text-muted">Role:</small>
-              <small className="ml-1">{manager.role}</small>
+              <small>{manager.role}</small>
             </div>
           )}
         </div>
@@ -1654,30 +1652,30 @@ const ClientManagement = () => {
       {/* Header */}
       <div className="client-management-header">
         <div className="card__content">
-          <div className="flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="flex-align-center">
-              <FiUsers className="text-3xl md:text-4xl mr-4 text-primary" />
+          <div className="client-header-container">
+            <div className="client-header-left">
+              <FiUsers className="client-header-icon" />
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold">Client Management</h1>
-                <p className="text-muted">Manage clients and services</p>
+                <h1 className="client-header-title">Client Management</h1>
+                <p className="client-header-subtitle">Manage clients and services</p>
               </div>
             </div>
-            <div className="flex-col sm:flex-row gap-2 w-full md:w-auto">
+            <div className="client-header-actions">
               <button
-                className="btn btn--outlined w-full sm:w-auto"
+                className="btn btn--outlined"
                 onClick={() => setServicesModal(true)}
               >
                 <FiBriefcase /> Services ({services.length})
               </button>
               <button
-                className="btn btn--primary w-full sm:w-auto"
+                className="btn btn--primary"
                 onClick={() => setAddClientModal(true)}
                 disabled={services.length === 0}
               >
                 <FiPlus /> Add Client
               </button>
               <button
-                className="btn btn--outlined w-full sm:w-auto"
+                className="btn btn--outlined"
                 onClick={fetchData}
               >
                 <FiRefreshCw /> Refresh
@@ -1688,7 +1686,7 @@ const ClientManagement = () => {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-4">
+      <div className="stats-grid">
         {[
           { label: 'Total Clients', value: pagination.totalItems || clients.length, color: 'primary', icon: <FiUsers /> },
           { label: 'Active Clients', value: clients.filter(c => c.status === 'Active').length, color: 'success', icon: <FiCheckCircle /> },
@@ -1698,13 +1696,13 @@ const ClientManagement = () => {
         ].map((stat, index) => (
           <div key={index} className={`stat-card stat-card--${stat.color}`}>
             <div className="card__content">
-              <div className="flex-align-center gap-2">
+              <div className="stat-card-content">
                 <div className={`avatar avatar--${stat.color}`}>
                   {stat.icon}
                 </div>
                 <div>
                   <small className="text-muted">{stat.label}</small>
-                  <p className="text-2xl font-bold">{stat.value}</p>
+                  <p className="stat-card-value">{stat.value}</p>
                 </div>
               </div>
             </div>
@@ -1727,21 +1725,21 @@ const ClientManagement = () => {
 
       {/* Main Content Card */}
       <div className="card">
-        <div className="card__header bg-gradient">
-          <div className="flex-align-center justify-between">
-            <div className="flex-align-center gap-2">
+        <div className="card__header card-header-gradient">
+          <div className="card-header-container">
+            <div className="card-header-left">
               <div className="avatar-circle">
                 <FiUsers />
               </div>
               <div>
-                <h2 className="text-white">Client Portfolio</h2>
-                <p className="text-white text-opacity-80">
+                <h2 className="card-header-title">Client Portfolio</h2>
+                <p className="card-header-subtitle">
                   Total {pagination.totalItems} clients • {clients.filter(c => c.status === 'Active').length} active
                 </p>
               </div>
             </div>
             
-            <div className="hidden md:flex items-center gap-2">
+            <div className="card-header-right">
               <div className="active-indicator">
                 <FiActivity />
                 <span>{clients.filter(c => c.status === 'Active').length} Active</span>
@@ -1759,8 +1757,8 @@ const ClientManagement = () => {
         
         {/* Filter Bar */}
         <div className="filter-bar">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
-            <div className="md:col-span-1">
+          <div className="filter-grid">
+            <div className="filter-search-container">
               <div className="search-input">
                 <FiSearch />
                 <input
@@ -1817,7 +1815,7 @@ const ClientManagement = () => {
             
             <div>
               <button
-                className="btn btn--primary w-full"
+                className="btn btn--primary w-100"
                 onClick={() => setAddClientModal(true)}
                 disabled={services.length === 0}
               >
@@ -1827,7 +1825,7 @@ const ClientManagement = () => {
           </div>
         </div>
         
-        <div className="card__content p-0">
+        <div className="card__content card-content-padded">
           {clients.length > 0 ? (
             <>
               {/* Table Container */}
@@ -1836,11 +1834,11 @@ const ClientManagement = () => {
                   <thead>
                     <tr>
                       <th>Client</th>
-                      <th className="hidden sm:table-cell">Company</th>
-                      <th className="hidden md:table-cell">Services</th>
+                      <th className="table-cell-hidden-sm">Company</th>
+                      <th className="table-cell-hidden-md">Services</th>
                       <th>Status</th>
                       <th>Progress</th>
-                      <th className="hidden sm:table-cell">Tasks</th>
+                      <th className="table-cell-hidden-sm">Tasks</th>
                       <th className="text-center">Actions</th>
                     </tr>
                   </thead>
@@ -1853,31 +1851,28 @@ const ClientManagement = () => {
                       return (
                         <tr key={client._id}>
                           <td>
-                            <div className="flex-align-center gap-2">
-                              <div className="avatar avatar--primary">
-                                {client.client?.charAt(0) || 'C'}
-                              </div>
+                            <div className="client-cell">
                               <div>
                                 <p className="font-bold">{client.client || 'N/A'}</p>
-                                <small className="text-muted hidden sm:block">
+                                <small className="text-muted client-cell-secondary">
                                   ID: {client.clientId || client._id?.slice(-6)}
                                 </small>
-                                <small className="text-muted sm:hidden">
+                                <small className="text-muted client-cell-mobile">
                                   {client.company || 'N/A'}
                                 </small>
                               </div>
                             </div>
                           </td>
                           
-                          <td className="hidden sm:table-cell">
+                          <td className="table-cell-hidden-sm">
                             <div>
                               <p className="font-medium">{client.company || 'N/A'}</p>
                               <small className="text-muted">{client.email || 'No email'}</small>
                             </div>
                           </td>
                           
-                          <td className="hidden md:table-cell">
-                            <div className="flex flex-wrap gap-1 max-w-xs">
+                          <td className="table-cell-hidden-md">
+                            <div className="services-tags">
                               {Array.isArray(client.services) && client.services.slice(0, 2).map((service, idx) => (
                                 <div key={idx} className="badge badge--info">
                                   {service}
@@ -1898,10 +1893,10 @@ const ClientManagement = () => {
                           </td>
                           
                           <td>
-                            <div className="w-20 sm:w-32">
-                              <div className="flex justify-between items-center mb-1">
+                            <div className="progress-cell">
+                              <div className="progress-header">
                                 <p className="font-medium">{progress}%</p>
-                                <small className="text-muted hidden sm:block">
+                                <small className="text-muted progress-stats">
                                   {stats.completed}/{stats.total}
                                 </small>
                               </div>
@@ -1918,8 +1913,8 @@ const ClientManagement = () => {
                             </div>
                           </td>
                           
-                          <td className="hidden sm:table-cell">
-                            <div className="flex-align-center gap-1">
+                          <td className="table-cell-hidden-sm">
+                            <div className="tasks-cell">
                               <div className={`badge ${pending > 0 ? 'badge--warning' : 'badge--success'}`}>
                                 {pending}
                               </div>
@@ -1928,7 +1923,7 @@ const ClientManagement = () => {
                           </td>
                           
                           <td className="text-center">
-                            <div className="flex gap-1 justify-center">
+                            <div className="actions-cell">
                               <button 
                                 className="action-button action-button--primary"
                                 onClick={() => handleViewClick(client)}
@@ -1954,9 +1949,9 @@ const ClientManagement = () => {
               
               {/* Pagination */}
               <div className="pagination-container">
-                <div className="flex items-center gap-2">
+                <div className="pagination-left">
                   <select
-                    className="form-input w-32"
+                    className="form-input pagination-select"
                     value={filters.limit}
                     onChange={(e) => handleFilterChange('limit', e.target.value)}
                   >
@@ -1965,7 +1960,7 @@ const ClientManagement = () => {
                     <option value={25}>25 per page</option>
                     <option value={50}>50 per page</option>
                   </select>
-                  <p className="text-muted">
+                  <p className="pagination-info">
                     Showing <strong>{((filters.page - 1) * filters.limit) + 1}-{Math.min(filters.page * filters.limit, pagination.totalItems)}</strong> of <strong>{pagination.totalItems}</strong>
                   </p>
                 </div>
@@ -1984,11 +1979,11 @@ const ClientManagement = () => {
               </div>
             </>
           ) : (
-            <div className="text-center py-8">
+            <div className="empty-state-container">
               <div className="empty-state">
-                <FiUsers className="text-5xl text-muted mb-3" />
-                <h3 className="text-muted font-bold mb-2">No Clients Found</h3>
-                <p className="text-muted max-w-md mx-auto px-2 mb-4">
+                <FiUsers className="empty-state-icon" />
+                <h3 className="empty-state-title">No Clients Found</h3>
+                <p className="empty-state-description">
                   {services.length === 0 
                     ? 'Add services first to create clients' 
                     : 'Add your first client to start managing your portfolio'
@@ -2062,27 +2057,27 @@ const ClientManagement = () => {
               </button>
             </div>
             <div className="modal__content">
-              <div className="space-y-3">
+              <div className="client-details-content">
                 {/* Basic Information */}
-                <div>
-                  <h4 className="flex-align-center gap-1 mb-2">
+                <div className="client-details-section">
+                  <h4 className="section-header">
                     <FiBriefcase /> Basic Information
                   </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    <div>
-                      <p className="text-muted">Client Name</p>
-                      <p className="font-bold">{viewDialog.client.client}</p>
+                  <div className="details-grid">
+                    <div className="detail-item">
+                      <p className="detail-label">Client Name</p>
+                      <p className="detail-value">{viewDialog.client.client}</p>
                     </div>
-                    <div>
-                      <p className="text-muted">Company</p>
-                      <p className="font-bold">{viewDialog.client.company}</p>
+                    <div className="detail-item">
+                      <p className="detail-label">Company</p>
+                      <p className="detail-value">{viewDialog.client.company}</p>
                     </div>
-                    <div>
-                      <p className="text-muted">City</p>
-                      <p className="font-bold">{viewDialog.client.city}</p>
+                    <div className="detail-item">
+                      <p className="detail-label">City</p>
+                      <p className="detail-value">{viewDialog.client.city}</p>
                     </div>
-                    <div>
-                      <p className="text-muted">Status</p>
+                    <div className="detail-item">
+                      <p className="detail-label">Status</p>
                       <div className={`status-chip status-chip--${viewDialog.client.status === 'Active' ? 'active' : viewDialog.client.status === 'On Hold' ? 'on-hold' : 'default'}`}>
                         {viewDialog.client.status}
                       </div>
@@ -2091,11 +2086,11 @@ const ClientManagement = () => {
                 </div>
 
                 {/* Project Managers */}
-                <div>
-                  <h4 className="flex-align-center gap-1 mb-2">
+                <div className="client-details-section">
+                  <h4 className="section-header">
                     <FiUsers /> Team
                   </h4>
-                  <p className="text-muted mb-2">
+                  <p className="section-description">
                     These managers will appear in task assignment dropdowns
                   </p>
                   <div>
@@ -2118,11 +2113,11 @@ const ClientManagement = () => {
 
                 {/* Services Progress Section */}
                 {viewDialog.client.services && viewDialog.client.services.length > 0 && (
-                  <div>
-                    <h4 className="flex-align-center gap-1 mb-2">
+                  <div className="client-details-section">
+                    <h4 className="section-header">
                       <FiTrendingUp /> Services & Task Management
                     </h4>
-                    <p className="text-muted mb-2">
+                    <p className="section-description">
                       Add tasks with due dates and assign them to project managers
                     </p>
                     
@@ -2143,33 +2138,33 @@ const ClientManagement = () => {
                 )}
 
                 {/* Additional Information */}
-                <div>
-                  <h4 className="flex-align-center gap-1 mb-2">
+                <div className="client-details-section">
+                  <h4 className="section-header">
                     <FiMapPin /> Additional Information
                   </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  <div className="details-grid">
                     {viewDialog.client.phone && (
-                      <div>
-                        <p className="text-muted">Phone</p>
-                        <p className="font-bold">{viewDialog.client.phone}</p>
+                      <div className="detail-item">
+                        <p className="detail-label">Phone</p>
+                        <p className="detail-value">{viewDialog.client.phone}</p>
                       </div>
                     )}
                     {viewDialog.client.address && (
-                      <div>
-                        <p className="text-muted">Address</p>
-                        <p className="font-bold">{viewDialog.client.address}</p>
+                      <div className="detail-item">
+                        <p className="detail-label">Address</p>
+                        <p className="detail-value">{viewDialog.client.address}</p>
                       </div>
                     )}
                     {viewDialog.client.description && (
-                      <div className="md:col-span-2">
-                        <p className="text-muted">Description</p>
-                        <p className="font-bold">{viewDialog.client.description}</p>
+                      <div className="detail-item detail-item-full">
+                        <p className="detail-label">Description</p>
+                        <p className="detail-value">{viewDialog.client.description}</p>
                       </div>
                     )}
                     {viewDialog.client.notes && (
-                      <div className="md:col-span-2">
-                        <p className="text-muted">Notes</p>
-                        <p className="font-bold">{viewDialog.client.notes}</p>
+                      <div className="detail-item detail-item-full">
+                        <p className="detail-label">Notes</p>
+                        <p className="detail-value">{viewDialog.client.notes}</p>
                       </div>
                     )}
                   </div>
@@ -2193,7 +2188,7 @@ const ClientManagement = () => {
               <h3>Edit Client</h3>
             </div>
             <div className="modal__content">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <div className="edit-client-grid">
                 <div className="form-group">
                   <label className="form-label">Client Name *</label>
                   <input
@@ -2252,11 +2247,11 @@ const ClientManagement = () => {
                 </div>
 
                 {/* Project Managers */}
-                <div className="form-group md:col-span-2">
+                <div className="form-group edit-managers-group">
                   <label className="form-label">Team *</label>
-                  <div className="max-h-40 overflow-auto">
+                  <div className="managers-list">
                     {projectManagers.map((manager) => (
-                      <div key={manager._id} className="flex items-center p-2 hover:bg-grey-50">
+                      <div key={manager._id} className="manager-checkbox-item">
                         <input
                           type="checkbox"
                           id={`edit-manager-${manager._id}`}
@@ -2279,10 +2274,8 @@ const ClientManagement = () => {
                             });
                           }}
                         />
-                        <div className="flex items-center ml-2 w-full">
-                          <div className="avatar avatar--primary mr-2">
-                            {manager.name?.charAt(0)?.toUpperCase() || 'U'}
-                          </div>
+                        <div className="manager-checkbox-content">
+                          <div className="avatar avatar--primary"></div>
                           <div>
                             <p className="font-bold">{manager.name}</p>
                             <small className="text-muted">
@@ -2296,11 +2289,11 @@ const ClientManagement = () => {
                 </div>
 
                 {/* Services */}
-                <div className="form-group md:col-span-2">
+                <div className="form-group edit-services-group">
                   <label className="form-label">Services</label>
-                  <div className="max-h-40 overflow-auto">
+                  <div className="services-list">
                     {services.map((service) => (
-                      <div key={service._id} className="flex items-center p-1">
+                      <div key={service._id} className="service-checkbox-item">
                         <input
                           type="checkbox"
                           id={`edit-service-${service._id}`}
@@ -2318,7 +2311,7 @@ const ClientManagement = () => {
                             });
                           }}
                         />
-                        <label htmlFor={`edit-service-${service._id}`} className="ml-2">
+                        <label htmlFor={`edit-service-${service._id}`}>
                           {service.servicename}
                         </label>
                       </div>
@@ -2326,7 +2319,7 @@ const ClientManagement = () => {
                   </div>
                 </div>
 
-                <div className="form-group md:col-span-2">
+                <div className="form-group edit-progress-group">
                   <label className="form-label">Progress</label>
                   <input
                     type="text"
@@ -2366,7 +2359,7 @@ const ClientManagement = () => {
                   />
                 </div>
 
-                <div className="form-group md:col-span-2">
+                <div className="form-group edit-address-group">
                   <label className="form-label">Address</label>
                   <input
                     type="text"
@@ -2379,7 +2372,7 @@ const ClientManagement = () => {
                   />
                 </div>
 
-                <div className="form-group md:col-span-2">
+                <div className="form-group edit-description-group">
                   <label className="form-label">Description</label>
                   <textarea
                     className="form-input"
@@ -2393,7 +2386,7 @@ const ClientManagement = () => {
                   />
                 </div>
 
-                <div className="form-group md:col-span-2">
+                <div className="form-group edit-notes-group">
                   <label className="form-label">Notes</label>
                   <textarea
                     className="form-input"

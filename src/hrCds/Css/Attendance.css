@@ -474,8 +474,8 @@
   justify-content: center;
   width: 56px;
   height: 56px;
-  border-radius: var(--border-radius-full);
-  background: var(--gray-50);
+  border-radius: 50%;
+  background: #0d60c0;
 }
 
 .Attendance-stat-icon {
@@ -526,7 +526,6 @@
 }
 
 .Attendance-stat-extra {
-  color: var(--success-light);
   font-size: 16px;
   font-weight: 600;
   background: var(--success-bg);
@@ -618,7 +617,9 @@
   box-shadow: var(--shadow-md);
   margin-bottom: 24px;
   overflow-x: auto;
+
 }
+
 
 .Attendance-table {
   width: 100%;
@@ -1024,6 +1025,23 @@
   .Attendance-container {
     padding: 16px;
   }
+
+
+  .Attendance-icon-button {
+    width: 6px;
+    height: 6px;
+    min-width: 28px;
+    min-height: 28px;
+  }
+
+  .Attendance-subtitle {
+    font-size: 11px;
+    line-height: 1.4;
+    font-weight: 600;
+    margin-left: -1px;
+  }
+
+ 
   
   .Attendance-header {
     padding: 20px;
@@ -1050,13 +1068,10 @@
   }
   
   .Attendance-stats-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 16px;
   }
-  
-  .Attendance-stat-card {
-    padding: 20px;
-  }
+    
   
   .Attendance-stat-value {
     font-size: 28px;
@@ -1075,7 +1090,57 @@
 
 @media (max-width: 480px) {
   .Attendance-stats-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr); /* 2 columns */
+    gap: 10px;
+  }
+
+  .Attendance-stat-icon-container {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    margin: 0 auto 6px;
+  }
+
+  .Attendance-stat-card {
+    padding: 10px 8px;
+    text-align: center;
+  }
+
+  .Attendance-stat-label {
+    font-size: 10px;
+  }
+
+  .Attendance-stat-extra {
+    font-size: 8px;
+  }
+
+  .Attendance-stat-value {
+    font-size: 18px;
+  }
+
+  /* Present Days – left */
+  .Attendance-stat-card[data-key="present"] {
+    order: 1;
+  }
+
+  /* Absent Days – right */
+  .Attendance-stat-card[data-key="absent"] {
+    order: 2;
+  }
+
+  .Attendance-time-tab {
+    padding: 6px 12px;
+    font-size: 10px;
+    flex: 1;              /* equal width tabs */
+    text-align: center;
+  }
+
+
+  .Attendance-export-button {
+    width: 40%;
+    padding: 6px;
+    font-size: 10px;
   }
   
   .Attendance-title {
@@ -1153,6 +1218,7 @@
   }
 }
 
+ 
 .export-container {
   position: relative;
 }

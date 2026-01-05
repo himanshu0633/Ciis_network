@@ -225,7 +225,9 @@ const MyAssets = () => {
             icon: FiXCircle,
             value: stats.rejected,
           },
-        ].map((stat) => (
+        ]
+        .filter(stat => stat.value > 0)
+        .map((stat) => (
           <div
             key={stat.key}
             className={`MyAssets-stat-card ${filterStatus === (stat.key === "total" ? "all" : stat.key) ? "MyAssets-active" : ""}`}

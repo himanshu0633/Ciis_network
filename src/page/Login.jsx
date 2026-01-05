@@ -433,47 +433,7 @@ const Login = () => {
                 {loading ? 'Signing in...' : 'Sign In'}
               </Button>
 
-              <Grid container justifyContent="center" spacing={1.5}>
-                <Grid item>
-                  <Typography variant="body2" color="text.secondary">
-                    Don't have an account?
-                  </Typography>
-                </Grid>
-                <Grid item>
-                  <Link
-                    href="/register"
-                    variant="body2"
-                    sx={{
-                      fontWeight: 600,
-                      textDecoration: 'none',
-                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                      backgroundClip: 'text',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      position: 'relative',
-                      '&:hover': {
-                        '&::after': {
-                          transform: 'scaleX(1)'
-                        }
-                      },
-                      '&::after': {
-                        content: '""',
-                        position: 'absolute',
-                        bottom: -2,
-                        left: 0,
-                        width: '100%',
-                        height: '2px',
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        transform: 'scaleX(0)',
-                        transformOrigin: 'left',
-                        transition: 'transform 0.3s ease'
-                      }
-                    }}
-                  >
-                    Sign up now
-                  </Link>
-                </Grid>
-              </Grid>
+      
             </form>
 
           </Paper>

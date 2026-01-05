@@ -15,7 +15,7 @@ const EmployeeProject = () => {
   const [openTaskDialog, setOpenTaskDialog] = useState(false);
   const [openStatusDialog, setOpenStatusDialog] = useState(false);
   const [openActivityDrawer, setOpenActivityDrawer] = useState(false);
-  const [openNotificationsDrawer, setOpenNotificationsDrawer] = useState(false);
+  const [openNotificationsModal, setOpenNotificationsModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [statusRemark, setStatusRemark] = useState("");
@@ -559,7 +559,7 @@ const EmployeeProject = () => {
           <Tooltip title="Notifications">
             <button 
               className="EmployeeProject-icon-button EmployeeProject-notification-button"
-              onClick={() => setOpenNotificationsDrawer(true)}
+              onClick={() => setOpenNotificationsModal(true)}
             >
               <Badge badgeContent={unreadNotificationsCount}>
                 <Icons.Notifications />
@@ -1296,62 +1296,94 @@ const EmployeeProject = () => {
         </div>
       )}
 
-      {/* NOTIFICATIONS DRAWER */}
-      {openNotificationsDrawer && (
-        <div className="EmployeeProject-drawer">
-          <div className="EmployeeProject-drawer-backdrop" onClick={() => setOpenNotificationsDrawer(false)} />
-          <div className="EmployeeProject-drawer-content EmployeeProject-drawer-right">
-            <div className="EmployeeProject-drawer-header">
-              <h3>Notifications</h3>
-              {notifications.length > 0 && (
-                <Tooltip title="Clear All">
-                  <button className="EmployeeProject-icon-button" onClick={handleClearAllNotifications}>
-                    <Icons.ClearAll />
-                  </button>
-                </Tooltip>
-              )}
+      {/* NOTIFICATIONS MODAL (Centered Popup) */}
+      {openNotificationsModal && (
+        <div className="EmployeeProject-modal">
+          <div className="EmployeeProject-modal-backdrop" onClick={() => setOpenNotificationsModal(false)} />
+          <div className="EmployeeProject-modal-content EmployeeProject-modal-xs">
+            <div className="EmployeeProject-modal-header EmployeeProject-modal-header-primary">
+              <div className="EmployeeProject-modal-header-content">
+                <Icons.Notifications />
+                <h3>Notifications</h3>
+                {notifications.length > 0 && unreadNotificationsCount > 0 && (
+                  <Chip
+                    label={`${unreadNotificationsCount} new`}
+                    color="#FFFFFF"
+                    style={{ backgroundColor: "#EF5350", color: "white", marginLeft: "8px" }}
+                  />
+                )}
+              </div>
+              <div className="EmployeeProject-modal-header-actions">
+                {notifications.length > 0 && (
+                  <Tooltip title="Clear All">
+                    <button 
+                      className="EmployeeProject-icon-button" 
+                      onClick={handleClearAllNotifications}
+                      style={{ color: "white" }}
+                    >
+                      <Icons.ClearAll />
+                    </button>
+                  </Tooltip>
+                )}
+                <button 
+                  className="EmployeeProject-icon-button" 
+                  onClick={() => setOpenNotificationsModal(false)}
+                  style={{ color: "white" }}
+                >
+                  <Icons.Close />
+                </button>
+              </div>
             </div>
-            <div className="EmployeeProject-drawer-body">
-              <div className="EmployeeProject-divider" />
-              
-              <div className="EmployeeProject-notifications-list">
-                {notifications.map((notification) => (
-                  <div 
-                    className={`EmployeeProject-notification-item ${notification.isRead ? '' : 'EmployeeProject-notification-unread'}`}
-                    key={notification._id}
-                    onClick={() => handleMarkNotificationAsRead(notification._id)}
-                  >
-                    <div className="EmployeeProject-notification-icon">
-                      <Icons.Notifications />
-                    </div>
-                    <div className="EmployeeProject-notification-content">
-                      <h5 className={notification.isRead ? '' : 'EmployeeProject-notification-title-unread'}>
-                        {notification.title}
-                      </h5>
-                      <p className="EmployeeProject-notification-message">{notification.message}</p>
-                      <div className="EmployeeProject-notification-footer">
-                        <span className="EmployeeProject-notification-date">
-                          <Icons.AccessTime />
-                          {new Date(notification.createdAt).toLocaleString()}
-                        </span>
-                        {!notification.isRead && (
-                          <Chip
-                            label="New"
-                            color="#667eea"
-                          />
-                        )}
+            <div className="EmployeeProject-modal-body">
+              <div className="EmployeeProject-notifications-list-container">
+                {notifications.length > 0 ? (
+                  <div className="EmployeeProject-notifications-list-modal">
+                    {notifications.map((notification) => (
+                      <div 
+                        className={`EmployeeProject-notification-item-modal ${notification.isRead ? '' : 'EmployeeProject-notification-unread-modal'}`}
+                        key={notification._id}
+                        onClick={() => handleMarkNotificationAsRead(notification._id)}
+                      >
+                        <div className="EmployeeProject-notification-icon-modal">
+                          <Icons.Notifications />
+                        </div>
+                        <div className="EmployeeProject-notification-content-modal">
+                          <h5 className={notification.isRead ? '' : 'EmployeeProject-notification-title-unread-modal'}>
+                            {notification.title}
+                          </h5>
+                          <p className="EmployeeProject-notification-message-modal">{notification.message}</p>
+                          <div className="EmployeeProject-notification-footer-modal">
+                            <span className="EmployeeProject-notification-date-modal">
+                              <Icons.AccessTime />
+                              {new Date(notification.createdAt).toLocaleString()}
+                            </span>
+                            {!notification.isRead && (
+                              <Chip
+                                label="New"
+                                color="#667eea"
+                              />
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    ))}
                   </div>
-                ))}
-                {notifications.length === 0 && (
-                  <div className="EmployeeProject-empty-notifications">
+                ) : (
+                  <div className="EmployeeProject-empty-notifications-modal">
                     <Icons.Notifications />
                     <p>No notifications yet.</p>
                     <small>You'll see project updates here</small>
                   </div>
                 )}
               </div>
+            </div>
+            <div className="EmployeeProject-modal-footer">
+              <button 
+                className="EmployeeProject-button EmployeeProject-button-primary"
+                onClick={() => setOpenNotificationsModal(false)}
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

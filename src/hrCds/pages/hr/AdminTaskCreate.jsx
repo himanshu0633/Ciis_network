@@ -1,19 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from '../../../utils/axiosConfig';
 import { API_URL_IMG } from '../../../config';
-import {
-  Box, Typography, Paper, Button, Dialog, DialogTitle, DialogContent,
-  DialogActions, TextField, FormControl, InputLabel, Select, MenuItem,
-  Chip, Stack, Card, CardContent, Avatar, CircularProgress,
-  Snackbar, Checkbox, ListItemText, OutlinedInput, Grid,
-  Divider, Tooltip, Badge, Tabs, Tab, IconButton,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  InputAdornment, styled, Modal,
-  TablePagination, Fade
-} from '@mui/material';
-import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { useNavigate } from 'react-router-dom';
+import './AdminTaskManagement.css';
+
+// Icons
 import {
   FiPlus, FiCalendar, FiInfo, FiPaperclip, FiMic, FiFileText,
   FiCheck, FiX, FiAlertCircle, FiUser, FiUsers, FiFolder,
@@ -24,182 +15,6 @@ import {
   FiLogOut, FiEdit3, FiTrash, FiMessageCircle,
   FiZoomIn, FiImage, FiCamera
 } from 'react-icons/fi';
-import { useTheme, useMediaQuery } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-
-// Styled Components
-const StatusChip = styled(Chip)(({ theme, status }) => ({
-  fontWeight: 600,
-  fontSize: '0.7rem',
-  ...(status === 'pending' && {
-    background: `${theme.palette.warning.main}15`,
-    color: theme.palette.warning.dark,
-    border: `1px solid ${theme.palette.warning.main}30`,
-  }),
-  ...(status === 'in-progress' && {
-    background: `${theme.palette.info.main}15`,
-    color: theme.palette.info.dark,
-    border: `1px solid ${theme.palette.info.main}30`,
-  }),
-  ...(status === 'completed' && {
-    background: `${theme.palette.success.main}15`,
-    color: theme.palette.success.dark,
-    border: `1px solid ${theme.palette.success.main}30`,
-  }),
-  ...(status === 'rejected' && {
-    background: `${theme.palette.error.main}15`,
-    color: theme.palette.error.dark,
-    border: `1px solid ${theme.palette.error.main}30`,
-  }),
-}));
-
-const PriorityChip = styled(Chip)(({ theme, priority }) => ({
-  fontWeight: 500,
-  fontSize: '0.65rem',
-  ...(priority === 'high' && {
-    background: `${theme.palette.error.main}15`,
-    color: theme.palette.error.dark,
-    border: `1px solid ${theme.palette.error.main}30`,
-  }),
-  ...(priority === 'medium' && {
-    background: `${theme.palette.warning.main}15`,
-    color: theme.palette.warning.dark,
-    border: `1px solid ${theme.palette.warning.main}30`,
-  }),
-  ...(priority === 'low' && {
-    background: `${theme.palette.success.main}15`,
-    color: theme.palette.success.dark,
-    border: `1px solid ${theme.palette.success.main}30`,
-  }),
-}));
-
-const StyledTableRow = styled(TableRow)(({ theme, status }) => ({
-  cursor: 'pointer',
-  transition: theme.transitions.create(['all'], {
-    duration: theme.transitions.duration.short,
-  }),
-  '&:hover': {
-    backgroundColor: `${theme.palette.primary.main}08`,
-  },
-  ...(status === 'completed' && {
-    background: `${theme.palette.success.main}05`,
-  }),
-  ...(status === 'in-progress' && {
-    background: `${theme.palette.info.main}05`,
-  }),
-  ...(status === 'pending' && {
-    background: `${theme.palette.warning.main}05`,
-  }),
-  ...(status === 'rejected' && {
-    background: `${theme.palette.error.main}05`,
-  }),
-}));
-
-const ActionButton = styled(IconButton)(({ theme }) => ({
-  transition: theme.transitions.create(['all'], {
-    duration: theme.transitions.duration.short,
-  }),
-  '&:hover': {
-    transform: 'scale(1.1)',
-  },
-}));
-
-const StatCard = styled(Card)(({ theme, color = 'primary' }) => ({
-  background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
-  borderRadius: theme.shape.borderRadius * 2,
-  boxShadow: theme.shadows[2],
-  transition: theme.transitions.create(['all'], {
-    duration: theme.transitions.duration.standard,
-  }),
-  borderLeft: `4px solid ${theme.palette[color].main}`,
-  height: '100%',
-  '&:hover': {
-    boxShadow: theme.shadows[6],
-    transform: 'translateY(-4px)',
-  },
-}));
-
-const FilterSection = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(2),
-  marginBottom: theme.spacing(3),
-  background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
-  border: `1px solid ${theme.palette.divider}`,
-}));
-
-const GroupCard = styled(Card)(({ theme }) => ({
-  borderRadius: theme.shape.borderRadius * 2,
-  transition: 'all 0.3s ease',
-  height: '100%',
-  '&:hover': {
-    transform: 'translateY(-2px)',
-    boxShadow: theme.shadows[4]
-  }
-}));
-
-// Image Upload Styled Components
-const ImageUploadArea = styled(Box)(({ theme, isDragActive }) => ({
-  border: `2px dashed ${isDragActive ? theme.palette.primary.main : theme.palette.divider}`,
-  borderRadius: theme.shape.borderRadius * 2,
-  padding: theme.spacing(3),
-  textAlign: 'center',
-  backgroundColor: isDragActive ? `${theme.palette.primary.main}08` : theme.palette.background.paper,
-  cursor: 'pointer',
-  transition: 'all 0.3s ease',
-  '&:hover': {
-    borderColor: theme.palette.primary.main,
-    backgroundColor: `${theme.palette.primary.main}04`,
-  },
-}));
-
-const ImagePreview = styled(Box)(({ theme }) => ({
-  position: 'relative',
-  borderRadius: theme.shape.borderRadius,
-  overflow: 'hidden',
-  cursor: 'pointer',
-  transition: 'all 0.3s ease',
-  '&:hover': {
-    transform: 'scale(1.02)',
-    boxShadow: theme.shadows[4],
-  },
-}));
-
-const ImagePreviewContainer = styled(Box)(({ theme }) => ({
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
-  gap: theme.spacing(1),
-  marginTop: theme.spacing(2),
-}));
-
-const RemoveImageButton = styled(IconButton)(({ theme }) => ({
-  position: 'absolute',
-  top: 4,
-  right: 4,
-  backgroundColor: theme.palette.error.main,
-  color: 'white',
-  width: 24,
-  height: 24,
-  '&:hover': {
-    backgroundColor: theme.palette.error.dark,
-  },
-}));
-
-const ZoomModal = styled(Modal)(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  '& .MuiBackdrop-root': {
-    backgroundColor: 'rgba(0, 0, 0, 0.9)',
-  },
-}));
-
-// Custom MenuProps for Select with search
-const MenuProps = {
-  PaperProps: {
-    style: {
-      maxHeight: 300,
-    },
-  },
-};
 
 const AdminTaskManagement = () => {
   const [tasks, setTasks] = useState([]);
@@ -310,9 +125,6 @@ const AdminTaskManagement = () => {
   const [userSearch, setUserSearch] = useState('');
   const [groupSearch, setGroupSearch] = useState('');
 
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
 
   // Filter users based on search
@@ -651,7 +463,7 @@ const AdminTaskManagement = () => {
       }
       setOpenGroupDialog(false);
       resetGroupForm();
-      fetchSupportingData(); // Refresh groups list
+      fetchSupportingData();
     } catch (error) {
       console.error('Error in group operation:', error);
       const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Group operation failed';
@@ -705,11 +517,9 @@ const AdminTaskManagement = () => {
     try {
       setSelectedTask(task);
       
-      // If task has statusInfo (from enrichedStatusInfo), use that
       if (task.statusInfo && Array.isArray(task.statusInfo)) {
         setTaskUserStatuses(task.statusInfo);
       } else if (task.statusByUser && Array.isArray(task.statusByUser)) {
-        // Otherwise use statusByUser and enrich with user data
         const enrichedStatuses = task.statusByUser.map(status => {
           const user = users.find(u => u._id === status.user || u._id === status.user?._id);
           return {
@@ -755,7 +565,6 @@ const AdminTaskManagement = () => {
       return;
     }
 
-    // For single image upload, replace existing image
     const newImage = {
       file: imageFiles[0],
       preview: URL.createObjectURL(imageFiles[0]),
@@ -763,8 +572,7 @@ const AdminTaskManagement = () => {
       size: imageFiles[0].size
     };
 
-    // Clear existing images and add new one
-    remarkImages.forEach(image => URL.revokeObjectURL(image.preview)); // Clean up memory
+    remarkImages.forEach(image => URL.revokeObjectURL(image.preview));
     setRemarkImages([newImage]);
   };
 
@@ -806,9 +614,8 @@ const AdminTaskManagement = () => {
       const formData = new FormData();
       formData.append('text', newRemark.trim());
 
-      // Append single image (since backend expects single image)
       if (remarkImages.length > 0) {
-        formData.append('image', remarkImages[0].file); // Use 'image' field name for single image
+        formData.append('image', remarkImages[0].file);
       }
 
       await apiCall('post', `/task/${selectedTask._id}/remarks`, formData, {
@@ -830,7 +637,6 @@ const AdminTaskManagement = () => {
     } catch (error) {
       console.error('Error adding remark:', error);
       
-      // More specific error messages
       if (error.response?.status === 413) {
         setSnackbar({ open: true, message: 'File size too large. Maximum 5MB per image', severity: 'error' });
       } else if (error.response?.status === 400) {
@@ -1089,1450 +895,1413 @@ const AdminTaskManagement = () => {
     return assignedUsers;
   };
 
-  // Image Zoom Modal
-  const renderImageZoomModal = () => (
-    <ZoomModal
-      open={!!zoomImage}
-      onClose={() => setZoomImage(null)}
-      closeAfterTransition
-    >
-      <Fade in={!!zoomImage}>
-        <Box sx={{ 
-          position: 'relative',
-          maxWidth: '90vw',
-          maxHeight: '90vh',
-          outline: 'none'
-        }}>
-          <IconButton
-            onClick={() => setZoomImage(null)}
-            sx={{
-              position: 'absolute',
-              top: 16,
-              right: 16,
-              backgroundColor: 'rgba(0,0,0,0.6)',
-              color: 'white',
-              zIndex: 1,
-              '&:hover': {
-                backgroundColor: 'rgba(0,0,0,0.8)',
-              }
-            }}
-          >
-            <FiX size={20} />
-          </IconButton>
-          <img
-            src={zoomImage}
-            alt="Zoomed view"
-            style={{
-              width: '100%',
-              height: 'auto',
-              maxHeight: '90vh',
-              objectFit: 'contain',
-              borderRadius: theme.shape.borderRadius
-            }}
-          />
-        </Box>
-      </Fade>
-    </ZoomModal>
-  );
+  // Status Chip Component
+  const AdminTaskManagementStatusChip = ({ status }) => {
+    const getStatusColor = () => {
+      switch(status) {
+        case 'pending': return 'warning';
+        case 'in-progress': return 'info';
+        case 'completed': return 'success';
+        case 'rejected': return 'error';
+        default: return 'default';
+      }
+    };
 
-  // Enhanced Remarks Dialog with Image Upload
-  const renderRemarksDialog = () => (
-    <Dialog 
-      open={openRemarksDialog} 
-      onClose={() => {
-        setOpenRemarksDialog(false);
-        setRemarkImages([]);
-        setNewRemark('');
-      }}
-      maxWidth="md"
-      fullWidth
-      fullScreen={isSmallMobile}
-      PaperProps={{ sx: { borderRadius: isSmallMobile ? 0 : 2 } }}
-    >
-      <DialogTitle sx={{ 
-        background: `linear-gradient(135deg, ${theme.palette.info.main}15 0%, ${theme.palette.info.main}05 100%)`,
-        pb: 2
-      }}>
-        <Stack direction="row" alignItems="center" justifyContent="space-between">
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <FiMessageSquare color={theme.palette.info.main} />
-            <Typography variant="h6" fontWeight={600}>
-              Remarks for: {selectedTask?.title}
-            </Typography>
-          </Stack>
-          <Typography variant="body2" color="text.secondary">
-            {remarks.length} remark(s)
-          </Typography>
-        </Stack>
-      </DialogTitle>
-      
-      <DialogContent>
-        <Stack spacing={3} sx={{ mt: 1 }}>
-          {/* Add New Remark Section */}
-          <Card variant="outlined" sx={{ borderRadius: 2 }}>
-            <CardContent sx={{ p: 3 }}>
-              <Typography variant="h6" gutterBottom fontWeight={600}>
-                Add New Remark
-              </Typography>
-              
-              {/* Text Input */}
-              <TextField
-                fullWidth
-                multiline
-                rows={3}
-                label="Your Remark"
-                value={newRemark}
-                onChange={(e) => setNewRemark(e.target.value)}
-                placeholder="Enter your remark here... (Optional if uploading images)"
-                sx={{ mb: 2 }}
+    const getStatusText = () => {
+      switch(status) {
+        case 'pending': return 'Pending';
+        case 'in-progress': return 'In Progress';
+        case 'completed': return 'Completed';
+        case 'rejected': return 'Rejected';
+        default: return status;
+      }
+    };
+
+    return (
+      <span className={`AdminTaskManagement-status-chip AdminTaskManagement-status-${getStatusColor()}`}>
+        {getStatusText()}
+      </span>
+    );
+  };
+
+  // Priority Chip Component
+  const AdminTaskManagementPriorityChip = ({ priority }) => {
+    const getPriorityColor = () => {
+      switch(priority) {
+        case 'high': return 'error';
+        case 'medium': return 'warning';
+        case 'low': return 'success';
+        default: return 'default';
+      }
+    };
+
+    return (
+      <span className={`AdminTaskManagement-priority-chip AdminTaskManagement-priority-${getPriorityColor()}`}>
+        {priority.charAt(0).toUpperCase() + priority.slice(1)}
+      </span>
+    );
+  };
+
+  // Stats Cards Component
+  const AdminTaskManagementStatCard = ({ label, value, color, icon: Icon }) => {
+    const colors = {
+      primary: '#3f51b5',
+      warning: '#ff9800',
+      info: '#2196f3',
+      success: '#4caf50',
+      error: '#f44336'
+    };
+
+    return (
+      <div className="AdminTaskManagement-stat-card" style={{ borderLeftColor: colors[color] || colors.primary }}>
+        <div className="AdminTaskManagement-stat-card-content">
+          <div className="AdminTaskManagement-stat-icon" style={{ backgroundColor: `${colors[color]}20`, color: colors[color] }}>
+            <Icon size={18} />
+          </div>
+          <div className="AdminTaskManagement-stat-text">
+            <div className="AdminTaskManagement-stat-label">{label}</div>
+            <div className="AdminTaskManagement-stat-value">{value}</div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Status Change Dialog
+  const renderStatusChangeDialog = () => (
+    <div className={`AdminTaskManagement-modal ${openStatusDialog ? 'AdminTaskManagement-modal-open' : ''}`}>
+      <div className="AdminTaskManagement-modal-content AdminTaskManagement-modal-medium">
+        <div className="AdminTaskManagement-modal-header">
+          <div className="AdminTaskManagement-modal-title-row">
+            <div className="AdminTaskManagement-modal-title-icon">
+              <FiUserCheck />
+              <h3>Change Task Status</h3>
+            </div>
+            <button 
+              className="AdminTaskManagement-icon-btn"
+              onClick={() => setOpenStatusDialog(false)}
+            >
+              <FiX size={20} />
+            </button>
+          </div>
+        </div>
+        <div className="AdminTaskManagement-modal-body">
+          <div className="AdminTaskManagement-form-container">
+            <div className="AdminTaskManagement-form-group">
+              <label>Task</label>
+              <input
+                type="text"
+                className="AdminTaskManagement-form-input"
+                value={selectedTask?.title || ''}
+                disabled
               />
+            </div>
 
-              {/* Image Upload Section */}
-              <Box>
-                <Typography variant="subtitle2" gutterBottom fontWeight={600}>
-                  Attach Image (Optional)
-                </Typography>
-                
-                <ImageUploadArea
-                  onDragOver={handleDragOver}
-                  onDrop={handleDrop}
-                  onClick={() => document.getElementById('remark-image-upload').click()}
-                  isDragActive={false}
-                >
-                  <Stack spacing={1} alignItems="center">
-                    <FiImage size={32} color={theme.palette.primary.main} />
-                    <Typography variant="body1" fontWeight={600}>
-                      Click to upload or drag & drop
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Supports JPG, PNG, GIF • Max 5MB
-                    </Typography>
-                    <Button
-                      variant="outlined"
-                      startIcon={<FiCamera />}
-                      sx={{ mt: 1 }}
-                    >
-                      Choose Image
-                    </Button>
-                  </Stack>
-                  
-                  <input
-                    id="remark-image-upload"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleRemarkImageUpload}
-                    style={{ display: 'none' }}
-                  />
-                </ImageUploadArea>
+            <div className="AdminTaskManagement-form-group">
+              <label>Select Status *</label>
+              <select
+                className="AdminTaskManagement-form-select"
+                value={statusChange.status}
+                onChange={(e) => setStatusChange({ ...statusChange, status: e.target.value })}
+              >
+                <option value="">Select Status</option>
+                <option value="pending">Pending</option>
+                <option value="in-progress">In Progress</option>
+                <option value="completed">Completed</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
 
-                {/* Image Preview */}
-                {remarkImages.length > 0 && (
-                  <Box sx={{ mt: 2 }}>
-                    <Typography variant="subtitle2" gutterBottom fontWeight={600}>
-                      Selected Image:
-                    </Typography>
-                    <ImagePreviewContainer>
-                      {remarkImages.map((image, index) => (
-                        <ImagePreview key={index}>
-                          <img
-                            src={image.preview}
-                            alt={`Preview ${index + 1}`}
-                            style={{
-                              width: '100%',
-                              height: 80,
-                              objectFit: 'cover',
-                              display: 'block'
-                            }}
-                            onClick={() => setZoomImage(image.preview)}
-                          />
-                          <RemoveImageButton
-                            size="small"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleRemoveRemarkImage(index);
-                            }}
-                          >
-                            <FiX size={14} />
-                          </RemoveImageButton>
-                        </ImagePreview>
-                      ))}
-                    </ImagePreviewContainer>
-                  </Box>
-                )}
-              </Box>
-
-              {/* Submit Button */}
-              <Box sx={{ mt: 2 }}>
-                <Button
-                  variant="contained"
-                  onClick={addRemark}
-                  disabled={isUploadingRemark || (!newRemark.trim() && remarkImages.length === 0)}
-                  startIcon={isUploadingRemark ? <CircularProgress size={16} /> : <FiMessageSquare />}
-                  fullWidth
-                  sx={{ borderRadius: 2 }}
-                >
-                  {isUploadingRemark ? 'Uploading...' : 'Add Remark'}
-                </Button>
-              </Box>
-            </CardContent>
-          </Card>
-
-          {/* Remarks History */}
-          <Box>
-            <Typography variant="h6" gutterBottom fontWeight={600}>
-              Remarks History
-            </Typography>
-            
-            {remarks.length > 0 ? (
-              <Stack spacing={2}>
-                {remarks.map((remark, index) => (
-                  <Card key={index} variant="outlined" sx={{ borderRadius: 2 }}>
-                    <CardContent sx={{ p: 2 }}>
-                      <Stack spacing={1.5}>
-                        {/* User Info and Date */}
-                        <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                          <Stack direction="row" alignItems="center" spacing={1.5}>
-                            <Avatar 
-                              sx={{ 
-                                width: 36, 
-                                height: 36, 
-                                bgcolor: theme.palette.primary.main,
-                                fontSize: '0.875rem'
-                              }}
-                            >
-                              {getUserName(remark.user)?.charAt(0)?.toUpperCase() || 'U'}
-                            </Avatar>
-                            <Box>
-                              <Typography variant="subtitle2" fontWeight={600}>
-                                {getUserName(remark.user)}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                {users.find(u => u._id === remark.user)?.role || 'User'} • {new Date(remark.createdAt).toLocaleDateString()} at {' '}
-                                {new Date(remark.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                              </Typography>
-                            </Box>
-                          </Stack>
-                        </Stack>
-
-                        {/* Remark Text */}
-                        {remark.text && (
-                          <Typography variant="body2" sx={{ 
-                            mt: 0.5,
-                            p: 1.5,
-                            backgroundColor: theme.palette.background.default,
-                            borderRadius: 1,
-                            borderLeft: `3px solid ${theme.palette.primary.main}`
-                          }}>
-                            {remark.text}
-                          </Typography>
-                        )}
-
-                        {/* Remark Image */}
-                        {remark.image && (
-                          <Box sx={{ mt: 1 }}>
-                            <Typography variant="caption" fontWeight={600} display="block" gutterBottom>
-                              Attached Image:
-                            </Typography>
-                            <ImagePreview 
-                              sx={{ 
-                                maxWidth: 200,
-                                borderRadius: 1
-                              }}
-                              onClick={() => setZoomImage(`${API_URL_IMG}/${remark.image}`)}
-                            >
-                              <img
-                                src={`${API_URL_IMG}/${remark.image}`}
-                                alt="Remark attachment"
-                                style={{
-                                  width: '100%',
-                                  height: 'auto',
-                                  borderRadius: theme.shape.borderRadius,
-                                  cursor: 'pointer'
-                                }}
-                              />
-                              <Tooltip title="Zoom">
-                                <IconButton
-                                  size="small"
-                                  sx={{
-                                    position: 'absolute',
-                                    bottom: 4,
-                                    right: 4,
-                                    backgroundColor: 'rgba(0,0,0,0.6)',
-                                    color: 'white',
-                                    '&:hover': {
-                                      backgroundColor: 'rgba(0,0,0,0.8)',
-                                    }
-                                  }}
-                                >
-                                  <FiZoomIn size={14} />
-                                </IconButton>
-                              </Tooltip>
-                            </ImagePreview>
-                          </Box>
-                        )}
-                      </Stack>
-                    </CardContent>
-                  </Card>
-                ))}
-              </Stack>
-            ) : (
-              <Card variant="outlined" sx={{ textAlign: 'center', py: 4 }}>
-                <CardContent>
-                  <FiMessageSquare size={48} color={theme.palette.text.secondary} />
-                  <Typography variant="h6" color="text.secondary" sx={{ mt: 2, fontWeight: 600 }}>
-                    No remarks yet
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                    Be the first to add a remark for this task
-                  </Typography>
-                </CardContent>
-              </Card>
-            )}
-          </Box>
-        </Stack>
-      </DialogContent>
-    </Dialog>
+            <div className="AdminTaskManagement-form-group">
+              <label>Remarks (Optional)</label>
+              <textarea
+                className="AdminTaskManagement-form-textarea"
+                placeholder="Enter remarks for status change..."
+                rows={3}
+                value={statusChange.remarks}
+                onChange={(e) => setStatusChange({ ...statusChange, remarks: e.target.value })}
+              />
+            </div>
+          </div>
+        </div>
+        <div className="AdminTaskManagement-modal-footer">
+          <button 
+            className="AdminTaskManagement-btn" 
+            onClick={() => setOpenStatusDialog(false)}
+          >
+            Cancel
+          </button>
+          <button
+            className="AdminTaskManagement-btn AdminTaskManagement-btn-primary"
+            onClick={handleStatusChange}
+          >
+            Update Status
+          </button>
+        </div>
+      </div>
+    </div>
   );
 
   // Enhanced Filters Section with Date Range
   const renderEnhancedFilters = () => (
-    <FilterSection>
-      <Stack spacing={2}>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'stretch', sm: 'center' }}>
-          <TextField
-            fullWidth
-            size="small"
-            placeholder="Search tasks by title or description..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <FiSearch />
-                </InputAdornment>
-              ),
-            }}
-          />
-          <Button
-            variant="contained"
-            onClick={applyFilters}
-            startIcon={<FiFilter />}
-            sx={{ minWidth: 120 }}
-          >
-            Apply
-          </Button>
-          <Button
-            variant="outlined"
-            onClick={clearFilters}
-            sx={{ minWidth: 120 }}
-          >
+    <div className="AdminTaskManagement-filter-section">
+      <div className="AdminTaskManagement-filter-stack">
+        <div className="AdminTaskManagement-filter-search-row">
+          <div className="AdminTaskManagement-search-input-container">
+            <FiSearch className="AdminTaskManagement-search-icon" />
+            <input
+              type="text"
+              className="AdminTaskManagement-search-input"
+              placeholder="Search tasks by title or description..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <button className="AdminTaskManagement-btn AdminTaskManagement-btn-primary" onClick={applyFilters}>
+            <FiFilter /> Apply
+          </button>
+          <button className="AdminTaskManagement-btn AdminTaskManagement-btn-outline" onClick={clearFilters}>
             Clear
-          </Button>
-        </Stack>
+          </button>
+        </div>
 
         {/* Date Range Filters */}
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6} md={3}>
-            <DateTimePicker
-              label="From Date"
-              value={dateRange.startDate}
-              onChange={(date) => setDateRange(prev => ({ ...prev, startDate: date }))}
-              renderInput={(params) => (
-                <TextField 
-                  {...params} 
-                  fullWidth 
-                  size="small"
-                  InputProps={{
-                    ...params.InputProps,
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <FiCalendar size={16} />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              )}
+        <div className="AdminTaskManagement-date-range-filters">
+          <div className="AdminTaskManagement-date-input-container">
+            <label>From Date</label>
+            <input
+              type="datetime-local"
+              className="AdminTaskManagement-date-input"
+              value={dateRange.startDate ? new Date(dateRange.startDate).toISOString().slice(0, 16) : ''}
+              onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value ? new Date(e.target.value) : null }))}
             />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <DateTimePicker
-              label="To Date"
-              value={dateRange.endDate}
-              onChange={(date) => setDateRange(prev => ({ ...prev, endDate: date }))}
-              renderInput={(params) => (
-                <TextField 
-                  {...params} 
-                  fullWidth 
-                  size="small"
-                  InputProps={{
-                    ...params.InputProps,
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <FiCalendar size={16} />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              )}
+          </div>
+          <div className="AdminTaskManagement-date-input-container">
+            <label>To Date</label>
+            <input
+              type="datetime-local"
+              className="AdminTaskManagement-date-input"
+              value={dateRange.endDate ? new Date(dateRange.endDate).toISOString().slice(0, 16) : ''}
+              onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value ? new Date(e.target.value) : null }))}
             />
-          </Grid>
-        </Grid>
+          </div>
+        </div>
 
         {/* Other Filters */}
-        <Grid container spacing={2}>
-          <Grid item xs={6} sm={4} md={2}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Status</InputLabel>
-              <Select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                label="Status"
-              >
-                <MenuItem value="">All Status</MenuItem>
-                <MenuItem value="pending">Pending</MenuItem>
-                <MenuItem value="in-progress">In Progress</MenuItem>
-                <MenuItem value="completed">Completed</MenuItem>
-                <MenuItem value="rejected">Rejected</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={6} sm={4} md={2}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Priority</InputLabel>
-              <Select
-                value={priorityFilter}
-                onChange={(e) => setPriorityFilter(e.target.value)}
-                label="Priority"
-              >
-                <MenuItem value="">All Priority</MenuItem>
-                <MenuItem value="high">High</MenuItem>
-                <MenuItem value="medium">Medium</MenuItem>
-                <MenuItem value="low">Low</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={6} sm={4} md={2}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Assigned To</InputLabel>
-              <Select
-                value={assignedToFilter}
-                onChange={(e) => setAssignedToFilter(e.target.value)}
-                label="Assigned To"
-              >
-                <MenuItem value="">All Users</MenuItem>
-                {users.map(user => (
-                  <MenuItem key={user._id} value={user._id}>
-                    {user.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={6} sm={4} md={2}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Created By</InputLabel>
-              <Select
-                value={createdByFilter}
-                onChange={(e) => setCreatedByFilter(e.target.value)}
-                label="Created By"
-              >
-                <MenuItem value="">All Creators</MenuItem>
-                {users.map(user => (
-                  <MenuItem key={user._id} value={user._id}>
-                    {user.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={6} sm={4} md={2}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Overdue</InputLabel>
-              <Select
-                value={overdueFilter}
-                onChange={(e) => setOverdueFilter(e.target.value)}
-                label="Overdue"
-              >
-                <MenuItem value="">All Tasks</MenuItem>
-                <MenuItem value="true">Overdue Only</MenuItem>
-                <MenuItem value="false">Not Overdue</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-        </Grid>
-      </Stack>
-    </FilterSection>
+        <div className="AdminTaskManagement-filter-grid">
+          <div className="AdminTaskManagement-filter-select-container">
+            <label>Status</label>
+            <select
+              className="AdminTaskManagement-filter-select"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="in-progress">In Progress</option>
+              <option value="completed">Completed</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+
+          <div className="AdminTaskManagement-filter-select-container">
+            <label>Priority</label>
+            <select
+              className="AdminTaskManagement-filter-select"
+              value={priorityFilter}
+              onChange={(e) => setPriorityFilter(e.target.value)}
+            >
+              <option value="">All Priority</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
+
+          <div className="AdminTaskManagement-filter-select-container">
+            <label>Assigned To</label>
+            <select
+              className="AdminTaskManagement-filter-select"
+              value={assignedToFilter}
+              onChange={(e) => setAssignedToFilter(e.target.value)}
+            >
+              <option value="">All Users</option>
+              {users.map(user => (
+                <option key={user._id} value={user._id}>
+                  {user.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="AdminTaskManagement-filter-select-container">
+            <label>Created By</label>
+            <select
+              className="AdminTaskManagement-filter-select"
+              value={createdByFilter}
+              onChange={(e) => setCreatedByFilter(e.target.value)}
+            >
+              <option value="">All Creators</option>
+              {users.map(user => (
+                <option key={user._id} value={user._id}>
+                  {user.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="AdminTaskManagement-filter-select-container">
+            <label>Overdue</label>
+            <select
+              className="AdminTaskManagement-filter-select"
+              value={overdueFilter}
+              onChange={(e) => setOverdueFilter(e.target.value)}
+            >
+              <option value="">All Tasks</option>
+              <option value="true">Overdue Only</option>
+              <option value="false">Not Overdue</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 
   // Stats Cards with Filtered Data
   const renderFilteredStatsCards = () => (
-    <Grid container spacing={2} sx={{ mb: 3 }}>
-      {[
-        { label: 'Total Tasks', value: filteredStats.total, color: 'primary', icon: FiCalendar },
-        { label: 'Pending', value: filteredStats.pending, color: 'warning', icon: FiClock },
-        { label: 'In Progress', value: filteredStats.inProgress, color: 'info', icon: FiAlertCircle },
-        { label: 'Completed', value: filteredStats.completed, color: 'success', icon: FiCheckCircle },
-        { label: 'Rejected', value: filteredStats.rejected, color: 'error', icon: FiXCircle },
-        { label: 'Overdue', value: filteredStats.overdue, color: 'error', icon: FiAlertTriangle },
-      ].map((stat, index) => (
-        <Grid item xs={6} sm={4} md={2} key={index}>
-          <StatCard color={stat.color}>
-            <CardContent sx={{ p: 2 }}>
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <Avatar sx={{
-                  bgcolor: `${theme.palette[stat.color].main}20`,
-                  color: theme.palette[stat.color].main,
-                  width: 40,
-                  height: 40
-                }}>
-                  <stat.icon size={18} />
-                </Avatar>
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Typography variant="body2" color="text.secondary" fontWeight={600} sx={{ 
-                    fontSize: { xs: '0.7rem', sm: '0.75rem' },
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap'
-                  }}>
-                    {stat.label}
-                  </Typography>
-                  <Typography variant="h4" fontWeight={700} sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
-                    {stat.value}
-                  </Typography>
-                </Box>
-              </Stack>
-            </CardContent>
-          </StatCard>
-        </Grid>
-      ))}
-    </Grid>
+    <div className="AdminTaskManagement-stats-grid">
+      <AdminTaskManagementStatCard label="Total Tasks" value={filteredStats.total} color="primary" icon={FiCalendar} />
+      <AdminTaskManagementStatCard label="Pending" value={filteredStats.pending} color="warning" icon={FiClock} />
+      <AdminTaskManagementStatCard label="In Progress" value={filteredStats.inProgress} color="info" icon={FiAlertCircle} />
+      <AdminTaskManagementStatCard label="Completed" value={filteredStats.completed} color="success" icon={FiCheckCircle} />
+      <AdminTaskManagementStatCard label="Rejected" value={filteredStats.rejected} color="error" icon={FiXCircle} />
+      <AdminTaskManagementStatCard label="Overdue" value={filteredStats.overdue} color="error" icon={FiAlertTriangle} />
+    </div>
+  );
+
+  // Enhanced Remarks Dialog with Image Upload
+  const renderRemarksDialog = () => (
+    <div className={`AdminTaskManagement-modal ${openRemarksDialog ? 'AdminTaskManagement-modal-open' : ''}`}>
+      <div className="AdminTaskManagement-modal-content AdminTaskManagement-modal-large">
+        <div className="AdminTaskManagement-modal-header AdminTaskManagement-modal-info">
+          <div className="AdminTaskManagement-modal-title-row">
+            <div className="AdminTaskManagement-modal-title-icon">
+              <FiMessageSquare />
+              <h3>Remarks for: {selectedTask?.title}</h3>
+            </div>
+            <div className="AdminTaskManagement-modal-subtitle">{remarks.length} remark(s)</div>
+          </div>
+          <button 
+            className="AdminTaskManagement-icon-btn"
+            onClick={() => setOpenRemarksDialog(false)}
+          >
+            <FiX size={20} />
+          </button>
+        </div>
+        
+        <div className="AdminTaskManagement-modal-body">
+          <div className="AdminTaskManagement-remarks-container">
+            {/* Add New Remark Section */}
+            <div className="AdminTaskManagement-card AdminTaskManagement-card-outline">
+              <div className="AdminTaskManagement-card-content">
+                <h4>Add New Remark</h4>
+                
+                {/* Text Input */}
+                <textarea
+                  className="AdminTaskManagement-remark-textarea"
+                  placeholder="Enter your remark here... (Optional if uploading images)"
+                  value={newRemark}
+                  onChange={(e) => setNewRemark(e.target.value)}
+                  rows={3}
+                />
+
+                {/* Image Upload Section */}
+                <div className="AdminTaskManagement-image-upload-section">
+                  <label>Attach Image (Optional)</label>
+                  
+                  <div 
+                    className="AdminTaskManagement-image-upload-area"
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                    onClick={() => document.getElementById('AdminTaskManagement-remark-image-upload').click()}
+                  >
+                    <div className="AdminTaskManagement-upload-content">
+                      <FiImage size={32} className="AdminTaskManagement-upload-icon" />
+                      <div className="AdminTaskManagement-upload-text">
+                        Click to upload or drag & drop
+                      </div>
+                      <div className="AdminTaskManagement-upload-subtext">
+                        Supports JPG, PNG, GIF • Max 5MB
+                      </div>
+                      <button className="AdminTaskManagement-btn AdminTaskManagement-btn-outline AdminTaskManagement-upload-btn">
+                        <FiCamera /> Choose Image
+                      </button>
+                    </div>
+                    
+                    <input
+                      id="AdminTaskManagement-remark-image-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleRemarkImageUpload}
+                      style={{ display: 'none' }}
+                    />
+                  </div>
+
+                  {/* Image Preview */}
+                  {remarkImages.length > 0 && (
+                    <div className="AdminTaskManagement-image-preview-container">
+                      <label>Selected Image:</label>
+                      <div className="AdminTaskManagement-image-preview-grid">
+                        {remarkImages.map((image, index) => (
+                          <div key={index} className="AdminTaskManagement-image-preview-item">
+                            <img
+                              src={image.preview}
+                              alt={`Preview ${index + 1}`}
+                              onClick={() => setZoomImage(image.preview)}
+                            />
+                            <button
+                              className="AdminTaskManagement-remove-image-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemoveRemarkImage(index);
+                              }}
+                            >
+                              <FiX size={14} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Submit Button */}
+                <button
+                  className="AdminTaskManagement-btn AdminTaskManagement-btn-primary AdminTaskManagement-btn-block"
+                  onClick={addRemark}
+                  disabled={isUploadingRemark || (!newRemark.trim() && remarkImages.length === 0)}
+                >
+                  {isUploadingRemark ? 'Uploading...' : 'Add Remark'}
+                </button>
+              </div>
+            </div>
+
+            {/* Remarks History */}
+            <div className="AdminTaskManagement-remarks-history">
+              <h4>Remarks History</h4>
+              
+              {remarks.length > 0 ? (
+                <div className="AdminTaskManagement-remarks-list">
+                  {remarks.map((remark, index) => (
+                    <div key={index} className="AdminTaskManagement-card AdminTaskManagement-card-outline">
+                      <div className="AdminTaskManagement-card-content">
+                        <div className="AdminTaskManagement-remark-item">
+                          {/* User Info and Date */}
+                          <div className="AdminTaskManagement-remark-header">
+                            <div className="AdminTaskManagement-remark-user">
+                              <div className="AdminTaskManagement-remark-avatar">
+                                {getUserName(remark.user)?.charAt(0)?.toUpperCase() || 'U'}
+                              </div>
+                              <div className="AdminTaskManagement-remark-user-info">
+                                <div className="AdminTaskManagement-remark-user-name">
+                                  {getUserName(remark.user)}
+                                </div>
+                                <div className="AdminTaskManagement-remark-user-details">
+                                  {users.find(u => u._id === remark.user)?.role || 'User'} • {new Date(remark.createdAt).toLocaleDateString()} at {' '}
+                                  {new Date(remark.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Remark Text */}
+                          {remark.text && (
+                            <div className="AdminTaskManagement-remark-text">
+                              {remark.text}
+                            </div>
+                          )}
+
+                          {/* Remark Image */}
+                          {remark.image && (
+                            <div className="AdminTaskManagement-remark-image-container">
+                              <label>Attached Image:</label>
+                              <div className="AdminTaskManagement-remark-image-preview">
+                                <img
+                                  src={`${API_URL_IMG}/${remark.image}`}
+                                  alt="Remark attachment"
+                                  onClick={() => setZoomImage(`${API_URL_IMG}/${remark.image}`)}
+                                />
+                                <button
+                                  className="AdminTaskManagement-zoom-image-btn"
+                                  onClick={() => setZoomImage(`${API_URL_IMG}/${remark.image}`)}
+                                >
+                                  <FiZoomIn size={14} />
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="AdminTaskManagement-card AdminTaskManagement-card-outline AdminTaskManagement-text-center">
+                  <div className="AdminTaskManagement-card-content">
+                    <FiMessageSquare size={48} className="AdminTaskManagement-empty-icon" />
+                    <h5>No remarks yet</h5>
+                    <p>Be the first to add a remark for this task</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="AdminTaskManagement-modal-footer">
+          <button 
+            className="AdminTaskManagement-btn" 
+            onClick={() => setOpenRemarksDialog(false)}
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Image Zoom Modal
+  const renderImageZoomModal = () => (
+    <div className={`AdminTaskManagement-modal ${zoomImage ? 'AdminTaskManagement-modal-open' : ''} AdminTaskManagement-modal-zoom`}>
+      <div className="AdminTaskManagement-modal-zoom-content">
+        <button
+          className="AdminTaskManagement-zoom-close-btn"
+          onClick={() => setZoomImage(null)}
+        >
+          <FiX size={20} />
+        </button>
+        <img
+          src={zoomImage}
+          alt="Zoomed view"
+          className="AdminTaskManagement-zoomed-image"
+        />
+      </div>
+    </div>
   );
 
   // Enhanced Notifications Panel
   const renderNotificationsPanel = () => (
-    <Modal
-      open={openNotifications}
-      onClose={() => setOpenNotifications(false)}
-      closeAfterTransition
-    >
-      <Box sx={{
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        width: isSmallMobile ? '90%' : 400,
-        maxHeight: '80vh',
-        bgcolor: 'background.paper',
-        borderRadius: 2,
-        boxShadow: 24,
-        overflow: 'hidden',
-      }}>
-        <Box sx={{ 
-          p: 2, 
-          borderBottom: 1, 
-          borderColor: 'divider',
-          background: `linear-gradient(135deg, ${theme.palette.primary.main}15 0%, ${theme.palette.primary.main}05 100%)`
-        }}>
-          <Stack direction="row" justifyContent="space-between" alignItems="center">
-            <Typography variant="h6" fontWeight={600}>Notifications</Typography>
-            <Button 
-              onClick={markAllNotificationsAsRead} 
-              size="small"
-              disabled={unreadNotificationCount === 0}
-              sx={{ borderRadius: 1 }}
+    <div className={`AdminTaskManagement-modal ${openNotifications ? 'AdminTaskManagement-modal-open' : ''}`}>
+      <div className="AdminTaskManagement-modal-content AdminTaskManagement-modal-notifications">
+        <div className="AdminTaskManagement-modal-header AdminTaskManagement-modal-primary">
+          <div className="AdminTaskManagement-modal-title-row">
+            <div className="AdminTaskManagement-modal-title-icon">
+              <FiBell />
+              <h3>Notifications</h3>
+            </div>
+            <button 
+              className="AdminTaskManagement-icon-btn"
+              onClick={() => setOpenNotifications(false)}
             >
-              Mark all as read
-            </Button>
-          </Stack>
-        </Box>
-        <Box sx={{ maxHeight: '60vh', overflow: 'auto', p: 1 }}>
+              <FiX size={20} />
+            </button>
+          </div>
+          <div className="AdminTaskManagement-modal-subtitle">
+            {unreadNotificationCount > 0 ? `${unreadNotificationCount} unread` : 'All caught up'}
+          </div>
+        </div>
+        <div className="AdminTaskManagement-modal-body AdminTaskManagement-modal-scroll">
           {notifications.length > 0 ? (
-            <Stack spacing={1}>
-              {notifications.map((notification) => (
-                <Card 
-                  key={notification._id} 
-                  variant="outlined"
-                  sx={{ 
-                    bgcolor: notification.isRead ? 'background.default' : 'action.hover',
-                    borderLeft: notification.isRead ? null : `4px solid ${theme.palette.primary.main}`,
-                    borderRadius: 1,
-                    transition: 'all 0.2s ease',
-                    '&:hover': {
-                      transform: 'translateY(-1px)',
-                      boxShadow: theme.shadows[1]
-                    }
-                  }}
+            <div className="AdminTaskManagement-notifications-list">
+              <div className="AdminTaskManagement-modal-title-row" style={{ marginBottom: '16px' }}>
+                <span>{notifications.length} notification(s)</span>
+                <button 
+                  className="AdminTaskManagement-btn AdminTaskManagement-btn-sm"
+                  onClick={markAllNotificationsAsRead} 
+                  disabled={unreadNotificationCount === 0}
                 >
-                  <CardContent sx={{ py: 1, '&:last-child': { pb: 1 } }}>
-                    <Stack spacing={1}>
-                      <Typography variant="subtitle2" fontWeight={600}>
-                        {notification.title}
-                      </Typography>
-                      <Typography variant="body2">
-                        {notification.message}
-                      </Typography>
-                      <Stack direction="row" justifyContent="space-between" alignItems="center">
-                        <Typography variant="caption" color="text.secondary">
-                          {new Date(notification.createdAt).toLocaleDateString()}
-                        </Typography>
-                        {!notification.isRead && (
-                          <Button 
-                            size="small" 
-                            onClick={() => markNotificationAsRead(notification._id)}
-                            sx={{ borderRadius: 1 }}
-                          >
-                            Mark read
-                          </Button>
-                        )}
-                      </Stack>
-                    </Stack>
-                  </CardContent>
-                </Card>
+                  Mark all as read
+                </button>
+              </div>
+              {notifications.map((notification) => (
+                <div 
+                  key={notification._id} 
+                  className={`AdminTaskManagement-notification-item ${notification.isRead ? '' : 'AdminTaskManagement-notification-unread'}`}
+                >
+                  <div className="AdminTaskManagement-notification-content">
+                    <div className="AdminTaskManagement-notification-title">{notification.title}</div>
+                    <div className="AdminTaskManagement-notification-message">{notification.message}</div>
+                    <div className="AdminTaskManagement-notification-footer">
+                      <div className="AdminTaskManagement-notification-date">
+                        {new Date(notification.createdAt).toLocaleDateString()}
+                      </div>
+                      {!notification.isRead && (
+                        <button 
+                          className="AdminTaskManagement-btn AdminTaskManagement-btn-sm"
+                          onClick={() => markNotificationAsRead(notification._id)}
+                        >
+                          Mark read
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
               ))}
-            </Stack>
+            </div>
           ) : (
-            <Box sx={{ textAlign: 'center', py: 4 }}>
-              <FiBell size={32} color={theme.palette.text.secondary} />
-              <Typography variant="body1" color="text.secondary" sx={{ mt: 1, fontWeight: 600 }}>
-                No notifications
-              </Typography>
-            </Box>
+            <div className="AdminTaskManagement-text-center">
+              <FiBell size={32} className="AdminTaskManagement-empty-icon" />
+              <h5>No notifications</h5>
+              <p>You're all caught up!</p>
+            </div>
           )}
-        </Box>
-      </Box>
-    </Modal>
+        </div>
+        <div className="AdminTaskManagement-modal-footer">
+          <button 
+            className="AdminTaskManagement-btn" 
+            onClick={() => setOpenNotifications(false)}
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
   );
 
   // Enhanced Activity Logs Dialog
   const renderActivityLogsDialog = () => (
-    <Dialog 
-      open={openActivityDialog} 
-      onClose={() => setOpenActivityDialog(false)} 
-      maxWidth="lg" 
-      fullWidth
-      fullScreen={isSmallMobile}
-    >
-      <DialogTitle sx={{ 
-        background: `linear-gradient(135deg, ${theme.palette.primary.main}15 0%, ${theme.palette.primary.main}05 100%)` 
-      }}>
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <FiActivity color={theme.palette.primary.main} />
-          <Typography variant="h6" fontWeight={600}>
-            Activity Logs for: {selectedTask?.title}
-          </Typography>
-        </Stack>
-      </DialogTitle>
-      <DialogContent>
-        {activityLogs.length > 0 ? (
-          <Stack spacing={1}>
-            {activityLogs.map((log, index) => (
-              <Card key={index} variant="outlined" sx={{ borderRadius: 1 }}>
-                <CardContent sx={{ py: 1.5 }}>
-                  <Stack spacing={1}>
-                    <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} spacing={1}>
-                      <Stack direction="row" alignItems="center" spacing={1}>
-                        <Avatar sx={{ 
-                          width: 32, 
-                          height: 32, 
-                          fontSize: '0.875rem',
-                          bgcolor: theme.palette.primary.main 
-                        }}>
-                          {getUserName(log.user)?.charAt(0)?.toUpperCase() || 'U'}
-                        </Avatar>
-                        <Box>
-                          <Typography variant="subtitle2" fontWeight={600}>
-                            {getUserName(log.user)}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {users.find(u => u._id === log.user)?.role || 'User'}
-                          </Typography>
-                        </Box>
-                      </Stack>
-                      <Typography variant="caption" color="text.secondary">
-                        {new Date(log.createdAt).toLocaleDateString()} at {new Date(log.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                      </Typography>
-                    </Stack>
-                    <Typography variant="body2" sx={{ mt: 0.5 }}>
-                      {log.description || log.action}
-                    </Typography>
-                    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                      <Chip 
-                        label={log.action} 
-                        size="small" 
-                        color="primary" 
-                        variant="outlined" 
-                        sx={{ fontWeight: 600 }}
-                      />
-                      {log.ipAddress && (
-                        <Typography variant="caption" color="text.secondary">
-                          IP: {log.ipAddress}
-                        </Typography>
-                      )}
-                    </Stack>
-                  </Stack>
-                </CardContent>
-              </Card>
-            ))}
-          </Stack>
-        ) : (
-          <Typography color="text.secondary" textAlign="center" py={3} fontWeight={500}>
-            No activity logs found for this task
-          </Typography>
-        )}
-      </DialogContent>
-    </Dialog>
-  );
-
-  // User Status Dialog to show all assigned users and their status
-  const renderUserStatusDialog = () => (
-    <Dialog 
-      open={openUserStatusDialog} 
-      onClose={() => setOpenUserStatusDialog(false)} 
-      maxWidth="md" 
-      fullWidth
-      fullScreen={isSmallMobile}
-    >
-      <DialogTitle sx={{ 
-        background: `linear-gradient(135deg, ${theme.palette.info.main}15 0%, ${theme.palette.info.main}05 100%)` 
-      }}>
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <FiUsers color={theme.palette.info.main} />
-          <Typography variant="h6" fontWeight={600}>
-            User Statuses for: {selectedTask?.title}
-          </Typography>
-        </Stack>
-      </DialogTitle>
-      <DialogContent>
-        <Stack spacing={2} sx={{ mt: 2 }}>
-          {taskUserStatuses.length > 0 ? (
-            taskUserStatuses.map((userStatus, index) => (
-              <Card key={index} variant="outlined" sx={{ borderRadius: 1 }}>
-                <CardContent sx={{ py: 1.5 }}>
-                  <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
-                    <Stack direction="row" alignItems="center" spacing={2}>
-                      <Avatar sx={{ 
-                        width: 40, 
-                        height: 40,
-                        bgcolor: theme.palette.primary.main 
-                      }}>
-                        {userStatus.name?.charAt(0)?.toUpperCase() || 'U'}
-                      </Avatar>
-                      <Box>
-                        <Typography variant="subtitle1" fontWeight={600}>
-                          {userStatus.name}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {userStatus.role} • {userStatus.email}
-                        </Typography>
-                      </Box>
-                    </Stack>
-                    <StatusChip
-                      label={userStatus.status}
-                      status={userStatus.status}
-                    />
-                  </Stack>
-                  {userStatus.updatedAt && (
-                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                      Last updated: {new Date(userStatus.updatedAt).toLocaleString()}
-                    </Typography>
-                  )}
-                </CardContent>
-              </Card>
-            ))
+    <div className={`AdminTaskManagement-modal ${openActivityDialog ? 'AdminTaskManagement-modal-open' : ''}`}>
+      <div className="AdminTaskManagement-modal-content AdminTaskManagement-modal-large">
+        <div className="AdminTaskManagement-modal-header AdminTaskManagement-modal-primary">
+          <div className="AdminTaskManagement-modal-title-row">
+            <div className="AdminTaskManagement-modal-title-icon">
+              <FiActivity />
+              <h3>Activity Logs for: {selectedTask?.title}</h3>
+            </div>
+            <button 
+              className="AdminTaskManagement-icon-btn"
+              onClick={() => setOpenActivityDialog(false)}
+            >
+              <FiX size={20} />
+            </button>
+          </div>
+          <div className="AdminTaskManagement-modal-subtitle">
+            {activityLogs.length} activity log(s)
+          </div>
+        </div>
+        <div className="AdminTaskManagement-modal-body">
+          {activityLogs.length > 0 ? (
+            <div className="AdminTaskManagement-activity-logs">
+              {activityLogs.map((log, index) => (
+                <div key={index} className="AdminTaskManagement-card AdminTaskManagement-card-outline">
+                  <div className="AdminTaskManagement-card-content">
+                    <div className="AdminTaskManagement-activity-log">
+                      <div className="AdminTaskManagement-activity-header">
+                        <div className="AdminTaskManagement-activity-user">
+                          <div className="AdminTaskManagement-activity-avatar">
+                            {getUserName(log.user)?.charAt(0)?.toUpperCase() || 'U'}
+                          </div>
+                          <div className="AdminTaskManagement-activity-user-info">
+                            <div className="AdminTaskManagement-activity-user-name">{getUserName(log.user)}</div>
+                            <div className="AdminTaskManagement-activity-user-role">
+                              {users.find(u => u._id === log.user)?.role || 'User'}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="AdminTaskManagement-activity-date">
+                          {new Date(log.createdAt).toLocaleDateString()} at {new Date(log.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </div>
+                      </div>
+                      <div className="AdminTaskManagement-activity-description">
+                        {log.description || log.action}
+                      </div>
+                      <div className="AdminTaskManagement-activity-footer">
+                        <span className="AdminTaskManagement-activity-tag">{log.action}</span>
+                        {log.ipAddress && (
+                          <span className="AdminTaskManagement-activity-ip">IP: {log.ipAddress}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : (
-            <Box sx={{ textAlign: 'center', py: 4 }}>
-              <FiUsers size={32} color={theme.palette.text.secondary} />
-              <Typography variant="body1" color="text.secondary" sx={{ mt: 1, fontWeight: 600 }}>
-                No user status information available
-              </Typography>
-            </Box>
+            <div className="AdminTaskManagement-text-center">
+              <FiActivity size={32} className="AdminTaskManagement-empty-icon" />
+              <h5>No activity logs found</h5>
+              <p>No activity logs found for this task</p>
+            </div>
           )}
-        </Stack>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={() => setOpenUserStatusDialog(false)}>Close</Button>
-      </DialogActions>
-    </Dialog>
+        </div>
+        <div className="AdminTaskManagement-modal-footer">
+          <button 
+            className="AdminTaskManagement-btn" 
+            onClick={() => setOpenActivityDialog(false)}
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
   );
 
-  // Create Task Dialog with searchable user dropdown
+  // User Status Dialog
+  const renderUserStatusDialog = () => (
+    <div className={`AdminTaskManagement-modal ${openUserStatusDialog ? 'AdminTaskManagement-modal-open' : ''}`}>
+      <div className="AdminTaskManagement-modal-content AdminTaskManagement-modal-medium">
+        <div className="AdminTaskManagement-modal-header AdminTaskManagement-modal-info">
+          <div className="AdminTaskManagement-modal-title-row">
+            <div className="AdminTaskManagement-modal-title-icon">
+              <FiUsers />
+              <h3>User Statuses for: {selectedTask?.title}</h3>
+            </div>
+            <button 
+              className="AdminTaskManagement-icon-btn"
+              onClick={() => setOpenUserStatusDialog(false)}
+            >
+              <FiX size={20} />
+            </button>
+          </div>
+          <div className="AdminTaskManagement-modal-subtitle">
+            {taskUserStatuses.length} user(s)
+          </div>
+        </div>
+        <div className="AdminTaskManagement-modal-body">
+          <div className="AdminTaskManagement-user-statuses">
+            {taskUserStatuses.length > 0 ? (
+              taskUserStatuses.map((userStatus, index) => (
+                <div key={index} className="AdminTaskManagement-card AdminTaskManagement-card-outline">
+                  <div className="AdminTaskManagement-card-content">
+                    <div className="AdminTaskManagement-user-status-item">
+                      <div className="AdminTaskManagement-user-status-header">
+                        <div className="AdminTaskManagement-user-status-user">
+                          <div className="AdminTaskManagement-user-status-avatar">
+                            {userStatus.name?.charAt(0)?.toUpperCase() || 'U'}
+                          </div>
+                          <div className="AdminTaskManagement-user-status-info">
+                            <div className="AdminTaskManagement-user-status-name">{userStatus.name}</div>
+                            <div className="AdminTaskManagement-user-status-details">
+                              {userStatus.role} • {userStatus.email}
+                            </div>
+                          </div>
+                        </div>
+                        <AdminTaskManagementStatusChip status={userStatus.status} />
+                      </div>
+                      {userStatus.updatedAt && (
+                        <div className="AdminTaskManagement-user-status-updated">
+                          Last updated: {new Date(userStatus.updatedAt).toLocaleString()}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="AdminTaskManagement-text-center">
+                <FiUsers size={32} className="AdminTaskManagement-empty-icon" />
+                <h5>No user status information available</h5>
+                <p>No user status data found for this task</p>
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="AdminTaskManagement-modal-footer">
+          <button 
+            className="AdminTaskManagement-btn" 
+            onClick={() => setOpenUserStatusDialog(false)}
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Create Task Dialog
   const renderCreateTaskDialog = () => (
-    <Dialog
-      open={openCreateDialog}
-      onClose={() => setOpenCreateDialog(false)}
-      maxWidth="md"
-      fullWidth
-      fullScreen={isMobile}
-    >
-      <DialogTitle>
-        <Typography variant="h5" fontWeight={600}>
-          Create New Task
-        </Typography>
-      </DialogTitle>
-      <DialogContent>
-        <Stack spacing={3} sx={{ mt: 1 }}>
-          <TextField
-            fullWidth
-            label="Task Title *"
-            value={newTask.title}
-            onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-            placeholder="Enter task title"
-          />
+    <div className={`AdminTaskManagement-modal ${openCreateDialog ? 'AdminTaskManagement-modal-open' : ''}`}>
+      <div className="AdminTaskManagement-modal-content AdminTaskManagement-modal-large">
+        <div className="AdminTaskManagement-modal-header">
+          <div className="AdminTaskManagement-modal-title-row">
+            <h3>Create New Task</h3>
+            <button 
+              className="AdminTaskManagement-icon-btn"
+              onClick={() => setOpenCreateDialog(false)}
+            >
+              <FiX size={20} />
+            </button>
+          </div>
+        </div>
+        <div className="AdminTaskManagement-modal-body">
+          <div className="AdminTaskManagement-form-container">
+            <div className="AdminTaskManagement-form-group">
+              <label>Task Title *</label>
+              <input
+                type="text"
+                className="AdminTaskManagement-form-input"
+                placeholder="Enter task title"
+                value={newTask.title}
+                onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+              />
+            </div>
 
-          <TextField
-            fullWidth
-            multiline
-            rows={3}
-            label="Description *"
-            value={newTask.description}
-            onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-            placeholder="Enter task description"
-          />
+            <div className="AdminTaskManagement-form-group">
+              <label>Description *</label>
+              <textarea
+                className="AdminTaskManagement-form-textarea"
+                placeholder="Enter task description"
+                rows={3}
+                value={newTask.description}
+                onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+              />
+            </div>
 
-          <DateTimePicker
-            label="Due Date & Time *"
-            value={newTask.dueDateTime}
-            onChange={(date) => setNewTask({ ...newTask, dueDateTime: date })}
-            renderInput={(params) => <TextField {...params} fullWidth />}
-          />
+            <div className="AdminTaskManagement-form-group">
+              <label>Due Date & Time *</label>
+              <input
+                type="datetime-local"
+                className="AdminTaskManagement-form-input"
+                value={newTask.dueDateTime ? new Date(newTask.dueDateTime).toISOString().slice(0, 16) : ''}
+                onChange={(e) => setNewTask({ ...newTask, dueDateTime: e.target.value ? new Date(e.target.value) : null })}
+              />
+            </div>
 
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
-                <InputLabel>Priority</InputLabel>
-                <Select
+            <div className="AdminTaskManagement-form-row">
+              <div className="AdminTaskManagement-form-group">
+                <label>Priority</label>
+                <select
+                  className="AdminTaskManagement-form-select"
                   value={newTask.priority}
                   onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
-                  label="Priority"
                 >
-                  <MenuItem value="low">Low</MenuItem>
-                  <MenuItem value="medium">Medium</MenuItem>
-                  <MenuItem value="high">High</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Priority Days"
-                value={newTask.priorityDays}
-                onChange={(e) => setNewTask({ ...newTask, priorityDays: e.target.value })}
-                placeholder="Enter priority days"
-              />
-            </Grid>
-          </Grid>
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
 
-          {/* Assign to Users with Search */}
-          <FormControl fullWidth>
-            <InputLabel>Assign to Users</InputLabel>
-            <Select
-              multiple
-              value={newTask.assignedUsers}
-              onChange={(e) => setNewTask({ ...newTask, assignedUsers: e.target.value })}
-              input={<OutlinedInput label="Assign to Users" />}
-              renderValue={(selected) => (
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                  {selected.map((value) => {
+              <div className="AdminTaskManagement-form-group">
+                <label>Priority Days</label>
+                <input
+                  type="text"
+                  className="AdminTaskManagement-form-input"
+                  placeholder="Enter priority days"
+                  value={newTask.priorityDays}
+                  onChange={(e) => setNewTask({ ...newTask, priorityDays: e.target.value })}
+                />
+              </div>
+            </div>
+
+            {/* Assign to Users with Search */}
+            <div className="AdminTaskManagement-form-group">
+              <label>Assign to Users</label>
+              <div className="AdminTaskManagement-multi-select-container">
+                <div className="AdminTaskManagement-select-search-bar">
+                  <FiSearch className="AdminTaskManagement-select-search-icon" />
+                  <input
+                    type="text"
+                    className="AdminTaskManagement-select-search-input"
+                    placeholder="Search users..."
+                    value={userSearch}
+                    onChange={(e) => setUserSearch(e.target.value)}
+                  />
+                  {userSearch && (
+                    <button className="AdminTaskManagement-select-search-clear" onClick={() => setUserSearch('')}>
+                      <FiX size={14} />
+                    </button>
+                  )}
+                </div>
+                <div className="AdminTaskManagement-multi-select-options">
+                  {filteredUsers.map((user) => (
+                    <div key={user._id} className="AdminTaskManagement-multi-select-option">
+                      <input
+                        type="checkbox"
+                        id={`AdminTaskManagement-user-${user._id}`}
+                        checked={newTask.assignedUsers.includes(user._id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setNewTask({
+                              ...newTask,
+                              assignedUsers: [...newTask.assignedUsers, user._id]
+                            });
+                          } else {
+                            setNewTask({
+                              ...newTask,
+                              assignedUsers: newTask.assignedUsers.filter(id => id !== user._id)
+                            });
+                          }
+                        }}
+                      />
+                      <label htmlFor={`AdminTaskManagement-user-${user._id}`} className="AdminTaskManagement-multi-select-label">
+                        <div className="AdminTaskManagement-multi-select-text">
+                          <div className="AdminTaskManagement-multi-select-primary">{user.name}</div>
+                          <div className="AdminTaskManagement-multi-select-secondary">
+                            <span>{user.role}</span>
+                            <span className="AdminTaskManagement-separator">•</span>
+                            <span>{user.email}</span>
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+                  ))}
+                  {filteredUsers.length === 0 && (
+                    <div className="AdminTaskManagement-multi-select-empty">
+                      No users found
+                    </div>
+                  )}
+                </div>
+              </div>
+              {newTask.assignedUsers.length > 0 && (
+                <div className="AdminTaskManagement-selected-chips">
+                  {newTask.assignedUsers.map(value => {
                     const user = users.find(u => u._id === value);
-                    return (
-                      <Chip key={value} label={user?.name || value} size="small" />
-                    );
+                    return user ? (
+                      <span key={value} className="AdminTaskManagement-selected-chip">
+                        {user.name}
+                      </span>
+                    ) : null;
                   })}
-                </Box>
+                </div>
               )}
-              MenuProps={MenuProps}
-            >
-              {/* Search Bar at the top of dropdown */}
-              <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  placeholder="Search users..."
-                  value={userSearch}
-                  onChange={(e) => setUserSearch(e.target.value)}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <FiSearch size={16} />
-                      </InputAdornment>
-                    ),
-                    endAdornment: userSearch && (
-                      <InputAdornment position="end">
-                        <IconButton
-                          size="small"
-                          onClick={() => setUserSearch('')}
-                          edge="end"
-                        >
-                          <FiX size={14} />
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                  onKeyDown={(e) => e.stopPropagation()}
-                  variant="outlined"
-                />
-              </Box>
-              
-              {filteredUsers.length > 0 ? (
-                filteredUsers.map((user) => (
-                  <MenuItem key={user._id} value={user._id}>
-                    <Checkbox checked={newTask.assignedUsers.indexOf(user._id) > -1} />
-                    <ListItemText 
-                      primary={user.name} 
-                      secondary={
-                        <Stack direction="row" spacing={1} alignItems="center">
-                          <Typography variant="caption" color="text.secondary">
-                            {user.role}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            •
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {user.email}
-                          </Typography>
-                        </Stack>
-                      }
-                    />
-                  </MenuItem>
-                ))
-              ) : (
-                <MenuItem disabled>
-                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', width: '100%', py: 1 }}>
-                    No users found
-                  </Typography>
-                </MenuItem>
-              )}
-            </Select>
-          </FormControl>
+            </div>
 
-          {/* Assign to Groups with Search */}
-          <FormControl fullWidth>
-            <InputLabel>Assign to Groups</InputLabel>
-            <Select
-              multiple
-              value={newTask.assignedGroups}
-              onChange={(e) => setNewTask({ ...newTask, assignedGroups: e.target.value })}
-              input={<OutlinedInput label="Assign to Groups" />}
-              renderValue={(selected) => (
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                  {selected.map((value) => {
+            {/* Assign to Groups with Search */}
+            <div className="AdminTaskManagement-form-group">
+              <label>Assign to Groups</label>
+              <div className="AdminTaskManagement-multi-select-container">
+                <div className="AdminTaskManagement-select-search-bar">
+                  <FiSearch className="AdminTaskManagement-select-search-icon" />
+                  <input
+                    type="text"
+                    className="AdminTaskManagement-select-search-input"
+                    placeholder="Search groups..."
+                    value={groupSearch}
+                    onChange={(e) => setGroupSearch(e.target.value)}
+                  />
+                  {groupSearch && (
+                    <button className="AdminTaskManagement-select-search-clear" onClick={() => setGroupSearch('')}>
+                      <FiX size={14} />
+                    </button>
+                  )}
+                </div>
+                <div className="AdminTaskManagement-multi-select-options">
+                  {filteredGroups.map((group) => (
+                    <div key={group._id} className="AdminTaskManagement-multi-select-option">
+                      <input
+                        type="checkbox"
+                        id={`AdminTaskManagement-group-${group._id}`}
+                        checked={newTask.assignedGroups.includes(group._id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setNewTask({
+                              ...newTask,
+                              assignedGroups: [...newTask.assignedGroups, group._id]
+                            });
+                          } else {
+                            setNewTask({
+                              ...newTask,
+                              assignedGroups: newTask.assignedGroups.filter(id => id !== group._id)
+                            });
+                          }
+                        }}
+                      />
+                      <label htmlFor={`AdminTaskManagement-group-${group._id}`} className="AdminTaskManagement-multi-select-label">
+                        <div className="AdminTaskManagement-multi-select-text">
+                          <div className="AdminTaskManagement-multi-select-primary">{group.name}</div>
+                          <div className="AdminTaskManagement-multi-select-secondary">
+                            {group.members?.length || 0} members • {group.description || 'No description'}
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+                  ))}
+                  {filteredGroups.length === 0 && (
+                    <div className="AdminTaskManagement-multi-select-empty">
+                      No groups found
+                    </div>
+                  )}
+                </div>
+              </div>
+              {newTask.assignedGroups.length > 0 && (
+                <div className="AdminTaskManagement-selected-chips">
+                  {newTask.assignedGroups.map(value => {
                     const group = groups.find(g => g._id === value);
-                    return (
-                      <Chip key={value} label={group?.name || value} size="small" color="secondary" />
-                    );
+                    return group ? (
+                      <span key={value} className="AdminTaskManagement-selected-chip AdminTaskManagement-selected-chip-secondary">
+                        {group.name}
+                      </span>
+                    ) : null;
                   })}
-                </Box>
+                </div>
               )}
-              MenuProps={MenuProps}
-            >
-              {/* Search Bar at the top of dropdown */}
-              <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  placeholder="Search groups..."
-                  value={groupSearch}
-                  onChange={(e) => setGroupSearch(e.target.value)}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <FiSearch size={16} />
-                      </InputAdornment>
-                    ),
-                    endAdornment: groupSearch && (
-                      <InputAdornment position="end">
-                        <IconButton
-                          size="small"
-                          onClick={() => setGroupSearch('')}
-                          edge="end"
-                        >
-                          <FiX size={14} />
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                  onKeyDown={(e) => e.stopPropagation()}
-                  variant="outlined"
-                />
-              </Box>
-              
-              {filteredGroups.length > 0 ? (
-                filteredGroups.map((group) => (
-                  <MenuItem key={group._id} value={group._id}>
-                    <Checkbox checked={newTask.assignedGroups.indexOf(group._id) > -1} />
-                    <ListItemText 
-                      primary={group.name} 
-                      secondary={`${group.members?.length || 0} members • ${group.description || 'No description'}`}
-                    />
-                  </MenuItem>
-                ))
-              ) : (
-                <MenuItem disabled>
-                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', width: '100%', py: 1 }}>
-                    No groups found
-                  </Typography>
-                </MenuItem>
-              )}
-            </Select>
-          </FormControl>
+            </div>
 
-          <Box>
-            <Typography variant="subtitle1" gutterBottom>
-              Attachments
-            </Typography>
-            <Stack direction="row" spacing={2}>
-              <Button
-                variant="outlined"
-                component="label"
-                startIcon={<FiFileText />}
-                sx={{ borderStyle: 'dashed' }}
-              >
-                Upload Files
-                <input
-                  type="file"
-                  multiple
-                  hidden
-                  onChange={(e) => setNewTask({ ...newTask, files: e.target.files })}
-                />
-              </Button>
-              <Button
-                variant="outlined"
-                component="label"
-                startIcon={<FiMic />}
-                sx={{ borderStyle: 'dashed' }}
-              >
-                Voice Note
-                <input
-                  type="file"
-                  accept="audio/*"
-                  hidden
-                  onChange={(e) => setNewTask({ ...newTask, voiceNote: e.target.files[0] })}
-                />
-              </Button>
-            </Stack>
-          </Box>
-        </Stack>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={() => setOpenCreateDialog(false)}>Cancel</Button>
-        <Button
-          onClick={handleCreateTask}
-          variant="contained"
-          disabled={isCreatingTask}
-          startIcon={isCreatingTask ? <CircularProgress size={16} /> : <FiCheck />}
-        >
-          {isCreatingTask ? 'Creating...' : 'Create Task'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+            <div className="AdminTaskManagement-form-group">
+              <label>Attachments</label>
+              <div className="AdminTaskManagement-attachment-buttons">
+                <button className="AdminTaskManagement-btn AdminTaskManagement-btn-outline AdminTaskManagement-attachment-btn">
+                  <FiFileText /> Upload Files
+                  <input
+                    type="file"
+                    multiple
+                    onChange={(e) => setNewTask({ ...newTask, files: e.target.files })}
+                  />
+                </button>
+                <button className="AdminTaskManagement-btn AdminTaskManagement-btn-outline AdminTaskManagement-attachment-btn">
+                  <FiMic /> Voice Note
+                  <input
+                    type="file"
+                    accept="audio/*"
+                    onChange={(e) => setNewTask({ ...newTask, voiceNote: e.target.files[0] })}
+                  />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="AdminTaskManagement-modal-footer">
+          <button 
+            className="AdminTaskManagement-btn" 
+            onClick={() => setOpenCreateDialog(false)}
+          >
+            Cancel
+          </button>
+          <button
+            className="AdminTaskManagement-btn AdminTaskManagement-btn-primary"
+            onClick={handleCreateTask}
+            disabled={isCreatingTask}
+          >
+            {isCreatingTask ? 'Creating...' : 'Create Task'}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 
-  // Edit Task Dialog with searchable user dropdown
+  // Edit Task Dialog
   const renderEditTaskDialog = () => (
-    <Dialog
-      open={openEditDialog}
-      onClose={() => setOpenEditDialog(false)}
-      maxWidth="md"
-      fullWidth
-      fullScreen={isMobile}
-    >
-      <DialogTitle>
-        <Typography variant="h5" fontWeight={600}>
-          Edit Task: {selectedTask?.title}
-        </Typography>
-      </DialogTitle>
-      <DialogContent>
-        <Stack spacing={3} sx={{ mt: 1 }}>
-          <TextField
-            fullWidth
-            label="Task Title *"
-            value={editTask.title}
-            onChange={(e) => setEditTask({ ...editTask, title: e.target.value })}
-            placeholder="Enter task title"
-          />
+    <div className={`AdminTaskManagement-modal ${openEditDialog ? 'AdminTaskManagement-modal-open' : ''}`}>
+      <div className="AdminTaskManagement-modal-content AdminTaskManagement-modal-large">
+        <div className="AdminTaskManagement-modal-header">
+          <div className="AdminTaskManagement-modal-title-row">
+            <h3>Edit Task: {selectedTask?.title}</h3>
+            <button 
+              className="AdminTaskManagement-icon-btn"
+              onClick={() => setOpenEditDialog(false)}
+            >
+              <FiX size={20} />
+            </button>
+          </div>
+        </div>
+        <div className="AdminTaskManagement-modal-body">
+          <div className="AdminTaskManagement-form-container">
+            <div className="AdminTaskManagement-form-group">
+              <label>Task Title *</label>
+              <input
+                type="text"
+                className="AdminTaskManagement-form-input"
+                placeholder="Enter task title"
+                value={editTask.title}
+                onChange={(e) => setEditTask({ ...editTask, title: e.target.value })}
+              />
+            </div>
 
-          <TextField
-            fullWidth
-            multiline
-            rows={3}
-            label="Description *"
-            value={editTask.description}
-            onChange={(e) => setEditTask({ ...editTask, description: e.target.value })}
-            placeholder="Enter task description"
-          />
+            <div className="AdminTaskManagement-form-group">
+              <label>Description *</label>
+              <textarea
+                className="AdminTaskManagement-form-textarea"
+                placeholder="Enter task description"
+                rows={3}
+                value={editTask.description}
+                onChange={(e) => setEditTask({ ...editTask, description: e.target.value })}
+              />
+            </div>
 
-          <DateTimePicker
-            label="Due Date & Time *"
-            value={editTask.dueDateTime}
-            onChange={(date) => setEditTask({ ...editTask, dueDateTime: date })}
-            renderInput={(params) => <TextField {...params} fullWidth />}
-          />
+            <div className="AdminTaskManagement-form-group">
+              <label>Due Date & Time *</label>
+              <input
+                type="datetime-local"
+                className="AdminTaskManagement-form-input"
+                value={editTask.dueDateTime ? new Date(editTask.dueDateTime).toISOString().slice(0, 16) : ''}
+                onChange={(e) => setEditTask({ ...editTask, dueDateTime: e.target.value ? new Date(e.target.value) : null })}
+              />
+            </div>
 
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
-                <InputLabel>Priority</InputLabel>
-                <Select
+            <div className="AdminTaskManagement-form-row">
+              <div className="AdminTaskManagement-form-group">
+                <label>Priority</label>
+                <select
+                  className="AdminTaskManagement-form-select"
                   value={editTask.priority}
                   onChange={(e) => setEditTask({ ...editTask, priority: e.target.value })}
-                  label="Priority"
                 >
-                  <MenuItem value="low">Low</MenuItem>
-                  <MenuItem value="medium">Medium</MenuItem>
-                  <MenuItem value="high">High</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Priority Days"
-                value={editTask.priorityDays}
-                onChange={(e) => setEditTask({ ...editTask, priorityDays: e.target.value })}
-                placeholder="Enter priority days"
-              />
-            </Grid>
-          </Grid>
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
 
-          {/* Assign to Users with Search */}
-          <FormControl fullWidth>
-            <InputLabel>Assign to Users</InputLabel>
-            <Select
-              multiple
-              value={editTask.assignedUsers}
-              onChange={(e) => setEditTask({ ...editTask, assignedUsers: e.target.value })}
-              input={<OutlinedInput label="Assign to Users" />}
-              renderValue={(selected) => (
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                  {selected.map((value) => {
+              <div className="AdminTaskManagement-form-group">
+                <label>Priority Days</label>
+                <input
+                  type="text"
+                  className="AdminTaskManagement-form-input"
+                  placeholder="Enter priority days"
+                  value={editTask.priorityDays}
+                  onChange={(e) => setEditTask({ ...editTask, priorityDays: e.target.value })}
+                />
+              </div>
+            </div>
+
+            {/* Assign to Users with Search */}
+            <div className="AdminTaskManagement-form-group">
+              <label>Assign to Users</label>
+              <div className="AdminTaskManagement-multi-select-container">
+                <div className="AdminTaskManagement-select-search-bar">
+                  <FiSearch className="AdminTaskManagement-select-search-icon" />
+                  <input
+                    type="text"
+                    className="AdminTaskManagement-select-search-input"
+                    placeholder="Search users..."
+                    value={userSearch}
+                    onChange={(e) => setUserSearch(e.target.value)}
+                  />
+                  {userSearch && (
+                    <button className="AdminTaskManagement-select-search-clear" onClick={() => setUserSearch('')}>
+                      <FiX size={14} />
+                    </button>
+                  )}
+                </div>
+                <div className="AdminTaskManagement-multi-select-options">
+                  {filteredUsers.map((user) => (
+                    <div key={user._id} className="AdminTaskManagement-multi-select-option">
+                      <input
+                        type="checkbox"
+                        id={`AdminTaskManagement-edit-user-${user._id}`}
+                        checked={editTask.assignedUsers.includes(user._id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setEditTask({
+                              ...editTask,
+                              assignedUsers: [...editTask.assignedUsers, user._id]
+                            });
+                          } else {
+                            setEditTask({
+                              ...editTask,
+                              assignedUsers: editTask.assignedUsers.filter(id => id !== user._id)
+                            });
+                          }
+                        }}
+                      />
+                      <label htmlFor={`AdminTaskManagement-edit-user-${user._id}`} className="AdminTaskManagement-multi-select-label">
+                        <div className="AdminTaskManagement-multi-select-text">
+                          <div className="AdminTaskManagement-multi-select-primary">{user.name}</div>
+                          <div className="AdminTaskManagement-multi-select-secondary">
+                            <span>{user.role}</span>
+                            <span className="AdminTaskManagement-separator">•</span>
+                            <span>{user.email}</span>
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+                  ))}
+                  {filteredUsers.length === 0 && (
+                    <div className="AdminTaskManagement-multi-select-empty">
+                      No users found
+                    </div>
+                  )}
+                </div>
+              </div>
+              {editTask.assignedUsers.length > 0 && (
+                <div className="AdminTaskManagement-selected-chips">
+                  {editTask.assignedUsers.map(value => {
                     const user = users.find(u => u._id === value);
-                    return (
-                      <Chip key={value} label={user?.name || value} size="small" />
-                    );
+                    return user ? (
+                      <span key={value} className="AdminTaskManagement-selected-chip">
+                        {user.name}
+                      </span>
+                    ) : null;
                   })}
-                </Box>
+                </div>
               )}
-              MenuProps={MenuProps}
-            >
-              {/* Search Bar at the top of dropdown */}
-              <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  placeholder="Search users..."
-                  value={userSearch}
-                  onChange={(e) => setUserSearch(e.target.value)}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <FiSearch size={16} />
-                      </InputAdornment>
-                    ),
-                    endAdornment: userSearch && (
-                      <InputAdornment position="end">
-                        <IconButton
-                          size="small"
-                          onClick={() => setUserSearch('')}
-                          edge="end"
-                        >
-                          <FiX size={14} />
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                  onKeyDown={(e) => e.stopPropagation()}
-                  variant="outlined"
-                />
-              </Box>
-              
-              {filteredUsers.length > 0 ? (
-                filteredUsers.map((user) => (
-                  <MenuItem key={user._id} value={user._id}>
-                    <Checkbox checked={editTask.assignedUsers.indexOf(user._id) > -1} />
-                    <ListItemText 
-                      primary={user.name} 
-                      secondary={
-                        <Stack direction="row" spacing={1} alignItems="center">
-                          <Typography variant="caption" color="text.secondary">
-                            {user.role}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            •
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {user.email}
-                          </Typography>
-                        </Stack>
-                      }
-                    />
-                  </MenuItem>
-                ))
-              ) : (
-                <MenuItem disabled>
-                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', width: '100%', py: 1 }}>
-                    No users found
-                  </Typography>
-                </MenuItem>
-              )}
-            </Select>
-          </FormControl>
+            </div>
 
-          {/* Assign to Groups with Search */}
-          <FormControl fullWidth>
-            <InputLabel>Assign to Groups</InputLabel>
-            <Select
-              multiple
-              value={editTask.assignedGroups}
-              onChange={(e) => setEditTask({ ...editTask, assignedGroups: e.target.value })}
-              input={<OutlinedInput label="Assign to Groups" />}
-              renderValue={(selected) => (
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                  {selected.map((value) => {
+            {/* Assign to Groups with Search */}
+            <div className="AdminTaskManagement-form-group">
+              <label>Assign to Groups</label>
+              <div className="AdminTaskManagement-multi-select-container">
+                <div className="AdminTaskManagement-select-search-bar">
+                  <FiSearch className="AdminTaskManagement-select-search-icon" />
+                  <input
+                    type="text"
+                    className="AdminTaskManagement-select-search-input"
+                    placeholder="Search groups..."
+                    value={groupSearch}
+                    onChange={(e) => setGroupSearch(e.target.value)}
+                  />
+                  {groupSearch && (
+                    <button className="AdminTaskManagement-select-search-clear" onClick={() => setGroupSearch('')}>
+                      <FiX size={14} />
+                    </button>
+                  )}
+                </div>
+                <div className="AdminTaskManagement-multi-select-options">
+                  {filteredGroups.map((group) => (
+                    <div key={group._id} className="AdminTaskManagement-multi-select-option">
+                      <input
+                        type="checkbox"
+                        id={`AdminTaskManagement-edit-group-${group._id}`}
+                        checked={editTask.assignedGroups.includes(group._id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setEditTask({
+                              ...editTask,
+                              assignedGroups: [...editTask.assignedGroups, group._id]
+                            });
+                          } else {
+                            setEditTask({
+                              ...editTask,
+                              assignedGroups: editTask.assignedGroups.filter(id => id !== group._id)
+                            });
+                          }
+                        }}
+                      />
+                      <label htmlFor={`AdminTaskManagement-edit-group-${group._id}`} className="AdminTaskManagement-multi-select-label">
+                        <div className="AdminTaskManagement-multi-select-text">
+                          <div className="AdminTaskManagement-multi-select-primary">{group.name}</div>
+                          <div className="AdminTaskManagement-multi-select-secondary">
+                            {group.members?.length || 0} members • {group.description || 'No description'}
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+                  ))}
+                  {filteredGroups.length === 0 && (
+                    <div className="AdminTaskManagement-multi-select-empty">
+                      No groups found
+                    </div>
+                  )}
+                </div>
+              </div>
+              {editTask.assignedGroups.length > 0 && (
+                <div className="AdminTaskManagement-selected-chips">
+                  {editTask.assignedGroups.map(value => {
                     const group = groups.find(g => g._id === value);
-                    return (
-                      <Chip key={value} label={group?.name || value} size="small" color="secondary" />
-                    );
+                    return group ? (
+                      <span key={value} className="AdminTaskManagement-selected-chip AdminTaskManagement-selected-chip-secondary">
+                        {group.name}
+                      </span>
+                    ) : null;
                   })}
-                </Box>
+                </div>
               )}
-              MenuProps={MenuProps}
-            >
-              {/* Search Bar at the top of dropdown */}
-              <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  placeholder="Search groups..."
-                  value={groupSearch}
-                  onChange={(e) => setGroupSearch(e.target.value)}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <FiSearch size={16} />
-                      </InputAdornment>
-                    ),
-                    endAdornment: groupSearch && (
-                      <InputAdornment position="end">
-                        <IconButton
-                          size="small"
-                          onClick={() => setGroupSearch('')}
-                          edge="end"
-                        >
-                          <FiX size={14} />
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                  onKeyDown={(e) => e.stopPropagation()}
-                  variant="outlined"
-                />
-              </Box>
-              
-              {filteredGroups.length > 0 ? (
-                filteredGroups.map((group) => (
-                  <MenuItem key={group._id} value={group._id}>
-                    <Checkbox checked={editTask.assignedGroups.indexOf(group._id) > -1} />
-                    <ListItemText 
-                      primary={group.name} 
-                      secondary={`${group.members?.length || 0} members • ${group.description || 'No description'}`}
-                    />
-                  </MenuItem>
-                ))
-              ) : (
-                <MenuItem disabled>
-                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', width: '100%', py: 1 }}>
-                    No groups found
-                  </Typography>
-                </MenuItem>
-              )}
-            </Select>
-          </FormControl>
-        </Stack>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={() => setOpenEditDialog(false)}>Cancel</Button>
-        <Button
-          onClick={handleEditTask}
-          variant="contained"
-          disabled={isUpdatingTask}
-          startIcon={isUpdatingTask ? <CircularProgress size={16} /> : <FiSave />}
-        >
-          {isUpdatingTask ? 'Updating...' : 'Update Task'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+            </div>
+          </div>
+        </div>
+        <div className="AdminTaskManagement-modal-footer">
+          <button 
+            className="AdminTaskManagement-btn" 
+            onClick={() => setOpenEditDialog(false)}
+          >
+            Cancel
+          </button>
+          <button
+            className="AdminTaskManagement-btn AdminTaskManagement-btn-primary"
+            onClick={handleEditTask}
+            disabled={isUpdatingTask}
+          >
+            {isUpdatingTask ? 'Updating...' : 'Update Task'}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 
   // Group Management Dialog
   const renderGroupManagementDialog = () => (
-    <Dialog
-      open={openGroupDialog}
-      onClose={() => setOpenGroupDialog(false)}
-      maxWidth="md"
-      fullWidth
-      fullScreen={isMobile}
-    >
-      <DialogTitle>
-        <Typography variant="h5" fontWeight={600}>
-          {editingGroup ? 'Edit Group' : 'Create New Group'}
-        </Typography>
-      </DialogTitle>
-      <DialogContent>
-        <Stack spacing={3} sx={{ mt: 1 }}>
-          <TextField
-            fullWidth
-            label="Group Name *"
-            value={newGroup.name}
-            onChange={(e) => setNewGroup({ ...newGroup, name: e.target.value })}
-            placeholder="Enter group name"
-          />
-
-          <TextField
-            fullWidth
-            multiline
-            rows={3}
-            label="Description *"
-            value={newGroup.description}
-            onChange={(e) => setNewGroup({ ...newGroup, description: e.target.value })}
-            placeholder="Enter group description"
-          />
-
-          <FormControl fullWidth>
-            <InputLabel>Select Members</InputLabel>
-            <Select
-              multiple
-              value={newGroup.members}
-              onChange={(e) => setNewGroup({ ...newGroup, members: e.target.value })}
-              input={<OutlinedInput label="Select Members" />}
-              renderValue={(selected) => (
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                  {selected.map((value) => {
-                    const user = users.find(u => u._id === value);
-                    return (
-                      <Chip key={value} label={user?.name || value} size="small" />
-                    );
-                  })}
-                </Box>
-              )}
+    <div className={`AdminTaskManagement-modal ${openGroupDialog ? 'AdminTaskManagement-modal-open' : ''}`}>
+      <div className="AdminTaskManagement-modal-content AdminTaskManagement-modal-large">
+        <div className="AdminTaskManagement-modal-header">
+          <div className="AdminTaskManagement-modal-title-row">
+            <h3>{editingGroup ? 'Edit Group' : 'Create New Group'}</h3>
+            <button 
+              className="AdminTaskManagement-icon-btn"
+              onClick={() => setOpenGroupDialog(false)}
             >
-              {users.map((user) => (
-                <MenuItem key={user._id} value={user._id}>
-                  <Checkbox checked={newGroup.members.indexOf(user._id) > -1} />
-                  <ListItemText primary={user.name} secondary={user.role} />
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Stack>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={() => setOpenGroupDialog(false)}>Cancel</Button>
-        <Button
-          onClick={handleCreateGroup}
-          variant="contained"
-          disabled={isCreatingGroup}
-          startIcon={isCreatingGroup ? <CircularProgress size={16} /> : <FiCheck />}
-        >
-          {isCreatingGroup ? (editingGroup ? 'Updating...' : 'Creating...') : (editingGroup ? 'Update Group' : 'Create Group')}
-        </Button>
-      </DialogActions>
-    </Dialog>
+              <FiX size={20} />
+            </button>
+          </div>
+        </div>
+        <div className="AdminTaskManagement-modal-body">
+          <div className="AdminTaskManagement-form-container">
+            <div className="AdminTaskManagement-form-group">
+              <label>Group Name *</label>
+              <input
+                type="text"
+                className="AdminTaskManagement-form-input"
+                placeholder="Enter group name"
+                value={newGroup.name}
+                onChange={(e) => setNewGroup({ ...newGroup, name: e.target.value })}
+              />
+            </div>
+
+            <div className="AdminTaskManagement-form-group">
+              <label>Description *</label>
+              <textarea
+                className="AdminTaskManagement-form-textarea"
+                placeholder="Enter group description"
+                rows={3}
+                value={newGroup.description}
+                onChange={(e) => setNewGroup({ ...newGroup, description: e.target.value })}
+              />
+            </div>
+
+            <div className="AdminTaskManagement-form-group">
+              <label>Select Members</label>
+              <div className="AdminTaskManagement-multi-select-container">
+                <div className="AdminTaskManagement-multi-select-options">
+                  {users.map((user) => (
+                    <div key={user._id} className="AdminTaskManagement-multi-select-option">
+                      <input
+                        type="checkbox"
+                        id={`AdminTaskManagement-group-member-${user._id}`}
+                        checked={newGroup.members.includes(user._id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setNewGroup({
+                              ...newGroup,
+                              members: [...newGroup.members, user._id]
+                            });
+                          } else {
+                            setNewGroup({
+                              ...newGroup,
+                              members: newGroup.members.filter(id => id !== user._id)
+                            });
+                          }
+                        }}
+                      />
+                      <label htmlFor={`AdminTaskManagement-group-member-${user._id}`} className="AdminTaskManagement-multi-select-label">
+                        <div className="AdminTaskManagement-multi-select-text">
+                          <div className="AdminTaskManagement-multi-select-primary">{user.name}</div>
+                          <div className="AdminTaskManagement-multi-select-secondary">{user.role}</div>
+                        </div>
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {newGroup.members.length > 0 && (
+                <div className="AdminTaskManagement-selected-chips">
+                  {newGroup.members.map(value => {
+                    const user = users.find(u => u._id === value);
+                    return user ? (
+                      <span key={value} className="AdminTaskManagement-selected-chip">
+                        {user.name}
+                      </span>
+                    ) : null;
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="AdminTaskManagement-modal-footer">
+          <button 
+            className="AdminTaskManagement-btn" 
+            onClick={() => setOpenGroupDialog(false)}
+          >
+            Cancel
+          </button>
+          <button
+            className="AdminTaskManagement-btn AdminTaskManagement-btn-primary"
+            onClick={handleCreateGroup}
+            disabled={isCreatingGroup}
+          >
+            {isCreatingGroup ? (editingGroup ? 'Updating...' : 'Creating...') : (editingGroup ? 'Update Group' : 'Create Group')}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 
   // Group Management Tab Content
   const renderGroupManagementTab = () => (
-    <Box>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
-        <Typography variant="h6">Group Management ({groups.length} groups)</Typography>
-        <Button
-          variant="contained"
-          startIcon={<FiPlus />}
+    <div>
+      <div className="AdminTaskManagement-tab-header">
+        <h4>Group Management ({groups.length} groups)</h4>
+        <button
+          className="AdminTaskManagement-btn AdminTaskManagement-btn-primary"
           onClick={() => {
             setEditingGroup(null);
             setNewGroup({ name: '', description: '', members: [] });
             setOpenGroupDialog(true);
           }}
         >
-          Create Group
-        </Button>
-      </Stack>
+          <FiPlus /> Create Group
+        </button>
+      </div>
 
-      <Grid container spacing={2}>
+      <div className="AdminTaskManagement-groups-grid">
         {groups.map(group => (
-          <Grid item xs={12} sm={6} md={4} key={group._id}>
-            <GroupCard>
-              <CardContent>
-                <Stack spacing={2}>
-                  <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                    <Box>
-                      <Typography variant="h6">{group.name}</Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {group.description}
-                      </Typography>
-                    </Box>
-                    <Stack direction="row" spacing={0.5}>
-                      <IconButton
-                        size="small"
-                        onClick={() => openGroupEditDialog(group)}
-                      >
-                        <FiEdit size={16} />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleDeleteGroup(group._id)}
-                        sx={{ color: 'error.main' }}
-                      >
-                        <FiTrash2 size={16} />
-                      </IconButton>
-                    </Stack>
-                  </Stack>
-                  <Divider />
-                  <Box>
-                    <Typography variant="caption" color="text.secondary">
-                      Members ({group.members?.length || 0})
-                    </Typography>
-                    <Stack spacing={1} sx={{ mt: 1 }}>
-                      {group.members?.slice(0, 3).map(memberId => {
-                        const member = users.find(u => u._id === memberId);
-                        return member ? (
-                          <Stack key={memberId} direction="row" alignItems="center" spacing={1}>
-                            <Avatar sx={{ width: 24, height: 24, fontSize: '0.7rem' }}>
-                              {member.name.charAt(0).toUpperCase()}
-                            </Avatar>
-                            <Typography variant="body2">{member.name}</Typography>
-                          </Stack>
-                        ) : null;
-                      })}
-                      {(group.members?.length || 0) > 3 && (
-                        <Typography variant="caption" color="text.secondary">
-                          +{(group.members?.length || 0) - 3} more members
-                        </Typography>
-                      )}
-                    </Stack>
-                  </Box>
-                </Stack>
-              </CardContent>
-            </GroupCard>
-          </Grid>
+          <div key={group._id} className="AdminTaskManagement-group-card">
+            <div className="AdminTaskManagement-group-card-content">
+              <div className="AdminTaskManagement-group-card-header">
+                <div className="AdminTaskManagement-group-card-info">
+                  <h5>{group.name}</h5>
+                  <p>{group.description}</p>
+                </div>
+                <div className="AdminTaskManagement-group-card-actions">
+                  <button
+                    className="AdminTaskManagement-icon-btn"
+                    onClick={() => openGroupEditDialog(group)}
+                  >
+                    <FiEdit size={16} />
+                  </button>
+                  <button
+                    className="AdminTaskManagement-icon-btn AdminTaskManagement-icon-btn-danger"
+                    onClick={() => handleDeleteGroup(group._id)}
+                  >
+                    <FiTrash2 size={16} />
+                  </button>
+                </div>
+              </div>
+              <div className="AdminTaskManagement-group-card-divider"></div>
+              <div className="AdminTaskManagement-group-card-members">
+                <div className="AdminTaskManagement-group-card-members-label">
+                  Members ({group.members?.length || 0})
+                </div>
+                <div className="AdminTaskManagement-group-card-members-list">
+                  {group.members?.slice(0, 3).map(memberId => {
+                    const member = users.find(u => u._id === memberId);
+                    return member ? (
+                      <div key={memberId} className="AdminTaskManagement-group-card-member">
+                        <div className="AdminTaskManagement-group-card-member-avatar">
+                          {member.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="AdminTaskManagement-group-card-member-name">{member.name}</div>
+                      </div>
+                    ) : null;
+                  })}
+                  {(group.members?.length || 0) > 3 && (
+                    <div className="AdminTaskManagement-group-card-members-more">
+                      +{(group.members?.length || 0) - 3} more members
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
         ))}
-      </Grid>
+      </div>
 
       {groups.length === 0 && (
-        <Box sx={{ textAlign: 'center', py: 6 }}>
-          <FiUsers size={48} color={theme.palette.text.secondary} />
-          <Typography variant="h6" color="text.secondary" sx={{ mt: 2 }}>
-            No groups created yet
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            Create your first group to assign tasks to multiple users at once
-          </Typography>
-        </Box>
+        <div className="AdminTaskManagement-empty-state">
+          <FiUsers size={48} className="AdminTaskManagement-empty-icon" />
+          <h5>No groups created yet</h5>
+          <p>Create your first group to assign tasks to multiple users at once</p>
+        </div>
       )}
-    </Box>
+    </div>
   );
 
   useEffect(() => {
@@ -2550,329 +2319,279 @@ const AdminTaskManagement = () => {
 
   if (!isAdmin) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
-        <Card sx={{ p: 4, textAlign: 'center', maxWidth: 400 }}>
-          <CardContent>
-            <FiAlertCircle size={48} color={theme.palette.warning.main} />
-            <Typography variant="h5" color="warning.main" gutterBottom sx={{ mt: 2 }}>
-              Access Denied
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              You need admin privileges to access this page.
-            </Typography>
-            <Button variant="contained" onClick={() => navigate('/')}>
+      <div className="AdminTaskManagement-access-denied">
+        <div className="AdminTaskManagement-card AdminTaskManagement-text-center">
+          <div className="AdminTaskManagement-card-content">
+            <FiAlertCircle size={48} className="AdminTaskManagement-warning-icon" />
+            <h3>Access Denied</h3>
+            <p>You need admin privileges to access this page.</p>
+            <button className="AdminTaskManagement-btn AdminTaskManagement-btn-primary" onClick={() => navigate('/')}>
               Go to Dashboard
-            </Button>
-          </CardContent>
-        </Card>
-      </Box>
+            </button>
+          </div>
+        </div>
+      </div>
     );
   }
 
   if (loading && tasks.length === 0) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh', flexDirection: 'column', gap: 2 }}>
-        <CircularProgress />
-        <Typography variant="body1" color="text.secondary">
-          Loading data...
-        </Typography>
-      </Box>
+      <div className="AdminTaskManagement-loading-container">
+        <div className="AdminTaskManagement-loading-spinner"></div>
+        <p>Loading data...</p>
+      </div>
     );
   }
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
-        {/* Header */}
-        <Paper sx={{ p: 3, mb: 3, borderRadius: 2 }}>
-          <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems="center" spacing={2}>
-            <Box>
-              <Typography variant="h4" fontWeight={700} gutterBottom>
-                Admin Task Management
-              </Typography>
-              <Typography variant="body1" color="text.secondary">
-                Manage all tasks, users, and groups in the system
-              </Typography>
-            </Box>
-            <Stack direction="row" spacing={1}>
-              <Tooltip title="Notifications">
-                <ActionButton 
-                  onClick={() => setOpenNotifications(true)}
-                  sx={{ 
-                    position: 'relative',
-                    '&:hover': { 
-                      backgroundColor: `${theme.palette.primary.main}10`,
-                    }
-                  }}
-                >
-                  <FiBell size={18} />
-                  {unreadNotificationCount > 0 && (
-                    <Badge 
-                      badgeContent={unreadNotificationCount} 
-                      color="error"
-                      sx={{
-                        position: 'absolute',
-                        top: 6,
-                        right: 6,
-                      }}
-                    />
-                  )}
-                </ActionButton>
-              </Tooltip>
+    <div className="AdminTaskManagement">
+      {/* Header */}
+      <div className="AdminTaskManagement-header-card">
+        <div className="AdminTaskManagement-header-content">
+          <div className="AdminTaskManagement-header-text">
+            <h1>Admin Task Management</h1>
+            <p>Manage all tasks, users, and groups in the system</p>
+          </div>
+          <div className="AdminTaskManagement-header-actions">
+            <button 
+              className="AdminTaskManagement-icon-btn AdminTaskManagement-notification-btn"
+              onClick={() => setOpenNotifications(true)}
+            >
+              <FiBell size={18} />
+              {unreadNotificationCount > 0 && (
+                <span className="AdminTaskManagement-notification-badge">{unreadNotificationCount}</span>
+              )}
+            </button>
 
-              <Button
-                variant="outlined"
-                startIcon={<FiRefreshCw />}
-                onClick={() => fetchAllData(page, rowsPerPage)}
-                disabled={loading}
-              >
-                Refresh
-              </Button>
-              <Button
-                variant="contained"
-                startIcon={<FiPlus />}
-                onClick={() => setOpenCreateDialog(true)}
-              >
-                Create Task
-              </Button>
-            </Stack>
-          </Stack>
-        </Paper>
+            <button
+              className="AdminTaskManagement-btn AdminTaskManagement-btn-outline"
+              onClick={() => fetchAllData(page, rowsPerPage)}
+              disabled={loading}
+            >
+              <FiRefreshCw /> Refresh
+            </button>
+            <button
+              className="AdminTaskManagement-btn AdminTaskManagement-btn-primary"
+              onClick={() => setOpenCreateDialog(true)}
+            >
+              <FiPlus /> Create Task
+            </button>
+          </div>
+        </div>
+      </div>
 
-        {/* Stats Cards with Filtered Data */}
-        {renderFilteredStatsCards()}
+      {/* Stats Cards with Filtered Data */}
+      {renderFilteredStatsCards()}
 
-        {/* Tabs */}
-        <Paper sx={{ borderRadius: 2, overflow: 'hidden', mb: 3 }}>
-          <Tabs
-            value={activeTab}
-            onChange={(_, newValue) => setActiveTab(newValue)}
-            sx={{ borderBottom: 1, borderColor: 'divider' }}
+      {/* Tabs */}
+      <div className="AdminTaskManagement-tabs-container">
+        <div className="AdminTaskManagement-tabs-header">
+          <button 
+            className={`AdminTaskManagement-tab-btn ${activeTab === 0 ? 'AdminTaskManagement-tab-active' : ''}`}
+            onClick={() => setActiveTab(0)}
           >
-            <Tab label="All Tasks" />
-            <Tab label="User Management" />
-            <Tab label="Group Management" />
-          </Tabs>
+            All Tasks
+          </button>
+          <button 
+            className={`AdminTaskManagement-tab-btn ${activeTab === 1 ? 'AdminTaskManagement-tab-active' : ''}`}
+            onClick={() => setActiveTab(1)}
+          >
+            User Management
+          </button>
+          <button 
+            className={`AdminTaskManagement-tab-btn ${activeTab === 2 ? 'AdminTaskManagement-tab-active' : ''}`}
+            onClick={() => setActiveTab(2)}
+          >
+            Group Management
+          </button>
+        </div>
 
-          {/* Tab Content */}
-          <Box sx={{ p: 3 }}>
-            {activeTab === 0 && (
-              <>
-                {/* Enhanced Filters with Date Range */}
-                {renderEnhancedFilters()}
+        <div className="AdminTaskManagement-tab-content">
+          {activeTab === 0 && (
+            <>
+              {/* Enhanced Filters with Date Range */}
+              {renderEnhancedFilters()}
 
-                {/* Tasks Table with Pagination */}
-                <TableContainer component={Paper}>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Title</TableCell>
-                        <TableCell>Description</TableCell>
-                        <TableCell>Due Date</TableCell>
-                        <TableCell>Priority</TableCell>
-                        <TableCell>Status</TableCell>
-                        <TableCell>Actions</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {tasks.map((task) => (
-                        <StyledTableRow key={task._id} status={getTaskStatus(task)}>
-                          <TableCell>
-                            <Typography variant="body2" fontWeight={600}>
-                              {task.title}
-                            </Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Tooltip title={task.description}>
-                              <Typography variant="body2" sx={{
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                                maxWidth: 200
-                              }}>
-                                {task.description}
-                              </Typography>
-                            </Tooltip>
-                          </TableCell>
-                          <TableCell>
-                            <Stack direction="row" alignItems="center" spacing={1}>
-                              <FiCalendar size={14} />
-                              <Typography variant="body2" color={isOverdue(task) ? 'error' : 'text.primary'}>
-                                {task.dueDateTime ? new Date(task.dueDateTime).toLocaleDateString() : 
-                                 task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'N/A'}
-                              </Typography>
-                              {isOverdue(task) && <FiAlertTriangle size={14} color="error" />}
-                            </Stack>
-                          </TableCell>
-                          <TableCell>
-                            <PriorityChip
-                              label={task.priority}
-                              priority={task.priority}
-                              size="small"
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <StatusChip
-                              label={getTaskStatus(task)}
-                              status={getTaskStatus(task)}
-                              size="small"
-                            />
-                          </TableCell>
-                       
-                          <TableCell>
-                            <Stack direction="row" spacing={0.5}>
-                              <Tooltip title="Edit">
-                                <ActionButton
-                                  size="small"
-                                  onClick={() => openEditTaskDialog(task)}
-                                >
-                                  <FiEdit3 size={16} />
-                                </ActionButton>
-                              </Tooltip>
-                              <Tooltip title="View User Statuses">
-                                <ActionButton
-                                  size="small"
-                                  onClick={() => fetchUserStatuses(task)}
-                                  sx={{ color: 'info.main' }}
-                                >
-                                  <FiUsers size={16} />
-                                </ActionButton>
-                              </Tooltip>
-                              <Tooltip title="Remarks">
-                                <ActionButton
-                                  size="small"
-                                  onClick={() => fetchRemarks(task._id)}
-                                >
-                                  <FiMessageSquare size={16} />
-                                </ActionButton>
-                              </Tooltip>
-                              <Tooltip title="Activity Logs">
-                                <ActionButton
-                                  size="small"
-                                  onClick={() => fetchActivityLogs(task._id)}
-                                >
-                                  <FiActivity size={16} />
-                                </ActionButton>
-                              </Tooltip>
-                              <Tooltip title="Change Status">
-                                <ActionButton
-                                  size="small"
-                                  onClick={() => openStatusChangeDialog(task)}
-                                >
-                                  <FiUserCheck size={16} />
-                                </ActionButton>
-                              </Tooltip>
-                              <Tooltip title="Delete">
-                                <ActionButton
-                                  size="small"
-                                  onClick={() => handleDeleteTask(task._id)}
-                                  sx={{ color: 'error.main' }}
-                                >
-                                  <FiTrash size={16} />
-                                </ActionButton>
-                              </Tooltip>
-                            </Stack>
-                          </TableCell>
-                        </StyledTableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                  
-                  {/* Pagination */}
-                  <TablePagination
-                    rowsPerPageOptions={[5, 10, 25, 50]}
-                    component="div"
-                    count={totalTasks}
-                    rowsPerPage={rowsPerPage}
-                    page={page}
-                    onPageChange={handleChangePage}
-                    onRowsPerPageChange={handleChangeRowsPerPage}
-                  />
-                </TableContainer>
+              {/* Tasks Table with Pagination */}
+              <div className="AdminTaskManagement-table-container">
+                <table className="AdminTaskManagement-tasks-table">
+                  <thead>
+                    <tr>
+                      <th>Title</th>
+                      <th>Description</th>
+                      <th>Due Date</th>
+                      <th>Priority</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tasks.map((task) => (
+                      <tr key={task._id} className={`AdminTaskManagement-table-row AdminTaskManagement-status-${getTaskStatus(task)}`}>
+                        <td>
+                          <div className="AdminTaskManagement-task-title">{task.title}</div>
+                        </td>
+                        <td>
+                          <div className="AdminTaskManagement-task-description" title={task.description}>
+                            {task.description}
+                          </div>
+                        </td>
+                        <td>
+                          <div className={`AdminTaskManagement-task-due-date ${isOverdue(task) ? 'AdminTaskManagement-task-overdue' : ''}`}>
+                            <FiCalendar size={14} />
+                            {task.dueDateTime ? new Date(task.dueDateTime).toLocaleDateString() : 
+                             task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'N/A'}
+                            {isOverdue(task) && <FiAlertTriangle size={14} />}
+                          </div>
+                        </td>
+                        <td>
+                          <AdminTaskManagementPriorityChip priority={task.priority} />
+                        </td>
+                        <td>
+                          <AdminTaskManagementStatusChip status={getTaskStatus(task)} />
+                        </td>
+                        <td>
+                          <div className="AdminTaskManagement-table-actions">
+                            <button
+                              className="AdminTaskManagement-icon-btn AdminTaskManagement-icon-btn-sm"
+                              onClick={() => openEditTaskDialog(task)}
+                              title="Edit"
+                            >
+                              <FiEdit3 size={16} />
+                            </button>
+                            <button
+                              className="AdminTaskManagement-icon-btn AdminTaskManagement-icon-btn-sm AdminTaskManagement-icon-btn-info"
+                              onClick={() => fetchUserStatuses(task)}
+                              title="View User Statuses"
+                            >
+                              <FiUsers size={16} />
+                            </button>
+                            <button
+                              className="AdminTaskManagement-icon-btn AdminTaskManagement-icon-btn-sm"
+                              onClick={() => fetchRemarks(task._id)}
+                              title="Remarks"
+                            >
+                              <FiMessageSquare size={16} />
+                            </button>
+                            <button
+                              className="AdminTaskManagement-icon-btn AdminTaskManagement-icon-btn-sm"
+                              onClick={() => fetchActivityLogs(task._id)}
+                              title="Activity Logs"
+                            >
+                              <FiActivity size={16} />
+                            </button>
+                            <button
+                              className="AdminTaskManagement-icon-btn AdminTaskManagement-icon-btn-sm"
+                              onClick={() => openStatusChangeDialog(task)}
+                              title="Change Status"
+                            >
+                              <FiUserCheck size={16} />
+                            </button>
+                            <button
+                              className="AdminTaskManagement-icon-btn AdminTaskManagement-icon-btn-sm AdminTaskManagement-icon-btn-danger"
+                              onClick={() => handleDeleteTask(task._id)}
+                              title="Delete"
+                            >
+                              <FiTrash size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                
+                {/* Pagination */}
+                <div className="AdminTaskManagement-pagination">
+                  <div className="AdminTaskManagement-pagination-info">
+                    Showing {page * rowsPerPage + 1} to {Math.min((page + 1) * rowsPerPage, totalTasks)} of {totalTasks} tasks
+                  </div>
+                  <div className="AdminTaskManagement-pagination-controls">
+                    <button
+                      className="AdminTaskManagement-pagination-btn"
+                      onClick={() => handleChangePage(null, page - 1)}
+                      disabled={page === 0}
+                    >
+                      Previous
+                    </button>
+                    <div className="AdminTaskManagement-pagination-page">
+                      Page {page + 1} of {Math.ceil(totalTasks / rowsPerPage)}
+                    </div>
+                    <button
+                      className="AdminTaskManagement-pagination-btn"
+                      onClick={() => handleChangePage(null, page + 1)}
+                      disabled={page >= Math.ceil(totalTasks / rowsPerPage) - 1}
+                    >
+                      Next
+                    </button>
+                    <select
+                      className="AdminTaskManagement-pagination-select"
+                      value={rowsPerPage}
+                      onChange={handleChangeRowsPerPage}
+                    >
+                      <option value={5}>5 per page</option>
+                      <option value={10}>10 per page</option>
+                      <option value={25}>25 per page</option>
+                      <option value={50}>50 per page</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
 
-                {tasks.length === 0 && !loading && (
-                  <Box sx={{ textAlign: 'center', py: 6 }}>
-                    <FiCalendar size={48} color={theme.palette.text.secondary} />
-                    <Typography variant="h6" color="text.secondary" sx={{ mt: 2 }}>
-                      No tasks found
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                      Try adjusting your filters or create a new task
-                    </Typography>
-                  </Box>
-                )}
-              </>
-            )}
+              {tasks.length === 0 && !loading && (
+                <div className="AdminTaskManagement-empty-state">
+                  <FiCalendar size={48} className="AdminTaskManagement-empty-icon" />
+                  <h5>No tasks found</h5>
+                  <p>Try adjusting your filters or create a new task</p>
+                </div>
+              )}
+            </>
+          )}
 
-            {activeTab === 1 && (
-              <Box>
-                <Typography variant="h6" gutterBottom>
-                  User Management ({users.length} users)
-                </Typography>
-                <Grid container spacing={2}>
-                  {users.map(user => (
-                    <Grid item xs={12} sm={6} md={4} key={user._id}>
-                      <Card>
-                        <CardContent>
-                          <Stack direction="row" alignItems="center" spacing={2}>
-                            <Avatar sx={{ bgcolor: 'primary.main' }}>
-                              {user.name?.charAt(0)?.toUpperCase() || 'U'}
-                            </Avatar>
-                            <Box sx={{ flex: 1 }}>
-                              <Typography variant="h6">{user.name}</Typography>
-                              <Typography variant="body2" color="text.secondary">
-                                {user.role}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                {user.email}
-                              </Typography>
-                            </Box>
-                          </Stack>
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                  ))}
-                </Grid>
-              </Box>
-            )}
+          {activeTab === 1 && (
+            <div>
+              <h4>User Management ({users.length} users)</h4>
+              <div className="AdminTaskManagement-users-grid">
+                {users.map(user => (
+                  <div key={user._id} className="AdminTaskManagement-user-card">
+                    <div className="AdminTaskManagement-user-card-content">
+                      <div className="AdminTaskManagement-user-card-avatar">
+                        {user.name?.charAt(0)?.toUpperCase() || 'U'}
+                      </div>
+                      <div className="AdminTaskManagement-user-card-info">
+                        <h5>{user.name}</h5>
+                        <p>{user.role}</p>
+                        <small>{user.email}</small>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
-            {activeTab === 2 && renderGroupManagementTab()}
-          </Box>
-        </Paper>
+          {activeTab === 2 && renderGroupManagementTab()}
+        </div>
+      </div>
 
-        {/* Dialogs */}
-        {renderCreateTaskDialog()}
-        {renderEditTaskDialog()}
-        {renderGroupManagementDialog()}
-        {renderNotificationsPanel()}
-        {renderRemarksDialog()}
-        {renderActivityLogsDialog()}
-        {renderUserStatusDialog()}
-        {renderImageZoomModal()}
+      {/* Dialogs */}
+      {renderCreateTaskDialog()}
+      {renderEditTaskDialog()}
+      {renderGroupManagementDialog()}
+      {renderStatusChangeDialog()}
+      {renderNotificationsPanel()}
+      {renderRemarksDialog()}
+      {renderActivityLogsDialog()}
+      {renderUserStatusDialog()}
+      {renderImageZoomModal()}
 
-        {/* Snackbar */}
-        <Snackbar
-          open={snackbar.open}
-          autoHideDuration={4000}
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        >
-          <Box sx={{
-            background: snackbar.severity === 'error' ? theme.palette.error.main : 
-                       snackbar.severity === 'warning' ? theme.palette.warning.main : 
-                       theme.palette.success.main,
-            color: 'white',
-            p: 2,
-            borderRadius: 1,
-            minWidth: 300
-          }}>
-            <Typography variant="body1" fontWeight={600}>
-              {snackbar.message}
-            </Typography>
-          </Box>
-        </Snackbar>
-      </Box>
-    </LocalizationProvider>
+      {/* Snackbar */}
+      {snackbar.open && (
+        <div className={`AdminTaskManagement-snackbar AdminTaskManagement-snackbar-${snackbar.severity}`}>
+          {snackbar.message}
+        </div>
+      )}
+    </div>
   );
 };
 

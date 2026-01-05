@@ -505,7 +505,9 @@ const EmployeeLeaves = () => {
             statClass: "stat-card-error",
             iconClass: "stat-icon-error"
           },
-        ].map((stat) => (
+        ]
+        .filter(stat => stat.value > 0)
+        .map((stat) => (
           <div 
             key={stat.type}
             className={`stat-card ${stat.statClass} ${selectedStat === stat.type ? 'stat-card-active' : ''}`}

@@ -583,6 +583,21 @@
   .UserCreateTask-meeting-container {
     padding: 20px;
   }
+
+  .UserCreateTask-meeting-greeting {
+    font-size: 22px;
+    line-height: 1.3;
+    text-align: center;
+    padding: 0 16px;
+  }
+
+  .UserCreateTask-meeting-subtitle {
+    font-size: 18px;
+    line-height: 1.3;
+    text-align: center;
+    padding: 0 16px; 
+  }
+
   
   .UserCreateTask-meeting-grid {
     grid-template-columns: 1fr;
@@ -629,6 +644,21 @@
   .UserCreateTask-meeting-card {
     padding: 20px;
   }
+
+  .UserCreateTask-meeting-greeting {
+    font-size: 18px;
+    line-height: 1.35;
+    text-align: center;
+    padding: 0 12px;
+    word-break: break-word;
+    margin-left: -40px;
+  }
+
+  .UserCreateTask-meeting-subtitle {
+    font-size: 14px;
+    margin-left: -45px;
+  }
+
   
   .UserCreateTask-meeting-header-stats {
     flex-direction: column;
