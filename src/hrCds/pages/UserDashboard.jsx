@@ -5,6 +5,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import './UserDashboard.css';
 import useIsMobile from '../../hooks/useIsMobile';
 
+import NewYearPopup from '../../components/NewYearPopup';
 import {
   FiClock, FiCalendar, FiChevronLeft, FiChevronRight,
   FiPlay, FiSquare, FiRefreshCw, FiBriefcase, FiUser,
@@ -375,6 +376,9 @@ const UserDashboard = () => {
   }
 
   return (
+    <div className="App">
+      <NewYearPopup />
+    </div>,
     <div className="dashboard-container">
       <ToastContainer 
         position="top-right" 

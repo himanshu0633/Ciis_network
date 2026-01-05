@@ -120,7 +120,7 @@
 /* Mobile Stats Grid */
 @media (max-width: 480px) {
   .AdminTaskManagement-stats-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
     gap: 12px;
   }
   
@@ -2169,13 +2169,14 @@
   }
   
   .AdminTaskManagement-header-actions {
-    flex-direction: column;
+    /* flex-direction: column; */
     align-items: stretch;
     gap: 8px;
   }
   
   .AdminTaskManagement-header-actions .AdminTaskManagement-btn {
-    width: 100%;
+    width: 40%;
+
   }
   
   .AdminTaskManagement-filter-section,

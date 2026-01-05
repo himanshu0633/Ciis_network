@@ -617,7 +617,9 @@
   box-shadow: var(--shadow-md);
   margin-bottom: 24px;
   overflow-x: auto;
+
 }
+
 
 .Attendance-table {
   width: 100%;
