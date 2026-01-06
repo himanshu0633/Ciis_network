@@ -70,6 +70,7 @@ const statusColors = {
 };
 
 const UserCreateTask = () => {
+  // State declarations
   const [openDialog, setOpenDialog] = useState(false);
   const [isCreatingTask, setIsCreatingTask] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
@@ -139,6 +140,7 @@ const UserCreateTask = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [isTablet, setIsTablet] = useState(window.innerWidth >= 768 && window.innerWidth < 1024);
 
+  // Responsive handler
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
@@ -149,6 +151,7 @@ const UserCreateTask = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Fetch user data
   const fetchUserData = useCallback(() => {
     try {
       const userStr = localStorage.getItem('user');
@@ -191,6 +194,7 @@ const UserCreateTask = () => {
     }
   }, []);
 
+  // Snackbar utility
   const showSnackbar = (message, severity = 'info') => {
     if (snackbarTimerRef.current) {
       clearTimeout(snackbarTimerRef.current);
@@ -207,6 +211,7 @@ const UserCreateTask = () => {
     }, 3000);
   };
 
+  // Get user status for a task
   const getUserStatusForTask = useCallback((task, userId) => {
     if (!task || !userId) return 'pending';
     
@@ -224,24 +229,22 @@ const UserCreateTask = () => {
     return 'pending';
   }, []);
 
+  // Check if task is overdue
   const isOverdue = useCallback((dueDateTime, status) => {
     if (!dueDateTime) return false;
     
-    // If status is already overdue
     if (status === 'overdue') return true;
     
     const now = new Date();
     const dueDate = new Date(dueDateTime);
     
-    // Check if due date has passed
     const isPastDue = dueDate < now;
-    
-    // Check if task is in a status that can be overdue
     const canBeOverdue = ['pending', 'in-progress', 'reopen', 'onhold'].includes(status);
     
     return isPastDue && canBeOverdue;
   }, []);
 
+  // Calculate statistics from tasks
   const calculateStatsFromTasks = useCallback((tasks) => {
     if (!tasks || Object.keys(tasks).length === 0) {
       setTaskStats({
@@ -275,12 +278,10 @@ const UserCreateTask = () => {
         total++;
         const myStatus = getUserStatusForTask(task, userId);
 
-        // Count by status
         if (statusCounts[myStatus] !== undefined) {
           statusCounts[myStatus]++;
         }
 
-        // Check and count overdue
         const taskIsOverdue = isOverdue(task.dueDateTime, myStatus);
         if (taskIsOverdue && myStatus !== 'overdue') {
           statusCounts.overdue++;
@@ -303,6 +304,7 @@ const UserCreateTask = () => {
     });
   }, [userId, getUserStatusForTask, isOverdue]);
 
+  // Fetch user's tasks
   const fetchMyTasks = useCallback(async () => {
     if (authError || !userId) {
       setLoading(false);
@@ -337,6 +339,7 @@ const UserCreateTask = () => {
     }
   }, [authError, userId, statusFilter, searchTerm, timeFilter, calculateStatsFromTasks]);
 
+  // Fetch overdue tasks
   const fetchOverdueTasks = useCallback(async () => {
     if (authError || !userId) {
       return;
@@ -353,10 +356,12 @@ const UserCreateTask = () => {
     }
   }, [authError, userId]);
 
+  // Handle time filter change
   const handleTimeFilterChange = (period) => {
     setTimeFilter(period);
   };
 
+  // Handle stats card click
   const handleStatsCardClick = (status) => {
     if (status) {
       const newStatusFilter = statusFilter === status ? '' : status;
@@ -371,6 +376,7 @@ const UserCreateTask = () => {
     }
   };
 
+  // Clear all filters
   const clearAllFilters = () => {
     setStatusFilter('');
     setTimeFilter('all');
@@ -381,6 +387,7 @@ const UserCreateTask = () => {
     showSnackbar('All filters cleared', 'info');
   };
 
+  // Fetch task remarks
   const fetchTaskRemarks = async (taskId) => {
     try {
       const res = await axios.get(`/task/${taskId}/remarks`);
@@ -395,6 +402,7 @@ const UserCreateTask = () => {
     }
   };
 
+  // Handle remark image upload
   const handleRemarkImageUpload = (event) => {
     const files = Array.from(event.target.files);
     const imageFiles = files.filter(file => file.type.startsWith('image/'));
@@ -415,6 +423,7 @@ const UserCreateTask = () => {
     setRemarkImages([newImage]);
   };
 
+  // Handle remove remark image
   const handleRemoveRemarkImage = (index) => {
     setRemarkImages(prev => {
       const newImages = [...prev];
@@ -424,10 +433,12 @@ const UserCreateTask = () => {
     });
   };
 
+  // Handle drag over
   const handleDragOver = (event) => {
     event.preventDefault();
   };
 
+  // Handle drop
   const handleDrop = (event) => {
     event.preventDefault();
     const files = Array.from(event.dataTransfer.files);
@@ -441,6 +452,7 @@ const UserCreateTask = () => {
     }
   };
 
+  // Add remark
   const addRemark = async (taskId) => {
     if (!newRemark.trim() && remarkImages.length === 0) {
       showSnackbar('Please enter a remark or upload an image', 'warning');
@@ -480,6 +492,7 @@ const UserCreateTask = () => {
     }
   };
 
+  // Fetch notifications
   const fetchNotifications = useCallback(async () => {
     if (authError || !userId) return;
     
@@ -492,6 +505,7 @@ const UserCreateTask = () => {
     }
   }, [authError, userId]);
 
+  // Mark notification as read
   const markNotificationAsRead = async (notificationId) => {
     try {
       await axios.patch(`/task/notifications/${notificationId}/read`);
@@ -502,6 +516,7 @@ const UserCreateTask = () => {
     }
   };
 
+  // Mark all notifications as read
   const markAllNotificationsAsRead = async () => {
     try {
       await axios.patch('/task/notifications/read-all');
@@ -512,6 +527,7 @@ const UserCreateTask = () => {
     }
   };
 
+  // Fetch activity logs
   const fetchActivityLogs = async (taskId) => {
     try {
       const res = await axios.get(`/task/${taskId}/activity-logs`);
@@ -523,6 +539,7 @@ const UserCreateTask = () => {
     }
   };
 
+  // Apply date filter
   const applyDateFilter = useCallback((tasks) => {
     if (!selectedDate && !dateRange.start && !dateRange.end) {
       return tasks;
@@ -570,12 +587,14 @@ const UserCreateTask = () => {
     return filteredTasks;
   }, [selectedDate, dateRange, dateFilterType]);
 
+  // Clear date filter
   const clearDateFilter = () => {
     setSelectedDate(null);
     setDateRange({ start: null, end: null });
     setCalendarFilterOpen(false);
   };
 
+  // Get date filter summary
   const getDateFilterSummary = () => {
     if (selectedDate) {
       return `Date: ${new Date(selectedDate).toLocaleDateString('en-IN')}`;
@@ -586,10 +605,12 @@ const UserCreateTask = () => {
     return null;
   };
 
+  // Filtered tasks
   const filteredTasks = useMemo(() => {
     return applyDateFilter(myTasksGrouped);
   }, [myTasksGrouped, applyDateFilter]);
 
+  // Handle status change
   const handleStatusChange = async (taskId, newStatus, remarks = '') => {
     if (authError || !userId) {
       showSnackbar('Please log in to update task status', 'error');
@@ -619,6 +640,7 @@ const UserCreateTask = () => {
     }
   };
 
+  // Mark task as overdue
   const markTaskAsOverdue = async (taskId, remarks = '') => {
     if (authError || !userId) {
       showSnackbar('Please log in to mark task as overdue', 'error');
@@ -647,6 +669,7 @@ const UserCreateTask = () => {
     }
   };
 
+  // Start recording
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -672,6 +695,7 @@ const UserCreateTask = () => {
     }
   };
 
+  // Stop recording
   const stopRecording = () => {
     if (mediaRecorderRef.current) {
       mediaRecorderRef.current.stop();
@@ -679,6 +703,7 @@ const UserCreateTask = () => {
     }
   };
 
+  // Create task
   const handleCreateTask = async () => {
     if (authError || !userId) {
       showSnackbar('Please log in to create tasks', 'error');
@@ -752,12 +777,14 @@ const UserCreateTask = () => {
     }
   };
 
+  // Logout
   const handleLogout = () => {
     localStorage.removeItem('user');
     localStorage.removeItem('token');
     navigate('/login');
   };
 
+  // Get overdue count
   const getOverdueCount = () => {
     let count = 0;
     Object.values(myTasksGrouped).forEach(tasks => {
@@ -771,6 +798,7 @@ const UserCreateTask = () => {
     return count;
   };
 
+  // Render statistics cards
   const renderStatisticsCards = () => {
     const statsData = [
       {
@@ -923,6 +951,7 @@ const UserCreateTask = () => {
     );
   };
 
+  // Render time filter
   const renderTimeFilter = () => (
     <div className="user-create-task-time-filter">
       <div className="user-create-task-time-filter-header">
@@ -972,6 +1001,7 @@ const UserCreateTask = () => {
     </div>
   );
 
+  // Render action buttons
   const renderActionButtons = (task) => {
     const myStatus = getUserStatusForTask(task, userId);
     const taskIsOverdue = isOverdue(task.dueDateTime, myStatus);
@@ -1023,6 +1053,7 @@ const UserCreateTask = () => {
     );
   };
 
+  // Render status select
   const renderStatusSelect = (task) => {
     const myStatus = getUserStatusForTask(task, userId);
     const taskIsOverdue = isOverdue(task.dueDateTime, myStatus);
@@ -1059,6 +1090,7 @@ const UserCreateTask = () => {
     );
   };
 
+  // Render remarks dialog
   const renderRemarksDialog = () => (
     <div className="user-create-task-dialog-overlay" style={{ display: remarksDialog.open ? 'flex' : 'none' }}>
       <div className={`user-create-task-dialog ${isMobile ? 'mobile-dialog' : ''}`} style={{ maxWidth: isMobile ? '95%' : isTablet ? '700px' : '800px', width: isMobile ? '95%' : 'auto' }}>
@@ -1311,6 +1343,7 @@ const UserCreateTask = () => {
     </div>
   );
 
+  // Render image zoom modal
   const renderImageZoomModal = () => (
     <div className="user-create-task-dialog-overlay" style={{ display: zoomImage ? 'flex' : 'none' }}>
       <div style={{ 
@@ -1350,6 +1383,7 @@ const UserCreateTask = () => {
     </div>
   );
 
+  // Render desktop table
   const renderDesktopTable = (tasksData) => {
     return Object.entries(tasksData).map(([dateKey, tasks]) => (
       <div key={dateKey} style={{ marginTop: '24px' }}>
@@ -1472,6 +1506,7 @@ const UserCreateTask = () => {
     ));
   };
 
+  // Render mobile cards
   const renderMobileCards = (tasksData) => {
     return Object.entries(tasksData).map(([dateKey, tasks]) => (
       <div key={dateKey} style={{ marginTop: isMobile ? '16px' : '20px' }}>
@@ -1558,6 +1593,7 @@ const UserCreateTask = () => {
     ));
   };
 
+  // Render grouped tasks
   const renderGroupedTasks = () => {
     // If showing overdue only, filter tasks
     let tasksToRender = showOverdueOnly 
@@ -1601,6 +1637,7 @@ const UserCreateTask = () => {
     return isMobile ? renderMobileCards(tasksToRender) : renderDesktopTable(tasksToRender);
   };
 
+  // Render overdue tasks section
   const renderOverdueTasksSection = () => {
     if (getOverdueCount() === 0) return null;
 
@@ -1714,6 +1751,7 @@ const UserCreateTask = () => {
     );
   };
 
+  // Render notifications panel
   const renderNotificationsPanel = () => (
     <div className="user-create-task-dialog-overlay" style={{ display: notificationsOpen ? 'flex' : 'none' }}>
       <div className={`user-create-task-dialog ${isMobile ? 'mobile-dialog' : ''}`} style={{ 
@@ -1802,6 +1840,7 @@ const UserCreateTask = () => {
     </div>
   );
 
+  // Render activity logs dialog
   const renderActivityLogsDialog = () => (
     <div className="user-create-task-dialog-overlay" style={{ display: activityDialog.open ? 'flex' : 'none' }}>
       <div className={`user-create-task-dialog ${isMobile ? 'mobile-dialog' : ''}`} style={{ 
@@ -1877,6 +1916,7 @@ const UserCreateTask = () => {
     </div>
   );
 
+  // Render calendar filter dialog
   const renderCalendarFilterDialog = () => (
     <div className="user-create-task-dialog-overlay" style={{ display: calendarFilterOpen ? 'flex' : 'none' }}>
       <div className={`user-create-task-dialog ${isMobile ? 'mobile-dialog' : ''}`} style={{ 
@@ -2008,6 +2048,7 @@ const UserCreateTask = () => {
     </div>
   );
 
+  // Render create task dialog
   const renderCreateTaskDialog = () => (
     <div className="user-create-task-dialog-overlay" style={{ display: openDialog ? 'flex' : 'none' }}>
       <div className={`user-create-task-dialog ${isMobile ? 'mobile-dialog' : ''}`} style={{ 
@@ -2156,6 +2197,7 @@ const UserCreateTask = () => {
     </div>
   );
 
+  // Cleanup effect
   useEffect(() => {
     return () => {
       if (snackbarTimerRef.current) {
@@ -2164,14 +2206,17 @@ const UserCreateTask = () => {
     };
   }, []);
 
+  // Fetch tasks on filter change
   useEffect(() => {
     fetchMyTasks();
   }, [statusFilter, searchTerm, timeFilter, fetchMyTasks]);
 
+  // Fetch user data on mount
   useEffect(() => {
     fetchUserData();
   }, [fetchUserData]);
 
+  // Fetch data when user is authenticated
   useEffect(() => {
     if (!authError && userId) {
       fetchMyTasks();
@@ -2180,6 +2225,7 @@ const UserCreateTask = () => {
     }
   }, [authError, userId, fetchMyTasks, fetchNotifications, fetchOverdueTasks]);
 
+  // Auth error screen
   if (authError) {
     return (
       <div className="user-create-task-error-container">
@@ -2204,6 +2250,7 @@ const UserCreateTask = () => {
     );
   }
 
+  // Loading screen
   if (loading) {
     return (
       <div className="user-create-task-loading-container">
@@ -2229,9 +2276,10 @@ const UserCreateTask = () => {
     );
   }
 
+  // Main render
   return (
     <div className="user-create-task-container">
-      {/* Snackbar - Positioned at the top */}
+      {/* Snackbar */}
       {snackbar.open && (
         <div className="user-create-task-snackbar-top">
           <div className={`user-create-task-snackbar-content user-create-task-snackbar-${snackbar.severity}`}>
@@ -2452,7 +2500,7 @@ const UserCreateTask = () => {
                 </button>
               </div>
 
-              {/* Clear All Filters button - aligned to the right */}
+              {/* Clear All Filters button */}
               {(statusFilter || selectedDate || dateRange.start || dateRange.end || showOverdueOnly) && (
                 <button
                   className="user-create-task-button user-create-task-button-outlined"
