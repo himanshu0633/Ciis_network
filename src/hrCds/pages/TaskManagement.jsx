@@ -8,7 +8,7 @@ import {
   FiXCircle, FiFilter, FiSearch, FiLogOut, FiMessageCircle,
   FiBarChart2, FiTrendingUp, FiList, FiPause, FiTarget, FiUsers,
   FiSlash, FiImage, FiCamera, FiTrash2, FiZoomIn, FiCheckSquare,
-  FiGlobe, FiSun, FiRotateCcw
+  FiGlobe, FiSun, FiRotateCcw, FiAlertTriangle
 } from 'react-icons/fi';
 
 import "../Css/TaskManagement.css";
@@ -26,17 +26,19 @@ const StatCard = ({ color = 'primary', clickable = true, active = false, childre
 };
 
 const StatusChip = ({ status, label }) => {
+  const statusLabel = label || status;
   return (
     <div className={`user-create-task-status-chip ${status}`}>
-      {label}
+      {statusLabel.charAt(0).toUpperCase() + statusLabel.slice(1).replace('-', ' ')}
     </div>
   );
 };
 
 const PriorityChip = ({ priority }) => {
+  const priorityLabel = priority || 'medium';
   return (
-    <div className={`user-create-task-priority-chip ${priority}`}>
-      {priority}
+    <div className={`user-create-task-priority-chip ${priorityLabel}`}>
+      {priorityLabel.charAt(0).toUpperCase() + priorityLabel.slice(1)}
     </div>
   );
 };
@@ -49,7 +51,8 @@ const getColorValue = (color) => {
     info: '#2196f3',
     error: '#f44336',
     secondary: '#9c27b0',
-    grey: '#9e9e9e'
+    grey: '#9e9e9e',
+    orange: '#ff9800'
   };
   return colors[color] || '#1976d2';
 };
@@ -59,10 +62,11 @@ const statusColors = {
   'in-progress': 'info',
   completed: 'success',
   rejected: 'error',
-  onhold: 'warning',
+  onhold: 'secondary',
   reopen: 'secondary',
   cancelled: 'grey',
-  overdue: 'error'
+  overdue: 'error',
+  approved: 'success'
 };
 
 const UserCreateTask = () => {
@@ -125,6 +129,10 @@ const UserCreateTask = () => {
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef(null);
   const chunks = useRef([]);
+
+  const [overdueTasks, setOverdueTasks] = useState([]);
+  const [showOverdueOnly, setShowOverdueOnly] = useState(false);
+  const [loadingOverdue, setLoadingOverdue] = useState(false);
 
   const navigate = useNavigate();
   const snackbarTimerRef = useRef(null);
@@ -216,6 +224,24 @@ const UserCreateTask = () => {
     return 'pending';
   }, []);
 
+  const isOverdue = useCallback((dueDateTime, status) => {
+    if (!dueDateTime) return false;
+    
+    // If status is already overdue
+    if (status === 'overdue') return true;
+    
+    const now = new Date();
+    const dueDate = new Date(dueDateTime);
+    
+    // Check if due date has passed
+    const isPastDue = dueDate < now;
+    
+    // Check if task is in a status that can be overdue
+    const canBeOverdue = ['pending', 'in-progress', 'reopen', 'onhold'].includes(status);
+    
+    return isPastDue && canBeOverdue;
+  }, []);
+
   const calculateStatsFromTasks = useCallback((tasks) => {
     if (!tasks || Object.keys(tasks).length === 0) {
       setTaskStats({
@@ -249,13 +275,14 @@ const UserCreateTask = () => {
         total++;
         const myStatus = getUserStatusForTask(task, userId);
 
+        // Count by status
         if (statusCounts[myStatus] !== undefined) {
           statusCounts[myStatus]++;
         }
 
-        if (task.dueDateTime && 
-            new Date(task.dueDateTime) < new Date() && 
-            (myStatus === 'pending' || myStatus === 'in-progress')) {
+        // Check and count overdue
+        const taskIsOverdue = isOverdue(task.dueDateTime, myStatus);
+        if (taskIsOverdue && myStatus !== 'overdue') {
           statusCounts.overdue++;
         }
       });
@@ -274,7 +301,7 @@ const UserCreateTask = () => {
       cancelled: { count: statusCounts.cancelled, percentage: calculatePercentage(statusCounts.cancelled) },
       overdue: { count: statusCounts.overdue, percentage: calculatePercentage(statusCounts.overdue) }
     });
-  }, [userId, getUserStatusForTask]);
+  }, [userId, getUserStatusForTask, isOverdue]);
 
   const fetchMyTasks = useCallback(async () => {
     if (authError || !userId) {
@@ -310,6 +337,22 @@ const UserCreateTask = () => {
     }
   }, [authError, userId, statusFilter, searchTerm, timeFilter, calculateStatsFromTasks]);
 
+  const fetchOverdueTasks = useCallback(async () => {
+    if (authError || !userId) {
+      return;
+    }
+
+    setLoadingOverdue(true);
+    try {
+      const res = await axios.get('/task/overdue');
+      setOverdueTasks(res.data.overdueTasks || {});
+    } catch (err) {
+      console.error('Error fetching overdue tasks:', err);
+    } finally {
+      setLoadingOverdue(false);
+    }
+  }, [authError, userId]);
+
   const handleTimeFilterChange = (period) => {
     setTimeFilter(period);
   };
@@ -334,6 +377,7 @@ const UserCreateTask = () => {
     setSelectedDate(null);
     setDateRange({ start: null, end: null });
     setSearchTerm('');
+    setShowOverdueOnly(false);
     showSnackbar('All filters cleared', 'info');
   };
 
@@ -559,6 +603,7 @@ const UserCreateTask = () => {
       });
 
       fetchMyTasks();
+      fetchOverdueTasks();
       fetchNotifications();
       
       showSnackbar('Status updated successfully', 'success');
@@ -570,6 +615,34 @@ const UserCreateTask = () => {
         showSnackbar('Session expired. Please log in again.', 'error');
       } else {
         showSnackbar(err?.response?.data?.error || 'Failed to update status', 'error');
+      }
+    }
+  };
+
+  const markTaskAsOverdue = async (taskId, remarks = '') => {
+    if (authError || !userId) {
+      showSnackbar('Please log in to mark task as overdue', 'error');
+      return;
+    }
+
+    try {
+      await axios.patch(`/task/${taskId}/overdue`, { 
+        remarks: remarks || 'Manually marked as overdue'
+      });
+
+      fetchMyTasks();
+      fetchOverdueTasks();
+      fetchNotifications();
+      
+      showSnackbar('Task marked as overdue', 'warning');
+
+    } catch (err) {
+      console.error("Error marking task as overdue:", err.response || err);
+      if (err.response?.status === 401) {
+        setAuthError(true);
+        showSnackbar('Session expired. Please log in again.', 'error');
+      } else {
+        showSnackbar(err?.response?.data?.error || 'Failed to mark task as overdue', 'error');
       }
     }
   };
@@ -662,6 +735,7 @@ const UserCreateTask = () => {
       });
 
       fetchMyTasks();
+      fetchOverdueTasks();
       fetchNotifications();
 
     } catch (err) {
@@ -684,9 +758,17 @@ const UserCreateTask = () => {
     navigate('/login');
   };
 
-  const isOverdue = (dueDateTime) => {
-    if (!dueDateTime) return false;
-    return new Date(dueDateTime) < new Date();
+  const getOverdueCount = () => {
+    let count = 0;
+    Object.values(myTasksGrouped).forEach(tasks => {
+      tasks.forEach(task => {
+        const myStatus = getUserStatusForTask(task, userId);
+        if (isOverdue(task.dueDateTime, myStatus)) {
+          count++;
+        }
+      });
+    });
+    return count;
   };
 
   const renderStatisticsCards = () => {
@@ -775,7 +857,7 @@ const UserCreateTask = () => {
     return (
       <div className="user-create-task-grid-container">
         {statsData
-          .filter(stat => stat.value > 0)
+          .filter(stat => stat.value > 0 || stat.title === 'Total Tasks')
           .map((stat, index) => {
             const isActive = stat.status === statusFilter;
             
@@ -891,8 +973,25 @@ const UserCreateTask = () => {
   );
 
   const renderActionButtons = (task) => {
+    const myStatus = getUserStatusForTask(task, userId);
+    const taskIsOverdue = isOverdue(task.dueDateTime, myStatus);
+    
     return (
       <div className="user-create-task-action-buttons">
+        {taskIsOverdue && (
+          <button 
+            className="user-create-task-action-button overdue-mark"
+            onClick={() => markTaskAsOverdue(task._id, 'Manual overdue marking')}
+            title="Mark as Overdue"
+            style={{
+              backgroundColor: '#f44336',
+              color: 'white'
+            }}
+          >
+            <FiAlertTriangle size={isMobile ? 14 : 16} />
+          </button>
+        )}
+
         <button 
           className="user-create-task-action-button"
           onClick={() => fetchTaskRemarks(task._id)}
@@ -926,13 +1025,14 @@ const UserCreateTask = () => {
 
   const renderStatusSelect = (task) => {
     const myStatus = getUserStatusForTask(task, userId);
+    const taskIsOverdue = isOverdue(task.dueDateTime, myStatus);
     
     return (
       <select
         value={myStatus}
         onChange={(e) => {
           const selectedStatus = e.target.value;
-          if (["completed", "onhold", "reopen", "cancelled", "rejected"].includes(selectedStatus)) {
+          if (["completed", "onhold", "reopen", "cancelled", "rejected", "overdue"].includes(selectedStatus)) {
             setPendingStatusChange({ taskId: task._id, status: selectedStatus });
             setRemarksDialog({ open: true, taskId: task._id, remarks: [] });
           } else {
@@ -940,11 +1040,17 @@ const UserCreateTask = () => {
           }
         }}
         className="user-create-task-select"
-        style={{ minWidth: isMobile ? '90px' : '100px' }}
+        style={{ 
+          minWidth: isMobile ? '90px' : '100px',
+          borderColor: taskIsOverdue ? '#f44336' : undefined,
+          color: taskIsOverdue ? '#f44336' : undefined,
+          fontWeight: taskIsOverdue ? '600' : undefined
+        }}
       >
         <option value="pending">Pending</option>
         <option value="in-progress">In Progress</option>
         <option value="completed">Completed</option>
+        <option value="overdue">Overdue</option>
         <option value="rejected">Rejected</option>
         <option value="onhold">On Hold</option>
         <option value="reopen">Reopen</option>
@@ -1244,10 +1350,8 @@ const UserCreateTask = () => {
     </div>
   );
 
-  const renderDesktopTable = (groupedTasks) => {
-    const tasksToRender = applyDateFilter(groupedTasks);
-    
-    return Object.entries(tasksToRender).map(([dateKey, tasks]) => (
+  const renderDesktopTable = (tasksData) => {
+    return Object.entries(tasksData).map(([dateKey, tasks]) => (
       <div key={dateKey} style={{ marginTop: '24px' }}>
         <div style={{ 
           padding: isMobile ? '12px' : '16px',
@@ -1275,9 +1379,17 @@ const UserCreateTask = () => {
             <tbody>
               {tasks.map((task) => {
                 const myStatus = getUserStatusForTask(task, userId);
+                const taskIsOverdue = isOverdue(task.dueDateTime, myStatus);
 
                 return (
-                  <tr key={task._id} className="user-create-task-table-row">
+                  <tr 
+                    key={task._id} 
+                    className={`user-create-task-table-row ${taskIsOverdue ? 'overdue-task' : ''}`}
+                    style={taskIsOverdue ? { 
+                      borderLeft: '4px solid #f44336',
+                      backgroundColor: '#fff5f5'
+                    } : {}}
+                  >
                     <td style={{ padding: isMobile ? '8px' : '12px' }}>
                       <div style={{ fontWeight: 600, fontSize: isMobile ? '13px' : '14px' }}>
                         {task.title}
@@ -1300,15 +1412,27 @@ const UserCreateTask = () => {
                         <FiCalendar size={isMobile ? 12 : 14} />
                         <div style={{
                           fontSize: isMobile ? '13px' : '14px',
-                          color: isOverdue(task.dueDateTime) ? '#c62828' : '#333',
-                          fontWeight: 500
+                          color: taskIsOverdue ? '#f44336' : '#333',
+                          fontWeight: taskIsOverdue ? '600' : '500'
                         }}>
                           {task.dueDateTime
                             ? new Date(task.dueDateTime).toLocaleDateString()
                             : '—'}
                         </div>
-                        {isOverdue(task.dueDateTime) && (
-                          <FiAlertCircle size={isMobile ? 12 : 14} color="#c62828" />
+                        {taskIsOverdue && (
+                          <div 
+                            className="user-create-task-overdue-badge"
+                            style={{
+                              backgroundColor: '#f44336',
+                              color: 'white',
+                              padding: '2px 8px',
+                              borderRadius: '12px',
+                              fontSize: '11px',
+                              fontWeight: '600'
+                            }}
+                          >
+                            OVERDUE
+                          </div>
                         )}
                       </div>
                     </td>
@@ -1348,10 +1472,8 @@ const UserCreateTask = () => {
     ));
   };
 
-  const renderMobileCards = (groupedTasks) => {
-    const tasksToRender = applyDateFilter(groupedTasks);
-    
-    return Object.entries(tasksToRender).map(([dateKey, tasks]) => (
+  const renderMobileCards = (tasksData) => {
+    return Object.entries(tasksData).map(([dateKey, tasks]) => (
       <div key={dateKey} style={{ marginTop: isMobile ? '16px' : '20px' }}>
         <div style={{ 
           padding: isMobile ? '12px' : '16px',
@@ -1364,9 +1486,17 @@ const UserCreateTask = () => {
         <div className="user-create-task-flex user-create-task-flex-column user-create-task-gap-2">
           {tasks.map((task) => {
             const myStatus = getUserStatusForTask(task, userId);
+            const taskIsOverdue = isOverdue(task.dueDateTime, myStatus);
 
             return (
-              <div key={task._id} className="user-create-task-mobile-card">
+              <div 
+                key={task._id} 
+                className={`user-create-task-mobile-card ${taskIsOverdue ? 'overdue-task' : ''}`}
+                style={taskIsOverdue ? { 
+                  borderLeft: '4px solid #f44336',
+                  backgroundColor: '#fff5f5'
+                } : {}}
+              >
                 <div className="user-create-task-mobile-card-content">
                   <div className="user-create-task-flex user-create-task-flex-column user-create-task-gap-2">
                     <div className="user-create-task-mobile-card-header">
@@ -1384,9 +1514,28 @@ const UserCreateTask = () => {
                     <div className="user-create-task-mobile-card-details">
                       <div className="user-create-task-flex user-create-task-align-center user-create-task-gap-1">
                         <FiCalendar size={isMobile ? 12 : 14} />
-                        <div style={{ fontSize: isMobile ? '13px' : '14px', color: isOverdue(task.dueDateTime) ? '#c62828' : '#333' }}>
+                        <div style={{ 
+                          fontSize: isMobile ? '13px' : '14px', 
+                          color: taskIsOverdue ? '#f44336' : '#333',
+                          fontWeight: taskIsOverdue ? '600' : '400'
+                        }}>
                           {task.dueDateTime ? new Date(task.dueDateTime).toLocaleDateString() : 'No date'}
                         </div>
+                        {taskIsOverdue && (
+                          <div 
+                            style={{
+                              backgroundColor: '#f44336',
+                              color: 'white',
+                              padding: '2px 8px',
+                              borderRadius: '12px',
+                              fontSize: '10px',
+                              fontWeight: '600',
+                              marginLeft: '4px'
+                            }}
+                          >
+                            OVERDUE
+                          </div>
+                        )}
                       </div>
                       <PriorityChip priority={task.priority || 'medium'} />
                     </div>
@@ -1409,8 +1558,23 @@ const UserCreateTask = () => {
     ));
   };
 
-  const renderGroupedTasks = (groupedTasks) => {
-    const tasksToRender = applyDateFilter(groupedTasks);
+  const renderGroupedTasks = () => {
+    // If showing overdue only, filter tasks
+    let tasksToRender = showOverdueOnly 
+      ? Object.entries(myTasksGrouped).reduce((acc, [dateKey, tasks]) => {
+          const overdueTasks = tasks.filter(task => {
+            const myStatus = getUserStatusForTask(task, userId);
+            return isOverdue(task.dueDateTime, myStatus);
+          });
+          if (overdueTasks.length > 0) {
+            acc[dateKey] = overdueTasks;
+          }
+          return acc;
+        }, {})
+      : myTasksGrouped;
+
+    // Apply date filter
+    tasksToRender = applyDateFilter(tasksToRender);
     
     if (Object.keys(tasksToRender).length === 0) {
       return (
@@ -1420,11 +1584,13 @@ const UserCreateTask = () => {
           </div>
 
           <div className="user-create-task-empty-state-title">
-            {statusFilter ? `No ${statusFilter} tasks found` : 'No tasks found'}
+            {showOverdueOnly ? 'No overdue tasks found' : statusFilter ? `No ${statusFilter} tasks found` : 'No tasks found'}
           </div>
 
           <div className="user-create-task-empty-state-subtitle">
-            {statusFilter
+            {showOverdueOnly
+              ? 'Great job! You have no overdue tasks.'
+              : statusFilter
               ? 'Try changing your status filter'
               : 'You have no tasks assigned yet'}
           </div>
@@ -1432,7 +1598,120 @@ const UserCreateTask = () => {
       );
     }
 
-    return isMobile ? renderMobileCards(groupedTasks) : renderDesktopTable(groupedTasks);
+    return isMobile ? renderMobileCards(tasksToRender) : renderDesktopTable(tasksToRender);
+  };
+
+  const renderOverdueTasksSection = () => {
+    if (getOverdueCount() === 0) return null;
+
+    return (
+      <div className="user-create-task-paper" style={{ 
+        marginTop: '16px',
+        borderLeft: '4px solid #f44336'
+      }}>
+        <div style={{ 
+          padding: isMobile ? '12px 16px' : '16px 24px', 
+          borderBottom: '1px solid #ffcdd2',
+          backgroundColor: '#fff5f5'
+        }}>
+          <div className="user-create-task-flex user-create-task-align-center user-create-task-gap-1.5">
+            <FiAlertTriangle size={isMobile ? 18 : 20} color="#f44336" />
+            <div style={{ fontSize: isMobile ? '18px' : '20px', fontWeight: 700, color: '#f44336' }}>
+              ⚠️ Overdue Tasks ({getOverdueCount()})
+            </div>
+          </div>
+          <div style={{ fontSize: isMobile ? '13px' : '14px', color: '#d32f2f', marginTop: '4px' }}>
+            Tasks past their due date requiring immediate attention
+          </div>
+        </div>
+
+        <div className="user-create-task-paper-content">
+          {Object.keys(myTasksGrouped).map(dateKey => {
+            const overdueTasksForDate = myTasksGrouped[dateKey].filter(task => {
+              const myStatus = getUserStatusForTask(task, userId);
+              return isOverdue(task.dueDateTime, myStatus);
+            });
+
+            if (overdueTasksForDate.length === 0) return null;
+
+            return (
+              <div key={dateKey} style={{ marginTop: '16px' }}>
+                <div style={{ 
+                  padding: isMobile ? '10px 12px' : '12px 16px',
+                  backgroundColor: '#ffebee',
+                  borderRadius: '4px',
+                  fontSize: isMobile ? '13px' : '14px',
+                  fontWeight: '600',
+                  color: '#c62828'
+                }}>
+                  📅 {dateKey} - {overdueTasksForDate.length} overdue task(s)
+                </div>
+                <div className="user-create-task-flex user-create-task-flex-column user-create-task-gap-2" style={{ marginTop: '8px' }}>
+                  {overdueTasksForDate.map(task => {
+                    const myStatus = getUserStatusForTask(task, userId);
+                    
+                    return (
+                      <div 
+                        key={task._id} 
+                        className="user-create-task-overdue-item"
+                        style={{
+                          borderLeft: '3px solid #f44336',
+                          backgroundColor: '#fff5f5',
+                          padding: isMobile ? '12px' : '16px',
+                          borderRadius: '4px'
+                        }}
+                      >
+                        <div className="user-create-task-flex user-create-task-justify-between user-create-task-align-start">
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: 600, fontSize: isMobile ? '14px' : '15px', color: '#333' }}>
+                              {task.title}
+                            </div>
+                            <div style={{ fontSize: isMobile ? '12px' : '13px', color: '#666', marginTop: '4px' }}>
+                              {task.description.length > 80 ? task.description.substring(0, 80) + '...' : task.description}
+                            </div>
+                          </div>
+                          <div className="user-create-task-flex user-create-task-gap-1">
+                            <button
+                              className="user-create-task-button user-create-task-button-contained"
+                              onClick={() => handleStatusChange(task._id, 'in-progress', 'Working on overdue task')}
+                              style={{
+                                padding: isMobile ? '6px 8px' : '8px 12px',
+                                backgroundColor: '#1976d2',
+                                fontSize: isMobile ? '11px' : '12px'
+                              }}
+                            >
+                              Start
+                            </button>
+                            <button
+                              className="user-create-task-button user-create-task-button-outlined"
+                              onClick={() => markTaskAsOverdue(task._id, 'Manual overdue marking')}
+                              style={{
+                                padding: isMobile ? '6px 8px' : '8px 12px',
+                                borderColor: '#f44336',
+                                color: '#f44336',
+                                fontSize: isMobile ? '11px' : '12px'
+                              }}
+                            >
+                              Mark
+                            </button>
+                          </div>
+                        </div>
+                        <div className="user-create-task-flex user-create-task-justify-between user-create-task-align-center" style={{ marginTop: '8px' }}>
+                          <div style={{ fontSize: isMobile ? '11px' : '12px', color: '#666' }}>
+                            Due: {task.dueDateTime ? new Date(task.dueDateTime).toLocaleDateString() : 'No date'}
+                          </div>
+                          <StatusChip status={myStatus} label={myStatus} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
   };
 
   const renderNotificationsPanel = () => (
@@ -1896,9 +2175,10 @@ const UserCreateTask = () => {
   useEffect(() => {
     if (!authError && userId) {
       fetchMyTasks();
+      fetchOverdueTasks();
       fetchNotifications();
     }
-  }, [authError, userId, fetchMyTasks, fetchNotifications]);
+  }, [authError, userId, fetchMyTasks, fetchNotifications, fetchOverdueTasks]);
 
   if (authError) {
     return (
@@ -2044,7 +2324,7 @@ const UserCreateTask = () => {
           {renderTimeFilter()}
           {renderStatisticsCards()}
 
-          {(statusFilter || timeFilter !== 'all') && (
+          {(statusFilter || timeFilter !== 'all' || showOverdueOnly) && (
             <div className="user-create-task-alert info" style={{ marginTop: '16px', padding: isMobile ? '12px' : '16px' }}>
               <div style={{ fontSize: isMobile ? '13px' : '14px' }}>
                 Active Filters:
@@ -2070,11 +2350,31 @@ const UserCreateTask = () => {
                     </button>
                   </div>
                 )}
+                {showOverdueOnly && (
+                  <div className="user-create-task-priority-chip" style={{ 
+                    display: 'inline-flex', 
+                    margin: '0 4px', 
+                    padding: '2px 8px',
+                    backgroundColor: '#f44336',
+                    color: 'white'
+                  }}>
+                    Overdue Only
+                    <button
+                      onClick={() => setShowOverdueOnly(false)}
+                      style={{ marginLeft: '4px', background: 'none', border: 'none', cursor: 'pointer', color: 'white' }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )}
         </div>
       </div>
+
+      {/* Overdue Tasks Section */}
+      {renderOverdueTasksSection()}
 
       {/* Tasks Section */}
       <div className="user-create-task-paper">
@@ -2088,10 +2388,22 @@ const UserCreateTask = () => {
               <div style={{ fontSize: isMobile ? '18px' : '20px', fontWeight: 700 }}>
                 My Tasks
               </div>
+              {getOverdueCount() > 0 && (
+                <div style={{
+                  backgroundColor: '#f44336',
+                  color: 'white',
+                  padding: '2px 8px',
+                  borderRadius: '12px',
+                  fontSize: '12px',
+                  fontWeight: '600'
+                }}>
+                  {getOverdueCount()} Overdue
+                </div>
+              )}
             </div>
             
             <div className={`user-create-task-flex ${isMobile ? 'user-create-task-flex-column user-create-task-gap-2' : 'user-create-task-justify-between user-create-task-align-center'}`}>
-              <div className="user-create-task-flex user-create-task-gap-1.5 user-create-task-align-center">
+              <div className="user-create-task-flex user-create-task-gap-1.5 user-create-task-align-center user-create-task-flex-wrap">
                 <button
                   className="user-create-task-button user-create-task-button-outlined"
                   onClick={() => setCalendarFilterOpen(true)}
@@ -2111,12 +2423,26 @@ const UserCreateTask = () => {
                   <option value="pending">Pending</option>
                   <option value="in-progress">In Progress</option>
                   <option value="completed">Completed</option>
+                  <option value="overdue">Overdue</option>
                   <option value="rejected">Rejected</option>
                   <option value="onhold">On Hold</option>
                   <option value="reopen">Reopen</option>
                   <option value="cancelled">Cancelled</option>
-                  <option value="overdue">Overdue</option>
                 </select>
+
+                <button
+                  className={`user-create-task-button ${showOverdueOnly ? 'user-create-task-button-contained' : 'user-create-task-button-outlined'}`}
+                  onClick={() => setShowOverdueOnly(!showOverdueOnly)}
+                  style={{ 
+                    padding: isMobile ? '8px 12px' : '10px 16px',
+                    backgroundColor: showOverdueOnly ? '#f44336' : undefined,
+                    borderColor: showOverdueOnly ? '#f44336' : undefined,
+                    color: showOverdueOnly ? 'white' : undefined
+                  }}
+                >
+                  <FiAlertTriangle size={isMobile ? 12 : 14} />
+                  {isMobile ? 'Overdue' : 'Overdue Only'}
+                </button>
 
                 <button
                   className="user-create-task-action-button"
@@ -2127,7 +2453,7 @@ const UserCreateTask = () => {
               </div>
 
               {/* Clear All Filters button - aligned to the right */}
-              {(statusFilter || selectedDate || dateRange.start || dateRange.end) && (
+              {(statusFilter || selectedDate || dateRange.start || dateRange.end || showOverdueOnly) && (
                 <button
                   className="user-create-task-button user-create-task-button-outlined"
                   onClick={clearAllFilters}
@@ -2142,7 +2468,7 @@ const UserCreateTask = () => {
         </div>
 
         <div className="user-create-task-paper-content">
-          {renderGroupedTasks(myTasksGrouped)}
+          {renderGroupedTasks()}
         </div>
       </div>
 

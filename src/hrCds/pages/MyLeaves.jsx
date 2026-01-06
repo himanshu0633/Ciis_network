@@ -272,67 +272,8 @@ const MyLeaves = () => {
         )}
       </div>
 
-      {/* Stats Cards */}
-      <div className="MyLeaves-stats-grid">
-        {[
-          {
-            key: "total",
-            label: "Total Leaves",
-            value: stats.total,
-            icon: FiCalendar,
-            color: "primary",
-            filter: "ALL",
-          },
-          {
-            key: "approved",
-            label: "Approved",
-            value: stats.approved,
-            icon: FiCheckCircle,
-            color: "success",
-            filter: "Approved",
-          },
-          {
-            key: "pending",
-            label: "Pending",
-            value: stats.pending,
-            icon: FiClock,
-            color: "warning",
-            filter: "Pending",
-          },
-          {
-            key: "rejected",
-            label: "Rejected",
-            value: stats.rejected,
-            icon: FiXCircle,
-            color: "error",
-            filter: "Rejected",
-          },
-        ]
-        .filter(stat => stat.value > 0)
-        .map((stat) => (
-          <div
-            key={stat.key}
-            className={`MyLeaves-stat-card ${statusFilter === stat.filter ? "MyLeaves-active" : ""}`}
-            onClick={() =>
-              setStatusFilter(
-                statusFilter === stat.filter ? "ALL" : stat.filter
-              )
-            }
-          >
-            <div className="MyLeaves-stat-card-content">
-              <div
-                className={`MyLeaves-stat-icon-container MyLeaves-${stat.color}`}
-              >
-                <stat.icon className="MyLeaves-stat-icon" />
-              </div>
-              <div className="MyLeaves-stat-details">
-                <p className="MyLeaves-stat-label">{stat.label}</p>
-                <h3 className="MyLeaves-stat-value">{stat.value}</h3>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* Stats Cards
+   */}
 
       {/* Tabs Section */}
       <div className="MyLeaves-tabs-container">
