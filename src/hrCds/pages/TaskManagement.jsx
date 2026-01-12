@@ -230,79 +230,113 @@ const UserCreateTask = () => {
   }, []);
 
   // Check if task is overdue
-  const isOverdue = useCallback((dueDateTime, status) => {
-    if (!dueDateTime) return false;
-    
-    if (status === 'overdue') return true;
-    
-    const now = new Date();
-    const dueDate = new Date(dueDateTime);
-    
-    const isPastDue = dueDate < now;
-    const canBeOverdue = ['pending', 'in-progress', 'reopen', 'onhold'].includes(status);
-    
-    return isPastDue && canBeOverdue;
-  }, []);
+// 🔴 REPLACE the isOverdue function with this:
+const isOverdue = useCallback((dueDateTime, status) => {
+  if (!dueDateTime) return false;
+  
+  // If status is already marked as overdue
+  if (status === 'overdue') return true;
+  
+  const now = new Date();
+  const dueDate = new Date(dueDateTime);
+  
+  // Check if due date has passed
+  const isPastDue = dueDate < now;
+  
+  // Statuses that can be considered for overdue
+  const canBeOverdue = ['pending', 'in-progress', 'reopen', 'onhold'];
+  
+  return isPastDue && canBeOverdue.includes(status);
+}, []);
 
-  // Calculate statistics from tasks
-  const calculateStatsFromTasks = useCallback((tasks) => {
-    if (!tasks || Object.keys(tasks).length === 0) {
-      setTaskStats({
-        total: 0,
-        pending: { count: 0, percentage: 0 },
-        inProgress: { count: 0, percentage: 0 },
-        completed: { count: 0, percentage: 0 },
-        rejected: { count: 0, percentage: 0 },
-        onHold: { count: 0, percentage: 0 },
-        reopen: { count: 0, percentage: 0 },
-        cancelled: { count: 0, percentage: 0 },
-        overdue: { count: 0, percentage: 0 }
-      });
-      return;
-    }
-    
-    let total = 0;
-    const statusCounts = {
-      pending: 0,
-      'in-progress': 0,
-      completed: 0,
-      rejected: 0,
-      onhold: 0,
-      reopen: 0,
-      cancelled: 0,
-      overdue: 0
-    };
-
-    Object.values(tasks).forEach(dateTasks => {
-      dateTasks.forEach(task => {
-        total++;
-        const myStatus = getUserStatusForTask(task, userId);
-
-        if (statusCounts[myStatus] !== undefined) {
-          statusCounts[myStatus]++;
-        }
-
-        const taskIsOverdue = isOverdue(task.dueDateTime, myStatus);
-        if (taskIsOverdue && myStatus !== 'overdue') {
-          statusCounts.overdue++;
-        }
-      });
+// 🔴 REPLACE the getOverdueCount function with this:
+const getOverdueCount = () => {
+  let count = 0;
+  Object.values(myTasksGrouped).forEach(tasks => {
+    tasks.forEach(task => {
+      const myStatus = getUserStatusForTask(task, userId);
+      const taskIsOverdue = isOverdue(task.dueDateTime, myStatus);
+      
+      if (taskIsOverdue || myStatus === 'overdue') {
+        count++;
+      }
     });
+  });
+  return count;
+};
 
-    const calculatePercentage = (count) => total > 0 ? Math.round((count / total) * 100) : 0;
-
+// 🔴 REPLACE the calculateStatsFromTasks function with this:
+const calculateStatsFromTasks = useCallback((tasks) => {
+  if (!tasks || Object.keys(tasks).length === 0) {
     setTaskStats({
-      total,
-      pending: { count: statusCounts.pending, percentage: calculatePercentage(statusCounts.pending) },
-      inProgress: { count: statusCounts['in-progress'], percentage: calculatePercentage(statusCounts['in-progress']) },
-      completed: { count: statusCounts.completed, percentage: calculatePercentage(statusCounts.completed) },
-      rejected: { count: statusCounts.rejected, percentage: calculatePercentage(statusCounts.rejected) },
-      onHold: { count: statusCounts.onhold, percentage: calculatePercentage(statusCounts.onhold) },
-      reopen: { count: statusCounts.reopen, percentage: calculatePercentage(statusCounts.reopen) },
-      cancelled: { count: statusCounts.cancelled, percentage: calculatePercentage(statusCounts.cancelled) },
-      overdue: { count: statusCounts.overdue, percentage: calculatePercentage(statusCounts.overdue) }
+      total: 0,
+      pending: { count: 0, percentage: 0 },
+      inProgress: { count: 0, percentage: 0 },
+      completed: { count: 0, percentage: 0 },
+      rejected: { count: 0, percentage: 0 },
+      onHold: { count: 0, percentage: 0 },
+      reopen: { count: 0, percentage: 0 },
+      cancelled: { count: 0, percentage: 0 },
+      overdue: { count: 0, percentage: 0 }
     });
-  }, [userId, getUserStatusForTask, isOverdue]);
+    return;
+  }
+  
+  let total = 0;
+  const statusCounts = {
+    pending: 0,
+    'in-progress': 0,
+    completed: 0,
+    rejected: 0,
+    onhold: 0,
+    reopen: 0,
+    cancelled: 0,
+    overdue: 0
+  };
+
+  Object.values(tasks).forEach(dateTasks => {
+    dateTasks.forEach(task => {
+      total++;
+      const myStatus = getUserStatusForTask(task, userId);
+
+      if (statusCounts[myStatus] !== undefined) {
+        statusCounts[myStatus]++;
+      }
+
+      // Check if task is overdue
+      if (isOverdue(task.dueDateTime, myStatus) && myStatus !== 'overdue') {
+        statusCounts.overdue++;
+      }
+    });
+  });
+
+  const calculatePercentage = (count) => total > 0 ? Math.round((count / total) * 100) : 0;
+
+  setTaskStats({
+    total,
+    pending: { count: statusCounts.pending, percentage: calculatePercentage(statusCounts.pending) },
+    inProgress: { count: statusCounts['in-progress'], percentage: calculatePercentage(statusCounts['in-progress']) },
+    completed: { count: statusCounts.completed, percentage: calculatePercentage(statusCounts.completed) },
+    rejected: { count: statusCounts.rejected, percentage: calculatePercentage(statusCounts.rejected) },
+    onHold: { count: statusCounts.onhold, percentage: calculatePercentage(statusCounts.onhold) },
+    reopen: { count: statusCounts.reopen, percentage: calculatePercentage(statusCounts.reopen) },
+    cancelled: { count: statusCounts.cancelled, percentage: calculatePercentage(statusCounts.cancelled) },
+    overdue: { count: statusCounts.overdue, percentage: calculatePercentage(statusCounts.overdue) }
+  });
+}, [userId, getUserStatusForTask, isOverdue]);
+
+// 🔴 ADD this new function for manual overdue check:
+const manualCheckOverdue = async () => {
+  try {
+    const res = await axios.get('/task/check-overdue');
+    showSnackbar(res.data.message, 'success');
+    fetchMyTasks();
+    fetchOverdueTasks();
+  } catch (error) {
+    console.error('Error checking overdue tasks:', error);
+    showSnackbar('Failed to check overdue tasks', 'error');
+  }
+};
 
   // Fetch user's tasks
   const fetchMyTasks = useCallback(async () => {
@@ -784,21 +818,7 @@ const UserCreateTask = () => {
     navigate('/login');
   };
 
-  // Get overdue count
-  const getOverdueCount = () => {
-    let count = 0;
-    Object.values(myTasksGrouped).forEach(tasks => {
-      tasks.forEach(task => {
-        const myStatus = getUserStatusForTask(task, userId);
-        if (isOverdue(task.dueDateTime, myStatus)) {
-          count++;
-        }
-      });
-    });
-    return count;
-  };
 
-  // Render statistics cards
   const renderStatisticsCards = () => {
     const statsData = [
       {
