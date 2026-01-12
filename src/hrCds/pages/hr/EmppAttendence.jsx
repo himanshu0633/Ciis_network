@@ -1479,22 +1479,22 @@ const handleDeleteRecord = async (recordId) => {
 
         {/* Action Bar */}
         <div className="header-actions">
-          <button
+          {/* <button
             className="btn btn-contained"
             onClick={handleAddRecord}
             style={{ marginRight: '10px' }}
           >
             <FiPlus size={16} />
             Add Attendance
-          </button>
+          </button> */}
           
-          <button
+          {/* <button
             className={`btn ${bulkEditMode ? 'btn-contained' : 'btn-outlined'}`}
             onClick={() => setBulkEditMode(!bulkEditMode)}
             style={{ marginRight: '10px' }}
           >
             {bulkEditMode ? 'Cancel Bulk Edit' : 'Bulk Edit'}
-          </button>
+          </button> */}
 
           {/* Export Button */}
           <div className="export-container" ref={exportMenuRef}>
