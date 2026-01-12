@@ -75,7 +75,7 @@ const UserDashboard = () => {
 
   const markedDates = useMemo(() => {
     return attendanceData
-      .filter(record => record.status === 'PRESENT')
+      .filter(record => record.status === 'PRESENT') // UPPERCASE
       .map(record => {
         const d = new Date(record.date);
         return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
@@ -84,7 +84,7 @@ const UserDashboard = () => {
 
   const halfDayDates = useMemo(() => {
     return attendanceData
-      .filter(record => record.status === 'HALF DAY')
+      .filter(record => record.status === 'HALF DAY') // UPPERCASE with space
       .map(record => {
         const d = new Date(record.date);
         return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
@@ -93,7 +93,7 @@ const UserDashboard = () => {
 
   const absentDates = useMemo(() => {
     return attendanceData
-      .filter(record => record.status === 'ABSENT')
+      .filter(record => record.status === 'ABSENT') // UPPERCASE
       .map(record => {
         const d = new Date(record.date);
         return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
@@ -122,21 +122,21 @@ const UserDashboard = () => {
       const d = new Date(record.date);
       return d.getMonth() === currentMonth && 
              d.getFullYear() === currentYear && 
-             record.status === 'PRESENT';
+             record.status === 'PRESENT'; // UPPERCASE
     }).length;
 
     const halfDays = attendanceData.filter(record => {
       const d = new Date(record.date);
       return d.getMonth() === currentMonth && 
              d.getFullYear() === currentYear && 
-             record.status === 'HALF DAY';
+             record.status === 'HALF DAY'; // UPPERCASE with space
     }).length;
 
     const absentDays = attendanceData.filter(record => {
       const d = new Date(record.date);
       return d.getMonth() === currentMonth && 
              d.getFullYear() === currentYear && 
-             record.status === 'ABSENT';
+             record.status === 'ABSENT'; // UPPERCASE
     }).length;
 
     const leavesTaken = leaveDates.filter(dateStr => {
@@ -285,7 +285,7 @@ const UserDashboard = () => {
 
       // Small delay so toast is visible
       setTimeout(() => {
-        window.location.href = "/login"; // or use navigate("/login") if using react-router
+        window.location.href = "/login";
       }, 1200);
 
     } catch (error) {
@@ -376,10 +376,8 @@ const UserDashboard = () => {
   }
 
   return (
-    <div className="App">
-      <NewYearPopup />
-    </div>,
     <div className="dashboard-container">
+      <NewYearPopup />
       <ToastContainer 
         position="top-right" 
         autoClose={3000}
@@ -398,7 +396,6 @@ const UserDashboard = () => {
             >
               <FiX size={20} />
             </button>
-            
             
             <h3 className="confirmation-title">Confirm Clock Out</h3>
             
@@ -583,7 +580,7 @@ const UserDashboard = () => {
               </div>
             </div>
             
-            <div className="calendar-controls">
+            {/* <div className="calendar-controls">
               <button
                 onClick={handlePrevMonth}
                 className="calendar-nav-btn"
@@ -602,7 +599,7 @@ const UserDashboard = () => {
               >
                 <FiChevronRight className="nav-icon" />
               </button>
-            </div>
+            </div> */}
           </div>
 
           <div className="calendar-body">
