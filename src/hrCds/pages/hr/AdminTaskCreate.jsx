@@ -13,7 +13,7 @@ import {
   FiEye, FiClock, FiCheckCircle, FiXCircle, FiAlertTriangle,
   FiMoreVertical, FiRefreshCw, FiUserCheck, FiUserX,
   FiLogOut, FiEdit3, FiTrash, FiMessageCircle,
-  FiZoomIn, FiImage, FiCamera, FiExternalLink, FiList
+  FiZoomIn, FiImage, FiCamera
 } from 'react-icons/fi';
 
 const AdminTaskManagement = () => {
@@ -84,7 +84,7 @@ const AdminTaskManagement = () => {
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
-    dueDateTime: '',
+    dueDateTime: null,
     assignedUsers: [],
     assignedGroups: [],
     priorityDays: '1',
@@ -96,7 +96,7 @@ const AdminTaskManagement = () => {
   const [editTask, setEditTask] = useState({
     title: '',
     description: '',
-    dueDateTime: '',
+    dueDateTime: null,
     assignedUsers: [],
     assignedGroups: [],
     priorityDays: '1',
@@ -171,7 +171,7 @@ const AdminTaskManagement = () => {
     }
   };
 
-  // API call function - UPDATED to handle different response formats
+  // API call function
   const apiCall = async (method, url, data = null, config = {}) => {
     try {
       const token = localStorage.getItem('token');
@@ -194,7 +194,7 @@ const AdminTaskManagement = () => {
       let response;
       switch (method.toLowerCase()) {
         case 'get':
-          response = await axios.get(url, { ...defaultConfig, ...config });
+          response = await axios.get(url, defaultConfig);
           break;
         case 'post':
           response = await axios.post(url, data, defaultConfig);
@@ -212,7 +212,6 @@ const AdminTaskManagement = () => {
           throw new Error(`Unsupported method: ${method}`);
       }
 
-      console.log(`API Response (${method} ${url}):`, response.data);
       return response.data;
     } catch (error) {
       console.error(`API Error (${method} ${url}):`, error);
@@ -229,7 +228,7 @@ const AdminTaskManagement = () => {
     }
   };
 
-  // Fetch tasks with pagination, filters and date range - UPDATED
+  // Fetch tasks with pagination, filters and date range
   const fetchTasks = async (page = 0, limit = rowsPerPage, filters = {}) => {
     if (authError || !userId) return;
 
@@ -238,51 +237,39 @@ const AdminTaskManagement = () => {
       // Build query parameters
       const params = {
         page: page + 1,
-        limit: limit,
-        ...filters
+        limit: limit
       };
 
-      // Remove empty filters
-      Object.keys(params).forEach(key => {
-        if (params[key] === '' || params[key] === null || params[key] === undefined) {
-          delete params[key];
-        }
-      });
-
-      console.log('Fetching tasks with params:', params);
+      // Add filters to params
+      if (searchTerm) params.search = searchTerm;
+      if (statusFilter) params.status = statusFilter;
+      if (priorityFilter) params.priority = priorityFilter;
+      if (assignedToFilter) params.assignedTo = assignedToFilter;
+      if (createdByFilter) params.createdBy = createdByFilter;
+      if (overdueFilter) params.overdue = overdueFilter;
       
-      const tasksResult = await apiCall('get', '/task', { params });
-      
-      // Handle different response formats
-      let tasksArray = [];
-      let total = 0;
-      
-      // Check for different possible response structures
-      if (tasksResult.success && tasksResult.notifications) {
-        // This is the notifications API response you provided
-        tasksArray = tasksResult.notifications
-          .filter(notification => notification.relatedTask)
-          .map(notification => notification.relatedTask);
-        total = tasksArray.length;
-      } else if (tasksResult.tasks) {
-        tasksArray = tasksResult.tasks;
-        total = tasksResult.total || tasksResult.totalCount || tasksArray.length;
-      } else if (tasksResult.data) {
-        tasksArray = tasksResult.data;
-        total = tasksResult.total || tasksResult.totalCount || tasksArray.length;
-      } else if (Array.isArray(tasksResult)) {
-        tasksArray = tasksResult;
-        total = tasksResult.length;
-      } else {
-        tasksArray = [];
-        total = 0;
+      // Add date range filters
+      if (dateRange.startDate) {
+        params.startDate = new Date(dateRange.startDate).toISOString();
       }
-      
-      setTasks(tasksArray);
-      setTotalTasks(total);
-      calculateFilteredStats(tasksArray);
+      if (dateRange.endDate) {
+        params.endDate = new Date(dateRange.endDate).toISOString();
+      }
 
-      console.log('Tasks loaded:', tasksArray.length);
+      const queryString = new URLSearchParams(params).toString();
+      
+      const tasksResult = await apiCall('get', `/task/assigned`);
+      
+      // Handle tasks response
+      const tasksArray = tasksResult.tasks || tasksResult.data || tasksResult.groupedTasks ? 
+        Object.values(tasksResult.groupedTasks || {}).flat() : [];
+      setTasks(tasksArray);
+      
+      // Set total count for pagination
+      setTotalTasks(tasksResult.total || tasksResult.totalCount || tasksArray.length);
+
+      // Calculate filtered stats
+      calculateFilteredStats(tasksArray);
 
     } catch (error) {
       console.error('Error fetching tasks:', error);
@@ -309,7 +296,7 @@ const AdminTaskManagement = () => {
       pending: tasksArray.filter(t => getTaskStatus(t) === 'pending').length,
       inProgress: tasksArray.filter(t => getTaskStatus(t) === 'in-progress').length,
       completed: tasksArray.filter(t => getTaskStatus(t) === 'completed').length,
-      rejected: tasksArray.filter(t => getTaskStatus(t) === 'rejected' || getTaskStatus(t) === 'cancelled').length,
+      rejected: tasksArray.filter(t => getTaskStatus(t) === 'rejected').length,
       overdue: tasksArray.filter(t => isOverdue(t)).length
     };
     setFilteredStats(stats);
@@ -318,9 +305,10 @@ const AdminTaskManagement = () => {
   // Fetch all supporting data (users, groups, notifications)
   const fetchSupportingData = async () => {
     try {
-      const [usersResult, groupsResult] = await Promise.allSettled([
+      const [usersResult, groupsResult, notificationsResult] = await Promise.allSettled([
         apiCall('get', '/task/assignable-users'),
-        apiCall('get', '/groups')
+        apiCall('get', '/groups'),
+        apiCall('get', '/task/notifications/all')
       ]);
 
       // Handle users response
@@ -335,22 +323,15 @@ const AdminTaskManagement = () => {
         setGroups(groupsData.groups || groupsData.data || []);
       }
 
+      // Handle notifications response
+      if (notificationsResult.status === 'fulfilled') {
+        const notificationsData = notificationsResult.value;
+        setNotifications(notificationsData.notifications || []);
+        setUnreadNotificationCount(notificationsData.unreadCount || 0);
+      }
+
     } catch (error) {
       console.error('Error fetching supporting data:', error);
-      setSnackbar({ open: true, message: 'Failed to load supporting data', severity: 'warning' });
-    }
-  };
-
-  // Fetch notifications separately
-  const fetchNotifications = async () => {
-    try {
-      const notificationsResult = await apiCall('get', '/task/notifications/all');
-      if (notificationsResult.success) {
-        setNotifications(notificationsResult.notifications || []);
-        setUnreadNotificationCount(notificationsResult.unreadCount || 0);
-      }
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
     }
   };
 
@@ -358,27 +339,8 @@ const AdminTaskManagement = () => {
   const fetchAllData = async (page = 0, limit = rowsPerPage) => {
     await Promise.all([
       fetchTasks(page, limit, getCurrentFilters()),
-      fetchSupportingData(),
-      fetchNotifications()
+      fetchSupportingData()
     ]);
-  };
-
-  // Get current filters
-  const getCurrentFilters = () => {
-    const filters = {};
-    if (searchTerm) filters.search = searchTerm;
-    if (statusFilter) filters.status = statusFilter;
-    if (priorityFilter) filters.priority = priorityFilter;
-    if (assignedToFilter) filters.assignedTo = assignedToFilter;
-    if (createdByFilter) filters.createdBy = createdByFilter;
-    if (overdueFilter) filters.overdue = overdueFilter;
-    if (dateRange.startDate) {
-      filters.startDate = new Date(dateRange.startDate).toISOString().split('T')[0];
-    }
-    if (dateRange.endDate) {
-      filters.endDate = new Date(dateRange.endDate).toISOString().split('T')[0];
-    }
-    return filters;
   };
 
   // Enhanced Task CRUD Operations
@@ -417,10 +379,10 @@ const AdminTaskManagement = () => {
         formData.append('voiceNote', newTask.voiceNote);
       }
 
-      const response = await apiCall('post', '/task', formData);
+      await apiCall('post', '/task/create-for-others', formData);
 
       setOpenCreateDialog(false);
-      setSnackbar({ open: true, message: response.message || 'Task created successfully', severity: 'success' });
+      setSnackbar({ open: true, message: 'Task created successfully', severity: 'success' });
       resetNewTaskForm();
       fetchAllData(page, rowsPerPage);
     } catch (error) {
@@ -441,10 +403,21 @@ const AdminTaskManagement = () => {
 
     setIsUpdatingTask(true);
     try {
-      const response = await apiCall('put', `/task/${selectedTask._id}`, editTask);
+      const formData = new FormData();
+      
+      // Append basic fields
+      formData.append('title', editTask.title);
+      formData.append('description', editTask.description);
+      formData.append('dueDateTime', new Date(editTask.dueDateTime).toISOString());
+      formData.append('priorityDays', editTask.priorityDays || '1');
+      formData.append('priority', editTask.priority);
+      formData.append('assignedUsers', JSON.stringify(editTask.assignedUsers));
+      formData.append('assignedGroups', JSON.stringify(editTask.assignedGroups));
+
+      await apiCall('put', `/task/${selectedTask._id}`, formData);
       
       setOpenEditDialog(false);
-      setSnackbar({ open: true, message: response.message || 'Task updated successfully', severity: 'success' });
+      setSnackbar({ open: true, message: 'Task updated successfully', severity: 'success' });
       fetchAllData(page, rowsPerPage);
     } catch (error) {
       console.error('Error updating task:', error);
@@ -459,12 +432,59 @@ const AdminTaskManagement = () => {
     if (!window.confirm('Are you sure you want to delete this task?')) return;
 
     try {
-      const response = await apiCall('delete', `/task/${taskId}`);
-      setSnackbar({ open: true, message: response.message || 'Task deleted successfully', severity: 'success' });
+      await apiCall('delete', `/task/${taskId}`);
+      setSnackbar({ open: true, message: 'Task deleted successfully', severity: 'success' });
       fetchAllData(page, rowsPerPage);
     } catch (error) {
       console.error('Error deleting task:', error);
       const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Failed to delete task';
+      setSnackbar({ open: true, message: errorMessage, severity: 'error' });
+    }
+  };
+
+  // Enhanced Group Management
+  const handleCreateGroup = async () => {
+    if (!newGroup.name || !newGroup.description) {
+      setSnackbar({ open: true, message: 'Please fill group name and description', severity: 'error' });
+      return;
+    }
+
+    if (newGroup.members.length === 0) {
+      setSnackbar({ open: true, message: 'Please select at least one member', severity: 'error' });
+      return;
+    }
+
+    setIsCreatingGroup(true);
+    try {
+      if (editingGroup) {
+        await apiCall('put', `/groups/${editingGroup._id}`, newGroup);
+        setSnackbar({ open: true, message: 'Group updated successfully', severity: 'success' });
+      } else {
+        await apiCall('post', '/groups', newGroup);
+        setSnackbar({ open: true, message: 'Group created successfully', severity: 'success' });
+      }
+      setOpenGroupDialog(false);
+      resetGroupForm();
+      fetchSupportingData();
+    } catch (error) {
+      console.error('Error in group operation:', error);
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Group operation failed';
+      setSnackbar({ open: true, message: errorMessage, severity: 'error' });
+    } finally {
+      setIsCreatingGroup(false);
+    }
+  };
+
+  const handleDeleteGroup = async (groupId) => {
+    if (!window.confirm('Are you sure you want to delete this group?')) return;
+
+    try {
+      await apiCall('delete', `/groups/${groupId}`);
+      setSnackbar({ open: true, message: 'Group deleted successfully', severity: 'success' });
+      fetchSupportingData();
+    } catch (error) {
+      console.error('Error deleting group:', error);
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Failed to delete group';
       setSnackbar({ open: true, message: errorMessage, severity: 'error' });
     }
   };
@@ -477,20 +497,51 @@ const AdminTaskManagement = () => {
     }
 
     try {
-      const response = await apiCall('patch', `/task/${statusChange.taskId}/status`, {
+      await apiCall('patch', `/task/${statusChange.taskId}/status`, {
         status: statusChange.status,
         remarks: statusChange.remarks,
         userId: statusChange.userId || userId
       });
 
       setOpenStatusDialog(false);
-      setSnackbar({ open: true, message: response.message || 'Status updated successfully', severity: 'success' });
+      setSnackbar({ open: true, message: 'Status updated successfully', severity: 'success' });
       resetStatusForm();
       fetchAllData(page, rowsPerPage);
     } catch (error) {
       console.error('Error updating status:', error);
       const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Failed to update status';
       setSnackbar({ open: true, message: errorMessage, severity: 'error' });
+    }
+  };
+
+  // Function to fetch and show user statuses for a task
+  const fetchUserStatuses = async (task) => {
+    try {
+      setSelectedTask(task);
+      
+      if (task.statusInfo && Array.isArray(task.statusInfo)) {
+        setTaskUserStatuses(task.statusInfo);
+      } else if (task.statusByUser && Array.isArray(task.statusByUser)) {
+        const enrichedStatuses = task.statusByUser.map(status => {
+          const user = users.find(u => u._id === status.user || u._id === status.user?._id);
+          return {
+            userId: status.user,
+            name: user?.name || 'Unknown User',
+            role: user?.role || 'N/A',
+            email: user?.email || 'N/A',
+            status: status.status,
+            updatedAt: status.updatedAt
+          };
+        });
+        setTaskUserStatuses(enrichedStatuses);
+      } else {
+        setTaskUserStatuses([]);
+      }
+      
+      setOpenUserStatusDialog(true);
+    } catch (error) {
+      console.error('Error fetching user statuses:', error);
+      setSnackbar({ open: true, message: 'Failed to load user statuses', severity: 'error' });
     }
   };
 
@@ -507,9 +558,55 @@ const AdminTaskManagement = () => {
     }
   };
 
+  const handleRemarkImageUpload = (event) => {
+    const files = Array.from(event.target.files);
+    const imageFiles = files.filter(file => file.type.startsWith('image/'));
+    
+    if (imageFiles.length === 0) {
+      setSnackbar({ open: true, message: 'Please select valid image files', severity: 'warning' });
+      return;
+    }
+
+    const newImage = {
+      file: imageFiles[0],
+      preview: URL.createObjectURL(imageFiles[0]),
+      name: imageFiles[0].name,
+      size: imageFiles[0].size
+    };
+
+    remarkImages.forEach(image => URL.revokeObjectURL(image.preview));
+    setRemarkImages([newImage]);
+  };
+
+  const handleRemoveRemarkImage = (index) => {
+    setRemarkImages(prev => {
+      const newImages = [...prev];
+      URL.revokeObjectURL(newImages[index].preview);
+      newImages.splice(index, 1);
+      return newImages;
+    });
+  };
+
+  const handleDragOver = (event) => {
+    event.preventDefault();
+  };
+
+  const handleDrop = (event) => {
+    event.preventDefault();
+    const files = Array.from(event.dataTransfer.files);
+    if (files.length > 0) {
+      const inputEvent = {
+        target: {
+          files: event.dataTransfer.files
+        }
+      };
+      handleRemarkImageUpload(inputEvent);
+    }
+  };
+
   const addRemark = async () => {
-    if (!newRemark.trim()) {
-      setSnackbar({ open: true, message: 'Please enter a remark', severity: 'warning' });
+    if (!newRemark.trim() && remarkImages.length === 0) {
+      setSnackbar({ open: true, message: 'Please enter a remark or upload an image', severity: 'warning' });
       return;
     }
     
@@ -523,7 +620,11 @@ const AdminTaskManagement = () => {
         formData.append('image', remarkImages[0].file);
       }
 
-      const response = await apiCall('post', `/task/${selectedTask._id}/remarks`, formData);
+      await apiCall('post', `/task/${selectedTask._id}/remarks`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        }
+      });
 
       setNewRemark('');
       setRemarkImages([]);
@@ -531,20 +632,73 @@ const AdminTaskManagement = () => {
       
       setSnackbar({ 
         open: true, 
-        message: response.message || 'Remark added successfully', 
+        message: `Remark added successfully${remarkImages.length > 0 ? ' with image' : ''}`, 
         severity: 'success' 
       });
 
     } catch (error) {
       console.error('Error adding remark:', error);
-      const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Failed to add remark';
-      setSnackbar({ open: true, message: errorMessage, severity: 'error' });
+      
+      if (error.response?.status === 413) {
+        setSnackbar({ open: true, message: 'File size too large. Maximum 5MB per image', severity: 'error' });
+      } else if (error.response?.status === 400) {
+        setSnackbar({ open: true, message: error.response.data.error || 'Invalid file type', severity: 'error' });
+      } else {
+        setSnackbar({ open: true, message: 'Failed to add remark', severity: 'error' });
+      }
     } finally {
       setIsUploadingRemark(false);
     }
   };
 
+  // Enhanced Activity Logs
+  const fetchActivityLogs = async (taskId) => {
+    try {
+      const data = await apiCall('get', `/task/${taskId}/activity-logs`);
+      setActivityLogs(data.logs || data.data || []);
+      setSelectedTask(tasks.find(task => task._id === taskId));
+      setOpenActivityDialog(true);
+    } catch (error) {
+      console.error('Error fetching activity logs:', error);
+      setSnackbar({ open: true, message: 'Failed to load activity logs', severity: 'error' });
+    }
+  };
+
+  // Enhanced Notifications Management
+  const markNotificationAsRead = async (notificationId) => {
+    try {
+      await apiCall('patch', `/task/notifications/${notificationId}/read`);
+      fetchSupportingData();
+      setSnackbar({ open: true, message: 'Notification marked as read', severity: 'success' });
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  const markAllNotificationsAsRead = async () => {
+    try {
+      await apiCall('patch', '/task/notifications/read-all');
+      fetchSupportingData();
+      setSnackbar({ open: true, message: 'All notifications marked as read', severity: 'success' });
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+    }
+  };
+
   // Filter functions
+  const getCurrentFilters = () => {
+    const filters = {};
+    if (searchTerm) filters.search = searchTerm;
+    if (statusFilter) filters.status = statusFilter;
+    if (priorityFilter) filters.priority = priorityFilter;
+    if (assignedToFilter) filters.assignedTo = assignedToFilter;
+    if (createdByFilter) filters.createdBy = createdByFilter;
+    if (overdueFilter) filters.overdue = overdueFilter;
+    if (dateRange.startDate) filters.startDate = dateRange.startDate;
+    if (dateRange.endDate) filters.endDate = dateRange.endDate;
+    return filters;
+  };
+
   const applyFilters = () => {
     setPage(0);
     fetchAllData(0, rowsPerPage);
@@ -583,7 +737,7 @@ const AdminTaskManagement = () => {
     setNewTask({
       title: '',
       description: '',
-      dueDateTime: '',
+      dueDateTime: null,
       assignedUsers: [],
       assignedGroups: [],
       priorityDays: '1',
@@ -620,7 +774,7 @@ const AdminTaskManagement = () => {
     setEditTask({
       title: task.title || '',
       description: task.description || '',
-      dueDateTime: task.dueDateTime ? new Date(task.dueDateTime).toISOString().slice(0, 16) : '',
+      dueDateTime: task.dueDateTime ? new Date(task.dueDateTime) : null,
       assignedUsers: task.assignedUsers?.map(u => u._id || u) || [],
       assignedGroups: task.assignedGroups?.map(g => g._id || g) || [],
       priorityDays: task.priorityDays || '1',
@@ -640,7 +794,17 @@ const AdminTaskManagement = () => {
     setOpenStatusDialog(true);
   };
 
-  // Data Helpers
+  const openGroupEditDialog = (group) => {
+    setEditingGroup(group);
+    setNewGroup({
+      name: group.name,
+      description: group.description,
+      members: group.members?.map(m => m._id || m) || []
+    });
+    setOpenGroupDialog(true);
+  };
+
+  // Data Helpers based on your API response
   const getUserName = (userId) => {
     if (typeof userId === 'object') {
       return userId.name || 'Unknown User';
@@ -657,53 +821,104 @@ const AdminTaskManagement = () => {
   const isOverdue = (task) => {
     const dueDate = task.dueDateTime || task.dueDate;
     if (!dueDate) return false;
-    const taskStatus = getTaskStatus(task);
-    return new Date(dueDate) < new Date() && 
-           !['completed', 'cancelled', 'rejected'].includes(taskStatus);
+    return new Date(dueDate) < new Date() && getTaskStatus(task) !== 'completed';
+  };
+
+  const getAssignedUsersCount = (task) => {
+    let count = task.assignedUsers?.length || 0;
+    task.assignedGroups?.forEach(groupId => {
+      const group = groups.find(g => g._id === groupId);
+      if (group) count += group.members?.length || 0;
+    });
+    return count;
   };
 
   const getTaskStatus = (task) => {
     return task.overallStatus || 'pending';
   };
 
-  const getStatusColor = (status) => {
-    switch(status) {
-      case 'completed': return 'success';
-      case 'in-progress': return 'info';
-      case 'pending': return 'warning';
-      case 'overdue': return 'error';
-      case 'cancelled': return 'default';
-      case 'onhold': return 'secondary';
-      default: return 'default';
+  // Get individual user status for a task
+  const getUserStatusForTask = (task, userId) => {
+    if (task.statusInfo && Array.isArray(task.statusInfo)) {
+      const userStatus = task.statusInfo.find(s => 
+        s.userId === userId || s.userId?._id === userId
+      );
+      return userStatus?.status || 'pending';
     }
+    
+    if (task.statusByUser && Array.isArray(task.statusByUser)) {
+      const userStatus = task.statusByUser.find(s => 
+        s.user === userId || s.user?._id === userId
+      );
+      return userStatus?.status || 'pending';
+    }
+    
+    return 'pending';
   };
 
-  const getStatusText = (status) => {
-    switch(status) {
-      case 'completed': return 'Completed';
-      case 'in-progress': return 'In Progress';
-      case 'pending': return 'Pending';
-      case 'overdue': return 'Overdue';
-      case 'cancelled': return 'Cancelled';
-      case 'onhold': return 'On Hold';
-      default: return status;
+  // Get all assigned users with their status
+  const getAllAssignedUsersWithStatus = (task) => {
+    const assignedUsers = [];
+    
+    // Add direct assigned users
+    if (task.assignedUsers && Array.isArray(task.assignedUsers)) {
+      task.assignedUsers.forEach(user => {
+        const userId = user._id || user;
+        const userObj = users.find(u => u._id === userId);
+        if (userObj) {
+          assignedUsers.push({
+            user: userObj,
+            status: getUserStatusForTask(task, userId),
+            type: 'direct'
+          });
+        }
+      });
     }
+    
+    // Add group members
+    if (task.assignedGroups && Array.isArray(task.assignedGroups)) {
+      task.assignedGroups.forEach(groupId => {
+        const group = groups.find(g => g._id === groupId);
+        if (group && group.members) {
+          group.members.forEach(memberId => {
+            const userObj = users.find(u => u._id === memberId);
+            if (userObj && !assignedUsers.some(u => u.user._id === userObj._id)) {
+              assignedUsers.push({
+                user: userObj,
+                status: getUserStatusForTask(task, memberId),
+                type: 'group'
+              });
+            }
+          });
+        }
+      });
+    }
+    
+    return assignedUsers;
   };
 
-  useEffect(() => {
-    fetchUserData();
-  }, []);
+  // Status Chip Component
+  const AdminTaskManagementStatusChip = ({ status }) => {
+    const getStatusColor = () => {
+      switch(status) {
+        case 'pending': return 'warning';
+        case 'in-progress': return 'info';
+        case 'completed': return 'success';
+        case 'rejected': return 'error';
+        default: return 'default';
+      }
+    };
 
-  useEffect(() => {
-    if (!authError && userId) {
-      fetchAllData(page, rowsPerPage);
-    }
-  }, [authError, userId]);
+    const getStatusText = () => {
+      switch(status) {
+        case 'pending': return 'Pending';
+        case 'in-progress': return 'In Progress';
+        case 'completed': return 'Completed';
+        case 'rejected': return 'Rejected';
+        default: return status;
+      }
+    };
 
-  // Check if user is admin
-  const isAdmin = ['admin', 'manager', 'hr', 'SuperAdmin'].includes(userRole);
-
-  if (!isAdmin) {
     return (
       <span className={`AdminTaskManagement-status-chip AdminTaskManagement-status-${getStatusColor()}`}>
         {getStatusText()}
@@ -743,139 +958,108 @@ const AdminTaskManagement = () => {
       success: '#4caf50',
       error: '#f44336'
     };
-      <div className="AdminTaskManagement-access-denied">
-        <div className="AdminTaskManagement-card AdminTaskManagement-text-center">
-          <div className="AdminTaskManagement-card-content">
-            <FiAlertCircle size={48} className="AdminTaskManagement-warning-icon" />
-            <h3>Access Denied</h3>
-            <p>You need admin privileges to access this page.</p>
-            <button className="AdminTaskManagement-btn AdminTaskManagement-btn-primary" onClick={() => navigate('/')}>
-              Go to Dashboard
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
-  if (loading && tasks.length === 0) {
     return (
-      <div className="AdminTaskManagement-loading-container">
-        <div className="AdminTaskManagement-loading-spinner"></div>
-        <p>Loading tasks...</p>
+      <div className="AdminTaskManagement-stat-card" style={{ borderLeftColor: colors[color] || colors.primary }}>
+        <div className="AdminTaskManagement-stat-card-content">
+          <div className="AdminTaskManagement-stat-icon" style={{ backgroundColor: `${colors[color]}20`, color: colors[color] }}>
+            <Icon size={18} />
+          </div>
+          <div className="AdminTaskManagement-stat-text">
+            <div className="AdminTaskManagement-stat-label">{label}</div>
+            <div className="AdminTaskManagement-stat-value">{value}</div>
+          </div>
+        </div>
       </div>
     );
-  }
+  };
 
-  return (
-    <div className="AdminTaskManagement">
-      {/* Header */}
-      <div className="AdminTaskManagement-header-card">
-        <div className="AdminTaskManagement-header-content">
-          <div className="AdminTaskManagement-header-text">
-            <h1>Admin Task Management</h1>
-            <p>Manage all tasks, users, and groups in the system</p>
-          </div>
-          <div className="AdminTaskManagement-header-actions">
+  // Status Change Dialog
+  const renderStatusChangeDialog = () => (
+    <div className={`AdminTaskManagement-modal ${openStatusDialog ? 'AdminTaskManagement-modal-open' : ''}`}>
+      <div className="AdminTaskManagement-modal-content AdminTaskManagement-modal-medium">
+        <div className="AdminTaskManagement-modal-header">
+          <div className="AdminTaskManagement-modal-title-row">
+            <div className="AdminTaskManagement-modal-title-icon">
+              <FiUserCheck />
+              <h3>Change Task Status</h3>
+            </div>
             <button 
-              className="AdminTaskManagement-icon-btn AdminTaskManagement-notification-btn"
-              onClick={() => setOpenNotifications(true)}
+              className="AdminTaskManagement-icon-btn"
+              onClick={() => setOpenStatusDialog(false)}
             >
-              <FiBell size={18} />
-              {unreadNotificationCount > 0 && (
-                <span className="AdminTaskManagement-notification-badge">{unreadNotificationCount}</span>
-              )}
-            </button>
-
-            <button
-              className="AdminTaskManagement-btn AdminTaskManagement-btn-outline"
-              onClick={() => fetchAllData(page, rowsPerPage)}
-              disabled={loading}
-            >
-              <FiRefreshCw /> Refresh
-            </button>
-            <button
-              className="AdminTaskManagement-btn AdminTaskManagement-btn-primary"
-              onClick={() => setOpenCreateDialog(true)}
-            >
-              <FiPlus /> Create Task
+              <FiX size={20} />
             </button>
           </div>
+        </div>
+        <div className="AdminTaskManagement-modal-body">
+          <div className="AdminTaskManagement-form-container">
+            <div className="AdminTaskManagement-form-group">
+              <label>Task</label>
+              <input
+                type="text"
+                className="AdminTaskManagement-form-input"
+                value={selectedTask?.title || ''}
+                disabled
+              />
+            </div>
+
+            <div className="AdminTaskManagement-form-group">
+              <label>Select Status *</label>
+              <select
+                className="AdminTaskManagement-form-select"
+                value={statusChange.status}
+                onChange={(e) => setStatusChange({ ...statusChange, status: e.target.value })}
+              >
+                <option value="">Select Status</option>
+                <option value="pending">Pending</option>
+                <option value="in-progress">In Progress</option>
+                <option value="completed">Completed</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
+
+            <div className="AdminTaskManagement-form-group">
+              <label>Remarks (Optional)</label>
+              <textarea
+                className="AdminTaskManagement-form-textarea"
+                placeholder="Enter remarks for status change..."
+                rows={3}
+                value={statusChange.remarks}
+                onChange={(e) => setStatusChange({ ...statusChange, remarks: e.target.value })}
+              />
+            </div>
+          </div>
+        </div>
+        <div className="AdminTaskManagement-modal-footer">
+          <button 
+            className="AdminTaskManagement-btn" 
+            onClick={() => setOpenStatusDialog(false)}
+          >
+            Cancel
+          </button>
+          <button
+            className="AdminTaskManagement-btn AdminTaskManagement-btn-primary"
+            onClick={handleStatusChange}
+          >
+            Update Status
+          </button>
         </div>
       </div>
+    </div>
+  );
 
-      {/* Stats Cards */}
-      <div className="AdminTaskManagement-stats-grid">
-        <div className="AdminTaskManagement-stat-card">
-          <div className="AdminTaskManagement-stat-card-content">
-            <div className="AdminTaskManagement-stat-icon AdminTaskManagement-stat-primary">
-              <FiList size={18} />
-            </div>
-            <div className="AdminTaskManagement-stat-text">
-              <div className="AdminTaskManagement-stat-label">Total Tasks</div>
-              <div className="AdminTaskManagement-stat-value">{filteredStats.total}</div>
-            </div>
-          </div>
-        </div>
-        
-        <div className="AdminTaskManagement-stat-card">
-          <div className="AdminTaskManagement-stat-card-content">
-            <div className="AdminTaskManagement-stat-icon AdminTaskManagement-stat-warning">
-              <FiClock size={18} />
-            </div>
-            <div className="AdminTaskManagement-stat-text">
-              <div className="AdminTaskManagement-stat-label">Pending</div>
-              <div className="AdminTaskManagement-stat-value">{filteredStats.pending}</div>
-            </div>
-          </div>
-        </div>
-        
-        <div className="AdminTaskManagement-stat-card">
-          <div className="AdminTaskManagement-stat-card-content">
-            <div className="AdminTaskManagement-stat-icon AdminTaskManagement-stat-info">
-              <FiActivity size={18} />
-            </div>
-            <div className="AdminTaskManagement-stat-text">
-              <div className="AdminTaskManagement-stat-label">In Progress</div>
-              <div className="AdminTaskManagement-stat-value">{filteredStats.inProgress}</div>
-            </div>
-          </div>
-        </div>
-        
-        <div className="AdminTaskManagement-stat-card">
-          <div className="AdminTaskManagement-stat-card-content">
-            <div className="AdminTaskManagement-stat-icon AdminTaskManagement-stat-success">
-              <FiCheckCircle size={18} />
-            </div>
-            <div className="AdminTaskManagement-stat-text">
-              <div className="AdminTaskManagement-stat-label">Completed</div>
-              <div className="AdminTaskManagement-stat-value">{filteredStats.completed}</div>
-            </div>
-          </div>
-        </div>
-        
-        <div className="AdminTaskManagement-stat-card">
-          <div className="AdminTaskManagement-stat-card-content">
-            <div className="AdminTaskManagement-stat-icon AdminTaskManagement-stat-error">
-              <FiAlertTriangle size={18} />
-            </div>
-            <div className="AdminTaskManagement-stat-text">
-              <div className="AdminTaskManagement-stat-label">Overdue</div>
-              <div className="AdminTaskManagement-stat-value">{filteredStats.overdue}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Filters Section */}
-      <div className="AdminTaskManagement-filter-section">
+  // Enhanced Filters Section with Date Range
+  const renderEnhancedFilters = () => (
+    <div className="AdminTaskManagement-filter-section">
+      <div className="AdminTaskManagement-filter-stack">
         <div className="AdminTaskManagement-filter-search-row">
           <div className="AdminTaskManagement-search-input-container">
             <FiSearch className="AdminTaskManagement-search-icon" />
             <input
               type="text"
               className="AdminTaskManagement-search-input"
-              placeholder="Search tasks..."
+              placeholder="Search tasks by title or description..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -888,6 +1072,29 @@ const AdminTaskManagement = () => {
           </button>
         </div>
 
+        {/* Date Range Filters */}
+        <div className="AdminTaskManagement-date-range-filters">
+          <div className="AdminTaskManagement-date-input-container">
+            <label>From Date</label>
+            <input
+              type="datetime-local"
+              className="AdminTaskManagement-date-input"
+              value={dateRange.startDate ? new Date(dateRange.startDate).toISOString().slice(0, 16) : ''}
+              onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value ? new Date(e.target.value) : null }))}
+            />
+          </div>
+          <div className="AdminTaskManagement-date-input-container">
+            <label>To Date</label>
+            <input
+              type="datetime-local"
+              className="AdminTaskManagement-date-input"
+              value={dateRange.endDate ? new Date(dateRange.endDate).toISOString().slice(0, 16) : ''}
+              onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value ? new Date(e.target.value) : null }))}
+            />
+          </div>
+        </div>
+
+        {/* Other Filters */}
         <div className="AdminTaskManagement-filter-grid">
           <div className="AdminTaskManagement-filter-select-container">
             <label>Status</label>
@@ -900,8 +1107,7 @@ const AdminTaskManagement = () => {
               <option value="pending">Pending</option>
               <option value="in-progress">In Progress</option>
               <option value="completed">Completed</option>
-              <option value="overdue">Overdue</option>
-              <option value="cancelled">Cancelled</option>
+              <option value="rejected">Rejected</option>
             </select>
           </div>
 
@@ -919,362 +1125,1004 @@ const AdminTaskManagement = () => {
             </select>
           </div>
 
-          <div className="AdminTaskManagement-date-input-container">
-            <label>From Date</label>
-            <input
-              type="date"
-              className="AdminTaskManagement-date-input"
-              value={dateRange.startDate || ''}
-              onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
-            />
+          <div className="AdminTaskManagement-filter-select-container">
+            <label>Assigned To</label>
+            <select
+              className="AdminTaskManagement-filter-select"
+              value={assignedToFilter}
+              onChange={(e) => setAssignedToFilter(e.target.value)}
+            >
+              <option value="">All Users</option>
+              {users.map(user => (
+                <option key={user._id} value={user._id}>
+                  {user.name}
+                </option>
+              ))}
+            </select>
           </div>
 
-          <div className="AdminTaskManagement-date-input-container">
-            <label>To Date</label>
-            <input
-              type="date"
-              className="AdminTaskManagement-date-input"
-              value={dateRange.endDate || ''}
-              onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
-            />
+          <div className="AdminTaskManagement-filter-select-container">
+            <label>Created By</label>
+            <select
+              className="AdminTaskManagement-filter-select"
+              value={createdByFilter}
+              onChange={(e) => setCreatedByFilter(e.target.value)}
+            >
+              <option value="">All Creators</option>
+              {users.map(user => (
+                <option key={user._id} value={user._id}>
+                  {user.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="AdminTaskManagement-filter-select-container">
+            <label>Overdue</label>
+            <select
+              className="AdminTaskManagement-filter-select"
+              value={overdueFilter}
+              onChange={(e) => setOverdueFilter(e.target.value)}
+            >
+              <option value="">All Tasks</option>
+              <option value="true">Overdue Only</option>
+              <option value="false">Not Overdue</option>
+            </select>
           </div>
         </div>
       </div>
+    </div>
+  );
 
-      {/* Tasks Table */}
-      <div className="AdminTaskManagement-table-container">
-        <table className="AdminTaskManagement-tasks-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Title</th>
-              <th>Description</th>
-              <th>Due Date</th>
-              <th>Priority</th>
-              <th>Status</th>
-              <th>Assigned To</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {tasks.length === 0 ? (
-              <tr>
-                <td colSpan="8" className="AdminTaskManagement-no-data">
-                  <FiList size={24} />
-                  <p>No tasks found</p>
-                </td>
-              </tr>
-            ) : (
-              tasks.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((task, index) => (
-                <tr key={task._id || index}>
-                  <td>{task.serialNo || index + 1}</td>
-                  <td>
-                    <div className="AdminTaskManagement-task-title">{task.title}</div>
-                  </td>
-                  <td>
-                    <div className="AdminTaskManagement-task-description">
-                      {task.description?.substring(0, 50)}
-                      {task.description?.length > 50 ? '...' : ''}
-                    </div>
-                  </td>
-                  <td>
-                    <div className={`AdminTaskManagement-task-due-date ${isOverdue(task) ? 'AdminTaskManagement-task-overdue' : ''}`}>
-                      <FiCalendar size={14} />
-                      {task.dueDateTime ? new Date(task.dueDateTime).toLocaleDateString() : 'N/A'}
-                      {isOverdue(task) && <FiAlertTriangle size={14} />}
-                    </div>
-                  </td>
-                  <td>
-                    <span className={`AdminTaskManagement-priority-chip AdminTaskManagement-priority-${task.priority}`}>
-                      {task.priority?.charAt(0).toUpperCase() + task.priority?.slice(1)}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={`AdminTaskManagement-status-chip AdminTaskManagement-status-${getStatusColor(getTaskStatus(task))}`}>
-                      {getStatusText(getTaskStatus(task))}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="AdminTaskManagement-assigned-users">
-                      {task.assignedUsers && task.assignedUsers.length > 0 ? (
-                        task.assignedUsers.slice(0, 2).map((user, idx) => (
-                          <span key={idx} className="AdminTaskManagement-user-chip">
-                            {getUserName(user).charAt(0)}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="AdminTaskManagement-no-assignee">Not assigned</span>
-                      )}
-                      {task.assignedUsers && task.assignedUsers.length > 2 && (
-                        <span className="AdminTaskManagement-more-users">
-                          +{task.assignedUsers.length - 2}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td>
-                    <div className="AdminTaskManagement-table-actions">
-                      <button
-                        className="AdminTaskManagement-icon-btn AdminTaskManagement-icon-btn-sm"
-                        onClick={() => openEditTaskDialog(task)}
-                        title="Edit"
-                      >
-                        <FiEdit3 size={16} />
-                      </button>
-                      <button
-                        className="AdminTaskManagement-icon-btn AdminTaskManagement-icon-btn-sm"
-                        onClick={() => fetchRemarks(task._id)}
-                        title="Remarks"
-                      >
-                        <FiMessageSquare size={16} />
-                      </button>
-                      <button
-                        className="AdminTaskManagement-icon-btn AdminTaskManagement-icon-btn-sm"
-                        onClick={() => openStatusChangeDialog(task)}
-                        title="Change Status"
-                      >
-                        <FiUserCheck size={16} />
-                      </button>
-                      <button
-                        className="AdminTaskManagement-icon-btn AdminTaskManagement-icon-btn-sm AdminTaskManagement-icon-btn-danger"
-                        onClick={() => handleDeleteTask(task._id)}
-                        title="Delete"
-                      >
-                        <FiTrash size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-        
-        {/* Pagination */}
-        {tasks.length > 0 && (
-          <div className="AdminTaskManagement-pagination">
-            <div className="AdminTaskManagement-pagination-info">
-              Showing {Math.min(page * rowsPerPage + 1, totalTasks)} to {Math.min((page + 1) * rowsPerPage, totalTasks)} of {totalTasks} tasks
+  // Stats Cards with Filtered Data
+  const renderFilteredStatsCards = () => (
+    <div className="AdminTaskManagement-stats-grid">
+      <AdminTaskManagementStatCard label="Total Tasks" value={filteredStats.total} color="primary" icon={FiCalendar} />
+      <AdminTaskManagementStatCard label="Pending" value={filteredStats.pending} color="warning" icon={FiClock} />
+      <AdminTaskManagementStatCard label="In Progress" value={filteredStats.inProgress} color="info" icon={FiAlertCircle} />
+      <AdminTaskManagementStatCard label="Completed" value={filteredStats.completed} color="success" icon={FiCheckCircle} />
+      <AdminTaskManagementStatCard label="Rejected" value={filteredStats.rejected} color="error" icon={FiXCircle} />
+      <AdminTaskManagementStatCard label="Overdue" value={filteredStats.overdue} color="error" icon={FiAlertTriangle} />
+    </div>
+  );
+
+  // Enhanced Remarks Dialog with Image Upload
+  const renderRemarksDialog = () => (
+    <div className={`AdminTaskManagement-modal ${openRemarksDialog ? 'AdminTaskManagement-modal-open' : ''}`}>
+      <div className="AdminTaskManagement-modal-content AdminTaskManagement-modal-large">
+        <div className="AdminTaskManagement-modal-header AdminTaskManagement-modal-info">
+          <div className="AdminTaskManagement-modal-title-row">
+            <div className="AdminTaskManagement-modal-title-icon">
+              <FiMessageSquare />
+              <h3>Remarks for: {selectedTask?.title}</h3>
             </div>
-            <div className="AdminTaskManagement-pagination-controls">
-              <button
-                className="AdminTaskManagement-pagination-btn"
-                onClick={() => handleChangePage(null, page - 1)}
-                disabled={page === 0}
-              >
-                Previous
-              </button>
-              <div className="AdminTaskManagement-pagination-page">
-                Page {page + 1} of {Math.ceil(totalTasks / rowsPerPage) || 1}
+            <div className="AdminTaskManagement-modal-subtitle">{remarks.length} remark(s)</div>
+          </div>
+          <button 
+            className="AdminTaskManagement-icon-btn"
+            onClick={() => setOpenRemarksDialog(false)}
+          >
+            <FiX size={20} />
+          </button>
+        </div>
+        
+        <div className="AdminTaskManagement-modal-body">
+          <div className="AdminTaskManagement-remarks-container">
+            {/* Add New Remark Section */}
+            <div className="AdminTaskManagement-card AdminTaskManagement-card-outline">
+              <div className="AdminTaskManagement-card-content">
+                <h4>Add New Remark</h4>
+                
+                {/* Text Input */}
+                <textarea
+                  className="AdminTaskManagement-remark-textarea"
+                  placeholder="Enter your remark here... (Optional if uploading images)"
+                  value={newRemark}
+                  onChange={(e) => setNewRemark(e.target.value)}
+                  rows={3}
+                />
+
+                {/* Image Upload Section */}
+                <div className="AdminTaskManagement-image-upload-section">
+                  <label>Attach Image (Optional)</label>
+                  
+                  <div 
+                    className="AdminTaskManagement-image-upload-area"
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                    onClick={() => document.getElementById('AdminTaskManagement-remark-image-upload').click()}
+                  >
+                    <div className="AdminTaskManagement-upload-content">
+                      <FiImage size={32} className="AdminTaskManagement-upload-icon" />
+                      <div className="AdminTaskManagement-upload-text">
+                        Click to upload or drag & drop
+                      </div>
+                      <div className="AdminTaskManagement-upload-subtext">
+                        Supports JPG, PNG, GIF • Max 5MB
+                      </div>
+                      <button className="AdminTaskManagement-btn AdminTaskManagement-btn-outline AdminTaskManagement-upload-btn">
+                        <FiCamera /> Choose Image
+                      </button>
+                    </div>
+                    
+                    <input
+                      id="AdminTaskManagement-remark-image-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleRemarkImageUpload}
+                      style={{ display: 'none' }}
+                    />
+                  </div>
+
+                  {/* Image Preview */}
+                  {remarkImages.length > 0 && (
+                    <div className="AdminTaskManagement-image-preview-container">
+                      <label>Selected Image:</label>
+                      <div className="AdminTaskManagement-image-preview-grid">
+                        {remarkImages.map((image, index) => (
+                          <div key={index} className="AdminTaskManagement-image-preview-item">
+                            <img
+                              src={image.preview}
+                              alt={`Preview ${index + 1}`}
+                              onClick={() => setZoomImage(image.preview)}
+                            />
+                            <button
+                              className="AdminTaskManagement-remove-image-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemoveRemarkImage(index);
+                              }}
+                            >
+                              <FiX size={14} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Submit Button */}
+                <button
+                  className="AdminTaskManagement-btn AdminTaskManagement-btn-primary AdminTaskManagement-btn-block"
+                  onClick={addRemark}
+                  disabled={isUploadingRemark || (!newRemark.trim() && remarkImages.length === 0)}
+                >
+                  {isUploadingRemark ? 'Uploading...' : 'Add Remark'}
+                </button>
               </div>
-              <button
-                className="AdminTaskManagement-pagination-btn"
-                onClick={() => handleChangePage(null, page + 1)}
-                disabled={page >= Math.ceil(totalTasks / rowsPerPage) - 1 || totalTasks === 0}
-              >
-                Next
-              </button>
-              <select
-                className="AdminTaskManagement-pagination-select"
-                value={rowsPerPage}
-                onChange={handleChangeRowsPerPage}
-              >
-                <option value={5}>5 per page</option>
-                <option value={10}>10 per page</option>
-                <option value={25}>25 per page</option>
-                <option value={50}>50 per page</option>
-              </select>
+            </div>
+
+            {/* Remarks History */}
+            <div className="AdminTaskManagement-remarks-history">
+              <h4>Remarks History</h4>
+              
+              {remarks.length > 0 ? (
+                <div className="AdminTaskManagement-remarks-list">
+                  {remarks.map((remark, index) => (
+                    <div key={index} className="AdminTaskManagement-card AdminTaskManagement-card-outline">
+                      <div className="AdminTaskManagement-card-content">
+                        <div className="AdminTaskManagement-remark-item">
+                          {/* User Info and Date */}
+                          <div className="AdminTaskManagement-remark-header">
+                            <div className="AdminTaskManagement-remark-user">
+                              <div className="AdminTaskManagement-remark-avatar">
+                                {getUserName(remark.user)?.charAt(0)?.toUpperCase() || 'U'}
+                              </div>
+                              <div className="AdminTaskManagement-remark-user-info">
+                                <div className="AdminTaskManagement-remark-user-name">
+                                  {getUserName(remark.user)}
+                                </div>
+                                <div className="AdminTaskManagement-remark-user-details">
+                                  {users.find(u => u._id === remark.user)?.role || 'User'} • {new Date(remark.createdAt).toLocaleDateString()} at {' '}
+                                  {new Date(remark.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Remark Text */}
+                          {remark.text && (
+                            <div className="AdminTaskManagement-remark-text">
+                              {remark.text}
+                            </div>
+                          )}
+
+                          {/* Remark Image */}
+                          {remark.image && (
+                            <div className="AdminTaskManagement-remark-image-container">
+                              <label>Attached Image:</label>
+                              <div className="AdminTaskManagement-remark-image-preview">
+                                <img
+                                  src={`${API_URL_IMG}/${remark.image}`}
+                                  alt="Remark attachment"
+                                  onClick={() => setZoomImage(`${API_URL_IMG}/${remark.image}`)}
+                                />
+                                <button
+                                  className="AdminTaskManagement-zoom-image-btn"
+                                  onClick={() => setZoomImage(`${API_URL_IMG}/${remark.image}`)}
+                                >
+                                  <FiZoomIn size={14} />
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="AdminTaskManagement-card AdminTaskManagement-card-outline AdminTaskManagement-text-center">
+                  <div className="AdminTaskManagement-card-content">
+                    <FiMessageSquare size={48} className="AdminTaskManagement-empty-icon" />
+                    <h5>No remarks yet</h5>
+                    <p>Be the first to add a remark for this task</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-        )}
+        </div>
+        <div className="AdminTaskManagement-modal-footer">
+          <button 
+            className="AdminTaskManagement-btn" 
+            onClick={() => setOpenRemarksDialog(false)}
+          >
+            Close
+          </button>
+        </div>
       </div>
+    </div>
+  );
 
-      {/* Create Task Dialog */}
-      {openCreateDialog && (
-        <div className="AdminTaskManagement-modal AdminTaskManagement-modal-open">
-          <div className="AdminTaskManagement-modal-content">
-            <div className="AdminTaskManagement-modal-header">
-              <h3>Create New Task</h3>
-              <button 
-                className="AdminTaskManagement-icon-btn"
-                onClick={() => setOpenCreateDialog(false)}
-              >
-                <FiX size={20} />
-              </button>
+  // Image Zoom Modal
+  const renderImageZoomModal = () => (
+    <div className={`AdminTaskManagement-modal ${zoomImage ? 'AdminTaskManagement-modal-open' : ''} AdminTaskManagement-modal-zoom`}>
+      <div className="AdminTaskManagement-modal-zoom-content">
+        <button
+          className="AdminTaskManagement-zoom-close-btn"
+          onClick={() => setZoomImage(null)}
+        >
+          <FiX size={20} />
+        </button>
+        <img
+          src={zoomImage}
+          alt="Zoomed view"
+          className="AdminTaskManagement-zoomed-image"
+        />
+      </div>
+    </div>
+  );
+
+  // Enhanced Notifications Panel
+  const renderNotificationsPanel = () => (
+    <div className={`AdminTaskManagement-modal ${openNotifications ? 'AdminTaskManagement-modal-open' : ''}`}>
+      <div className="AdminTaskManagement-modal-content AdminTaskManagement-modal-notifications">
+        <div className="AdminTaskManagement-modal-header AdminTaskManagement-modal-primary">
+          <div className="AdminTaskManagement-modal-title-row">
+            <div className="AdminTaskManagement-modal-title-icon">
+              <FiBell />
+              <h3>Notifications</h3>
             </div>
-            <div className="AdminTaskManagement-modal-body">
+            <button 
+              className="AdminTaskManagement-icon-btn"
+              onClick={() => setOpenNotifications(false)}
+            >
+              <FiX size={20} />
+            </button>
+          </div>
+          <div className="AdminTaskManagement-modal-subtitle">
+            {unreadNotificationCount > 0 ? `${unreadNotificationCount} unread` : 'All caught up'}
+          </div>
+        </div>
+        <div className="AdminTaskManagement-modal-body AdminTaskManagement-modal-scroll">
+          {notifications.length > 0 ? (
+            <div className="AdminTaskManagement-notifications-list">
+              <div className="AdminTaskManagement-modal-title-row" style={{ marginBottom: '16px' }}>
+                <span>{notifications.length} notification(s)</span>
+                <button 
+                  className="AdminTaskManagement-btn AdminTaskManagement-btn-sm"
+                  onClick={markAllNotificationsAsRead} 
+                  disabled={unreadNotificationCount === 0}
+                >
+                  Mark all as read
+                </button>
+              </div>
+              {notifications.map((notification) => (
+                <div 
+                  key={notification._id} 
+                  className={`AdminTaskManagement-notification-item ${notification.isRead ? '' : 'AdminTaskManagement-notification-unread'}`}
+                >
+                  <div className="AdminTaskManagement-notification-content">
+                    <div className="AdminTaskManagement-notification-title">{notification.title}</div>
+                    <div className="AdminTaskManagement-notification-message">{notification.message}</div>
+                    <div className="AdminTaskManagement-notification-footer">
+                      <div className="AdminTaskManagement-notification-date">
+                        {new Date(notification.createdAt).toLocaleDateString()}
+                      </div>
+                      {!notification.isRead && (
+                        <button 
+                          className="AdminTaskManagement-btn AdminTaskManagement-btn-sm"
+                          onClick={() => markNotificationAsRead(notification._id)}
+                        >
+                          Mark read
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="AdminTaskManagement-text-center">
+              <FiBell size={32} className="AdminTaskManagement-empty-icon" />
+              <h5>No notifications</h5>
+              <p>You're all caught up!</p>
+            </div>
+          )}
+        </div>
+        <div className="AdminTaskManagement-modal-footer">
+          <button 
+            className="AdminTaskManagement-btn" 
+            onClick={() => setOpenNotifications(false)}
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Enhanced Activity Logs Dialog
+  const renderActivityLogsDialog = () => (
+    <div className={`AdminTaskManagement-modal ${openActivityDialog ? 'AdminTaskManagement-modal-open' : ''}`}>
+      <div className="AdminTaskManagement-modal-content AdminTaskManagement-modal-large">
+        <div className="AdminTaskManagement-modal-header AdminTaskManagement-modal-primary">
+          <div className="AdminTaskManagement-modal-title-row">
+            <div className="AdminTaskManagement-modal-title-icon">
+              <FiActivity />
+              <h3>Activity Logs for: {selectedTask?.title}</h3>
+            </div>
+            <button 
+              className="AdminTaskManagement-icon-btn"
+              onClick={() => setOpenActivityDialog(false)}
+            >
+              <FiX size={20} />
+            </button>
+          </div>
+          <div className="AdminTaskManagement-modal-subtitle">
+            {activityLogs.length} activity log(s)
+          </div>
+        </div>
+        <div className="AdminTaskManagement-modal-body">
+          {activityLogs.length > 0 ? (
+            <div className="AdminTaskManagement-activity-logs">
+              {activityLogs.map((log, index) => (
+                <div key={index} className="AdminTaskManagement-card AdminTaskManagement-card-outline">
+                  <div className="AdminTaskManagement-card-content">
+                    <div className="AdminTaskManagement-activity-log">
+                      <div className="AdminTaskManagement-activity-header">
+                        <div className="AdminTaskManagement-activity-user">
+                          <div className="AdminTaskManagement-activity-avatar">
+                            {getUserName(log.user)?.charAt(0)?.toUpperCase() || 'U'}
+                          </div>
+                          <div className="AdminTaskManagement-activity-user-info">
+                            <div className="AdminTaskManagement-activity-user-name">{getUserName(log.user)}</div>
+                            <div className="AdminTaskManagement-activity-user-role">
+                              {users.find(u => u._id === log.user)?.role || 'User'}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="AdminTaskManagement-activity-date">
+                          {new Date(log.createdAt).toLocaleDateString()} at {new Date(log.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </div>
+                      </div>
+                      <div className="AdminTaskManagement-activity-description">
+                        {log.description || log.action}
+                      </div>
+                      <div className="AdminTaskManagement-activity-footer">
+                        <span className="AdminTaskManagement-activity-tag">{log.action}</span>
+                        {log.ipAddress && (
+                          <span className="AdminTaskManagement-activity-ip">IP: {log.ipAddress}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="AdminTaskManagement-text-center">
+              <FiActivity size={32} className="AdminTaskManagement-empty-icon" />
+              <h5>No activity logs found</h5>
+              <p>No activity logs found for this task</p>
+            </div>
+          )}
+        </div>
+        <div className="AdminTaskManagement-modal-footer">
+          <button 
+            className="AdminTaskManagement-btn" 
+            onClick={() => setOpenActivityDialog(false)}
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // User Status Dialog
+  const renderUserStatusDialog = () => (
+    <div className={`AdminTaskManagement-modal ${openUserStatusDialog ? 'AdminTaskManagement-modal-open' : ''}`}>
+      <div className="AdminTaskManagement-modal-content AdminTaskManagement-modal-medium">
+        <div className="AdminTaskManagement-modal-header AdminTaskManagement-modal-info">
+          <div className="AdminTaskManagement-modal-title-row">
+            <div className="AdminTaskManagement-modal-title-icon">
+              <FiUsers />
+              <h3>User Statuses for: {selectedTask?.title}</h3>
+            </div>
+            <button 
+              className="AdminTaskManagement-icon-btn"
+              onClick={() => setOpenUserStatusDialog(false)}
+            >
+              <FiX size={20} />
+            </button>
+          </div>
+          <div className="AdminTaskManagement-modal-subtitle">
+            {taskUserStatuses.length} user(s)
+          </div>
+        </div>
+        <div className="AdminTaskManagement-modal-body">
+          <div className="AdminTaskManagement-user-statuses">
+            {taskUserStatuses.length > 0 ? (
+              taskUserStatuses.map((userStatus, index) => (
+                <div key={index} className="AdminTaskManagement-card AdminTaskManagement-card-outline">
+                  <div className="AdminTaskManagement-card-content">
+                    <div className="AdminTaskManagement-user-status-item">
+                      <div className="AdminTaskManagement-user-status-header">
+                        <div className="AdminTaskManagement-user-status-user">
+                          <div className="AdminTaskManagement-user-status-avatar">
+                            {userStatus.name?.charAt(0)?.toUpperCase() || 'U'}
+                          </div>
+                          <div className="AdminTaskManagement-user-status-info">
+                            <div className="AdminTaskManagement-user-status-name">{userStatus.name}</div>
+                            <div className="AdminTaskManagement-user-status-details">
+                              {userStatus.role} • {userStatus.email}
+                            </div>
+                          </div>
+                        </div>
+                        <AdminTaskManagementStatusChip status={userStatus.status} />
+                      </div>
+                      {userStatus.updatedAt && (
+                        <div className="AdminTaskManagement-user-status-updated">
+                          Last updated: {new Date(userStatus.updatedAt).toLocaleString()}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="AdminTaskManagement-text-center">
+                <FiUsers size={32} className="AdminTaskManagement-empty-icon" />
+                <h5>No user status information available</h5>
+                <p>No user status data found for this task</p>
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="AdminTaskManagement-modal-footer">
+          <button 
+            className="AdminTaskManagement-btn" 
+            onClick={() => setOpenUserStatusDialog(false)}
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Create Task Dialog
+  const renderCreateTaskDialog = () => (
+    <div className={`AdminTaskManagement-modal ${openCreateDialog ? 'AdminTaskManagement-modal-open' : ''}`}>
+      <div className="AdminTaskManagement-modal-content AdminTaskManagement-modal-large">
+        <div className="AdminTaskManagement-modal-header">
+          <div className="AdminTaskManagement-modal-title-row">
+            <h3>Create New Task</h3>
+            <button 
+              className="AdminTaskManagement-icon-btn"
+              onClick={() => setOpenCreateDialog(false)}
+            >
+              <FiX size={20} />
+            </button>
+          </div>
+        </div>
+        <div className="AdminTaskManagement-modal-body">
+          <div className="AdminTaskManagement-form-container">
+            <div className="AdminTaskManagement-form-group">
+              <label>Task Title *</label>
+              <input
+                type="text"
+                className="AdminTaskManagement-form-input"
+                placeholder="Enter task title"
+                value={newTask.title}
+                onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+              />
+            </div>
+
+            <div className="AdminTaskManagement-form-group">
+              <label>Description *</label>
+              <textarea
+                className="AdminTaskManagement-form-textarea"
+                placeholder="Enter task description"
+                rows={3}
+                value={newTask.description}
+                onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+              />
+            </div>
+
+            <div className="AdminTaskManagement-form-group">
+              <label>Due Date & Time *</label>
+              <input
+                type="datetime-local"
+                className="AdminTaskManagement-form-input"
+                value={newTask.dueDateTime ? new Date(newTask.dueDateTime).toISOString().slice(0, 16) : ''}
+                onChange={(e) => setNewTask({ ...newTask, dueDateTime: e.target.value ? new Date(e.target.value) : null })}
+              />
+            </div>
+
+            <div className="AdminTaskManagement-form-row">
               <div className="AdminTaskManagement-form-group">
-                <label>Task Title *</label>
+                <label>Priority</label>
+                <select
+                  className="AdminTaskManagement-form-select"
+                  value={newTask.priority}
+                  onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
+                >
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
+
+              <div className="AdminTaskManagement-form-group">
+                <label>Priority Days</label>
                 <input
                   type="text"
                   className="AdminTaskManagement-form-input"
-                  placeholder="Enter task title"
-                  value={newTask.title}
-                  onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                  placeholder="Enter priority days"
+                  value={newTask.priorityDays}
+                  onChange={(e) => setNewTask({ ...newTask, priorityDays: e.target.value })}
                 />
               </div>
+            </div>
 
-              <div className="AdminTaskManagement-form-group">
-                <label>Description *</label>
-                <textarea
-                  className="AdminTaskManagement-form-textarea"
-                  placeholder="Enter task description"
-                  rows={3}
-                  value={newTask.description}
-                  onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-                />
-              </div>
-
-              <div className="AdminTaskManagement-form-group">
-                <label>Due Date & Time *</label>
-                <input
-                  type="datetime-local"
-                  className="AdminTaskManagement-form-input"
-                  value={newTask.dueDateTime}
-                  onChange={(e) => setNewTask({ ...newTask, dueDateTime: e.target.value })}
-                />
-              </div>
-
-              <div className="AdminTaskManagement-form-row">
-                <div className="AdminTaskManagement-form-group">
-                  <label>Priority</label>
-                  <select
-                    className="AdminTaskManagement-form-select"
-                    value={newTask.priority}
-                    onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
-                  >
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                  </select>
-                </div>
-
-                <div className="AdminTaskManagement-form-group">
-                  <label>Priority Days</label>
+            {/* Assign to Users with Search */}
+            <div className="AdminTaskManagement-form-group">
+              <label>Assign to Users</label>
+              <div className="AdminTaskManagement-multi-select-container">
+                <div className="AdminTaskManagement-select-search-bar">
+                  <FiSearch className="AdminTaskManagement-select-search-icon" />
                   <input
                     type="text"
-                    className="AdminTaskManagement-form-input"
-                    placeholder="Enter priority days"
-                    value={newTask.priorityDays}
-                    onChange={(e) => setNewTask({ ...newTask, priorityDays: e.target.value })}
+                    className="AdminTaskManagement-select-search-input"
+                    placeholder="Search users..."
+                    value={userSearch}
+                    onChange={(e) => setUserSearch(e.target.value)}
                   />
+                  {userSearch && (
+                    <button className="AdminTaskManagement-select-search-clear" onClick={() => setUserSearch('')}>
+                      <FiX size={14} />
+                    </button>
+                  )}
+                </div>
+                <div className="AdminTaskManagement-multi-select-options">
+                  {filteredUsers.map((user) => (
+                    <div key={user._id} className="AdminTaskManagement-multi-select-option">
+                      <input
+                        type="checkbox"
+                        id={`AdminTaskManagement-user-${user._id}`}
+                        checked={newTask.assignedUsers.includes(user._id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setNewTask({
+                              ...newTask,
+                              assignedUsers: [...newTask.assignedUsers, user._id]
+                            });
+                          } else {
+                            setNewTask({
+                              ...newTask,
+                              assignedUsers: newTask.assignedUsers.filter(id => id !== user._id)
+                            });
+                          }
+                        }}
+                      />
+                      <label htmlFor={`AdminTaskManagement-user-${user._id}`} className="AdminTaskManagement-multi-select-label">
+                        <div className="AdminTaskManagement-multi-select-text">
+                          <div className="AdminTaskManagement-multi-select-primary">{user.name}</div>
+                          <div className="AdminTaskManagement-multi-select-secondary">
+                            <span>{user.role}</span>
+                            <span className="AdminTaskManagement-separator">•</span>
+                            <span>{user.email}</span>
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+                  ))}
+                  {filteredUsers.length === 0 && (
+                    <div className="AdminTaskManagement-multi-select-empty">
+                      No users found
+                    </div>
+                  )}
                 </div>
               </div>
-
-              <div className="AdminTaskManagement-form-group">
-                <label>Assign to Users</label>
-                <select
-                  className="AdminTaskManagement-form-select"
-                  multiple
-                  value={newTask.assignedUsers}
-                  onChange={(e) => {
-                    const options = e.target.options;
-                    const value = [];
-                    for (let i = 0; i < options.length; i++) {
-                      if (options[i].selected) {
-                        value.push(options[i].value);
-                      }
-                    }
-                    setNewTask({ ...newTask, assignedUsers: value });
-                  }}
-                  size="5"
-                >
-                  {users.map((user) => (
-                    <option key={user._id} value={user._id}>
-                      {user.name} ({user.role})
-                    </option>
-                  ))}
-                </select>
-                <small>Hold Ctrl to select multiple users</small>
-              </div>
+              {newTask.assignedUsers.length > 0 && (
+                <div className="AdminTaskManagement-selected-chips">
+                  {newTask.assignedUsers.map(value => {
+                    const user = users.find(u => u._id === value);
+                    return user ? (
+                      <span key={value} className="AdminTaskManagement-selected-chip">
+                        {user.name}
+                      </span>
+                    ) : null;
+                  })}
+                </div>
+              )}
             </div>
-            <div className="AdminTaskManagement-modal-footer">
-              <button 
-                className="AdminTaskManagement-btn" 
-                onClick={() => setOpenCreateDialog(false)}
-              >
-                Cancel
-              </button>
-              <button
-                className="AdminTaskManagement-btn AdminTaskManagement-btn-primary"
-                onClick={handleCreateTask}
-                disabled={isCreatingTask}
-              >
-                {isCreatingTask ? 'Creating...' : 'Create Task'}
-              </button>
+
+            {/* Assign to Groups with Search */}
+            <div className="AdminTaskManagement-form-group">
+              <label>Assign to Groups</label>
+              <div className="AdminTaskManagement-multi-select-container">
+                <div className="AdminTaskManagement-select-search-bar">
+                  <FiSearch className="AdminTaskManagement-select-search-icon" />
+                  <input
+                    type="text"
+                    className="AdminTaskManagement-select-search-input"
+                    placeholder="Search groups..."
+                    value={groupSearch}
+                    onChange={(e) => setGroupSearch(e.target.value)}
+                  />
+                  {groupSearch && (
+                    <button className="AdminTaskManagement-select-search-clear" onClick={() => setGroupSearch('')}>
+                      <FiX size={14} />
+                    </button>
+                  )}
+                </div>
+                <div className="AdminTaskManagement-multi-select-options">
+                  {filteredGroups.map((group) => (
+                    <div key={group._id} className="AdminTaskManagement-multi-select-option">
+                      <input
+                        type="checkbox"
+                        id={`AdminTaskManagement-group-${group._id}`}
+                        checked={newTask.assignedGroups.includes(group._id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setNewTask({
+                              ...newTask,
+                              assignedGroups: [...newTask.assignedGroups, group._id]
+                            });
+                          } else {
+                            setNewTask({
+                              ...newTask,
+                              assignedGroups: newTask.assignedGroups.filter(id => id !== group._id)
+                            });
+                          }
+                        }}
+                      />
+                      <label htmlFor={`AdminTaskManagement-group-${group._id}`} className="AdminTaskManagement-multi-select-label">
+                        <div className="AdminTaskManagement-multi-select-text">
+                          <div className="AdminTaskManagement-multi-select-primary">{group.name}</div>
+                          <div className="AdminTaskManagement-multi-select-secondary">
+                            {group.members?.length || 0} members • {group.description || 'No description'}
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+                  ))}
+                  {filteredGroups.length === 0 && (
+                    <div className="AdminTaskManagement-multi-select-empty">
+                      No groups found
+                    </div>
+                  )}
+                </div>
+              </div>
+              {newTask.assignedGroups.length > 0 && (
+                <div className="AdminTaskManagement-selected-chips">
+                  {newTask.assignedGroups.map(value => {
+                    const group = groups.find(g => g._id === value);
+                    return group ? (
+                      <span key={value} className="AdminTaskManagement-selected-chip AdminTaskManagement-selected-chip-secondary">
+                        {group.name}
+                      </span>
+                    ) : null;
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="AdminTaskManagement-form-group">
+              <label>Attachments</label>
+              <div className="AdminTaskManagement-attachment-buttons">
+                <button className="AdminTaskManagement-btn AdminTaskManagement-btn-outline AdminTaskManagement-attachment-btn">
+                  <FiFileText /> Upload Files
+                  <input
+                    type="file"
+                    multiple
+                    onChange={(e) => setNewTask({ ...newTask, files: e.target.files })}
+                  />
+                </button>
+                <button className="AdminTaskManagement-btn AdminTaskManagement-btn-outline AdminTaskManagement-attachment-btn">
+                  <FiMic /> Voice Note
+                  <input
+                    type="file"
+                    accept="audio/*"
+                    onChange={(e) => setNewTask({ ...newTask, voiceNote: e.target.files[0] })}
+                  />
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      )}
+        <div className="AdminTaskManagement-modal-footer">
+          <button 
+            className="AdminTaskManagement-btn" 
+            onClick={() => setOpenCreateDialog(false)}
+          >
+            Cancel
+          </button>
+          <button
+            className="AdminTaskManagement-btn AdminTaskManagement-btn-primary"
+            onClick={handleCreateTask}
+            disabled={isCreatingTask}
+          >
+            {isCreatingTask ? 'Creating...' : 'Create Task'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
-      {/* Status Change Dialog */}
-      {openStatusDialog && (
-        <div className="AdminTaskManagement-modal AdminTaskManagement-modal-open">
-          <div className="AdminTaskManagement-modal-content">
-            <div className="AdminTaskManagement-modal-header">
-              <h3>Change Task Status</h3>
-              <button 
-                className="AdminTaskManagement-icon-btn"
-                onClick={() => setOpenStatusDialog(false)}
-              >
-                <FiX size={20} />
-              </button>
+  // Edit Task Dialog
+  const renderEditTaskDialog = () => (
+    <div className={`AdminTaskManagement-modal ${openEditDialog ? 'AdminTaskManagement-modal-open' : ''}`}>
+      <div className="AdminTaskManagement-modal-content AdminTaskManagement-modal-large">
+        <div className="AdminTaskManagement-modal-header">
+          <div className="AdminTaskManagement-modal-title-row">
+            <h3>Edit Task: {selectedTask?.title}</h3>
+            <button 
+              className="AdminTaskManagement-icon-btn"
+              onClick={() => setOpenEditDialog(false)}
+            >
+              <FiX size={20} />
+            </button>
+          </div>
+        </div>
+        <div className="AdminTaskManagement-modal-body">
+          <div className="AdminTaskManagement-form-container">
+            <div className="AdminTaskManagement-form-group">
+              <label>Task Title *</label>
+              <input
+                type="text"
+                className="AdminTaskManagement-form-input"
+                placeholder="Enter task title"
+                value={editTask.title}
+                onChange={(e) => setEditTask({ ...editTask, title: e.target.value })}
+              />
             </div>
-            <div className="AdminTaskManagement-modal-body">
+
+            <div className="AdminTaskManagement-form-group">
+              <label>Description *</label>
+              <textarea
+                className="AdminTaskManagement-form-textarea"
+                placeholder="Enter task description"
+                rows={3}
+                value={editTask.description}
+                onChange={(e) => setEditTask({ ...editTask, description: e.target.value })}
+              />
+            </div>
+
+            <div className="AdminTaskManagement-form-group">
+              <label>Due Date & Time *</label>
+              <input
+                type="datetime-local"
+                className="AdminTaskManagement-form-input"
+                value={editTask.dueDateTime ? new Date(editTask.dueDateTime).toISOString().slice(0, 16) : ''}
+                onChange={(e) => setEditTask({ ...editTask, dueDateTime: e.target.value ? new Date(e.target.value) : null })}
+              />
+            </div>
+
+            <div className="AdminTaskManagement-form-row">
               <div className="AdminTaskManagement-form-group">
-                <label>Task</label>
+                <label>Priority</label>
+                <select
+                  className="AdminTaskManagement-form-select"
+                  value={editTask.priority}
+                  onChange={(e) => setEditTask({ ...editTask, priority: e.target.value })}
+                >
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
+
+              <div className="AdminTaskManagement-form-group">
+                <label>Priority Days</label>
                 <input
                   type="text"
                   className="AdminTaskManagement-form-input"
-                  value={selectedTask?.title || ''}
-                  disabled
-                />
-              </div>
-
-              <div className="AdminTaskManagement-form-group">
-                <label>Select Status *</label>
-                <select
-                  className="AdminTaskManagement-form-select"
-                  value={statusChange.status}
-                  onChange={(e) => setStatusChange({ ...statusChange, status: e.target.value })}
-                >
-                  <option value="">Select Status</option>
-                  <option value="pending">Pending</option>
-                  <option value="in-progress">In Progress</option>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
-                  <option value="onhold">On Hold</option>
-                </select>
-              </div>
-
-              <div className="AdminTaskManagement-form-group">
-                <label>Remarks (Optional)</label>
-                <textarea
-                  className="AdminTaskManagement-form-textarea"
-                  placeholder="Enter remarks for status change..."
-                  rows={3}
-                  value={statusChange.remarks}
-                  onChange={(e) => setStatusChange({ ...statusChange, remarks: e.target.value })}
+                  placeholder="Enter priority days"
+                  value={editTask.priorityDays}
+                  onChange={(e) => setEditTask({ ...editTask, priorityDays: e.target.value })}
                 />
               </div>
             </div>
-            <div className="AdminTaskManagement-modal-footer">
-              <button 
-                className="AdminTaskManagement-btn" 
-                onClick={() => setOpenStatusDialog(false)}
-              >
-                Cancel
-              </button>
-              <button
-                className="AdminTaskManagement-btn AdminTaskManagement-btn-primary"
-                onClick={handleStatusChange}
-              >
-                Update Status
-              </button>
+
+            {/* Assign to Users with Search */}
+            <div className="AdminTaskManagement-form-group">
+              <label>Assign to Users</label>
+              <div className="AdminTaskManagement-multi-select-container">
+                <div className="AdminTaskManagement-select-search-bar">
+                  <FiSearch className="AdminTaskManagement-select-search-icon" />
+                  <input
+                    type="text"
+                    className="AdminTaskManagement-select-search-input"
+                    placeholder="Search users..."
+                    value={userSearch}
+                    onChange={(e) => setUserSearch(e.target.value)}
+                  />
+                  {userSearch && (
+                    <button className="AdminTaskManagement-select-search-clear" onClick={() => setUserSearch('')}>
+                      <FiX size={14} />
+                    </button>
+                  )}
+                </div>
+                <div className="AdminTaskManagement-multi-select-options">
+                  {filteredUsers.map((user) => (
+                    <div key={user._id} className="AdminTaskManagement-multi-select-option">
+                      <input
+                        type="checkbox"
+                        id={`AdminTaskManagement-edit-user-${user._id}`}
+                        checked={editTask.assignedUsers.includes(user._id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setEditTask({
+                              ...editTask,
+                              assignedUsers: [...editTask.assignedUsers, user._id]
+                            });
+                          } else {
+                            setEditTask({
+                              ...editTask,
+                              assignedUsers: editTask.assignedUsers.filter(id => id !== user._id)
+                            });
+                          }
+                        }}
+                      />
+                      <label htmlFor={`AdminTaskManagement-edit-user-${user._id}`} className="AdminTaskManagement-multi-select-label">
+                        <div className="AdminTaskManagement-multi-select-text">
+                          <div className="AdminTaskManagement-multi-select-primary">{user.name}</div>
+                          <div className="AdminTaskManagement-multi-select-secondary">
+                            <span>{user.role}</span>
+                            <span className="AdminTaskManagement-separator">•</span>
+                            <span>{user.email}</span>
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+                  ))}
+                  {filteredUsers.length === 0 && (
+                    <div className="AdminTaskManagement-multi-select-empty">
+                      No users found
+                    </div>
+                  )}
+                </div>
+              </div>
+              {editTask.assignedUsers.length > 0 && (
+                <div className="AdminTaskManagement-selected-chips">
+                  {editTask.assignedUsers.map(value => {
+                    const user = users.find(u => u._id === value);
+                    return user ? (
+                      <span key={value} className="AdminTaskManagement-selected-chip">
+                        {user.name}
+                      </span>
+                    ) : null;
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Assign to Groups with Search */}
+            <div className="AdminTaskManagement-form-group">
+              <label>Assign to Groups</label>
+              <div className="AdminTaskManagement-multi-select-container">
+                <div className="AdminTaskManagement-select-search-bar">
+                  <FiSearch className="AdminTaskManagement-select-search-icon" />
+                  <input
+                    type="text"
+                    className="AdminTaskManagement-select-search-input"
+                    placeholder="Search groups..."
+                    value={groupSearch}
+                    onChange={(e) => setGroupSearch(e.target.value)}
+                  />
+                  {groupSearch && (
+                    <button className="AdminTaskManagement-select-search-clear" onClick={() => setGroupSearch('')}>
+                      <FiX size={14} />
+                    </button>
+                  )}
+                </div>
+                <div className="AdminTaskManagement-multi-select-options">
+                  {filteredGroups.map((group) => (
+                    <div key={group._id} className="AdminTaskManagement-multi-select-option">
+                      <input
+                        type="checkbox"
+                        id={`AdminTaskManagement-edit-group-${group._id}`}
+                        checked={editTask.assignedGroups.includes(group._id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setEditTask({
+                              ...editTask,
+                              assignedGroups: [...editTask.assignedGroups, group._id]
+                            });
+                          } else {
+                            setEditTask({
+                              ...editTask,
+                              assignedGroups: editTask.assignedGroups.filter(id => id !== group._id)
+                            });
+                          }
+                        }}
+                      />
+                      <label htmlFor={`AdminTaskManagement-edit-group-${group._id}`} className="AdminTaskManagement-multi-select-label">
+                        <div className="AdminTaskManagement-multi-select-text">
+                          <div className="AdminTaskManagement-multi-select-primary">{group.name}</div>
+                          <div className="AdminTaskManagement-multi-select-secondary">
+                            {group.members?.length || 0} members • {group.description || 'No description'}
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+                  ))}
+                  {filteredGroups.length === 0 && (
+                    <div className="AdminTaskManagement-multi-select-empty">
+                      No groups found
+                    </div>
+                  )}
+                </div>
+              </div>
+              {editTask.assignedGroups.length > 0 && (
+                <div className="AdminTaskManagement-selected-chips">
+                  {editTask.assignedGroups.map(value => {
+                    const group = groups.find(g => g._id === value);
+                    return group ? (
+                      <span key={value} className="AdminTaskManagement-selected-chip AdminTaskManagement-selected-chip-secondary">
+                        {group.name}
+                      </span>
+                    ) : null;
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </div>
-      )}
+        <div className="AdminTaskManagement-modal-footer">
+          <button 
+            className="AdminTaskManagement-btn" 
+            onClick={() => setOpenEditDialog(false)}
+          >
+            Cancel
+          </button>
+          <button
+            className="AdminTaskManagement-btn AdminTaskManagement-btn-primary"
+            onClick={handleEditTask}
+            disabled={isUpdatingTask}
+          >
+            {isUpdatingTask ? 'Updating...' : 'Update Task'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
   // Group Management Dialog
   const renderGroupManagementDialog = () => (
@@ -1703,64 +2551,52 @@ const AdminTaskManagement = () => {
                   <FiCalendar size={48} className="AdminTaskManagement-empty-icon" />
                   <h5>No tasks found</h5>
                   <p>Try adjusting your filters or create a new task</p>
-      {/* Notifications Panel */}
-      {openNotifications && (
-        <div className="AdminTaskManagement-modal AdminTaskManagement-modal-open">
-          <div className="AdminTaskManagement-modal-content AdminTaskManagement-modal-large">
-            <div className="AdminTaskManagement-modal-header">
-              <h3>Notifications ({notifications.length})</h3>
-              <button 
-                className="AdminTaskManagement-icon-btn"
-                onClick={() => setOpenNotifications(false)}
-              >
-                <FiX size={20} />
-              </button>
-            </div>
-            <div className="AdminTaskManagement-modal-body">
-              {notifications.length === 0 ? (
-                <div className="AdminTaskManagement-empty-state">
-                  <FiBell size={32} />
-                  <p>No notifications</p>
-                </div>
-              ) : (
-                <div className="AdminTaskManagement-notifications-list">
-                  {notifications.map((notification) => (
-                    <div 
-                      key={notification._id} 
-                      className={`AdminTaskManagement-notification-item ${!notification.isRead ? 'AdminTaskManagement-notification-unread' : ''}`}
-                    >
-                      <div className="AdminTaskManagement-notification-icon">
-                        {notification.type === 'task_assigned' && <FiUserCheck />}
-                        {notification.type === 'status_updated' && <FiActivity />}
-                        {notification.type === 'task_overdue' && <FiAlertTriangle />}
-                        {notification.type === 'remark_added' && <FiMessageSquare />}
-                      </div>
-                      <div className="AdminTaskManagement-notification-content">
-                        <div className="AdminTaskManagement-notification-title">{notification.title}</div>
-                        <div className="AdminTaskManagement-notification-message">{notification.message}</div>
-                        <div className="AdminTaskManagement-notification-date">
-                          {new Date(notification.createdAt).toLocaleString()}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
                 </div>
               )}
+            </>
+          )}
+
+          {activeTab === 1 && (
+            <div>
+              <h4>User Management ({users.length} users)</h4>
+              <div className="AdminTaskManagement-users-grid">
+                {users.map(user => (
+                  <div key={user._id} className="AdminTaskManagement-user-card">
+                    <div className="AdminTaskManagement-user-card-content">
+                      <div className="AdminTaskManagement-user-card-avatar">
+                        {user.name?.charAt(0)?.toUpperCase() || 'U'}
+                      </div>
+                      <div className="AdminTaskManagement-user-card-info">
+                        <h5>{user.name}</h5>
+                        <p>{user.role}</p>
+                        <small>{user.email}</small>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
+
+          {activeTab === 2 && renderGroupManagementTab()}
         </div>
-      )}
+      </div>
+
+      {/* Dialogs */}
+      {renderCreateTaskDialog()}
+      {renderEditTaskDialog()}
+      {renderGroupManagementDialog()}
+      {renderStatusChangeDialog()}
+      {renderNotificationsPanel()}
+      {renderRemarksDialog()}
+      {renderActivityLogsDialog()}
+      {renderUserStatusDialog()}
+      {renderImageZoomModal()}
 
       {/* Snackbar */}
       {snackbar.open && (
         <div className={`AdminTaskManagement-snackbar AdminTaskManagement-snackbar-${snackbar.severity}`}>
           {snackbar.message}
-          <button 
-            className="AdminTaskManagement-snackbar-close"
-            onClick={() => setSnackbar({ ...snackbar, open: false })}
-          >
-            <FiX size={16} />
-          </button>
         </div>
       )}
     </div>
