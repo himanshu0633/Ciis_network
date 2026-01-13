@@ -1386,3 +1386,46 @@
     text-align: center;
   }
 }
+/* Late status colors */
+.status-late {
+  color: #ff9800 !important;
+  background-color: rgba(255, 152, 0, 0.1) !important;
+  border-color: #ff9800 !important;
+}
+
+/* Calendar colors */
+.calendar-day.late {
+  background-color: #fff3e0;
+  border: 2px solid #ff9800;
+  color: #e65100;
+}
+
+.calendar-day.late.day-today {
+  background-color: #ffecb3;
+  border: 2px solid #ff9800;
+  color: #e65100;
+}
+
+/* Legend color */
+.legend-color.color-late {
+  background-color: #ff9800;
+}
+
+/* Stat card for late */
+.stat-card-late {
+  background: linear-gradient(135deg, #fff3e0 0%, #ffecb3 100%);
+  border: 1px solid #ff9800;
+}
+
+.stat-card-late .stat-icon-container.icon-late {
+  background-color: #ff9800;
+  color: white;
+}
+
+.stat-card-late .stat-value {
+  color: #e65100;
+}
+
+.stat-card-late .stat-label {
+  color: #ff9800;
+}

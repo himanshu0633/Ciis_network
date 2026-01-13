@@ -10,11 +10,11 @@ import {
   FiClock, FiCalendar, FiChevronLeft, FiChevronRight,
   FiPlay, FiSquare, FiRefreshCw, FiBriefcase, FiUser,
   FiCheckCircle, FiAlertCircle, FiTrendingUp, FiActivity,
-  FiX
+  FiX, FiAlertTriangle
 } from 'react-icons/fi';
 import {
   MdWork, MdOutlineCrop54, MdBeachAccess, MdSick,
-  MdOutlineWatchLater, MdToday, MdAccessTime
+  MdOutlineWatchLater, MdToday, MdAccessTime, MdOutlineAlarm
 } from 'react-icons/md';
 
 const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -73,9 +73,19 @@ const UserDashboard = () => {
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
 
+  // Add lateDates array
+  const lateDates = useMemo(() => {
+    return attendanceData
+      .filter(record => record.status === 'LATE')
+      .map(record => {
+        const d = new Date(record.date);
+        return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+      });
+  }, [attendanceData]);
+
   const markedDates = useMemo(() => {
     return attendanceData
-      .filter(record => record.status === 'PRESENT') // UPPERCASE
+      .filter(record => record.status === 'PRESENT')
       .map(record => {
         const d = new Date(record.date);
         return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
@@ -84,7 +94,7 @@ const UserDashboard = () => {
 
   const halfDayDates = useMemo(() => {
     return attendanceData
-      .filter(record => record.status === 'HALF DAY') // UPPERCASE with space
+      .filter(record => record.status === 'HALF DAY')
       .map(record => {
         const d = new Date(record.date);
         return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
@@ -93,7 +103,7 @@ const UserDashboard = () => {
 
   const absentDates = useMemo(() => {
     return attendanceData
-      .filter(record => record.status === 'ABSENT') // UPPERCASE
+      .filter(record => record.status === 'ABSENT')
       .map(record => {
         const d = new Date(record.date);
         return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
@@ -122,21 +132,28 @@ const UserDashboard = () => {
       const d = new Date(record.date);
       return d.getMonth() === currentMonth && 
              d.getFullYear() === currentYear && 
-             record.status === 'PRESENT'; // UPPERCASE
+             record.status === 'PRESENT';
+    }).length;
+
+    const lateDays = attendanceData.filter(record => {
+      const d = new Date(record.date);
+      return d.getMonth() === currentMonth && 
+             d.getFullYear() === currentYear && 
+             record.status === 'LATE';
     }).length;
 
     const halfDays = attendanceData.filter(record => {
       const d = new Date(record.date);
       return d.getMonth() === currentMonth && 
              d.getFullYear() === currentYear && 
-             record.status === 'HALF DAY'; // UPPERCASE with space
+             record.status === 'HALF DAY';
     }).length;
 
     const absentDays = attendanceData.filter(record => {
       const d = new Date(record.date);
       return d.getMonth() === currentMonth && 
              d.getFullYear() === currentYear && 
-             record.status === 'ABSENT'; // UPPERCASE
+             record.status === 'ABSENT';
     }).length;
 
     const leavesTaken = leaveDates.filter(dateStr => {
@@ -146,6 +163,7 @@ const UserDashboard = () => {
 
     return {
       presentDays,
+      lateDays,
       halfDays,
       absentDays,
       leavesTaken
@@ -161,6 +179,7 @@ const UserDashboard = () => {
     const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
     
     if (markedDates.includes(key)) return "present";
+    if (lateDates.includes(key)) return "late";
     if (halfDayDates.includes(key)) return "halfday";
     if (leaveDates.includes(key)) return "leave";
     if (absentDates.includes(key)) return "absent";
@@ -179,6 +198,7 @@ const UserDashboard = () => {
     const status = getDayStatus(day);
     switch(status) {
       case 'present': return '✓';
+      case 'late': return 'L';
       case 'halfday': return '½';
       case 'leave': return 'L';
       case 'absent': return '✗';
@@ -323,6 +343,7 @@ const UserDashboard = () => {
   const getStatusColor = (status) => {
     switch(status) {
       case 'PRESENT': return 'status-present';
+      case 'LATE': return 'status-late';
       case 'HALF DAY': return 'status-halfday';
       case 'ABSENT': return 'status-absent';
       default: return 'status-default';
@@ -501,7 +522,7 @@ const UserDashboard = () => {
         </div>
       </div>
 
-      {/* Current Month Stats */}
+      {/* Current Month Stats - ADD LATE STAT CARD */}
       <div className="dashboard-stats-grid">
         <div className="dashboard-stat-card stat-card-present">
           <div className="stat-card-header">
@@ -514,6 +535,22 @@ const UserDashboard = () => {
           <div className="stat-label">Days Present</div>
           <div className="stat-footer">
             <FiTrendingUp className="stat-trend-icon" />
+            <span className="stat-month-text">Tracked in {monthNames[currentMonth]}</span>
+          </div>
+        </div>
+
+        {/* NEW LATE STAT CARD */}
+        <div className="dashboard-stat-card stat-card-late">
+          <div className="stat-card-header">
+            <div className="stat-icon-container icon-late">
+              <MdOutlineAlarm className="stat-icon" />
+            </div>
+            <div className="stat-current-month">Current Month</div>
+          </div>
+          <div className="stat-value">{monthlyStats.lateDays}</div>
+          <div className="stat-label">Late Days</div>
+          <div className="stat-footer">
+            <FiAlertTriangle className="stat-trend-icon" />
             <span className="stat-month-text">Tracked in {monthNames[currentMonth]}</span>
           </div>
         </div>
@@ -547,21 +584,6 @@ const UserDashboard = () => {
             <span className="stat-month-text">Approved in {monthNames[currentMonth]}</span>
           </div>
         </div>
-
-        <div className="dashboard-stat-card stat-card-absent">
-          <div className="stat-card-header">
-            <div className="stat-icon-container icon-absent">
-              <MdSick className="stat-icon" />
-            </div>
-            <div className="stat-current-month">Current Month</div>
-          </div>
-          <div className="stat-value">{monthlyStats.absentDays}</div>
-          <div className="stat-label">Absent Days</div>
-          <div className="stat-footer">
-            <FiAlertCircle className="stat-trend-icon" />
-            <span className="stat-month-text">Tracked in {monthNames[currentMonth]}</span>
-          </div>
-        </div>
       </div>
 
       <div className="dashboard-content-grid">
@@ -580,7 +602,7 @@ const UserDashboard = () => {
               </div>
             </div>
             
-            {/* <div className="calendar-controls">
+            <div className="calendar-controls">
               <button
                 onClick={handlePrevMonth}
                 className="calendar-nav-btn"
@@ -599,7 +621,7 @@ const UserDashboard = () => {
               >
                 <FiChevronRight className="nav-icon" />
               </button>
-            </div> */}
+            </div>
           </div>
 
           <div className="calendar-body">
@@ -647,6 +669,10 @@ const UserDashboard = () => {
             <div className="legend-item">
               <div className="legend-color color-present"></div>
               <span>Present</span>
+            </div>
+            <div className="legend-item">
+              <div className="legend-color color-late"></div>
+              <span>Late</span>
             </div>
             <div className="legend-item">
               <div className="legend-color color-halfday"></div>
@@ -698,9 +724,10 @@ const UserDashboard = () => {
                   <div className="activity-item-content">
                     <div className={`activity-status-icon ${getStatusColor(record.status)}`}>
                       {record.status === 'PRESENT' && <FiCheckCircle className="status-icon" />}
+                      {record.status === 'LATE' && <FiAlertTriangle className="status-icon" />}
                       {record.status === 'HALF DAY' && <FiAlertCircle className="status-icon" />}
                       {record.status === 'ABSENT' && <FiAlertCircle className="status-icon" />}
-                      {!['PRESENT', 'HALF DAY', 'ABSENT'].includes(record.status) && <FiClock className="status-icon" />}
+                      {!['PRESENT', 'LATE', 'HALF DAY', 'ABSENT'].includes(record.status) && <FiClock className="status-icon" />}
                     </div>
                     <div className="activity-details">
                       <div className="activity-date">
