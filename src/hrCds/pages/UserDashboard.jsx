@@ -207,25 +207,28 @@ const UserDashboard = () => {
     }
   };
 
-  const fetchAttendanceData = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get('/attendance/list', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = response.data?.data || [];
-      setAttendanceData(data);
-      
-      const sortedData = [...data].sort((a, b) => new Date(b.date) - new Date(a.date));
-      setRecentActivity(sortedData.slice(0, 5));
-    } catch (error) {
-      console.error('Error fetching attendance:', error);
-      toast.error('Failed to load attendance data');
-    } finally {
-      setLoading(false);
-    }
-  };
-
+const fetchAttendanceData = async () => {
+  try {
+    setLoading(true);
+    const response = await axios.get('/attendance/list', {
+      params: {
+        month: calendarMonth,  // Pass current calendar month
+        year: calendarYear     // Pass current calendar year
+      },
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = response.data?.data || [];
+    setAttendanceData(data);
+    
+    const sortedData = [...data].sort((a, b) => new Date(b.date) - new Date(a.date));
+    setRecentActivity(sortedData.slice(0, 5));
+  } catch (error) {
+    console.error('Error fetching attendance:', error);
+    toast.error('Failed to load attendance data');
+  } finally {
+    setLoading(false);
+  }
+};
   const fetchLeaveData = async () => {
     try {
       const response = await axios.get('/leaves/status', {
@@ -315,30 +318,63 @@ const UserDashboard = () => {
     }
   };
 
-  const handlePrevMonth = () => {
-    setCalendarMonth(prev => {
-      if (prev === 0) {
-        setCalendarYear(prevYear => prevYear - 1);
-        return 11;
-      }
-      return prev - 1;
-    });
-  };
+const handlePrevMonth = () => {
+  setCalendarMonth(prev => {
+    if (prev === 0) {
+      const newYear = calendarYear - 1;
+      setCalendarYear(newYear);
+      
+      // Fetch data for new month
+      setTimeout(() => {
+        fetchAttendanceData();
+      }, 100);
+      
+      return 11;
+    }
+    const newMonth = prev - 1;
+    
+    // Fetch data for new month
+    setTimeout(() => {
+      fetchAttendanceData();
+    }, 100);
+    
+    return newMonth;
+  });
+};
 
-  const handleNextMonth = () => {
-    setCalendarMonth(prev => {
-      if (prev === 11) {
-        setCalendarYear(prevYear => prevYear + 1);
-        return 0;
-      }
-      return prev + 1;
-    });
-  };
+const handleNextMonth = () => {
+  setCalendarMonth(prev => {
+    if (prev === 11) {
+      const newYear = calendarYear + 1;
+      setCalendarYear(newYear);
+      
+      // Fetch data for new month
+      setTimeout(() => {
+        fetchAttendanceData();
+      }, 100);
+      
+      return 0;
+    }
+    const newMonth = prev + 1;
+    
+    // Fetch data for new month
+    setTimeout(() => {
+      fetchAttendanceData();
+    }, 100);
+    
+    return newMonth;
+  });
+};
 
-  const resetToCurrentMonth = () => {
-    setCalendarMonth(currentDate.getMonth());
-    setCalendarYear(currentDate.getFullYear());
-  };
+const resetToCurrentMonth = () => {
+  setCalendarMonth(currentDate.getMonth());
+  setCalendarYear(currentDate.getFullYear());
+  
+  // Fetch data for current month
+  setTimeout(() => {
+    fetchAttendanceData();
+  }, 100);
+};
 
   const getStatusColor = (status) => {
     switch(status) {
@@ -349,28 +385,47 @@ const UserDashboard = () => {
       default: return 'status-default';
     }
   };
+// Fix the useEffect structure
+useEffect(() => {
+  // Initial load when component mounts
+  const loadInitialData = async () => {
+    await fetchAttendanceData();
+    await fetchLeaveData();
+    await fetchCurrentStatus();
+  };
+  
+  loadInitialData();
+}, []); // Empty dependency array - runs only once on mount
 
-  useEffect(() => {
-    const loadData = async () => {
+useEffect(() => {
+  // Timer effect - separate from data fetching
+  if (isRunning) {
+    intervalRef.current = setInterval(() => {
+      setTimer(prev => prev + 1);
+    }, 1000);
+  } else {
+    clearInterval(intervalRef.current);
+  }
+  
+  return () => clearInterval(intervalRef.current);
+}, [isRunning]);
+
+useEffect(() => {
+  // Fetch attendance data when calendar month/year changes
+  // But only if we already have some data (to avoid double fetching on initial load)
+  if (attendanceData.length > 0 || loading) {
+    const fetchData = async () => {
       await fetchAttendanceData();
-      await fetchLeaveData();
-      await fetchCurrentStatus();
     };
-    loadData();
-  }, []);
-
-  useEffect(() => {
-    if (isRunning) {
-      intervalRef.current = setInterval(() => {
-        setTimer(prev => prev + 1);
-      }, 1000);
-    } else {
-      clearInterval(intervalRef.current);
-    }
     
-    return () => clearInterval(intervalRef.current);
-  }, [isRunning]);
-
+    // Add a small debounce to prevent rapid calls
+    const timer = setTimeout(() => {
+      fetchData();
+    }, 300);
+    
+    return () => clearTimeout(timer);
+  }
+}, [calendarMonth, calendarYear]);
   const calendarDays = getCalendarGrid(calendarYear, calendarMonth);
 
   const isMobile = useIsMobile();

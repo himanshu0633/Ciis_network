@@ -119,7 +119,7 @@ const UserCreateTask = () => {
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
-    dueDateTime: null,
+    dueDateTime: '',
     priority: 'medium',
     priorityDays: '1',
     files: null,
@@ -737,79 +737,159 @@ const manualCheckOverdue = async () => {
     }
   };
 
-  // Create task
-  const handleCreateTask = async () => {
-    if (authError || !userId) {
-      showSnackbar('Please log in to create tasks', 'error');
-      return;
-    }
+const handleCreateTask = async () => {
+  if (authError || !userId) {
+    showSnackbar('Please log in to create tasks', 'error');
+    return;
+  }
 
-    if (!newTask.title || !newTask.description || !newTask.dueDateTime) {
-      showSnackbar('Please fill all required fields (Title, Description, Due Date)', 'error');
-      return;
-    }
+  if (!newTask.title || !newTask.description || !newTask.dueDateTime) {
+    showSnackbar('Please fill all required fields (Title, Description, Due Date)', 'error');
+    return;
+  }
 
-    if (newTask.dueDateTime && new Date(newTask.dueDateTime) < new Date()) {
-      showSnackbar('Due date cannot be in the past', 'error');
-      return;
-    }
+  setIsCreatingTask(true);
 
-    setIsCreatingTask(true);
-
-    try {
-      const formData = new FormData();
-      formData.append('title', newTask.title);
-      formData.append('description', newTask.description);
-      formData.append('dueDateTime', new Date(newTask.dueDateTime).toISOString());
-      formData.append('priorityDays', newTask.priorityDays || '1');
-      formData.append('priority', newTask.priority);
-
-      if (newTask.files) {
-        for (let i = 0; i < newTask.files.length; i++) {
-          formData.append('files', newTask.files[i]);
-        }
-      }
-
-      if (newTask.voiceNote) {
-        formData.append('voiceNote', newTask.voiceNote);
-      }
-
-      await axios.post('/task/create-self', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        }
-      });
-
-      setOpenDialog(false);
-      showSnackbar('Task created successfully', 'success');
-      
-      setNewTask({
-        title: '', 
-        description: '', 
-        dueDateTime: null, 
-        priority: 'medium', 
-        priorityDays: '1', 
-        files: null, 
-        voiceNote: null,
-      });
-
-      fetchMyTasks();
-      fetchOverdueTasks();
-      fetchNotifications();
-
-    } catch (err) {
-      console.error('Error creating task:', err);
-      
-      if (err.response?.status === 401) {
-        setAuthError(true);
-        showSnackbar('Session expired. Please log in again.', 'error');
+  try {
+    let dueDate;
+    
+    // Handle date parsing
+    if (newTask.dueDateTime instanceof Date) {
+      dueDate = newTask.dueDateTime;
+    } else if (typeof newTask.dueDateTime === 'string') {
+      // Parse the datetime-local input (format: YYYY-MM-DDTHH:mm)
+      if (newTask.dueDateTime.includes('T')) {
+        // Add seconds if missing
+        const dateStr = newTask.dueDateTime.includes(':') && newTask.dueDateTime.split(':').length === 2 
+          ? `${newTask.dueDateTime}:00` 
+          : newTask.dueDateTime;
+        
+        dueDate = new Date(dateStr);
       } else {
-        showSnackbar(err?.response?.data?.error || 'Task creation failed', 'error');
+        dueDate = new Date(newTask.dueDateTime);
       }
-    } finally {
+    } else {
+      showSnackbar('Invalid date format', 'error');
       setIsCreatingTask(false);
+      return;
     }
-  };
+
+    // Check if date is valid
+    if (isNaN(dueDate.getTime())) {
+      console.error('Invalid date:', newTask.dueDateTime);
+      showSnackbar('Invalid date format. Please select a valid date and time.', 'error');
+      setIsCreatingTask(false);
+      return;
+    }
+
+    // Check if dueDateTime is in the past (with 5 minutes buffer for timezone)
+    const now = new Date();
+    const buffer = 5 * 60 * 1000; // 5 minutes buffer
+    
+    if (dueDate < new Date(now.getTime() - buffer)) {
+      showSnackbar('Due date cannot be in the past. Please select a future date and time.', 'error');
+      setIsCreatingTask(false);
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('title', newTask.title);
+    formData.append('description', newTask.description);
+    
+    // Send as ISO string
+    formData.append('dueDateTime', dueDate.toISOString());
+
+    formData.append('priorityDays', newTask.priorityDays || '1');
+    formData.append('priority', newTask.priority);
+
+    if (newTask.files) {
+      for (let i = 0; i < newTask.files.length; i++) {
+        formData.append('files', newTask.files[i]);
+      }
+    }
+
+    if (newTask.voiceNote) {
+      formData.append('voiceNote', newTask.voiceNote);
+    }
+
+    console.log('📤 Creating task with data:', {
+      title: newTask.title,
+      description: newTask.description,
+      dueDateTime: dueDate.toISOString(),
+      dueDateTimeLocal: newTask.dueDateTime,
+      priority: newTask.priority,
+      priorityDays: newTask.priorityDays
+    });
+
+    const response = await axios.post('/task/create-self', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      }
+    });
+
+    console.log('✅ Task created successfully:', response.data);
+
+    setOpenDialog(false);
+    showSnackbar('Task created successfully', 'success');
+    
+    // Reset form
+    setNewTask({
+      title: '', 
+      description: '', 
+      dueDateTime: '',
+      priority: 'medium', 
+      priorityDays: '1', 
+      files: null, 
+      voiceNote: null,
+    });
+
+    // Refresh tasks
+    fetchMyTasks();
+    fetchNotifications();
+
+  } catch (err) {
+    console.error('❌ Full error creating task:', err);
+    console.error('❌ Error response:', err.response?.data);
+    
+    if (err.response?.status === 401) {
+      setAuthError(true);
+      showSnackbar('Session expired. Please log in again.', 'error');
+    } else if (err.response?.status === 400) {
+      const errorMsg = err.response?.data?.error || 'Invalid input. Please check your data.';
+      showSnackbar(errorMsg, 'error');
+    } else {
+      const errorMsg = err.response?.data?.error || err.response?.data?.message || 'Task creation failed';
+      showSnackbar(errorMsg, 'error');
+    }
+  } finally {
+    setIsCreatingTask(false);
+  }
+};
+
+// Helper function to format date to required backend format
+// You can add this as a standalone function or use useCallback
+const formatDateForBackend = (dateTimeString) => {
+  if (!dateTimeString) return '';
+  
+  const date = new Date(dateTimeString);
+  
+  // Format: DD/MM/YYYY
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  
+  // Format: HH:MM AM/PM
+  let hours = date.getHours();
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  
+  hours = hours % 12;
+  hours = hours ? hours : 12; // the hour '0' should be '12'
+  const formattedHours = String(hours).padStart(2, '0');
+  
+  // Return format: DD/MM/YYYY, HH:MM AM/PM
+  return `${day}/${month}/${year}, ${formattedHours}:${minutes} ${ampm}`;
+};
 
   // Logout
   const handleLogout = () => {
@@ -2117,13 +2197,26 @@ const manualCheckOverdue = async () => {
             <div className={`user-create-task-flex ${isMobile ? 'user-create-task-flex-column' : 'user-create-task-gap-2'}`}>
               <div className="user-create-task-form-control" style={{ flex: 1 }}>
                 <label>Due Date & Time *</label>
-                <input
-                  type="datetime-local"
-                  className="user-create-task-input"
-                  value={newTask.dueDateTime ? new Date(newTask.dueDateTime).toISOString().slice(0, 16) : ''}
-                  onChange={(e) => setNewTask({ ...newTask, dueDateTime: e.target.value })}
-                  min={new Date().toISOString().slice(0, 16)}
-                />
+                
+<input
+  type="datetime-local"
+  className="user-create-task-input"
+  value={newTask.dueDateTime || ''}
+  onChange={(e) => {
+    const value = e.target.value;
+    console.log('📅 Selected datetime-local value:', value);
+    
+    // Ensure proper format
+    let formattedValue = value;
+    if (value && value.includes('T') && value.split(':').length === 2) {
+      // Add seconds if missing
+      formattedValue = `${value}:00`;
+    }
+    
+    setNewTask({ ...newTask, dueDateTime: formattedValue });
+  }}
+  min={new Date().toISOString().slice(0, 16)}
+/>
               </div>
 
               <div className="user-create-task-form-control" style={{ flex: 1 }}>

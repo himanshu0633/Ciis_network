@@ -18,6 +18,8 @@ import {
   FiX,
   FiBarChart2,
   FiRefreshCw,
+  FiAlertTriangle,
+  FiWatch
 } from "react-icons/fi";
 import '../Css/Attendance.css';
 
@@ -37,6 +39,7 @@ const Attendance = () => {
   const [isMobile, setIsMobile] = useState(false);
   const [stats, setStats] = useState({
     present: 0,
+    late: 0,
     absent: 0,
     halfDay: 0,
     total: 0,
@@ -133,15 +136,21 @@ const Attendance = () => {
     console.log("Calculating stats for data:", data);
 
     const present = data.filter((record) => record.status === "PRESENT").length;
+    const late = data.filter((record) => record.status === "LATE").length;
     const absent = data.filter((record) => record.status === "ABSENT").length;
     const halfDay = data.filter(
       (record) => record.status === "HALF DAY"
     ).length;
     const total = data.length;
-    const percentage = total > 0 ? Math.round((present / total) * 100) : 0;
+    
+    // Calculate percentage based on (PRESENT + LATE) / total
+    // Since LATE is considered a working day
+    const workingDays = present + late;
+    const percentage = total > 0 ? Math.round((workingDays / total) * 100) : 0;
 
     console.log("Calculated stats:", {
       present,
+      late,
       absent,
       halfDay,
       total,
@@ -150,6 +159,7 @@ const Attendance = () => {
 
     setStats({
       present,
+      late,
       absent,
       halfDay,
       total,
@@ -192,6 +202,8 @@ const Attendance = () => {
     switch (status) {
       case "PRESENT":
         return <FiCheckCircle className="Attendance-status-icon" />;
+      case "LATE":
+        return <FiAlertTriangle className="Attendance-status-icon" />;
       case "ABSENT":
         return <FiMinusCircle className="Attendance-status-icon" />;
       case "HALF DAY":
@@ -205,12 +217,29 @@ const Attendance = () => {
     switch (status) {
       case "PRESENT":
         return "#4caf50";
+      case "LATE":
+        return "#ff9800";
       case "ABSENT":
         return "#f44336";
       case "HALF DAY":
-        return "#ff9800";
+        return "#ff5722";
       default:
         return "#757575";
+    }
+  };
+
+  const getStatusDisplayText = (status) => {
+    switch (status) {
+      case "PRESENT":
+        return "PRESENT";
+      case "LATE":
+        return "LATE";
+      case "ABSENT":
+        return "ABSENT";
+      case "HALF DAY":
+        return "HALF DAY";
+      default:
+        return status;
     }
   };
 
@@ -219,8 +248,13 @@ const Attendance = () => {
       formatDate(record.date).toLowerCase().includes(search.toLowerCase()) ||
       (record.status &&
         record.status.toLowerCase().includes(search.toLowerCase()));
+    
     const matchesStatus =
-      statusFilter === "ALL" || record.status === statusFilter;
+      statusFilter === "ALL" || 
+      (statusFilter === "LATE" ? record.status === "LATE" :
+       statusFilter === "PRESENT" ? record.status === "PRESENT" :
+       statusFilter === "ABSENT" ? record.status === "ABSENT" :
+       statusFilter === "HALF DAY" ? record.status === "HALF DAY" : true);
 
     const recordDate = new Date(record.date);
     const now = new Date();
@@ -276,15 +310,17 @@ const Attendance = () => {
         "Total Time",
         "Late By",
         "Early Leave",
+        "Overtime",
       ];
       const csvData = filteredData.map((record) => [
         formatDate(record.date),
         formatTime(record.inTime),
         formatTime(record.outTime),
-        record.status,
+        getStatusDisplayText(record.status),
         record.totalTime || "00:00:00",
         record.lateBy || "00:00:00",
         record.earlyLeave || "00:00:00",
+        record.overTime || "00:00:00",
       ]);
 
       const csvContent = [headers, ...csvData]
@@ -316,6 +352,9 @@ const Attendance = () => {
     setSearch(date ? formatDate(date) : "");
     setShowCalendar(false);
   };
+
+  // Status options including LATE
+  const statusOptions = ["ALL", "PRESENT", "LATE", "HALF DAY", "ABSENT"];
 
   if (loading) {
     return (
@@ -420,7 +459,7 @@ const Attendance = () => {
         {/* Filter Menu */}
         {showFilterMenu && !isMobile && (
           <div className="Attendance-filter-menu">
-            {["ALL", "PRESENT", "ABSENT", "HALF DAY"].map((status) => (
+            {statusOptions.map((status) => (
               <button
                 key={status}
                 className={`Attendance-filter-menu-item ${
@@ -466,7 +505,7 @@ const Attendance = () => {
             </div>
             <div className="Attendance-filter-options">
               <h4>Status Filter</h4>
-              {["ALL", "PRESENT", "ABSENT", "HALF DAY"].map((status) => (
+              {statusOptions.map((status) => (
                 <button
                   key={status}
                   className={`Attendance-filter-option ${
@@ -485,78 +524,86 @@ const Attendance = () => {
         </div>
       )}
 
-      {/* Stats Cards */}
+      {/* Stats Cards - Now includes LATE */}
       <div className="Attendance-stats-grid">
-  {[
-    {
-      key: "present",
-      label: "Present Days",
-      value: stats.present,
-      icon: FiCheckCircle,
-      color: "success",
-      extra: `${stats.percentage}%`,
-    },
-    {
-      key: "absent",
-      label: "Absent Days",
-      value: stats.absent,
-      icon: FiMinusCircle,
-      color: "error",
-    },
-    {
-      key: "halfDay",
-      label: "Half Days",
-      value: stats.halfDay,
-      icon: FiAlertCircle,
-      color: "warning",
-    },
-    {
-      key: "total",
-      label: "Total Records",
-      value: stats.total,
-      icon: FiBarChart2,
-      color: "info",
-    },
-  ]
-    .filter(stat => stat.value > 0)   // 👈 IMPORTANT LINE
-    .map((stat) => (
-      <div
-        key={stat.key}
-        className={`Attendance-stat-card ${
-          statusFilter === stat.key.toUpperCase()
-            ? "Attendance-active"
-            : ""
-        }`}
-        onClick={() =>
-          setStatusFilter(
-            statusFilter === stat.key.toUpperCase()
-              ? "ALL"
-              : stat.key.toUpperCase()
-          )
-        }
-      >
-        <div className="Attendance-stat-card-content">
-          <div className="Attendance-stat-icon-container">
-            <stat.icon
-              className={`Attendance-stat-icon Attendance-${stat.color}`}
-            />
-          </div>
-          <div className="Attendance-stat-details">
-            <p className="Attendance-stat-label">{stat.label}</p>
-            <div className="Attendance-stat-value-container">
-              <h3 className="Attendance-stat-value">{stat.value}</h3>
-              {stat.extra && (
-                <span className="Attendance-stat-extra">
-                  {stat.extra}
-                </span>
-              )}
+        {[
+          {
+            key: "present",
+            label: "Present Days",
+            value: stats.present,
+            icon: FiCheckCircle,
+            color: "success",
+            extra: `${stats.percentage}%`,
+          },
+          {
+            key: "late",
+            label: "Late Days",
+            value: stats.late,
+            icon: FiAlertTriangle,
+            color: "warning",
+          },
+          {
+            key: "halfDay",
+            label: "Half Days",
+            value: stats.halfDay,
+            icon: FiAlertCircle,
+            color: "warning",
+          },
+          {
+            key: "absent",
+            label: "Absent Days",
+            value: stats.absent,
+            icon: FiMinusCircle,
+            color: "error",
+          },
+          {
+            key: "total",
+            label: "Total Records",
+            value: stats.total,
+            icon: FiBarChart2,
+            color: "info",
+          },
+        ]
+          .filter(stat => stat.value > 0 || stat.key === "total") // Show total even if 0
+          .map((stat) => (
+            <div
+              key={stat.key}
+              className={`Attendance-stat-card ${
+                statusFilter === stat.key.toUpperCase()
+                  ? "Attendance-active"
+                  : ""
+              }`}
+              onClick={() => {
+                if (stat.key !== "total") {
+                  setStatusFilter(
+                    statusFilter === stat.key.toUpperCase()
+                      ? "ALL"
+                      : stat.key.toUpperCase()
+                  );
+                }
+              }}
+            >
+              <div className="Attendance-stat-card-content">
+                <div className="Attendance-stat-icon-container">
+                  <stat.icon
+                    className={`Attendance-stat-icon Attendance-${stat.color}`}
+                  />
+                </div>
+                <div className="Attendance-stat-details">
+                  <p className="Attendance-stat-label">{stat.label}</p>
+                  <div className="Attendance-stat-value-container">
+                    <h3 className="Attendance-stat-value">{stat.value}</h3>
+                    {stat.extra && (
+                      <span className="Attendance-stat-extra">
+                        {stat.extra}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          ))}
       </div>
-    ))}
-</div>
-
 
       {/* Active Filters Display */}
       {(statusFilter !== "ALL" || timeRange !== "ALL") && (
@@ -565,7 +612,7 @@ const Attendance = () => {
           <div className="Attendance-filter-chips">
             {statusFilter !== "ALL" && (
               <div className="Attendance-filter-chip">
-                <span>Status: {statusFilter}</span>
+                <span>Status: {getStatusDisplayText(statusFilter)}</span>
                 <button onClick={() => setStatusFilter("ALL")}>×</button>
               </div>
             )}
@@ -584,6 +631,12 @@ const Attendance = () => {
         <h3>
           Showing {filteredData.length} of {attendance.length} records
         </h3>
+        {stats.late > 0 && (
+          <div className="Attendance-late-info">
+            <FiWatch className="Attendance-late-info-icon" />
+            <span>{stats.late} late day(s) recorded</span>
+          </div>
+        )}
       </div>
 
       {/* Desktop/Tablet Table */}
@@ -597,58 +650,73 @@ const Attendance = () => {
                 <th>Logout</th>
                 <th>Status</th>
                 <th>Total Time</th>
+                <th>Late By</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredData.length > 0 ? (
-                filteredData.map((record) => (
-                  <tr
-                    key={record._id}
-                    className={`Attendance-table-row Attendance-status-${record.status.toLowerCase().replace(" ", "-")}`}
-                    onClick={() => openDetailsModal(record)}
-                  >
-                    <td>
-                      <strong>{formatDate(record.date)}</strong>
-                    </td>
-                    <td>
-                      <div className="Attendance-time-cell">
-                        <FiClock />
-                        <span>{formatTime(record.inTime)}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="Attendance-time-cell">
-                        <FiClock />
-                        <span>{formatTime(record.outTime)}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <div
-                        className={`Attendance-status-chip Attendance-status-${record.status.toLowerCase().replace(" ", "-")}`}
-                      >
-                        {getStatusIcon(record.status)}
-                        <span>{record.status}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <strong className="Attendance-total-time">
-                        {record.totalTime || "00:00:00"}
-                      </strong>
-                    </td>
-                    <td>
-                      <button
-                        className="Attendance-view-details-button"
-                        onClick={() => openDetailsModal(record)}
-                      >
-                        <FiEye />
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                filteredData.map((record) => {
+                  const statusClass = record.status.toLowerCase().replace(" ", "-");
+                  return (
+                    <tr
+                      key={record._id}
+                      className={`Attendance-table-row Attendance-status-${statusClass}`}
+                      onClick={() => openDetailsModal(record)}
+                    >
+                      <td>
+                        <strong>{formatDate(record.date)}</strong>
+                      </td>
+                      <td>
+                        <div className="Attendance-time-cell">
+                          <FiClock />
+                          <span>{formatTime(record.inTime)}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="Attendance-time-cell">
+                          <FiClock />
+                          <span>{formatTime(record.outTime)}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <div
+                          className={`Attendance-status-chip Attendance-status-${statusClass}`}
+                        >
+                          {getStatusIcon(record.status)}
+                          <span>{getStatusDisplayText(record.status)}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <strong className="Attendance-total-time">
+                          {record.totalTime || "00:00:00"}
+                        </strong>
+                      </td>
+                      <td>
+                        <div className="Attendance-late-cell">
+                          {record.lateBy && record.lateBy !== "00:00:00" ? (
+                            <span className="Attendance-late-badge">
+                              {record.lateBy}
+                            </span>
+                          ) : (
+                            <span className="Attendance-no-late">--</span>
+                          )}
+                        </div>
+                      </td>
+                      <td>
+                        <button
+                          className="Attendance-view-details-button"
+                          onClick={() => openDetailsModal(record)}
+                        >
+                          <FiEye />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
               ) : (
                 <tr>
-                  <td colSpan="6" className="Attendance-no-data-cell">
+                  <td colSpan="7" className="Attendance-no-data-cell">
                     <FiUser className="Attendance-no-data-icon" />
                     <h3>No attendance records found</h3>
                     <p>Try adjusting your filters or search terms</p>
@@ -664,40 +732,52 @@ const Attendance = () => {
       {isMobile && (
         <div className="Attendance-mobile-cards">
           {filteredData.length > 0 ? (
-            filteredData.map((record) => (
-              <div
-                key={record._id}
-                className={`Attendance-mobile-card Attendance-status-${record.status.toLowerCase().replace(" ", "-")}`}
-                onClick={() => openDetailsModal(record)}
-              >
-                <div className="Attendance-mobile-card-content">
-                  <div className="Attendance-mobile-card-header">
-                    <h3>{formatDate(record.date)}</h3>
-                    <FiChevronRight className="Attendance-card-arrow" />
-                  </div>
-                  <div className="Attendance-mobile-card-times">
-                    <div className="Attendance-time-item">
-                      <FiClock />
-                      <span>In: {formatTime(record.inTime)}</span>
+            filteredData.map((record) => {
+              const statusClass = record.status.toLowerCase().replace(" ", "-");
+              return (
+                <div
+                  key={record._id}
+                  className={`Attendance-mobile-card Attendance-status-${statusClass}`}
+                  onClick={() => openDetailsModal(record)}
+                >
+                  <div className="Attendance-mobile-card-content">
+                    <div className="Attendance-mobile-card-header">
+                      <h3>{formatDate(record.date)}</h3>
+                      <FiChevronRight className="Attendance-card-arrow" />
                     </div>
-                    <div className="Attendance-time-item">
-                      <FiClock />
-                      <span>Out: {formatTime(record.outTime)}</span>
+                    <div className="Attendance-mobile-card-times">
+                      <div className="Attendance-time-item">
+                        <FiClock />
+                        <span>In: {formatTime(record.inTime)}</span>
+                      </div>
+                      <div className="Attendance-time-item">
+                        <FiClock />
+                        <span>Out: {formatTime(record.outTime)}</span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="Attendance-mobile-card-footer">
-                    <div
-                      className={`Attendance-mobile-status-chip Attendance-status-${record.status.toLowerCase().replace(" ", "-")}`}
-                    >
-                      {record.status}
+                    <div className="Attendance-mobile-card-footer">
+                      <div
+                        className={`Attendance-mobile-status-chip Attendance-status-${statusClass}`}
+                      >
+                        {getStatusIcon(record.status)}
+                        <span>{getStatusDisplayText(record.status)}</span>
+                      </div>
+                      <div className="Attendance-mobile-card-right">
+                        {record.lateBy && record.lateBy !== "00:00:00" && (
+                          <div className="Attendance-mobile-late">
+                            <FiAlertTriangle />
+                            <span>{record.lateBy}</span>
+                          </div>
+                        )}
+                        <strong className="Attendance-mobile-total-time">
+                          {record.totalTime || "00:00:00"}
+                        </strong>
+                      </div>
                     </div>
-                    <strong className="Attendance-mobile-total-time">
-                      {record.totalTime || "00:00:00"}
-                    </strong>
                   </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           ) : (
             <div className="Attendance-no-data-card">
               <FiUser className="Attendance-no-data-icon" />
@@ -730,26 +810,55 @@ const Attendance = () => {
                 <div
                   className={`Attendance-modal-status-chip Attendance-status-${selectedRecord.status.toLowerCase().replace(" ", "-")}`}
                 >
-                  {selectedRecord.status}
+                  {getStatusIcon(selectedRecord.status)}
+                  <span>{getStatusDisplayText(selectedRecord.status)}</span>
                 </div>
               </div>
               <div className="Attendance-modal-divider"></div>
-              <div className="Attendance-modal-section">
-                <h4>Login Time</h4>
-                <p className="Attendance-modal-time">{formatTime(selectedRecord.inTime)}</p>
+              
+              <div className="Attendance-modal-grid">
+                <div className="Attendance-modal-grid-item">
+                  <h4>Login Time</h4>
+                  <p className="Attendance-modal-time">{formatTime(selectedRecord.inTime)}</p>
+                </div>
+                <div className="Attendance-modal-grid-item">
+                  <h4>Logout Time</h4>
+                  <p className="Attendance-modal-time">
+                    {formatTime(selectedRecord.outTime)}
+                  </p>
+                </div>
               </div>
-              <div className="Attendance-modal-section">
-                <h4>Logout Time</h4>
-                <p className="Attendance-modal-time">
-                  {formatTime(selectedRecord.outTime)}
-                </p>
+              
+              <div className="Attendance-modal-grid">
+                <div className="Attendance-modal-grid-item">
+                  <h4>Total Duration</h4>
+                  <p className="Attendance-modal-duration">
+                    {selectedRecord.totalTime || "00:00:00"}
+                  </p>
+                </div>
+                <div className="Attendance-modal-grid-item">
+                  <h4>Late By</h4>
+                  <p className="Attendance-modal-late">
+                    {selectedRecord.lateBy || "00:00:00"}
+                  </p>
+                </div>
               </div>
-              <div className="Attendance-modal-section">
-                <h4>Total Duration</h4>
-                <p className="Attendance-modal-duration">
-                  {selectedRecord.totalTime || "00:00:00"}
-                </p>
+              
+              <div className="Attendance-modal-grid">
+                <div className="Attendance-modal-grid-item">
+                  <h4>Early Leave</h4>
+                  <p className="Attendance-modal-early-leave">
+                    {selectedRecord.earlyLeave || "00:00:00"}
+                  </p>
+                </div>
+                <div className="Attendance-modal-grid-item">
+                  <h4>Overtime</h4>
+                  <p className="Attendance-modal-overtime">
+                    {selectedRecord.overTime || "00:00:00"}
+                  </p>
+                </div>
               </div>
+              
               <button className="Attendance-modal-close-button" onClick={closeModal}>
                 Close Details
               </button>
