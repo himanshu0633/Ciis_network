@@ -22,6 +22,7 @@ const AdminTaskManagement = () => {
   const [users, setUsers] = useState([]);
   const [groups, setGroups] = useState([]);
   const [userRole, setUserRole] = useState('');
+  const [jobRole, setJobRole] = useState('');
   const [userId, setUserId] = useState('');
   const [authError, setAuthError] = useState(false);
   
@@ -160,6 +161,7 @@ const AdminTaskManagement = () => {
       }
 
       setUserRole(user.role);
+      setJobRole(user.jobRole || '');
       setUserId(user.id);
       setAuthError(false);
     } catch (error) {
@@ -703,6 +705,44 @@ const AdminTaskManagement = () => {
 
   if (!isAdmin) {
     return (
+      <span className={`AdminTaskManagement-status-chip AdminTaskManagement-status-${getStatusColor()}`}>
+        {getStatusText()}
+      </span>
+    );
+  };
+
+  // Priority Chip Component
+  const AdminTaskManagementPriorityChip = ({ priority }) => {
+  const safePriority = typeof priority === 'string' ? priority : 'medium';
+
+  const getPriorityColor = () => {
+    switch (safePriority) {
+      case 'high': return 'error';
+      case 'medium': return 'warning';
+      case 'low': return 'success';
+      default: return 'default';
+    }
+  };
+
+  return (
+    <span
+      className={`AdminTaskManagement-priority-chip AdminTaskManagement-priority-${getPriorityColor()}`}
+    >
+      {safePriority.charAt(0).toUpperCase() + safePriority.slice(1)}
+    </span>
+  );
+};
+
+
+  // Stats Cards Component
+  const AdminTaskManagementStatCard = ({ label, value, color, icon: Icon }) => {
+    const colors = {
+      primary: '#3f51b5',
+      warning: '#ff9800',
+      info: '#2196f3',
+      success: '#4caf50',
+      error: '#f44336'
+    };
       <div className="AdminTaskManagement-access-denied">
         <div className="AdminTaskManagement-card AdminTaskManagement-text-center">
           <div className="AdminTaskManagement-card-content">
@@ -1236,6 +1276,433 @@ const AdminTaskManagement = () => {
         </div>
       )}
 
+  // Group Management Dialog
+  const renderGroupManagementDialog = () => (
+    <div className={`AdminTaskManagement-modal ${openGroupDialog ? 'AdminTaskManagement-modal-open' : ''}`}>
+      <div className="AdminTaskManagement-modal-content AdminTaskManagement-modal-large">
+        <div className="AdminTaskManagement-modal-header">
+          <div className="AdminTaskManagement-modal-title-row">
+            <h3>{editingGroup ? 'Edit Group' : 'Create New Group'}</h3>
+            <button 
+              className="AdminTaskManagement-icon-btn"
+              onClick={() => setOpenGroupDialog(false)}
+            >
+              <FiX size={20} />
+            </button>
+          </div>
+        </div>
+        <div className="AdminTaskManagement-modal-body">
+          <div className="AdminTaskManagement-form-container">
+            <div className="AdminTaskManagement-form-group">
+              <label>Group Name *</label>
+              <input
+                type="text"
+                className="AdminTaskManagement-form-input"
+                placeholder="Enter group name"
+                value={newGroup.name}
+                onChange={(e) => setNewGroup({ ...newGroup, name: e.target.value })}
+              />
+            </div>
+
+            <div className="AdminTaskManagement-form-group">
+              <label>Description *</label>
+              <textarea
+                className="AdminTaskManagement-form-textarea"
+                placeholder="Enter group description"
+                rows={3}
+                value={newGroup.description}
+                onChange={(e) => setNewGroup({ ...newGroup, description: e.target.value })}
+              />
+            </div>
+
+            <div className="AdminTaskManagement-form-group">
+              <label>Select Members</label>
+              <div className="AdminTaskManagement-multi-select-container">
+                <div className="AdminTaskManagement-multi-select-options">
+                  {users.map((user) => (
+                    <div key={user._id} className="AdminTaskManagement-multi-select-option">
+                      <input
+                        type="checkbox"
+                        id={`AdminTaskManagement-group-member-${user._id}`}
+                        checked={newGroup.members.includes(user._id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setNewGroup({
+                              ...newGroup,
+                              members: [...newGroup.members, user._id]
+                            });
+                          } else {
+                            setNewGroup({
+                              ...newGroup,
+                              members: newGroup.members.filter(id => id !== user._id)
+                            });
+                          }
+                        }}
+                      />
+                      <label htmlFor={`AdminTaskManagement-group-member-${user._id}`} className="AdminTaskManagement-multi-select-label">
+                        <div className="AdminTaskManagement-multi-select-text">
+                          <div className="AdminTaskManagement-multi-select-primary">{user.name}</div>
+                          <div className="AdminTaskManagement-multi-select-secondary">{user.role}</div>
+                        </div>
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {newGroup.members.length > 0 && (
+                <div className="AdminTaskManagement-selected-chips">
+                  {newGroup.members.map(value => {
+                    const user = users.find(u => u._id === value);
+                    return user ? (
+                      <span key={value} className="AdminTaskManagement-selected-chip">
+                        {user.name}
+                      </span>
+                    ) : null;
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="AdminTaskManagement-modal-footer">
+          <button 
+            className="AdminTaskManagement-btn" 
+            onClick={() => setOpenGroupDialog(false)}
+          >
+            Cancel
+          </button>
+          <button
+            className="AdminTaskManagement-btn AdminTaskManagement-btn-primary"
+            onClick={handleCreateGroup}
+            disabled={isCreatingGroup}
+          >
+            {isCreatingGroup ? (editingGroup ? 'Updating...' : 'Creating...') : (editingGroup ? 'Update Group' : 'Create Group')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Group Management Tab Content
+  const renderGroupManagementTab = () => (
+    <div>
+      <div className="AdminTaskManagement-tab-header">
+        <h4>Group Management ({groups.length} groups)</h4>
+        <button
+          className="AdminTaskManagement-btn AdminTaskManagement-btn-primary"
+          onClick={() => {
+            setEditingGroup(null);
+            setNewGroup({ name: '', description: '', members: [] });
+            setOpenGroupDialog(true);
+          }}
+        >
+          <FiPlus /> Create Group
+        </button>
+      </div>
+
+      <div className="AdminTaskManagement-groups-grid">
+        {groups.map(group => (
+          <div key={group._id} className="AdminTaskManagement-group-card">
+            <div className="AdminTaskManagement-group-card-content">
+              <div className="AdminTaskManagement-group-card-header">
+                <div className="AdminTaskManagement-group-card-info">
+                  <h5>{group.name}</h5>
+                  <p>{group.description}</p>
+                </div>
+                <div className="AdminTaskManagement-group-card-actions">
+                  <button
+                    className="AdminTaskManagement-icon-btn"
+                    onClick={() => openGroupEditDialog(group)}
+                  >
+                    <FiEdit size={16} />
+                  </button>
+                  <button
+                    className="AdminTaskManagement-icon-btn AdminTaskManagement-icon-btn-danger"
+                    onClick={() => handleDeleteGroup(group._id)}
+                  >
+                    <FiTrash2 size={16} />
+                  </button>
+                </div>
+              </div>
+              <div className="AdminTaskManagement-group-card-divider"></div>
+              <div className="AdminTaskManagement-group-card-members">
+                <div className="AdminTaskManagement-group-card-members-label">
+                  Members ({group.members?.length || 0})
+                </div>
+                <div className="AdminTaskManagement-group-card-members-list">
+                  {group.members?.slice(0, 3).map(memberId => {
+                    const member = users.find(u => u._id === memberId);
+                    return member ? (
+                      <div key={memberId} className="AdminTaskManagement-group-card-member">
+                        <div className="AdminTaskManagement-group-card-member-avatar">
+                          {member.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="AdminTaskManagement-group-card-member-name">{member.name}</div>
+                      </div>
+                    ) : null;
+                  })}
+                  {(group.members?.length || 0) > 3 && (
+                    <div className="AdminTaskManagement-group-card-members-more">
+                      +{(group.members?.length || 0) - 3} more members
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {groups.length === 0 && (
+        <div className="AdminTaskManagement-empty-state">
+          <FiUsers size={48} className="AdminTaskManagement-empty-icon" />
+          <h5>No groups created yet</h5>
+          <p>Create your first group to assign tasks to multiple users at once</p>
+        </div>
+      )}
+    </div>
+  );
+
+  useEffect(() => {
+    fetchUserData();
+  }, []);
+
+  useEffect(() => {
+    if (!authError && userId) {
+      fetchAllData(page, rowsPerPage);
+    }
+  }, [authError, userId]);
+
+  // Check if user is admin
+  const isAdmin = ['admin', 'manager', 'hr', 'SuperAdmin'].includes(userRole);
+  const isReportingAuditor = jobRole === 'Reporting-Auditor';
+
+  if (!isAdmin && !isReportingAuditor) {
+    return (
+      <div className="AdminTaskManagement-access-denied">
+        <div className="AdminTaskManagement-card AdminTaskManagement-text-center">
+          <div className="AdminTaskManagement-card-content">
+            <FiAlertCircle size={48} className="AdminTaskManagement-warning-icon" />
+            <h3>Access Denied</h3>
+            <p>You need admin privileges to access this page.</p>
+            <button className="AdminTaskManagement-btn AdminTaskManagement-btn-primary" onClick={() => navigate('/')}>
+              Go to Dashboard
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading && tasks.length === 0) {
+    return (
+      <div className="AdminTaskManagement-loading-container">
+        <div className="AdminTaskManagement-loading-spinner"></div>
+        <p>Loading data...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="AdminTaskManagement">
+      {/* Header */}
+      <div className="AdminTaskManagement-header-card">
+        <div className="AdminTaskManagement-header-content">
+          <div className="AdminTaskManagement-header-text">
+            <h1>Admin Task Management</h1>
+            <p>Manage all tasks, users, and groups in the system</p>
+          </div>
+          <div className="AdminTaskManagement-header-actions">
+            <button 
+              className="AdminTaskManagement-icon-btn AdminTaskManagement-notification-btn"
+              onClick={() => setOpenNotifications(true)}
+            >
+              <FiBell size={18} />
+              {unreadNotificationCount > 0 && (
+                <span className="AdminTaskManagement-notification-badge">{unreadNotificationCount}</span>
+              )}
+            </button>
+
+            <button
+              className="AdminTaskManagement-btn AdminTaskManagement-btn-outline"
+              onClick={() => fetchAllData(page, rowsPerPage)}
+              disabled={loading}
+            >
+              <FiRefreshCw /> Refresh
+            </button>
+            <button
+              className="AdminTaskManagement-btn AdminTaskManagement-btn-primary"
+              onClick={() => setOpenCreateDialog(true)}
+            >
+              <FiPlus /> Create Task
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Cards with Filtered Data */}
+      {renderFilteredStatsCards()}
+
+      {/* Tabs */}
+      <div className="AdminTaskManagement-tabs-container">
+        <div className="AdminTaskManagement-tabs-header">
+          <button 
+            className={`AdminTaskManagement-tab-btn ${activeTab === 0 ? 'AdminTaskManagement-tab-active' : ''}`}
+            onClick={() => setActiveTab(0)}
+          >
+            All Tasks
+          </button>
+          <button 
+            className={`AdminTaskManagement-tab-btn ${activeTab === 1 ? 'AdminTaskManagement-tab-active' : ''}`}
+            onClick={() => setActiveTab(1)}
+          >
+            User Management
+          </button>
+          <button 
+            className={`AdminTaskManagement-tab-btn ${activeTab === 2 ? 'AdminTaskManagement-tab-active' : ''}`}
+            onClick={() => setActiveTab(2)}
+          >
+            Group Management
+          </button>
+        </div>
+
+        <div className="AdminTaskManagement-tab-content">
+          {activeTab === 0 && (
+            <>
+              {/* Enhanced Filters with Date Range */}
+              {renderEnhancedFilters()}
+
+              {/* Tasks Table with Pagination */}
+              <div className="AdminTaskManagement-table-container">
+                <table className="AdminTaskManagement-tasks-table">
+                  <thead>
+                    <tr>
+                      <th>Title</th>
+                      <th>Description</th>
+                      <th>Due Date</th>
+                      <th>Priority</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tasks.map((task) => (
+                      <tr key={task._id} className={`AdminTaskManagement-table-row AdminTaskManagement-status-${getTaskStatus(task)}`}>
+                        <td>
+                          <div className="AdminTaskManagement-task-title">{task.title}</div>
+                        </td>
+                        <td>
+                          <div className="AdminTaskManagement-task-description" title={task.description}>
+                            {task.description}
+                          </div>
+                        </td>
+                        <td>
+                          <div className={`AdminTaskManagement-task-due-date ${isOverdue(task) ? 'AdminTaskManagement-task-overdue' : ''}`}>
+                            <FiCalendar size={14} />
+                            {task.dueDateTime ? new Date(task.dueDateTime).toLocaleDateString() : 
+                             task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'N/A'}
+                            {isOverdue(task) && <FiAlertTriangle size={14} />}
+                          </div>
+                        </td>
+                        <td>
+                          <AdminTaskManagementPriorityChip priority={task.priority} />
+                        </td>
+                        <td>
+                          <AdminTaskManagementStatusChip status={getTaskStatus(task)} />
+                        </td>
+                        <td>
+                          <div className="AdminTaskManagement-table-actions">
+                            <button
+                              className="AdminTaskManagement-icon-btn AdminTaskManagement-icon-btn-sm"
+                              onClick={() => openEditTaskDialog(task)}
+                              title="Edit"
+                            >
+                              <FiEdit3 size={16} />
+                            </button>
+                            <button
+                              className="AdminTaskManagement-icon-btn AdminTaskManagement-icon-btn-sm AdminTaskManagement-icon-btn-info"
+                              onClick={() => fetchUserStatuses(task)}
+                              title="View User Statuses"
+                            >
+                              <FiUsers size={16} />
+                            </button>
+                            <button
+                              className="AdminTaskManagement-icon-btn AdminTaskManagement-icon-btn-sm"
+                              onClick={() => fetchRemarks(task._id)}
+                              title="Remarks"
+                            >
+                              <FiMessageSquare size={16} />
+                            </button>
+                            <button
+                              className="AdminTaskManagement-icon-btn AdminTaskManagement-icon-btn-sm"
+                              onClick={() => fetchActivityLogs(task._id)}
+                              title="Activity Logs"
+                            >
+                              <FiActivity size={16} />
+                            </button>
+                            <button
+                              className="AdminTaskManagement-icon-btn AdminTaskManagement-icon-btn-sm"
+                              onClick={() => openStatusChangeDialog(task)}
+                              title="Change Status"
+                            >
+                              <FiUserCheck size={16} />
+                            </button>
+                            <button
+                              className="AdminTaskManagement-icon-btn AdminTaskManagement-icon-btn-sm AdminTaskManagement-icon-btn-danger"
+                              onClick={() => handleDeleteTask(task._id)}
+                              title="Delete"
+                            >
+                              <FiTrash size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                
+                {/* Pagination */}
+                <div className="AdminTaskManagement-pagination">
+                  <div className="AdminTaskManagement-pagination-info">
+                    Showing {page * rowsPerPage + 1} to {Math.min((page + 1) * rowsPerPage, totalTasks)} of {totalTasks} tasks
+                  </div>
+                  <div className="AdminTaskManagement-pagination-controls">
+                    <button
+                      className="AdminTaskManagement-pagination-btn"
+                      onClick={() => handleChangePage(null, page - 1)}
+                      disabled={page === 0}
+                    >
+                      Previous
+                    </button>
+                    <div className="AdminTaskManagement-pagination-page">
+                      Page {page + 1} of {Math.ceil(totalTasks / rowsPerPage)}
+                    </div>
+                    <button
+                      className="AdminTaskManagement-pagination-btn"
+                      onClick={() => handleChangePage(null, page + 1)}
+                      disabled={page >= Math.ceil(totalTasks / rowsPerPage) - 1}
+                    >
+                      Next
+                    </button>
+                    <select
+                      className="AdminTaskManagement-pagination-select"
+                      value={rowsPerPage}
+                      onChange={handleChangeRowsPerPage}
+                    >
+                      <option value={5}>5 per page</option>
+                      <option value={10}>10 per page</option>
+                      <option value={25}>25 per page</option>
+                      <option value={50}>50 per page</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {tasks.length === 0 && !loading && (
+                <div className="AdminTaskManagement-empty-state">
+                  <FiCalendar size={48} className="AdminTaskManagement-empty-icon" />
+                  <h5>No tasks found</h5>
+                  <p>Try adjusting your filters or create a new task</p>
       {/* Notifications Panel */}
       {openNotifications && (
         <div className="AdminTaskManagement-modal AdminTaskManagement-modal-open">
