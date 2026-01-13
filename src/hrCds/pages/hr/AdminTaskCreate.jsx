@@ -22,6 +22,7 @@ const AdminTaskManagement = () => {
   const [users, setUsers] = useState([]);
   const [groups, setGroups] = useState([]);
   const [userRole, setUserRole] = useState('');
+  const [jobRole, setJobRole] = useState('');
   const [userId, setUserId] = useState('');
   const [authError, setAuthError] = useState(false);
   
@@ -160,6 +161,7 @@ const AdminTaskManagement = () => {
       }
 
       setUserRole(user.role);
+      setJobRole(user.jobRole || '');
       setUserId(user.id);
       setAuthError(false);
     } catch (error) {
@@ -926,21 +928,26 @@ const AdminTaskManagement = () => {
 
   // Priority Chip Component
   const AdminTaskManagementPriorityChip = ({ priority }) => {
-    const getPriorityColor = () => {
-      switch(priority) {
-        case 'high': return 'error';
-        case 'medium': return 'warning';
-        case 'low': return 'success';
-        default: return 'default';
-      }
-    };
+  const safePriority = typeof priority === 'string' ? priority : 'medium';
 
-    return (
-      <span className={`AdminTaskManagement-priority-chip AdminTaskManagement-priority-${getPriorityColor()}`}>
-        {priority.charAt(0).toUpperCase() + priority.slice(1)}
-      </span>
-    );
+  const getPriorityColor = () => {
+    switch (safePriority) {
+      case 'high': return 'error';
+      case 'medium': return 'warning';
+      case 'low': return 'success';
+      default: return 'default';
+    }
   };
+
+  return (
+    <span
+      className={`AdminTaskManagement-priority-chip AdminTaskManagement-priority-${getPriorityColor()}`}
+    >
+      {safePriority.charAt(0).toUpperCase() + safePriority.slice(1)}
+    </span>
+  );
+};
+
 
   // Stats Cards Component
   const AdminTaskManagementStatCard = ({ label, value, color, icon: Icon }) => {
@@ -2316,8 +2323,9 @@ const AdminTaskManagement = () => {
 
   // Check if user is admin
   const isAdmin = ['admin', 'manager', 'hr', 'SuperAdmin'].includes(userRole);
+  const isReportingAuditor = jobRole === 'Reporting-Auditor';
 
-  if (!isAdmin) {
+  if (!isAdmin && !isReportingAuditor) {
     return (
       <div className="AdminTaskManagement-access-denied">
         <div className="AdminTaskManagement-card AdminTaskManagement-text-center">
