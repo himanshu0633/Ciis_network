@@ -5,16 +5,16 @@ import 'react-toastify/dist/ReactToastify.css';
 import './UserDashboard.css';
 import useIsMobile from '../../hooks/useIsMobile';
 
-import NewYearPopup from '../../components/NewYearPopup';
+// import NewYearPopup from '../../components/NewYearPopup';
 import {
   FiClock, FiCalendar, FiChevronLeft, FiChevronRight,
   FiPlay, FiSquare, FiRefreshCw, FiBriefcase, FiUser,
   FiCheckCircle, FiAlertCircle, FiTrendingUp, FiActivity,
-  FiX
+  FiX, FiAlertTriangle
 } from 'react-icons/fi';
 import {
   MdWork, MdOutlineCrop54, MdBeachAccess, MdSick,
-  MdOutlineWatchLater, MdToday, MdAccessTime
+  MdOutlineWatchLater, MdToday, MdAccessTime, MdOutlineAlarm
 } from 'react-icons/md';
 
 const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -73,6 +73,16 @@ const UserDashboard = () => {
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
 
+  // Add lateDates array
+  const lateDates = useMemo(() => {
+    return attendanceData
+      .filter(record => record.status === 'LATE')
+      .map(record => {
+        const d = new Date(record.date);
+        return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+      });
+  }, [attendanceData]);
+
   const markedDates = useMemo(() => {
     return attendanceData
       .filter(record => record.status === 'PRESENT')
@@ -125,6 +135,13 @@ const UserDashboard = () => {
              record.status === 'PRESENT';
     }).length;
 
+    const lateDays = attendanceData.filter(record => {
+      const d = new Date(record.date);
+      return d.getMonth() === currentMonth && 
+             d.getFullYear() === currentYear && 
+             record.status === 'LATE';
+    }).length;
+
     const halfDays = attendanceData.filter(record => {
       const d = new Date(record.date);
       return d.getMonth() === currentMonth && 
@@ -146,6 +163,7 @@ const UserDashboard = () => {
 
     return {
       presentDays,
+      lateDays,
       halfDays,
       absentDays,
       leavesTaken
@@ -161,6 +179,7 @@ const UserDashboard = () => {
     const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
     
     if (markedDates.includes(key)) return "present";
+    if (lateDates.includes(key)) return "late";
     if (halfDayDates.includes(key)) return "halfday";
     if (leaveDates.includes(key)) return "leave";
     if (absentDates.includes(key)) return "absent";
@@ -179,6 +198,7 @@ const UserDashboard = () => {
     const status = getDayStatus(day);
     switch(status) {
       case 'present': return '✓';
+      case 'late': return 'L';
       case 'halfday': return '½';
       case 'leave': return 'L';
       case 'absent': return '✗';
@@ -187,25 +207,28 @@ const UserDashboard = () => {
     }
   };
 
-  const fetchAttendanceData = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get('/attendance/list', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = response.data?.data || [];
-      setAttendanceData(data);
-      
-      const sortedData = [...data].sort((a, b) => new Date(b.date) - new Date(a.date));
-      setRecentActivity(sortedData.slice(0, 5));
-    } catch (error) {
-      console.error('Error fetching attendance:', error);
-      toast.error('Failed to load attendance data');
-    } finally {
-      setLoading(false);
-    }
-  };
-
+const fetchAttendanceData = async () => {
+  try {
+    setLoading(true);
+    const response = await axios.get('/attendance/list', {
+      params: {
+        month: calendarMonth,  // Pass current calendar month
+        year: calendarYear     // Pass current calendar year
+      },
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = response.data?.data || [];
+    setAttendanceData(data);
+    
+    const sortedData = [...data].sort((a, b) => new Date(b.date) - new Date(a.date));
+    setRecentActivity(sortedData.slice(0, 5));
+  } catch (error) {
+    console.error('Error fetching attendance:', error);
+    toast.error('Failed to load attendance data');
+  } finally {
+    setLoading(false);
+  }
+};
   const fetchLeaveData = async () => {
     try {
       const response = await axios.get('/leaves/status', {
@@ -285,7 +308,7 @@ const UserDashboard = () => {
 
       // Small delay so toast is visible
       setTimeout(() => {
-        window.location.href = "/login"; // or use navigate("/login") if using react-router
+        window.location.href = "/login";
       }, 1200);
 
     } catch (error) {
@@ -295,61 +318,114 @@ const UserDashboard = () => {
     }
   };
 
-  const handlePrevMonth = () => {
-    setCalendarMonth(prev => {
-      if (prev === 0) {
-        setCalendarYear(prevYear => prevYear - 1);
-        return 11;
-      }
-      return prev - 1;
-    });
-  };
+const handlePrevMonth = () => {
+  setCalendarMonth(prev => {
+    if (prev === 0) {
+      const newYear = calendarYear - 1;
+      setCalendarYear(newYear);
+      
+      // Fetch data for new month
+      setTimeout(() => {
+        fetchAttendanceData();
+      }, 100);
+      
+      return 11;
+    }
+    const newMonth = prev - 1;
+    
+    // Fetch data for new month
+    setTimeout(() => {
+      fetchAttendanceData();
+    }, 100);
+    
+    return newMonth;
+  });
+};
 
-  const handleNextMonth = () => {
-    setCalendarMonth(prev => {
-      if (prev === 11) {
-        setCalendarYear(prevYear => prevYear + 1);
-        return 0;
-      }
-      return prev + 1;
-    });
-  };
+const handleNextMonth = () => {
+  setCalendarMonth(prev => {
+    if (prev === 11) {
+      const newYear = calendarYear + 1;
+      setCalendarYear(newYear);
+      
+      // Fetch data for new month
+      setTimeout(() => {
+        fetchAttendanceData();
+      }, 100);
+      
+      return 0;
+    }
+    const newMonth = prev + 1;
+    
+    // Fetch data for new month
+    setTimeout(() => {
+      fetchAttendanceData();
+    }, 100);
+    
+    return newMonth;
+  });
+};
 
-  const resetToCurrentMonth = () => {
-    setCalendarMonth(currentDate.getMonth());
-    setCalendarYear(currentDate.getFullYear());
-  };
+const resetToCurrentMonth = () => {
+  setCalendarMonth(currentDate.getMonth());
+  setCalendarYear(currentDate.getFullYear());
+  
+  // Fetch data for current month
+  setTimeout(() => {
+    fetchAttendanceData();
+  }, 100);
+};
 
   const getStatusColor = (status) => {
     switch(status) {
       case 'PRESENT': return 'status-present';
+      case 'LATE': return 'status-late';
       case 'HALF DAY': return 'status-halfday';
       case 'ABSENT': return 'status-absent';
       default: return 'status-default';
     }
   };
+// Fix the useEffect structure
+useEffect(() => {
+  // Initial load when component mounts
+  const loadInitialData = async () => {
+    await fetchAttendanceData();
+    await fetchLeaveData();
+    await fetchCurrentStatus();
+  };
+  
+  loadInitialData();
+}, []); // Empty dependency array - runs only once on mount
 
-  useEffect(() => {
-    const loadData = async () => {
+useEffect(() => {
+  // Timer effect - separate from data fetching
+  if (isRunning) {
+    intervalRef.current = setInterval(() => {
+      setTimer(prev => prev + 1);
+    }, 1000);
+  } else {
+    clearInterval(intervalRef.current);
+  }
+  
+  return () => clearInterval(intervalRef.current);
+}, [isRunning]);
+
+useEffect(() => {
+  // Fetch attendance data when calendar month/year changes
+  // But only if we already have some data (to avoid double fetching on initial load)
+  if (attendanceData.length > 0 || loading) {
+    const fetchData = async () => {
       await fetchAttendanceData();
-      await fetchLeaveData();
-      await fetchCurrentStatus();
     };
-    loadData();
-  }, []);
-
-  useEffect(() => {
-    if (isRunning) {
-      intervalRef.current = setInterval(() => {
-        setTimer(prev => prev + 1);
-      }, 1000);
-    } else {
-      clearInterval(intervalRef.current);
-    }
     
-    return () => clearInterval(intervalRef.current);
-  }, [isRunning]);
-
+    // Add a small debounce to prevent rapid calls
+    const timer = setTimeout(() => {
+      fetchData();
+    }, 300);
+    
+    return () => clearTimeout(timer);
+  }
+}, [calendarMonth, calendarYear]);
   const calendarDays = getCalendarGrid(calendarYear, calendarMonth);
 
   const isMobile = useIsMobile();
@@ -376,10 +452,8 @@ const UserDashboard = () => {
   }
 
   return (
-    <div className="App">
-      <NewYearPopup />
-    </div>,
     <div className="dashboard-container">
+      {/* <NewYearPopup /> */}
       <ToastContainer 
         position="top-right" 
         autoClose={3000}
@@ -398,7 +472,6 @@ const UserDashboard = () => {
             >
               <FiX size={20} />
             </button>
-            
             
             <h3 className="confirmation-title">Confirm Clock Out</h3>
             
@@ -504,7 +577,7 @@ const UserDashboard = () => {
         </div>
       </div>
 
-      {/* Current Month Stats */}
+      {/* Current Month Stats - ADD LATE STAT CARD */}
       <div className="dashboard-stats-grid">
         <div className="dashboard-stat-card stat-card-present">
           <div className="stat-card-header">
@@ -517,6 +590,22 @@ const UserDashboard = () => {
           <div className="stat-label">Days Present</div>
           <div className="stat-footer">
             <FiTrendingUp className="stat-trend-icon" />
+            <span className="stat-month-text">Tracked in {monthNames[currentMonth]}</span>
+          </div>
+        </div>
+
+        {/* NEW LATE STAT CARD */}
+        <div className="dashboard-stat-card stat-card-late">
+          <div className="stat-card-header">
+            <div className="stat-icon-container icon-late">
+              <MdOutlineAlarm className="stat-icon" />
+            </div>
+            <div className="stat-current-month">Current Month</div>
+          </div>
+          <div className="stat-value">{monthlyStats.lateDays}</div>
+          <div className="stat-label">Late Days</div>
+          <div className="stat-footer">
+            <FiAlertTriangle className="stat-trend-icon" />
             <span className="stat-month-text">Tracked in {monthNames[currentMonth]}</span>
           </div>
         </div>
@@ -548,21 +637,6 @@ const UserDashboard = () => {
           <div className="stat-footer">
             <FiCheckCircle className="stat-trend-icon" />
             <span className="stat-month-text">Approved in {monthNames[currentMonth]}</span>
-          </div>
-        </div>
-
-        <div className="dashboard-stat-card stat-card-absent">
-          <div className="stat-card-header">
-            <div className="stat-icon-container icon-absent">
-              <MdSick className="stat-icon" />
-            </div>
-            <div className="stat-current-month">Current Month</div>
-          </div>
-          <div className="stat-value">{monthlyStats.absentDays}</div>
-          <div className="stat-label">Absent Days</div>
-          <div className="stat-footer">
-            <FiAlertCircle className="stat-trend-icon" />
-            <span className="stat-month-text">Tracked in {monthNames[currentMonth]}</span>
           </div>
         </div>
       </div>
@@ -652,6 +726,10 @@ const UserDashboard = () => {
               <span>Present</span>
             </div>
             <div className="legend-item">
+              <div className="legend-color color-late"></div>
+              <span>Late</span>
+            </div>
+            <div className="legend-item">
               <div className="legend-color color-halfday"></div>
               <span>Half Day</span>
             </div>
@@ -701,9 +779,10 @@ const UserDashboard = () => {
                   <div className="activity-item-content">
                     <div className={`activity-status-icon ${getStatusColor(record.status)}`}>
                       {record.status === 'PRESENT' && <FiCheckCircle className="status-icon" />}
+                      {record.status === 'LATE' && <FiAlertTriangle className="status-icon" />}
                       {record.status === 'HALF DAY' && <FiAlertCircle className="status-icon" />}
                       {record.status === 'ABSENT' && <FiAlertCircle className="status-icon" />}
-                      {!['PRESENT', 'HALF DAY', 'ABSENT'].includes(record.status) && <FiClock className="status-icon" />}
+                      {!['PRESENT', 'LATE', 'HALF DAY', 'ABSENT'].includes(record.status) && <FiClock className="status-icon" />}
                     </div>
                     <div className="activity-details">
                       <div className="activity-date">
