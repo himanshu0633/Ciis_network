@@ -9,6 +9,7 @@ import Layout2 from './hrCds/UserLayout';
 import ProtectedRoute from './admin/components/ProtectedRoute';
 import ThemeContextProvider from './Theme/ThemeContext';
 import CreateUser from './admin/page/CreateUser';
+import Department from './admin/page/DepartmentManagement'
 import ChangePassword from './admin/page/ChangePassword';
 import EmppTask from './hrCds/pages/hr/EmmpTask';
 import TaskManagement from './hrCds/pages/TaskManagement';
@@ -62,6 +63,7 @@ function App() {
           }>
           
           <Route path="create-user" element={<CreateUser />} />
+          <Route path='department' element={<Department/>} />
           <Route path="change-password" element={<ChangePassword />} />
           <Route path="emp-details" element={<EmppDetail />} />
           <Route path="emp-leaves" element={<EmppLeave />} />
