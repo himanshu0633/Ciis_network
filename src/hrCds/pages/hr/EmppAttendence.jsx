@@ -157,184 +157,190 @@ const AddAttendanceModal = ({ onClose, onSave, users, selectedDate }) => {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h3>Add New Attendance</h3>
-          <button className="modal-close" onClick={onClose}>
-            <FiX size={20} />
-          </button>
+  <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+    <div className="modal-header">
+      <h3>Add New Attendance</h3>
+      <button className="modal-close" onClick={onClose}>
+        <FiX size={20} />
+      </button>
+    </div>
+
+    <form onSubmit={handleSubmit}>
+      <div className="modal-body">
+        <div className="form-grid">
+          <div className="form-group full-width">
+            <label>Select Employee *</label>
+            <select
+              className="form-input"
+              value={formData.user}
+              onChange={(e) => setFormData({ ...formData, user: e.target.value })}
+              required
+            >
+              <option value="">Select an employee...</option>
+              {users.map(user => (
+                <option key={user._id} value={user._id}>
+                  {user.name} - {user.email} ({user.employeeType})
+                </option>
+              ))}
+            </select>
+            
+            {/* Display selected employee info if available */}
+            {formData.user && (
+              <div className="selected-user-info">
+                {(() => {
+                  const selectedUser = users.find(u => u._id === formData.user);
+                  if (!selectedUser) return null;
+                  return (
+                    <div className="user-display">
+                      <div className="user-avatar-small">
+                        {selectedUser.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                      </div>
+                      <div className="user-details">
+                        <strong>{selectedUser.name}</strong>
+                        <small>{selectedUser.email} • {selectedUser.employeeType}</small>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+          </div>
+
+          <div className="form-group">
+            <label>Date *</label>
+            <input
+              type="date"
+              className="form-input"
+              value={selectedDate}
+              readOnly
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Check In Time *</label>
+            <input
+              type="time"
+              className="form-input"
+              value={formData.inTime}
+              onChange={(e) => handleTimeChange('inTime', e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Check Out Time *</label>
+            <input
+              type="time"
+              className="form-input"
+              value={formData.outTime}
+              onChange={(e) => setFormData({ ...formData, outTime: e.target.value })}
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Status *</label>
+            <select
+              className="form-input"
+              value={formData.status}
+              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+              required
+            >
+              <option value="present">Present</option>
+              <option value="late">Late</option>
+              <option value="halfday">Half Day</option>
+              <option value="absent">Absent</option>
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label>Late By</label>
+            <input
+              type="text"
+              className="form-input"
+              value={formData.lateBy}
+              onChange={(e) => setFormData({ ...formData, lateBy: e.target.value })}
+              placeholder="00:00:00"
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Early Leave</label>
+            <input
+              type="text"
+              className="form-input"
+              value={formData.earlyLeave}
+              onChange={(e) => setFormData({ ...formData, earlyLeave: e.target.value })}
+              placeholder="00:00:00"
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Overtime</label>
+            <input
+              type="text"
+              className="form-input"
+              value={formData.overTime}
+              onChange={(e) => setFormData({ ...formData, overTime: e.target.value })}
+              placeholder="00:00:00"
+            />
+          </div>
+
+          <div className="form-group full-width">
+            <label>Notes</label>
+            <textarea
+              className="form-input"
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              placeholder="Add any additional notes..."
+              rows="3"
+            />
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="modal-body">
-            <div className="form-grid">
-              <div className="form-group full-width">
-                <label>Select Employee *</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="Search employee by name or email..."
-                  value={searchUser}
-                  onChange={(e) => setSearchUser(e.target.value)}
-                />
-                <div className="user-list">
-                  {filteredUsers.slice(0, 5).map(user => (
-                    <div
-                      key={user._id}
-                      className={`user-item ${formData.user === user._id ? 'selected' : ''}`}
-                      onClick={() => setFormData({ ...formData, user: user._id })}
-                    >
-                      <div className="user-avatar">
-                        {user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                      </div>
-                      <div className="user-info">
-                        <div className="user-name">{user.name}</div>
-                        <div className="user-email">{user.email}</div>
-                        <div className="user-type">{user.employeeType}</div>
-                      </div>
-                      {formData.user === user._id && (
-                        <FiCheck className="check-icon" />
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label>Date *</label>
-                <input
-                  type="date"
-                  className="form-input"
-                  value={selectedDate}
-                  readOnly
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Check In Time *</label>
-                <input
-                  type="time"
-                  className="form-input"
-                  value={formData.inTime}
-                  onChange={(e) => handleTimeChange('inTime', e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Check Out Time *</label>
-                <input
-                  type="time"
-                  className="form-input"
-                  value={formData.outTime}
-                  onChange={(e) => setFormData({ ...formData, outTime: e.target.value })}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Status *</label>
-                <select
-                  className="form-input"
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                  required
-                >
-                  <option value="present">Present</option>
-                  <option value="late">Late</option>
-                  <option value="halfday">Half Day</option>
-                  <option value="absent">Absent</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>Late By</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={formData.lateBy}
-                  onChange={(e) => setFormData({ ...formData, lateBy: e.target.value })}
-                  placeholder="00:00:00"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Early Leave</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={formData.earlyLeave}
-                  onChange={(e) => setFormData({ ...formData, earlyLeave: e.target.value })}
-                  placeholder="00:00:00"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Overtime</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={formData.overTime}
-                  onChange={(e) => setFormData({ ...formData, overTime: e.target.value })}
-                  placeholder="00:00:00"
-                />
-              </div>
-
-              <div className="form-group full-width">
-                <label>Notes</label>
-                <textarea
-                  className="form-input"
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  placeholder="Add any additional notes..."
-                  rows="3"
-                />
-              </div>
-            </div>
-
-            <div className="calculated-info">
-              <div className="info-item">
-                <span>Calculated Status:</span>
-                <span className={`status-chip ${calculateStatus()}`}>
-                  {calculateStatus().toUpperCase()}
-                </span>
-              </div>
-              <div className="info-item">
-                <span>Hours Worked:</span>
-                <span>
-                  {(() => {
-                    if (!formData.inTime || !formData.outTime) return "00:00:00";
-                    const [inHour, inMinute] = formData.inTime.split(':').map(Number);
-                    const [outHour, outMinute] = formData.outTime.split(':').map(Number);
-                    const totalMinutes = (outHour * 60 + outMinute) - (inHour * 60 + inMinute);
-                    const hours = Math.floor(totalMinutes / 60);
-                    const minutes = totalMinutes % 60;
-                    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
-                  })()}
-                </span>
-              </div>
-            </div>
+        <div className="calculated-info">
+          <div className="info-item">
+            <span>Calculated Status:</span>
+            <span className={`status-chip ${calculateStatus()}`}>
+              {calculateStatus().toUpperCase()}
+            </span>
           </div>
-
-          <div className="modal-footer">
-            <button 
-              className="btn btn-outlined" 
-              type="button" 
-              onClick={onClose}
-            >
-              Cancel
-            </button>
-            <button 
-              className="btn btn-contained" 
-              type="submit"
-              disabled={loading || !formData.user}
-            >
-              {loading ? 'Saving...' : 'Save Attendance'}
-            </button>
+          <div className="info-item">
+            <span>Hours Worked:</span>
+            <span>
+              {(() => {
+                if (!formData.inTime || !formData.outTime) return "00:00:00";
+                const [inHour, inMinute] = formData.inTime.split(':').map(Number);
+                const [outHour, outMinute] = formData.outTime.split(':').map(Number);
+                const totalMinutes = (outHour * 60 + outMinute) - (inHour * 60 + inMinute);
+                const hours = Math.floor(totalMinutes / 60);
+                const minutes = totalMinutes % 60;
+                return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
+              })()}
+            </span>
           </div>
-        </form>
+        </div>
       </div>
-    </div>
+
+      <div className="modal-footer">
+        <button 
+          className="btn btn-outlined" 
+          type="button" 
+          onClick={onClose}
+        >
+          Cancel
+        </button>
+        <button 
+          className="btn btn-contained" 
+          type="submit"
+          disabled={loading || !formData.user}
+        >
+          {loading ? 'Saving...' : 'Save Attendance'}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
   );
 };
 
@@ -1479,22 +1485,22 @@ const handleDeleteRecord = async (recordId) => {
 
         {/* Action Bar */}
         <div className="header-actions">
-          <button
+          {/* <button
             className="btn btn-contained"
             onClick={handleAddRecord}
             style={{ marginRight: '10px' }}
           >
             <FiPlus size={16} />
             Add Attendance
-          </button>
+          </button> */}
           
-          <button
+          {/* <button
             className={`btn ${bulkEditMode ? 'btn-contained' : 'btn-outlined'}`}
             onClick={() => setBulkEditMode(!bulkEditMode)}
             style={{ marginRight: '10px' }}
           >
             {bulkEditMode ? 'Cancel Bulk Edit' : 'Bulk Edit'}
-          </button>
+          </button> */}
 
           {/* Export Button */}
           <div className="export-container" ref={exportMenuRef}>
@@ -1846,7 +1852,7 @@ const handleDeleteRecord = async (recordId) => {
                         className="btn btn-contained"
                         onClick={handleAddRecord}
                       >
-                        <FiPlus /> Add Attendance
+                        Add Attendance
                       </button>
                     </div>
                   </td>

@@ -433,19 +433,21 @@
 }
 
 .EmployeeProject-tooltip-text {
-  visibility: hidden;
   background-color: #333;
   color: white;
   text-align: center;
-  padding: 5px 10px;
+  padding: 5px 8px ;
+  padding-right: 70px !important;
   border-radius: 6px;
+  margin-left: 15px;
   position: absolute;
   z-index: 1;
-  bottom: 125%;
-  left: 50%;
+  bottom: 105%;
+  left: 5%;
+  right: 10% !important;
   transform: translateX(-50%);
   white-space: nowrap;
-  font-size: 0.75rem;
+  font-size: 0.60rem;
   opacity: 0;
   transition: opacity 0.3s;
 }
@@ -454,6 +456,8 @@
   visibility: visible;
   opacity: 1;
 }
+
+
 
 /* Progress */
 .EmployeeProject-linear-progress {

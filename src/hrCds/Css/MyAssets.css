@@ -497,7 +497,7 @@
   width: 100%;
   padding: 12px 16px 12px 44px;
   border: 2px solid var(--gray-200);
-  border-radius: var(--border-radius-full);
+  border-radius: 50px;
   font-size: 14px;
   transition: var(--transition);
   background: var(--gray-50);
@@ -824,7 +824,7 @@
 
 .MyAssets-mobile-status-chip {
   padding: 6px 12px;
-  border-radius: var(--border-radius-full);
+  border-radius: 50px;
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
@@ -1086,8 +1086,7 @@
   }
 
   .MyAssets-mobile-status-chip {
-    padding: 4px; 
-    margin: -3vh;
+    padding: 4px;
   }
 
   .MyAssets-mobile-asset-icon.MyAssets-primary {
@@ -1101,6 +1100,7 @@
   .MyAssets-status-approved {
     padding: 4px; 
     margin: -1vh;
+    border-radius: 50px;
   }
 }
 

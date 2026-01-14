@@ -882,3 +882,80 @@
     width: 100%;
   }
 }
+
+@media (max-width: 768px) {
+
+  /* Remove horizontal scroll completely */
+  .leaves-table-container {
+    overflow-x: hidden !important;
+  }
+
+  .leaves-table {
+    width: 100% !important;
+    min-width: 100% !important;
+    table-layout: fixed;
+  }
+
+  /* Hide ALL table headers */
+  .leaves-table thead th {
+    display: none;
+  }
+
+  /* Show ONLY Employee (1st) & Status (4th) headers */
+  .leaves-table thead th:nth-child(1),
+  .leaves-table thead th:nth-child(4) {
+    display: table-cell;
+  }
+
+  /* Hide ALL table cells */
+  .leaves-table tbody td {
+    display: none;
+  }
+
+  /* Show ONLY Employee column */
+  .leaves-table tbody td:nth-child(1) {
+    display: table-cell;
+    width: 70%;
+  }
+
+  /* Show ONLY Status column */
+  .leaves-table tbody td:nth-child(4) {
+    display: table-cell;
+    width: 30%;
+    text-align: right;
+  }
+
+  /* Employee UI compact */
+  .employee-info {
+    gap: 8px;
+  }
+
+  .employee-avatar {
+    width: 34px;
+    height: 34px;
+    font-size: 12px;
+  }
+
+  .employee-name {
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .employee-email {
+    display: none; /* hide email on mobile */
+  }
+
+  /* Status chip smaller */
+  .status-chip {
+    font-size: 10px;
+    padding: 5px 10px;
+  }
+
+  /* Disable hover background issue */
+  .leaves-table tbody tr:hover {
+    background: none;
+  }
+}
