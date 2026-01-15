@@ -52,7 +52,7 @@ const CreateUser = () => {
   // Fetch departments and current user on mount
   useEffect(() => {
     fetchDepartments();
-    fetchUsers();
+  
     // Get current user role from localStorage/token
     const userData = JSON.parse(localStorage.getItem('user') || '{}');
     setCurrentUserRole(userData.jobRole || '');
@@ -60,21 +60,14 @@ const CreateUser = () => {
 
   const fetchDepartments = async () => {
     try {
-      const response = await axios.get('/auth/departments');
+      const response = await axios.get('/departments');
       setDepartments(response.data.departments || []);
     } catch (err) {
       toast.error('Failed to load departments');
     }
   };
 
-  const fetchUsers = async () => {
-    try {
-      const response = await axios.get('/auth/users');
-      setUsers(response.data.users || []);
-    } catch (err) {
-      toast.error('Failed to load users');
-    }
-  };
+
 
   // Handle input changes with validation
   const handleTextChange = (e) => {
@@ -169,7 +162,7 @@ const CreateUser = () => {
       toast.success('✅ User created successfully');
       
       setForm(initialFormState);
-      fetchUsers(); // Refresh user list
+      
     } catch (err) {
       const msg = err?.response?.data?.message || '❌ User creation failed';
       toast.error(msg);
@@ -184,37 +177,6 @@ const CreateUser = () => {
     setOpenEditDialog(true);
   };
 
-  // Handle edit submission
-  const handleEditSubmit = async () => {
-    if (!editingUser) return;
-
-    try {
-      await axios.put(`/auth/users/${editingUser._id}`, editingUser);
-      toast.success('✅ User updated successfully');
-      setOpenEditDialog(false);
-      setEditingUser(null);
-      fetchUsers(); // Refresh list
-    } catch (err) {
-      const msg = err?.response?.data?.message || '❌ Update failed';
-      toast.error(msg);
-    }
-  };
-
-  // Handle user deletion
-  const handleDelete = async () => {
-    if (!userToDelete) return;
-
-    try {
-      await axios.delete(`/auth/users/${userToDelete._id}`);
-      toast.success('✅ User deleted successfully');
-      setOpenDeleteDialog(false);
-      setUserToDelete(null);
-      fetchUsers(); // Refresh list
-    } catch (err) {
-      const msg = err?.response?.data?.message || '❌ Deletion failed';
-      toast.error(msg);
-    }
-  };
 
   // Filter users based on search term
   const filteredUsers = users.filter(user =>
@@ -235,10 +197,9 @@ const CreateUser = () => {
   };
 
   return (
-    <Box p={3}>
-      <Grid container spacing={3}>
-        {/* Left: Create User Form */}
-        <Grid item xs={12} md={6}>
+
+     
+       
           <Paper sx={{ p: 4, borderRadius: 3, height: '100%' }} elevation={6}>
             <Typography variant="h5" fontWeight={600} gutterBottom>
               Create New User
@@ -318,7 +279,7 @@ const CreateUser = () => {
                 onChange={handleSelectChange}
               >
                 {departments.map(dept => (
-                  <MenuItem key={dept._id} value={dept._id}>
+                  <MenuItem key={dept._id} value={dept._id }>
                     {dept.name}
                   </MenuItem>
                 ))}
@@ -432,197 +393,11 @@ const CreateUser = () => {
               </Box>
             </form>
           </Paper>
-        </Grid>
+        
 
-        {/* Right: User List */}
-        <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 3, borderRadius: 3, height: '100%' }} elevation={6}>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-              <Typography variant="h5" fontWeight={600}>
-                Users List ({filteredUsers.length})
-              </Typography>
-              <Box display="flex" gap={1}>
-                <TextField
-                  size="small"
-                  placeholder="Search users..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  InputProps={{
-                    startAdornment: <Search sx={{ mr: 1, color: 'action.active' }} />
-                  }}
-                />
-              </Box>
-            </Box>
-
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Name</TableCell>
-                    <TableCell>Email</TableCell>
-                    <TableCell>Department</TableCell>
-                    <TableCell>Job Role</TableCell>
-                    <TableCell>Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredUsers
-                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                    .map(user => (
-                      <TableRow key={user._id} hover>
-                        <TableCell>{user.name}</TableCell>
-                        <TableCell>{user.email}</TableCell>
-                        <TableCell>
-                          <Chip 
-                            size="small" 
-                            label={user.department?.name || 'N/A'}
-                            color="primary"
-                            variant="outlined"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Chip 
-                            size="small" 
-                            label={user.jobRole}
-                            color={
-                              user.jobRole === 'admin' || user.jobRole === 'SuperAdmin' 
-                                ? 'error' 
-                                : user.jobRole === 'hr' || user.jobRole === 'manager'
-                                ? 'warning'
-                                : 'success'
-                            }
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Box display="flex" gap={1}>
-                            <Tooltip title="Edit">
-                              <IconButton 
-                                size="small" 
-                                onClick={() => handleEdit(user)}
-                                disabled={user.jobRole === 'admin' && currentUserRole !== 'admin'}
-                              >
-                                <Edit fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Delete">
-                              <IconButton 
-                                size="small" 
-                                color="error"
-                                onClick={() => {
-                                  setUserToDelete(user);
-                                  setOpenDeleteDialog(true);
-                                }}
-                                disabled={
-                                  (user.jobRole === 'admin' || user.jobRole === 'SuperAdmin') && 
-                                  currentUserRole !== 'admin'
-                                }
-                              >
-                                <Delete fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          </Box>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-
-            <TablePagination
-              component="div"
-              count={filteredUsers.length}
-              page={page}
-              onPageChange={handleChangePage}
-              rowsPerPage={rowsPerPage}
-              onRowsPerPageChange={handleChangeRowsPerPage}
-              rowsPerPageOptions={[5, 10, 25]}
-            />
-          </Paper>
-        </Grid>
-      </Grid>
-
-      {/* Edit Dialog */}
-      <Dialog open={openEditDialog} onClose={() => setOpenEditDialog(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Edit User</DialogTitle>
-        <DialogContent>
-          {editingUser && (
-            <Box pt={2}>
-              <Grid container spacing={2}>
-                <Grid item xs={6}>
-                  <TextField
-                    label="Name"
-                    fullWidth
-                    value={editingUser.name}
-                    onChange={(e) => setEditingUser({...editingUser, name: e.target.value})}
-                  />
-                </Grid>
-                <Grid item xs={6}>
-                  <TextField
-                    label="Email"
-                    fullWidth
-                    disabled
-                    value={editingUser.email}
-                  />
-                </Grid>
-                <Grid item xs={6}>
-                  <TextField
-                    label="Department"
-                    select
-                    fullWidth
-                    value={editingUser.department?._id || editingUser.department}
-                    onChange={(e) => setEditingUser({...editingUser, department: e.target.value})}
-                    disabled={currentUserRole !== 'admin' && currentUserRole !== 'SuperAdmin'}
-                  >
-                    {departments.map(dept => (
-                      <MenuItem key={dept._id} value={dept._id}>
-                        {dept.name}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                </Grid>
-                <Grid item xs={6}>
-                  <TextField
-                    label="Job Role"
-                    select
-                    fullWidth
-                    value={editingUser.jobRole}
-                    onChange={(e) => setEditingUser({...editingUser, jobRole: e.target.value})}
-                    disabled={currentUserRole !== 'admin' && currentUserRole !== 'SuperAdmin'}
-                  >
-                    {jobRoleOptions.map(role => (
-                      <MenuItem key={role} value={role}>
-                        {role}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                </Grid>
-                {/* Add more editable fields as needed */}
-              </Grid>
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenEditDialog(false)}>Cancel</Button>
-          <Button onClick={handleEditSubmit} variant="contained">Save Changes</Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={openDeleteDialog} onClose={() => setOpenDeleteDialog(false)}>
-        <DialogTitle>Confirm Delete</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to delete user {userToDelete?.name}?
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenDeleteDialog(false)}>Cancel</Button>
-          <Button onClick={handleDelete} variant="contained" color="error">
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+    
+   
+ 
   );
 };
 

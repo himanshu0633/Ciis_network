@@ -12,18 +12,15 @@ import {
   IconButton,
   Divider,
   Typography,
-  Collapse,
   useMediaQuery,
   useTheme
 } from '@mui/material';
 import {
-  ExpandLess,
-  ExpandMore,
   LogoutOutlined
 } from '@mui/icons-material';
 import Swal from "sweetalert2";
 import {
-  FaHome, FaClipboardList, FaFileAlt, FaRocket, FaClock, FaMoneyBill, FaWallet,
+  FaHome, FaClipboardList, FaFileAlt, FaRocket, FaMoneyBill, FaWallet,
   FaBullseye, FaChartLine, FaTasks, FaUserPlus, FaUserTie, FaNetworkWired,
   FaGraduationCap, FaBell, FaUsers, FaUser, FaCog, FaBuilding
 } from 'react-icons/fa';
@@ -138,9 +135,6 @@ const Sidebar = ({ isMobile = false }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const theme = useTheme();
-  const [userRole, setUserRole] = useState('');
-  const [jobRole, setJobRole] = useState('');
-  const [openSections, setOpenSections] = useState({});
   const [isHovered, setIsHovered] = useState(false);
   const sidebarRef = useRef(null);
   const hoverTimer = useRef(null);
@@ -148,14 +142,6 @@ const Sidebar = ({ isMobile = false }) => {
 
   // Mobile पर always open रहेगा, Desktop पर hover-based
   const isSidebarOpen = isMobile ? true : isHovered;
-
-  useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('user'));
-    if (user?.role) {
-      setUserRole(user.role);
-      setJobRole(user.jobRole);
-    }
-  }, []);
 
   useEffect(() => {
     // Cleanup timers on unmount
@@ -193,19 +179,9 @@ const Sidebar = ({ isMobile = false }) => {
 
   const handleNavigate = (path) => {
     navigate(path);
-    // Mobile पर navigation के बाद sidebar close हो सकता है (अगर drawer है)
-    if (isMobile) {
-      // ये parent component handle करेगा
-    } else {
+    if (!isMobile) {
       setIsHovered(false);
     }
-  };
-
-  const handleSectionToggle = (section) => {
-    setOpenSections(prev => ({
-      ...prev,
-      [section]: !prev[section]
-    }));
   };
 
   const handleLogout = async () => {
@@ -244,7 +220,7 @@ const Sidebar = ({ isMobile = false }) => {
     }
   };
 
-  // Menu Structure
+  // Menu Structure - सभी items सभी users के लिए दिखेंगे
   const menuSections = [
     {
       id: 'main',
@@ -253,26 +229,22 @@ const Sidebar = ({ isMobile = false }) => {
         { 
           icon: <FaHome />, 
           name: 'Dashboard', 
-          path: '/cds/user-dashboard', 
-          roles: ['user', 'hr', 'manager', 'admin', 'SuperAdmin'] 
+          path: '/cds/user-dashboard'
         },
         { 
           icon: <FaClipboardList />, 
           name: 'Attendance', 
-          path: '/cds/attendance', 
-          roles: ['user', 'hr', 'manager', 'admin', 'SuperAdmin'] 
+          path: '/cds/attendance'
         },
         { 
           icon: <FaFileAlt />, 
           name: 'My Leaves', 
-          path: '/cds/my-leaves', 
-          roles: ['user', 'hr', 'manager', 'admin', 'SuperAdmin'] 
+          path: '/cds/my-leaves'
         },
         { 
           icon: <FaRocket />, 
           name: 'My Assets', 
-          path: '/cds/my-assets', 
-          roles: ['user', 'hr', 'manager', 'admin', 'SuperAdmin'] 
+          path: '/cds/my-assets'
         },
       ]
     },
@@ -283,14 +255,12 @@ const Sidebar = ({ isMobile = false }) => {
         { 
           icon: <FaGraduationCap />, 
           name: 'Create Task', 
-          path: '/cds/task-management', 
-          roles: ['user', 'hr', 'manager']
+          path: '/cds/task-management'
         },
         { 
           icon: <FaTasks />, 
           name: 'Employee Project', 
-          path: '/cds/project', 
-          roles: ['user', 'hr', 'manager']
+          path: '/cds/project'
         },
       ]
     },
@@ -301,113 +271,74 @@ const Sidebar = ({ isMobile = false }) => {
         { 
           icon: <FaBell />, 
           name: 'Alerts', 
-          path: '/cds/alert', 
-          roles: ['user', 'hr', 'manager', 'admin', 'SuperAdmin']
+          path: '/cds/alert'
         },
         { 
           icon: <FaTasks />, 
           name: 'Employee Meeting', 
-          path: '/cds/employee-meeting', 
-          roles: ['user', 'hr', 'manager', 'admin', 'SuperAdmin']
+          path: '/cds/employee-meeting'
         },
       ]
     },
     {
       id: 'admin',
       heading: 'Administration',
-      roles: ['hr', 'manager', 'admin', 'SuperAdmin'],
       items: [
         { 
           icon: <FaUser />, 
           name: 'Employee Details', 
-          path: '/cds/admin/emp-details', 
-          roles: ['hr', 'manager', 'admin', 'SuperAdmin'] 
+          path: '/cds/admin/emp-details'
         },
         { 
           icon: <FaClipboardList />, 
           name: 'Employees Attendance', 
-          path: '/cds/admin/emp-attendance', 
-          roles: ['hr', 'manager', 'admin', 'SuperAdmin'] 
+          path: '/cds/admin/emp-attendance'
         },
         { 
           icon: <FaFileAlt />, 
           name: 'Employees Leaves', 
-          path: '/cds/admin/emp-leaves', 
-          roles: ['hr', 'manager', 'admin', 'SuperAdmin'] 
+          path: '/cds/admin/emp-leaves'
         },
         { 
           icon: <FaRocket />, 
           name: 'Employees Assets', 
-          path: '/cds/admin/emp-assets', 
-          roles: ['hr', 'manager', 'admin', 'SuperAdmin'] 
+          path: '/cds/admin/emp-assets'
         },
         { 
           icon: <FaTasks />, 
           name: 'Employees Task Create', 
-          path: '/cds/admin/admin-task-create', 
-          roles: ['hr', 'manager', 'admin', 'SuperAdmin'] ,
-          jobRoles: ['Reporting-Auditor']
+          path: '/cds/admin/admin-task-create'
         },
         { 
           icon: <FaTasks />, 
           name: 'Client', 
-          path: '/cds/admin/emp-client', 
-          roles: ['hr', 'manager', 'admin', 'SuperAdmin'] 
+          path: '/cds/admin/emp-client'
         },
         { 
           icon: <FaTasks />, 
           name: 'Employees All Task', 
-          path: '/cds/admin/emp-all-task', 
-          roles: ['hr', 'manager', 'admin', 'SuperAdmin'] 
+          path: '/cds/admin/emp-all-task'
         },
         { 
           icon: <FaUsers />, 
           name: 'Admin Meeting', 
-          path: '/cds/admin/admin-meeting', 
-          roles: ['hr', 'manager', 'admin', 'SuperAdmin'] 
+          path: '/cds/admin/admin-meeting'
         },
         { 
           icon: <FaNetworkWired />, 
           name: 'Admin Projects', 
-          path: '/cds/admin/adminp', 
-          roles: ['hr', 'manager', 'admin', 'SuperAdmin'] 
+          path: '/cds/admin/adminp'
         },
         { 
           icon: <FaUserPlus />, 
           name: 'Create User', 
-          path: '/cds/admin/create-user', 
-          roles: ['hr', 'manager', 'admin', 'SuperAdmin'] 
+          path: '/cds/admin/create-user'
         },
       ]
     }
   ];
 
-  // Filter menu sections based on user role
-  // const getFilteredMenuSections = () => {
-  //   return menuSections.filter(section => {
-  //     if (section.roles) {
-  //       return section.roles.includes(userRole);
-  //     }
-  //     return true;
-  //   });
-  // };
-
-  // const filteredSections = getFilteredMenuSections();
-
   const renderMenuSection = (section) => {
-    const filteredItems = section.items.filter(item => {
-  const roleAllowed =
-    item.roles && item.roles.includes(userRole);
-
-  const jobRoleAllowed =
-    item.jobRoles && item.jobRoles.includes(jobRole);
-
-  return roleAllowed || jobRoleAllowed;
-});
-
-
-    if (filteredItems.length === 0) return null;
-
     // Mobile पर always open दिखाना है, desktop पर conditional
     const shouldShowFull = isMobile ? true : isSidebarOpen;
 
@@ -437,7 +368,7 @@ const Sidebar = ({ isMobile = false }) => {
 
         {/* Section Items */}
         <List sx={{ py: 0 }}>
-          {filteredItems.map((item, idx) => (
+          {section.items.map((item, idx) => (
             <StyledListItem key={`${section.id}-${idx}`} disablePadding>
               {shouldShowFull ? (
                 <StyledListItemButton
@@ -487,25 +418,7 @@ const Sidebar = ({ isMobile = false }) => {
       } : undefined}
     >
       {/* Menu Sections */}
-      {menuSections.map((section) => {
-  const filteredItems = section.items.filter(item => {
-    const roleAllowed =
-      item.roles && item.roles.includes(userRole);
-
-    const jobRoleAllowed =
-      item.jobRoles && item.jobRoles.includes(jobRole);
-
-    return roleAllowed || jobRoleAllowed;
-  });
-
-  if (filteredItems.length === 0) return null;
-
-  return renderMenuSection({
-    ...section,
-    items: filteredItems
-  });
-})}
-
+      {menuSections.map((section) => renderMenuSection(section))}
 
       {/* Logout Section */}
       <Box sx={{ mt: 'auto', p: 2 }}>

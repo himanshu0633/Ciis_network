@@ -26,7 +26,7 @@ const DepartmentManagement = () => {
 
   const fetchDepartments = async () => {
     try {
-      const response = await axios.get('/auth/departments');
+      const response = await axios.get('/departments');
       setDepartments(response.data.departments || []);
     } catch (err) {
       toast.error('Failed to load departments');
@@ -42,10 +42,10 @@ const DepartmentManagement = () => {
     setLoading(true);
     try {
       if (editingDept) {
-        await axios.put(`/auth/departments/${editingDept._id}`, formData);
+        await axios.put(`/departments/${editingDept._id}`, formData);
         toast.success('Department updated successfully');
       } else {
-        await axios.post('/auth/departments', formData);
+        await axios.post('/departments', formData);
         toast.success('Department created successfully');
       }
       
@@ -65,7 +65,7 @@ const DepartmentManagement = () => {
     if (!window.confirm('Are you sure you want to delete this department?')) return;
 
     try {
-      await axios.delete(`/auth/departments/${id}`);
+      await axios.delete(`/departments/${id}`);
       toast.success('Department deleted successfully');
       fetchDepartments();
     } catch (err) {
