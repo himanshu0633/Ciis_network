@@ -139,6 +139,7 @@ const Sidebar = ({ isMobile = false }) => {
   const navigate = useNavigate();
   const theme = useTheme();
   const [userRole, setUserRole] = useState('');
+  const [jobRole, setJobRole] = useState('');
   const [openSections, setOpenSections] = useState({});
   const [isHovered, setIsHovered] = useState(false);
   const sidebarRef = useRef(null);
@@ -152,6 +153,7 @@ const Sidebar = ({ isMobile = false }) => {
     const user = JSON.parse(localStorage.getItem('user'));
     if (user?.role) {
       setUserRole(user.role);
+      setJobRole(user.jobRole);
     }
   }, []);
 
@@ -343,7 +345,8 @@ const Sidebar = ({ isMobile = false }) => {
           icon: <FaTasks />, 
           name: 'Employees Task Create', 
           path: '/cds/admin/admin-task-create', 
-          roles: ['hr', 'manager', 'admin', 'SuperAdmin'] 
+          roles: ['hr', 'manager', 'admin', 'SuperAdmin'] ,
+          jobRoles: ['Reporting-Auditor']
         },
         { 
           icon: <FaTasks />, 
@@ -380,21 +383,28 @@ const Sidebar = ({ isMobile = false }) => {
   ];
 
   // Filter menu sections based on user role
-  const getFilteredMenuSections = () => {
-    return menuSections.filter(section => {
-      if (section.roles) {
-        return section.roles.includes(userRole);
-      }
-      return true;
-    });
-  };
+  // const getFilteredMenuSections = () => {
+  //   return menuSections.filter(section => {
+  //     if (section.roles) {
+  //       return section.roles.includes(userRole);
+  //     }
+  //     return true;
+  //   });
+  // };
 
-  const filteredSections = getFilteredMenuSections();
+  // const filteredSections = getFilteredMenuSections();
 
   const renderMenuSection = (section) => {
-    const filteredItems = section.items.filter(item => 
-      !item.roles || item.roles.includes(userRole)
-    );
+    const filteredItems = section.items.filter(item => {
+  const roleAllowed =
+    item.roles && item.roles.includes(userRole);
+
+  const jobRoleAllowed =
+    item.jobRoles && item.jobRoles.includes(jobRole);
+
+  return roleAllowed || jobRoleAllowed;
+});
+
 
     if (filteredItems.length === 0) return null;
 
@@ -477,7 +487,25 @@ const Sidebar = ({ isMobile = false }) => {
       } : undefined}
     >
       {/* Menu Sections */}
-      {filteredSections.map(renderMenuSection)}
+      {menuSections.map((section) => {
+  const filteredItems = section.items.filter(item => {
+    const roleAllowed =
+      item.roles && item.roles.includes(userRole);
+
+    const jobRoleAllowed =
+      item.jobRoles && item.jobRoles.includes(jobRole);
+
+    return roleAllowed || jobRoleAllowed;
+  });
+
+  if (filteredItems.length === 0) return null;
+
+  return renderMenuSection({
+    ...section,
+    items: filteredItems
+  });
+})}
+
 
       {/* Logout Section */}
       <Box sx={{ mt: 'auto', p: 2 }}>

@@ -56,7 +56,7 @@ const EmployeeTypeFilter = ({ selected, onChange }) => {
   );
 };
 
-// Status Filter Component
+// Status Filter Component - UPDATED to include LATE
 const StatusFilter = ({ selected, onChange }) => {
   const options = [
     { value: 'all', label: 'All Status' },
@@ -141,7 +141,7 @@ const AddAttendanceModal = ({ onClose, onSave, users, selectedDate }) => {
     const totalMinutes = (hours * 60) + minutes;
     
     if (totalMinutes >= 600) return "halfday";
-    if (totalMinutes >= 570) return "late";
+    if (totalMinutes >= 550) return "late"; // Changed from 570 to 550 for 9:10 AM
     return "present";
   };
 
@@ -412,7 +412,7 @@ const EditAttendanceModal = ({ record, onClose, onSave, onDelete, users }) => {
     const totalMinutes = (hours * 60) + minutes;
     
     if (totalMinutes >= 600) return "halfday";
-    if (totalMinutes >= 570) return "late";
+    if (totalMinutes >= 550) return "late"; // Changed from 570 to 550 for 9:10 AM
     return "present";
   };
 
@@ -860,6 +860,7 @@ const EmployeeAttendance = () => {
     }
   };
 
+  // UPDATED: Calculate status based on new LATE rules (9:10 AM to 9:30 AM)
   const calculateStatusFromTime = (inTime) => {
     if (!inTime) return "absent";
     
@@ -868,9 +869,11 @@ const EmployeeAttendance = () => {
     const loginMinute = loginTime.getMinutes();
     const totalMinutes = (loginHour * 60) + loginMinute;
     
+    // 9:10 AM = 550 minutes, 9:30 AM = 570 minutes, 10:00 AM = 600 minutes
     if (totalMinutes >= 600) return "halfday";
-    if (totalMinutes >= 570) return "late";
-    return "present";
+    if (totalMinutes >= 550 && totalMinutes < 570) return "late"; // 9:10 AM to 9:30 AM
+    if (totalMinutes >= 570) return "halfday"; // 9:30 AM to 10:00 AM
+    return "present"; // Before 9:10 AM
   };
 
   const fetchAttendanceData = async (date) => {
@@ -1012,6 +1015,7 @@ const EmployeeAttendance = () => {
     });
   };
 
+  // UPDATED: Get login time category for LATE (9:10 AM to 9:30 AM)
   const getLoginTimeCategory = (inTime) => {
     if (!inTime) return "No Login";
     
@@ -1022,7 +1026,8 @@ const EmployeeAttendance = () => {
     
     if (totalMinutes >= 600) return "After 10:00 AM";
     if (totalMinutes >= 570) return "9:30 AM - 10:00 AM";
-    return "Before 9:30 AM";
+    if (totalMinutes >= 550) return "9:10 AM - 9:30 AM (LATE)";
+    return "Before 9:10 AM";
   };
 
   const formatExportDate = (dateStr) => {
@@ -1042,39 +1047,40 @@ const EmployeeAttendance = () => {
   const handleAddRecord = () => {
     setAddModalOpen(true);
   };
-const handleSaveRecord = async (recordId, updatedData) => {
-  try {
-    setLoading(true);
-    
-    let response;
-    
-    // Check if it's a frontend-generated absent record
-    if (recordId.startsWith('absent_')) {
-      // Extract user ID and date from the recordId
-      const parts = recordId.split('_');
-      const userId = parts[1];
-      const date = parts[2];
+
+  const handleSaveRecord = async (recordId, updatedData) => {
+    try {
+      setLoading(true);
       
-      // Create new attendance record
-      response = await axios.post('/attendance/manual', {
-        ...updatedData,
-        user: userId,
-        date: date
-      });
-    } else {
-      // Update existing record
-      response = await axios.put(`/attendance/${recordId}`, updatedData);
+      let response;
+      
+      // Check if it's a frontend-generated absent record
+      if (recordId.startsWith('absent_')) {
+        // Extract user ID and date from the recordId
+        const parts = recordId.split('_');
+        const userId = parts[1];
+        const date = parts[2];
+        
+        // Create new attendance record
+        response = await axios.post('/attendance/manual', {
+          ...updatedData,
+          user: userId,
+          date: date
+        });
+      } else {
+        // Update existing record
+        response = await axios.put(`/attendance/${recordId}`, updatedData);
+      }
+      
+      showSnackbar("Attendance record saved successfully!", "success");
+      fetchAttendanceData(selectedDate); // Refresh data
+    } catch (error) {
+      console.error("Error saving attendance:", error);
+      showSnackbar("Failed to save attendance record", "error");
+    } finally {
+      setLoading(false);
     }
-    
-    showSnackbar("Attendance record saved successfully!", "success");
-    fetchAttendanceData(selectedDate); // Refresh data
-  } catch (error) {
-    console.error("Error saving attendance:", error);
-    showSnackbar("Failed to save attendance record", "error");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const handleAddNewRecord = async (data) => {
     try {
@@ -1091,29 +1097,29 @@ const handleSaveRecord = async (recordId, updatedData) => {
     }
   };
 
-const handleDeleteRecord = async (recordId) => {
-  try {
-    setLoading(true);
-    
-    // Check if it's a frontend-generated absent record
-    if (recordId.startsWith('absent_')) {
-      showSnackbar("Cannot delete absent record - it doesn't exist in database", "warning");
+  const handleDeleteRecord = async (recordId) => {
+    try {
+      setLoading(true);
+      
+      // Check if it's a frontend-generated absent record
+      if (recordId.startsWith('absent_')) {
+        showSnackbar("Cannot delete absent record - it doesn't exist in database", "warning");
+        setEditModalOpen(false);
+        return;
+      }
+      
+      await axios.delete(`/attendance/${recordId}`);
+      
+      showSnackbar("Attendance record deleted successfully!", "success");
+      fetchAttendanceData(selectedDate); // Refresh data
       setEditModalOpen(false);
-      return;
+    } catch (error) {
+      console.error("Error deleting attendance:", error);
+      showSnackbar("Failed to delete attendance record", "error");
+    } finally {
+      setLoading(false);
     }
-    
-    await axios.delete(`/attendance/${recordId}`);
-    
-    showSnackbar("Attendance record deleted successfully!", "success");
-    fetchAttendanceData(selectedDate); // Refresh data
-    setEditModalOpen(false);
-  } catch (error) {
-    console.error("Error deleting attendance:", error);
-    showSnackbar("Failed to delete attendance record", "error");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const handleBulkStatusChange = async (status) => {
     if (selectedRecords.length === 0) {
@@ -1425,11 +1431,12 @@ const handleDeleteRecord = async (recordId) => {
           <p className="attendance-subtitle">
             Monitor and manage employee attendance with full edit capabilities
           </p>
+          {/* UPDATED: Timing rules with LATE (9:10 AM to 9:30 AM) */}
           <div className="timing-rules">
-            <span className="rule-item"><FiClock /> Before 9:30 AM → PRESENT</span>
-            <span className="rule-item"><FiAlertTriangle /> 9:30 AM - 10:00 AM → LATE</span>
-            <span className="rule-item"><FiAlertCircle /> After 10:00 AM → HALF DAY</span>
-            <span className="rule-item"><FiUserX /> No Login → ABSENT</span>
+            <span className="rule-item"><FiCheckCircle /> Before 9:10 AM → PRESENT</span>
+            <span className="rule-item"><FiAlertTriangle /> 9:10 AM - 9:30 AM → LATE</span>
+            <span className="rule-item"><FiAlertCircle /> 9:30 AM - 10:00 AM → HALF DAY</span>
+            <span className="rule-item"><FiUserX /> After 10:00 AM → HALF DAY / No Login → ABSENT</span>
           </div>
           
           {bulkEditMode && selectedRecords.length > 0 && (
@@ -1485,22 +1492,8 @@ const handleDeleteRecord = async (recordId) => {
 
         {/* Action Bar */}
         <div className="header-actions">
-          {/* <button
-            className="btn btn-contained"
-            onClick={handleAddRecord}
-            style={{ marginRight: '10px' }}
-          >
-            <FiPlus size={16} />
-            Add Attendance
-          </button> */}
-          
-          {/* <button
-            className={`btn ${bulkEditMode ? 'btn-contained' : 'btn-outlined'}`}
-            onClick={() => setBulkEditMode(!bulkEditMode)}
-            style={{ marginRight: '10px' }}
-          >
-            {bulkEditMode ? 'Cancel Bulk Edit' : 'Bulk Edit'}
-          </button> */}
+      
+        
 
           {/* Export Button */}
           <div className="export-container" ref={exportMenuRef}>
@@ -1521,20 +1514,10 @@ const handleDeleteRecord = async (recordId) => {
                   <span>Export as Excel (XLSX)</span>
                 </button>
 
-                <button className="export-option" onClick={exportToPDF}>
-                  <FiFileText size={16} />
-                  <span>Export as PDF</span>
-                </button>
+          
 
-                <button className="export-option" onClick={exportToImage}>
-                  <FiImage size={16} />
-                  <span>Export as Image (JPG)</span>
-                </button>
 
-                <button className="export-option" onClick={exportToCSV}>
-                  <FiDownload size={16} />
-                  <span>Export as CSV</span>
-                </button>
+                
               </div>
             )}
           </div>
@@ -1627,7 +1610,7 @@ const handleDeleteRecord = async (recordId) => {
         </div>
       </div>
 
-      {/* Stat Cards */}
+      {/* Stat Cards - UPDATED with LATE */}
       <div className="stats-container">
         {[
           { 
@@ -1642,7 +1625,7 @@ const handleDeleteRecord = async (recordId) => {
             label: "Present", 
             count: stats.present, 
             icon: <FiCheckCircle />,
-            description: "Before 9:30 AM",
+            description: "Before 9:10 AM",
             statClass: "stat-card-success",
             iconClass: "stat-icon-success"
           },
@@ -1650,7 +1633,7 @@ const handleDeleteRecord = async (recordId) => {
             label: "Late", 
             count: stats.late, 
             icon: <FiClock />,
-            description: "9:30 AM - 10:00 AM",
+            description: "9:10 AM - 9:30 AM",
             statClass: "stat-card-warning",
             iconClass: "stat-icon-warning"
           },
@@ -1658,7 +1641,7 @@ const handleDeleteRecord = async (recordId) => {
             label: "Half Day", 
             count: stats.halfDay, 
             icon: <FiAlertCircle />,
-            description: "After 10:00 AM",
+            description: "After 9:30 AM",
             statClass: "stat-card-info",
             iconClass: "stat-icon-info"
           },
@@ -1674,7 +1657,7 @@ const handleDeleteRecord = async (recordId) => {
             label: "On Time", 
             count: stats.onTime, 
             icon: <FiUserCheck />,
-            description: "Arrived before 9:30 AM",
+            description: "Arrived before 9:10 AM",
             statClass: "stat-card-secondary",
             iconClass: "stat-icon-secondary"
           },
@@ -1810,10 +1793,11 @@ const handleDeleteRecord = async (recordId) => {
                       <span className={`status-chip ${getStatusClass(rec.status)}`}>
                         {rec.status.toUpperCase()}
                       </span>
+                      {/* UPDATED: Status explanation with new LATE rules */}
                       <div className="status-explanation">
-                        {rec.status === 'present' && 'Arrived before 9:30 AM'}
-                        {rec.status === 'late' && 'Arrived between 9:30-10:00 AM'}
-                        {rec.status === 'halfday' && 'Arrived after 10:00 AM'}
+                        {rec.status === 'present' && 'Arrived before 9:10 AM'}
+                        {rec.status === 'late' && 'Arrived between 9:10-9:30 AM'}
+                        {rec.status === 'halfday' && 'Arrived after 9:30 AM'}
                         {rec.status === 'absent' && 'No attendance recorded'}
                       </div>
                     </td>
@@ -1884,9 +1868,9 @@ const handleDeleteRecord = async (recordId) => {
             </span>
           </div>
           <div className="summary-item">
-            <span className="summary-label">Absent Rate:</span>
+            <span className="summary-label">Late Rate:</span>
             <span className="summary-value">
-              {stats.total > 0 ? (stats.absent / stats.total * 100).toFixed(1) : 0}%
+              {stats.total > 0 ? (stats.late / stats.total * 100).toFixed(1) : 0}%
             </span>
           </div>
         </div>

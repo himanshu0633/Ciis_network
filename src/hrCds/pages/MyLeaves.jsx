@@ -66,19 +66,30 @@ const MyLeaves = () => {
     });
   };
 
-  const getHistoryLabel = (h) => {
-    if (!h) return "";
-    const dateText = h.at
-      ? ` on ${new Date(h.at).toLocaleString()}`
-      : "";
-    const remarksText = h.remarks ? ` — "${h.remarks}"` : "";
-    if (h.action === "approved")
-      return `✅ Approved by ${h.role}${dateText}${remarksText}`;
-    if (h.action === "rejected")
-      return `❌ Rejected by ${h.role}${dateText}${remarksText}`;
-    if (h.action === "applied") return `📝 Applied${dateText}${remarksText}`;
-    return `⏳ Pending${dateText}${remarksText}`;
-  };
+const getHistoryLabel = (h) => {
+  if (!h) return "";
+
+  const dateText = h.at
+    ? ` on ${new Date(h.at).toLocaleString()}`
+    : "";
+
+  const remarksText = h.remarks ? ` — "${h.remarks}"` : "";
+
+const approvedBy =
+  typeof h.by === "object" ? h.by.name : "Unknown";
+
+  if (h.action === "approved")
+    return `✅ Approved by ${approvedBy}${dateText}${remarksText}`;
+
+  if (h.action === "rejected")
+    return `❌ Rejected by ${approvedBy}${dateText}${remarksText}`;
+
+  if (h.action === "applied")
+    return `📝 Applied${dateText}`;
+
+  return `⏳ Pending`;
+};
+
 
   const fetchLeaves = useCallback(async (showRefresh = false) => {
     if (showRefresh) setRefreshing(true);

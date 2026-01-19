@@ -70,6 +70,7 @@ const statusColors = {
 };
 
 const UserCreateTask = () => {
+  // State declarations
   const [openDialog, setOpenDialog] = useState(false);
   const [isCreatingTask, setIsCreatingTask] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
@@ -118,7 +119,7 @@ const UserCreateTask = () => {
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
-    dueDateTime: null,
+    dueDateTime: '',
     priority: 'medium',
     priorityDays: '1',
     files: null,
@@ -139,6 +140,7 @@ const UserCreateTask = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [isTablet, setIsTablet] = useState(window.innerWidth >= 768 && window.innerWidth < 1024);
 
+  // Responsive handler
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
@@ -149,6 +151,7 @@ const UserCreateTask = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Fetch user data
   const fetchUserData = useCallback(() => {
     try {
       const userStr = localStorage.getItem('user');
@@ -191,6 +194,7 @@ const UserCreateTask = () => {
     }
   }, []);
 
+  // Snackbar utility
   const showSnackbar = (message, severity = 'info') => {
     if (snackbarTimerRef.current) {
       clearTimeout(snackbarTimerRef.current);
@@ -207,6 +211,7 @@ const UserCreateTask = () => {
     }, 3000);
   };
 
+  // Get user status for a task
   const getUserStatusForTask = useCallback((task, userId) => {
     if (!task || !userId) return 'pending';
     
@@ -224,85 +229,116 @@ const UserCreateTask = () => {
     return 'pending';
   }, []);
 
-  const isOverdue = useCallback((dueDateTime, status) => {
-    if (!dueDateTime) return false;
-    
-    // If status is already overdue
-    if (status === 'overdue') return true;
-    
-    const now = new Date();
-    const dueDate = new Date(dueDateTime);
-    
-    // Check if due date has passed
-    const isPastDue = dueDate < now;
-    
-    // Check if task is in a status that can be overdue
-    const canBeOverdue = ['pending', 'in-progress', 'reopen', 'onhold'].includes(status);
-    
-    return isPastDue && canBeOverdue;
-  }, []);
+  // Check if task is overdue
+// 🔴 REPLACE the isOverdue function with this:
+const isOverdue = useCallback((dueDateTime, status) => {
+  if (!dueDateTime) return false;
+  
+  // If status is already marked as overdue
+  if (status === 'overdue') return true;
+  
+  const now = new Date();
+  const dueDate = new Date(dueDateTime);
+  
+  // Check if due date has passed
+  const isPastDue = dueDate < now;
+  
+  // Statuses that can be considered for overdue
+  const canBeOverdue = ['pending', 'in-progress', 'reopen', 'onhold'];
+  
+  return isPastDue && canBeOverdue.includes(status);
+}, []);
 
-  const calculateStatsFromTasks = useCallback((tasks) => {
-    if (!tasks || Object.keys(tasks).length === 0) {
-      setTaskStats({
-        total: 0,
-        pending: { count: 0, percentage: 0 },
-        inProgress: { count: 0, percentage: 0 },
-        completed: { count: 0, percentage: 0 },
-        rejected: { count: 0, percentage: 0 },
-        onHold: { count: 0, percentage: 0 },
-        reopen: { count: 0, percentage: 0 },
-        cancelled: { count: 0, percentage: 0 },
-        overdue: { count: 0, percentage: 0 }
-      });
-      return;
-    }
-    
-    let total = 0;
-    const statusCounts = {
-      pending: 0,
-      'in-progress': 0,
-      completed: 0,
-      rejected: 0,
-      onhold: 0,
-      reopen: 0,
-      cancelled: 0,
-      overdue: 0
-    };
-
-    Object.values(tasks).forEach(dateTasks => {
-      dateTasks.forEach(task => {
-        total++;
-        const myStatus = getUserStatusForTask(task, userId);
-
-        // Count by status
-        if (statusCounts[myStatus] !== undefined) {
-          statusCounts[myStatus]++;
-        }
-
-        // Check and count overdue
-        const taskIsOverdue = isOverdue(task.dueDateTime, myStatus);
-        if (taskIsOverdue && myStatus !== 'overdue') {
-          statusCounts.overdue++;
-        }
-      });
+// 🔴 REPLACE the getOverdueCount function with this:
+const getOverdueCount = () => {
+  let count = 0;
+  Object.values(myTasksGrouped).forEach(tasks => {
+    tasks.forEach(task => {
+      const myStatus = getUserStatusForTask(task, userId);
+      const taskIsOverdue = isOverdue(task.dueDateTime, myStatus);
+      
+      if (taskIsOverdue || myStatus === 'overdue') {
+        count++;
+      }
     });
+  });
+  return count;
+};
 
-    const calculatePercentage = (count) => total > 0 ? Math.round((count / total) * 100) : 0;
-
+// 🔴 REPLACE the calculateStatsFromTasks function with this:
+const calculateStatsFromTasks = useCallback((tasks) => {
+  if (!tasks || Object.keys(tasks).length === 0) {
     setTaskStats({
-      total,
-      pending: { count: statusCounts.pending, percentage: calculatePercentage(statusCounts.pending) },
-      inProgress: { count: statusCounts['in-progress'], percentage: calculatePercentage(statusCounts['in-progress']) },
-      completed: { count: statusCounts.completed, percentage: calculatePercentage(statusCounts.completed) },
-      rejected: { count: statusCounts.rejected, percentage: calculatePercentage(statusCounts.rejected) },
-      onHold: { count: statusCounts.onhold, percentage: calculatePercentage(statusCounts.onhold) },
-      reopen: { count: statusCounts.reopen, percentage: calculatePercentage(statusCounts.reopen) },
-      cancelled: { count: statusCounts.cancelled, percentage: calculatePercentage(statusCounts.cancelled) },
-      overdue: { count: statusCounts.overdue, percentage: calculatePercentage(statusCounts.overdue) }
+      total: 0,
+      pending: { count: 0, percentage: 0 },
+      inProgress: { count: 0, percentage: 0 },
+      completed: { count: 0, percentage: 0 },
+      rejected: { count: 0, percentage: 0 },
+      onHold: { count: 0, percentage: 0 },
+      reopen: { count: 0, percentage: 0 },
+      cancelled: { count: 0, percentage: 0 },
+      overdue: { count: 0, percentage: 0 }
     });
-  }, [userId, getUserStatusForTask, isOverdue]);
+    return;
+  }
+  
+  let total = 0;
+  const statusCounts = {
+    pending: 0,
+    'in-progress': 0,
+    completed: 0,
+    rejected: 0,
+    onhold: 0,
+    reopen: 0,
+    cancelled: 0,
+    overdue: 0
+  };
 
+  Object.values(tasks).forEach(dateTasks => {
+    dateTasks.forEach(task => {
+      total++;
+      const myStatus = getUserStatusForTask(task, userId);
+
+      if (statusCounts[myStatus] !== undefined) {
+        statusCounts[myStatus]++;
+      }
+
+      // Check if task is overdue
+      if (isOverdue(task.dueDateTime, myStatus) && myStatus !== 'overdue') {
+        statusCounts.overdue++;
+      }
+    });
+  });
+
+  const calculatePercentage = (count) => total > 0 ? Math.round((count / total) * 100) : 0;
+
+  setTaskStats({
+    total,
+    pending: { count: statusCounts.pending, percentage: calculatePercentage(statusCounts.pending) },
+    inProgress: { count: statusCounts['in-progress'], percentage: calculatePercentage(statusCounts['in-progress']) },
+    completed: { count: statusCounts.completed, percentage: calculatePercentage(statusCounts.completed) },
+    rejected: { count: statusCounts.rejected, percentage: calculatePercentage(statusCounts.rejected) },
+    onHold: { count: statusCounts.onhold, percentage: calculatePercentage(statusCounts.onhold) },
+    reopen: { count: statusCounts.reopen, percentage: calculatePercentage(statusCounts.reopen) },
+    cancelled: { count: statusCounts.cancelled, percentage: calculatePercentage(statusCounts.cancelled) },
+    overdue: { count: statusCounts.overdue, percentage: calculatePercentage(statusCounts.overdue) }
+  });
+}, [userId, getUserStatusForTask, isOverdue]);
+
+// 🔴 ADD this new function for manual overdue check:
+const manualCheckOverdue = async () => {
+  try {
+    const res = await axios.get('/task/check-overdue');
+    showSnackbar(res.data.message, 'success');
+    fetchMyTasks();
+    fetchOverdueTasks();
+  } catch (error) {
+    console.error('Error checking overdue tasks:', error);
+    showSnackbar('Failed to check overdue tasks', 'error');
+  }
+};
+
+  // Fetch user's tasks
   const fetchMyTasks = useCallback(async () => {
     if (authError || !userId) {
       setLoading(false);
@@ -337,6 +373,7 @@ const UserCreateTask = () => {
     }
   }, [authError, userId, statusFilter, searchTerm, timeFilter, calculateStatsFromTasks]);
 
+  // Fetch overdue tasks
   const fetchOverdueTasks = useCallback(async () => {
     if (authError || !userId) {
       return;
@@ -353,10 +390,12 @@ const UserCreateTask = () => {
     }
   }, [authError, userId]);
 
+  // Handle time filter change
   const handleTimeFilterChange = (period) => {
     setTimeFilter(period);
   };
 
+  // Handle stats card click
   const handleStatsCardClick = (status) => {
     if (status) {
       const newStatusFilter = statusFilter === status ? '' : status;
@@ -371,6 +410,7 @@ const UserCreateTask = () => {
     }
   };
 
+  // Clear all filters
   const clearAllFilters = () => {
     setStatusFilter('');
     setTimeFilter('all');
@@ -381,6 +421,7 @@ const UserCreateTask = () => {
     showSnackbar('All filters cleared', 'info');
   };
 
+  // Fetch task remarks
   const fetchTaskRemarks = async (taskId) => {
     try {
       const res = await axios.get(`/task/${taskId}/remarks`);
@@ -395,6 +436,7 @@ const UserCreateTask = () => {
     }
   };
 
+  // Handle remark image upload
   const handleRemarkImageUpload = (event) => {
     const files = Array.from(event.target.files);
     const imageFiles = files.filter(file => file.type.startsWith('image/'));
@@ -415,6 +457,7 @@ const UserCreateTask = () => {
     setRemarkImages([newImage]);
   };
 
+  // Handle remove remark image
   const handleRemoveRemarkImage = (index) => {
     setRemarkImages(prev => {
       const newImages = [...prev];
@@ -424,10 +467,12 @@ const UserCreateTask = () => {
     });
   };
 
+  // Handle drag over
   const handleDragOver = (event) => {
     event.preventDefault();
   };
 
+  // Handle drop
   const handleDrop = (event) => {
     event.preventDefault();
     const files = Array.from(event.dataTransfer.files);
@@ -441,6 +486,7 @@ const UserCreateTask = () => {
     }
   };
 
+  // Add remark
   const addRemark = async (taskId) => {
     if (!newRemark.trim() && remarkImages.length === 0) {
       showSnackbar('Please enter a remark or upload an image', 'warning');
@@ -480,6 +526,7 @@ const UserCreateTask = () => {
     }
   };
 
+  // Fetch notifications
   const fetchNotifications = useCallback(async () => {
     if (authError || !userId) return;
     
@@ -492,6 +539,7 @@ const UserCreateTask = () => {
     }
   }, [authError, userId]);
 
+  // Mark notification as read
   const markNotificationAsRead = async (notificationId) => {
     try {
       await axios.patch(`/task/notifications/${notificationId}/read`);
@@ -502,6 +550,7 @@ const UserCreateTask = () => {
     }
   };
 
+  // Mark all notifications as read
   const markAllNotificationsAsRead = async () => {
     try {
       await axios.patch('/task/notifications/read-all');
@@ -512,6 +561,7 @@ const UserCreateTask = () => {
     }
   };
 
+  // Fetch activity logs
   const fetchActivityLogs = async (taskId) => {
     try {
       const res = await axios.get(`/task/${taskId}/activity-logs`);
@@ -523,6 +573,7 @@ const UserCreateTask = () => {
     }
   };
 
+  // Apply date filter
   const applyDateFilter = useCallback((tasks) => {
     if (!selectedDate && !dateRange.start && !dateRange.end) {
       return tasks;
@@ -570,12 +621,14 @@ const UserCreateTask = () => {
     return filteredTasks;
   }, [selectedDate, dateRange, dateFilterType]);
 
+  // Clear date filter
   const clearDateFilter = () => {
     setSelectedDate(null);
     setDateRange({ start: null, end: null });
     setCalendarFilterOpen(false);
   };
 
+  // Get date filter summary
   const getDateFilterSummary = () => {
     if (selectedDate) {
       return `Date: ${new Date(selectedDate).toLocaleDateString('en-IN')}`;
@@ -586,10 +639,12 @@ const UserCreateTask = () => {
     return null;
   };
 
+  // Filtered tasks
   const filteredTasks = useMemo(() => {
     return applyDateFilter(myTasksGrouped);
   }, [myTasksGrouped, applyDateFilter]);
 
+  // Handle status change
   const handleStatusChange = async (taskId, newStatus, remarks = '') => {
     if (authError || !userId) {
       showSnackbar('Please log in to update task status', 'error');
@@ -619,6 +674,7 @@ const UserCreateTask = () => {
     }
   };
 
+  // Mark task as overdue
   const markTaskAsOverdue = async (taskId, remarks = '') => {
     if (authError || !userId) {
       showSnackbar('Please log in to mark task as overdue', 'error');
@@ -647,6 +703,7 @@ const UserCreateTask = () => {
     }
   };
 
+  // Start recording
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -672,6 +729,7 @@ const UserCreateTask = () => {
     }
   };
 
+  // Stop recording
   const stopRecording = () => {
     if (mediaRecorderRef.current) {
       mediaRecorderRef.current.stop();
@@ -679,97 +737,167 @@ const UserCreateTask = () => {
     }
   };
 
-  const handleCreateTask = async () => {
-    if (authError || !userId) {
-      showSnackbar('Please log in to create tasks', 'error');
-      return;
-    }
+const handleCreateTask = async () => {
+  if (authError || !userId) {
+    showSnackbar('Please log in to create tasks', 'error');
+    return;
+  }
 
-    if (!newTask.title || !newTask.description || !newTask.dueDateTime) {
-      showSnackbar('Please fill all required fields (Title, Description, Due Date)', 'error');
-      return;
-    }
+  if (!newTask.title || !newTask.description || !newTask.dueDateTime) {
+    showSnackbar('Please fill all required fields (Title, Description, Due Date)', 'error');
+    return;
+  }
 
-    if (newTask.dueDateTime && new Date(newTask.dueDateTime) < new Date()) {
-      showSnackbar('Due date cannot be in the past', 'error');
-      return;
-    }
+  setIsCreatingTask(true);
 
-    setIsCreatingTask(true);
-
-    try {
-      const formData = new FormData();
-      formData.append('title', newTask.title);
-      formData.append('description', newTask.description);
-      formData.append('dueDateTime', new Date(newTask.dueDateTime).toISOString());
-      formData.append('priorityDays', newTask.priorityDays || '1');
-      formData.append('priority', newTask.priority);
-
-      if (newTask.files) {
-        for (let i = 0; i < newTask.files.length; i++) {
-          formData.append('files', newTask.files[i]);
-        }
-      }
-
-      if (newTask.voiceNote) {
-        formData.append('voiceNote', newTask.voiceNote);
-      }
-
-      await axios.post('/task/create-self', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        }
-      });
-
-      setOpenDialog(false);
-      showSnackbar('Task created successfully', 'success');
-      
-      setNewTask({
-        title: '', 
-        description: '', 
-        dueDateTime: null, 
-        priority: 'medium', 
-        priorityDays: '1', 
-        files: null, 
-        voiceNote: null,
-      });
-
-      fetchMyTasks();
-      fetchOverdueTasks();
-      fetchNotifications();
-
-    } catch (err) {
-      console.error('Error creating task:', err);
-      
-      if (err.response?.status === 401) {
-        setAuthError(true);
-        showSnackbar('Session expired. Please log in again.', 'error');
+  try {
+    let dueDate;
+    
+    // Handle date parsing
+    if (newTask.dueDateTime instanceof Date) {
+      dueDate = newTask.dueDateTime;
+    } else if (typeof newTask.dueDateTime === 'string') {
+      // Parse the datetime-local input (format: YYYY-MM-DDTHH:mm)
+      if (newTask.dueDateTime.includes('T')) {
+        // Add seconds if missing
+        const dateStr = newTask.dueDateTime.includes(':') && newTask.dueDateTime.split(':').length === 2 
+          ? `${newTask.dueDateTime}:00` 
+          : newTask.dueDateTime;
+        
+        dueDate = new Date(dateStr);
       } else {
-        showSnackbar(err?.response?.data?.error || 'Task creation failed', 'error');
+        dueDate = new Date(newTask.dueDateTime);
       }
-    } finally {
+    } else {
+      showSnackbar('Invalid date format', 'error');
       setIsCreatingTask(false);
+      return;
     }
-  };
 
+    // Check if date is valid
+    if (isNaN(dueDate.getTime())) {
+      console.error('Invalid date:', newTask.dueDateTime);
+      showSnackbar('Invalid date format. Please select a valid date and time.', 'error');
+      setIsCreatingTask(false);
+      return;
+    }
+
+    // Check if dueDateTime is in the past (with 5 minutes buffer for timezone)
+    const now = new Date();
+    const buffer = 5 * 60 * 1000; // 5 minutes buffer
+    
+    if (dueDate < new Date(now.getTime() - buffer)) {
+      showSnackbar('Due date cannot be in the past. Please select a future date and time.', 'error');
+      setIsCreatingTask(false);
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('title', newTask.title);
+    formData.append('description', newTask.description);
+    
+    // Send as ISO string
+    formData.append('dueDateTime', dueDate.toISOString());
+
+    formData.append('priorityDays', newTask.priorityDays || '1');
+    formData.append('priority', newTask.priority);
+
+    if (newTask.files) {
+      for (let i = 0; i < newTask.files.length; i++) {
+        formData.append('files', newTask.files[i]);
+      }
+    }
+
+    if (newTask.voiceNote) {
+      formData.append('voiceNote', newTask.voiceNote);
+    }
+
+    console.log('📤 Creating task with data:', {
+      title: newTask.title,
+      description: newTask.description,
+      dueDateTime: dueDate.toISOString(),
+      dueDateTimeLocal: newTask.dueDateTime,
+      priority: newTask.priority,
+      priorityDays: newTask.priorityDays
+    });
+
+    const response = await axios.post('/task/create-self', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      }
+    });
+
+    console.log('✅ Task created successfully:', response.data);
+
+    setOpenDialog(false);
+    showSnackbar('Task created successfully', 'success');
+    
+    // Reset form
+    setNewTask({
+      title: '', 
+      description: '', 
+      dueDateTime: '',
+      priority: 'medium', 
+      priorityDays: '1', 
+      files: null, 
+      voiceNote: null,
+    });
+
+    // Refresh tasks
+    fetchMyTasks();
+    fetchNotifications();
+
+  } catch (err) {
+    console.error('❌ Full error creating task:', err);
+    console.error('❌ Error response:', err.response?.data);
+    
+    if (err.response?.status === 401) {
+      setAuthError(true);
+      showSnackbar('Session expired. Please log in again.', 'error');
+    } else if (err.response?.status === 400) {
+      const errorMsg = err.response?.data?.error || 'Invalid input. Please check your data.';
+      showSnackbar(errorMsg, 'error');
+    } else {
+      const errorMsg = err.response?.data?.error || err.response?.data?.message || 'Task creation failed';
+      showSnackbar(errorMsg, 'error');
+    }
+  } finally {
+    setIsCreatingTask(false);
+  }
+};
+
+// Helper function to format date to required backend format
+// You can add this as a standalone function or use useCallback
+const formatDateForBackend = (dateTimeString) => {
+  if (!dateTimeString) return '';
+  
+  const date = new Date(dateTimeString);
+  
+  // Format: DD/MM/YYYY
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  
+  // Format: HH:MM AM/PM
+  let hours = date.getHours();
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  
+  hours = hours % 12;
+  hours = hours ? hours : 12; // the hour '0' should be '12'
+  const formattedHours = String(hours).padStart(2, '0');
+  
+  // Return format: DD/MM/YYYY, HH:MM AM/PM
+  return `${day}/${month}/${year}, ${formattedHours}:${minutes} ${ampm}`;
+};
+
+  // Logout
   const handleLogout = () => {
     localStorage.removeItem('user');
     localStorage.removeItem('token');
     navigate('/login');
   };
 
-  const getOverdueCount = () => {
-    let count = 0;
-    Object.values(myTasksGrouped).forEach(tasks => {
-      tasks.forEach(task => {
-        const myStatus = getUserStatusForTask(task, userId);
-        if (isOverdue(task.dueDateTime, myStatus)) {
-          count++;
-        }
-      });
-    });
-    return count;
-  };
 
   const renderStatisticsCards = () => {
     const statsData = [
@@ -923,6 +1051,7 @@ const UserCreateTask = () => {
     );
   };
 
+  // Render time filter
   const renderTimeFilter = () => (
     <div className="user-create-task-time-filter">
       <div className="user-create-task-time-filter-header">
@@ -972,6 +1101,7 @@ const UserCreateTask = () => {
     </div>
   );
 
+  // Render action buttons
   const renderActionButtons = (task) => {
     const myStatus = getUserStatusForTask(task, userId);
     const taskIsOverdue = isOverdue(task.dueDateTime, myStatus);
@@ -1011,6 +1141,7 @@ const UserCreateTask = () => {
         {task.files?.length > 0 && (
           <a
             className="user-create-task-action-button"
+            // eslint-disable-next-line no-undef
             href={`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/${task.files[0].path || task.files[0]}`}
             target="_blank"
             rel="noopener noreferrer"
@@ -1023,6 +1154,7 @@ const UserCreateTask = () => {
     );
   };
 
+  // Render status select
   const renderStatusSelect = (task) => {
     const myStatus = getUserStatusForTask(task, userId);
     const taskIsOverdue = isOverdue(task.dueDateTime, myStatus);
@@ -1059,6 +1191,7 @@ const UserCreateTask = () => {
     );
   };
 
+  // Render remarks dialog
   const renderRemarksDialog = () => (
     <div className="user-create-task-dialog-overlay" style={{ display: remarksDialog.open ? 'flex' : 'none' }}>
       <div className={`user-create-task-dialog ${isMobile ? 'mobile-dialog' : ''}`} style={{ maxWidth: isMobile ? '95%' : isTablet ? '700px' : '800px', width: isMobile ? '95%' : 'auto' }}>
@@ -1311,6 +1444,7 @@ const UserCreateTask = () => {
     </div>
   );
 
+  // Render image zoom modal
   const renderImageZoomModal = () => (
     <div className="user-create-task-dialog-overlay" style={{ display: zoomImage ? 'flex' : 'none' }}>
       <div style={{ 
@@ -1350,6 +1484,7 @@ const UserCreateTask = () => {
     </div>
   );
 
+  // Render desktop table
   const renderDesktopTable = (tasksData) => {
     return Object.entries(tasksData).map(([dateKey, tasks]) => (
       <div key={dateKey} style={{ marginTop: '24px' }}>
@@ -1472,6 +1607,7 @@ const UserCreateTask = () => {
     ));
   };
 
+  // Render mobile cards
   const renderMobileCards = (tasksData) => {
     return Object.entries(tasksData).map(([dateKey, tasks]) => (
       <div key={dateKey} style={{ marginTop: isMobile ? '16px' : '20px' }}>
@@ -1558,6 +1694,7 @@ const UserCreateTask = () => {
     ));
   };
 
+  // Render grouped tasks
   const renderGroupedTasks = () => {
     // If showing overdue only, filter tasks
     let tasksToRender = showOverdueOnly 
@@ -1601,6 +1738,7 @@ const UserCreateTask = () => {
     return isMobile ? renderMobileCards(tasksToRender) : renderDesktopTable(tasksToRender);
   };
 
+  // Render overdue tasks section
   const renderOverdueTasksSection = () => {
     if (getOverdueCount() === 0) return null;
 
@@ -1714,6 +1852,7 @@ const UserCreateTask = () => {
     );
   };
 
+  // Render notifications panel
   const renderNotificationsPanel = () => (
     <div className="user-create-task-dialog-overlay" style={{ display: notificationsOpen ? 'flex' : 'none' }}>
       <div className={`user-create-task-dialog ${isMobile ? 'mobile-dialog' : ''}`} style={{ 
@@ -1802,6 +1941,7 @@ const UserCreateTask = () => {
     </div>
   );
 
+  // Render activity logs dialog
   const renderActivityLogsDialog = () => (
     <div className="user-create-task-dialog-overlay" style={{ display: activityDialog.open ? 'flex' : 'none' }}>
       <div className={`user-create-task-dialog ${isMobile ? 'mobile-dialog' : ''}`} style={{ 
@@ -1877,6 +2017,7 @@ const UserCreateTask = () => {
     </div>
   );
 
+  // Render calendar filter dialog
   const renderCalendarFilterDialog = () => (
     <div className="user-create-task-dialog-overlay" style={{ display: calendarFilterOpen ? 'flex' : 'none' }}>
       <div className={`user-create-task-dialog ${isMobile ? 'mobile-dialog' : ''}`} style={{ 
@@ -2008,6 +2149,7 @@ const UserCreateTask = () => {
     </div>
   );
 
+  // Render create task dialog
   const renderCreateTaskDialog = () => (
     <div className="user-create-task-dialog-overlay" style={{ display: openDialog ? 'flex' : 'none' }}>
       <div className={`user-create-task-dialog ${isMobile ? 'mobile-dialog' : ''}`} style={{ 
@@ -2055,13 +2197,26 @@ const UserCreateTask = () => {
             <div className={`user-create-task-flex ${isMobile ? 'user-create-task-flex-column' : 'user-create-task-gap-2'}`}>
               <div className="user-create-task-form-control" style={{ flex: 1 }}>
                 <label>Due Date & Time *</label>
-                <input
-                  type="datetime-local"
-                  className="user-create-task-input"
-                  value={newTask.dueDateTime ? new Date(newTask.dueDateTime).toISOString().slice(0, 16) : ''}
-                  onChange={(e) => setNewTask({ ...newTask, dueDateTime: e.target.value })}
-                  min={new Date().toISOString().slice(0, 16)}
-                />
+                
+<input
+  type="datetime-local"
+  className="user-create-task-input"
+  value={newTask.dueDateTime || ''}
+  onChange={(e) => {
+    const value = e.target.value;
+    console.log('📅 Selected datetime-local value:', value);
+    
+    // Ensure proper format
+    let formattedValue = value;
+    if (value && value.includes('T') && value.split(':').length === 2) {
+      // Add seconds if missing
+      formattedValue = `${value}:00`;
+    }
+    
+    setNewTask({ ...newTask, dueDateTime: formattedValue });
+  }}
+  min={new Date().toISOString().slice(0, 16)}
+/>
               </div>
 
               <div className="user-create-task-form-control" style={{ flex: 1 }}>
@@ -2156,6 +2311,7 @@ const UserCreateTask = () => {
     </div>
   );
 
+  // Cleanup effect
   useEffect(() => {
     return () => {
       if (snackbarTimerRef.current) {
@@ -2164,14 +2320,17 @@ const UserCreateTask = () => {
     };
   }, []);
 
+  // Fetch tasks on filter change
   useEffect(() => {
     fetchMyTasks();
   }, [statusFilter, searchTerm, timeFilter, fetchMyTasks]);
 
+  // Fetch user data on mount
   useEffect(() => {
     fetchUserData();
   }, [fetchUserData]);
 
+  // Fetch data when user is authenticated
   useEffect(() => {
     if (!authError && userId) {
       fetchMyTasks();
@@ -2180,6 +2339,7 @@ const UserCreateTask = () => {
     }
   }, [authError, userId, fetchMyTasks, fetchNotifications, fetchOverdueTasks]);
 
+  // Auth error screen
   if (authError) {
     return (
       <div className="user-create-task-error-container">
@@ -2204,6 +2364,7 @@ const UserCreateTask = () => {
     );
   }
 
+  // Loading screen
   if (loading) {
     return (
       <div className="user-create-task-loading-container">
@@ -2229,9 +2390,10 @@ const UserCreateTask = () => {
     );
   }
 
+  // Main render
   return (
     <div className="user-create-task-container">
-      {/* Snackbar - Positioned at the top */}
+      {/* Snackbar */}
       {snackbar.open && (
         <div className="user-create-task-snackbar-top">
           <div className={`user-create-task-snackbar-content user-create-task-snackbar-${snackbar.severity}`}>
@@ -2452,7 +2614,7 @@ const UserCreateTask = () => {
                 </button>
               </div>
 
-              {/* Clear All Filters button - aligned to the right */}
+              {/* Clear All Filters button */}
               {(statusFilter || selectedDate || dateRange.start || dateRange.end || showOverdueOnly) && (
                 <button
                   className="user-create-task-button user-create-task-button-outlined"

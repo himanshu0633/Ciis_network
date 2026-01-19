@@ -22,6 +22,7 @@ const AdminTaskManagement = () => {
   const [users, setUsers] = useState([]);
   const [groups, setGroups] = useState([]);
   const [userRole, setUserRole] = useState('');
+  const [jobRole, setJobRole] = useState('');
   const [userId, setUserId] = useState('');
   const [authError, setAuthError] = useState(false);
   
@@ -83,7 +84,7 @@ const AdminTaskManagement = () => {
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
-    dueDateTime: null,
+    dueDateTime: '',
     assignedUsers: [],
     assignedGroups: [],
     priorityDays: '1',
@@ -95,7 +96,7 @@ const AdminTaskManagement = () => {
   const [editTask, setEditTask] = useState({
     title: '',
     description: '',
-    dueDateTime: null,
+    dueDateTime: '',
     assignedUsers: [],
     assignedGroups: [],
     priorityDays: '1',
@@ -124,6 +125,9 @@ const AdminTaskManagement = () => {
   // Search state for user dropdown
   const [userSearch, setUserSearch] = useState('');
   const [groupSearch, setGroupSearch] = useState('');
+
+  // Local date state for create dialog
+  const [createDueDateTime, setCreateDueDateTime] = useState('');
 
   const navigate = useNavigate();
 
@@ -160,6 +164,7 @@ const AdminTaskManagement = () => {
       }
 
       setUserRole(user.role);
+      setJobRole(user.jobRole || '');
       setUserId(user.id);
       setAuthError(false);
     } catch (error) {
@@ -223,6 +228,38 @@ const AdminTaskManagement = () => {
       }
       
       throw error;
+    }
+  };
+
+  // Format date for datetime-local input
+  const formatDateForInput = (date) => {
+    if (!date) return '';
+    
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return '';
+    
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
+  // Parse datetime-local input to Date object
+  const parseDateTimeInput = (dateTimeString) => {
+    if (!dateTimeString) return null;
+    
+    if (dateTimeString.includes('T')) {
+      // Add seconds if missing
+      const dateStr = dateTimeString.includes(':') && dateTimeString.split(':').length === 2 
+        ? `${dateTimeString}:00` 
+        : dateTimeString;
+      
+      return new Date(dateStr);
+    } else {
+      return new Date(dateTimeString);
     }
   };
 
@@ -355,16 +392,41 @@ const AdminTaskManagement = () => {
 
     setIsCreatingTask(true);
     try {
+      // Parse the datetime-local input
+      const parsedDueDateTime = parseDateTimeInput(newTask.dueDateTime);
+      
+      if (!parsedDueDateTime || isNaN(parsedDueDateTime.getTime())) {
+        setSnackbar({ open: true, message: 'Invalid date format. Please select a valid date and time.', severity: 'error' });
+        setIsCreatingTask(false);
+        return;
+      }
+
+      // Check if due date is in the past (with 5 minute buffer)
+      const now = new Date();
+      const buffer = 5 * 60 * 1000; // 5 minutes buffer
+      if (parsedDueDateTime < new Date(now.getTime() - buffer)) {
+        setSnackbar({ open: true, message: 'Due date cannot be in the past. Please select a future date and time.', severity: 'error' });
+        setIsCreatingTask(false);
+        return;
+      }
+
       const formData = new FormData();
       
       // Append basic fields
       formData.append('title', newTask.title);
       formData.append('description', newTask.description);
-      formData.append('dueDateTime', new Date(newTask.dueDateTime).toISOString());
+      formData.append('dueDateTime', parsedDueDateTime.toISOString()); // Send as ISO string
       formData.append('priorityDays', newTask.priorityDays || '1');
       formData.append('priority', newTask.priority);
       formData.append('assignedUsers', JSON.stringify(newTask.assignedUsers));
       formData.append('assignedGroups', JSON.stringify(newTask.assignedGroups));
+
+      console.log('📤 Creating task with:', {
+        title: newTask.title,
+        dueDateTime: parsedDueDateTime.toISOString(),
+        dueDateTimeLocal: newTask.dueDateTime,
+        priority: newTask.priority
+      });
 
       // Handle file uploads
       if (newTask.files) {
@@ -401,16 +463,31 @@ const AdminTaskManagement = () => {
 
     setIsUpdatingTask(true);
     try {
+      // Parse the datetime-local input
+      const parsedDueDateTime = parseDateTimeInput(editTask.dueDateTime);
+      
+      if (!parsedDueDateTime || isNaN(parsedDueDateTime.getTime())) {
+        setSnackbar({ open: true, message: 'Invalid date format', severity: 'error' });
+        setIsUpdatingTask(false);
+        return;
+      }
+
       const formData = new FormData();
       
       // Append basic fields
       formData.append('title', editTask.title);
       formData.append('description', editTask.description);
-      formData.append('dueDateTime', new Date(editTask.dueDateTime).toISOString());
+      formData.append('dueDateTime', parsedDueDateTime.toISOString()); // Send as ISO string
       formData.append('priorityDays', editTask.priorityDays || '1');
       formData.append('priority', editTask.priority);
       formData.append('assignedUsers', JSON.stringify(editTask.assignedUsers));
       formData.append('assignedGroups', JSON.stringify(editTask.assignedGroups));
+
+      console.log('📝 Updating task:', {
+        title: editTask.title,
+        dueDateTime: parsedDueDateTime.toISOString(),
+        dueDateTimeLocal: editTask.dueDateTime
+      });
 
       await apiCall('put', `/task/${selectedTask._id}`, formData);
       
@@ -735,7 +812,7 @@ const AdminTaskManagement = () => {
     setNewTask({
       title: '',
       description: '',
-      dueDateTime: null,
+      dueDateTime: '',
       assignedUsers: [],
       assignedGroups: [],
       priorityDays: '1',
@@ -745,6 +822,7 @@ const AdminTaskManagement = () => {
     });
     setUserSearch('');
     setGroupSearch('');
+    setCreateDueDateTime('');
   };
 
   const resetStatusForm = () => {
@@ -769,10 +847,14 @@ const AdminTaskManagement = () => {
   const openEditTaskDialog = (task) => {
     console.log('Opening edit dialog for task:', task);
     setSelectedTask(task);
+    
+    // Format dueDateTime for datetime-local input
+    const formattedDueDateTime = formatDateForInput(task.dueDateTime);
+    
     setEditTask({
       title: task.title || '',
       description: task.description || '',
-      dueDateTime: task.dueDateTime ? new Date(task.dueDateTime) : null,
+      dueDateTime: formattedDueDateTime,
       assignedUsers: task.assignedUsers?.map(u => u._id || u) || [],
       assignedGroups: task.assignedGroups?.map(g => g._id || g) || [],
       priorityDays: task.priorityDays || '1',
@@ -926,8 +1008,10 @@ const AdminTaskManagement = () => {
 
   // Priority Chip Component
   const AdminTaskManagementPriorityChip = ({ priority }) => {
+    const safePriority = typeof priority === 'string' ? priority : 'medium';
+
     const getPriorityColor = () => {
-      switch(priority) {
+      switch (safePriority) {
         case 'high': return 'error';
         case 'medium': return 'warning';
         case 'low': return 'success';
@@ -936,8 +1020,10 @@ const AdminTaskManagement = () => {
     };
 
     return (
-      <span className={`AdminTaskManagement-priority-chip AdminTaskManagement-priority-${getPriorityColor()}`}>
-        {priority.charAt(0).toUpperCase() + priority.slice(1)}
+      <span
+        className={`AdminTaskManagement-priority-chip AdminTaskManagement-priority-${getPriorityColor()}`}
+      >
+        {safePriority.charAt(0).toUpperCase() + safePriority.slice(1)}
       </span>
     );
   };
@@ -1072,8 +1158,11 @@ const AdminTaskManagement = () => {
             <input
               type="datetime-local"
               className="AdminTaskManagement-date-input"
-              value={dateRange.startDate ? new Date(dateRange.startDate).toISOString().slice(0, 16) : ''}
-              onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value ? new Date(e.target.value) : null }))}
+              value={dateRange.startDate ? formatDateForInput(dateRange.startDate) : ''}
+              onChange={(e) => setDateRange(prev => ({ 
+                ...prev, 
+                startDate: e.target.value ? parseDateTimeInput(e.target.value) : null 
+              }))}
             />
           </div>
           <div className="AdminTaskManagement-date-input-container">
@@ -1081,8 +1170,11 @@ const AdminTaskManagement = () => {
             <input
               type="datetime-local"
               className="AdminTaskManagement-date-input"
-              value={dateRange.endDate ? new Date(dateRange.endDate).toISOString().slice(0, 16) : ''}
-              onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value ? new Date(e.target.value) : null }))}
+              value={dateRange.endDate ? formatDateForInput(dateRange.endDate) : ''}
+              onChange={(e) => setDateRange(prev => ({ 
+                ...prev, 
+                endDate: e.target.value ? parseDateTimeInput(e.target.value) : null 
+              }))}
             />
           </div>
         </div>
@@ -1617,6 +1709,18 @@ const AdminTaskManagement = () => {
     </div>
   );
 
+  // Set default date when create dialog opens
+  useEffect(() => {
+    if (openCreateDialog) {
+      // Set default to current time + 1 hour
+      const now = new Date();
+      now.setHours(now.getHours() + 1);
+      const defaultDateTime = formatDateForInput(now);
+      setCreateDueDateTime(defaultDateTime);
+      setNewTask(prev => ({ ...prev, dueDateTime: defaultDateTime }));
+    }
+  }, [openCreateDialog]);
+
   // Create Task Dialog
   const renderCreateTaskDialog = () => (
     <div className={`AdminTaskManagement-modal ${openCreateDialog ? 'AdminTaskManagement-modal-open' : ''}`}>
@@ -1661,9 +1765,17 @@ const AdminTaskManagement = () => {
               <input
                 type="datetime-local"
                 className="AdminTaskManagement-form-input"
-                value={newTask.dueDateTime ? new Date(newTask.dueDateTime).toISOString().slice(0, 16) : ''}
-                onChange={(e) => setNewTask({ ...newTask, dueDateTime: e.target.value ? new Date(e.target.value) : null })}
+                value={newTask.dueDateTime || ''}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  console.log('📅 Selected datetime:', value);
+                  setNewTask({ ...newTask, dueDateTime: value });
+                }}
+                min={new Date().toISOString().slice(0, 16)}
               />
+              <small className="AdminTaskManagement-form-hint">
+                Please select a future date and time
+              </small>
             </div>
 
             <div className="AdminTaskManagement-form-row">
@@ -1922,9 +2034,17 @@ const AdminTaskManagement = () => {
               <input
                 type="datetime-local"
                 className="AdminTaskManagement-form-input"
-                value={editTask.dueDateTime ? new Date(editTask.dueDateTime).toISOString().slice(0, 16) : ''}
-                onChange={(e) => setEditTask({ ...editTask, dueDateTime: e.target.value ? new Date(e.target.value) : null })}
+                value={editTask.dueDateTime || ''}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  console.log('📅 Editing datetime:', value);
+                  setEditTask({ ...editTask, dueDateTime: value });
+                }}
+                min={new Date().toISOString().slice(0, 16)}
               />
+              <small className="AdminTaskManagement-form-hint">
+                Current: {selectedTask?.dueDateTime ? new Date(selectedTask.dueDateTime).toLocaleString() : 'Not set'}
+              </small>
             </div>
 
             <div className="AdminTaskManagement-form-row">
@@ -2314,10 +2434,29 @@ const AdminTaskManagement = () => {
     }
   }, [authError, userId]);
 
+  // Debug useEffect for date states
+  useEffect(() => {
+    console.log('🔍 Debug newTask.dueDateTime:', newTask.dueDateTime);
+    if (newTask.dueDateTime) {
+      const parsed = parseDateTimeInput(newTask.dueDateTime);
+      console.log('🔍 Parsed as Date:', parsed);
+      console.log('🔍 Is valid?', parsed && !isNaN(parsed.getTime()));
+    }
+  }, [newTask.dueDateTime]);
+
+  useEffect(() => {
+    console.log('🔍 Debug editTask.dueDateTime:', editTask.dueDateTime);
+    if (editTask.dueDateTime) {
+      const parsed = parseDateTimeInput(editTask.dueDateTime);
+      console.log('🔍 Parsed as Date:', parsed);
+    }
+  }, [editTask.dueDateTime]);
+
   // Check if user is admin
   const isAdmin = ['admin', 'manager', 'hr', 'SuperAdmin'].includes(userRole);
+  const isReportingAuditor = jobRole === 'Reporting-Auditor';
 
-  if (!isAdmin) {
+  if (!isAdmin && !isReportingAuditor) {
     return (
       <div className="AdminTaskManagement-access-denied">
         <div className="AdminTaskManagement-card AdminTaskManagement-text-center">
