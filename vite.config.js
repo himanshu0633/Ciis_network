@@ -19,10 +19,15 @@ export default defineConfig({
     ]
   },
 
-  build: {
+   build: {
     commonjsOptions: {
       include: [/node_modules/]
-    }
+    },
+    esbuild: {
+      loader: {
+        '.js': 'jsx', // Enabling JSX syntax for .js files
+      },
+    },
   },
 
   server: {

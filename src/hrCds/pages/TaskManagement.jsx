@@ -152,47 +152,44 @@ const UserCreateTask = () => {
   }, []);
 
   // Fetch user data
-  const fetchUserData = useCallback(() => {
-    try {
-      const userStr = localStorage.getItem('user');
-      if (!userStr) {
-        setAuthError(true);
-        setSnackbar({
-          open: true,
-          message: 'Please log in to access tasks',
-          severity: 'error'
-        });
-        setLoading(false);
-        return;
-      }
-
-      const user = JSON.parse(userStr);
-      if (!user?.role || !user?.id || !user?.name) {
-        setAuthError(true);
-        setSnackbar({
-          open: true,
-          message: 'Invalid user data. Please log in again.',
-          severity: 'error'
-        });
-        setLoading(false);
-        return;
-      }
-
-      setUserRole(user.role);
-      setUserId(user.id);
-      setUserName(user.name);
-      setAuthError(false);
-    } catch (error) {
-      console.error('Error parsing user data:', error);
+ const fetchUserData = useCallback(() => {
+  try {
+    const userStr = localStorage.getItem('user');
+    if (!userStr) {
       setAuthError(true);
-      setSnackbar({
-        open: true,
-        message: 'Error loading user data. Please log in again.',
-        severity: 'error'
-      });
+      showSnackbar('Please log in to access tasks', 'error');
       setLoading(false);
+      return;
     }
-  }, []);
+
+    const user = JSON.parse(userStr);
+    
+    // ✅ FIX: 'role' की जगह 'jobRole' check करें
+    // और 'id' की जगह '_id' भी check करें
+    const userId = user.id || user._id;
+    const userRole = user.role || user.jobRole;  // दोनों check करें
+    const userName = user.name;
+    
+    if (!userId || !userRole || !userName) {
+      setAuthError(true);
+      showSnackbar('Invalid user data. Please log in again.', 'error');
+      setLoading(false);
+      return;
+    }
+
+    // ✅ State set करें
+    setUserRole(userRole);
+    setUserId(userId);
+    setUserName(userName);
+    setAuthError(false);
+    
+  } catch (error) {
+    console.error('Error parsing user data:', error);
+    setAuthError(true);
+    showSnackbar('Error loading user data. Please log in again.', 'error');
+    setLoading(false);
+  }
+}, []);
 
   // Snackbar utility
   const showSnackbar = (message, severity = 'info') => {

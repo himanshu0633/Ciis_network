@@ -40,7 +40,7 @@ import AboutUs from "./Pages/AboutUs";
 import ContactUs from "./Pages/ContactUs";
 import ClientMeeting from "./hrCds/pages/ClientMeeting";
 import Clock from './hrCds/pages/Clock';
-
+// import MenuAccessManagement from './hrCds/pages/hr/MenuAccessManagement';
 function App() {
   const user = JSON.parse(localStorage.getItem('user'));
   const userRole = user?.role;
@@ -88,6 +88,7 @@ function App() {
               </ProtectedRoute>
             </ThemeContextProvider>
           }>
+          {/* <Route path='menuaccessmanagement' element={<MenuAccessManagement />} /> */}
           <Route path="alert" element={<Alerts />} />
           <Route path="attendance" element={<Attendance />} />
           <Route path="my-assets" element={<MyAssets />} />
@@ -99,7 +100,7 @@ function App() {
           <Route path="project" element={<EmployeeProject />} />
           <Route path="task-management" element={<TaskManagement />} />
           <Route path="employee-meeting" element={<EmployeeMeetingPage />} />
-             <Route path="client-meeting" element={<ClientMeeting />} />
+          <Route path="client-meeting" element={<ClientMeeting />} />
     <Route path="clock" element={<Clock />} />
         </Route>
         {/* Catch-all route */}
