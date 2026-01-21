@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -12,21 +12,27 @@ import {
   IconButton,
   Divider,
   Typography,
-  Collapse,
   useMediaQuery,
   useTheme
 } from '@mui/material';
 import {
-  ExpandLess,
-  ExpandMore,
+  Dashboard as DashboardIcon,
+  CalendarToday as CalendarIcon,
+  EventNote as EventNoteIcon,
+  Computer as ComputerIcon,
+  Task as TaskIcon,
+  Groups as GroupsIcon,
+  Notifications as NotificationsIcon,
+  VideoCall as VideoCallIcon,
+  Person as PersonIcon,
+  Business as BusinessIcon,
+  ListAlt as ListAltIcon,
+  MeetingRoom as MeetingRoomIcon,
+  Apartment as ApartmentIcon,
+  PersonAdd as PersonAddIcon,
   LogoutOutlined
 } from '@mui/icons-material';
 import Swal from "sweetalert2";
-import {
-  FaHome, FaClipboardList, FaFileAlt, FaRocket, FaClock, FaMoneyBill, FaWallet,
-  FaBullseye, FaChartLine, FaTasks, FaUserPlus, FaUserTie, FaNetworkWired,
-  FaGraduationCap, FaBell, FaUsers, FaUser, FaCog, FaBuilding
-} from 'react-icons/fa';
 
 const drawerWidthOpen = 260;
 const drawerWidthClosed = 70;
@@ -138,10 +144,8 @@ const Sidebar = ({ isMobile = false }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const theme = useTheme();
-  const [userRole, setUserRole] = useState('');
-  const [jobRole, setJobRole] = useState('');
-  const [openSections, setOpenSections] = useState({});
   const [isHovered, setIsHovered] = useState(false);
+  const [userData, setUserData] = useState(null);
   const sidebarRef = useRef(null);
   const hoverTimer = useRef(null);
   const leaveTimer = useRef(null);
@@ -149,11 +153,15 @@ const Sidebar = ({ isMobile = false }) => {
   // Mobile पर always open रहेगा, Desktop पर hover-based
   const isSidebarOpen = isMobile ? true : isHovered;
 
+  // LocalStorage से user data fetch करें
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('user'));
-    if (user?.role) {
-      setUserRole(user.role);
-      setJobRole(user.jobRole);
+    const user = localStorage.getItem("user");
+    if (user) {
+      try {
+        setUserData(JSON.parse(user));
+      } catch (error) {
+        console.error("Error parsing user data:", error);
+      }
     }
   }, []);
 
@@ -193,19 +201,9 @@ const Sidebar = ({ isMobile = false }) => {
 
   const handleNavigate = (path) => {
     navigate(path);
-    // Mobile पर navigation के बाद sidebar close हो सकता है (अगर drawer है)
-    if (isMobile) {
-      // ये parent component handle करेगा
-    } else {
+    if (!isMobile) {
       setIsHovered(false);
     }
-  };
-
-  const handleSectionToggle = (section) => {
-    setOpenSections(prev => ({
-      ...prev,
-      [section]: !prev[section]
-    }));
   };
 
   const handleLogout = async () => {
@@ -244,170 +242,247 @@ const Sidebar = ({ isMobile = false }) => {
     }
   };
 
-  // Menu Structure
-  const menuSections = [
+  // Single source of truth for all menu items
+  const menuItems = useMemo(() => [
+    // Main Menu - सभी users के लिए (all departments)
     {
-      id: 'main',
-      heading: 'Main Menu',
-      items: [
-        { 
-          icon: <FaHome />, 
-          name: 'Dashboard', 
-          path: '/cds/user-dashboard', 
-          roles: ['user', 'hr', 'manager', 'admin', 'SuperAdmin'] 
-        },
-        { 
-          icon: <FaClipboardList />, 
-          name: 'Attendance', 
-          path: '/cds/attendance', 
-          roles: ['user', 'hr', 'manager', 'admin', 'SuperAdmin'] 
-        },
-        { 
-          icon: <FaFileAlt />, 
-          name: 'My Leaves', 
-          path: '/cds/my-leaves', 
-          roles: ['user', 'hr', 'manager', 'admin', 'SuperAdmin'] 
-        },
-        { 
-          icon: <FaRocket />, 
-          name: 'My Assets', 
-          path: '/cds/my-assets', 
-          roles: ['user', 'hr', 'manager', 'admin', 'SuperAdmin'] 
-        },
+      id: 'dashboard',
+      icon: <DashboardIcon />, 
+      name: 'Dashboard', 
+      path: '/cds/user-dashboard', 
+      category: 'main',
+      accessRules: [
+        { department: 'all', roles: ['admin', 'user', 'hr', 'manager', 'SuperAdmin'] },
+        { department: '696869607c8d496a6cb657fa', roles: ['user'] }
       ]
     },
     {
-      id: 'tasks',
-      heading: 'Tasks & Projects',
-      items: [
-        { 
-          icon: <FaGraduationCap />, 
-          name: 'Create Task', 
-          path: '/cds/task-management', 
-          roles: ['user', 'hr', 'manager']
-        },
-        { 
-          icon: <FaTasks />, 
-          name: 'Employee Project', 
-          path: '/cds/project', 
-          roles: ['user', 'hr', 'manager']
-        },
+      id: 'attendance',
+      icon: <CalendarIcon />, 
+      name: 'Attendance', 
+      path: '/cds/attendance', 
+      category: 'main',
+      accessRules: [
+        { department: 'all', roles: ['admin', 'user', 'hr', 'manager', 'SuperAdmin'] },
+        { department: '696869607c8d496a6cb657fa', roles: ['user'] }
       ]
     },
     {
-      id: 'communication',
-      heading: 'Communication',
-      items: [
-        { 
-          icon: <FaBell />, 
-          name: 'Alerts', 
-          path: '/cds/alert', 
-          roles: ['user', 'hr', 'manager', 'admin', 'SuperAdmin']
-        },
-        { 
-          icon: <FaTasks />, 
-          name: 'Employee Meeting', 
-          path: '/cds/employee-meeting', 
-          roles: ['user', 'hr', 'manager', 'admin', 'SuperAdmin']
-        },
+      id: 'my-leaves',
+      icon: <EventNoteIcon />, 
+      name: 'My Leaves', 
+      path: '/cds/my-leaves', 
+      category: 'main',
+      accessRules: [
+        { department: 'all', roles: ['admin', 'user', 'hr', 'manager', 'SuperAdmin'] },
+        { department: '696869607c8d496a6cb657fa', roles: ['user'] }
       ]
     },
     {
-      id: 'admin',
-      heading: 'Administration',
-      roles: ['hr', 'manager', 'admin', 'SuperAdmin'],
-      items: [
-        { 
-          icon: <FaUser />, 
-          name: 'Employee Details', 
-          path: '/cds/admin/emp-details', 
-          roles: ['hr', 'manager', 'admin', 'SuperAdmin'] 
-        },
-        { 
-          icon: <FaClipboardList />, 
-          name: 'Employees Attendance', 
-          path: '/cds/admin/emp-attendance', 
-          roles: ['hr', 'manager', 'admin', 'SuperAdmin'] 
-        },
-        { 
-          icon: <FaFileAlt />, 
-          name: 'Employees Leaves', 
-          path: '/cds/admin/emp-leaves', 
-          roles: ['hr', 'manager', 'admin', 'SuperAdmin'] 
-        },
-        { 
-          icon: <FaRocket />, 
-          name: 'Employees Assets', 
-          path: '/cds/admin/emp-assets', 
-          roles: ['hr', 'manager', 'admin', 'SuperAdmin'] 
-        },
-        { 
-          icon: <FaTasks />, 
-          name: 'Employees Task Create', 
-          path: '/cds/admin/admin-task-create', 
-          roles: ['hr', 'manager', 'admin', 'SuperAdmin'] ,
-          jobRoles: ['Reporting-Auditor']
-        },
-        { 
-          icon: <FaTasks />, 
-          name: 'Client', 
-          path: '/cds/admin/emp-client', 
-          roles: ['hr', 'manager', 'admin', 'SuperAdmin'] 
-        },
-        { 
-          icon: <FaTasks />, 
-          name: 'Employees All Task', 
-          path: '/cds/admin/emp-all-task', 
-          roles: ['hr', 'manager', 'admin', 'SuperAdmin'] 
-        },
-        { 
-          icon: <FaUsers />, 
-          name: 'Admin Meeting', 
-          path: '/cds/admin/admin-meeting', 
-          roles: ['hr', 'manager', 'admin', 'SuperAdmin'] 
-        },
-        { 
-          icon: <FaNetworkWired />, 
-          name: 'Admin Projects', 
-          path: '/cds/admin/adminp', 
-          roles: ['hr', 'manager', 'admin', 'SuperAdmin'] 
-        },
-        { 
-          icon: <FaUserPlus />, 
-          name: 'Create User', 
-          path: '/cds/admin/create-user', 
-          roles: ['hr', 'manager', 'admin', 'SuperAdmin'] 
-        },
+      id: 'my-assets',
+      icon: <ComputerIcon />, 
+      name: 'My Assets', 
+      path: '/cds/my-assets', 
+      category: 'main',
+      accessRules: [
+        { department: 'all', roles: ['admin', 'user', 'hr', 'manager', 'SuperAdmin'] },
+        { department: '696869607c8d496a6cb657fa', roles: ['user'] }
       ]
-    }
-  ];
+    },
+    
+    // Tasks & Projects
+    {
+      id: 'create-task',
+      icon: <TaskIcon />, 
+      name: 'Create Task', 
+      path: '/cds/task-management', 
+      category: 'tasks',
+      accessRules: [
+        { department: '6968699f7c8d496a6cb6580e', roles: ['admin', 'user', 'hr', 'manager', 'SuperAdmin'] }
+      ]
+    },
+    {
+      id: 'employee-project',
+      icon: <GroupsIcon />, 
+      name: 'Employee Project', 
+      path: '/cds/project', 
+      category: 'tasks',
+      accessRules: [
+        { department: '6968699f7c8d496a6cb6580e', roles: ['admin', 'user', 'hr', 'manager', 'SuperAdmin'] }
+      ]
+    },
+    
+    // Communication
+    {
+      id: 'alerts',
+      icon: <NotificationsIcon />, 
+      name: 'Alerts', 
+      path: '/cds/alert', 
+      category: 'communication',
+      accessRules: [
+        { department: 'all', roles: ['admin', 'user', 'hr', 'manager', 'SuperAdmin'] }
+      ]
+    },
+    {
+      id: 'employee-meeting',
+      icon: <VideoCallIcon />, 
+      name: 'Employee Meeting', 
+      path: '/cds/employee-meeting', 
+      category: 'communication',
+      accessRules: [
+        { department: '6968690c7c8d496a6cb657f5', roles: ['admin', 'user', 'hr', 'manager', 'SuperAdmin'] }
+      ]
+    },
 
-  // Filter menu sections based on user role
-  // const getFilteredMenuSections = () => {
-  //   return menuSections.filter(section => {
-  //     if (section.roles) {
-  //       return section.roles.includes(userRole);
-  //     }
-  //     return true;
-  //   });
-  // };
+    // Admin Menu
+    {
+      id: 'emp-details',
+      icon: <PersonIcon />, 
+      name: 'Employee Details', 
+      path: '/cds/admin/emp-details', 
+      category: 'admin',
+      accessRules: [
+        { department: '6968690c7c8d496a6cb657f5', roles: ['admin', 'hr', 'manager', 'SuperAdmin'] },
+        { department: '696869607c8d496a6cb657fa', roles: ['manager'] }
+      ]
+    },
+    {
+      id: 'emp-attendance',
+      icon: <CalendarIcon />, 
+      name: 'Employees Attendance', 
+      path: '/cds/admin/emp-attendance', 
+      category: 'admin',
+      accessRules: [
+        { department: '6968690c7c8d496a6cb657f5', roles: ['admin', 'hr', 'manager', 'SuperAdmin'] },
+        { department: '696869607c8d496a6cb657fa', roles: ['manager'] }
+      ]
+    },
+    {
+      id: 'emp-leaves',
+      icon: <EventNoteIcon />, 
+      name: 'Employees Leaves', 
+      path: '/cds/admin/emp-leaves', 
+      category: 'admin',
+      accessRules: [
+        { department: '6968690c7c8d496a6cb657f5', roles: ['admin', 'hr', 'manager', 'SuperAdmin'] },
+        { department: '696869607c8d496a6cb657fa', roles: ['manager'] }
+      ]
+    },
+    {
+      id: 'emp-assets',
+      icon: <ComputerIcon />, 
+      name: 'Employees Assets', 
+      path: '/cds/admin/emp-assets', 
+      category: 'admin',
+      accessRules: [
+        { department: '6968690c7c8d496a6cb657f5', roles: ['admin', 'hr', 'manager', 'SuperAdmin'] },
+        { department: '696869607c8d496a6cb657fa', roles: ['manager'] }
+      ]
+    },
+    {
+      id: 'admin-task-create',
+      icon: <TaskIcon />, 
+      name: 'Create Task', 
+      path: '/cds/admin/task-create', 
+      category: 'admin',
+      accessRules: [
+        { department: '6968690c7c8d496a6cb657f5', roles: ['admin', 'hr', 'manager', 'SuperAdmin'] },
+        { department: '696869607c8d496a6cb657fa', roles: ['manager'] }
+      ]
+    },
+    {
+      id: 'emp-client',
+      icon: <BusinessIcon />, 
+      name: 'Client Management', 
+      path: '/cds/admin/client', 
+      category: 'admin',
+      accessRules: [
+        { department: '6968690c7c8d496a6cb657f5', roles: ['admin', 'hr', 'manager', 'SuperAdmin'] }
+      ]
+    },
+    {
+      id: 'emp-all-task',
+      icon: <ListAltIcon />, 
+      name: 'All Tasks', 
+      path: '/cds/admin/all-tasks', 
+      category: 'admin',
+      accessRules: [
+        { department: '6968690c7c8d496a6cb657f5', roles: ['admin', 'hr', 'manager', 'SuperAdmin'] }
+      ]
+    },
+    {
+      id: 'admin-meeting',
+      icon: <MeetingRoomIcon />, 
+      name: 'Admin Meeting', 
+      path: '/cds/admin/meeting', 
+      category: 'admin',
+      accessRules: [
+        { department: '6968690c7c8d496a6cb657f5', roles: ['admin', 'hr', 'manager', 'SuperAdmin'] }
+      ]
+    },
+    {
+      id: 'admin-projects',
+      icon: <ApartmentIcon />, 
+      name: 'Admin Projects', 
+      path: '/cds/admin/adminp', 
+      category: 'admin',
+      accessRules: [
+        { department: '6968690c7c8d496a6cb657f5', roles: ['admin', 'hr', 'manager', 'SuperAdmin'] }
+      ]
+    },
+    {
+      id: 'create-user',
+      icon: <PersonAddIcon />, 
+      name: 'Create User', 
+      path: '/cds/admin/create-user', 
+      category: 'admin',
+      accessRules: [
+        { department: '6968690c7c8d496a6cb657f5', roles: ['admin', 'hr', 'manager', 'SuperAdmin'] },
+        { department: '696869607c8d496a6cb657fa', roles: ['manager'] }
+      ]
+    },
+  ], []);
 
-  // const filteredSections = getFilteredMenuSections();
+  // User के role और department के based filter menu items
+  const filteredMenuItems = useMemo(() => {
+    if (!userData) return [];
+
+    const userDepartment = userData.department;
+    const userRole = userData.jobRole;
+
+    return menuItems.filter(item => {
+      // Check if any access rule matches the user's department and role
+      return item.accessRules.some(rule => {
+        const departmentMatch = rule.department === 'all' || rule.department === userDepartment;
+        const roleMatch = rule.roles.includes(userRole);
+        return departmentMatch && roleMatch;
+      });
+    });
+  }, [userData, menuItems]);
+
+  // Filtered items को sections में organize करें
+  const menuSections = useMemo(() => {
+    if (!filteredMenuItems.length) return [];
+
+    const sections = [
+      { id: 'main', heading: 'Main Menu', items: [] },
+      { id: 'tasks', heading: 'Tasks & Projects', items: [] },
+      { id: 'communication', heading: 'Communication', items: [] },
+      { id: 'admin', heading: 'Administration', items: [] }
+    ];
+
+    filteredMenuItems.forEach(item => {
+      const section = sections.find(sec => sec.id === item.category);
+      if (section) {
+        section.items.push(item);
+      }
+    });
+
+    // खाली sections remove करें
+    return sections.filter(section => section.items.length > 0);
+  }, [filteredMenuItems]);
 
   const renderMenuSection = (section) => {
-    const filteredItems = section.items.filter(item => {
-  const roleAllowed =
-    item.roles && item.roles.includes(userRole);
-
-  const jobRoleAllowed =
-    item.jobRoles && item.jobRoles.includes(jobRole);
-
-  return roleAllowed || jobRoleAllowed;
-});
-
-
-    if (filteredItems.length === 0) return null;
-
     // Mobile पर always open दिखाना है, desktop पर conditional
     const shouldShowFull = isMobile ? true : isSidebarOpen;
 
@@ -437,8 +512,8 @@ const Sidebar = ({ isMobile = false }) => {
 
         {/* Section Items */}
         <List sx={{ py: 0 }}>
-          {filteredItems.map((item, idx) => (
-            <StyledListItem key={`${section.id}-${idx}`} disablePadding>
+          {section.items.map((item) => (
+            <StyledListItem key={item.id} disablePadding>
               {shouldShowFull ? (
                 <StyledListItemButton
                   selected={location.pathname === item.path}
@@ -477,6 +552,23 @@ const Sidebar = ({ isMobile = false }) => {
   // Mobile और Desktop के लिए अलग containers
   const Container = isMobile ? MobileSidebarContainer : SidebarContainer;
 
+  // Loading state
+  if (!userData) {
+    return (
+      <Container
+        sx={!isMobile ? {
+          width: isSidebarOpen ? drawerWidthOpen : drawerWidthClosed,
+        } : undefined}
+      >
+        <Box sx={{ p: 2, textAlign: 'center' }}>
+          <Typography variant="body2" color="text.secondary">
+            Loading...
+          </Typography>
+        </Box>
+      </Container>
+    );
+  }
+
   return (
     <Container
       ref={sidebarRef}
@@ -486,26 +578,20 @@ const Sidebar = ({ isMobile = false }) => {
         width: isSidebarOpen ? drawerWidthOpen : drawerWidthClosed,
       } : undefined}
     >
+      {/* User Info (only when sidebar is open) */}
+      {isSidebarOpen && (
+        <Box sx={{ p: 2, borderBottom: `1px solid ${theme.palette.divider}` }}>
+          <Typography variant="subtitle2" fontWeight={600} noWrap>
+            {userData.name}
+          </Typography>
+          <Typography variant="caption" color="text.secondary" noWrap>
+            {userData.jobRole}
+          </Typography>
+        </Box>
+      )}
+
       {/* Menu Sections */}
-      {menuSections.map((section) => {
-  const filteredItems = section.items.filter(item => {
-    const roleAllowed =
-      item.roles && item.roles.includes(userRole);
-
-    const jobRoleAllowed =
-      item.jobRoles && item.jobRoles.includes(jobRole);
-
-    return roleAllowed || jobRoleAllowed;
-  });
-
-  if (filteredItems.length === 0) return null;
-
-  return renderMenuSection({
-    ...section,
-    items: filteredItems
-  });
-})}
-
+      {menuSections.map((section) => renderMenuSection(section))}
 
       {/* Logout Section */}
       <Box sx={{ mt: 'auto', p: 2 }}>

@@ -1,45 +1,92 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
-  Box, Button, TextField, Typography, Paper, MenuItem, CircularProgress, IconButton, InputAdornment
+  Box, Button, TextField, Typography, Paper, MenuItem, 
+  CircularProgress, IconButton, InputAdornment, Grid, Checkbox,
+  FormControlLabel, FormGroup, Dialog, DialogTitle, DialogContent,
+  DialogActions, Alert, Snackbar, Table, TableBody, TableCell,
+  TableContainer, TableHead, TableRow, TablePagination,
+  Chip, Tooltip, Icon, Select, FormControl, InputLabel
 } from '@mui/material';
-import { Visibility, VisibilityOff } from '@mui/icons-material';
+import { 
+  Visibility, VisibilityOff, Edit, Delete, Add,
+  Lock, LockOpen, Search, FilterList
+} from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import axios from '../../utils/axiosConfig';
 
-const roleOptions = ['admin', 'user', 'hr', 'manager'];
-const propertyOptions = ['phone', 'sim', 'laptop', 'desktop', 'headphone'];
+// Constants
 const genderOptions = ['male', 'female', 'other'];
 const maritalStatusOptions = ['single', 'married', 'divorced', 'widowed'];
 const employeeTypeOptions = ['intern', 'technical', 'non-technical', 'sales'];
 const emergencyRelationOptions = ['father', 'mother', 'spouse', 'sibling', 'friend', 'other'];
+const jobRoleOptions = ['admin', 'user', 'hr', 'manager', 'SuperAdmin'];
+const propertyOptions = ['phone', 'sim', 'laptop', 'desktop', 'headphone'];
 
-// ✅ Initial form structure for easy reset
+// Initial form state
 const initialFormState = {
-  name: '', email: '', password: '', confirmPassword: '', role: '',
+  name: '', email: '', password: '', confirmPassword: '', 
+  department: '', jobRole: 'user',
+  // Optional fields
   phone: '', address: '', gender: '', maritalStatus: '', dob: '', salary: '',
   accountNumber: '', ifsc: '', bankName: '', bankHolderName: '',
-  employeeType: '', jobRole: '', properties: [], propertyOwned: '', additionalDetails: '',
-  fatherName: '', motherName: '', emergencyName: '', emergencyPhone: '', emergencyRelation: '', emergencyAddress: ''
+  employeeType: '', properties: [], propertyOwned: '', additionalDetails: '',
+  fatherName: '', motherName: '', emergencyName: '', emergencyPhone: '', 
+  emergencyRelation: '', emergencyAddress: ''
 };
 
 const CreateUser = () => {
   const [form, setForm] = useState(initialFormState);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [departments, setDepartments] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [editingUser, setEditingUser] = useState(null);
+  const [openEditDialog, setOpenEditDialog] = useState(false);
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentUserRole, setCurrentUserRole] = useState('');
 
-  // Handle text input with validation
+  // Fetch departments and current user on mount
+  useEffect(() => {
+    fetchDepartments();
+  
+    // Get current user role from localStorage/token
+    const userData = JSON.parse(localStorage.getItem('user') || '{}');
+    setCurrentUserRole(userData.jobRole || '');
+  }, []);
+
+  const fetchDepartments = async () => {
+    try {
+      const response = await axios.get('/departments');
+      setDepartments(response.data.departments || []);
+    } catch (err) {
+      toast.error('Failed to load departments');
+    }
+  };
+
+
+
+  // Handle input changes with validation
   const handleTextChange = (e) => {
     const { name, value } = e.target;
 
+    // Name validation (letters and spaces only)
     if (['name', 'fatherName', 'motherName', 'emergencyName', 'bankHolderName'].includes(name)) {
       if (/^[a-zA-Z\s]*$/.test(value) || value === '') {
         setForm(prev => ({ ...prev, [name]: value }));
       }
-    } else if (['phone', 'salary', 'accountNumber', 'emergencyPhone'].includes(name)) {
+    }
+    // Number validation
+    else if (['phone', 'salary', 'accountNumber', 'emergencyPhone'].includes(name)) {
       if (/^\d*$/.test(value) || value === '') {
         setForm(prev => ({ ...prev, [name]: value }));
       }
-    } else if (name === 'ifsc') {
+    }
+    // IFSC validation (alphanumeric)
+    else if (name === 'ifsc') {
       if (/^[a-zA-Z0-9]*$/.test(value) || value === '') {
         setForm(prev => ({ ...prev, [name]: value }));
       }
@@ -54,7 +101,7 @@ const CreateUser = () => {
     setForm(prev => ({ ...prev, [name]: value }));
   };
 
-  // Handle checkbox selection for assets
+  // Handle checkbox selection for properties
   const handleCheckboxChange = (e) => {
     const { value, checked } = e.target;
     setForm(prev => ({
@@ -65,24 +112,44 @@ const CreateUser = () => {
     }));
   };
 
-  // ✅ Form validation
+  // Form validation
   const validateForm = () => {
-    if (!form.name || form.name.length < 2) return toast.error('Name must be at least 2 characters');
-    if (!form.email.includes('@')) return toast.error('Enter a valid email');
-    if (form.password.length < 8) return toast.error('Password must be at least 8 characters');
-    if (form.password !== form.confirmPassword) return toast.error('Passwords do not match');
-    if (!roleOptions.includes(form.role)) return toast.error('Select a valid role');
-
-    // Extra checks for role = user
-    if (form.role === 'user') {
-      if (form.phone && form.phone.length !== 10) return toast.error('Phone number must be 10 digits');
-      if (form.emergencyPhone && form.emergencyPhone.length !== 10) return toast.error('Emergency phone must be 10 digits');
-      if (form.accountNumber && form.accountNumber.length < 8) return toast.error('Account number must be at least 8 digits');
+    if (!form.name || form.name.length < 2) {
+      toast.error('Name must be at least 2 characters');
+      return false;
+    }
+    if (!form.email.includes('@')) {
+      toast.error('Enter a valid email');
+      return false;
+    }
+    if (form.password.length < 8) {
+      toast.error('Password must be at least 8 characters');
+      return false;
+    }
+    if (form.password !== form.confirmPassword) {
+      toast.error('Passwords do not match');
+      return false;
+    }
+    if (!form.department) {
+      toast.error('Please select a department');
+      return false;
+    }
+    if (!form.jobRole) {
+      toast.error('Please select a job role');
+      return false;
+    }
+    if (form.phone && form.phone.length !== 10) {
+      toast.error('Phone number must be 10 digits');
+      return false;
+    }
+    if (form.emergencyPhone && form.emergencyPhone.length !== 10) {
+      toast.error('Emergency phone must be 10 digits');
+      return false;
     }
     return true;
   };
 
-  // ✅ Handle submit
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -91,118 +158,154 @@ const CreateUser = () => {
     try {
       const { confirmPassword, ...submitData } = form;
 
-      // Remove extra fields if role is not 'user'
-      let finalData = { ...submitData };
-      if (form.role !== 'user') {
-        const userSpecificFields = [
-          'phone', 'address', 'gender', 'maritalStatus', 'dob', 'salary',
-          'accountNumber', 'ifsc', 'bankName', 'bankHolderName', 'employeeType', 'jobRole',
-          'properties', 'propertyOwned', 'additionalDetails',
-          'fatherName', 'motherName', 'emergencyName', 'emergencyPhone', 'emergencyRelation', 'emergencyAddress'
-        ];
-        userSpecificFields.forEach(field => delete finalData[field]);
-      }
-
-      await axios.post('/auth/register', finalData);
+      await axios.post('/auth/register', submitData);
       toast.success('✅ User created successfully');
-
+      
       setForm(initialFormState);
+      
     } catch (err) {
-      const msg =
-        err?.response?.data?.msg ||
-        err?.response?.data?.error ||
-        err?.message ||
-        '❌ User creation failed';
-      console.error('User creation error:', err);
+      const msg = err?.response?.data?.message || '❌ User creation failed';
       toast.error(msg);
     } finally {
       setLoading(false);
     }
   };
 
+  // Handle user edit
+  const handleEdit = (user) => {
+    setEditingUser(user);
+    setOpenEditDialog(true);
+  };
+
+
+  // Filter users based on search term
+  const filteredUsers = users.filter(user =>
+    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.department?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.jobRole?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Pagination
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
   return (
-    <Box p={3} maxWidth={600} mx="auto">
-      <Paper sx={{ p: 4, borderRadius: 3 }} elevation={6}>
-        <Typography variant="h5" fontWeight={600} gutterBottom>
-          Create New User
-        </Typography>
-        <form onSubmit={handleSubmit}>
-          {/* Basic Info */}
-          <TextField
-            label="Full Name"
-            name="name"
-            fullWidth
-            required
-            margin="normal"
-            value={form.name}
-            onChange={handleTextChange}
-            inputProps={{ pattern: '[a-zA-Z\\s]*' }}
-            helperText="Only letters and spaces allowed"
-          />
 
-          <TextField
-            label="Email Address"
-            name="email"
-            type="email"
-            fullWidth
-            required
-            margin="normal"
-            value={form.email}
-            onChange={handleTextChange}
-          />
+     
+       
+          <Paper sx={{ p: 4, borderRadius: 3, height: '100%' }} elevation={6}>
+            <Typography variant="h5" fontWeight={600} gutterBottom>
+              Create New User
+            </Typography>
+            <Typography variant="body2" color="text.secondary" mb={3}>
+              All fields marked with * are required
+            </Typography>
 
-          <TextField
-            label="Password"
-            name="password"
-            type={showPassword ? 'text' : 'password'}
-            fullWidth
-            required
-            margin="normal"
-            value={form.password}
-            onChange={handleTextChange}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton onClick={() => setShowPassword(prev => !prev)}>
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              )
-            }}
-          />
+            <form onSubmit={handleSubmit}>
+              {/* Required Fields */}
+              <Typography variant="subtitle1" fontWeight={600} color="primary" gutterBottom>
+                Required Information
+              </Typography>
 
-          <TextField
-            label="Confirm Password"
-            name="confirmPassword"
-            type={showPassword ? 'text' : 'password'}
-            fullWidth
-            required
-            margin="normal"
-            value={form.confirmPassword}
-            onChange={handleTextChange}
-          />
+              <TextField
+                label="Full Name *"
+                name="name"
+                fullWidth
+                required
+                margin="normal"
+                value={form.name}
+                onChange={handleTextChange}
+                helperText="Only letters and spaces"
+              />
 
-          <TextField
-            label="Role"
-            name="role"
-            fullWidth
-            select
-            required
-            margin="normal"
-            value={form.role}
-            onChange={handleSelectChange}
-          >
-            {roleOptions.map(role => (
-              <MenuItem key={role} value={role}>
-                {role.toUpperCase()}
-              </MenuItem>
-            ))}
-          </TextField>
+              <TextField
+                label="Email Address *"
+                name="email"
+                type="email"
+                fullWidth
+                required
+                margin="normal"
+                value={form.email}
+                onChange={handleTextChange}
+              />
 
-          {/* Extra fields only for 'user' */}
-          {form.role === 'user' && (
-            <>
-              <Typography variant="h6" mt={2}>Basic Details</Typography>
+              <TextField
+                label="Password *"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                fullWidth
+                required
+                margin="normal"
+                value={form.password}
+                onChange={handleTextChange}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={() => setShowPassword(prev => !prev)}>
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  )
+                }}
+                helperText="Minimum 8 characters"
+              />
+
+              <TextField
+                label="Confirm Password *"
+                name="confirmPassword"
+                type={showPassword ? 'text' : 'password'}
+                fullWidth
+                required
+                margin="normal"
+                value={form.confirmPassword}
+                onChange={handleTextChange}
+              />
+
+              <TextField
+                label="Department *"
+                name="department"
+                fullWidth
+                select
+                required
+                margin="normal"
+                value={form.department}
+                onChange={handleSelectChange}
+              >
+                {departments.map(dept => (
+                  <MenuItem key={dept._id} value={dept._id }>
+                    {dept.name}
+                  </MenuItem>
+                ))}
+              </TextField>
+
+              <TextField
+                label="Job Role *"
+                name="jobRole"
+                fullWidth
+                select
+                required
+                margin="normal"
+                value={form.jobRole}
+                onChange={handleSelectChange}
+              >
+                {jobRoleOptions.map(role => (
+                  <MenuItem key={role} value={role}>
+                    {role.charAt(0).toUpperCase() + role.slice(1)}
+                  </MenuItem>
+                ))}
+              </TextField>
+
+              {/* Optional Fields Section */}
+              <Typography variant="subtitle1" fontWeight={600} color="primary" mt={3} gutterBottom>
+                Optional Information (Editable by anyone)
+              </Typography>
 
               <TextField
                 label="Phone Number"
@@ -211,7 +314,7 @@ const CreateUser = () => {
                 margin="normal"
                 value={form.phone}
                 onChange={handleTextChange}
-                inputProps={{ maxLength: 10, pattern: '\\d*' }}
+                inputProps={{ maxLength: 10 }}
                 helperText="10 digits only"
               />
 
@@ -222,39 +325,48 @@ const CreateUser = () => {
                 margin="normal"
                 value={form.address}
                 onChange={handleTextChange}
+                multiline
+                rows={2}
               />
 
-              <TextField
-                label="Gender"
-                name="gender"
-                fullWidth
-                select
-                margin="normal"
-                value={form.gender}
-                onChange={handleSelectChange}
-              >
-                {genderOptions.map(option => (
-                  <MenuItem key={option} value={option}>
-                    {option.charAt(0).toUpperCase() + option.slice(1)}
-                  </MenuItem>
-                ))}
-              </TextField>
-
-              <TextField
-                label="Marital Status"
-                name="maritalStatus"
-                fullWidth
-                select
-                margin="normal"
-                value={form.maritalStatus}
-                onChange={handleSelectChange}
-              >
-                {maritalStatusOptions.map(option => (
-                  <MenuItem key={option} value={option}>
-                    {option.charAt(0).toUpperCase() + option.slice(1)}
-                  </MenuItem>
-                ))}
-              </TextField>
+              <Grid container spacing={2}>
+                <Grid item xs={6}>
+                  <TextField
+                    label="Gender"
+                    name="gender"
+                    fullWidth
+                    select
+                    margin="normal"
+                    value={form.gender}
+                    onChange={handleSelectChange}
+                  >
+                    <MenuItem value="">Select</MenuItem>
+                    {genderOptions.map(option => (
+                      <MenuItem key={option} value={option}>
+                        {option.charAt(0).toUpperCase() + option.slice(1)}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    label="Marital Status"
+                    name="maritalStatus"
+                    fullWidth
+                    select
+                    margin="normal"
+                    value={form.maritalStatus}
+                    onChange={handleSelectChange}
+                  >
+                    <MenuItem value="">Select</MenuItem>
+                    {maritalStatusOptions.map(option => (
+                      <MenuItem key={option} value={option}>
+                        {option.charAt(0).toUpperCase() + option.slice(1)}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </Grid>
+              </Grid>
 
               <TextField
                 label="Date of Birth"
@@ -267,197 +379,25 @@ const CreateUser = () => {
                 onChange={handleTextChange}
               />
 
-              <TextField
-                label="Salary"
-                name="salary"
-                fullWidth
-                margin="normal"
-                value={form.salary}
-                onChange={handleTextChange}
-                inputProps={{ pattern: '\\d*' }}
-                helperText="Numbers only"
-              />
-
-              <Typography variant="h6" mt={2}>Bank Details</Typography>
-
-              <TextField
-                label="Account Number"
-                name="accountNumber"
-                fullWidth
-                margin="normal"
-                value={form.accountNumber}
-                onChange={handleTextChange}
-              />
-
-              <TextField
-                label="IFSC Code"
-                name="ifsc"
-                fullWidth
-                margin="normal"
-                value={form.ifsc}
-                onChange={handleTextChange}
-              />
-
-              <TextField
-                label="Bank Name"
-                name="bankName"
-                fullWidth
-                margin="normal"
-                value={form.bankName}
-                onChange={handleTextChange}
-              />
-
-              <TextField
-                label="Bank Holder Name"
-                name="bankHolderName"
-                fullWidth
-                margin="normal"
-                value={form.bankHolderName}
-                onChange={handleTextChange}
-              />
-
-              <TextField
-                label="Employee Type"
-                name="employeeType"
-                select
-                fullWidth
-                margin="normal"
-                value={form.employeeType}
-                onChange={handleSelectChange}
-              >
-                {employeeTypeOptions.map(option => (
-                  <MenuItem key={option} value={option}>
-                    {option.charAt(0).toUpperCase() + option.slice(1)}
-                  </MenuItem>
-                ))}
-              </TextField>
-
-              <TextField
-                label="Job Role"
-                name="jobRole"
-                fullWidth
-                margin="normal"
-                value={form.jobRole}
-                onChange={handleTextChange}
-              />
-
-              <Typography variant="h6" mt={2}>Assets</Typography>
-              <Box mt={1}>
-                <Typography>Select Properties:</Typography>
-                {propertyOptions.map(item => (
-                  <label key={item} style={{ display: 'block' }}>
-                    <input
-                      type="checkbox"
-                      value={item}
-                      checked={form.properties.includes(item)}
-                      onChange={handleCheckboxChange}
-                    />{' '}
-                    {item}
-                  </label>
-                ))}
+              <Box mt={3}>
+                <Button
+                  type="submit"
+                  fullWidth
+                  variant="contained"
+                  size="large"
+                  disabled={loading}
+                  startIcon={loading ? <CircularProgress size={20} /> : <Add />}
+                >
+                  {loading ? 'Creating...' : 'Create User'}
+                </Button>
               </Box>
+            </form>
+          </Paper>
+        
 
-              <TextField
-                label="Property Owned"
-                name="propertyOwned"
-                fullWidth
-                margin="normal"
-                value={form.propertyOwned}
-                onChange={handleTextChange}
-              />
-
-              <TextField
-                label="Additional Details"
-                name="additionalDetails"
-                fullWidth
-                margin="normal"
-                value={form.additionalDetails}
-                onChange={handleTextChange}
-              />
-
-              <Typography variant="h6" mt={2}>Family Details</Typography>
-
-              <TextField
-                label="Father's Name"
-                name="fatherName"
-                fullWidth
-                margin="normal"
-                value={form.fatherName}
-                onChange={handleTextChange}
-              />
-
-              <TextField
-                label="Mother's Name"
-                name="motherName"
-                fullWidth
-                margin="normal"
-                value={form.motherName}
-                onChange={handleTextChange}
-              />
-
-              <Typography variant="h6" mt={2}>Emergency Contact</Typography>
-
-              <TextField
-                label="Name"
-                name="emergencyName"
-                fullWidth
-                margin="normal"
-                value={form.emergencyName}
-                onChange={handleTextChange}
-              />
-
-              <TextField
-                label="Phone"
-                name="emergencyPhone"
-                fullWidth
-                margin="normal"
-                value={form.emergencyPhone}
-                onChange={handleTextChange}
-                inputProps={{ maxLength: 10, pattern: '\\d*' }}
-                helperText="10 digits only"
-              />
-
-              <TextField
-                label="Relationship"
-                name="emergencyRelation"
-                fullWidth
-                select
-                margin="normal"
-                value={form.emergencyRelation}
-                onChange={handleSelectChange}
-              >
-                {emergencyRelationOptions.map(option => (
-                  <MenuItem key={option} value={option}>
-                    {option.charAt(0).toUpperCase() + option.slice(1)}
-                  </MenuItem>
-                ))}
-              </TextField>
-
-              <TextField
-                label="Present Address"
-                name="emergencyAddress"
-                fullWidth
-                margin="normal"
-                value={form.emergencyAddress}
-                onChange={handleTextChange}
-              />
-            </>
-          )}
-
-          <Box mt={3}>
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              disabled={loading}
-              startIcon={loading && <CircularProgress size={20} />}
-            >
-              {loading ? 'Creating...' : 'Create User'}
-            </Button>
-          </Box>
-        </form>
-      </Paper>
-    </Box>
+    
+   
+ 
   );
 };
 
