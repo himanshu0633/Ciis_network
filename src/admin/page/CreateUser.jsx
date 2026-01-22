@@ -17,9 +17,8 @@ import axios from '../../utils/axiosConfig';
 // Constants
 const genderOptions = ['male', 'female', 'other'];
 const maritalStatusOptions = ['single', 'married', 'divorced', 'widowed'];
-const employeeTypeOptions = ['intern', 'technical', 'non-technical', 'sales'];
 const emergencyRelationOptions = ['father', 'mother', 'spouse', 'sibling', 'friend', 'other'];
-const jobRoleOptions = ['admin', 'user', 'hr', 'manager', 'SuperAdmin'];
+const jobRoleOptions = ['admin', 'user', 'hr', 'manager', 'SuperAdmin', 'intern'];
 const propertyOptions = ['phone', 'sim', 'laptop', 'desktop', 'headphone'];
 
 // Initial form state
