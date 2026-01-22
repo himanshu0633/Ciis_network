@@ -435,6 +435,7 @@
   margin-bottom: 16px;
   color: var(--gray-400);
   opacity: 0.5;
+  margin-left: 30vh;
 }
 
 .MyAssets-no-properties h3 {
@@ -1018,6 +1019,10 @@
   .MyAssets-stats-grid {
     grid-template-columns: repeat(2, 1fr); /* 2 columns */
     gap: 10px;
+  }
+
+  .MyAssets-no-properties-icon {
+    margin-left: 11vh;
   }
 
   .MyAssets-stat-avatar.MyAssets-primary {

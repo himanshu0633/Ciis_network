@@ -598,7 +598,7 @@
 .MyLeaves-no-data-icon {
   font-size: 48px;
   color: var(--gray-400);
-  margin-bottom: 16px;
+  margin-left: 75vh;
 }
 
 .MyLeaves-no-data-cell h3,
@@ -1220,6 +1220,10 @@
     min-height: 36px;
     margin: 0 auto 6px;
   }
+
+.MyLeaves-no-data-icon {
+  margin-left: 7vh;
+}
 
   .MyLeaves-stat-label {
     font-size: 9px;
