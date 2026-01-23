@@ -28,7 +28,7 @@
 
 .dashboard-user-info {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 16px;
   flex: 1;
   min-width: 300px;
@@ -79,14 +79,18 @@
   font-size: 24px;
   font-weight: 700;
   line-height: 1.2;
-  color: #1e293b;
-  margin-bottom: 8px;
+  width: 220px;
+  white-space: nowrap;
+  margin: 1vh;
 }
 
 .dashboard-user-welcome {
   font-size: 14px;
-  color: #64748b;
-  margin-bottom: 16px;
+  color: #6b7280;
+  width: 220px;          
+  white-space: nowrap;
+  margin: 1vh;
+  font-weight: 500;
 }
 
 .dashboard-user-tags {

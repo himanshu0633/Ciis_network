@@ -2015,3 +2015,73 @@
   --text-muted: #6b7280;
   --grey-50: #f9fafb;
 }
+
+@media (max-width: 768px) {
+
+  /* Remove horizontal scroll */
+  .table-container {
+    overflow-x: hidden !important;
+  }
+
+  .data-table {
+    width: 100% !important;
+    min-width: 100% !important;
+    table-layout: fixed;
+  }
+
+  /* Hide ALL table headers */
+  .data-table thead th {
+    display: none;
+  }
+
+  /* Show ONLY Client (1st) & Status (4th) headers */
+  .data-table thead th:nth-child(1),
+  .data-table thead th:nth-child(4) {
+    display: table-cell;
+  }
+
+  /* Hide ALL td cells */
+  .data-table tbody td {
+    display: none;
+  }
+
+  /* Show ONLY Client column */
+  .data-table tbody td:nth-child(1) {
+    display: table-cell;
+    width: 70%;
+  }
+
+  /* Show ONLY Status column */
+  .data-table tbody td:nth-child(4) {
+    display: table-cell;
+    width: 30%;
+    text-align: right;
+  }
+
+  /* Client cell compact */
+  .client-cell {
+    gap: 6px;
+  }
+
+  .client-cell-secondary {
+    display: none !important;
+  }
+
+  .client-cell-mobile {
+    display: block !important;
+    font-size: 12px;
+    color: #6b7280;
+  }
+
+  /* Status chip smaller */
+  .status-chip {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+
+  /* Disable hover translate effect */
+  .data-table tr:hover {
+    transform: none;
+    background: none;
+  }
+}

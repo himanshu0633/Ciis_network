@@ -112,7 +112,7 @@
   width: 100%;
   padding: 12px 16px 12px 44px;
   border: 2px solid var(--gray-200);
-  border-radius: var(--border-radius-full);
+  border-radius: 50px;
   font-size: 14px;
   transition: var(--transition);
   background: var(--gray-50);
@@ -598,7 +598,7 @@
 .MyLeaves-no-data-icon {
   font-size: 48px;
   color: var(--gray-400);
-  margin-bottom: 16px;
+  margin-left: 75vh;
 }
 
 .MyLeaves-no-data-cell h3,
@@ -1220,6 +1220,10 @@
     min-height: 36px;
     margin: 0 auto 6px;
   }
+
+.MyLeaves-no-data-icon {
+  margin-left: 7vh;
+}
 
   .MyLeaves-stat-label {
     font-size: 9px;
