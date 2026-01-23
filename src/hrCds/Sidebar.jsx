@@ -298,7 +298,8 @@ const Sidebar = ({ isMobile = false }) => {
       path: '/cds/task-management', 
       category: 'tasks',
       accessRules: [
-        { department: '6968699f7c8d496a6cb6580e', roles: ['admin', 'user', 'hr', 'manager', 'SuperAdmin'] }
+        { department: '6968699f7c8d496a6cb6580e', roles: ['admin', 'user', 'hr', 'manager', 'SuperAdmin'] },
+        { department: '6968690c7c8d496a6cb657f5', roles: ['admin', 'user', 'hr', 'manager', 'SuperAdmin','intern'] }
       ]
     },
     {
@@ -308,7 +309,9 @@ const Sidebar = ({ isMobile = false }) => {
       path: '/cds/project', 
       category: 'tasks',
       accessRules: [
-        { department: '6968699f7c8d496a6cb6580e', roles: ['admin', 'user', 'hr', 'manager', 'SuperAdmin'] }
+        { department: '6968699f7c8d496a6cb6580e', roles: ['admin', 'user', 'hr', 'manager', 'SuperAdmin'] },
+        { department: '6968690c7c8d496a6cb657f5', roles: ['admin', 'user', 'hr', 'manager', 'SuperAdmin', 'intern'] }
+
       ]
     },
     
@@ -320,7 +323,9 @@ const Sidebar = ({ isMobile = false }) => {
       path: '/cds/alert', 
       category: 'communication',
       accessRules: [
-        { department: 'all', roles: ['admin', 'user', 'hr', 'manager', 'SuperAdmin'] }
+        { department: 'all', roles: ['admin', 'user', 'hr', 'manager', 'SuperAdmin'] },
+        { department: '6968690c7c8d496a6cb657f5', roles: ['admin', 'user', 'hr', 'manager', 'SuperAdmin', 'intern'] }
+
       ]
     },
     {
@@ -330,7 +335,8 @@ const Sidebar = ({ isMobile = false }) => {
       path: '/cds/employee-meeting', 
       category: 'communication',
       accessRules: [
-        { department: '6968690c7c8d496a6cb657f5', roles: ['admin', 'user', 'hr', 'manager', 'SuperAdmin'] }
+        { department: '6968690c7c8d496a6cb657f5', roles: ['admin', 'user', 'hr', 'manager', 'SuperAdmin','intern'] },
+        
       ]
     },
 

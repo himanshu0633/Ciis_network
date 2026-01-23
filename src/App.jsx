@@ -60,7 +60,6 @@ function App() {
               </ProtectedRoute>
             </ThemeContextProvider>
           }>
-          
           <Route path="create-user" element={<CreateUser />} />
           <Route path='department' element={<Department/>} />
           <Route path="change-password" element={<ChangePassword />} />
@@ -74,9 +73,7 @@ function App() {
           <Route path="admin-meeting" element={<AdminMeetingPage />} />
           <Route path="adminp" element={<AdminProject />} />
           <Route path="emp-all-task" element={<EmpAllTask />} />
-          <Route path="emp-client" element={<Client />} />
-      
-       
+          <Route path="emp-client" element={<Client />} />       
         </Route>
         <Route
           path="/cds/*"
@@ -113,4 +110,3 @@ function App() {
 }
 
 export default App;
-
