@@ -1281,4 +1281,203 @@
   .EmployeeDirectory-employee-list {
     margin-bottom: 20px;
   }
+}/* Role-based tag styles */
+.EmployeeDirectory-employee-tag-admin {
+  background-color: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+}
+
+.EmployeeDirectory-employee-tag-manager {
+  background-color: #fffbeb;
+  color: #d97706;
+  border: 1px solid #fcd34d;
+}
+
+.EmployeeDirectory-employee-tag-hr {
+  background-color: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #93c5fd;
+}
+
+.EmployeeDirectory-employee-tag-user {
+  background-color: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #86efac;
+}
+
+.EmployeeDirectory-employee-tag-superadmin {
+  background-color: #f5f3ff;
+  color: #7c3aed;
+  border: 1px solid #c4b5fd;
+}
+
+/* Current user indicators */
+.EmployeeDirectory-current-user-badge {
+  background-color: #3b82f6;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  margin-left: 8px;
+}
+
+.EmployeeDirectory-current-user-tag {
+  background-color: #3b82f6;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-left: 8px;
+}
+
+/* Status badges */
+.EmployeeDirectory-status-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.EmployeeDirectory-status-badge.active {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.EmployeeDirectory-status-badge.inactive {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+/* Warning box */
+.EmployeeDirectory-warning-box {
+  background-color: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.EmployeeDirectory-warning-box svg {
+  color: #d97706;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.EmployeeDirectory-warning-box span {
+  color: #92400e;
+  font-size: 0.875rem;
+}
+
+/* Avatar initials */
+.EmployeeDirectory-avatar-initials {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: #3b82f6;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+/* Mobile filter */
+.EmployeeDirectory-mobile-filter {
+  margin-left: auto;
+  max-width: 280px;
+  height: 100vh;
+  border-radius: 20px 0 0 20px;
+}
+
+/* Checkbox group */
+.EmployeeDirectory-checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.EmployeeDirectory-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.EmployeeDirectory-checkbox {
+  width: 18px;
+  height: 18px;
+}
+
+/* Floating action button */
+.EmployeeDirectory-floating-action-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  z-index: 100;
+}
+
+.EmployeeDirectory-floating-action-btn:hover {
+  background-color: #2563eb;
+}
+
+/* View toggle */
+.EmployeeDirectory-view-toggle-btn {
+  padding: 6px 12px;
+  border: 1px solid #d1d5db;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.EmployeeDirectory-view-toggle-btn:first-child {
+  border-radius: 6px 0 0 6px;
+}
+
+.EmployeeDirectory-view-toggle-btn:last-child {
+  border-radius: 0 6px 6px 0;
+}
+
+.EmployeeDirectory-view-toggle-btn.active {
+  background-color: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+/* Count badge */
+.EmployeeDirectory-count-badge {
+  padding: 6px 12px;
+  border: 1px solid #3b82f6;
+  border-radius: 16px;
+  background-color: rgba(59, 130, 246, 0.1);
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+/* Mobile actions */
+.EmployeeDirectory-mobile-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Filter section */
+.EmployeeDirectory-filter-section {
+  margin-top: 24px;
 }

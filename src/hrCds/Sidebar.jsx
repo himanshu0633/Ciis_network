@@ -298,7 +298,10 @@ const Sidebar = ({ isMobile = false }) => {
       path: '/cds/task-management', 
       category: 'tasks',
       accessRules: [
+<<<<<<< HEAD
         { department: '6968699f7c8d496a6cb6580e', roles: ['admin', 'user', 'hr', 'manager', 'SuperAdmin'] },
+=======
+>>>>>>> bbe958f8907bd49eb84f0d5e48eb3b7569088af1
         { department: '6968690c7c8d496a6cb657f5', roles: ['admin', 'user', 'hr', 'manager', 'SuperAdmin','intern'] }
       ]
     },
@@ -309,9 +312,13 @@ const Sidebar = ({ isMobile = false }) => {
       path: '/cds/project', 
       category: 'tasks',
       accessRules: [
+<<<<<<< HEAD
         { department: '6968699f7c8d496a6cb6580e', roles: ['admin', 'user', 'hr', 'manager', 'SuperAdmin'] },
         { department: '6968690c7c8d496a6cb657f5', roles: ['admin', 'user', 'hr', 'manager', 'SuperAdmin', 'intern'] }
 
+=======
+        { department: '6968690c7c8d496a6cb657f5', roles: ['admin', 'user', 'hr', 'manager', 'SuperAdmin'] }
+>>>>>>> bbe958f8907bd49eb84f0d5e48eb3b7569088af1
       ]
     },
     
