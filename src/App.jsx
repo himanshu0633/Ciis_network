@@ -97,7 +97,7 @@ function App() {
           <Route path="task-management" element={<TaskManagement />} />
           <Route path="employee-meeting" element={<EmployeeMeetingPage />} />
           <Route path="client-meeting" element={<ClientMeeting />} />
-    <Route path="clock" element={<Clock />} />
+          <Route path="clock" element={<Clock />} />
         </Route>
         {/* Catch-all route */}
         <Route path="*" element={<Navigate to="/" replace />} />
