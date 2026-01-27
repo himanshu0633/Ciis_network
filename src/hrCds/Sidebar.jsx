@@ -298,11 +298,8 @@ const Sidebar = ({ isMobile = false }) => {
       path: '/cds/task-management', 
       category: 'tasks',
       accessRules: [
-<<<<<<< HEAD
-        { department: '6968699f7c8d496a6cb6580e', roles: ['admin', 'user', 'hr', 'manager', 'SuperAdmin'] },
-=======
->>>>>>> bbe958f8907bd49eb84f0d5e48eb3b7569088af1
-        { department: '6968690c7c8d496a6cb657f5', roles: ['admin', 'user', 'hr', 'manager', 'SuperAdmin','intern'] }
+        { department: '6968690c7c8d496a6cb657f5', roles: ['admin', 'user', 'hr', 'manager', 'SuperAdmin','intern'] },
+        { department: '696869767c8d496a6cb657ff', roles: ['user', 'intern']}
       ]
     },
     {
@@ -312,13 +309,8 @@ const Sidebar = ({ isMobile = false }) => {
       path: '/cds/project', 
       category: 'tasks',
       accessRules: [
-<<<<<<< HEAD
-        { department: '6968699f7c8d496a6cb6580e', roles: ['admin', 'user', 'hr', 'manager', 'SuperAdmin'] },
-        { department: '6968690c7c8d496a6cb657f5', roles: ['admin', 'user', 'hr', 'manager', 'SuperAdmin', 'intern'] }
-
-=======
-        { department: '6968690c7c8d496a6cb657f5', roles: ['admin', 'user', 'hr', 'manager', 'SuperAdmin'] }
->>>>>>> bbe958f8907bd49eb84f0d5e48eb3b7569088af1
+        { department: '6968690c7c8d496a6cb657f5', roles: ['admin', 'user', 'hr', 'manager', 'SuperAdmin'] },
+        { department: '696869767c8d496a6cb657ff', roles: ['user', 'intern']}
       ]
     },
     
@@ -402,7 +394,7 @@ const Sidebar = ({ isMobile = false }) => {
         { department: '6968690c7c8d496a6cb657f5', roles: ['admin', 'hr', 'manager', 'SuperAdmin'] },
         { department: '696869607c8d496a6cb657fa', roles: ['manager'] }
       ]
-    },
+    },    
     {
       id: 'emp-client',
       icon: <BusinessIcon />, 
