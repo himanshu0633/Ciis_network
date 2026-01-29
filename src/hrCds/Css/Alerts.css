@@ -1,6 +1,3 @@
-/* Alerts.css */
-
-/* ===== PROFESSIONAL COLOR PALETTE ===== */
 :root {
   --primary-blue: #2563eb;
   --primary-dark-blue: #1d4ed8;
@@ -81,6 +78,7 @@
   padding: 32px 40px;
   color: white;
   box-shadow: var(--shadow-md);
+  border-radius: 20px;
   position: relative;
   overflow: hidden;
 }

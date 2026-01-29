@@ -435,6 +435,7 @@
   margin-bottom: 16px;
   color: var(--gray-400);
   opacity: 0.5;
+  margin-left: 30vh;
 }
 
 .MyAssets-no-properties h3 {
@@ -497,7 +498,7 @@
   width: 100%;
   padding: 12px 16px 12px 44px;
   border: 2px solid var(--gray-200);
-  border-radius: var(--border-radius-full);
+  border-radius: 50px;
   font-size: 14px;
   transition: var(--transition);
   background: var(--gray-50);
@@ -824,7 +825,7 @@
 
 .MyAssets-mobile-status-chip {
   padding: 6px 12px;
-  border-radius: var(--border-radius-full);
+  border-radius: 50px;
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
@@ -1020,6 +1021,10 @@
     gap: 10px;
   }
 
+  .MyAssets-no-properties-icon {
+    margin-left: 11vh;
+  }
+
   .MyAssets-stat-avatar.MyAssets-primary {
     width: 36px;
     height: 36px;
@@ -1086,8 +1091,7 @@
   }
 
   .MyAssets-mobile-status-chip {
-    padding: 4px; 
-    margin: -3vh;
+    padding: 4px;
   }
 
   .MyAssets-mobile-asset-icon.MyAssets-primary {
@@ -1101,6 +1105,7 @@
   .MyAssets-status-approved {
     padding: 4px; 
     margin: -1vh;
+    border-radius: 50px;
   }
 }
 

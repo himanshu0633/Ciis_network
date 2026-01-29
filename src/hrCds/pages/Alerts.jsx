@@ -396,9 +396,7 @@ const Alerts = () => {
     );
   }, [groups, groupSearch]);
 
-  /* -----------------------------------
-    🔹 Helper Functions
-  ------------------------------------ */
+
   const formatDate = (d) =>
     new Date(d).toLocaleString("en-US", {
       month: "short",

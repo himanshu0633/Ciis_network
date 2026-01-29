@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Box,
   Button,
@@ -37,6 +37,18 @@ const Login = () => {
   const location = useLocation();
   const { setUser, setIsAuthenticated } = useAuth();
 
+  // ✅ Use refs to prevent cursor jump
+  const emailInputRef = useRef(null);
+  const passwordInputRef = useRef(null);
+  const currentInputRef = useRef(null);
+  const cursorPositionRef = useRef(0);
+  const formRef = useRef(form);
+
+  // Update form ref whenever form changes
+  useEffect(() => {
+    formRef.current = form;
+  }, [form]);
+
   useEffect(() => {
     if (location.state?.fromRegister) {
       toast.success("Registration successful! Please login.");
@@ -53,27 +65,65 @@ const Login = () => {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, [location.state]);
 
-  const handleChange = (e) => {
+  // ✅ Restore cursor position after render
+  useEffect(() => {
+    if (currentInputRef.current && cursorPositionRef.current !== null) {
+      const input = currentInputRef.current;
+      const position = cursorPositionRef.current;
+      
+      // Use requestAnimationFrame for smoother cursor restoration
+      requestAnimationFrame(() => {
+        if (document.activeElement !== input) {
+          input.focus();
+        }
+        input.setSelectionRange(position, position);
+      });
+      
+      // Reset refs
+      currentInputRef.current = null;
+      cursorPositionRef.current = 0;
+    }
+  });
+
+  // ✅ FIXED: Optimized handleChange to prevent cursor jump
+  const handleChange = useCallback((e) => {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    
+    // Save current focused element and cursor position
+    currentInputRef.current = e.target;
+    cursorPositionRef.current = e.target.selectionStart;
+    
+    // Update form state immediately
+    setForm(prev => ({ 
+      ...prev, 
+      [name]: value 
+    }));
+    
     // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
-  };
+  }, [errors]);
+
+  // ✅ Add onBlur handler to save cursor position
+  const handleBlur = useCallback((e) => {
+    currentInputRef.current = e.target;
+    cursorPositionRef.current = e.target.selectionStart;
+  }, []);
 
   const validateForm = () => {
     const newErrors = {};
+    const currentForm = formRef.current;
     
-    if (!form.email.trim()) {
+    if (!currentForm.email.trim()) {
       newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(currentForm.email)) {
       newErrors.email = 'Please enter a valid email address';
     }
     
-    if (!form.password) {
+    if (!currentForm.password) {
       newErrors.password = 'Password is required';
-    } else if (form.password.length < 6) {
+    } else if (currentForm.password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters';
     }
     
@@ -88,7 +138,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const res = await axios.post('/auth/login', form);
+      const res = await axios.post('/auth/login', formRef.current);
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('user', JSON.stringify(res.data.user));
       setUser(res.data.user);
@@ -109,6 +159,13 @@ const Login = () => {
     }
   };
 
+  // ✅ Handle Enter key press for better UX
+  const handleKeyPress = useCallback((e) => {
+    if (e.key === 'Enter' && !loading) {
+      handleSubmit(e);
+    }
+  }, [loading]);
+
   return (
     <Box
       sx={{
@@ -118,7 +175,7 @@ const Login = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-      py: 2,
+        py: 2,
         '&::before': {
           content: '""',
           position: 'absolute',
@@ -294,6 +351,7 @@ const Login = () => {
 
             <form onSubmit={handleSubmit} noValidate>
               <TextField
+                inputRef={emailInputRef}
                 label="Email Address"
                 name="email"
                 type="email"
@@ -301,6 +359,8 @@ const Login = () => {
                 margin="normal"
                 value={form.email}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                onKeyPress={handleKeyPress}
                 error={!!errors.email}
                 helperText={errors.email}
                 required
@@ -336,6 +396,7 @@ const Login = () => {
               />
 
               <TextField
+                inputRef={passwordInputRef}
                 label="Password"
                 name="password"
                 type={showPassword ? 'text' : 'password'}
@@ -343,6 +404,8 @@ const Login = () => {
                 margin="normal"
                 value={form.password}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                onKeyPress={handleKeyPress}
                 error={!!errors.password}
                 helperText={errors.password}
                 required
@@ -433,9 +496,61 @@ const Login = () => {
                 {loading ? 'Signing in...' : 'Sign In'}
               </Button>
 
-      
+              <Grid container justifyContent="space-between" sx={{ mt: 2 }}>
+                <Grid item>
+                  <Link
+                    href="/forgot-password"
+                    variant="body2"
+                    sx={{
+                      color: 'primary.main',
+                      textDecoration: 'none',
+                      fontWeight: 500,
+                      transition: 'color 0.2s ease',
+                      '&:hover': {
+                        color: 'primary.dark',
+                        textDecoration: 'underline'
+                      }
+                    }}
+                  >
+                    Forgot password?
+                  </Link>
+                </Grid>
+                <Grid item>
+                  <Link
+                    href="/register"
+                    variant="body2"
+                    sx={{
+                      color: 'primary.main',
+                      textDecoration: 'none',
+                      fontWeight: 500,
+                      transition: 'color 0.2s ease',
+                      '&:hover': {
+                        color: 'primary.dark',
+                        textDecoration: 'underline'
+                      }
+                    }}
+                  >
+                    Don't have an account? Sign up
+                  </Link>
+                </Grid>
+              </Grid>
             </form>
 
+            {/* Version info */}
+            <Typography
+              variant="caption"
+              sx={{
+                display: 'block',
+                textAlign: 'center',
+                mt: 3,
+                pt: 2,
+                borderTop: '1px solid rgba(0, 0, 0, 0.1)',
+                color: 'text.disabled',
+                fontSize: '0.75rem'
+              }}
+            >
+              © {new Date().getFullYear()} Your Company. All rights reserved.
+            </Typography>
           </Paper>
         </Fade>
       </Container>
@@ -443,4 +558,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Login; 

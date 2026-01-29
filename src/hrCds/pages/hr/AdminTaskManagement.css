@@ -2250,3 +2250,71 @@
     break-inside: avoid;
   }
 }
+
+@media (max-width: 768px) {
+
+  /* Stop horizontal scrolling */
+  .AdminTaskManagement-table-container {
+    overflow-x: hidden !important;
+  }
+
+  .AdminTaskManagement-tasks-table {
+    width: 100% !important;
+    min-width: 100% !important;
+    table-layout: fixed;
+    display: table;
+  }
+
+  /* Hide ALL headers */
+  .AdminTaskManagement-tasks-table thead th {
+    display: none;
+  }
+
+  .AdminTaskManagement-tasks-table thead th:nth-child(1) {
+    display: table-cell;
+    text-align: left !important;
+  }
+
+  .AdminTaskManagement-tasks-table thead th:nth-child(5) {
+    display: table-cell;
+    text-align: right !important;
+  }
+  
+  /* Hide ALL td cells */
+  .AdminTaskManagement-tasks-table tbody td {
+    display: none;
+  }
+
+  /* Show ONLY Title column */
+  .AdminTaskManagement-tasks-table tbody td:nth-child(1) {
+    display: table-cell;
+    width: 70%;
+  }
+
+  /* Show ONLY Status column */
+  .AdminTaskManagement-tasks-table tbody td:nth-child(5) {
+    display: table-cell;
+    width: 30%;
+    text-align: right;
+  }
+
+  /* Improve title readability */
+  .AdminTaskManagement-task-title {
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Compact status chip */
+  .AdminTaskManagement-status-chip {
+    font-size: 10px;
+    padding: 4px 8px;
+  }
+
+  /* Disable row hover background on mobile */
+  .AdminTaskManagement-table-row:hover {
+    background: none;
+  }
+}
