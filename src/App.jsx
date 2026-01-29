@@ -74,15 +74,15 @@ function App() {
 
         {/* ✅ Company Management WITHOUT LOGIN */}
         <Route path="/CompanyManagement" element={<CompanyManagement />} />
+        <Route path="/create-user" element={<CreateUser />} />
 
         {/* ✅ Super Admin Dashboard (Protected) */}
         <Route
           path="/SuperAdminDashboard"
-          element={
-            <ProtectedRoute>
-              <SuperAdminDashboard />
-            </ProtectedRoute>
-          }
+        
+              element={<SuperAdminDashboard />}
+ 
+    
         />
 
         {/* ✅ CDS ADMIN Routes */}
@@ -96,7 +96,7 @@ function App() {
             </ThemeContextProvider>
           }
         >
-          <Route path="create-user" element={<CreateUser />} />
+          
           <Route path="department" element={<Department />} />
           <Route path="change-password" element={<ChangePassword />} />
 

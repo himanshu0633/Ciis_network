@@ -34,10 +34,8 @@ const SuperAdminLogin = () => {
         
         toast.success('Login successful! Redirecting...');
         
-        // Redirect to super admin dashboard
-        setTimeout(() => {
-          navigate('/super-admin/dashboard');
-        }, 1500);
+        // Redirect to super admin dashboard immediately
+        navigate('/super-admin/dashboard');
       } else {
         toast.error(response.data.message || 'Login failed');
       }
@@ -191,10 +189,6 @@ const styles = {
     transition: 'all 0.3s',
     outline: 'none'
   },
-  inputFocus: {
-    borderColor: '#667eea',
-    boxShadow: '0 0 0 3px rgba(102, 126, 234, 0.1)'
-  },
   submitButton: {
     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     color: 'white',
@@ -247,13 +241,6 @@ const styles = {
     listStyle: 'none',
     padding: 0,
     margin: 0
-  },
-  featuresListLi: {
-    padding: '8px 0',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    color: '#444'
   }
 };
 
@@ -270,7 +257,7 @@ style.textContent = `
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
   }
   
-  button:hover {
+  button:hover:not(:disabled) {
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
   }
