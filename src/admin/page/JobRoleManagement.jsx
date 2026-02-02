@@ -5,19 +5,21 @@ import {
   TableHead, TableRow, TablePagination, IconButton,
   Dialog, DialogTitle, DialogContent, DialogActions,
   Chip, Tooltip, Alert, Snackbar, FormControlLabel,
-  Switch
+  Switch, Select, MenuItem, FormControl, InputLabel
 } from '@mui/material';
 import { Edit, Delete, Add, Search } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import axios from '../../utils/axiosConfig';
 
-const DepartmentManagement = () => {
+const JobRoleManagement = () => {
+  const [jobRoles, setJobRoles] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
-  const [editingDept, setEditingDept] = useState(null);
+  const [editingJobRole, setEditingJobRole] = useState(null);
   const [formData, setFormData] = useState({ 
     name: '', 
     description: '',
+    department: '',
     company: '',  
     companyCode: '' 
   });
@@ -92,7 +94,7 @@ const DepartmentManagement = () => {
       const isSuper = checkSuperAdminStatus(user);
       setIsSuperAdmin(isSuper);
       
-      // Set company info in form data for new departments
+      // Set company info in form data for new job roles
       if (user.company && user.companyCode) {
         setFormData(prev => ({
           ...prev,
@@ -101,14 +103,15 @@ const DepartmentManagement = () => {
         }));
       }
       
-      // Fetch departments
+      // Fetch job roles and departments
+      fetchJobRoles(user, isSuper);
       fetchDepartments(user, isSuper);
     } else {
       toast.error('Please login to continue');
     }
   }, []);
 
-  const fetchDepartments = async (user = null, isSuper = false) => {
+  const fetchJobRoles = async (user = null, isSuper = false) => {
     try {
       if (!user) {
         user = getUserFromStorage();
@@ -120,8 +123,8 @@ const DepartmentManagement = () => {
       }
       
       // If super-admin and showing all companies, fetch all
-      // Otherwise, fetch only departments for user's company
-      let url = '/departments';
+      // Otherwise, fetch only job roles for user's company
+      let url = '/job-roles';
       let params = {};
       
       if (!isSuper || !showAllCompanies) {
@@ -130,12 +133,39 @@ const DepartmentManagement = () => {
         }
       }
       
-      console.log('Fetching departments with params:', params);
+      console.log('Fetching job roles with params:', params);
+      
+      const response = await axios.get('/job-roles', { params });
+      setJobRoles(response.data.jobRoles || []);
+      
+      console.log('Job roles fetched:', response.data.jobRoles?.length);
+    } catch (err) {
+      console.error('Fetch job roles error:', err);
+      toast.error(err.response?.data?.message || 'Failed to load job roles');
+    }
+  };
+
+  const fetchDepartments = async (user = null, isSuper = false) => {
+    try {
+      if (!user) {
+        user = getUserFromStorage();
+        if (!user) return;
+        isSuper = checkSuperAdminStatus(user);
+      }
+      
+      let url = '/departments';
+      let params = {};
+      
+      if (!isSuper) {
+        if (user.company) {
+          params.company = user.company;
+        }
+      }
       
       const response = await axios.get('/departments', { params });
       setDepartments(response.data.departments || []);
       
-      console.log('Departments fetched:', response.data.departments?.length);
+      console.log('Departments fetched for dropdown:', response.data.departments?.length);
     } catch (err) {
       console.error('Fetch departments error:', err);
       toast.error(err.response?.data?.message || 'Failed to load departments');
@@ -144,7 +174,12 @@ const DepartmentManagement = () => {
 
   const handleSubmit = async () => {
     if (!formData.name.trim()) {
-      toast.error('Department name is required');
+      toast.error('Job role name is required');
+      return;
+    }
+
+    if (!formData.department) {
+      toast.error('Please select a department');
       return;
     }
 
@@ -161,7 +196,8 @@ const DepartmentManagement = () => {
       // Prepare data
       const submitData = {
         name: formData.name.trim(),
-        description: formData.description.trim()
+        description: formData.description.trim(),
+        department: formData.department
       };
       
       // Add company info if not super-admin or if explicitly setting company
@@ -170,27 +206,28 @@ const DepartmentManagement = () => {
         submitData.companyCode = formData.companyCode || user.companyCode;
       }
       
-      console.log('Submitting department data:', submitData);
+      console.log('Submitting job role data:', submitData);
       
-      if (editingDept) {
-        await axios.put(`/departments/${editingDept._id}`, submitData);
-        toast.success('Department updated successfully');
+      if (editingJobRole) {
+        await axios.put(`/job-roles/${editingJobRole._id}`, submitData);
+        toast.success('Job role updated successfully');
       } else {
-        await axios.post('/departments', submitData);
-        toast.success('Department created successfully');
+        await axios.post('/job-roles', submitData);
+        toast.success('Job role created successfully');
       }
       
       setOpenDialog(false);
       setFormData({ 
         name: '', 
         description: '',
+        department: '',
         company: user.company || '',
         companyCode: user.companyCode || ''
       });
-      setEditingDept(null);
+      setEditingJobRole(null);
       
-      // Refresh departments
-      fetchDepartments(user, isSuper);
+      // Refresh job roles
+      fetchJobRoles(user, isSuper);
     } catch (err) {
       console.error('Submit error:', err);
       const msg = err.response?.data?.message || 'Operation failed';
@@ -201,61 +238,64 @@ const DepartmentManagement = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this department?')) return;
+    if (!window.confirm('Are you sure you want to delete this job role?')) return;
 
     try {
-      await axios.delete(`/departments/${id}`);
-      toast.success('Department deleted successfully');
+      await axios.delete(`/job-roles/${id}`);
+      toast.success('Job role deleted successfully');
       
-      // Refresh departments
+      // Refresh job roles
       const user = getUserFromStorage();
       const isSuper = checkSuperAdminStatus(user);
-      fetchDepartments(user, isSuper);
+      fetchJobRoles(user, isSuper);
     } catch (err) {
       const msg = err.response?.data?.message || 'Deletion failed';
       toast.error(msg);
     }
   };
 
-  const handleEdit = (dept) => {
-    setEditingDept(dept);
+  const handleEdit = (jobRole) => {
+    setEditingJobRole(jobRole);
     const user = getUserFromStorage();
     
     setFormData({ 
-      name: dept.name, 
-      description: dept.description || '',
-      company: dept.company || user?.company || '',
-      companyCode: dept.companyCode || user?.companyCode || ''
+      name: jobRole.name, 
+      description: jobRole.description || '',
+      department: jobRole.department?._id || jobRole.department || '',
+      company: jobRole.company?._id || jobRole.company || user?.company || '',
+      companyCode: jobRole.companyCode || user?.companyCode || ''
     });
     setOpenDialog(true);
   };
 
-  // Filter departments based on user role and search
-  const getFilteredDepartments = () => {
-    let filtered = departments;
+  // Filter job roles based on user role and search
+  const getFilteredJobRoles = () => {
+    let filtered = jobRoles;
     const user = userInfo || getUserFromStorage();
     const isSuper = checkSuperAdminStatus(user);
     
     // Apply company filter if not showing all companies
     if (!isSuper || !showAllCompanies) {
-      filtered = departments.filter(dept => 
-        !dept.company || dept.company === user?.company
+      filtered = jobRoles.filter(jobRole => 
+        !jobRole.company || 
+        (typeof jobRole.company === 'object' ? jobRole.company._id : jobRole.company) === user?.company
       );
     }
     
     // Apply search filter
     if (searchTerm) {
-      filtered = filtered.filter(dept =>
-        dept.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (dept.description && dept.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (dept.companyCode && dept.companyCode.toLowerCase().includes(searchTerm.toLowerCase()))
+      filtered = filtered.filter(jobRole =>
+        jobRole.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (jobRole.description && jobRole.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (jobRole.companyCode && jobRole.companyCode.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (jobRole.department?.name && jobRole.department.name.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
     
     return filtered;
   };
 
-  const filteredDepartments = getFilteredDepartments();
+  const filteredJobRoles = getFilteredJobRoles();
 
   // Handle show all companies toggle
   const handleShowAllToggle = (event) => {
@@ -265,17 +305,17 @@ const DepartmentManagement = () => {
     const isSuper = checkSuperAdminStatus(user);
     
     if (event.target.checked && isSuper) {
-      // Fetch all departments for super admin
-      axios.get('/departments')
+      // Fetch all job roles for super admin
+      axios.get('/job-roles')
         .then(response => {
-          setDepartments(response.data.departments || []);
+          setJobRoles(response.data.jobRoles || []);
         })
         .catch(err => {
-          toast.error('Failed to load all departments');
+          toast.error('Failed to load all job roles');
         });
     } else {
-      // Fetch only company-specific departments
-      fetchDepartments(user, isSuper);
+      // Fetch only company-specific job roles
+      fetchJobRoles(user, isSuper);
     }
   };
 
@@ -285,7 +325,7 @@ const DepartmentManagement = () => {
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
           <Box>
             <Typography variant="h5" fontWeight={600}>
-              Department Management
+              Job Role Management
             </Typography>
             {userInfo && (
               <Typography variant="body2" color="text.secondary">
@@ -312,7 +352,7 @@ const DepartmentManagement = () => {
             
             <TextField
               size="small"
-              placeholder="Search departments..."
+              placeholder="Search job roles..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               InputProps={{
@@ -324,7 +364,7 @@ const DepartmentManagement = () => {
               variant="contained"
               startIcon={<Add />}
               onClick={() => {
-                setEditingDept(null);
+                setEditingJobRole(null);
                 const user = getUserFromStorage();
                 
                 if (!user) {
@@ -335,13 +375,14 @@ const DepartmentManagement = () => {
                 setFormData({ 
                   name: '', 
                   description: '',
+                  department: '',
                   company: user.company || '',
                   companyCode: user.companyCode || ''
                 });
                 setOpenDialog(true);
               }}
             >
-              Add Department
+              Add Job Role
             </Button>
           </Box>
         </Box>
@@ -356,44 +397,59 @@ const DepartmentManagement = () => {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Department Name</TableCell>
+                <TableCell>Job Role Name</TableCell>
                 <TableCell>Description</TableCell>
+                <TableCell>Department</TableCell>
                 {isSuperAdmin && showAllCompanies && <TableCell>Company Code</TableCell>}
                 <TableCell>Created By</TableCell>
                 <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredDepartments.length === 0 ? (
+              {filteredJobRoles.length === 0 ? (
                 <TableRow>
                   <TableCell 
-                    colSpan={isSuperAdmin && showAllCompanies ? 5 : 4} 
+                    colSpan={isSuperAdmin && showAllCompanies ? 6 : 5} 
                     align="center"
                     sx={{ py: 4 }}
                   >
                     <Typography color="text.secondary">
-                      {searchTerm ? 'No departments match your search' : 'No departments found'}
+                      {searchTerm ? 'No job roles match your search' : 'No job roles found'}
                     </Typography>
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredDepartments
+                filteredJobRoles
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                  .map(dept => (
-                    <TableRow key={dept._id} hover>
+                  .map(jobRole => (
+                    <TableRow key={jobRole._id} hover>
                       <TableCell>
-                        <Typography fontWeight={600}>{dept.name}</Typography>
+                        <Typography fontWeight={600}>{jobRole.name}</Typography>
                       </TableCell>
                       <TableCell>
                         <Typography color="text.secondary">
-                          {dept.description || 'No description'}
+                          {jobRole.description || 'No description'}
                         </Typography>
+                      </TableCell>
+                      <TableCell>
+                        {jobRole.department?.name ? (
+                          <Chip 
+                            label={jobRole.department.name} 
+                            size="small" 
+                            color="secondary" 
+                            variant="outlined"
+                          />
+                        ) : (
+                          <Typography variant="body2" color="text.disabled">
+                            Not assigned
+                          </Typography>
+                        )}
                       </TableCell>
                       {isSuperAdmin && showAllCompanies && (
                         <TableCell>
-                          {dept.companyCode ? (
+                          {jobRole.companyCode ? (
                             <Chip 
-                              label={dept.companyCode} 
+                              label={jobRole.companyCode} 
                               size="small" 
                               color="primary" 
                               variant="outlined"
@@ -406,12 +462,12 @@ const DepartmentManagement = () => {
                         </TableCell>
                       )}
                       <TableCell>
-                        {dept.createdBy?.name || 'System'}
+                        {jobRole.createdBy?.name || 'System'}
                       </TableCell>
                       <TableCell>
                         <Box display="flex" gap={1}>
                           <Tooltip title="Edit">
-                            <IconButton size="small" onClick={() => handleEdit(dept)}>
+                            <IconButton size="small" onClick={() => handleEdit(jobRole)}>
                               <Edit fontSize="small" />
                             </IconButton>
                           </Tooltip>
@@ -419,8 +475,8 @@ const DepartmentManagement = () => {
                             <IconButton 
                               size="small" 
                               color="error"
-                              onClick={() => handleDelete(dept._id)}
-                              disabled={!dept.isActive}
+                              onClick={() => handleDelete(jobRole._id)}
+                              disabled={!jobRole.isActive}
                             >
                               <Delete fontSize="small" />
                             </IconButton>
@@ -436,7 +492,7 @@ const DepartmentManagement = () => {
 
         <TablePagination
           component="div"
-          count={filteredDepartments.length}
+          count={filteredJobRoles.length}
           page={page}
           onPageChange={(e, newPage) => setPage(newPage)}
           rowsPerPage={rowsPerPage}
@@ -451,7 +507,7 @@ const DepartmentManagement = () => {
       {/* Add/Edit Dialog */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>
-          {editingDept ? 'Edit Department' : 'Add New Department'}
+          {editingJobRole ? 'Edit Job Role' : 'Add New Job Role'}
           {userInfo?.companyCode && !isSuperAdmin && (
             <Typography variant="caption" display="block" color="primary">
               Company: {userInfo.companyCode}
@@ -462,13 +518,12 @@ const DepartmentManagement = () => {
           <Box pt={2}>
             {isSuperAdmin && (
               <Alert severity="info" sx={{ mb: 2 }}>
-                As Super Admin, you can create departments for any company.
-                {editingDept?.companyCode && ` Currently editing department from ${editingDept.companyCode}`}
+                As Super Admin, you can create job roles for any company and department.
               </Alert>
             )}
             
             <TextField
-              label="Department Name *"
+              label="Job Role Name *"
               fullWidth
               margin="normal"
               value={formData.name}
@@ -486,7 +541,25 @@ const DepartmentManagement = () => {
               onChange={(e) => setFormData({...formData, description: e.target.value})}
             />
             
-            {isSuperAdmin && !editingDept && (
+            <FormControl fullWidth margin="normal" required>
+              <InputLabel>Department *</InputLabel>
+              <Select
+                value={formData.department}
+                onChange={(e) => setFormData({...formData, department: e.target.value})}
+                label="Department *"
+              >
+                <MenuItem value="">
+                  <em>Select Department</em>
+                </MenuItem>
+                {departments.map(dept => (
+                  <MenuItem key={dept._id} value={dept._id}>
+                    {dept.name} {dept.companyCode && `(${dept.companyCode})`}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            
+            {isSuperAdmin && !editingJobRole && (
               <Box mt={2}>
                 <TextField
                   label="Company ID (Optional)"
@@ -494,7 +567,7 @@ const DepartmentManagement = () => {
                   margin="normal"
                   value={formData.company}
                   onChange={(e) => setFormData({...formData, company: e.target.value})}
-                  placeholder="Leave empty for global department"
+                  placeholder="Leave empty for current company"
                 />
                 <TextField
                   label="Company Code (Optional)"
@@ -513,9 +586,9 @@ const DepartmentManagement = () => {
           <Button 
             onClick={handleSubmit} 
             variant="contained"
-            disabled={loading || !formData.name.trim()}
+            disabled={loading || !formData.name.trim() || !formData.department}
           >
-            {loading ? 'Saving...' : editingDept ? 'Update' : 'Create'}
+            {loading ? 'Saving...' : editingJobRole ? 'Update' : 'Create'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -523,4 +596,4 @@ const DepartmentManagement = () => {
   );
 };
 
-export default DepartmentManagement;
+export default JobRoleManagement;

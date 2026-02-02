@@ -63,6 +63,9 @@ const CiisNavbar = () => {
             <Link to="/login">
               <button className="login-btn">Login</button>
             </Link>
+            <Link to="/SuperAdminLogin">
+              <button className="login-btn">SuperAdminLogin</button>
+            </Link>
           </div>
 
         </div>

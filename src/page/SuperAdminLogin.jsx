@@ -35,7 +35,8 @@ const SuperAdminLogin = () => {
         toast.success('Login successful! Redirecting...');
         
         // Redirect to super admin dashboard immediately
-        navigate('/super-admin/dashboard');
+        navigate('/Ciis/CompanyManagement');
+
       } else {
         toast.error(response.data.message || 'Login failed');
       }
@@ -133,6 +134,7 @@ const SuperAdminLogin = () => {
 };
 
 const styles = {
+
   container: {
     minHeight: '100vh',
     display: 'flex',

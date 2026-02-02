@@ -6,7 +6,7 @@ import "react-toastify/dist/ReactToastify.css";
 // Layouts
 import Layout from "./admin/components/Layout";
 import Layout2 from "./hrCds/UserLayout";
-
+import SuperLayout from "./admin/components/SuperAdminLayout";
 // Protected Route
 import ProtectedRoute from "./admin/components/ProtectedRoute";
 import ThemeContextProvider from "./Theme/ThemeContext";
@@ -53,7 +53,7 @@ import ContactUs from "./Pages/ContactUs";
 import SuperAdminLogin from "./page/SuperAdminLogin";
 import SuperAdminDashboard from "./page/SuperAdminDashboard.jsx";
 import CompanyManagement from "./page/CompanyManagement.jsx";
-
+import JobRoleManagement from "./admin/page/JobRoleManagement.jsx";
 function App() {
   const user = JSON.parse(localStorage.getItem("user"));
   const userRole = user?.role;
@@ -65,26 +65,28 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<AboutUs />} />
         <Route path="/contact" element={<ContactUs />} />
-
-        {/* ✅ Company Login */}
-        <Route path="/company/:companyCode/login" element={<Login />} />
-
-        {/* ✅ Super Admin Login */}
         <Route path="/SuperAdminLogin" element={<SuperAdminLogin />} />
-
-        {/* ✅ Company Management WITHOUT LOGIN */}
-        <Route path="/CompanyManagement" element={<CompanyManagement />} />
-        <Route path="/create-user" element={<CreateUser />} />
-
-        {/* ✅ Super Admin Dashboard (Protected) */}
+        <Route path="company/:companyCode/login" element={<Login />} />
         <Route
-          path="/SuperAdminDashboard"
-        
-              element={<SuperAdminDashboard />}
- 
-    
-        />
-
+          path="/Ciis/*"
+          element={
+            <ThemeContextProvider>
+              <ProtectedRoute>
+                <SuperLayout />
+              </ProtectedRoute>
+            </ThemeContextProvider>
+          }
+        >
+          <Route path="department" element={<Department />} />
+          {/* ✅ Company Login */}
+          <Route path="job-role-management" element={<JobRoleManagement />} />
+          {/* ✅ Company Management WITHOUT LOGIN */}
+          <Route path="CompanyManagement" element={<CompanyManagement />} />
+          <Route path="create-user" element={<CreateUser />} />
+          {/* ✅ Super Admin Dashboard (Protected) */}
+          <Route path="SuperAdminDashboard" element={<SuperAdminDashboard />} />
+          <Route path="JobRoleManagement" element={<JobRoleManagement />} />
+        </Route>
         {/* ✅ CDS ADMIN Routes */}
         <Route
           path="/cds/admin/*"
@@ -96,7 +98,7 @@ function App() {
             </ThemeContextProvider>
           }
         >
-          
+
           <Route path="department" element={<Department />} />
           <Route path="change-password" element={<ChangePassword />} />
 

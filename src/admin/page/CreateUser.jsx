@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   Box, Button, TextField, Typography, Paper, MenuItem, 
-  CircularProgress, IconButton, InputAdornment, Grid
+  CircularProgress, IconButton, InputAdornment, Grid,
+  Autocomplete, FormControl, InputLabel, Select
 } from '@mui/material';
 import { Visibility, VisibilityOff, Add } from '@mui/icons-material';
 import { toast } from 'react-toastify';
@@ -11,12 +12,11 @@ import axios from '../../utils/axiosConfig';
 // Constants
 const genderOptions = ['male', 'female', 'other'];
 const maritalStatusOptions = ['single', 'married', 'divorced', 'widowed'];
-const jobRoleOptions = ['admin', 'user', 'hr', 'manager',  'intern'];
 
 // Initial form state
 const initialFormState = {
   name: '', email: '', password: '', confirmPassword: '', 
-  department: '', jobRole: 'user',
+  department: '', jobRole: '',
   phone: '', address: '', gender: '', maritalStatus: '', dob: '', salary: '',
   accountNumber: '', ifsc: '', bankName: '', bankHolderName: '',
   employeeType: '', properties: [], propertyOwned: '', additionalDetails: '',
@@ -26,43 +26,150 @@ const initialFormState = {
 
 const CreateUser = () => {
   const [form, setForm] = useState(initialFormState);
-  const [searchParams] = useSearchParams(); 
-  const [companyId, setCompanyId] = useState('');
-  const [companyCode, setCompanyCode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [departments, setDepartments] = useState([]);
+  const [jobRoles, setJobRoles] = useState([]);
+  const [loadingDepartments, setLoadingDepartments] = useState(false);
+  const [loadingJobRoles, setLoadingJobRoles] = useState(false);
+  const navigate = useNavigate();
+  
+  // LocalStorage se company data
+  const [companyId, setCompanyId] = useState('');
+  const [companyCode, setCompanyCode] = useState('');
+  const [currentUser, setCurrentUser] = useState(null);
 
-  // Fetch departments and get company data from URL
+  // LocalStorage se current user aur company data fetch karna
   useEffect(() => {
-    // ✅ Get both parameters from URL
-    const companyFromURL = searchParams.get('company');
-    const companyCodeFromURL = searchParams.get('companyCode');
-    
-    console.log("📋 URL Parameters:");
-    console.log("Company ID:", companyFromURL);
-    console.log("Company Code:", companyCodeFromURL);
-    
-    if (companyFromURL && companyCodeFromURL) {
-      setCompanyId(companyFromURL);
-      setCompanyCode(companyCodeFromURL);
-      console.log("✅ Company data set from URL");
-    } else {
-      console.log("❌ Missing company data in URL");
-      toast.error("Invalid company reference");
+    const fetchDataFromLocalStorage = () => {
+      try {
+        // Current user ka data localStorage se
+        const userData = JSON.parse(localStorage.getItem('superAdmin'));
+        
+        if (userData) {
+          console.log("📋 LocalStorage User Data:", userData);
+          setCurrentUser(userData);
+          
+          // Company data extract karna
+          if (userData.company && userData.companyCode) {
+            setCompanyId(userData.company);
+            setCompanyCode(userData.companyCode);
+            console.log("✅ Company data set from localStorage:", {
+              companyId: userData.company,
+              companyCode: userData.companyCode
+            });
+          } else {
+            console.log("❌ Company data missing in user object");
+            toast.error("Company information not found in your profile");
+            navigate('/dashboard');
+          }
+        } else {
+          console.log("❌ No user data found in localStorage");
+          toast.error("Please login again");
+          navigate('/login');
+        }
+      } catch (error) {
+        console.error("❌ Error parsing localStorage data:", error);
+        toast.error("Error loading user data");
+        navigate('/login');
+      }
+    };
+
+    fetchDataFromLocalStorage();
+  }, [navigate]);
+
+  // Company ID ke change pe departments fetch karna
+  useEffect(() => {
+    if (companyId) {
+      fetchDepartments();
     }
-    
-    fetchDepartments();
-  }, [searchParams]);
+  }, [companyId]);
+
+  // Department change pe job roles fetch karna
+  useEffect(() => {
+    if (form.department) {
+      fetchJobRolesByDepartment(form.department);
+    } else {
+      setJobRoles([]);
+    }
+  }, [form.department]);
 
   const fetchDepartments = async () => {
     try {
-      const response = await axios.get('/departments');
-      setDepartments(response.data.departments || []);
-      console.log("📊 Departments loaded:", response.data.departments?.length || 0);
+      if (!companyId) {
+        console.log("⚠️ Company ID not available, skipping department fetch");
+        return;
+      }
+      
+      setLoadingDepartments(true);
+      console.log(`📡 Fetching departments for company: ${companyId}`);
+      
+      const response = await axios.get(`/departments?company=${companyId}`);
+      
+      if (response.data && response.data.departments) {
+        setDepartments(response.data.departments);
+        console.log("✅ Departments loaded:", response.data.departments);
+      } else if (response.data && Array.isArray(response.data)) {
+        setDepartments(response.data);
+        console.log("✅ Departments loaded (array format):", response.data);
+      } else {
+        console.log("⚠️ No departments found");
+        setDepartments([]);
+        toast.info('No departments found for this company');
+      }
     } catch (err) {
-      console.error("Failed to load departments:", err);
+      console.error("❌ Failed to load departments:", err);
+      
+      if (err.response) {
+        console.error("Error response:", err.response.data);
+        console.error("Error status:", err.response.status);
+      }
+      
       toast.error('Failed to load departments');
+      setDepartments([]);
+    } finally {
+      setLoadingDepartments(false);
+    }
+  };
+
+  // Job roles fetch karne ka function
+  const fetchJobRolesByDepartment = async (departmentId) => {
+    try {
+      if (!departmentId) {
+        console.log("⚠️ No department ID provided");
+        setJobRoles([]);
+        return;
+      }
+
+      setLoadingJobRoles(true);
+      console.log(`📡 Fetching job roles for department: ${departmentId}`);
+      
+      const response = await axios.get(`/job-roles/department/${departmentId}`);
+      
+      if (response.data && response.data.success) {
+        setJobRoles(response.data.jobRoles || []);
+        console.log("✅ Job roles loaded:", response.data.jobRoles);
+        
+        // Agar koi job role selected nahi hai, aur job roles available hain, to pehla select karo
+        if (!form.jobRole && response.data.jobRoles.length > 0) {
+          setForm(prev => ({ ...prev, jobRole: response.data.jobRoles[0]._id }));
+        }
+      } else {
+        console.log("⚠️ No job roles found for this department");
+        setJobRoles([]);
+      }
+    } catch (err) {
+      console.error("❌ Failed to load job roles:", err);
+      
+      if (err.response) {
+        console.error("Error response:", err.response.data);
+        console.error("Error status:", err.response.status);
+      }
+      
+      toast.error('Failed to load job roles for this department');
+      setJobRoles([]);
+    } finally {
+      setLoadingJobRoles(false);
     }
   };
 
@@ -70,19 +177,16 @@ const CreateUser = () => {
   const handleTextChange = (e) => {
     const { name, value } = e.target;
 
-    // Name validation (letters and spaces only)
     if (['name', 'fatherName', 'motherName', 'emergencyName', 'bankHolderName'].includes(name)) {
       if (/^[a-zA-Z\s]*$/.test(value) || value === '') {
         setForm(prev => ({ ...prev, [name]: value }));
       }
     }
-    // Number validation
     else if (['phone', 'salary', 'accountNumber', 'emergencyPhone'].includes(name)) {
       if (/^\d*$/.test(value) || value === '') {
         setForm(prev => ({ ...prev, [name]: value }));
       }
     }
-    // IFSC validation (alphanumeric)
     else if (name === 'ifsc') {
       if (/^[a-zA-Z0-9]*$/.test(value) || value === '') {
         setForm(prev => ({ ...prev, [name]: value }));
@@ -92,10 +196,28 @@ const CreateUser = () => {
     }
   };
 
-  // Handle select dropdowns
-  const handleSelectChange = (e) => {
-    const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+  // Handle department selection
+  const handleDepartmentChange = (event, newValue) => {
+    if (newValue) {
+      setForm(prev => ({ 
+        ...prev, 
+        department: newValue._id,
+        jobRole: '' // Reset job role when department changes
+      }));
+      console.log("Selected department:", newValue.name, "ID:", newValue._id);
+    } else {
+      setForm(prev => ({ 
+        ...prev, 
+        department: '',
+        jobRole: ''
+      }));
+    }
+  };
+
+  // Handle job role selection
+  const handleJobRoleChange = (e) => {
+    const { value } = e.target;
+    setForm(prev => ({ ...prev, jobRole: value }));
   };
 
   // Form validation
@@ -125,7 +247,6 @@ const CreateUser = () => {
       return false;
     }
     
-    // ✅ Check company data
     if (!companyId || !companyCode) {
       toast.error('Company information is missing');
       return false;
@@ -134,7 +255,7 @@ const CreateUser = () => {
     return true;
   };
 
-  // ✅ UPDATED: Handle form submission
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -145,20 +266,24 @@ const CreateUser = () => {
       return;
     }
 
-    console.log("🚀 Submitting form with company data:");
+    console.log("🚀 Submitting form:");
     console.log("Company ID:", companyId);
     console.log("Company Code:", companyCode);
+    console.log("Department ID:", form.department);
+    console.log("Job Role ID:", form.jobRole);
     console.log("Form data:", form);
 
     setLoading(true);
     try {
       const { confirmPassword, ...submitData } = form;
       
-      // ✅ Add company data to form
+      // ✅ FIXED: createdBy and createdByName remove karna hai
+      // Server automatically createdBy set karega
       const userData = {
         ...submitData,
         company: companyId,
         companyCode: companyCode
+        // ❌ createdBy and createdByName mat bhejo
       };
 
       console.log("📦 Final data being sent to server:", userData);
@@ -169,19 +294,49 @@ const CreateUser = () => {
       toast.success('✅ User created successfully');
       
       // Reset form
-      setForm(initialFormState);
+      setForm({
+        ...initialFormState
+      });
       
     } catch (err) {
-      console.error("❌ Registration error:");
-      console.error("Error:", err);
+      console.error("❌ Registration error:", err);
       console.error("Response data:", err.response?.data);
       
       const msg = err?.response?.data?.message || '❌ User creation failed';
       toast.error(msg);
+      
+      if (err.response?.status === 409) {
+        toast.error('Email already exists in this company');
+      }
     } finally {
       setLoading(false);
     }
   };
+
+  // Helper function to get current user's info display
+  const renderCurrentUserInfo = () => {
+    if (!currentUser) return null;
+    
+    return (
+      <Box sx={{ mb: 2, p: 2, bgcolor: '#f0f9ff', borderRadius: 2, border: '1px solid #bae6fd' }}>
+        <Typography variant="body2" color="primary" fontWeight={600}>
+          Creating user for: {currentUser.companyCode}
+        </Typography>
+        <Typography variant="caption" color="text.secondary" display="block">
+          Logged in as: {currentUser.name} ({currentUser.jobRole})
+        </Typography>
+        <Typography variant="caption" color="text.secondary" display="block">
+          Company ID: {companyId?.substring(0, 8)}...
+        </Typography>
+      </Box>
+    );
+  };
+
+  // Get selected department object for Autocomplete
+  const selectedDepartment = departments.find(dept => dept._id === form.department) || null;
+  
+  // Get selected job role object
+  const selectedJobRole = jobRoles.find(role => role._id === form.jobRole) || null;
 
   return (
     <Paper sx={{ p: 4, borderRadius: 3, height: '100%' }} elevation={6}>
@@ -189,18 +344,8 @@ const CreateUser = () => {
         Create New User
       </Typography>
       
-      {/* ✅ Display company information */}
-      {/* {companyId && companyCode && (
-        <Box sx={{ mb: 2, p: 2, bgcolor: '#f0f9ff', borderRadius: 2 }}>
-          <Typography variant="body2" color="primary" fontWeight={600}>
-            Creating user for:
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            Company ID: {companyId.substring(0, 8)}... | 
-            Company Code: {companyCode}
-          </Typography>
-        </Box>
-      )} */}
+      {/* Display current user and company info */}
+      {renderCurrentUserInfo()}
       
       <Typography variant="body2" color="text.secondary" mb={3}>
         All fields marked with * are required
@@ -266,39 +411,85 @@ const CreateUser = () => {
           onChange={handleTextChange}
         />
 
-        <TextField
-          label="Department *"
-          name="department"
-          fullWidth
-          select
-          required
-          margin="normal"
-          value={form.department}
-          onChange={handleSelectChange}
-        >
-          {departments.map(dept => (
-            <MenuItem key={dept._id} value={dept._id}>
-              {dept.name}
+        {/* Department Field */}
+        <Autocomplete
+          options={departments}
+          getOptionLabel={(option) => option.name || ''}
+          value={selectedDepartment}
+          onChange={handleDepartmentChange}
+          loading={loadingDepartments}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="Department *"
+              required
+              margin="normal"
+              fullWidth
+              helperText={
+                loadingDepartments 
+                  ? "Loading departments..." 
+                  : departments.length === 0 
+                    ? "No departments found. Please create departments first." 
+                    : "Select a department"
+              }
+              InputProps={{
+                ...params.InputProps,
+                endAdornment: (
+                  <>
+                    {loadingDepartments ? <CircularProgress color="inherit" size={20} /> : null}
+                    {params.InputProps.endAdornment}
+                  </>
+                ),
+              }}
+            />
+          )}
+          renderOption={(props, option) => (
+            <MenuItem {...props} key={option._id}>
+              {option.name}
             </MenuItem>
-          ))}
-        </TextField>
+          )}
+          isOptionEqualToValue={(option, value) => option._id === value._id}
+          disabled={loadingDepartments || departments.length === 0}
+        />
 
-        <TextField
-          label="Job Role *"
-          name="jobRole"
-          fullWidth
-          select
-          required
-          margin="normal"
-          value={form.jobRole}
-          onChange={handleSelectChange}
-        >
-          {jobRoleOptions.map(role => (
-            <MenuItem key={role} value={role}>
-              {role.charAt(0).toUpperCase() + role.slice(1)}
-            </MenuItem>
-          ))}
-        </TextField>
+        {/* Job Role Field - Department ke hisab se */}
+        <FormControl fullWidth margin="normal" required>
+          <InputLabel>Job Role *</InputLabel>
+          <Select
+            label="Job Role *"
+            name="jobRole"
+            value={form.jobRole}
+            onChange={handleJobRoleChange}
+            disabled={!form.department || loadingJobRoles || jobRoles.length === 0}
+          >
+            {loadingJobRoles ? (
+              <MenuItem disabled>
+                <CircularProgress size={20} sx={{ mr: 1 }} />
+                Loading job roles...
+              </MenuItem>
+            ) : jobRoles.length === 0 ? (
+              <MenuItem disabled>
+                {form.department ? "No job roles found for this department" : "Please select a department first"}
+              </MenuItem>
+            ) : (
+              jobRoles.map((role) => (
+                <MenuItem key={role._id} value={role._id}>
+                  {role.name}
+                  {role.description && ` - ${role.description}`}
+                </MenuItem>
+              ))
+            )}
+          </Select>
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+            {!form.department 
+              ? "Select a department to see available job roles" 
+              : loadingJobRoles 
+                ? "Loading job roles..." 
+                : jobRoles.length > 0 
+                  ? `${jobRoles.length} job role(s) available` 
+                  : "No job roles defined for this department"}
+          </Typography>
+        </FormControl>
 
         {/* Optional Fields Section */}
         <Typography variant="subtitle1" fontWeight={600} color="primary" mt={3} gutterBottom>
@@ -336,7 +527,7 @@ const CreateUser = () => {
               select
               margin="normal"
               value={form.gender}
-              onChange={handleSelectChange}
+              onChange={handleTextChange}
             >
               <MenuItem value="">Select</MenuItem>
               {genderOptions.map(option => (
@@ -354,7 +545,7 @@ const CreateUser = () => {
               select
               margin="normal"
               value={form.maritalStatus}
-              onChange={handleSelectChange}
+              onChange={handleTextChange}
             >
               <MenuItem value="">Select</MenuItem>
               {maritalStatusOptions.map(option => (
@@ -383,7 +574,7 @@ const CreateUser = () => {
             fullWidth
             variant="contained"
             size="large"
-            disabled={loading || !companyId || !companyCode}
+            disabled={loading || !companyId || !companyCode || departments.length === 0 || !form.jobRole}
             startIcon={loading ? <CircularProgress size={20} /> : <Add />}
           >
             {loading ? 'Creating...' : 'Create User'}
@@ -391,7 +582,13 @@ const CreateUser = () => {
           
           {(!companyId || !companyCode) && (
             <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
-              Company information is missing. Please go back and try again.
+              Company information is missing. Please login again or contact support.
+            </Typography>
+          )}
+          
+          {departments.length === 0 && companyId && (
+            <Typography variant="caption" color="warning" sx={{ mt: 1, display: 'block' }}>
+              No departments found. Please create departments first before adding users.
             </Typography>
           )}
         </Box>
