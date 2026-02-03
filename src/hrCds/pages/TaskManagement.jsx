@@ -96,7 +96,7 @@ const UserCreateTask = () => {
     overdue: { count: 0, percentage: 0 }
   });
 
-  const [timeFilter, setTimeFilter] = useState("all");
+  const [timeFilter, setTimeFilter] = useState("today");
   const [notifications, setNotifications] = useState([]);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
   const [remarksDialog, setRemarksDialog] = useState({ open: false, taskId: null, remarks: [] });
