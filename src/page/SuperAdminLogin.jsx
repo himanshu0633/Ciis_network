@@ -20,37 +20,72 @@ const SuperAdminLogin = () => {
     });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  if (!validateForm()) return;
 
-    try {
-      const response = await axios.post(`${API_BASE}/super-admin/login`, formData);
-      
-      if (response.data.success) {
-        // Save super admin data to localStorage
-        localStorage.setItem('superAdmin', JSON.stringify(response.data.data));
-        localStorage.setItem('token', response.data.token);
-        
-        toast.success('Login successful! Redirecting...');
-        
-        // Redirect to super admin dashboard immediately
-        navigate('/Ciis/CompanyManagement');
+  setLoading(true);
 
-      } else {
-        toast.error(response.data.message || 'Login failed');
-      }
-    } catch (error) {
-      console.error('Login error:', error);
-      toast.error(
-        error.response?.data?.message || 
-        error.response?.data?.error || 
-        'Login failed. Please check credentials.'
-      );
-    } finally {
-      setLoading(false);
+  try {
+    // ✅ FIX: Use correct API base URL
+    let apiUrl;
+    
+    if (companyIdentifier) {
+      // Use company-specific login endpoint
+      apiUrl = `/api/auth/company/${companyIdentifier}/login`;
+      console.log('🏢 Using company login endpoint:', apiUrl);
+    } else {
+      // Use regular login endpoint
+      apiUrl = '/api/auth/login';
+      console.log('👤 Using regular login endpoint:', apiUrl);
     }
-  };
+
+    // ✅ FIX: Only send email and password
+    const loginData = {
+      email: form.email,
+      password: form.password
+      // Don't include companyIdentifier in body
+    };
+
+    console.log('📤 Sending login request:', {
+      url: apiUrl,
+      email: form.email,
+      hasCompanyId: !!companyIdentifier
+    });
+
+    const res = await axios.post(apiUrl, loginData);
+    
+    // ... rest of success handling
+
+  } catch (err) {
+    console.error('🔥 Full login error:', {
+      status: err.response?.status,
+      statusText: err.response?.statusText,
+      data: err.response?.data,
+      message: err.message,
+      config: {
+        url: err.config?.url,
+        method: err.config?.method,
+        data: err.config?.data
+      }
+    });
+
+    let errorMsg = 'Login failed. Please try again.';
+    let errorCode = 'UNKNOWN_ERROR';
+
+    if (err.response?.data) {
+      errorMsg = err.response.data.message || errorMsg;
+      errorCode = err.response.data.errorCode || errorCode;
+      
+      console.log('🔍 Server error details:', err.response.data);
+    }
+
+    toast.error(errorMsg);
+    setErrors((prev) => ({ ...prev, general: errorMsg }));
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div style={styles.container}>
