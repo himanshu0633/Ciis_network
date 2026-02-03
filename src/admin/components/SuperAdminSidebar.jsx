@@ -19,7 +19,8 @@ import {
   SupervisorAccount as SuperAdminDashboardIcon,
   Apartment as DepartmentIcon,
   Work as JobRoleManagementIcon,
-  PersonAdd as CreateUserCIIsIcon
+  PersonAdd as CreateUserCIIsIcon,
+  Business as AllCompaniesIcon, // ✅ Naya icon
 } from '@mui/icons-material';
 
 // Styled components (same as before)
@@ -143,6 +144,7 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
     { heading: 'CIIS Admin' },
     { icon: <SuperAdminDashboardIcon />, name: 'Super Admin Dashboard', route: '/Ciis/SuperAdminDashboard' },
     { icon: <CompanyManagementIcon />, name: 'Company Management', route: '/Ciis/CompanyManagement' },
+    { icon: <AllCompaniesIcon />, name: 'All Companies', route: '/Ciis/all-companies' }, // ✅ Yahan add kiya
     { icon: <CreateUserCIIsIcon />, name: 'Create User', route: '/Ciis/create-user' },
     { icon: <DepartmentIcon />, name: 'Department', route: '/Ciis/department' },
     { icon: <JobRoleManagementIcon />, name: 'Job Role Management', route: '/Ciis/job-role-management' },
@@ -152,6 +154,17 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
   const menuItems = [...ciisMenuItems];
 
   const handleClick = (route) => {
+    // ✅ Validation check before navigation
+    if (!validateSuperAdmin()) {
+      console.log("❌ Validation failed, preventing navigation");
+      
+      // Optionally show error message
+      localStorage.removeItem("superAdmin");
+      localStorage.removeItem("token");
+      navigate("/Ciis/login");
+      return;
+    }
+    
     navigate(route);
     if (isMobile) {
       closeSidebar?.();

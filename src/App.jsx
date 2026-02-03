@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./page/Login";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import AllCompany from "./page/AllCompany.jsx";
 
 // Layouts
 import Layout from "./admin/components/Layout";
@@ -83,6 +84,7 @@ function App() {
           {/* ✅ Company Management WITHOUT LOGIN */}
           <Route path="CompanyManagement" element={<CompanyManagement />} />
           <Route path="create-user" element={<CreateUser />} />
+          <Route path="all-companies" element={<AllCompany />} />
           {/* ✅ Super Admin Dashboard (Protected) */}
           <Route path="SuperAdminDashboard" element={<SuperAdminDashboard />} />
           <Route path="JobRoleManagement" element={<JobRoleManagement />} />
