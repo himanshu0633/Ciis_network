@@ -42,7 +42,7 @@ import {
 
 const AllCompany = () => {
   const navigate = useNavigate();
-  const API_BASE = "http://localhost:3000/api";
+  // const API_BASE = "http://localhost:3000/api";
 
   // State variables
   const [loading, setLoading] = useState(true);
@@ -99,7 +99,7 @@ const AllCompany = () => {
       const headers = { Authorization: `Bearer ${token}` };
 
       const response = await axios.get(
-        `${API_BASE}/super-admin/companies-with-users`,
+        `${API_URL}/super-admin/companies-with-users`,
         { headers }
       );
 
@@ -132,7 +132,7 @@ const AllCompany = () => {
       const headers = { Authorization: `Bearer ${token}` };
 
       const companiesRes = await axios.get(
-        `${API_BASE}/super-admin/companies`,
+        `${API_URL}/super-admin/companies`,
         { headers }
       );
 
@@ -140,7 +140,7 @@ const AllCompany = () => {
         companiesRes.data.map(async (company) => {
           try {
             const usersRes = await axios.get(
-              `${API_BASE}/super-admin/company/${company._id}/users`,
+              `${API_URL}/super-admin/company/${company._id}/users`,
               { headers }
             );
             
@@ -201,7 +201,7 @@ const AllCompany = () => {
       const headers = { Authorization: `Bearer ${token}` };
       
       const response = await axios.get(
-        `${API_BASE}/super-admin/company/${companyId}/users`,
+        `${API_URL}/super-admin/company/${companyId}/users`,
         { headers }
       );
       
