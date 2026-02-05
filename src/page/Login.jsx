@@ -52,66 +52,74 @@ const Login = () => {
   const navigate = useNavigate();
   const { setUser, setIsAuthenticated } = useAuth();
 
-// Extract company identifier from URL
-useEffect(() => {
-  const extractCompanyIdentifier = () => {
-    const path = window.location.pathname;
-    console.log('🔗 Current path:', path);
-    
-    // Pattern 1: /company/{identifier}/login
-    const match1 = path.match(/\/company\/([^/]+)\/login/);
-    if (match1 && match1[1]) {
-      console.log('✅ Extracted identifier from /company/{id}/login:', match1[1]);
-      return match1[1];
+  // Extract company identifier from URL
+  useEffect(() => {
+    const extractCompanyIdentifier = () => {
+      const path = window.location.pathname;
+      console.log('🔗 Current path:', path);
+      
+      // Pattern 1: /company/{identifier}/login
+      const match1 = path.match(/\/company\/([^/]+)\/login/);
+      if (match1 && match1[1]) {
+        console.log('✅ Extracted identifier from /company/{id}/login:', match1[1]);
+        return match1[1];
+      }
+
+      // Pattern 2: /company/{identifier}
+      const match2 = path.match(/\/company\/([^/]+)/);
+      if (match2 && match2[1]) {
+        console.log('✅ Extracted identifier from /company/{id}:', match2[1]);
+        return match2[1];
+      }
+
+      // Pattern 3: Check URL segments
+      const segments = path.split('/').filter(Boolean);
+      if (segments.length >= 2 && segments[0] === 'company') {
+        console.log('✅ Extracted identifier from segments:', segments[1]);
+        return segments[1];
+      }
+
+      console.log('⚠️ No company identifier found in URL');
+      return null;
+    };
+
+    const identifier = extractCompanyIdentifier();
+    if (identifier) {
+      console.log('🎯 Setting company identifier:', identifier);
+      setCompanyIdentifier(identifier);
+      fetchCompanyDetails(identifier);
+    } else {
+      setCompanyLoading(false);
     }
-
-    // Pattern 2: /company/{identifier}
-    const match2 = path.match(/\/company\/([^/]+)/);
-    if (match2 && match2[1]) {
-      console.log('✅ Extracted identifier from /company/{id}:', match2[1]);
-      return match2[1];
-    }
-
-    // Pattern 3: Check URL segments
-    const segments = path.split('/').filter(Boolean);
-    if (segments.length >= 2 && segments[0] === 'company') {
-      console.log('✅ Extracted identifier from segments:', segments[1]);
-      return segments[1];
-    }
-
-    console.log('⚠️ No company identifier found in URL');
-    return null;
-  };
-
-  const identifier = extractCompanyIdentifier();
-  if (identifier) {
-    console.log('🎯 Setting company identifier:', identifier);
-    setCompanyIdentifier(identifier);
-    fetchCompanyDetails(identifier);
-  } else {
-    setCompanyLoading(false);
-  }
-}, []);
+  }, []);
 
   const fetchCompanyDetails = async (identifier) => {
     try {
       setCompanyLoading(true);
+      console.log('🔍 Fetching company details for:', identifier);
 
       const response = await axios.get(`/company/details/${identifier}`);
 
       if (response.data.success) {
+        console.log('✅ Company details fetched:', response.data.company);
         setCompanyDetails(response.data.company);
         document.title = `${response.data.company.companyName} - Login`;
+        
+        // Store company details in localStorage for future use
+        localStorage.setItem('companyDetails', JSON.stringify(response.data.company));
       }
     } catch (error) {
-      console.error('Error fetching company details:', error);
+      console.error('❌ Error fetching company details:', error);
 
       if (error.response?.status === 404) {
         toast.error('Company not found. Please check the URL.');
       } else if (error.response?.status === 403) {
         toast.error(error.response.data.message || 'Company account is not active');
+      } else {
+        toast.error('Failed to load company details. Please try again.');
       }
 
+      // Set fallback company details
       setCompanyDetails({
         companyName: 'Company Portal',
         logo: null,
@@ -158,100 +166,199 @@ useEffect(() => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateForm()) return;
+  // Login.jsx में handleSubmit function update करें
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  if (!validateForm()) return;
 
-    setLoading(true);
+  setLoading(true);
 
-    try {
-      const loginData = {
-        ...form,
-        companyIdentifier: companyIdentifier || null
-      };
+  try {
+    console.log('🔐 Login attempt for:', form.email);
+    console.log('🏢 Company identifier from URL:', companyIdentifier);
 
-      const res = await axios.post('/auth/login', loginData);
+    // ✅ Prepare login data based on what backend accepts
+    const loginData = {
+      email: form.email.trim(),
+      password: form.password
+    };
 
-      if (res.data.requiresTwoFactor) {
-        setTwoFactorRequired(true);
-        toast.info('Two-factor authentication required');
-        return;
-      }
-
-      // Save token
-      localStorage.setItem('token', res.data.token);
-
-      // Save user data
-      const userData = res.data.user;
-      localStorage.setItem('user', JSON.stringify(userData));
-
-      setUser(userData);
-      setIsAuthenticated(true);
-
-      // Save company identifier
-      if (companyIdentifier) {
-        localStorage.setItem('companyIdentifier', companyIdentifier);
-      }
-
-      if (companyDetails) {
-        localStorage.setItem('companyDetails', JSON.stringify(companyDetails));
-      }
-
-      toast.success("Login successful!");
-
-      // Redirect based on role
-      const redirectPath =
-        userData.role === 'admin' ? '/admin/dashboard' : '/user/dashboard';
-
-      navigate(redirectPath);
-    } catch (err) {
-      console.error('Login error:', err);
-
-      let errorMsg = 'Login failed. Please try again.';
-      let shouldRetry = false;
-
-      if (err.response?.data) {
-        const { errorCode, message, remainingAttempts } = err.response.data;
-
-        errorMsg = message;
-
-        switch (errorCode) {
-          case 'ACCOUNT_LOCKED':
-            const retryAfter = err.response.data.retryAfter;
-            const lockTime = new Date(retryAfter).toLocaleTimeString();
-            errorMsg = `Account locked until ${lockTime}. Please try again later.`;
-            break;
-
-          case 'ACCOUNT_DEACTIVATED':
-            errorMsg = 'Your account has been deactivated. Contact your administrator.';
-            break;
-
-          case 'SUBSCRIPTION_EXPIRED':
-            errorMsg = 'Company subscription has expired. Contact your company admin.';
-            break;
-
-          case 'INVALID_CREDENTIALS':
-            if (remainingAttempts) {
-              errorMsg += ` ${remainingAttempts} attempts remaining.`;
-              shouldRetry = remainingAttempts > 0;
-            }
-            break;
-
-          case 'COMPANY_NOT_FOUND':
-            errorMsg = 'Company not found. Please check your URL.';
-            break;
-
-          default:
-            break;
-        }
-      }
-
-      toast.error(errorMsg);
-      setErrors((prev) => ({ ...prev, general: errorMsg, shouldRetry }));
-    } finally {
-      setLoading(false);
+    // ✅ Add companyIdentifier field (backend इसे accept करता है)
+    if (companyIdentifier) {
+      loginData.companyIdentifier = companyIdentifier;
+      // ✅ Optional: companyCode भी भेजें (दोनों में से कोई एक काम करेगा)
+      loginData.companyCode = companyIdentifier;
     }
-  };
+
+    console.log('📤 Sending login data:', { 
+      ...loginData, 
+      password: '***' 
+    });
+
+    const res = await axios.post('/auth/login', loginData);
+    console.log('✅ Login response received:', res.data);
+
+    if (res.data.requiresTwoFactor) {
+      setTwoFactorRequired(true);
+      toast.info('Two-factor authentication required');
+      return;
+    }
+
+    // ✅ Save token
+    if (!res.data.token) {
+      throw new Error('No token received from server');
+    }
+    
+    localStorage.setItem('token', res.data.token);
+    console.log('💾 Token saved to localStorage');
+
+    // ✅ Save user data
+    const userData = res.data.user;
+    if (!userData) {
+      throw new Error('No user data received from server');
+    }
+    
+    localStorage.setItem('user', JSON.stringify(userData));
+    console.log('👤 User data saved:', {
+      id: userData._id,
+      name: userData.name,
+      email: userData.email,
+      companyCode: userData.companyCode
+    });
+
+    // ✅ Save company details from response
+    if (res.data.companyDetails) {
+      localStorage.setItem('companyDetails', JSON.stringify(res.data.companyDetails));
+      console.log('🏢 Company details saved:', res.data.companyDetails);
+    }
+
+    // ✅ Set auth context
+    setUser(userData);
+    setIsAuthenticated(true);
+
+    toast.success("Login successful!");
+
+    // ✅ Check company code match for debugging
+    const storedCompanyCode = res.data.companyDetails?.companyCode;
+    const userCompanyCode = userData.companyCode;
+    
+    if (storedCompanyCode && userCompanyCode) {
+      console.log('🔍 Company code check:', {
+        stored: storedCompanyCode,
+        user: userCompanyCode,
+        match: storedCompanyCode === userCompanyCode
+      });
+    }
+
+    // ✅ Debug: Log localStorage
+    console.log('📊 localStorage after login:');
+    console.log('- token:', localStorage.getItem('token')?.substring(0, 20) + '...');
+    console.log('- user:', JSON.parse(localStorage.getItem('user') || '{}'));
+    console.log('- companyDetails:', JSON.parse(localStorage.getItem('companyDetails') || '{}'));
+
+    // ✅ Decode token to see payload
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        console.log('🔐 Decoded token payload:', payload);
+      }
+    } catch (decodeError) {
+      console.warn('⚠️ Could not decode token:', decodeError);
+    }
+
+    // ✅ Redirect logic
+    let redirectPath = '/dashboard'; // Default
+    
+    const userRole = userData.role?.name || userData.role || userData.jobRole;
+    console.log('🎭 User role detected:', userRole);
+    
+    if (userRole) {
+      const roleLower = userRole.toLowerCase();
+      
+      if (roleLower.includes('admin') || roleLower.includes('manager')) {
+        redirectPath = '/admin/dashboard';
+      } else if (roleLower.includes('employee') || roleLower.includes('staff')) {
+        redirectPath = '/user/dashboard';
+      }
+    }
+
+    console.log('🔄 Redirecting to:', redirectPath);
+    
+    // Small delay to show success message
+    setTimeout(() => {
+      navigate(redirectPath);
+    }, 1000);
+
+  } catch (err) {
+    console.error('❌ Login error:', err);
+    
+    let errorMsg = 'Login failed. Please try again.';
+    let shouldRetry = false;
+
+    if (err.response?.data) {
+      const { errorCode, message, remainingAttempts, expectedCode } = err.response.data;
+      console.log('🔍 Server error response:', err.response.data);
+
+      errorMsg = message || errorMsg;
+
+      switch (errorCode) {
+        case 'ACCOUNT_LOCKED':
+          const retryAfter = err.response.data.retryAfter;
+          const lockTime = new Date(retryAfter).toLocaleTimeString();
+          errorMsg = `Account locked until ${lockTime}. Please try again later.`;
+          break;
+
+        case 'ACCOUNT_DEACTIVATED':
+          errorMsg = 'Your account has been deactivated. Contact your administrator.';
+          break;
+
+        case 'SUBSCRIPTION_EXPIRED':
+          errorMsg = 'Company subscription has expired. Contact your company admin.';
+          break;
+
+        case 'INVALID_CREDENTIALS':
+          if (remainingAttempts) {
+            errorMsg += ` ${remainingAttempts} attempts remaining.`;
+            shouldRetry = remainingAttempts > 0;
+          }
+          break;
+
+        case 'COMPANY_MISMATCH':
+          if (expectedCode) {
+            errorMsg = `Invalid company access. You belong to company: ${expectedCode.toUpperCase()}`;
+          } else {
+            errorMsg = 'User does not belong to this company.';
+          }
+          break;
+
+        case 'NO_COMPANY':
+          errorMsg = 'User is not associated with any company. Contact administrator.';
+          break;
+
+        case 'COMPANY_DEACTIVATED':
+          errorMsg = 'Company account is deactivated.';
+          break;
+
+        default:
+          break;
+      }
+    } else if (err.message) {
+      errorMsg = err.message;
+    }
+
+    console.error('❌ Login error details:', {
+      message: errorMsg,
+      status: err.response?.status,
+      data: err.response?.data
+    });
+
+    toast.error(errorMsg);
+    setErrors((prev) => ({ ...prev, general: errorMsg, shouldRetry }));
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleTwoFactorSubmit = async () => {
     if (!twoFactorCode.trim()) {
@@ -280,6 +387,25 @@ useEffect(() => {
       setTwoFactorCode('');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Add a test login function for debugging
+  const testLogin = async (testEmail, testPassword) => {
+    try {
+      console.log('🧪 Testing login with:', testEmail);
+      
+      const res = await axios.post('/auth/login', {
+        email: testEmail,
+        password: testPassword,
+        companyCode: companyIdentifier
+      });
+      
+      console.log('🧪 Test login response:', res.data);
+      return res.data;
+    } catch (error) {
+      console.error('🧪 Test login error:', error.response?.data);
+      throw error;
     }
   };
 
@@ -348,6 +474,10 @@ useEffect(() => {
                       <Typography variant="body2" color="text.secondary" gutterBottom>
                         {companyDetails.companyEmail}
                       </Typography>
+                      
+                      <Typography variant="caption" color="primary" sx={{ display: 'block' }}>
+                        Company Code: {companyDetails.companyCode}
+                      </Typography>
                     </Box>
 
                     <Divider sx={{ mb: 3 }} />
@@ -391,11 +521,26 @@ useEffect(() => {
                     </Box>
 
                     <Divider sx={{ my: 3 }} />
+                    
+                    {/* Debug info - only in development */}
+                    {process.env.NODE_ENV === 'development' && (
+                      <Box sx={{ mt: 2, p: 1, bgcolor: 'warning.light', borderRadius: 1 }}>
+                        <Typography variant="caption" sx={{ display: 'block' }}>
+                          🔍 Debug Info:
+                        </Typography>
+                        <Typography variant="caption" sx={{ display: 'block', fontSize: '0.7rem' }}>
+                          Identifier: {companyIdentifier}
+                        </Typography>
+                        <Typography variant="caption" sx={{ display: 'block', fontSize: '0.7rem' }}>
+                          Path: {window.location.pathname}
+                        </Typography>
+                      </Box>
+                    )}
 
                     <Typography
                       variant="caption"
                       color="text.disabled"
-                      sx={{ display: 'block', textAlign: 'center' }}
+                      sx={{ display: 'block', textAlign: 'center', mt: 2 }}
                     >
                       Secure enterprise portal • {new Date().getFullYear()}
                     </Typography>
@@ -412,9 +557,37 @@ useEffect(() => {
                 sx={{
                   p: 4,
                   borderRadius: 3,
-                  boxShadow: '0 20px 40px rgba(0,0,0,0.1)'
+                  boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+                  position: 'relative'
                 }}
               >
+                {/* Debug button for development */}
+                {process.env.NODE_ENV === 'development' && (
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    color="warning"
+                    sx={{ position: 'absolute', top: 10, right: 10 }}
+                    onClick={() => {
+                      console.log('🔍 Current state:', {
+                        form,
+                        companyIdentifier,
+                        companyDetails,
+                        localStorage: {
+                          token: localStorage.getItem('token')?.substring(0, 20) + '...',
+                          user: JSON.parse(localStorage.getItem('user') || '{}'),
+                          companyDetails: JSON.parse(localStorage.getItem('companyDetails') || '{}')
+                        }
+                      });
+                      
+                      // Test with sample credentials
+                      // testLogin('test@example.com', 'password123');
+                    }}
+                  >
+                    Debug
+                  </Button>
+                )}
+
                 <Box sx={{ textAlign: 'center', mb: 4 }}>
                   <Avatar
                     sx={{
@@ -438,10 +611,26 @@ useEffect(() => {
                       ? `Sign in to ${companyDetails.companyName}`
                       : 'Sign in to continue'}
                   </Typography>
+                  
+                  {companyIdentifier && !companyLoading && (
+                    <Typography variant="caption" color="primary" sx={{ display: 'block', mt: 1 }}>
+                      Company: {companyIdentifier.toUpperCase()}
+                    </Typography>
+                  )}
                 </Box>
 
                 {errors.general && (
-                  <Alert severity="error" sx={{ mb: 3 }}>
+                  <Alert 
+                    severity="error" 
+                    sx={{ mb: 3 }}
+                    action={
+                      errors.shouldRetry && (
+                        <Button color="inherit" size="small" onClick={handleSubmit}>
+                          Retry
+                        </Button>
+                      )
+                    }
+                  >
                     {errors.general}
                   </Alert>
                 )}
@@ -500,7 +689,6 @@ useEffect(() => {
                       }}
                     />
 
-                    {/* ✅ Remember Me Removed - Only Forgot Password */}
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
                       <Link
                         href={`${window.location.pathname.replace('/login', '/forgot-password')}`}
@@ -518,7 +706,10 @@ useEffect(() => {
                       sx={{
                         mt: 3,
                         py: 1.5,
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        '&:hover': {
+                          background: 'linear-gradient(135deg, #5a67d8 0%, #6c429b 100%)'
+                        }
                       }}
                       startIcon={
                         loading ? (

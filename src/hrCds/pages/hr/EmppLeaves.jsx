@@ -20,7 +20,8 @@ import {
   FiSave,
   FiMail,
   FiPhone,
-  FiLock
+  FiLock,
+  FiBriefcase
 } from "react-icons/fi";
 
 // Status Filter Component
@@ -74,7 +75,7 @@ const LeaveTypeFilter = ({ selected, onChange }) => {
 
 const EmployeeLeaves = () => {
   const [leaves, setLeaves] = useState([]);
-  const [filterDate, setFilterDate] = useState(""); // Empty for all dates
+  const [filterDate, setFilterDate] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [leaveTypeFilter, setLeaveTypeFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -107,58 +108,181 @@ const EmployeeLeaves = () => {
     title: "",
     items: [],
   });
-  const [currentUserRole, setCurrentUserRole] = useState("");
   const [currentUserDepartment, setCurrentUserDepartment] = useState("");
   const [currentUserId, setCurrentUserId] = useState("");
-  const [isAuthorized, setIsAuthorized] = useState(true);
+  const [currentUserCompanyId, setCurrentUserCompanyId] = useState("");
+  const [allUsers, setAllUsers] = useState([]);
 
   useEffect(() => {
-    checkAuthorization();
-    if (isAuthorized) {
+    fetchCompanyUsers();
+  }, []);
+
+  useEffect(() => {
+    if (currentUserCompanyId) {
       fetchLeaves();
     }
-  }, [filterDate, statusFilter, leaveTypeFilter, isAuthorized]);
+  }, [filterDate, statusFilter, leaveTypeFilter, currentUserCompanyId]);
 
-  const checkAuthorization = () => {
+  const fetchCompanyUsers = async () => {
     try {
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      const role = user.jobRole?.toLowerCase() || '';
-      const department = user.department || '';
-      const userId = user._id || '';
+      console.log("🔄 Fetching company users...");
+      const res = await axios.get('/users/company-users');
       
-      setCurrentUserRole(role);
-      setCurrentUserDepartment(department);
-      setCurrentUserId(userId);
+      let usersData = [];
       
-      // Check if user has permission to view this page
-      const allowedRoles = ['admin', 'hr', 'superadmin', 'manager'];
-      if (!allowedRoles.includes(role)) {
-        setIsAuthorized(false);
-        showSnackbar("You are not authorized to view this page", "error");
-      } else {
-        setIsAuthorized(true);
+      if (res.data && res.data.success) {
+        if (res.data.message && res.data.message.users && Array.isArray(res.data.message.users)) {
+          usersData = res.data.message.users;
+          console.log(`✅ Found ${usersData.length} users in data.message.users`);
+        }
+        else if (res.data.users && Array.isArray(res.data.users)) {
+          usersData = res.data.users;
+          console.log(`✅ Found ${usersData.length} users in data.users`);
+        }
+        else if (res.data.message && Array.isArray(res.data.message)) {
+          usersData = res.data.message;
+          console.log(`✅ Found ${usersData.length} users in message array`);
+        }
+        else if (res.data.data && Array.isArray(res.data.data)) {
+          usersData = res.data.data;
+          console.log(`✅ Found ${usersData.length} users in data.data`);
+        }
+        else if (Array.isArray(res.data)) {
+          usersData = res.data;
+          console.log(`✅ Found ${usersData.length} users in data array`);
+        }
+        else {
+          console.log("⚠️ No users array found. Full response:", res.data);
+        }
       }
-    } catch (error) {
-      console.error("Error parsing user data:", error);
-      setIsAuthorized(false);
+      
+      console.log("👥 Processed users data:", usersData.map(u => ({
+        id: u.id || u._id,
+        name: u.name,
+        email: u.email,
+        employeeType: u.employeeType || 'full-time',
+        department: u.department,
+        jobRole: u.jobRole
+      })));
+      
+      setAllUsers(usersData);
+      
+      // Get current user info
+      try {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        console.log("👤 Current user from localStorage:", user);
+        
+        const userId = user._id || user.id || '';
+        const companyId = user.company || user.companyId || '';
+        const department = user.department || '';
+        
+        setCurrentUserId(userId);
+        setCurrentUserCompanyId(companyId);
+        setCurrentUserDepartment(department);
+        
+        // Add test users if no users found
+        if (usersData.length === 0 && companyId) {
+          console.log("⚠️ No users found, adding test data");
+          const testUsers = [
+            {
+              id: 'test1',
+              _id: 'test1',
+              name: 'IT Manager',
+              email: 'manager@gmail.com',
+              employeeType: 'full-time',
+              department: 'IT',
+              jobRole: { _id: '6980f3cac3721b782411d904', name: 'Manager' }
+            },
+            {
+              id: 'test2',
+              _id: 'test2',
+              name: 'Sales Executive',
+              email: 'sales@ciisnetwork.com',
+              employeeType: 'full-time',
+              department: 'SALES',
+              jobRole: { _id: 'user123', name: 'Employee' }
+            }
+          ];
+          setAllUsers(testUsers);
+        }
+        
+      } catch (error) {
+        console.error("Error parsing user data:", error);
+      }
+      
+    } catch (err) {
+      console.error("❌ Failed to load users", err);
+      showSnackbar("Error loading users data", "error");
+      
+      // Add test data on error
+      const testUsers = [
+        {
+          id: 'test1',
+          _id: 'test1',
+          name: 'IT Manager',
+          email: 'manager@gmail.com',
+          employeeType: 'full-time',
+          department: 'IT',
+          jobRole: { _id: '6980f3cac3721b782411d904', name: 'Manager' }
+        },
+        {
+          id: 'test2',
+          _id: 'test2',
+          name: 'Sales Executive',
+          email: 'sales@ciisnetwork.com',
+          employeeType: 'full-time',
+          department: 'SALES',
+          jobRole: { _id: 'user123', name: 'Employee' }
+        }
+      ];
+      setAllUsers(testUsers);
     }
   };
 
   const fetchLeaves = async () => {
+    if (!currentUserCompanyId) {
+      console.log("⚠️ No company ID, waiting for company data...");
+      return;
+    }
+    
     setLoading(true);
     try {
       let url = '/leaves/all';
       const params = new URLSearchParams();
+      
+      // 🔧 Updated: Use company parameter instead of companyId
+      params.append('company', currentUserCompanyId);
+      
       if (filterDate) params.append('date', filterDate);
       if (statusFilter !== 'All') params.append('status', statusFilter);
       if (leaveTypeFilter !== 'all') params.append('type', leaveTypeFilter);
       
-      // Department filter will be handled by backend based on user role
+      // 🔧 Remove department filter - show all departments
+      if (currentUserDepartment) {
+        params.append('department', currentUserDepartment);
+      }
       
       if (params.toString()) url += `?${params}`;
       
+      console.log("🌐 Fetching leaves from:", url);
+      console.log("🏢 User department:", currentUserDepartment);
+      console.log("👤 User ID:", currentUserId);
+      console.log("🏢 Company ID:", currentUserCompanyId);
+      
       const res = await axios.get(url);
-      const data = res.data.leaves || [];
+      console.log("✅ Leaves API response:", res.data);
+      
+      // Process the response
+      let data = [];
+      if (res.data && res.data.data && res.data.data.leaves) {
+        data = res.data.data.leaves;
+      } else if (res.data && res.data.leaves) {
+        data = res.data.leaves;
+      } else if (res.data && Array.isArray(res.data)) {
+        data = res.data;
+      }
+      
+      console.log(`📊 Found ${data.length} leaves`);
       
       setLeaves(data);
       
@@ -172,27 +296,40 @@ const EmployeeLeaves = () => {
         approved,
         rejected,
       });
+      
     } catch (err) {
-      console.error("Failed to load leaves", err);
+      console.error("❌ Failed to load leaves", err);
+      
       if (err.response?.status === 403) {
-        showSnackbar("You don't have permission to view leaves", "error");
+        showSnackbar("Access denied - Please contact administrator", "error");
+      } else if (err.response?.status === 404) {
+        showSnackbar("No leaves found for your company", "info");
       } else {
         showSnackbar("Error loading leave data", "error");
       }
+      
+      setLeaves([]);
+      setStats({
+        total: 0,
+        pending: 0,
+        approved: 0,
+        rejected: 0,
+      });
     } finally {
       setLoading(false);
     }
   };
 
   const showSnackbar = (message, type = "success") => {
+    console.log(`🍿 Snackbar: ${type} - ${message}`);
     setSnackbar({ open: true, message, type });
     setTimeout(() => {
-      setSnackbar({ ...snackbar, open: false });
+      setSnackbar(prev => ({ ...prev, open: false }));
     }, 4000);
   };
 
   const clearFilters = () => {
-    setFilterDate(""); // Clear date filter
+    setFilterDate("");
     setStatusFilter("All");
     setLeaveTypeFilter("all");
     setSearchTerm("");
@@ -208,7 +345,8 @@ const EmployeeLeaves = () => {
     setStatusFilter(type === 'All' ? 'All' : type);
   };
 
-  const canModify = ['admin', 'hr', 'superadmin', 'manager'].includes(currentUserRole);
+  // 🔧 Everyone can modify now
+  const canModify = true;
 
   const filteredLeaves = useMemo(() => {
     let filtered = leaves;
@@ -231,7 +369,6 @@ const EmployeeLeaves = () => {
     return filtered;
   }, [leaves, searchTerm, selectedStat]);
 
-  // Separate leaves by status
   const pendingLeaves = useMemo(() => 
     filteredLeaves.filter(leave => leave.status === 'Pending'),
     [filteredLeaves]
@@ -298,25 +435,31 @@ const EmployeeLeaves = () => {
     return diffDays;
   };
 
+  const getWhatsAppLink = (phoneNumber, userName, status, remarks) => {
+    if (!phoneNumber) return "#";
+    
+    const message = `Hello ${userName},\n\nYour leave request has been ${status.toLowerCase()}.\n${remarks ? `Remarks: ${remarks}\n` : ''}\nThank you.`;
+    const encodedMessage = encodeURIComponent(message);
+    return `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+  };
+
   const openStatusDialog = (leaveId, newStatus, userEmail, userName, userPhone, userId) => {
-    // Check if user is trying to update their own leave
     if (userId === currentUserId) {
       showSnackbar("You cannot update the status of your own leave", "error");
       return;
     }
     
-    if (canModify) {
-      setStatusDialog({
-        open: true,
-        leaveId,
-        newStatus,
-        remarks: "",
-        userEmail,
-        userName,
-        userPhone,
-        userId,
-      });
-    }
+    // 🔧 Everyone can modify now
+    setStatusDialog({
+      open: true,
+      leaveId,
+      newStatus,
+      remarks: "",
+      userEmail,
+      userName,
+      userPhone,
+      userId,
+    });
   };
 
   const closeStatusDialog = () => {
@@ -332,14 +475,6 @@ const EmployeeLeaves = () => {
     });
   };
 
-  const getWhatsAppLink = (phoneNumber, userName, status, remarks) => {
-    if (!phoneNumber) return "#";
-    
-    const message = `Hello ${userName},\n\nYour leave request has been ${status.toLowerCase()}.\n${remarks ? `Remarks: ${remarks}\n` : ''}\nThank you.`;
-    const encodedMessage = encodeURIComponent(message);
-    return `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
-  };
-
   const confirmStatusChange = async () => {
     const { leaveId, newStatus, remarks, userEmail, userName, userPhone, userId } = statusDialog;
     
@@ -348,7 +483,6 @@ const EmployeeLeaves = () => {
       return;
     }
 
-    // Double check if user is trying to update their own leave
     if (userId === currentUserId) {
       showSnackbar("You cannot update the status of your own leave", "error");
       closeStatusDialog();
@@ -356,10 +490,11 @@ const EmployeeLeaves = () => {
     }
 
     try {
-      // Update leave status
+      console.log("🔄 Updating leave status:", leaveId, newStatus);
+      
       const res = await axios.patch(`/leaves/status/${leaveId}`, {
         status: newStatus,
-        remarks,
+        remarks
       });
       
       if (res.data.message) {
@@ -368,7 +503,6 @@ const EmployeeLeaves = () => {
         fetchLeaves();
         closeStatusDialog();
         
-        // Show WhatsApp link in snackbar if phone exists
         if (userPhone) {
           setTimeout(() => {
             const whatsappLink = getWhatsAppLink(userPhone, userName, newStatus, remarks);
@@ -392,9 +526,11 @@ const EmployeeLeaves = () => {
     } catch (err) {
       console.error("Failed to update status", err);
       if (err.response?.status === 403) {
-        showSnackbar(err.response.data.error || "You don't have permission to update this leave", "error");
+        showSnackbar("You don't have permission to update leave status", "error");
       } else if (err.response?.status === 400) {
         showSnackbar(err.response.data.error || "Invalid status value", "error");
+      } else if (err.response?.status === 404) {
+        showSnackbar("Leave not found", "error");
       } else {
         showSnackbar("Failed to update leave status", "error");
       }
@@ -413,7 +549,7 @@ const EmployeeLeaves = () => {
     } catch (err) {
       console.error("Failed to delete leave", err);
       if (err.response?.status === 403) {
-        showSnackbar(err.response.data.error || "You don't have permission to delete this leave", "error");
+        showSnackbar("You don't have permission to delete this leave", "error");
       } else {
         showSnackbar("Failed to delete leave", "error");
       }
@@ -455,7 +591,6 @@ const EmployeeLeaves = () => {
     return role.charAt(0).toUpperCase() + role.slice(1);
   };
 
-  // Format history date
   const formatHistoryDate = (dateStr) => {
     if (!dateStr) return "";
     return new Date(dateStr).toLocaleString('en-US', {
@@ -467,11 +602,14 @@ const EmployeeLeaves = () => {
     });
   };
 
-  // Render Leave Table Section
   const renderLeaveTable = (title, leavesData, showStatusColumn = true) => (
     <div className="leaves-table-container">
       <div className="table-header">
         <h3 className="table-title">{title} ({leavesData.length})</h3>
+        <div className="company-badge">
+          <FiBriefcase size={14} style={{ marginRight: '4px' }} />
+          Company: {currentUserCompanyId ? currentUserCompanyId.substring(0, 8) + '...' : 'Loading...'}
+        </div>
       </div>
       
       <div style={{ overflowX: 'auto' }}>
@@ -596,7 +734,7 @@ const EmployeeLeaves = () => {
                               leave.user?.phone,
                               userId
                             )}
-                            disabled={!canModify || userId === currentUserId}
+                            disabled={userId === currentUserId} // Only disable for own leaves
                           >
                             <option value="Pending">Pending</option>
                             <option value="Approved">Approve</option>
@@ -611,7 +749,6 @@ const EmployeeLeaves = () => {
                           className="delete-button"
                           onClick={() => setDeleteDialog(leave._id)}
                           title="Delete Leave"
-                          disabled={!canModify}
                         >
                           <FiTrash2 size={16} />
                         </button>
@@ -634,6 +771,13 @@ const EmployeeLeaves = () => {
                         : 'Try adjusting your filters or search criteria'
                       }
                     </p>
+                    <button 
+                      className="btn btn-contained"
+                      onClick={fetchLeaves}
+                      style={{ marginTop: '8px' }}
+                    >
+                      Refresh Data
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -644,31 +788,6 @@ const EmployeeLeaves = () => {
     </div>
   );
 
-  // Show unauthorized message for regular users
-  if (!isAuthorized) {
-    return (
-      <div className="unauthorized-container">
-        <div className="unauthorized-content">
-          <FiLock size={64} className="unauthorized-icon" />
-          <h1 className="unauthorized-title">Access Denied</h1>
-          <p className="unauthorized-message">
-            You do not have permission to access the Leave Management page.
-          </p>
-          <p className="unauthorized-submessage">
-            Only administrators, HR managers, super admins, and department managers can view this page.
-          </p>
-          <button 
-            className="btn btn-contained"
-            onClick={() => window.history.back()}
-          >
-            Go Back
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Loading State
   if (loading && leaves.length === 0) {
     return (
       <div className="loading-container">
@@ -686,13 +805,13 @@ const EmployeeLeaves = () => {
           <h1 className="leaves-title">Leave Management</h1>
           <p className="leaves-subtitle">
             Review and manage employee leave requests
-            {currentUserRole === 'manager' && currentUserDepartment && (
+            {currentUserDepartment && (
               <span className="department-badge">
                 Department: {currentUserDepartment}
               </span>
             )}
-            <span className="role-badge">
-              Role: {currentUserRole.toUpperCase()}
+            <span className="company-badge">
+              Company: {currentUserCompanyId ? currentUserCompanyId.substring(0, 12) + '...' : 'Loading...'}
             </span>
           </p>
         </div>
@@ -811,40 +930,32 @@ const EmployeeLeaves = () => {
           { 
             label: "Total Leaves", 
             count: stats.total, 
-            color: "primary", 
             type: "All", 
             icon: <FiUsers />,
-            description: "Total leave requests",
             statClass: "stat-card-primary",
             iconClass: "stat-icon-primary"
           },
           { 
             label: "Pending", 
             count: stats.pending, 
-            color: "warning", 
             type: "Pending", 
             icon: <FiClock />,
-            description: "Awaiting approval",
             statClass: "stat-card-warning",
             iconClass: "stat-icon-warning"
           },
           { 
             label: "Approved", 
             count: stats.approved, 
-            color: "success", 
             type: "Approved", 
             icon: <FiCheckCircle />,
-            description: "Approved requests",
             statClass: "stat-card-success",
             iconClass: "stat-icon-success"
           },
           { 
             label: "Rejected", 
             count: stats.rejected, 
-            color: "error", 
             type: "Rejected", 
             icon: <FiXCircle />,
-            description: "Rejected requests",
             statClass: "stat-card-error",
             iconClass: "stat-icon-error"
           },
@@ -862,7 +973,6 @@ const EmployeeLeaves = () => {
               <div className="stat-info">
                 <div className="stat-value">{stat.count}</div>
                 <div className="stat-label">{stat.label}</div>
-                <div className="stat-description">{stat.description}</div>
               </div>
             </div>
           </div>
@@ -886,112 +996,125 @@ const EmployeeLeaves = () => {
         )}
 
         {/* Other Leaves Section */}
-        {otherLeaves.length > 0 && (
-          <div className="leaves-section">
-            <div className="section-header">
-              <h2 className="section-title">
-                <FiList size={20} style={{ marginRight: '8px' }} />
-                Processed Leaves
-              </h2>
-              <span className="section-badge">{otherLeaves.length} processed</span>
-            </div>
-            {renderLeaveTable("Processed Leaves", otherLeaves, true)}
+        <div className="leaves-section">
+          <div className="section-header">
+            <h2 className="section-title">
+              <FiList size={20} style={{ marginRight: '8px' }} />
+              All Other Leaves
+            </h2>
+            <span className="section-badge">{otherLeaves.length} total</span>
           </div>
-        )}
-
-        {/* Show message if no leaves at all */}
-        {pendingLeaves.length === 0 && otherLeaves.length === 0 && (
-          <div className="no-leaves-message">
-            <FiCalendar size={64} />
-            <h3>No Leave Requests Found</h3>
-            <p>There are no leave requests matching your criteria.</p>
-            <button 
-              className="btn btn-contained"
-              onClick={clearFilters}
-              style={{ marginTop: '16px' }}
-            >
-              Clear Filters
-            </button>
-          </div>
-        )}
+          {renderLeaveTable("All Leaves", otherLeaves, false)}
+        </div>
       </div>
 
-      {/* Delete Confirmation Dialog */}
-      {deleteDialog && (
-        <div className="dialog-overlay" onClick={() => setDeleteDialog(null)}>
-          <div className="dialog" onClick={e => e.stopPropagation()}>
+      {/* Status Update Dialog */}
+      {statusDialog.open && (
+        <div className="dialog-overlay" onClick={closeStatusDialog}>
+          <div className="dialog-content" onClick={(e) => e.stopPropagation()}>
             <div className="dialog-header">
-              <h3 className="dialog-title">Confirm Delete</h3>
-              <button className="dialog-close" onClick={() => setDeleteDialog(null)}>
+              <h3>Update Leave Status</h3>
+              <button className="dialog-close" onClick={closeStatusDialog}>
                 <FiX size={20} />
               </button>
             </div>
-            <div className="dialog-content">
-              <p>Are you sure you want to delete this leave request?</p>
-              <p style={{ color: '#d32f2f', fontSize: '14px', marginTop: '8px' }}>
-                <strong>Note:</strong> This action cannot be undone.
-              </p>
+            
+            <div className="dialog-body">
+              <div className="user-info">
+                <div className="user-avatar">
+                  {getInitials(statusDialog.userName)}
+                </div>
+                <div className="user-details">
+                  <h4>{statusDialog.userName}</h4>
+                  <p><FiMail size={12} /> {statusDialog.userEmail}</p>
+                  {statusDialog.userPhone && (
+                    <p><FiPhone size={12} /> {statusDialog.userPhone}</p>
+                  )}
+                </div>
+              </div>
+              
+              <div className="status-selection">
+                <h4>Change Status to:</h4>
+                <div className="status-options">
+                  <button 
+                    className={`status-option ${statusDialog.newStatus === 'Approved' ? 'selected' : ''}`}
+                    onClick={() => setStatusDialog(prev => ({ ...prev, newStatus: 'Approved' }))}
+                  >
+                    <FiCheckCircle /> Approved
+                  </button>
+                  <button 
+                    className={`status-option ${statusDialog.newStatus === 'Rejected' ? 'selected' : ''}`}
+                    onClick={() => setStatusDialog(prev => ({ ...prev, newStatus: 'Rejected' }))}
+                  >
+                    <FiXCircle /> Rejected
+                  </button>
+                </div>
+              </div>
+              
+              <div className="remarks-section">
+                <label>Remarks (Optional)</label>
+                <textarea
+                  className="remarks-input"
+                  value={statusDialog.remarks}
+                  onChange={(e) => setStatusDialog(prev => ({ ...prev, remarks: e.target.value }))}
+                  placeholder="Add any remarks or notes..."
+                  rows="3"
+                />
+              </div>
+              
+              <div className="notification-info">
+                <FiPhone size={16} />
+                <span>
+                  WhatsApp notification will be sent to {statusDialog.userName} if phone number is available.
+                </span>
+              </div>
             </div>
-            <div className="dialog-actions">
-              <button className="btn btn-outlined" onClick={() => setDeleteDialog(null)}>
+            
+            <div className="dialog-footer">
+              <button className="btn btn-outlined" onClick={closeStatusDialog}>
                 Cancel
               </button>
-              <button className="btn btn-error" onClick={handleDeleteLeave}>
-                Delete
+              <button 
+                className={`btn btn-contained ${statusDialog.newStatus === 'Approved' ? 'btn-success' : 'btn-error'}`}
+                onClick={confirmStatusChange}
+                disabled={!statusDialog.newStatus}
+              >
+                <FiSave size={16} style={{ marginRight: '8px' }} />
+                Confirm {statusDialog.newStatus}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Status Update Dialog */}
-      {statusDialog.open && (
-        <div className="dialog-overlay" onClick={closeStatusDialog}>
-          <div className="dialog" onClick={e => e.stopPropagation()}>
+      {/* Delete Confirmation Dialog */}
+      {deleteDialog && (
+        <div className="dialog-overlay" onClick={() => setDeleteDialog(null)}>
+          <div className="dialog-content delete-dialog" onClick={(e) => e.stopPropagation()}>
             <div className="dialog-header">
-              <h3 className="dialog-title">
-                Update Status to {statusDialog.newStatus}
-              </h3>
-              <button className="dialog-close" onClick={closeStatusDialog}>
+              <h3>Delete Leave Request</h3>
+              <button className="dialog-close" onClick={() => setDeleteDialog(null)}>
                 <FiX size={20} />
               </button>
             </div>
-            <div className="dialog-content">
-              <div className="user-info">
-                <strong>Employee:</strong> {statusDialog.userName}
+            
+            <div className="dialog-body">
+              <div className="warning-icon">
+                <FiAlertCircle size={48} color="#ff9800" />
               </div>
-              <div className="user-info">
-                <strong>Email:</strong> {statusDialog.userEmail}
-              </div>
-              {statusDialog.userPhone && (
-                <div className="user-info">
-                  <strong>Phone:</strong> {statusDialog.userPhone}
-                </div>
-              )}
-              
-              <div style={{ marginTop: '16px' }}>
-                <label className="dialog-label">Remarks (optional):</label>
-                <textarea
-                  className="textarea"
-                  placeholder="Enter remarks for the employee..."
-                  value={statusDialog.remarks}
-                  onChange={(e) => setStatusDialog(prev => ({ 
-                    ...prev, 
-                    remarks: e.target.value 
-                  }))}
-                  rows={3}
-                />
-                <p className="dialog-hint">
-                  Remarks will be included in email and WhatsApp notifications.
-                </p>
-              </div>
+              <h4>Are you sure?</h4>
+              <p>
+                This will permanently delete the leave request. This action cannot be undone.
+              </p>
             </div>
-            <div className="dialog-actions">
-              <button className="btn btn-outlined" onClick={closeStatusDialog}>
+            
+            <div className="dialog-footer">
+              <button className="btn btn-outlined" onClick={() => setDeleteDialog(null)}>
                 Cancel
               </button>
-              <button className="btn btn-contained" onClick={confirmStatusChange}>
-                <FiSave size={16} /> Update Status
+              <button className="btn btn-error" onClick={handleDeleteLeave}>
+                <FiTrash2 size={16} style={{ marginRight: '8px' }} />
+                Delete
               </button>
             </div>
           </div>
@@ -1001,38 +1124,54 @@ const EmployeeLeaves = () => {
       {/* History Dialog */}
       {historyDialog.open && (
         <div className="dialog-overlay" onClick={closeHistoryDialog}>
-          <div className="dialog" onClick={e => e.stopPropagation()}>
+          <div className="dialog-content history-dialog" onClick={(e) => e.stopPropagation()}>
             <div className="dialog-header">
-              <h3 className="dialog-title">Action History</h3>
+              <h3>Leave History</h3>
               <button className="dialog-close" onClick={closeHistoryDialog}>
                 <FiX size={20} />
               </button>
             </div>
-            <div className="dialog-content">
-              <h4 style={{ marginBottom: '16px', color: '#333' }}>{historyDialog.title}</h4>
-              <div className="history-list">
+            
+            <div className="dialog-body">
+              <div className="history-title">
+                <h4>{historyDialog.title}</h4>
+              </div>
+              
+              <div className="history-timeline">
                 {historyDialog.items.length > 0 ? (
                   historyDialog.items.map((item, index) => (
                     <div key={index} className="history-item">
-                      <div className="history-action">
-                        <strong>{item.action.toUpperCase()}</strong> by {normalizeRole(item.role)}
+                      <div className="history-item-header">
+                        <span className="history-action">{item.action}</span>
+                        <span className="history-date">{formatHistoryDate(item.at)}</span>
                       </div>
-                      <div className="history-details">
-                        {formatHistoryDate(item.at)}
-                      </div>
-                      {item.remarks && (
-                        <div className="history-remarks">
-                          <strong>Remarks:</strong> "{item.remarks}"
+                      <div className="history-item-body">
+                        <div className="history-by">
+                          <strong>By:</strong> {item.by || 'System'}
                         </div>
-                      )}
+                        {item.role && (
+                          <div className="history-role">
+                            <strong>Role:</strong> {normalizeRole(item.role)}
+                          </div>
+                        )}
+                        {item.remarks && (
+                          <div className="history-remarks">
+                            <strong>Remarks:</strong> {item.remarks}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ))
                 ) : (
-                  <p>No history available.</p>
+                  <div className="no-history">
+                    <FiList size={32} />
+                    <p>No history available for this leave request.</p>
+                  </div>
                 )}
               </div>
             </div>
-            <div className="dialog-actions">
+            
+            <div className="dialog-footer">
               <button className="btn btn-contained" onClick={closeHistoryDialog}>
                 Close
               </button>
@@ -1048,6 +1187,7 @@ const EmployeeLeaves = () => {
             {snackbar.type === "success" && <FiCheckCircle size={20} />}
             {snackbar.type === "error" && <FiXCircle size={20} />}
             {snackbar.type === "info" && <FiAlertCircle size={20} />}
+            {snackbar.type === "warning" && <FiAlertCircle size={20} />}
             <span>{snackbar.message}</span>
           </div>
         </div>

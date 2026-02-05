@@ -69,7 +69,7 @@ function App() {
         <Route path="company/:companyCode/login" element={<Login />} />
         <Route path="/CompanyManagement" element={<CompanyManagement />} />
         <Route
-          path="/Ciis/*"
+          path="/Ciis-network/*"
           element={
             <ThemeContextProvider>
               <ProtectedRoute>
@@ -80,11 +80,8 @@ function App() {
         >
           <Route path="department" element={<Department />} />
           {/* ✅ Company Login */}
-          <Route path="job-role-management" element={<JobRoleManagement />} />
-          {/* ✅ Company Management WITHOUT LOGIN */}
-          
+         
           <Route path="create-user" element={<CreateUser />} />
-          {/* ✅ Super Admin Dashboard (Protected) */}
           <Route path="SuperAdminDashboard" element={<SuperAdminDashboard />} />
           <Route path="JobRoleManagement" element={<JobRoleManagement />} />
         </Route>
@@ -102,17 +99,14 @@ function App() {
 
           <Route path="department" element={<Department />} />
           <Route path="change-password" element={<ChangePassword />} />
-
           <Route path="emp-details" element={<EmppDetail />} />
           <Route path="emp-leaves" element={<EmppLeave />} />
           <Route path="emp-assets" element={<EmppAsset />} />
           <Route path="emp-attendance" element={<EmppAttendence />} />
-
           <Route path="emp-task-management" element={<EmppTask />} />
           <Route path="emp-task-details" element={<TaskDeatils />} />
           <Route path="admin-task-create" element={<AdminTaskCreate />} />
           <Route path="admin-meeting" element={<AdminMeetingPage />} />
-
           <Route path="adminp" element={<AdminProject />} />
           <Route path="emp-all-task" element={<EmpAllTask />} />
           <Route path="emp-client" element={<Client />} />
