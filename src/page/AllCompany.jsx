@@ -331,15 +331,7 @@ const AllCompany = () => {
   return (
     <div style={styles.container}>
       {/* Header Section */}
-      <div style={styles.headerSection}>
-        <button
-          style={styles.backButton}
-          onClick={() => navigate("/super-admin/dashboard")}
-        >
-          <ArrowBack style={{ marginRight: "8px" }} />
-          Back to Dashboard
-        </button>
-        
+      <div style={styles.headerSection}>        
         <div style={styles.titleSection}>
           <Business style={styles.titleIcon} />
           <h1>All Companies & Users</h1>
