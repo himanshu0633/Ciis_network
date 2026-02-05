@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -13,120 +13,147 @@ import {
   Grid,
   Avatar,
   Fade,
-  Alert
+  Alert,
+  Card,
+  CardContent,
+  Divider
 } from '@mui/material';
 import {
   Visibility,
   VisibilityOff,
   Login as LoginIcon,
   LockOutlined,
-  EmailOutlined
+  EmailOutlined,
+  Business,
+  Person,
+  LocationOn,
+  Phone
 } from '@mui/icons-material';
 import axios from '../utils/axiosConfig';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import { toast } from 'react-toastify';
 
 const Login = () => {
-  const [form, setForm] = useState({ email: '', password: '' });
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState({});
-  const [bgPosition, setBgPosition] = useState({ x: 0, y: 0 });
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { setUser, setIsAuthenticated } = useAuth();
-
-  // ✅ Use refs to prevent cursor jump
-  const emailInputRef = useRef(null);
-  const passwordInputRef = useRef(null);
-  const currentInputRef = useRef(null);
-  const cursorPositionRef = useRef(0);
-  const formRef = useRef(form);
-
-  // Update form ref whenever form changes
-  useEffect(() => {
-    formRef.current = form;
-  }, [form]);
-
-  useEffect(() => {
-    if (location.state?.fromRegister) {
-      toast.success("Registration successful! Please login.");
-    }
-
-    // Handle mouse move for parallax effect
-    const handleMouseMove = (e) => {
-      const x = (e.clientX / window.innerWidth) * 20 - 10;
-      const y = (e.clientY / window.innerHeight) * 20 - 10;
-      setBgPosition({ x, y });
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, [location.state]);
-
-  // ✅ Restore cursor position after render
-  useEffect(() => {
-    if (currentInputRef.current && cursorPositionRef.current !== null) {
-      const input = currentInputRef.current;
-      const position = cursorPositionRef.current;
-      
-      // Use requestAnimationFrame for smoother cursor restoration
-      requestAnimationFrame(() => {
-        if (document.activeElement !== input) {
-          input.focus();
-        }
-        input.setSelectionRange(position, position);
-      });
-      
-      // Reset refs
-      currentInputRef.current = null;
-      cursorPositionRef.current = 0;
-    }
+  const [form, setForm] = useState({
+    email: '',
+    password: ''
   });
 
-  // ✅ FIXED: Optimized handleChange to prevent cursor jump
-  const handleChange = useCallback((e) => {
-    const { name, value } = e.target;
-    
-    // Save current focused element and cursor position
-    currentInputRef.current = e.target;
-    cursorPositionRef.current = e.target.selectionStart;
-    
-    // Update form state immediately
-    setForm(prev => ({ 
-      ...prev, 
-      [name]: value 
-    }));
-    
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
-  }, [errors]);
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [companyLoading, setCompanyLoading] = useState(true);
+  const [errors, setErrors] = useState({});
+  const [companyDetails, setCompanyDetails] = useState(null);
+  const [companyIdentifier, setCompanyIdentifier] = useState('');
+  const [twoFactorRequired, setTwoFactorRequired] = useState(false);
+  const [twoFactorCode, setTwoFactorCode] = useState('');
 
-  // ✅ Add onBlur handler to save cursor position
-  const handleBlur = useCallback((e) => {
-    currentInputRef.current = e.target;
-    cursorPositionRef.current = e.target.selectionStart;
-  }, []);
+  const navigate = useNavigate();
+  const { setUser, setIsAuthenticated } = useAuth();
+
+// Extract company identifier from URL
+useEffect(() => {
+  const extractCompanyIdentifier = () => {
+    const path = window.location.pathname;
+    console.log('🔗 Current path:', path);
+    
+    // Pattern 1: /company/{identifier}/login
+    const match1 = path.match(/\/company\/([^/]+)\/login/);
+    if (match1 && match1[1]) {
+      console.log('✅ Extracted identifier from /company/{id}/login:', match1[1]);
+      return match1[1];
+    }
+
+    // Pattern 2: /company/{identifier}
+    const match2 = path.match(/\/company\/([^/]+)/);
+    if (match2 && match2[1]) {
+      console.log('✅ Extracted identifier from /company/{id}:', match2[1]);
+      return match2[1];
+    }
+
+    // Pattern 3: Check URL segments
+    const segments = path.split('/').filter(Boolean);
+    if (segments.length >= 2 && segments[0] === 'company') {
+      console.log('✅ Extracted identifier from segments:', segments[1]);
+      return segments[1];
+    }
+
+    console.log('⚠️ No company identifier found in URL');
+    return null;
+  };
+
+  const identifier = extractCompanyIdentifier();
+  if (identifier) {
+    console.log('🎯 Setting company identifier:', identifier);
+    setCompanyIdentifier(identifier);
+    fetchCompanyDetails(identifier);
+  } else {
+    setCompanyLoading(false);
+  }
+}, []);
+
+  const fetchCompanyDetails = async (identifier) => {
+    try {
+      setCompanyLoading(true);
+
+      const response = await axios.get(`/company/details/${identifier}`);
+
+      if (response.data.success) {
+        setCompanyDetails(response.data.company);
+        document.title = `${response.data.company.companyName} - Login`;
+      }
+    } catch (error) {
+      console.error('Error fetching company details:', error);
+
+      if (error.response?.status === 404) {
+        toast.error('Company not found. Please check the URL.');
+      } else if (error.response?.status === 403) {
+        toast.error(error.response.data.message || 'Company account is not active');
+      }
+
+      setCompanyDetails({
+        companyName: 'Company Portal',
+        logo: null,
+        ownerName: 'Administrator'
+      });
+    } finally {
+      setCompanyLoading(false);
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    setForm((prev) => ({
+      ...prev,
+      [name]: value
+    }));
+
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: '' }));
+    }
+  };
 
   const validateForm = () => {
     const newErrors = {};
-    const currentForm = formRef.current;
-    
-    if (!currentForm.email.trim()) {
+
+    if (!form.email.trim()) {
       newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(currentForm.email)) {
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
       newErrors.email = 'Please enter a valid email address';
     }
-    
-    if (!currentForm.password) {
+
+    if (!form.password) {
       newErrors.password = 'Password is required';
-    } else if (currentForm.password.length < 6) {
+    } else if (form.password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters';
     }
-    
+
+    if (twoFactorRequired && !twoFactorCode) {
+      newErrors.twoFactor = 'Two-factor code is required';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -138,424 +165,452 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const res = await axios.post('/auth/login', formRef.current);
+      const loginData = {
+        ...form,
+        companyIdentifier: companyIdentifier || null
+      };
+
+      const res = await axios.post('/auth/login', loginData);
+
+      if (res.data.requiresTwoFactor) {
+        setTwoFactorRequired(true);
+        toast.info('Two-factor authentication required');
+        return;
+      }
+
+      // Save token
       localStorage.setItem('token', res.data.token);
-      localStorage.setItem('user', JSON.stringify(res.data.user));
-      setUser(res.data.user);
+
+      // Save user data
+      const userData = res.data.user;
+      localStorage.setItem('user', JSON.stringify(userData));
+
+      setUser(userData);
       setIsAuthenticated(true);
-      
-      toast.success("Login successful! Redirecting...");
-      setTimeout(() => {
-        navigate(location.state?.from || '/cds/user-dashboard');
-      }, 1500);
+
+      // Save company identifier
+      if (companyIdentifier) {
+        localStorage.setItem('companyIdentifier', companyIdentifier);
+      }
+
+      if (companyDetails) {
+        localStorage.setItem('companyDetails', JSON.stringify(companyDetails));
+      }
+
+      toast.success("Login successful!");
+
+      // Redirect based on role
+      const redirectPath =
+        userData.role === 'admin' ? '/admin/dashboard' : '/user/dashboard';
+
+      navigate(redirectPath);
     } catch (err) {
-      const errorMsg = err.response?.data?.message || 'Login failed. Please try again.';
+      console.error('Login error:', err);
+
+      let errorMsg = 'Login failed. Please try again.';
+      let shouldRetry = false;
+
+      if (err.response?.data) {
+        const { errorCode, message, remainingAttempts } = err.response.data;
+
+        errorMsg = message;
+
+        switch (errorCode) {
+          case 'ACCOUNT_LOCKED':
+            const retryAfter = err.response.data.retryAfter;
+            const lockTime = new Date(retryAfter).toLocaleTimeString();
+            errorMsg = `Account locked until ${lockTime}. Please try again later.`;
+            break;
+
+          case 'ACCOUNT_DEACTIVATED':
+            errorMsg = 'Your account has been deactivated. Contact your administrator.';
+            break;
+
+          case 'SUBSCRIPTION_EXPIRED':
+            errorMsg = 'Company subscription has expired. Contact your company admin.';
+            break;
+
+          case 'INVALID_CREDENTIALS':
+            if (remainingAttempts) {
+              errorMsg += ` ${remainingAttempts} attempts remaining.`;
+              shouldRetry = remainingAttempts > 0;
+            }
+            break;
+
+          case 'COMPANY_NOT_FOUND':
+            errorMsg = 'Company not found. Please check your URL.';
+            break;
+
+          default:
+            break;
+        }
+      }
+
       toast.error(errorMsg);
-      
-      // Set general error
-      setErrors(prev => ({ ...prev, general: errorMsg }));
+      setErrors((prev) => ({ ...prev, general: errorMsg, shouldRetry }));
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ Handle Enter key press for better UX
-  const handleKeyPress = useCallback((e) => {
-    if (e.key === 'Enter' && !loading) {
-      handleSubmit(e);
+  const handleTwoFactorSubmit = async () => {
+    if (!twoFactorCode.trim()) {
+      setErrors((prev) => ({ ...prev, twoFactor: 'Two-factor code is required' }));
+      return;
     }
-  }, [loading]);
+
+    setLoading(true);
+
+    try {
+      const res = await axios.post('/auth/verify-2fa', {
+        email: form.email,
+        code: twoFactorCode
+      });
+
+      localStorage.setItem('token', res.data.token);
+      localStorage.setItem('user', JSON.stringify(res.data.user));
+
+      setUser(res.data.user);
+      setIsAuthenticated(true);
+
+      toast.success("Two-factor authentication successful!");
+      navigate('/dashboard');
+    } catch (err) {
+      toast.error('Invalid two-factor code. Please try again.');
+      setTwoFactorCode('');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Box
       sx={{
         minHeight: '100vh',
-        position: 'relative',
-        overflow: 'hidden',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        py: 2,
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: -10,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: `
-            linear-gradient(135deg, 
-              rgba(101, 0, 163, 0.15) 0%, 
-              rgba(41, 121, 255, 0.15) 30%, 
-              rgba(0, 212, 255, 0.15) 70%, 
-              rgba(101, 0, 163, 0.15) 100%
-            ),
-            radial-gradient(circle at 20% 80%, rgba(101, 0, 163, 0.08) 0%, transparent 50%),
-            radial-gradient(circle at 80% 20%, rgba(41, 121, 255, 0.08) 0%, transparent 50%),
-            linear-gradient(45deg, #f5f7fa 0%, #c3cfe2 100%)
-          `,
-          backgroundSize: '400% 400%',
-          animation: 'gradientShift 15s ease infinite',
-          transform: `translate(${bgPosition.x}px, ${bgPosition.y}px)`,
-          transition: 'transform 0.3s ease-out',
-          zIndex: 0,
-        },
-        '@keyframes gradientShift': {
-          '0%': { backgroundPosition: '0% 50%' },
-          '50%': { backgroundPosition: '100% 50%' },
-          '100%': { backgroundPosition: '0% 50%' }
-        },
-        '&::after': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundImage: `
-            radial-gradient(circle at 15% 50%, rgba(255, 255, 255, 0.8) 1px, transparent 1px),
-            radial-gradient(circle at 85% 30%, rgba(255, 255, 255, 0.6) 1px, transparent 1px),
-            radial-gradient(circle at 50% 80%, rgba(255, 255, 255, 0.4) 2px, transparent 2px)
-          `,
-          backgroundSize: '50px 50px',
-          opacity: 0.3,
-          zIndex: 0,
-        }
+        p: 2
       }}
     >
-      {/* Animated floating elements */}
-      {[...Array(5)].map((_, i) => (
-        <Box
-          key={i}
-          sx={{
-            position: 'absolute',
-            width: Math.random() * 100 + 50,
-            height: Math.random() * 100 + 50,
-            background: `linear-gradient(45deg, 
-              rgba(${Math.random() * 100 + 155}, ${Math.random() * 100 + 155}, 255, 0.1),
-              rgba(${Math.random() * 100 + 155}, 100, 255, 0.05)
-            )`,
-            borderRadius: '50%',
-            top: `${Math.random() * 100}%`,
-            left: `${Math.random() * 100}%`,
-            animation: `float ${Math.random() * 20 + 20}s ease-in-out infinite`,
-            animationDelay: `${Math.random() * 5}s`,
-            filter: 'blur(20px)',
-            zIndex: 0,
-            '@keyframes float': {
-              '0%, 100%': { transform: 'translateY(0px) rotate(0deg)' },
-              '50%': { transform: `translateY(${Math.random() * 100 - 50}px) rotate(${Math.random() * 180 - 90}deg)` }
-            }
-          }}
-        />
-      ))}
+      <Container maxWidth="lg">
+        <Grid container spacing={3} justifyContent="center">
+          {/* Company Details Card */}
+          {companyDetails && (
+            <Grid item xs={12} md={5}>
+              <Fade in={!companyLoading}>
+                <Card
+                  sx={{
+                    height: '100%',
+                    borderRadius: 3,
+                    boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+                    overflow: 'hidden'
+                  }}
+                >
+                  <CardContent sx={{ p: 4, height: '100%' }}>
+                    <Box sx={{ textAlign: 'center', mb: 3 }}>
+                      {companyDetails.logo ? (
+                        <Box
+                          component="img"
+                          src={companyDetails.logo}
+                          alt={companyDetails.companyName}
+                          sx={{
+                            width: 120,
+                            height: 120,
+                            margin: '0 auto 20px',
+                            borderRadius: 2,
+                            objectFit: 'contain',
+                            p: 2,
+                            backgroundColor: 'white',
+                            boxShadow: '0 8px 16px rgba(0,0,0,0.1)'
+                          }}
+                        />
+                      ) : (
+                        <Avatar
+                          sx={{
+                            width: 120,
+                            height: 120,
+                            margin: '0 auto 20px',
+                            background:
+                              'linear-gradient(135deg, #4CAF50 0%, #8BC34A 100%)',
+                            boxShadow: '0 8px 16px rgba(76,175,80,0.3)'
+                          }}
+                        >
+                          <Business sx={{ fontSize: 48 }} />
+                        </Avatar>
+                      )}
 
-      <Container 
-        component="main" 
-        maxWidth="xs"
-        sx={{
-          position: 'relative',
-          zIndex: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Fade in timeout={800}>
-          <Paper
-            elevation={24}
-            sx={{
-              p: { xs: 3, sm: 4 },
-              width: '100%',
-              borderRadius: 4,
-              backgroundColor: 'rgba(255, 255, 255, 0.95)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255, 255, 255, 0.3)',
-              boxShadow: `
-                0 20px 60px rgba(0, 0, 0, 0.1),
-                inset 0 1px 0 rgba(255, 255, 255, 0.6),
-                0 8px 32px rgba(25, 118, 210, 0.15)
-              `,
-              position: 'relative',
-              overflow: 'hidden',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: '4px',
-                background: 'linear-gradient(90deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-                borderRadius: '4px 4px 0 0',
-              }
-            }}
-          >
-            <Box sx={{ textAlign: 'center', mb: 4 }}>
-              <Avatar
-                sx={{
-                  width: 72,
-                  height: 72,
-                  margin: '0 auto 20px',
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  boxShadow: '0 8px 24px rgba(102, 126, 234, 0.3)',
-                  transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-                  '&:hover': {
-                    transform: 'scale(1.05)',
-                    boxShadow: '0 12px 32px rgba(102, 126, 234, 0.4)'
-                  }
-                }}
-              >
-                <LockOutlined sx={{ fontSize: 36 }} />
-              </Avatar>
-              <Typography
-                variant="h4"
-                component="h1"
-                gutterBottom
-                sx={{
-                  fontWeight: 700,
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  backgroundClip: 'text',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  fontSize: { xs: '1.875rem', sm: '2.25rem' },
-                  letterSpacing: '-0.5px'
-                }}
-              >
-                Welcome Back
-              </Typography>
-              <Typography
-                variant="body1"
-                sx={{
-                  color: 'text.secondary',
-                  mb: 2,
-                  fontWeight: 400
-                }}
-              >
-                Sign in to continue to your dashboard
-              </Typography>
-            </Box>
+                      <Typography variant="h5" gutterBottom sx={{ fontWeight: 700 }}>
+                        {companyDetails.companyName}
+                      </Typography>
 
-            {errors.general && (
-              <Alert 
-                severity="error" 
-                sx={{ 
-                  mb: 3,
-                  borderRadius: 2,
-                  boxShadow: '0 4px 12px rgba(211, 47, 47, 0.1)'
-                }}
-                onClose={() => setErrors(prev => ({ ...prev, general: '' }))}
-              >
-                {errors.general}
-              </Alert>
-            )}
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        {companyDetails.companyEmail}
+                      </Typography>
+                    </Box>
 
-            <form onSubmit={handleSubmit} noValidate>
-              <TextField
-                inputRef={emailInputRef}
-                label="Email Address"
-                name="email"
-                type="email"
-                fullWidth
-                margin="normal"
-                value={form.email}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                onKeyPress={handleKeyPress}
-                error={!!errors.email}
-                helperText={errors.email}
-                required
-                autoComplete="email"
-                autoFocus
-                variant="outlined"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <EmailOutlined sx={{ color: 'primary.main' }} />
-                    </InputAdornment>
-                  ),
-                }}
+                    <Divider sx={{ mb: 3 }} />
+
+                    <Box sx={{ '& > *:not(:last-child)': { mb: 2 } }}>
+                      {companyDetails.ownerName && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                          <Person color="primary" />
+                          <Box>
+                            <Typography variant="caption" color="text.secondary">
+                              Owner
+                            </Typography>
+                            <Typography variant="body2">{companyDetails.ownerName}</Typography>
+                          </Box>
+                        </Box>
+                      )}
+
+                      {companyDetails.companyPhone && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                          <Phone color="primary" />
+                          <Box>
+                            <Typography variant="caption" color="text.secondary">
+                              Phone
+                            </Typography>
+                            <Typography variant="body2">{companyDetails.companyPhone}</Typography>
+                          </Box>
+                        </Box>
+                      )}
+
+                      {companyDetails.companyAddress && (
+                        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+                          <LocationOn color="primary" sx={{ mt: 0.5 }} />
+                          <Box>
+                            <Typography variant="caption" color="text.secondary">
+                              Address
+                            </Typography>
+                            <Typography variant="body2">{companyDetails.companyAddress}</Typography>
+                          </Box>
+                        </Box>
+                      )}
+                    </Box>
+
+                    <Divider sx={{ my: 3 }} />
+
+                    <Typography
+                      variant="caption"
+                      color="text.disabled"
+                      sx={{ display: 'block', textAlign: 'center' }}
+                    >
+                      Secure enterprise portal • {new Date().getFullYear()}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Fade>
+            </Grid>
+          )}
+
+          {/* Login Form Card */}
+          <Grid item xs={12} md={7}>
+            <Fade in>
+              <Paper
                 sx={{
-                  mb: 2.5,
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                    transition: 'all 0.2s ease',
-                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                    '&:hover fieldset': {
-                      borderColor: 'primary.light',
-                      boxShadow: '0 0 0 4px rgba(102, 126, 234, 0.1)'
-                    },
-                    '&.Mui-focused': {
-                      '& fieldset': {
-                        borderWidth: 2,
-                        borderColor: 'primary.main',
-                        boxShadow: '0 0 0 4px rgba(102, 126, 234, 0.1)'
+                  p: 4,
+                  borderRadius: 3,
+                  boxShadow: '0 20px 40px rgba(0,0,0,0.1)'
+                }}
+              >
+                <Box sx={{ textAlign: 'center', mb: 4 }}>
+                  <Avatar
+                    sx={{
+                      width: 72,
+                      height: 72,
+                      margin: '0 auto 20px',
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                    }}
+                  >
+                    <LockOutlined sx={{ fontSize: 36 }} />
+                  </Avatar>
+
+                  <Typography variant="h4" gutterBottom sx={{ fontWeight: 700 }}>
+                    {twoFactorRequired ? 'Two-Factor Authentication' : 'Welcome Back'}
+                  </Typography>
+
+                  <Typography variant="body1" color="text.secondary">
+                    {twoFactorRequired
+                      ? 'Enter the code from your authenticator app'
+                      : companyDetails
+                      ? `Sign in to ${companyDetails.companyName}`
+                      : 'Sign in to continue'}
+                  </Typography>
+                </Box>
+
+                {errors.general && (
+                  <Alert severity="error" sx={{ mb: 3 }}>
+                    {errors.general}
+                  </Alert>
+                )}
+
+                {!twoFactorRequired ? (
+                  <form onSubmit={handleSubmit}>
+                    <TextField
+                      fullWidth
+                      label="Email Address"
+                      name="email"
+                      type="email"
+                      value={form.email}
+                      onChange={handleChange}
+                      error={!!errors.email}
+                      helperText={errors.email}
+                      disabled={loading}
+                      autoComplete="email"
+                      margin="normal"
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <EmailOutlined color="action" />
+                          </InputAdornment>
+                        )
+                      }}
+                    />
+
+                    <TextField
+                      fullWidth
+                      label="Password"
+                      name="password"
+                      type={showPassword ? 'text' : 'password'}
+                      value={form.password}
+                      onChange={handleChange}
+                      error={!!errors.password}
+                      helperText={errors.password}
+                      disabled={loading}
+                      autoComplete="current-password"
+                      margin="normal"
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <LockOutlined color="action" />
+                          </InputAdornment>
+                        ),
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton
+                              onClick={() => setShowPassword(!showPassword)}
+                              edge="end"
+                            >
+                              {showPassword ? <VisibilityOff /> : <Visibility />}
+                            </IconButton>
+                          </InputAdornment>
+                        )
+                      }}
+                    />
+
+                    {/* ✅ Remember Me Removed - Only Forgot Password */}
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+                      <Link
+                        href={`${window.location.pathname.replace('/login', '/forgot-password')}`}
+                        variant="body2"
+                      >
+                        Forgot password?
+                      </Link>
+                    </Box>
+
+                    <Button
+                      type="submit"
+                      fullWidth
+                      variant="contained"
+                      disabled={loading}
+                      sx={{
+                        mt: 3,
+                        py: 1.5,
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                      }}
+                      startIcon={
+                        loading ? (
+                          <CircularProgress size={20} color="inherit" />
+                        ) : (
+                          <LoginIcon />
+                        )
                       }
-                    }
-                  }
-                }}
-              />
+                    >
+                      {loading ? 'Signing in...' : 'Sign In'}
+                    </Button>
 
-              <TextField
-                inputRef={passwordInputRef}
-                label="Password"
-                name="password"
-                type={showPassword ? 'text' : 'password'}
-                fullWidth
-                margin="normal"
-                value={form.password}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                onKeyPress={handleKeyPress}
-                error={!!errors.password}
-                helperText={errors.password}
-                required
-                autoComplete="current-password"
-                variant="outlined"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <LockOutlined sx={{ color: 'primary.main' }} />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        edge="end"
-                        onClick={() => setShowPassword(!showPassword)}
-                        aria-label="toggle password visibility"
-                        size="small"
+                    <Box sx={{ mt: 3, textAlign: 'center' }}>
+                      <Link
+                        href={`${window.location.pathname.replace('/login', '/register')}`}
+                        variant="body2"
+                      >
+                        Don't have an account? Sign up
+                      </Link>
+                    </Box>
+                  </form>
+                ) : (
+                  <Box>
+                    <TextField
+                      fullWidth
+                      label="Enter 6-digit code"
+                      value={twoFactorCode}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                        setTwoFactorCode(value);
+                        if (errors.twoFactor) {
+                          setErrors((prev) => ({ ...prev, twoFactor: '' }));
+                        }
+                      }}
+                      error={!!errors.twoFactor}
+                      helperText={errors.twoFactor}
+                      disabled={loading}
+                      margin="normal"
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <LockOutlined color="action" />
+                          </InputAdornment>
+                        )
+                      }}
+                    />
+
+                    <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
+                      <Button
+                        fullWidth
+                        variant="outlined"
+                        onClick={() => setTwoFactorRequired(false)}
+                        disabled={loading}
+                      >
+                        Back
+                      </Button>
+
+                      <Button
+                        fullWidth
+                        variant="contained"
+                        onClick={handleTwoFactorSubmit}
+                        disabled={loading || twoFactorCode.length !== 6}
                         sx={{
-                          '&:hover': {
-                            backgroundColor: 'rgba(102, 126, 234, 0.1)'
-                          }
+                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
                         }}
                       >
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{
-                  mb: 2,
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                    transition: 'all 0.2s ease',
-                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                    '&:hover fieldset': {
-                      borderColor: 'primary.light',
-                      boxShadow: '0 0 0 4px rgba(102, 126, 234, 0.1)'
-                    },
-                    '&.Mui-focused': {
-                      '& fieldset': {
-                        borderWidth: 2,
-                        borderColor: 'primary.main',
-                        boxShadow: '0 0 0 4px rgba(102, 126, 234, 0.1)'
-                      }
-                    }
-                  }
-                }}
-              />
+                        {loading ? 'Verifying...' : 'Verify'}
+                      </Button>
+                    </Box>
 
-              <Button
-                type="submit"
-                variant="contained"
-                fullWidth
-                disabled={loading}
-                sx={{
-                  py: 1.75,
-                  borderRadius: 2,
-                  fontWeight: 600,
-                  fontSize: '1rem',
-                  textTransform: 'none',
-                  mb: 3,
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  boxShadow: '0 8px 24px rgba(102, 126, 234, 0.4)',
-                  transition: 'all 0.3s ease',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  '&:hover': {
-                    transform: 'translateY(-2px)',
-                    boxShadow: '0 12px 32px rgba(102, 126, 234, 0.5)',
-                    '&::before': {
-                      transform: 'translateX(100%)'
-                    }
-                  },
-                  '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    top: 0,
-                    left: '-100%',
-                    width: '100%',
-                    height: '100%',
-                    background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent)',
-                    transition: 'transform 0.6s ease'
-                  }
-                }}
-                startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <LoginIcon />}
-              >
-                {loading ? 'Signing in...' : 'Sign In'}
-              </Button>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ mt: 2, textAlign: 'center' }}
+                    >
+                      Having trouble? <Link href="#" variant="body2">Resend code</Link>
+                    </Typography>
+                  </Box>
+                )}
 
-              <Grid container justifyContent="space-between" sx={{ mt: 2 }}>
-                <Grid item>
-                  <Link
-                    href="/forgot-password"
-                    variant="body2"
-                    sx={{
-                      color: 'primary.main',
-                      textDecoration: 'none',
-                      fontWeight: 500,
-                      transition: 'color 0.2s ease',
-                      '&:hover': {
-                        color: 'primary.dark',
-                        textDecoration: 'underline'
-                      }
-                    }}
-                  >
-                    Forgot password?
-                  </Link>
-                </Grid>
-                <Grid item>
-                  <Link
-                    href="/register"
-                    variant="body2"
-                    sx={{
-                      color: 'primary.main',
-                      textDecoration: 'none',
-                      fontWeight: 500,
-                      transition: 'color 0.2s ease',
-                      '&:hover': {
-                        color: 'primary.dark',
-                        textDecoration: 'underline'
-                      }
-                    }}
-                  >
-                    Don't have an account? Sign up
-                  </Link>
-                </Grid>
-              </Grid>
-            </form>
-
-            {/* Version info */}
-            <Typography
-              variant="caption"
-              sx={{
-                display: 'block',
-                textAlign: 'center',
-                mt: 3,
-                pt: 2,
-                borderTop: '1px solid rgba(0, 0, 0, 0.1)',
-                color: 'text.disabled',
-                fontSize: '0.75rem'
-              }}
-            >
-              © {new Date().getFullYear()} Your Company. All rights reserved.
-            </Typography>
-          </Paper>
-        </Fade>
+                <Box sx={{ mt: 4, textAlign: 'center' }}>
+                  <Typography variant="caption" color="text.disabled">
+                    By signing in, you agree to our Terms of Service and Privacy Policy
+                  </Typography>
+                </Box>
+              </Paper>
+            </Fade>
+          </Grid>
+        </Grid>
       </Container>
     </Box>
   );
 };
 
-export default Login; 
+export default Login;

@@ -68,6 +68,7 @@ function App() {
         <Route path="/contact" element={<ContactUs />} />
         <Route path="/SuperAdminLogin" element={<SuperAdminLogin />} />
         <Route path="company/:companyCode/login" element={<Login />} />
+        <Route path="/CompanyManagement" element={<CompanyManagement />} />
         <Route
           path="/Ciis/*"
           element={
@@ -82,7 +83,7 @@ function App() {
           {/* ✅ Company Login */}
           <Route path="job-role-management" element={<JobRoleManagement />} />
           {/* ✅ Company Management WITHOUT LOGIN */}
-          <Route path="CompanyManagement" element={<CompanyManagement />} />
+          
           <Route path="create-user" element={<CreateUser />} />
           <Route path="all-companies" element={<AllCompany />} />
           {/* ✅ Super Admin Dashboard (Protected) */}
