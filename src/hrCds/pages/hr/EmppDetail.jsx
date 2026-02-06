@@ -751,9 +751,17 @@ const EmployeeDirectory = () => {
         }
       };
       
-      // Fetch users
-      console.log("🌐 Fetching users from /users/company-users");
-      const usersRes = await axios.get("/users/company-users", config);
+      console.log("🌐 Making API request to: /users/department-users");
+      
+      // Use the correct endpoint from the controller
+      const usersRes = await axios.get("/users/department-users", config);
+      console.log("✅ API Response received:", {
+        status: usersRes.status,
+        statusText: usersRes.statusText,
+        dataKeys: Object.keys(usersRes.data)
+      });
+      
+      console.log("📦 Full API response data:", JSON.stringify(usersRes.data, null, 2));
       
       let employeesData = [];
       

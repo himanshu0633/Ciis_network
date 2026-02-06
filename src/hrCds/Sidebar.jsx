@@ -124,7 +124,8 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
     { heading: 'Task Management' },
     { icon: <TaskManagementIcon />, name: 'Task Management', route: '/ciisUser/task-management' },
     { icon: <TaskDetailsIcon />, name: 'Task Details', route: '/ciisUser/emp-task-details' },
-    { icon: <AllTasksIcon />, name: 'All Tasks', route: '/ciisUser/emp-all-task' },
+    { icon: <AllTasksIcon />, name: 'Company All Tasks', route: '/ciisUser/company-all-task' },
+    { icon: <AllTasksIcon />, name: 'Department All Tasks', route: '/ciisUser/department-all-task' },
     { icon: <TaskManagementIcon />, name: 'My Task Management', route: '/ciisUser/my-task-management' },
     { icon: <AdminTaskIcon />, name: 'Admin Task Create', route: '/ciisUser/admin-task-create' },
     

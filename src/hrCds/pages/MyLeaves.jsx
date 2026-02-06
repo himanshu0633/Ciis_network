@@ -17,8 +17,7 @@ import {
   FiX,
   FiBriefcase,
   FiUsers,
-  FiAlertTriangle,
-  FiCornerUpLeft
+  FiAlertTriangle
 } from "react-icons/fi";
 import '../Css/MyLeaves.css';
 
@@ -30,17 +29,15 @@ const MyLeaves = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debugInfo, setDebugInfo] = useState([]);
   
   // Job Roles और Departments State
   const [jobRoles, setJobRoles] = useState([]);
   const [departments, setDepartments] = useState([]);
-  const [companies, setCompanies] = useState([]);
-  const [userJobRoleName, setUserJobRoleName] = useState("Loading...");
-  const [userDepartmentName, setUserDepartmentName] = useState("Loading...");
-  const [userCompanyName, setUserCompanyName] = useState("Loading...");
+  const [userJobRoleName, setUserJobRoleName] = useState("Employee");
+  const [userDepartmentName, setUserDepartmentName] = useState("General");
   const [jobRolesLoading, setJobRolesLoading] = useState(false);
   const [departmentsLoading, setDepartmentsLoading] = useState(false);
-  const [companiesLoading, setCompaniesLoading] = useState(false);
   
   const [stats, setStats] = useState({
     total: 0,
@@ -60,11 +57,22 @@ const MyLeaves = () => {
     items: [],
   });
   const [isMobile, setIsMobile] = useState(false);
+  const [showDebug, setShowDebug] = useState(false); // Debug panel toggle
 
   // Get user and company details
   const user = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null;
   const token = localStorage.getItem('token');
   const companyDetails = localStorage.getItem('companyDetails') ? JSON.parse(localStorage.getItem('companyDetails')) : null;
+
+  // ✅ Add debug log
+  const addDebugLog = (message, data = null) => {
+    console.log(`🔍 DEBUG: ${message}`, data);
+    setDebugInfo(prev => [...prev.slice(-10), {
+      timestamp: new Date().toLocaleTimeString(),
+      message,
+      data: data ? JSON.stringify(data).substring(0, 100) + '...' : null
+    }]);
+  };
 
   // Check mobile viewport
   useEffect(() => {
@@ -76,279 +84,365 @@ const MyLeaves = () => {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  // ✅ DIRECT SOLUTION: Extract IDs and fetch names separately
-  const extractAndFetchDetails = async () => {
-    console.log("🔍 Extracting IDs and fetching details...");
-    
-    // Get IDs from user object
-    const userId = user?._id || user?.id;
-    const companyId = user?.company || companyDetails?._id || companyDetails?.id;
-    const departmentId = user?.department;
-    const jobRoleId = user?.jobRole || user?.role;
-    
-    console.log("Extracted IDs:", {
-      userId,
-      companyId,
-      departmentId,
-      jobRoleId
-    });
-    
-    // Set defaults
-    setUserJobRoleName("Employee");
-    setUserDepartmentName("General");
-    setUserCompanyName(companyDetails?.companyName || "Company");
-    
-    // Try to fetch company name if we have company ID
-    if (companyId && (!companyDetails?.companyName || companyDetails.companyName.includes('...'))) {
-      try {
-        console.log(`Fetching company details for ID: ${companyId}`);
-        const response = await axios.get(`/api/companies/${companyId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (response.data?.companyName) {
-          setUserCompanyName(response.data.companyName);
-          console.log(`✅ Got company name: ${response.data.companyName}`);
-        }
-      } catch (error) {
-        console.log("Could not fetch company details, using ID:", companyId);
-        setUserCompanyName(`Company (${companyId.substring(0, 8)}...)`);
-      }
+  // ✅ Get Company ID Function - FIXED
+  const getCompanyId = () => {
+    if (!user && !companyDetails) {
+      addDebugLog("No user or company details found");
+      return null;
     }
     
-    // Try to fetch department name if we have department ID
-    if (departmentId && departmentId.length > 10) { // Check if it looks like an ID
-      try {
-        console.log(`Fetching department details for ID: ${departmentId}`);
-        const response = await axios.get(`/api/departments/${departmentId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (response.data?.departmentName || response.data?.name) {
-          setUserDepartmentName(response.data.departmentName || response.data.name);
-          console.log(`✅ Got department name: ${response.data.departmentName || response.data.name}`);
-        }
-      } catch (error) {
-        // Try alternative endpoint
-        try {
-          const response = await axios.get(`/departments/${departmentId}`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          if (response.data?.departmentName || response.data?.name) {
-            setUserDepartmentName(response.data.departmentName || response.data.name);
-            console.log(`✅ Got department name from alt endpoint: ${response.data.departmentName || response.data.name}`);
-          }
-        } catch (error2) {
-          console.log("Could not fetch department details, using ID:", departmentId);
-          setUserDepartmentName(`Department (${departmentId.substring(0, 8)}...)`);
-        }
-      }
-    } else if (departmentId) {
-      // If it's not an ID, maybe it's already a name
-      setUserDepartmentName(departmentId);
+    // Check all possible sources for company ID
+    const sources = [
+      { source: 'companyDetails._id', value: companyDetails?._id },
+      { source: 'companyDetails.id', value: companyDetails?.id },
+      { source: 'user.company', value: user?.company },
+      { source: 'user.companyId', value: user?.companyId },
+      { source: 'user.companyDetails._id', value: user?.companyDetails?._id },
+      { source: 'companyDetails.companyId', value: companyDetails?.companyId },
+    ];
+    
+    const foundSource = sources.find(s => s.value);
+    
+    if (foundSource) {
+      addDebugLog(`Company ID found in ${foundSource.source}:`, foundSource.value);
+      return foundSource.value;
     }
     
-    // Try to fetch job role name if we have job role ID
-    if (jobRoleId && jobRoleId.length > 10) { // Check if it looks like an ID
-      try {
-        console.log(`Fetching job role details for ID: ${jobRoleId}`);
-        const response = await axios.get(`/api/job-roles/${jobRoleId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (response.data?.roleName || response.data?.name) {
-          setUserJobRoleName(response.data.roleName || response.data.name);
-          console.log(`✅ Got job role name: ${response.data.roleName || response.data.name}`);
-        }
-      } catch (error) {
-        // Try alternative endpoint
-        try {
-          const response = await axios.get(`/job-roles/${jobRoleId}`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          if (response.data?.roleName || response.data?.name) {
-            setUserJobRoleName(response.data.roleName || response.data.name);
-            console.log(`✅ Got job role name from alt endpoint: ${response.data.roleName || response.data.name}`);
-          }
-        } catch (error2) {
-          console.log("Could not fetch job role details, using ID:", jobRoleId);
-          setUserJobRoleName(`Role (${jobRoleId.substring(0, 8)}...)`);
-        }
-      }
-    } else if (jobRoleId) {
-      // If it's not an ID, maybe it's already a name
-      setUserJobRoleName(jobRoleId);
-    }
+    addDebugLog("No company ID found in any source", { user, companyDetails });
+    return null;
   };
 
-  // ✅ SIMPLE FETCH: Get all companies, departments, job roles
-  const fetchAllMasterData = async () => {
-    console.log("📊 Fetching all master data...");
-    
-    // Fetch companies
-    try {
-      setCompaniesLoading(true);
-      const companiesRes = await axios.get('/api/companies', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (Array.isArray(companiesRes.data) || Array.isArray(companiesRes.data?.companies)) {
-        const companiesList = Array.isArray(companiesRes.data) ? companiesRes.data : companiesRes.data.companies;
-        setCompanies(companiesList);
-        console.log(`✅ Loaded ${companiesList.length} companies`);
-        
-        // Find current company
-        const companyId = user?.company || companyDetails?._id;
-        if (companyId) {
-          const currentCompany = companiesList.find(c => c._id === companyId || c.id === companyId);
-          if (currentCompany?.companyName) {
-            setUserCompanyName(currentCompany.companyName);
-          }
-        }
+  // ✅ FIXED: Resolve User Job Role Function (from your original code)
+  const resolveUserJobRole = (roles) => {
+    // ✅ FIX 1: Check if roles is undefined/null/empty first
+    if (!roles || roles.length === 0) {
+      addDebugLog("Roles array is empty or undefined");
+      
+      // Check user object directly for role information
+      if (!user) {
+        return "Employee";
       }
-    } catch (error) {
-      console.log("Could not fetch companies:", error.message);
-    } finally {
-      setCompaniesLoading(false);
+      
+      if (user?.roleName) {
+        return user.roleName;
+      }
+      if (user?.jobRoleName) {
+        return user.jobRoleName;
+      }
+      if (user?.role) {
+        return user.role;
+      }
+      
+      return "Employee";
     }
     
-    // Fetch departments
-    try {
-      setDepartmentsLoading(true);
-      const deptRes = await axios.get('/api/departments', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (Array.isArray(deptRes.data) || Array.isArray(deptRes.data?.departments)) {
-        const deptList = Array.isArray(deptRes.data) ? deptRes.data : deptRes.data.departments;
-        setDepartments(deptList);
-        console.log(`✅ Loaded ${deptList.length} departments`);
-        
-        // Find user's department
-        const deptId = user?.department;
-        if (deptId) {
-          const userDept = deptList.find(d => d._id === deptId || d.id === deptId);
-          if (userDept?.departmentName || userDept?.name) {
-            setUserDepartmentName(userDept.departmentName || userDept.name);
-          }
-        }
-      }
-    } catch (error) {
-      console.log("Could not fetch departments:", error.message);
-      // Try alternative endpoint
-      try {
-        const deptRes2 = await axios.get('/departments', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (Array.isArray(deptRes2.data)) {
-          setDepartments(deptRes2.data);
-          console.log(`✅ Loaded ${deptRes2.data.length} departments from alt endpoint`);
-        }
-      } catch (error2) {
-        console.log("Alternative endpoint also failed");
-      }
-    } finally {
-      setDepartmentsLoading(false);
+    // ✅ FIX 2: Check user object properly
+    if (!user) {
+      addDebugLog("User object is null/undefined");
+      return "Employee";
     }
     
-    // Fetch job roles
-    try {
-      setJobRolesLoading(true);
-      const rolesRes = await axios.get('/api/job-roles', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (Array.isArray(rolesRes.data) || Array.isArray(rolesRes.data?.jobRoles)) {
-        const rolesList = Array.isArray(rolesRes.data) ? rolesRes.data : rolesRes.data.jobRoles;
-        setJobRoles(rolesList);
-        console.log(`✅ Loaded ${rolesList.length} job roles`);
+    // ✅ FIX 3: Check user.jobRole properly
+    if (!user?.jobRole && !user?.role && !user?.roleId) {
+      addDebugLog("User has no jobRole, role, or roleId property");
+      
+      // Try to get from roleName or jobRoleName
+      if (user?.roleName) {
+        return user.roleName;
+      }
+      if (user?.jobRoleName) {
+        return user.jobRoleName;
+      }
+      
+      return "Employee";
+    }
+    
+    // ✅ FIX 4: Use the role ID from user
+    const roleId = user.jobRole || user.role || user.roleId;
+    addDebugLog(`Looking for role with ID: ${roleId} in ${roles.length} roles`);
+    
+    // ✅ FIX 5: Find the role with proper string comparison
+    const role = roles.find(
+      r => {
+        // Try multiple ID fields
+        const match = String(r._id) === String(roleId) || 
+                     String(r.id) === String(roleId) ||
+                     String(r.roleId) === String(roleId) ||
+                     String(r.roleNumber) === String(roleId) ||
+                     r.roleName?.toLowerCase() === String(roleId).toLowerCase();
         
-        // Find user's job role
-        const roleId = user?.jobRole || user?.role;
-        if (roleId) {
-          const userRole = rolesList.find(r => r._id === roleId || r.id === roleId);
-          if (userRole?.roleName || userRole?.name) {
-            setUserJobRoleName(userRole.roleName || userRole.name);
-          }
+        if (match) {
+          addDebugLog(`Role match found:`, {
+            roleId: r._id,
+            roleName: r.roleName,
+            userRoleId: roleId
+          });
         }
+        return match;
       }
-    } catch (error) {
-      console.log("Could not fetch job roles:", error.message);
-      // Try alternative endpoint
-      try {
-        const rolesRes2 = await axios.get('/job-roles', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (Array.isArray(rolesRes2.data)) {
-          setJobRoles(rolesRes2.data);
-          console.log(`✅ Loaded ${rolesRes2.data.length} job roles from alt endpoint`);
+    );
+
+    // ✅ FIX 6: Return role name or fallback
+    if (role) {
+      return role.roleName || "Employee";
+    }
+    
+    // Additional fallback: check if user has roleName directly
+    if (user?.roleName) {
+      return user.roleName;
+    }
+    
+    // Default fallback
+    addDebugLog("No matching role found, returning default 'Employee'");
+    return "Employee";
+  };
+
+  // ✅ FIXED: Resolve User Department Function (from your original code)
+  const resolveUserDepartment = (depts) => {
+    // ✅ FIX 1: Check if depts is undefined/null/empty first
+    if (!depts || depts.length === 0) {
+      addDebugLog("Departments array is empty or undefined");
+      
+      // Check user object directly for department information
+      if (!user) {
+        return "General";
+      }
+      
+      if (user?.departmentName) {
+        return user.departmentName;
+      }
+      if (user?.dept) {
+        return user.dept;
+      }
+      
+      return "General";
+    }
+    
+    // ✅ FIX 2: Check user object properly
+    if (!user) {
+      addDebugLog("User object is null/undefined");
+      return "General";
+    }
+    
+    // ✅ FIX 3: Check user.department properly
+    if (!user?.department && !user?.dept && !user?.departmentId) {
+      addDebugLog("User has no department, dept, or departmentId property");
+      
+      // Try to get from departmentName
+      if (user?.departmentName) {
+        return user.departmentName;
+      }
+      
+      return "General";
+    }
+    
+    // ✅ FIX 4: Use the department ID from user
+    const deptId = user.department || user.dept || user.departmentId;
+    addDebugLog(`Looking for department with ID: ${deptId} in ${depts.length} departments`);
+    
+    // ✅ FIX 5: Find the department with proper string comparison
+    const dept = depts.find(
+      d => {
+        // Try multiple ID fields
+        const match = String(d._id) === String(deptId) || 
+                     String(d.id) === String(deptId) ||
+                     String(d.departmentId) === String(deptId) ||
+                     String(d.departmentCode) === String(deptId) ||
+                     d.departmentName?.toLowerCase() === String(deptId).toLowerCase();
+        
+        if (match) {
+          addDebugLog(`Department match found:`, {
+            deptId: d._id,
+            deptName: d.departmentName,
+            userDeptId: deptId
+          });
         }
-      } catch (error2) {
-        console.log("Alternative endpoint also failed");
+        return match;
       }
+    );
+
+    // ✅ FIX 6: Return department name or fallback
+    if (dept) {
+      return dept.departmentName || "General";
+    }
+    
+    // Additional fallback: check if user has departmentName directly
+    if (user?.departmentName) {
+      return user.departmentName;
+    }
+    
+    // Default fallback
+    addDebugLog("No matching department found, returning default 'General'");
+    return "General";
+  };
+
+  // ✅ UPDATED: Fetch Job Roles Function
+  const fetchJobRoles = async () => {
+    const companyId = getCompanyId();
+    
+    if (!companyId) {
+      addDebugLog("No company ID available for job roles");
+      setUserJobRoleName("Employee");
+      return [];
+    }
+    
+    setJobRolesLoading(true);
+    addDebugLog(`Starting job roles fetch for company: ${companyId}`);
+    
+    try {
+      const res = await axios.get(`/job-roles?company=${companyId}`, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      addDebugLog("Job roles API response:", res.data);
+      
+      // Handle different response structures
+      let roles = [];
+      if (Array.isArray(res.data)) {
+        roles = res.data;
+      } else if (Array.isArray(res.data?.data)) {
+        roles = res.data.data;
+      } else if (Array.isArray(res.data?.jobRoles)) {
+        roles = res.data.jobRoles;
+      } else if (Array.isArray(res.data?.roles)) {
+        roles = res.data.roles;
+      }
+      
+      // Ensure roles is an array
+      if (!Array.isArray(roles)) {
+        roles = [];
+      }
+      
+      addDebugLog(`Found ${roles.length} job roles`);
+      
+      // Set job roles
+      setJobRoles(roles);
+      
+      // ✅ Use the fixed resolveUserJobRole function
+      const roleName = resolveUserJobRole(roles);
+      setUserJobRoleName(roleName);
+      
+      addDebugLog(`User job role resolved to: ${roleName}`);
+      
+      return roles;
+      
+    } catch (err) {
+      console.error("Job role fetch failed", err);
+      addDebugLog("Job role fetch failed", err.response?.data || err.message);
+      
+      // ✅ Use the fixed resolveUserJobRole with empty array as fallback
+      const roleName = resolveUserJobRole([]);
+      setUserJobRoleName(roleName);
+      
+      setNotification({
+        message: "Could not load job roles",
+        severity: "warning",
+      });
+      
+      return [];
     } finally {
       setJobRolesLoading(false);
     }
   };
 
-  // ✅ SMART DISPLAY FUNCTION: Show names instead of IDs
-  const getDisplayName = (id, type = 'department') => {
-    if (!id) return 'N/A';
+  // ✅ UPDATED: Fetch Departments Function
+  const fetchDepartments = async () => {
+    const companyId = getCompanyId();
     
-    // If ID is short or looks like a name, return as is
-    if (id.length < 10 || id.includes(' ') || !id.includes('6980')) {
-      return id.charAt(0).toUpperCase() + id.slice(1).toLowerCase();
+    if (!companyId) {
+      addDebugLog("No company ID available for departments");
+      setUserDepartmentName("General");
+      return [];
     }
     
-    // Try to find in loaded data
-    let foundItem = null;
+    setDepartmentsLoading(true);
+    addDebugLog(`Starting departments fetch for company: ${companyId}`);
     
-    switch(type) {
-      case 'department':
-        foundItem = departments.find(d => d._id === id || d.id === id);
-        if (foundItem) return foundItem.departmentName || foundItem.name || `Dept (${id.substring(0, 8)}...)`;
-        break;
-        
-      case 'company':
-        foundItem = companies.find(c => c._id === id || c.id === id);
-        if (foundItem) return foundItem.companyName || foundItem.name || `Co (${id.substring(0, 8)}...)`;
-        break;
-        
-      case 'jobRole':
-        foundItem = jobRoles.find(r => r._id === id || r.id === id);
-        if (foundItem) return foundItem.roleName || foundItem.name || `Role (${id.substring(0, 8)}...)`;
-        break;
+    try {
+      const res = await axios.get(`/departments?company=${companyId}`, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      addDebugLog("Departments API response:", res.data);
+      
+      // Handle different response structures
+      let depts = [];
+      if (Array.isArray(res.data)) {
+        depts = res.data;
+      } else if (Array.isArray(res.data?.data)) {
+        depts = res.data.data;
+      } else if (Array.isArray(res.data?.departments)) {
+        depts = res.data.departments;
+      } else if (Array.isArray(res.data?.departmentList)) {
+        depts = res.data.departmentList;
+      }
+      
+      // Ensure depts is an array
+      if (!Array.isArray(depts)) {
+        depts = [];
+      }
+      
+      addDebugLog(`Found ${depts.length} departments`);
+      
+      // Set departments
+      setDepartments(depts);
+      
+      // ✅ Use the fixed resolveUserDepartment function
+      const deptName = resolveUserDepartment(depts);
+      setUserDepartmentName(deptName);
+      
+      addDebugLog(`User department resolved to: ${deptName}`);
+      
+      return depts;
+      
+    } catch (err) {
+      console.error("Department fetch failed", err);
+      addDebugLog("Department fetch failed", err.response?.data || err.message);
+      
+      // ✅ Use the fixed resolveUserDepartment with empty array as fallback
+      const deptName = resolveUserDepartment([]);
+      setUserDepartmentName(deptName);
+      
+      setNotification({
+        message: "Could not load departments",
+        severity: "warning",
+      });
+      
+      return [];
+    } finally {
+      setDepartmentsLoading(false);
     }
-    
-    // If not found, return truncated ID
-    return `${type} (${id.substring(0, 8)}...)`;
   };
 
-  // ✅ FALLBACK: Check localStorage for names
-  const checkLocalStorageForNames = () => {
-    console.log("🔍 Checking localStorage for names...");
+  // ✅ UPDATED: Load User Info Function
+  const loadUserInfo = async () => {
+    addDebugLog("=== Starting user info load ===");
+    addDebugLog("User object:", user);
+    addDebugLog("Company details:", companyDetails);
     
-    // Check if we have company name
-    if (companyDetails?.companyName && !companyDetails.companyName.includes('...')) {
-      setUserCompanyName(companyDetails.companyName);
-    } else {
-      // Try to get from user object
-      const userCompanyName = user?.companyName || user?.companyDetails?.companyName;
-      if (userCompanyName) {
-        setUserCompanyName(userCompanyName);
-      }
-    }
-    
-    // Check for department name in user object
-    if (user?.departmentName) {
-      setUserDepartmentName(user.departmentName);
-    } else if (user?.department && user.department.length < 20) {
-      // If department field is short, it might be a name already
-      setUserDepartmentName(user.department);
-    }
-    
-    // Check for job role name in user object
-    if (user?.jobRoleName || user?.roleName) {
-      setUserJobRoleName(user.jobRoleName || user.roleName);
-    } else if (user?.jobRole && user.jobRole.length < 20) {
-      // If jobRole field is short, it might be a name already
-      setUserJobRoleName(user.jobRole);
-    } else if (user?.role && user.role.length < 20) {
-      setUserJobRoleName(user.role);
+    try {
+      // Run both fetches in parallel
+      await Promise.all([
+        fetchJobRoles(),
+        fetchDepartments()
+      ]);
+      
+      addDebugLog("=== User info load complete ===");
+      addDebugLog(`Final Job Role: ${userJobRoleName}`);
+      addDebugLog(`Final Department: ${userDepartmentName}`);
+      
+    } catch (error) {
+      addDebugLog("Error loading user info:", error);
+      setNotification({
+        message: "Failed to load user information",
+        severity: "error",
+      });
     }
   };
 
@@ -392,10 +486,12 @@ const MyLeaves = () => {
     else setLoading(true);
 
     try {
+      addDebugLog("Fetching leaves data");
       const res = await axios.get("/leaves/status");
       const list = res.data.leaves || [];
       setLeaves(list);
       calculateStats(list);
+      addDebugLog(`Fetched ${list.length} leaves`);
       
       if (showRefresh) {
         setNotification({
@@ -404,7 +500,7 @@ const MyLeaves = () => {
         });
       }
     } catch (error) {
-      console.error("Error fetching leaves:", error);
+      addDebugLog("Error fetching leaves:", error);
       setNotification({
         message: "Failed to fetch leaves",
         severity: "error",
@@ -423,25 +519,17 @@ const MyLeaves = () => {
   };
 
   useEffect(() => {
-    const loadAllData = async () => {
-      console.log("🚀 Starting data load...");
+    const loadData = async () => {
+      addDebugLog("=== Initial data load started ===");
+      // First load user info
+      await loadUserInfo();
       
-      // 1. First check localStorage
-      checkLocalStorageForNames();
-      
-      // 2. Try direct ID lookup
-      await extractAndFetchDetails();
-      
-      // 3. Fetch all master data in parallel
-      await fetchAllMasterData();
-      
-      // 4. Fetch leaves
+      // Then fetch leaves
       await fetchLeaves();
-      
-      console.log("✅ All data loaded");
+      addDebugLog("=== Initial data load complete ===");
     };
     
-    loadAllData();
+    loadData();
   }, [fetchLeaves]);
 
   const filteredLeaves = leaves.filter((l) => {
@@ -529,15 +617,11 @@ const MyLeaves = () => {
     setHistoryDialog({ open: false, title: "", items: [] });
   };
 
-  // Refresh all data
-  const refreshAllData = async () => {
-    setRefreshing(true);
-    await Promise.all([
-      extractAndFetchDetails(),
-      fetchAllMasterData(),
-      fetchLeaves(true)
-    ]);
-    setRefreshing(false);
+  // Force refresh user info
+  const forceRefreshUserInfo = async () => {
+    addDebugLog("Manual refresh triggered");
+    await loadUserInfo();
+    await fetchLeaves(true);
   };
 
   if (loading && !refreshing) {
@@ -551,7 +635,7 @@ const MyLeaves = () => {
             Loading your leave records...
           </h2>
           <p className="MyLeaves-loading-subtext">
-            Fetching: Company, Department, and Job Role information
+            Fetching job roles and department information
           </p>
         </div>
       </div>
@@ -569,44 +653,38 @@ const MyLeaves = () => {
               Manage and track all your leave requests
             </p>
             
-            {/* User Info Display - WITH MULTIPLE SOURCES */}
+            {/* User Info Display - ALWAYS SHOW */}
             <div className="MyLeaves-user-info">
               <div className="MyLeaves-user-info-tags">
                 <span className="MyLeaves-user-tag">
                   <FiUser size={12} />
                   {user?.name || 'User'}
                 </span>
-                <span className="MyLeaves-user-tag MyLeaves-tag-role">
+                <span className="MyLeaves-user-tag">
                   <FiBriefcase size={12} />
                   {userJobRoleName}
-                  {jobRolesLoading && <span className="MyLeaves-loading-dot"> ...</span>}
+                  {jobRolesLoading && <span className="MyLeaves-loading-dot">...</span>}
                 </span>
-                <span className="MyLeaves-user-tag MyLeaves-tag-dept">
+                <span className="MyLeaves-user-tag">
                   <FiUsers size={12} />
                   {userDepartmentName}
-                  {departmentsLoading && <span className="MyLeaves-loading-dot"> ...</span>}
+                  {departmentsLoading && <span className="MyLeaves-loading-dot">...</span>}
                 </span>
-                <span className="MyLeaves-user-tag MyLeaves-tag-company">
+                <span className="MyLeaves-user-tag">
                   <FiBriefcase size={12} />
-                  {userCompanyName}
-                  {companiesLoading && <span className="MyLeaves-loading-dot"> ...</span>}
+                  {companyDetails?.companyName || 'Company'}
                 </span>
               </div>
               
-              {/* Status indicator */}
-              <div className="MyLeaves-status-indicator">
-                {jobRolesLoading || departmentsLoading || companiesLoading ? (
-                  <span className="MyLeaves-status-loading">
-                    <FiRefreshCw className="MyLeaves-spin" size={12} />
-                    Loading details...
-                  </span>
-                ) : (
-                  <span className="MyLeaves-status-ready">
-                    <FiCheckCircle size={12} />
-                    Details loaded
-                  </span>
-                )}
-              </div>
+              {/* Debug Button */}
+              <button 
+                className="MyLeaves-debug-button"
+                onClick={() => setShowDebug(!showDebug)}
+                title="Toggle debug info"
+              >
+                <FiAlertTriangle size={12} />
+                Debug
+              </button>
             </div>
           </div>
 
@@ -624,8 +702,8 @@ const MyLeaves = () => {
 
             <button
               className="MyLeaves-icon-button"
-              onClick={refreshAllData}
-              disabled={refreshing || jobRolesLoading || departmentsLoading || companiesLoading}
+              onClick={forceRefreshUserInfo}
+              disabled={refreshing || jobRolesLoading || departmentsLoading}
               title="Refresh all data"
             >
               <FiRefreshCw className={refreshing ? "MyLeaves-spin" : ""} />
@@ -654,6 +732,47 @@ const MyLeaves = () => {
           </div>
         )}
       </div>
+
+      {/* Debug Panel */}
+      {showDebug && (
+        <div className="MyLeaves-debug-panel">
+          <div className="MyLeaves-debug-header">
+            <h3>Debug Information</h3>
+            <button onClick={() => setDebugInfo([])}>Clear</button>
+            <button onClick={() => setShowDebug(false)}>Hide</button>
+          </div>
+          <div className="MyLeaves-debug-content">
+            <div className="MyLeaves-debug-section">
+              <h4>User Object:</h4>
+              <pre>{JSON.stringify(user, null, 2)}</pre>
+            </div>
+            <div className="MyLeaves-debug-section">
+              <h4>Company Details:</h4>
+              <pre>{JSON.stringify(companyDetails, null, 2)}</pre>
+            </div>
+            <div className="MyLeaves-debug-section">
+              <h4>Job Roles ({jobRoles.length}):</h4>
+              <pre>{JSON.stringify(jobRoles, null, 2)}</pre>
+            </div>
+            <div className="MyLeaves-debug-section">
+              <h4>Departments ({departments.length}):</h4>
+              <pre>{JSON.stringify(departments, null, 2)}</pre>
+            </div>
+            <div className="MyLeaves-debug-section">
+              <h4>Logs (latest 10):</h4>
+              <div className="MyLeaves-debug-logs">
+                {debugInfo.map((log, index) => (
+                  <div key={index} className="MyLeaves-debug-log">
+                    <span className="MyLeaves-debug-time">[{log.timestamp}]</span>
+                    <span className="MyLeaves-debug-message">{log.message}</span>
+                    {log.data && <span className="MyLeaves-debug-data">{log.data}</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="MyLeaves-stats-container">
@@ -703,102 +822,74 @@ const MyLeaves = () => {
           </div>
         </div>
         
-        {/* Information Card with Details */}
+        {/* Job Role and Department Info Card - SIMPLIFIED */}
         <div className="MyLeaves-info-card">
           <div className="MyLeaves-info-header">
             <h3>
               <FiInfo className="MyLeaves-info-icon" />
-              Employee Details
+              Employee Information
             </h3>
-            <button 
-              className="MyLeaves-info-refresh-btn"
-              onClick={refreshAllData}
-              disabled={jobRolesLoading || departmentsLoading || companiesLoading}
-              title="Refresh details"
-            >
-              <FiRefreshCw size={12} />
-            </button>
+            <div className="MyLeaves-info-status">
+              {jobRolesLoading || departmentsLoading ? (
+                <span className="MyLeaves-loading-small">Loading...</span>
+              ) : (
+                <>
+                  <span className="MyLeaves-status-dot MyLeaves-status-success"></span>
+                  <span>Loaded</span>
+                </>
+              )}
+            </div>
           </div>
-          
           <div className="MyLeaves-info-content">
             <div className="MyLeaves-info-row">
               <div className="MyLeaves-info-item">
-                <div className="MyLeaves-info-label">
-                  <FiBriefcase size={12} />
-                  <span>Job Role:</span>
-                </div>
-                <div className="MyLeaves-info-value">
+                <strong>Job Role:</strong>
+                <span className="MyLeaves-info-value">
                   {userJobRoleName}
-                  {user?.jobRole && user.jobRole.length > 20 && (
-                    <span className="MyLeaves-id-hint" title={`ID: ${user.jobRole}`}>
-                      (ID based)
-                    </span>
-                  )}
-                </div>
+                  {jobRolesLoading && <span className="MyLeaves-loading-tiny"> (updating...)</span>}
+                </span>
               </div>
-              
               <div className="MyLeaves-info-item">
-                <div className="MyLeaves-info-label">
-                  <FiUsers size={12} />
-                  <span>Department:</span>
-                </div>
-                <div className="MyLeaves-info-value">
+                <strong>Department:</strong>
+                <span className="MyLeaves-info-value">
                   {userDepartmentName}
-                  {user?.department && user.department.length > 20 && (
-                    <span className="MyLeaves-id-hint" title={`ID: ${user.department}`}>
-                      (ID based)
-                    </span>
-                  )}
-                </div>
+                  {departmentsLoading && <span className="MyLeaves-loading-tiny"> (updating...)</span>}
+                </span>
               </div>
             </div>
-            
             <div className="MyLeaves-info-row">
               <div className="MyLeaves-info-item">
-                <div className="MyLeaves-info-label">
-                  <FiBriefcase size={12} />
-                  <span>Company:</span>
-                </div>
-                <div className="MyLeaves-info-value">
-                  {userCompanyName}
-                  {companyDetails?._id && companyDetails._id.length > 20 && (
-                    <span className="MyLeaves-id-hint" title={`ID: ${companyDetails._id}`}>
-                      (ID: {companyDetails._id.substring(0, 8)}...)
-                    </span>
-                  )}
-                </div>
+                <strong>Employee ID:</strong>
+                <span className="MyLeaves-info-value">
+                  {user?.employeeId || user?.empId || user?.id?.substring(0, 8) || 'N/A'}
+                </span>
               </div>
-              
               <div className="MyLeaves-info-item">
-                <div className="MyLeaves-info-label">
-                  <FiUser size={12} />
-                  <span>Employee ID:</span>
-                </div>
-                <div className="MyLeaves-info-value">
-                  {user?.employeeId || user?.empId || user?._id?.substring(0, 8) || 'N/A'}
-                </div>
+                <strong>Company:</strong>
+                <span className="MyLeaves-info-value">
+                  {companyDetails?.companyName || 'N/A'}
+                </span>
               </div>
-            </div>
-            
-            {/* Data Source Info */}
-            <div className="MyLeaves-data-source">
-              <FiInfo size={10} />
-              <span>
-                {jobRoles.length > 0 && departments.length > 0 && companies.length > 0 
-                  ? `Data: ${jobRoles.length} roles, ${departments.length} depts, ${companies.length} companies loaded`
-                  : 'Fetching detailed information...'}
-              </span>
             </div>
           </div>
-          
           <div className="MyLeaves-info-footer">
             <button 
-              className="MyLeaves-force-fetch-btn"
-              onClick={extractAndFetchDetails}
-              title="Try to fetch names from IDs"
+              className="MyLeaves-info-refresh"
+              onClick={loadUserInfo}
+              disabled={jobRolesLoading || departmentsLoading}
             >
-              <FiCornerUpLeft size={12} />
-              Fetch names from IDs
+              <FiRefreshCw size={12} />
+              Refresh Info
+            </button>
+            <button 
+              className="MyLeaves-info-force"
+              onClick={() => {
+                setUserJobRoleName("Employee");
+                setUserDepartmentName("General");
+                loadUserInfo();
+              }}
+            >
+              Reset & Reload
             </button>
           </div>
         </div>
@@ -857,30 +948,149 @@ const MyLeaves = () => {
               </button>
             </div>
 
-            {/* Results Count with User Info */}
-            <div className="MyLeaves-results-header">
-              <h3 className="MyLeaves-results-count">
-                Showing {filteredLeaves.length} of {leaves.length} records
-              </h3>
-              <div className="MyLeaves-user-context">
-                <span className="MyLeaves-context-item">
-                  <FiBriefcase size={12} />
-                  {userJobRoleName}
-                </span>
-                <span className="MyLeaves-context-item">
-                  <FiUsers size={12} />
-                  {userDepartmentName}
-                </span>
-                <span className="MyLeaves-context-item">
-                  <FiBriefcase size={12} />
-                  {userCompanyName}
-                </span>
-              </div>
-            </div>
+            {/* Results Count */}
+            <h3 className="MyLeaves-results-count">
+              Showing {filteredLeaves.length} of {leaves.length} records
+              <span className="MyLeaves-user-role-badge">
+                • Role: {userJobRoleName} • Dept: {userDepartmentName}
+              </span>
+            </h3>
 
-            {/* Table/Mobile View - YOUR EXISTING CODE HERE */}
-            {/* ... */}
-            
+            {/* Main Content */}
+            <div className="MyLeaves-requests-content">
+              {filteredLeaves.length === 0 ? (
+                <div className="MyLeaves-empty-state">
+                  <FiAlertCircle className="MyLeaves-empty-icon" />
+                  <h3>No leaves found</h3>
+                  <p>
+                    {searchTerm || statusFilter !== "ALL" 
+                      ? "Try adjusting your search or filter criteria" 
+                      : "You haven't applied for any leaves yet"}
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {/* Desktop Table View */}
+                  {!isMobile && (
+                    <div className="MyLeaves-table-container">
+                      <table className="MyLeaves-table">
+                        <thead>
+                          <tr>
+                            <th>Type</th>
+                            <th>Period</th>
+                            <th>Days</th>
+                            <th>Reason</th>
+                            <th>Status</th>
+                            <th>Applied On</th>
+                            <th>History</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredLeaves.map((leave) => (
+                            <tr key={leave._id || leave.id}>
+                              <td>
+                                <span className={`MyLeaves-leave-type MyLeaves-type-${leave.type?.toLowerCase()}`}>
+                                  {leave.type}
+                                </span>
+                              </td>
+                              <td>
+                                <div className="MyLeaves-date-range">
+                                  <FiCalendar size={12} />
+                                  {formatDate(leave.startDate)} - {formatDate(leave.endDate)}
+                                </div>
+                              </td>
+                              <td>
+                                <span className="MyLeaves-days-badge">
+                                  {leave.days || calculateDays(leave.startDate, leave.endDate)} day(s)
+                                </span>
+                              </td>
+                              <td className="MyLeaves-reason-cell">
+                                {leave.reason}
+                              </td>
+                              <td>
+                                <span className={`MyLeaves-status-badge MyLeaves-status-${leave.status?.toLowerCase()}`}>
+                                  {leave.status === "Approved" && <FiCheckCircle size={12} />}
+                                  {leave.status === "Pending" && <FiClock size={12} />}
+                                  {leave.status === "Rejected" && <FiXCircle size={12} />}
+                                  {leave.status}
+                                </span>
+                              </td>
+                              <td>
+                                {formatDate(leave.createdAt || leave.appliedOn)}
+                              </td>
+                              <td>
+                                <button
+                                  className="MyLeaves-history-button"
+                                  onClick={() => openHistoryModal(leave)}
+                                  disabled={!leave.history || leave.history.length === 0}
+                                >
+                                  <FiList size={14} />
+                                  View History
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {/* Mobile Card View */}
+                  {isMobile && (
+                    <div className="MyLeaves-mobile-cards">
+                      {filteredLeaves.map((leave) => (
+                        <div key={leave._id || leave.id} className="MyLeaves-mobile-card">
+                          <div className="MyLeaves-mobile-card-header">
+                            <div className="MyLeaves-mobile-card-title">
+                              <span className={`MyLeaves-leave-type MyLeaves-type-${leave.type?.toLowerCase()}`}>
+                                {leave.type}
+                              </span>
+                              <span className={`MyLeaves-status-badge MyLeaves-status-${leave.status?.toLowerCase()}`}>
+                                {leave.status}
+                              </span>
+                            </div>
+                            <div className="MyLeaves-mobile-card-dates">
+                              <FiCalendar size={12} />
+                              {formatDate(leave.startDate)} - {formatDate(leave.endDate)}
+                            </div>
+                          </div>
+                          
+                          <div className="MyLeaves-mobile-card-content">
+                            <div className="MyLeaves-mobile-card-row">
+                              <span className="MyLeaves-mobile-label">Reason:</span>
+                              <span className="MyLeaves-mobile-value">{leave.reason}</span>
+                            </div>
+                            <div className="MyLeaves-mobile-card-row">
+                              <span className="MyLeaves-mobile-label">Days:</span>
+                              <span className="MyLeaves-mobile-value">
+                                {leave.days || calculateDays(leave.startDate, leave.endDate)} day(s)
+                              </span>
+                            </div>
+                            <div className="MyLeaves-mobile-card-row">
+                              <span className="MyLeaves-mobile-label">Applied:</span>
+                              <span className="MyLeaves-mobile-value">
+                                {formatDate(leave.createdAt || leave.appliedOn)}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <div className="MyLeaves-mobile-card-actions">
+                            <button
+                              className="MyLeaves-history-button"
+                              onClick={() => openHistoryModal(leave)}
+                              disabled={!leave.history || leave.history.length === 0}
+                            >
+                              <FiList size={14} />
+                              History
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         )}
 
@@ -893,81 +1103,193 @@ const MyLeaves = () => {
                 Fill in the details to submit a leave request
               </p>
               
-              {/* Applicant Info with Smart Display */}
+              {/* Applicant Info */}
               <div className="MyLeaves-applicant-info">
                 <div className="MyLeaves-applicant-card">
                   <div className="MyLeaves-applicant-header">
                     <FiUser className="MyLeaves-applicant-icon" />
                     <h4>Applicant Information</h4>
-                    <span className="MyLeaves-applicant-status">
-                      {jobRolesLoading || departmentsLoading ? 'Loading...' : 'Ready'}
-                    </span>
                   </div>
-                  
-                  <div className="MyLeaves-applicant-grid">
-                    <div className="MyLeaves-applicant-field">
-                      <label>Full Name</label>
-                      <div className="MyLeaves-applicant-value">{user?.name || 'N/A'}</div>
+                  <div className="MyLeaves-applicant-details">
+                    <div className="MyLeaves-applicant-detail">
+                      <span className="MyLeaves-applicant-label">Name:</span>
+                      <span className="MyLeaves-applicant-value">{user?.name || 'N/A'}</span>
                     </div>
-                    
-                    <div className="MyLeaves-applicant-field">
-                      <label>Job Role</label>
-                      <div className="MyLeaves-applicant-value">
-                        {userJobRoleName}
-                        {user?.jobRole && user.jobRole.length > 20 && (
-                          <div className="MyLeaves-field-note">
-                            ID: {user.jobRole.substring(0, 12)}...
-                          </div>
-                        )}
-                      </div>
+                    <div className="MyLeaves-applicant-detail">
+                      <span className="MyLeaves-applicant-label">Job Role:</span>
+                      <span className="MyLeaves-applicant-value">{userJobRoleName}</span>
                     </div>
-                    
-                    <div className="MyLeaves-applicant-field">
-                      <label>Department</label>
-                      <div className="MyLeaves-applicant-value">
-                        {userDepartmentName}
-                        {user?.department && user.department.length > 20 && (
-                          <div className="MyLeaves-field-note">
-                            ID: {user.department.substring(0, 12)}...
-                          </div>
-                        )}
-                      </div>
+                    <div className="MyLeaves-applicant-detail">
+                      <span className="MyLeaves-applicant-label">Department:</span>
+                      <span className="MyLeaves-applicant-value">{userDepartmentName}</span>
                     </div>
-                    
-                    <div className="MyLeaves-applicant-field">
-                      <label>Company</label>
-                      <div className="MyLeaves-applicant-value">
-                        {userCompanyName}
-                        {companyDetails?._id && (
-                          <div className="MyLeaves-field-note">
-                            ID: {companyDetails._id.substring(0, 12)}...
-                          </div>
-                        )}
-                      </div>
+                    <div className="MyLeaves-applicant-detail">
+                      <span className="MyLeaves-applicant-label">Employee ID:</span>
+                      <span className="MyLeaves-applicant-value">{user?.employeeId || user?.empId || 'N/A'}</span>
                     </div>
-                  </div>
-                  
-                  <div className="MyLeaves-applicant-footer">
-                    <button 
-                      className="MyLeaves-update-details-btn"
-                      onClick={refreshAllData}
-                    >
-                      <FiRefreshCw size={12} />
-                      Update Details
-                    </button>
                   </div>
                 </div>
               </div>
 
-              {/* Leave Application Form */}
+              {/* Leave Form */}
               <div className="MyLeaves-form">
-                {/* Your existing form code here */}
-                {/* ... */}
+                <div className="MyLeaves-form-group">
+                  <label htmlFor="type">
+                    <FiBriefcase className="MyLeaves-form-icon" />
+                    Leave Type
+                  </label>
+                  <select
+                    id="type"
+                    name="type"
+                    value={form.type}
+                    onChange={handleChange}
+                    className="MyLeaves-form-select"
+                  >
+                    <option value="Casual">Casual Leave</option>
+                    <option value="Sick">Sick Leave</option>
+                    <option value="Earned">Earned Leave</option>
+                    <option value="Maternity">Maternity Leave</option>
+                    <option value="Paternity">Paternity Leave</option>
+                    <option value="Unpaid">Unpaid Leave</option>
+                  </select>
+                </div>
+
+                <div className="MyLeaves-form-row">
+                  <div className="MyLeaves-form-group">
+                    <label htmlFor="startDate">
+                      <FiCalendar className="MyLeaves-form-icon" />
+                      Start Date
+                    </label>
+                    <input
+                      type="date"
+                      id="startDate"
+                      name="startDate"
+                      value={form.startDate}
+                      onChange={handleChange}
+                      className="MyLeaves-form-input"
+                      min={new Date().toISOString().split('T')[0]}
+                    />
+                  </div>
+
+                  <div className="MyLeaves-form-group">
+                    <label htmlFor="endDate">
+                      <FiCalendar className="MyLeaves-form-icon" />
+                      End Date
+                    </label>
+                    <input
+                      type="date"
+                      id="endDate"
+                      name="endDate"
+                      value={form.endDate}
+                      onChange={handleChange}
+                      className="MyLeaves-form-input"
+                      min={form.startDate || new Date().toISOString().split('T')[0]}
+                    />
+                  </div>
+                </div>
+
+                <div className="MyLeaves-form-group">
+                  <label htmlFor="days">
+                    <FiClock className="MyLeaves-form-icon" />
+                    Total Days
+                  </label>
+                  <div className="MyLeaves-days-display">
+                    {calculateDays(form.startDate, form.endDate)} day(s)
+                  </div>
+                </div>
+
+                <div className="MyLeaves-form-group">
+                  <label htmlFor="reason">
+                    <FiInfo className="MyLeaves-form-icon" />
+                    Reason for Leave
+                  </label>
+                  <textarea
+                    id="reason"
+                    name="reason"
+                    value={form.reason}
+                    onChange={handleChange}
+                    className="MyLeaves-form-textarea"
+                    placeholder="Please provide a reason for your leave request..."
+                    rows={4}
+                  />
+                </div>
+
+                <div className="MyLeaves-form-actions">
+                  <button
+                    type="button"
+                    className="MyLeaves-form-cancel"
+                    onClick={() => setTab(0)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="MyLeaves-form-submit"
+                    onClick={applyLeave}
+                    disabled={!form.startDate || !form.endDate || !form.reason.trim()}
+                  >
+                    <FiPlus size={16} />
+                    Apply for Leave
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         )}
       </div>
+
+      {/* History Modal */}
+      {historyDialog.open && (
+        <div className="MyLeaves-modal-overlay">
+          <div className="MyLeaves-modal">
+            <div className="MyLeaves-modal-header">
+              <h2>{historyDialog.title}</h2>
+              <button className="MyLeaves-modal-close" onClick={closeHistoryModal}>
+                <FiX />
+              </button>
+            </div>
+            <div className="MyLeaves-modal-content">
+              {historyDialog.items.length === 0 ? (
+                <div className="MyLeaves-empty-history">
+                  <FiAlertCircle className="MyLeaves-empty-history-icon" />
+                  <h3>No history available</h3>
+                  <p>This leave request doesn't have any history records yet.</p>
+                </div>
+              ) : (
+                <div className="MyLeaves-history-list">
+                  {historyDialog.items.map((item, index) => (
+                    <div key={index} className="MyLeaves-history-item">
+                      <div className="MyLeaves-history-icon">
+                        {item.action === "approved" && <FiCheckCircle className="MyLeaves-history-approved" />}
+                        {item.action === "rejected" && <FiXCircle className="MyLeaves-history-rejected" />}
+                        {item.action === "applied" && <FiClock className="MyLeaves-history-applied" />}
+                      </div>
+                      <div className="MyLeaves-history-content">
+                        <p className="MyLeaves-history-text">
+                          {getHistoryLabel(item)}
+                        </p>
+                        {item.remarks && (
+                          <p className="MyLeaves-history-remarks">
+                            <strong>Remarks:</strong> {item.remarks}
+                          </p>
+                        )}
+                        <p className="MyLeaves-history-time">
+                          {item.at ? new Date(item.at).toLocaleString() : 'Unknown date'}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="MyLeaves-modal-footer">
+              <button className="MyLeaves-modal-close-btn" onClick={closeHistoryModal}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Notification Snackbar */}
       {notification?.message && (
@@ -992,6 +1314,18 @@ const MyLeaves = () => {
           </button>
         </div>
       )}
+      
+      {/* Debug info in console */}
+      <div style={{ display: 'none' }}>
+        Current State: {JSON.stringify({
+          userJobRoleName,
+          userDepartmentName,
+          jobRolesCount: jobRoles.length,
+          departmentsCount: departments.length,
+          user: user ? 'exists' : 'null',
+          companyDetails: companyDetails ? 'exists' : 'null'
+        })}
+      </div>
     </div>
   );
 };

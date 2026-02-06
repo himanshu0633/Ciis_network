@@ -854,7 +854,7 @@ const EmployeeAttendance = () => {
   const fetchAllUsers = async () => {
     try {
       console.log("🔄 Fetching company users...");
-      const res = await axios.get('/users/company-users');
+      const res = await axios.get('/users/department-users');
       
       // FIXED: Handle different response structures
       let usersData = [];
@@ -1653,7 +1653,7 @@ const EmployeeAttendance = () => {
         {/* Action Bar */}
         <div className="header-actions">
           {/* Add New Button */}
-          <button 
+          {/* <button 
             className="btn btn-contained"
             onClick={handleAddRecord}
             disabled={loading}
@@ -1663,18 +1663,18 @@ const EmployeeAttendance = () => {
           </button>
 
           {/* Bulk Edit Button */}
-          <button 
+          {/* <button 
             className={`btn ${bulkEditMode ? 'btn-contained' : 'btn-outlined'}`}
             onClick={() => setBulkEditMode(!bulkEditMode)}
             disabled={loading}
           >
             {bulkEditMode ? 'Exit Bulk Edit' : 'Bulk Edit'}
-          </button>
+          </button> */} 
 
           {/* Export Button */}
           <div className="export-container" ref={exportMenuRef}>
             <button
-              className="export-trigger"
+              className="date-chip"
               onClick={() => setExportMenuOpen(!exportMenuOpen)}
               title="Export Report"
               disabled={loading}

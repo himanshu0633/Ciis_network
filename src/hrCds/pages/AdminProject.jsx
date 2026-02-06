@@ -154,7 +154,7 @@ export const AdminProject = () => {
   // FIXED: Fetch users with proper API response handling
   const fetchUsers = async () => {
     try {
-      const res = await axios.get("/users/company-users");
+      const res = await axios.get("/users/department-users");
       
       // Handle nested API response structure
       if (res.data && res.data.success && res.data.message && res.data.message.users) {

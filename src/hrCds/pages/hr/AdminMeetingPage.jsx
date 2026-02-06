@@ -25,7 +25,7 @@ export default function AdminMeetingPage() {
   // 🟢 Fetch all users - FIXED
   const fetchUsers = async () => {
     try {
-      const res = await axios.get(`${API_URL}/users/company-users`);
+      const res = await axios.get(`${API_URL}/users/department-users`);
       
       // The API response structure is: {success: true, message: {users: [...]}}
       if (res.data && res.data.success && res.data.message && res.data.message.users) {

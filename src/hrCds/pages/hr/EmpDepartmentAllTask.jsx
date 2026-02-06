@@ -231,7 +231,7 @@ const TaskDetails = () => {
       // Try general users endpoint first
       try {
         console.log("🔍 Trying general endpoint...");
-        response = await axios.get('/task/users-with-counts', config);
+        response = await axios.get('/task/department-users-with-counts', config);
       } catch (generalError) {
         console.log("General endpoint failed, trying fallback...");
         try {
@@ -1308,7 +1308,7 @@ const TaskDetails = () => {
         <div className="emp-all-task-header-content">
           <div className="emp-all-task-header-top">
             <div className="emp-all-task-header-title">
-              <h1>📊 Company Employee Task Management</h1>
+              <h1>📊 Department Employee Task Management</h1>
               <p className="emp-all-task-header-subtitle">
                 Comprehensive dashboard with advanced filtering and analytics
               </p>

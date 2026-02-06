@@ -47,7 +47,8 @@ const SuperAdminLogin = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState({});
+
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -87,17 +88,17 @@ const SuperAdminLogin = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post(`${API_URL}/super-admin/login`, form);
-
+      const response = await axios.post(`${API_URL}/super-admin/login`, formData);
+      
       if (response.data.success) {
         // Save super admin data to localStorage
         localStorage.setItem('superAdmin', JSON.stringify(response.data.data));
         localStorage.setItem('token', response.data.token);
 
         toast.success('Login successful! Redirecting...');
-
-        // Redirect to super admin dashboard
-        navigate('/Ciis-network/department');
+        
+        // Redirect to super admin dashboard immediately
+        navigate('/Ciis-network/SuperAdminDashboard');
       } else {
         toast.error(response.data.message || 'Login failed');
       }

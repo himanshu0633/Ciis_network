@@ -109,8 +109,8 @@ const UserDashboard = () => {
       
       let jobRolesData = [];
       const endpoints = [
-        `/job-roles?company=${companyId}`,
-        `/job-roles?company=${companyId}`,
+        `/api/job-roles?company=${companyId}`,
+        `/api/job-roles?company=${companyId}`,
         `/api/job-roles`,
         `/job-roles`
       ];
