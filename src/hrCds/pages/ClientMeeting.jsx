@@ -287,35 +287,7 @@ export default function ClientMeeting() {
                 />
               </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Duration (mins)</label>
-                  <select
-                    name="duration"
-                    value={form.duration}
-                    onChange={handleChange}
-                  >
-                    <option>15</option>
-                    <option>30</option>
-                    <option>45</option>
-                    <option>60</option>
-                    <option>90</option>
-                    <option>120</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label>Follow-up Required</label>
-                  <select
-                    name="followUpRequired"
-                    value={form.followUpRequired}
-                    onChange={handleChange}
-                  >
-                    <option>No</option>
-                    <option>Yes</option>
-                  </select>
-                </div>
-              </div>
+         
 
               <div className="form-group">
                 <label>Agenda / Notes</label>

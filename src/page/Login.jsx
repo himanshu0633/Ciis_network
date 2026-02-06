@@ -238,7 +238,7 @@ const handleSubmit = async (e) => {
 
     toast.success("Login successful!");
 
-    // ✅ Check company code match for debugging
+    
     const storedCompanyCode = res.data.companyDetails?.companyCode;
     const userCompanyCode = userData.companyCode;
     
@@ -250,13 +250,8 @@ const handleSubmit = async (e) => {
       });
     }
 
-    // ✅ Debug: Log localStorage
-    console.log('📊 localStorage after login:');
-    console.log('- token:', localStorage.getItem('token')?.substring(0, 20) + '...');
-    console.log('- user:', JSON.parse(localStorage.getItem('user') || '{}'));
-    console.log('- companyDetails:', JSON.parse(localStorage.getItem('companyDetails') || '{}'));
 
-    // ✅ Decode token to see payload
+    // ✅ Decode token to see payloadu
     try {
       const token = localStorage.getItem('token');
       if (token) {
@@ -268,7 +263,7 @@ const handleSubmit = async (e) => {
     }
 
     // ✅ Redirect logic
-    let redirectPath = '/dashboard'; // Default
+    let redirectPath = '/ciisUser/user-dashboard'; // Default
     
     const userRole = userData.role?.name || userData.role || userData.jobRole;
     console.log('🎭 User role detected:', userRole);
@@ -381,7 +376,7 @@ const handleSubmit = async (e) => {
       setIsAuthenticated(true);
 
       toast.success("Two-factor authentication successful!");
-      navigate('/dashboard');
+      navigate('/ciisUser/user-dashboard');
     } catch (err) {
       toast.error('Invalid two-factor code. Please try again.');
       setTwoFactorCode('');
@@ -390,24 +385,7 @@ const handleSubmit = async (e) => {
     }
   };
 
-  // Add a test login function for debugging
-  const testLogin = async (testEmail, testPassword) => {
-    try {
-      console.log('🧪 Testing login with:', testEmail);
-      
-      const res = await axios.post('/auth/login', {
-        email: testEmail,
-        password: testPassword,
-        companyCode: companyIdentifier
-      });
-      
-      console.log('🧪 Test login response:', res.data);
-      return res.data;
-    } catch (error) {
-      console.error('🧪 Test login error:', error.response?.data);
-      throw error;
-    }
-  };
+
 
   return (
     <Box
@@ -522,20 +500,7 @@ const handleSubmit = async (e) => {
 
                     <Divider sx={{ my: 3 }} />
                     
-                    {/* Debug info - only in development */}
-                    {process.env.NODE_ENV === 'development' && (
-                      <Box sx={{ mt: 2, p: 1, bgcolor: 'warning.light', borderRadius: 1 }}>
-                        <Typography variant="caption" sx={{ display: 'block' }}>
-                          🔍 Debug Info:
-                        </Typography>
-                        <Typography variant="caption" sx={{ display: 'block', fontSize: '0.7rem' }}>
-                          Identifier: {companyIdentifier}
-                        </Typography>
-                        <Typography variant="caption" sx={{ display: 'block', fontSize: '0.7rem' }}>
-                          Path: {window.location.pathname}
-                        </Typography>
-                      </Box>
-                    )}
+                 
 
                     <Typography
                       variant="caption"
@@ -561,32 +526,7 @@ const handleSubmit = async (e) => {
                   position: 'relative'
                 }}
               >
-                {/* Debug button for development */}
-                {process.env.NODE_ENV === 'development' && (
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    color="warning"
-                    sx={{ position: 'absolute', top: 10, right: 10 }}
-                    onClick={() => {
-                      console.log('🔍 Current state:', {
-                        form,
-                        companyIdentifier,
-                        companyDetails,
-                        localStorage: {
-                          token: localStorage.getItem('token')?.substring(0, 20) + '...',
-                          user: JSON.parse(localStorage.getItem('user') || '{}'),
-                          companyDetails: JSON.parse(localStorage.getItem('companyDetails') || '{}')
-                        }
-                      });
-                      
-                      // Test with sample credentials
-                      // testLogin('test@example.com', 'password123');
-                    }}
-                  >
-                    Debug
-                  </Button>
-                )}
+       
 
                 <Box sx={{ textAlign: 'center', mb: 4 }}>
                   <Avatar

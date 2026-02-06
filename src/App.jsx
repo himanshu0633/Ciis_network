@@ -34,7 +34,7 @@ import Alerts from "./hrCds/pages/Alerts";
 import Attendance from "./hrCds/pages/Attendance";
 import MyAssets from "./hrCds/pages/MyAssets";
 import MyLeaves from "./hrCds/pages/MyLeaves";
-import MyPerformance from "./hrCds/pages/MyPerformance";
+
 import MyTaskManagement from "./hrCds/pages/MyTaskManagement";
 import Profile from "./hrCds/pages/Profile";
 import UserDashboard from "./hrCds/pages/UserDashboard";
@@ -42,7 +42,7 @@ import TaskManagement from "./hrCds/pages/TaskManagement";
 import EmployeeMeetingPage from "./hrCds/pages/EmployeeMeetingPage";
 import EmployeeProject from "./hrCds/pages/EmployeeProject";
 import ClientMeeting from "./hrCds/pages/ClientMeeting";
-import Clock from "./hrCds/pages/Clock";
+
 
 // Website Pages
 import Home from "./Pages/Home";
@@ -79,25 +79,24 @@ function App() {
           }
         >
           <Route path="department" element={<Department />} />
-          {/* ✅ Company Login */}
-         
           <Route path="create-user" element={<CreateUser />} />
           <Route path="SuperAdminDashboard" element={<SuperAdminDashboard />} />
           <Route path="JobRoleManagement" element={<JobRoleManagement />} />
         </Route>
-        {/* ✅ CDS ADMIN Routes */}
+
+
+        {/* ✅ CDS USER Routes */}
         <Route
-          path="/cds/admin/*"
+          path="/ciisUser/*"
           element={
             <ThemeContextProvider>
               <ProtectedRoute>
-                <Layout />
+                <Layout2 />
               </ProtectedRoute>
             </ThemeContextProvider>
           }
         >
-
-          <Route path="department" element={<Department />} />
+          
           <Route path="change-password" element={<ChangePassword />} />
           <Route path="emp-details" element={<EmppDetail />} />
           <Route path="emp-leaves" element={<EmppLeave />} />
@@ -107,27 +106,14 @@ function App() {
           <Route path="emp-task-details" element={<TaskDeatils />} />
           <Route path="admin-task-create" element={<AdminTaskCreate />} />
           <Route path="admin-meeting" element={<AdminMeetingPage />} />
-          <Route path="adminp" element={<AdminProject />} />
+          <Route path="adminproject" element={<AdminProject />} />
           <Route path="emp-all-task" element={<EmpAllTask />} />
           <Route path="emp-client" element={<Client />} />
-        </Route>
-
-        {/* ✅ CDS USER Routes */}
-        <Route
-          path="/cds/*"
-          element={
-            <ThemeContextProvider>
-              <ProtectedRoute>
-                <Layout2 />
-              </ProtectedRoute>
-            </ThemeContextProvider>
-          }
-        >
           <Route path="alert" element={<Alerts />} />
           <Route path="attendance" element={<Attendance />} />
           <Route path="my-assets" element={<MyAssets />} />
           <Route path="my-leaves" element={<MyLeaves />} />
-          <Route path="my-performance" element={<MyPerformance />} />
+       
           <Route path="my-task-management" element={<MyTaskManagement />} />
           <Route path="profile" element={<Profile />} />
           <Route path="user-dashboard" element={<UserDashboard />} />
@@ -135,7 +121,7 @@ function App() {
           <Route path="task-management" element={<TaskManagement />} />
           <Route path="employee-meeting" element={<EmployeeMeetingPage />} />
           <Route path="client-meeting" element={<ClientMeeting />} />
-          <Route path="clock" element={<Clock />} />
+         
         </Route>
 
         {/* ✅ Catch-all */}

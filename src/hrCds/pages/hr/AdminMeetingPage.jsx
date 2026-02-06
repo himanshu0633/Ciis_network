@@ -22,26 +22,54 @@ export default function AdminMeetingPage() {
 
   const adminId = localStorage.getItem("userId");
 
-  // 🟢 Fetch all users
+  // 🟢 Fetch all users - FIXED
   const fetchUsers = async () => {
     try {
-      const res = await axios.get(`${API_URL}/users/all-users`);
-      setUsers(res.data || []);
+      const res = await axios.get(`${API_URL}/users/company-users`);
+      
+      // The API response structure is: {success: true, message: {users: [...]}}
+      if (res.data && res.data.success && res.data.message && res.data.message.users) {
+        setUsers(res.data.message.users || []);
+      } else {
+        console.warn("Unexpected API response structure:", res.data);
+        setUsers([]);
+        toast.error("❌ Invalid response format from server");
+      }
     } catch (err) {
       console.error("Error fetching users:", err);
       toast.error("❌ Failed to load users");
+      setUsers([]); // Ensure users is always an array
     }
   };
 
-  // 🟢 Fetch all meetings
+  // 🟢 Fetch all meetings - FIXED
   const fetchMeetings = async () => {
     try {
       setRefreshing(true);
       const res = await axios.get(`${API_URL}/meetings`);
-      setMeetings(res.data || []);
+      
+      // Handle different possible response structures
+      if (Array.isArray(res.data)) {
+        // If response is directly an array
+        setMeetings(res.data);
+      } else if (res.data && Array.isArray(res.data.data)) {
+        // If response is {data: [...]}
+        setMeetings(res.data.data);
+      } else if (res.data && Array.isArray(res.data.meetings)) {
+        // If response is {meetings: [...]}
+        setMeetings(res.data.meetings);
+      } else if (res.data && res.data.success && Array.isArray(res.data.data)) {
+        // If response is {success: true, data: [...]}
+        setMeetings(res.data.data);
+      } else {
+        console.warn("Unexpected meetings API response:", res.data);
+        setMeetings([]);
+        toast.warning("⚠️ Could not load meetings in expected format");
+      }
     } catch (err) {
       console.error("Error fetching meetings:", err);
       toast.error("❌ Failed to fetch meetings");
+      setMeetings([]); // Ensure meetings is always an array
     } finally {
       setRefreshing(false);
     }
@@ -57,6 +85,11 @@ export default function AdminMeetingPage() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  // 🟢 Helper function to get user ID (handles both id and _id fields)
+  const getUserId = (user) => {
+    return user._id || user.id;
+  };
+
   // 🟢 Handle attendee selection
   const handleAttendeeChange = (id) => {
     setForm((prev) => ({
@@ -69,7 +102,7 @@ export default function AdminMeetingPage() {
 
   // 🟢 Select all attendees
   const selectAllAttendees = () => {
-    const allUserIds = users.map(user => user._id);
+    const allUserIds = users.map(user => getUserId(user));
     setForm(prev => ({
       ...prev,
       attendees: prev.attendees.length === allUserIds.length ? [] : allUserIds
@@ -100,6 +133,8 @@ export default function AdminMeetingPage() {
         });
         fetchMeetings();
         setActiveTab("manage");
+      } else {
+        toast.error(res.data.message || "❌ Failed to create meeting");
       }
     } catch (err) {
       console.error(err);
@@ -113,14 +148,14 @@ export default function AdminMeetingPage() {
   const showStatus = async (meetingId) => {
     try {
       const res = await axios.get(`${API_URL}/meetings/view-status/${meetingId}`);
-      if (res.data.length === 0) {
+      if (res.data && res.data.length === 0) {
         toast.info("No attendees found for this meeting");
         return;
       }
 
       setStatusModal({
         open: true,
-        data: res.data,
+        data: res.data || [],
         meetingTitle: meetings.find(m => m._id === meetingId)?.title || "Meeting"
       });
     } catch (err) {
@@ -138,6 +173,8 @@ export default function AdminMeetingPage() {
       if (res.data.success) {
         toast.success("✅ Meeting deleted successfully!");
         fetchMeetings();
+      } else {
+        toast.error(res.data.message || "❌ Failed to delete meeting");
       }
     } catch (err) {
       console.error(err);
@@ -147,6 +184,8 @@ export default function AdminMeetingPage() {
 
   // 🟢 Format date and time
   const formatDateTime = (date, time) => {
+    if (!date) return { date: "N/A", time: "N/A", isPast: false, isToday: false };
+    
     const meetingDate = new Date(date);
     const now = new Date();
     const isToday = meetingDate.toDateString() === now.toDateString();
@@ -158,11 +197,11 @@ export default function AdminMeetingPage() {
         month: 'short', 
         day: 'numeric' 
       }),
-      time: new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', { 
+      time: time ? new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', { 
         hour: 'numeric', 
         minute: '2-digit',
         hour12: true 
-      }),
+      }) : "N/A",
       isPast,
       isToday
     };
@@ -278,38 +317,51 @@ export default function AdminMeetingPage() {
                     type="button" 
                     onClick={selectAllAttendees}
                     style={styles.selectAllBtn}
+                    disabled={!Array.isArray(users) || users.length === 0}
                   >
-                    {form.attendees.length === users.length ? "Deselect All" : "Select All"}
+                    {form.attendees.length === (users?.length || 0) ? "Deselect All" : "Select All"}
                   </button>
                 </div>
                 <div style={styles.attendeesGrid}>
-                  {users.map((u) => (
-                    <label key={u._id} style={styles.checkboxCard}>
-                      <input
-                        type="checkbox"
-                        onChange={() => handleAttendeeChange(u._id)}
-                        checked={form.attendees.includes(u._id)}
-                        style={styles.checkboxInput}
-                      />
-                      <div style={{
-                        ...styles.checkboxContent,
-                        ...(form.attendees.includes(u._id) ? styles.checkboxContentSelected : {})
-                      }}>
-                        <span style={styles.userName}>{u.name}</span>
-                        <span style={styles.userEmail}>{u.email}</span>
-                      </div>
-                    </label>
-                  ))}
+                  {Array.isArray(users) && users.length > 0 ? (
+                    users.map((u) => {
+                      const userId = getUserId(u);
+                      return (
+                        <label key={userId} style={styles.checkboxCard}>
+                          <input
+                            type="checkbox"
+                            onChange={() => handleAttendeeChange(userId)}
+                            checked={form.attendees.includes(userId)}
+                            style={styles.checkboxInput}
+                          />
+                          <div style={{
+                            ...styles.checkboxContent,
+                            ...(form.attendees.includes(userId) ? styles.checkboxContentSelected : {})
+                          }}>
+                            <span style={styles.userName}>{u.name || "Unnamed User"}</span>
+                            <span style={styles.userEmail}>{u.email || "No email"}</span>
+                          </div>
+                        </label>
+                      );
+                    })
+                  ) : (
+                    <div style={styles.noUsersMessage}>
+                      No users available. Please check your connection.
+                    </div>
+                  )}
                 </div>
                 <div style={styles.attendeeCount}>
-                  {form.attendees.length} of {users.length} attendees selected
+                  {form.attendees.length} of {Array.isArray(users) ? users.length : 0} attendees selected
                 </div>
               </div>
 
               <button 
                 type="submit" 
-                disabled={loading} 
-                style={styles.submitButton}
+                disabled={loading || !Array.isArray(users) || users.length === 0} 
+                style={{
+                  ...styles.submitButton,
+                  ...((loading || !Array.isArray(users) || users.length === 0) ? styles.disabledButton : {})
+                }}
               >
                 {loading ? (
                   <>
@@ -346,7 +398,7 @@ export default function AdminMeetingPage() {
             </button>
           </div>
 
-          {meetings.length === 0 ? (
+          {!Array.isArray(meetings) || meetings.length === 0 ? (
             <div style={styles.emptyState}>
               <div style={styles.emptyIcon}>📅</div>
               <h4 style={styles.emptyTitle}>No Meetings Yet</h4>
@@ -363,19 +415,19 @@ export default function AdminMeetingPage() {
               {meetings.map((meeting) => {
                 const datetime = formatDateTime(meeting.date, meeting.time);
                 return (
-                  <div key={meeting._id} style={styles.meetingCard}>
+                  <div key={meeting._id || meeting.id} style={styles.meetingCard}>
                     <div style={styles.cardHeader}>
-                      <h4 style={styles.meetingTitle}>{meeting.title}</h4>
+                      <h4 style={styles.meetingTitle}>{meeting.title || "Untitled Meeting"}</h4>
                       <div style={styles.cardActions}>
                         <button 
-                          onClick={() => showStatus(meeting._id)}
+                          onClick={() => showStatus(meeting._id || meeting.id)}
                           style={styles.statusButton}
                           title="View Status"
                         >
                           👁️
                         </button>
                         <button 
-                          onClick={() => deleteMeeting(meeting._id)}
+                          onClick={() => deleteMeeting(meeting._id || meeting.id)}
                           style={styles.deleteButton}
                           title="Delete Meeting"
                         >
@@ -400,7 +452,7 @@ export default function AdminMeetingPage() {
                         </span>
                       </div>
                       
-                      {meeting.recurring !== "No" && (
+                      {meeting.recurring && meeting.recurring !== "No" && (
                         <div style={styles.detailItem}>
                           <span style={styles.detailIcon}>🔁</span>
                           <span style={styles.detailText}>{meeting.recurring}</span>
@@ -410,7 +462,7 @@ export default function AdminMeetingPage() {
                       <div style={styles.detailItem}>
                         <span style={styles.detailIcon}>👥</span>
                         <span style={styles.detailText}>
-                          {meeting.attendees?.length || 0} attendees
+                          {(Array.isArray(meeting.attendees) ? meeting.attendees.length : 0)} attendees
                         </span>
                       </div>
                     </div>
@@ -420,7 +472,7 @@ export default function AdminMeetingPage() {
                         Created by: {meeting.createdBy?.name || "Admin"}
                       </span>
                       <button 
-                        onClick={() => showStatus(meeting._id)}
+                        onClick={() => showStatus(meeting._id || meeting.id)}
                         style={styles.viewStatusButton}
                       >
                         View Attendance
@@ -448,17 +500,23 @@ export default function AdminMeetingPage() {
               </button>
             </div>
             <div style={styles.modalContent}>
-              {statusModal.data.map((item, index) => (
-                <div key={index} style={styles.statusItem}>
-                  <span style={styles.userName}>{item.userId?.name || "Unknown User"}</span>
-                  <span style={{
-                    ...styles.statusBadge,
-                    ...(item.viewed ? styles.statusSeen : styles.statusPending)
-                  }}>
-                    {item.viewed ? "✅ Seen" : "❌ Not Seen"}
-                  </span>
+              {Array.isArray(statusModal.data) && statusModal.data.length > 0 ? (
+                statusModal.data.map((item, index) => (
+                  <div key={index} style={styles.statusItem}>
+                    <span style={styles.userName}>{item.userId?.name || item.user?.name || "Unknown User"}</span>
+                    <span style={{
+                      ...styles.statusBadge,
+                      ...(item.viewed ? styles.statusSeen : styles.statusPending)
+                    }}>
+                      {item.viewed ? "✅ Seen" : "❌ Not Seen"}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div style={styles.noStatusData}>
+                  No attendance data available
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>
@@ -544,6 +602,7 @@ const styles = {
   },
   formRow: {
     display: "grid",
+    gridTemplateColumns: "1fr 1fr 1fr",
     gap: "16px",
   },
   label: {
@@ -630,6 +689,13 @@ const styles = {
     textAlign: "right",
     marginTop: "4px",
   },
+  noUsersMessage: {
+    padding: '20px',
+    textAlign: 'center',
+    color: '#6b7280',
+    fontSize: '14px',
+    gridColumn: '1 / -1',
+  },
   submitButton: {
     padding: "14px 24px",
     background: "#3b82f6",
@@ -644,6 +710,10 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     gap: "8px",
+  },
+  disabledButton: {
+    opacity: 0.5,
+    cursor: "not-allowed",
   },
   manageSection: {
     background: "transparent",
@@ -865,6 +935,11 @@ const styles = {
     padding: "12px 0",
     borderBottom: "1px solid #f3f4f6",
   },
+  noStatusData: {
+    textAlign: "center",
+    color: "#6b7280",
+    padding: "20px",
+  },
   statusBadge: {
     padding: "4px 8px",
     borderRadius: "12px",
@@ -882,11 +957,16 @@ const styles = {
 };
 
 // Add CSS animation for spinner
-const spinnerStyle = document.createElement('style');
-spinnerStyle.textContent = `
-  @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+if (typeof document !== 'undefined') {
+  const spinnerStyle = document.createElement('style');
+  spinnerStyle.textContent = `
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+  `;
+  if (!document.querySelector('style[data-spinner-animation]')) {
+    spinnerStyle.setAttribute('data-spinner-animation', 'true');
+    document.head.appendChild(spinnerStyle);
   }
-`;
-document.head.appendChild(spinnerStyle);
+}

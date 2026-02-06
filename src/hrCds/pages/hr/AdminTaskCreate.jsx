@@ -1311,22 +1311,57 @@ const AdminTaskManagement = () => {
   };
 
   // 🆕 User Info Chip Component
-  const AdminTaskManagementUserInfoChip = ({ user }) => {
-    return (
-      <div className="AdminTaskManagement-user-info-chip">
-        <div className="AdminTaskManagement-user-info-avatar">
-          {user?.name?.charAt(0)?.toUpperCase() || 'U'}
-        </div>
-        <div className="AdminTaskManagement-user-info-details">
-          <div className="AdminTaskManagement-user-info-name">{user?.name || 'Unknown'}</div>
-          <div className="AdminTaskManagement-user-info-meta">
-            <span> {user?.company?.companyName || user?.company || 'No Company'}</span>
-            <span>{user?.department?.name || user?.department || 'No Department'}</span>
-          </div>
+// 🆕 User Info Chip Component - FIXED VERSION
+const AdminTaskManagementUserInfoChip = ({ user }) => {
+  // Extract company name safely
+  const getCompanyName = () => {
+    if (!user?.company) return 'No Company';
+    
+    // If company is an object with companyName property
+    if (typeof user.company === 'object' && user.company.companyName) {
+      return user.company.companyName;
+    }
+    
+    // If company is a string
+    if (typeof user.company === 'string') {
+      return user.company;
+    }
+    
+    return 'No Company';
+  };
+
+  // Extract department name safely
+  const getDepartmentName = () => {
+    if (!user?.department) return 'No Department';
+    
+    // If department is an object with name property
+    if (typeof user.department === 'object' && user.department.name) {
+      return user.department.name;
+    }
+    
+    // If department is a string
+    if (typeof user.department === 'string') {
+      return user.department;
+    }
+    
+    return 'No Department';
+  };
+
+  return (
+    <div className="AdminTaskManagement-user-info-chip">
+      <div className="AdminTaskManagement-user-info-avatar">
+        {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+      </div>
+      <div className="AdminTaskManagement-user-info-details">
+        <div className="AdminTaskManagement-user-info-name">{user?.name || 'Unknown'}</div>
+        <div className="AdminTaskManagement-user-info-meta">
+          <span>Company: {getCompanyName()}</span>
+          <span>Dept: {getDepartmentName()}</span>
         </div>
       </div>
-    );
-  };
+    </div>
+  );
+};
 
   // Stats Cards Component
   const AdminTaskManagementStatCard = ({ label, value, color, icon: Icon }) => {
