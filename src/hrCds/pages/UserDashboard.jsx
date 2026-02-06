@@ -1,3 +1,4 @@
+// UserDashboard.js - UPDATED
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import axios from '../../utils/axiosConfig';
 import { ToastContainer, toast } from 'react-toastify';
@@ -5,7 +6,6 @@ import 'react-toastify/dist/ReactToastify.css';
 import './UserDashboard.css';
 import useIsMobile from '../../hooks/useIsMobile';
 
-// import NewYearPopup from '../../components/NewYearPopup';
 import {
   FiClock, FiCalendar, FiChevronLeft, FiChevronRight,
   FiPlay, FiSquare, FiRefreshCw, FiBriefcase, FiUser,
@@ -66,12 +66,25 @@ const UserDashboard = () => {
   const [showClockOutConfirm, setShowClockOutConfirm] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Get user and company details
   const user = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null;
   const token = localStorage.getItem('token');
+  const companyDetails = localStorage.getItem('companyDetails') ? JSON.parse(localStorage.getItem('companyDetails')) : null;
 
   const currentDate = new Date();
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
+
+  // Check if user belongs to the current company
+  const isUserInCurrentCompany = useMemo(() => {
+    if (!user || !companyDetails) return false;
+    
+    // Check if user's companyCode matches companyDetails companyCode
+    const userCompanyCode = user.companyCode || (user.company && user.company.companyCode);
+    const companyCode = companyDetails.companyCode;
+    
+    return userCompanyCode === companyCode;
+  }, [user, companyDetails]);
 
   // Add lateDates array
   const lateDates = useMemo(() => {
@@ -207,30 +220,46 @@ const UserDashboard = () => {
     }
   };
 
-const fetchAttendanceData = async () => {
-  try {
-    setLoading(true);
-    const response = await axios.get('/attendance/list', {
-      params: {
-        month: calendarMonth,  // Pass current calendar month
-        year: calendarYear     // Pass current calendar year
-      },
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    const data = response.data?.data || [];
-    setAttendanceData(data);
-    
-    const sortedData = [...data].sort((a, b) => new Date(b.date) - new Date(a.date));
-    setRecentActivity(sortedData.slice(0, 5));
-  } catch (error) {
-    console.error('Error fetching attendance:', error);
-    toast.error('Failed to load attendance data');
-  } finally {
-    setLoading(false);
-  }
-};
+  const fetchAttendanceData = async () => {
+    try {
+      // Check if user belongs to current company
+      if (!isUserInCurrentCompany) {
+        toast.error('Access denied: User does not belong to this company');
+        return;
+      }
+
+      setLoading(true);
+      const response = await axios.get('/attendance/list', {
+        params: {
+          month: calendarMonth,
+          year: calendarYear
+        },
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = response.data?.data || [];
+      setAttendanceData(data);
+      
+      const sortedData = [...data].sort((a, b) => new Date(b.date) - new Date(a.date));
+      setRecentActivity(sortedData.slice(0, 5));
+    } catch (error) {
+      console.error('Error fetching attendance:', error);
+      if (error.response?.status === 403) {
+        toast.error('Access denied: Company mismatch');
+      } else {
+        toast.error('Failed to load attendance data');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchLeaveData = async () => {
     try {
+      // Check if user belongs to current company
+      if (!isUserInCurrentCompany) {
+        return;
+      }
+
       const response = await axios.get('/leaves/status', {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -242,6 +271,12 @@ const fetchAttendanceData = async () => {
 
   const fetchCurrentStatus = async () => {
     try {
+      // Check if user belongs to current company
+      if (!isUserInCurrentCompany) {
+        setIsRunning(false);
+        return;
+      }
+
       const response = await axios.get('/attendance/status', {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -255,11 +290,18 @@ const fetchAttendanceData = async () => {
       }
     } catch (error) {
       console.error('Error fetching status:', error);
+      setIsRunning(false);
     }
   };
 
   const handleIn = async () => {
     try {
+      // Check if user belongs to current company
+      if (!isUserInCurrentCompany) {
+        toast.error('Cannot clock in: Company mismatch');
+        return;
+      }
+
       await axios.post('/attendance/in', {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -272,7 +314,11 @@ const fetchAttendanceData = async () => {
       await fetchAttendanceData();
     } catch (error) {
       console.error('Clock-in error:', error);
-      toast.error('Clock-in failed');
+      if (error.response?.status === 403) {
+        toast.error('Access denied: Company mismatch');
+      } else {
+        toast.error('Clock-in failed');
+      }
     }
   };
 
@@ -287,6 +333,14 @@ const fetchAttendanceData = async () => {
   const handleClockOut = async () => {
     try {
       setIsProcessing(true);
+      
+      // Check if user belongs to current company
+      if (!isUserInCurrentCompany) {
+        toast.error('Cannot clock out: Company mismatch');
+        setIsProcessing(false);
+        return;
+      }
+
       await axios.post(
         "/attendance/out",
         {},
@@ -302,6 +356,7 @@ const fetchAttendanceData = async () => {
       // Clear auth data (LOGOUT)
       localStorage.removeItem("token");
       localStorage.removeItem("user");
+      localStorage.removeItem("companyDetails");
 
       // Optional: clear axios default header
       delete axios.defaults.headers.common["Authorization"];
@@ -313,68 +368,67 @@ const fetchAttendanceData = async () => {
 
     } catch (error) {
       console.error("Clock-out error:", error);
-      toast.error("Clock-out failed");
+      if (error.response?.status === 403) {
+        toast.error('Access denied: Company mismatch');
+      } else {
+        toast.error("Clock-out failed");
+      }
       setIsProcessing(false);
     }
   };
 
-const handlePrevMonth = () => {
-  setCalendarMonth(prev => {
-    if (prev === 0) {
-      const newYear = calendarYear - 1;
-      setCalendarYear(newYear);
+  const handlePrevMonth = () => {
+    setCalendarMonth(prev => {
+      if (prev === 0) {
+        const newYear = calendarYear - 1;
+        setCalendarYear(newYear);
+        
+        setTimeout(() => {
+          fetchAttendanceData();
+        }, 100);
+        
+        return 11;
+      }
+      const newMonth = prev - 1;
       
-      // Fetch data for new month
       setTimeout(() => {
         fetchAttendanceData();
       }, 100);
       
-      return 11;
-    }
-    const newMonth = prev - 1;
-    
-    // Fetch data for new month
-    setTimeout(() => {
-      fetchAttendanceData();
-    }, 100);
-    
-    return newMonth;
-  });
-};
+      return newMonth;
+    });
+  };
 
-const handleNextMonth = () => {
-  setCalendarMonth(prev => {
-    if (prev === 11) {
-      const newYear = calendarYear + 1;
-      setCalendarYear(newYear);
+  const handleNextMonth = () => {
+    setCalendarMonth(prev => {
+      if (prev === 11) {
+        const newYear = calendarYear + 1;
+        setCalendarYear(newYear);
+        
+        setTimeout(() => {
+          fetchAttendanceData();
+        }, 100);
+        
+        return 0;
+      }
+      const newMonth = prev + 1;
       
-      // Fetch data for new month
-      setTimeout(() => {
+        setTimeout(() => {
         fetchAttendanceData();
       }, 100);
       
-      return 0;
-    }
-    const newMonth = prev + 1;
+      return newMonth;
+    });
+  };
+
+  const resetToCurrentMonth = () => {
+    setCalendarMonth(currentDate.getMonth());
+    setCalendarYear(currentDate.getFullYear());
     
-    // Fetch data for new month
     setTimeout(() => {
       fetchAttendanceData();
     }, 100);
-    
-    return newMonth;
-  });
-};
-
-const resetToCurrentMonth = () => {
-  setCalendarMonth(currentDate.getMonth());
-  setCalendarYear(currentDate.getFullYear());
-  
-  // Fetch data for current month
-  setTimeout(() => {
-    fetchAttendanceData();
-  }, 100);
-};
+  };
 
   const getStatusColor = (status) => {
     switch(status) {
@@ -385,50 +439,82 @@ const resetToCurrentMonth = () => {
       default: return 'status-default';
     }
   };
-// Fix the useEffect structure
-useEffect(() => {
-  // Initial load when component mounts
-  const loadInitialData = async () => {
-    await fetchAttendanceData();
-    await fetchLeaveData();
-    await fetchCurrentStatus();
-  };
-  
-  loadInitialData();
-}, []); // Empty dependency array - runs only once on mount
 
-useEffect(() => {
-  // Timer effect - separate from data fetching
-  if (isRunning) {
-    intervalRef.current = setInterval(() => {
-      setTimer(prev => prev + 1);
-    }, 1000);
-  } else {
-    clearInterval(intervalRef.current);
-  }
-  
-  return () => clearInterval(intervalRef.current);
-}, [isRunning]);
-
-useEffect(() => {
-  // Fetch attendance data when calendar month/year changes
-  // But only if we already have some data (to avoid double fetching on initial load)
-  if (attendanceData.length > 0 || loading) {
-    const fetchData = async () => {
-      await fetchAttendanceData();
+  // Load initial data
+  useEffect(() => {
+    const loadInitialData = async () => {
+      // Check if user belongs to current company before fetching
+      if (isUserInCurrentCompany) {
+        await fetchAttendanceData();
+        await fetchLeaveData();
+        await fetchCurrentStatus();
+      } else {
+        toast.error('User does not belong to this company. Please log in again.');
+        // Redirect to login after a delay
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 3000);
+      }
     };
     
-    // Add a small debounce to prevent rapid calls
-    const timer = setTimeout(() => {
-      fetchData();
-    }, 300);
-    
-    return () => clearTimeout(timer);
-  }
-}, [calendarMonth, calendarYear]);
-  const calendarDays = getCalendarGrid(calendarYear, calendarMonth);
+    loadInitialData();
+  }, []);
 
+  useEffect(() => {
+    // Timer effect
+    if (isRunning) {
+      intervalRef.current = setInterval(() => {
+        setTimer(prev => prev + 1);
+      }, 1000);
+    } else {
+      clearInterval(intervalRef.current);
+    }
+    
+    return () => clearInterval(intervalRef.current);
+  }, [isRunning]);
+
+  useEffect(() => {
+    // Fetch attendance data when calendar month/year changes
+    if ((attendanceData.length > 0 || loading) && isUserInCurrentCompany) {
+      const fetchData = async () => {
+        await fetchAttendanceData();
+      };
+      
+      const timer = setTimeout(() => {
+        fetchData();
+      }, 300);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [calendarMonth, calendarYear]);
+
+  const calendarDays = getCalendarGrid(calendarYear, calendarMonth);
   const isMobile = useIsMobile();
+
+  // Show access denied message if user doesn't belong to company
+  if (!isUserInCurrentCompany) {
+    return (
+      <div className="dashboard-container">
+        <div className="access-denied-message">
+          <div className="access-denied-icon">🔒</div>
+          <h2>Access Denied</h2>
+          <p>
+            You do not have access to this company's dashboard.
+            <br />
+            User company code: <strong>{user?.companyCode || 'Not set'}</strong>
+            <br />
+            Current company code: <strong>{companyDetails?.companyCode || 'Not set'}</strong>
+          </p>
+          <button 
+            className="btn-primary"
+            onClick={() => window.location.href = "/login"}
+          >
+            Go to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (isMobile) {
     return (
@@ -453,7 +539,6 @@ useEffect(() => {
 
   return (
     <div className="dashboard-container">
-      {/* <NewYearPopup /> */}
       <ToastContainer 
         position="top-right" 
         autoClose={3000}
@@ -527,11 +612,15 @@ useEffect(() => {
             <div className="dashboard-user-tags">
               <span className="dashboard-tag dashboard-tag-role">
                 <FiBriefcase size={14} />
-                {user?.role || 'Employee'}
+                {user?.jobRole || user?.role || 'Employee'}
               </span>
               <span className="dashboard-tag dashboard-tag-type">
                 <FiUser size={14} />
                 {user?.employeeType || 'Full-time'}
+              </span>
+              <span className="dashboard-tag dashboard-tag-company">
+                <FiBriefcase size={14} />
+                {companyDetails?.companyName || 'Company'}
               </span>
             </div>
 
@@ -558,7 +647,7 @@ useEffect(() => {
             <div className="dashboard-clock-buttons">
               <button
                 onClick={handleIn}
-                disabled={isRunning || loading}
+                disabled={isRunning || loading || !isUserInCurrentCompany}
                 className={`dashboard-btn dashboard-btn-clockin ${isRunning ? 'btn-disabled' : ''}`}
               >
                 <FiPlay size={20} />
@@ -566,7 +655,7 @@ useEffect(() => {
               </button>
               <button
                 onClick={confirmClockOut}
-                disabled={!isRunning || loading}
+                disabled={!isRunning || loading || !isUserInCurrentCompany}
                 className={`dashboard-btn dashboard-btn-clockout ${!isRunning ? 'btn-disabled' : ''}`}
               >
                 <FiSquare size={20} />
@@ -577,7 +666,7 @@ useEffect(() => {
         </div>
       </div>
 
-      {/* Current Month Stats - ADD LATE STAT CARD */}
+      {/* Current Month Stats */}
       <div className="dashboard-stats-grid">
         <div className="dashboard-stat-card stat-card-present">
           <div className="stat-card-header">
@@ -594,7 +683,6 @@ useEffect(() => {
           </div>
         </div>
 
-        {/* NEW LATE STAT CARD */}
         <div className="dashboard-stat-card stat-card-late">
           <div className="stat-card-header">
             <div className="stat-icon-container icon-late">
@@ -762,7 +850,7 @@ useEffect(() => {
             </div>
             <button
               onClick={fetchAttendanceData}
-              disabled={loading}
+              disabled={loading || !isUserInCurrentCompany}
               className="activity-refresh-btn"
             >
               <FiRefreshCw className={`refresh-icon ${loading ? 'spinning' : ''}`} />
