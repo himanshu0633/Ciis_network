@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import API_URL from '../config';
 
 const SuperAdminLogin = () => {
   const navigate = useNavigate();
@@ -11,7 +12,7 @@ const SuperAdminLogin = () => {
   });
   const [loading, setLoading] = useState(false);
 
-  const API_BASE = "http://localhost:3000/api";
+
 
   const handleChange = (e) => {
     setFormData({
@@ -25,7 +26,7 @@ const SuperAdminLogin = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post(`${API_BASE}/super-admin/login`, formData);
+      const response = await axios.post(`${API_URL}/super-admin/login`, formData);
       
       if (response.data.success) {
         // Save super admin data to localStorage
@@ -35,7 +36,7 @@ const SuperAdminLogin = () => {
         toast.success('Login successful! Redirecting...');
         
         // Redirect to super admin dashboard immediately
-        navigate('/ciis/SuperAdminDashboard');
+        navigate('/Ciis-network/SuperAdminDashboard');
       } else {
         toast.error(response.data.message || 'Login failed');
       }

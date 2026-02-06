@@ -854,7 +854,7 @@ const EmployeeAttendance = () => {
   const fetchAllUsers = async () => {
     try {
       console.log("🔄 Fetching company users...");
-      const res = await axios.get('/users/company-users');
+      const res = await axios.get('/users/department-users');
       
       // FIXED: Handle different response structures
       let usersData = [];

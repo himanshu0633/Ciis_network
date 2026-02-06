@@ -25,8 +25,10 @@ import { useTheme, useMediaQuery } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { styled } from '@mui/material/styles';
 
-// Enhanced Styled Components
-const StatCard = styled(Card)(({ theme, color = 'primary' }) => ({
+// Enhanced Styled Components - FIXED VERSION
+const StatCard = styled(Card, {
+  shouldForwardProp: (prop) => prop !== 'color'
+})(({ theme, color = 'primary' }) => ({
   background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
   borderRadius: theme.shape.borderRadius * 2,
   boxShadow: theme.shadows[2],
@@ -41,7 +43,9 @@ const StatCard = styled(Card)(({ theme, color = 'primary' }) => ({
   },
 }));
 
-const StatusChip = styled(Chip)(({ theme, status }) => ({
+const StatusChip = styled(Chip, {
+  shouldForwardProp: (prop) => prop !== 'status'
+})(({ theme, status }) => ({
   fontWeight: 600,
   fontSize: '0.7rem',
   minWidth: 80,
@@ -67,7 +71,9 @@ const StatusChip = styled(Chip)(({ theme, status }) => ({
   }),
 }));
 
-const PriorityChip = styled(Chip)(({ theme, priority }) => ({
+const PriorityChip = styled(Chip, {
+  shouldForwardProp: (prop) => prop !== 'priority'
+})(({ theme, priority }) => ({
   fontWeight: 500,
   fontSize: '0.65rem',
   ...(priority === 'high' && {
@@ -87,7 +93,9 @@ const PriorityChip = styled(Chip)(({ theme, priority }) => ({
   }),
 }));
 
-const MobileTaskCard = styled(Card)(({ theme, status }) => ({
+const MobileTaskCard = styled(Card, {
+  shouldForwardProp: (prop) => prop !== 'status'
+})(({ theme, status }) => ({
   borderRadius: theme.shape.borderRadius * 2,
   boxShadow: theme.shadows[1],
   cursor: 'pointer',
@@ -115,7 +123,9 @@ const ActionButton = styled(IconButton)(({ theme }) => ({
   },
 }));
 
-const CalendarFilterButton = styled(Button)(({ theme, active }) => ({
+const CalendarFilterButton = styled(Button, {
+  shouldForwardProp: (prop) => prop !== 'active'
+})(({ theme, active }) => ({
   borderRadius: theme.shape.borderRadius,
   border: `1px solid ${active ? theme.palette.primary.main : theme.palette.divider}`,
   background: active ? `${theme.palette.primary.main}15` : 'transparent',
@@ -123,7 +133,8 @@ const CalendarFilterButton = styled(Button)(({ theme, active }) => ({
   fontWeight: active ? 600 : 400,
   textTransform: 'none',
   minWidth: 'auto',
-  px: 2,
+  paddingLeft: theme.spacing(2),
+  paddingRight: theme.spacing(2),
   '&:hover': {
     borderColor: theme.palette.primary.main,
     backgroundColor: `${theme.palette.primary.main}08`,
@@ -148,7 +159,6 @@ const UserCreateTask = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [isCreatingTask, setIsCreatingTask] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-  const [userRole, setUserRole] = useState('');
   const [userId, setUserId] = useState('');
   const [userName, setUserName] = useState('');
   const [authError, setAuthError] = useState(false);
@@ -326,52 +336,59 @@ const UserCreateTask = () => {
   }, [userId]);
 
   // User authentication check
-  const fetchUserData = () => {
-    try {
-      const userStr = localStorage.getItem('user');
-      if (!userStr) {
-        setAuthError(true);
-        setSnackbar({
-          open: true,
-          message: 'Please log in to access tasks',
-          severity: 'error'
-        });
-        setLoading(false);
-        return;
-      }
-
-      const user = JSON.parse(userStr);
-      if (!user || !user.role || !user.id || !user.name) {
-        setAuthError(true);
-        setSnackbar({
-          open: true,
-          message: 'Invalid user data. Please log in again.',
-          severity: 'error'
-        });
-        setLoading(false);
-        return;
-      }
-
-      setUserRole(user.role);
-      setUserId(user.id);
-      setUserName(user.name);
-      setAuthError(false);
-      
-      setNewTask(prev => ({
-        ...prev,
-        assignedUsers: [user.id]
-      }));
-    } catch (error) {
-      console.error('Error parsing user data:', error);
+ const fetchUserData = () => {
+  try {
+    const userStr = localStorage.getItem('user');
+    if (!userStr) {
       setAuthError(true);
       setSnackbar({
         open: true,
-        message: 'Error loading user data. Please log in again.',
+        message: 'Please log in to access tasks',
         severity: 'error'
       });
       setLoading(false);
+      return;
     }
-  };
+
+    const user = JSON.parse(userStr);
+    
+    // ✅ FIX: Use _id instead of id
+    const userId = user._id;  // Changed from user.id
+    const userName = user.name;
+    
+    if (!userId || !userName) {
+      setAuthError(true);
+      setSnackbar({
+        open: true,
+        message: 'Invalid user data. Please log in again.',
+        severity: 'error'
+      });
+      setLoading(false);
+      return;
+    }
+
+    // ✅ State set करें
+    setUserId(userId);
+    setUserName(userName);
+    setAuthError(false);
+    
+    // Set assignedUsers for self-task creation
+    setNewTask(prev => ({
+      ...prev,
+      assignedUsers: [userId]
+    }));
+    
+  } catch (error) {
+    console.error('Error parsing user data:', error);
+    setAuthError(true);
+    setSnackbar({
+      open: true,
+      message: 'Error loading user data. Please log in again.',
+      severity: 'error'
+    });
+    setLoading(false);
+  }
+};
 
   // Fetch tasks with proper error handling
   const fetchMyTasks = useCallback(async (page = 1, isLoadMore = false) => {
@@ -1269,7 +1286,7 @@ const UserCreateTask = () => {
     if (totalTasksCount === 0) {
       return (
         <Box sx={{ textAlign: 'center', py: 6, px: 2 }}>
-          <FiCalendar size={isMobile ? 48 : 64} color={theme.palette.text.secondary} />
+          <FiCalendar size={isMobile ? 48 : 64} color={theme.palette.text.secondary} style={{ marginBottom: 16 }} />
           <Typography variant="h6" color="text.secondary" sx={{ mt: 2, fontWeight: 600 }}>
             {selectedDate || dateRange.start || dateRange.end || statusFilter || searchTerm 
               ? 'No tasks found for current filters' 
@@ -1343,8 +1360,6 @@ const UserCreateTask = () => {
       />
     </Paper>
   );
-
-  // ========== MISSING DIALOG FUNCTIONS ==========
 
   // Create Task Dialog
   const renderCreateTaskDialog = () => (

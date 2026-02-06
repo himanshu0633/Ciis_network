@@ -125,8 +125,8 @@ const EmployeeLeaves = () => {
 
   const fetchCompanyUsers = async () => {
     try {
-      console.log("🔄 Fetching company users...");
-      const res = await axios.get('/users/company-users');
+      console.log("🔄 Fetching department users...");
+      const res = await axios.get('/users/department-users');
       
       let usersData = [];
       

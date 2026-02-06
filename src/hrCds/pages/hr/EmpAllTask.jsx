@@ -3,8 +3,8 @@ import axios from "../../../utils/axiosConfig";
 import "./EmpAllTask.css";
 import {
   FiUsers, FiUser, FiCalendar, FiCheckCircle, FiClock,
-  FiAlertCircle, FiXCircle, FiTrendingUp, FiList, 
-  FiArrowRight, FiX, FiBarChart2, FiPieChart, FiSearch, 
+  FiAlertCircle, FiXCircle, FiTrendingUp, FiList,
+  FiArrowRight, FiX, FiBarChart2, FiPieChart, FiSearch,
   FiMail, FiBriefcase, FiMessageSquare, FiPlus, FiImage,
   FiCamera, FiZoomIn, FiSend, FiTrash2, FiFilter,
   FiCalendar as FiCal, FiChevronRight, FiChevronLeft,
@@ -12,7 +12,7 @@ import {
   FiCheckSquare, FiArchive, FiTarget, FiPercent,
   FiAlertTriangle, FiActivity, FiTrendingDown, FiTrendingUp as FiTrendUp,
   FiChevronDown, FiChevronUp, FiStar, FiAward, FiBarChart,
-  FiEdit3, FiExternalLink, FiMoreVertical, FiShare2, FiInfo, FiHash 
+  FiEdit3, FiExternalLink, FiMoreVertical, FiShare2, FiInfo, FiHash
 } from "react-icons/fi";
 
 // Status Options
@@ -29,15 +29,6 @@ const STATUS_OPTIONS = [
   { value: 'cancelled', label: 'Cancelled', color: '#6c757d', icon: FiX, bgColor: '#f8f9fa' },
 ];
 
-// Employee Types
-const EMPLOYEE_TYPES = [
-  { value: "all", label: "All Employees", icon: FiUsers, color: "#4e73df" },
-  { value: "intern", label: "Intern", icon: FiUser, color: "#36b9cc" },
-  { value: "technical", label: "Technical", icon: FiTrendingUp, color: "#1cc88a" },
-  { value: "non-technical", label: "Non-Technical", icon: FiUsers, color: "#f6c23e" },
-  { value: "sales", label: "Sales", icon: FiTarget, color: "#e74a3b" },
-];
-
 const TaskDetails = () => {
   const [users, setUsers] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState(null);
@@ -46,40 +37,40 @@ const TaskDetails = () => {
   const [loading, setLoading] = useState(false);
   const [usersLoading, setUsersLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // User states
+  const [currentUser, setCurrentUser] = useState(null);
   const [currentUserRole, setCurrentUserRole] = useState("");
-  const [selectedEmployeeType, setSelectedEmployeeType] = useState("all");
+
   const [openDialog, setOpenDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeStatusFilters, setActiveStatusFilters] = useState(['all']);
   const [showStatusFilters, setShowStatusFilters] = useState(true);
-  const [dateFilter, setDateFilter] = useState("all"); // all | today | tomorrow | week | overdue
-const [priorityFilter, setPriorityFilter] = useState("all"); // all | low | medium | high
+  const [dateFilter, setDateFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState("all");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
 
-const [specificDate, setSpecificDate] = useState(""); 
-// format: YYYY-MM-DD
-const [fromDate, setFromDate] = useState("");
-const [toDate, setToDate] = useState("");
+  const today = new Date();
 
-const today = new Date();
+  const isSameDay = (d1, d2) => {
+    const a = new Date(d1);
+    const b = new Date(d2);
+    return (
+      a.getDate() === b.getDate() &&
+      a.getMonth() === b.getMonth() &&
+      a.getFullYear() === b.getFullYear()
+    );
+  };
 
-const isSameDay = (d1, d2) => {
-  const a = new Date(d1);
-  const b = new Date(d2);
-  return (
-    a.getDate() === b.getDate() &&
-    a.getMonth() === b.getMonth() &&
-    a.getFullYear() === b.getFullYear()
-  );
-};
-
-const isThisWeek = (date) => {
-  const now = new Date();
-  const start = new Date(now);
-  start.setDate(now.getDate() - now.getDay());
-  const end = new Date(start);
-  end.setDate(start.getDate() + 6);
-  return new Date(date) >= start && new Date(date) <= end;
-};
+  const isThisWeek = (date) => {
+    const now = new Date();
+    const start = new Date(now);
+    start.setDate(now.getDate() - now.getDay());
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    return new Date(date) >= start && new Date(date) <= end;
+  };
 
   // Overall Statistics
   const [overallStats, setOverallStats] = useState({
@@ -94,7 +85,7 @@ const isThisWeek = (date) => {
     reopen: 0,
     cancelled: 0
   });
-  
+
   // Individual user statistics
   const [userTaskStats, setUserTaskStats] = useState({
     total: 0,
@@ -108,7 +99,7 @@ const isThisWeek = (date) => {
     reopen: { count: 0, percentage: 0 },
     cancelled: { count: 0, percentage: 0 }
   });
-  
+
   const [systemStats, setSystemStats] = useState({
     totalEmployees: 0,
     totalTasks: 0,
@@ -116,6 +107,45 @@ const isThisWeek = (date) => {
     pendingTasks: 0,
     activeEmployees: 0
   });
+
+  // ✅ FIXED: User authentication function
+  useEffect(() => {
+    const fetchUserData = () => {
+      try {
+        const userStr = localStorage.getItem("user");
+        if (!userStr) {
+          setError("Please log in to access this page");
+          return;
+        }
+
+        const user = JSON.parse(userStr);
+        setCurrentUser(user);
+        
+        // Check if user has a name field or use email
+        if (!user.name && user.email) {
+          user.name = user.email.split('@')[0];
+        }
+
+        // For your user structure, jobRole is an ID. You need to fetch the actual role name.
+        // For now, let's assume manager based on email or other field
+        const userRole = user.email.includes('manager') ? 'manager' : 
+                        user.jobRole ? 'employee' : 'user';
+        setCurrentUserRole(userRole.toLowerCase());
+        
+      } catch (error) {
+        console.error("Error parsing user data:", error);
+        setError("Error loading user data");
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  // Check if user can manage (admin, manager, hr)
+  const canManage = useMemo(() => {
+    if (!currentUserRole) return false;
+    return ["admin", "manager", "hr", "superadmin", "itmanger"].includes(currentUserRole);
+  }, [currentUserRole]);
 
   // Calculate overall stats from all users
   const calculateOverallStats = (usersData) => {
@@ -126,7 +156,7 @@ const isThisWeek = (date) => {
           emptyStats[opt.value] = 0;
         }
       });
-      setOverallStats(emptyStats);
+      setOverallStats({ total: 0, ...emptyStats });
       return;
     }
 
@@ -146,7 +176,7 @@ const isThisWeek = (date) => {
     // Calculate totals from all users
     usersData.forEach(user => {
       const userStats = user.taskStats || {};
-      
+
       stats.total += userStats.total || 0;
       stats.pending += userStats.pending || 0;
       stats['in-progress'] += userStats.inProgress || 0;
@@ -160,16 +190,16 @@ const isThisWeek = (date) => {
     });
 
     setOverallStats(stats);
-    
+
     // Calculate system stats
     const totalTasks = stats.total;
     const totalUsers = usersData.length;
     const activeUsers = usersData.filter(user => (user.taskStats?.total || 0) > 0).length;
     const pendingTasks = stats.pending + stats['in-progress'];
-    const avgCompletion = totalUsers > 0 
+    const avgCompletion = totalUsers > 0
       ? Math.round(usersData.reduce((sum, user) => sum + (user.taskStats?.completionRate || 0), 0) / totalUsers)
       : 0;
-    
+
     setSystemStats({
       totalEmployees: totalUsers,
       totalTasks,
@@ -179,15 +209,178 @@ const isThisWeek = (date) => {
     });
   };
 
-  // Filtered users based on employee type
+  // ✅ FIXED: Fetch Users Function with better error handling
+  const fetchUsersWithTasks = async () => {
+    setUsersLoading(true);
+    setError("");
+    try {
+      console.log("📤 Fetching users with tasks...");
+
+      // Get token from localStorage
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError("Please log in to access this page");
+        setUsersLoading(false);
+        return;
+      }
+
+      // Add authorization header
+      const config = {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      };
+
+      // Try different endpoints based on user role
+      let response = null;
+
+      // Try manager endpoint first
+      try {
+        console.log("🔍 Trying manager endpoint...");
+        response = await axios.get('/task/manager/team-tasks', config);
+      } catch (managerError) {
+        console.log("Manager endpoint failed, trying admin endpoint...");
+        try {
+          response = await axios.get('/task/admin/all-users-tasks', config);
+        } catch (adminError) {
+          console.log("Admin endpoint failed, trying general endpoint...");
+          try {
+            response = await axios.get('/task/team-members', config);
+          } catch (generalError) {
+            console.log("All endpoints failed, trying fallback...");
+            // Fallback: Get all users
+            const usersResponse = await axios.get('/auth/users', config);
+            if (usersResponse.data?.users) {
+              const usersWithEmptyStats = usersResponse.data.users.map(user => ({
+                ...user,
+                taskStats: {
+                  total: 0,
+                  pending: 0,
+                  completed: 0,
+                  completionRate: 0,
+                  inProgress: 0,
+                  approved: 0,
+                  rejected: 0,
+                  overdue: 0,
+                  onhold: 0,
+                  reopen: 0,
+                  cancelled: 0
+                }
+              }));
+              setUsers(usersWithEmptyStats);
+              calculateOverallStats(usersWithEmptyStats);
+              setUsersLoading(false);
+              return;
+            }
+            throw new Error("Unable to fetch users");
+          }
+        }
+      }
+
+      // Handle different response formats
+      let usersData = [];
+
+      if (response.data?.users && Array.isArray(response.data.users)) {
+        usersData = response.data.users;
+      } else if (response.data?.data && Array.isArray(response.data.data)) {
+        usersData = response.data.data;
+      } else if (response.data?.teamMembers && Array.isArray(response.data.teamMembers)) {
+        usersData = response.data.teamMembers;
+      } else if (Array.isArray(response.data)) {
+        usersData = response.data;
+      } else if (response.data?.success && response.data?.tasks) {
+        // If we got tasks instead of users, extract unique users from tasks
+        const tasks = response.data.tasks;
+        const userMap = new Map();
+
+        tasks.forEach(task => {
+          if (task.assignedTo) {
+            if (!userMap.has(task.assignedTo._id)) {
+              userMap.set(task.assignedTo._id, {
+                ...task.assignedTo,
+                taskStats: {
+                  total: 0,
+                  pending: 0,
+                  completed: 0,
+                  completionRate: 0
+                }
+              });
+            }
+          }
+        });
+
+        usersData = Array.from(userMap.values());
+      }
+
+      console.log("✅ Users data received:", usersData.length);
+
+      // Ensure each user has taskStats
+      const usersWithStats = usersData.map(user => ({
+        ...user,
+        name: user.name || user.email?.split('@')[0] || 'Unknown User',
+        role: user.role || 'Employee',
+        taskStats: user.taskStats || {
+          total: 0,
+          pending: 0,
+          completed: 0,
+          completionRate: 0,
+          inProgress: 0,
+          approved: 0,
+          rejected: 0,
+          overdue: 0,
+          onhold: 0,
+          reopen: 0,
+          cancelled: 0
+        }
+      }));
+
+      setUsers(usersWithStats);
+      calculateOverallStats(usersWithStats);
+
+    } catch (err) {
+      console.error("❌ Error fetching users with tasks:", err);
+
+      // Better error handling
+      if (err.response?.status === 401) {
+        setError("Your session has expired. Please log in again.");
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+      } else if (err.response?.status === 403) {
+        setError("You don't have permission to access this page.");
+      } else {
+        setError(
+          err?.response?.data?.error ||
+          err?.response?.data?.message ||
+          "Unable to load employee data. Please try again."
+        );
+      }
+
+      // Set empty users array
+      setUsers([]);
+      calculateOverallStats([]);
+    } finally {
+      setUsersLoading(false);
+    }
+  };
+
+  // Filtered users based on search query
   const filteredUsers = useMemo(() => {
-    if (selectedEmployeeType === "all") return users;
-    
-    return users.filter(user => {
-      if (!user.employeeType) return false;
-      return user.employeeType.toLowerCase() === selectedEmployeeType.toLowerCase();
-    });
-  }, [users, selectedEmployeeType]);
+    let filtered = users;
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(user =>
+        (user.name?.toLowerCase().includes(query)) ||
+        (user.email?.toLowerCase().includes(query)) ||
+        (user.employeeId?.toLowerCase().includes(query))
+      );
+    }
+
+    return filtered;
+  }, [users, searchQuery]);
 
   // Get non-zero statuses for overall stats
   const getNonZeroStatuses = useMemo(() => {
@@ -198,188 +391,124 @@ const isThisWeek = (date) => {
   }, [overallStats]);
 
   // Filter tasks based on active status filters
-const filteredTasks = useMemo(() => {
-  if (!Array.isArray(tasks)) return [];
+  const filteredTasks = useMemo(() => {
+    if (!Array.isArray(tasks)) return [];
 
-  let filtered = [...tasks];
-  const now = new Date();
+    let filtered = [...tasks];
+    const now = new Date();
 
-  /* 🔍 SEARCH FILTER */
-  if (searchQuery.trim()) {
-    const query = searchQuery.toLowerCase();
-    filtered = filtered.filter(task =>
-      task.title?.toLowerCase().includes(query) ||
-      task.description?.toLowerCase().includes(query) ||
-      task.serialNo?.toString().includes(query)
-    );
-  }
+    /* 🔍 SEARCH FILTER */
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(task =>
+        task.title?.toLowerCase().includes(query) ||
+        task.description?.toLowerCase().includes(query) ||
+        task.serialNo?.toString().includes(query)
+      );
+    }
 
-  /* 📌 STATUS FILTER */
-  if (!activeStatusFilters.includes("all")) {
+    /* 📌 STATUS FILTER */
+    if (!activeStatusFilters.includes("all")) {
+      filtered = filtered.filter(task => {
+        const status = task.userStatus || task.status || task.overallStatus;
+        return activeStatusFilters.includes(status);
+      });
+    }
+
+    /* 📅 DATE FILTER */
     filtered = filtered.filter(task => {
-      const status = task.userStatus || task.status || task.overallStatus;
-      return activeStatusFilters.includes(status);
-    });
-  }
+      const rawDate = task.dueDateTime || task.createdAt;
+      if (!rawDate) return false;
 
-  /* 📅 DATE FILTER (DATE RANGE > QUICK FILTERS) */
-  filtered = filtered.filter(task => {
-    const rawDate = task.dueDateTime || task.createdAt;
-    if (!rawDate) return false;
+      const taskTime = new Date(rawDate).setHours(0, 0, 0, 0);
 
-    const taskTime = new Date(rawDate).setHours(0, 0, 0, 0);
+      // 🔹 DATE RANGE FILTER (From – To)
+      if (fromDate || toDate) {
+        const fromTime = fromDate
+          ? new Date(fromDate).setHours(0, 0, 0, 0)
+          : null;
 
-    // 🔹 DATE RANGE FILTER (From – To)
-    if (fromDate || toDate) {
-      const fromTime = fromDate
-        ? new Date(fromDate).setHours(0, 0, 0, 0)
-        : null;
+        const toTime = toDate
+          ? new Date(toDate).setHours(23, 59, 59, 999)
+          : null;
 
-      const toTime = toDate
-        ? new Date(toDate).setHours(23, 59, 59, 999)
-        : null;
+        if (fromTime && taskTime < fromTime) return false;
+        if (toTime && taskTime > toTime) return false;
 
-      if (fromTime && taskTime < fromTime) return false;
-      if (toTime && taskTime > toTime) return false;
+        return true;
+      }
+
+      // 🔹 QUICK DATE FILTERS
+      if (dateFilter === "today") {
+        return isSameDay(rawDate, now);
+      }
+
+      if (dateFilter === "tomorrow") {
+        const tomorrow = new Date(now);
+        tomorrow.setDate(now.getDate() + 1);
+        return isSameDay(rawDate, tomorrow);
+      }
+
+      if (dateFilter === "week") {
+        return isThisWeek(rawDate);
+      }
+
+      if (dateFilter === "overdue") {
+        return new Date(rawDate) < now;
+      }
 
       return true;
+    });
+
+    /* 🚦 PRIORITY FILTER */
+    if (priorityFilter !== "all") {
+      filtered = filtered.filter(task => task.priority === priorityFilter);
     }
 
-    // 🔹 QUICK DATE FILTERS
-    if (dateFilter === "today") {
-      return isSameDay(rawDate, now);
-    }
+    /* ⭐ TODAY TASKS ALWAYS ON TOP */
+    filtered.sort((a, b) => {
+      const aDate = a.dueDateTime || a.createdAt;
+      const bDate = b.dueDateTime || b.createdAt;
 
-    if (dateFilter === "tomorrow") {
-      const tomorrow = new Date(now);
-      tomorrow.setDate(now.getDate() + 1);
-      return isSameDay(rawDate, tomorrow);
-    }
+      const aToday = aDate && isSameDay(aDate, now);
+      const bToday = bDate && isSameDay(bDate, now);
 
-    if (dateFilter === "week") {
-      return isThisWeek(rawDate);
-    }
+      if (aToday && !bToday) return -1;
+      if (!aToday && bToday) return 1;
 
-    if (dateFilter === "overdue") {
-      return new Date(rawDate) < now;
-    }
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
 
-    return true;
-  });
+    return filtered;
+  }, [
+    tasks,
+    searchQuery,
+    activeStatusFilters,
+    dateFilter,
+    fromDate,
+    toDate,
+    priorityFilter
+  ]);
 
-  /* 🚦 PRIORITY FILTER */
-  if (priorityFilter !== "all") {
-    filtered = filtered.filter(task => task.priority === priorityFilter);
-  }
-
-  /* ⭐ TODAY TASKS ALWAYS ON TOP */
-  filtered.sort((a, b) => {
-    const aDate = a.dueDateTime || a.createdAt;
-    const bDate = b.dueDateTime || b.createdAt;
-
-    const aToday = aDate && isSameDay(aDate, now);
-    const bToday = bDate && isSameDay(bDate, now);
-
-    if (aToday && !bToday) return -1;
-    if (!aToday && bToday) return 1;
-
-    return new Date(b.createdAt) - new Date(a.createdAt);
-  });
-
-  return filtered;
-}, [
-  tasks,
-  searchQuery,
-  activeStatusFilters,
-  dateFilter,
-  fromDate,
-  toDate,
-  priorityFilter
-]);
-
-useEffect(() => {
-  if (fromDate || toDate) setDateFilter("all");
-}, [fromDate, toDate]);
-``
-
-const isSameSelectedDate = (taskDate, selectedDate) => {
-  if (!selectedDate) return true;
-  const task = new Date(taskDate);
-  const selected = new Date(selectedDate);
-
-  return (
-    task.getDate() === selected.getDate() &&
-    task.getMonth() === selected.getMonth() &&
-    task.getFullYear() === selected.getFullYear()
-  );
-};
-
-  // Role from localStorage
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        const role = (
-          parsedUser?.role ||
-          parsedUser?.user?.role ||
-          ""
-        )
-          .toString()
-          .trim()
-          .toLowerCase();
-        setCurrentUserRole(role);
-      } catch {
-        setCurrentUserRole("");
-      }
-    }
-  }, []);
-
-  const canManage = useMemo(
-    () => ["admin", "manager", "hr", "superadmin"].includes(currentUserRole),
-    [currentUserRole]
-  );
+    if (fromDate || toDate) setDateFilter("all");
+  }, [fromDate, toDate]);
 
   // Fetch all users with task counts from backend
   useEffect(() => {
-    const fetchUsersWithTasks = async () => {
-      setUsersLoading(true);
-      try {
-        const res = await axios.get(`/task/admin/users-with-tasks?employeeType=${selectedEmployeeType}`);
-        
-        if (res.data.success) {
-          const usersData = res.data.users || [];
-          setUsers(usersData);
-          
-          // Calculate overall stats
-          calculateOverallStats(usersData);
-        }
-      } catch (err) {
-        console.error("Error fetching users with tasks:", err);
-        setError(
-          err?.response?.data?.error ||
-            "Error fetching users. Please try again."
-        );
-      } finally {
-        setUsersLoading(false);
-      }
-    };
-    
     if (canManage) {
       fetchUsersWithTasks();
     }
-  }, [canManage, selectedEmployeeType]);
+  }, [canManage]);
 
   // Fetch task status counts for specific user
   const fetchTaskStatusCounts = async (userId) => {
     try {
-      setLoading(true);
-      
       const response = await axios.get(`/task/user/${userId}/stats`);
-      
+
       if (response.data.success && response.data.statusCounts) {
         const statusCounts = response.data.statusCounts;
-        
+
         setUserTaskStats({
           total: statusCounts.total || 0,
           pending: statusCounts.pending || { count: 0, percentage: 0 },
@@ -396,8 +525,6 @@ const isSameSelectedDate = (taskDate, selectedDate) => {
     } catch (err) {
       console.error('❌ Error fetching task status counts:', err);
       calculateStatsFromTasks();
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -418,7 +545,7 @@ const isSameSelectedDate = (taskDate, selectedDate) => {
       });
       return;
     }
-    
+
     const statusCounts = {
       pending: 0,
       'in-progress': 0,
@@ -441,41 +568,41 @@ const isSameSelectedDate = (taskDate, selectedDate) => {
     const total = tasks.length;
     setUserTaskStats({
       total,
-      pending: { 
-        count: statusCounts.pending, 
-        percentage: total > 0 ? Math.round((statusCounts.pending / total) * 100) : 0 
+      pending: {
+        count: statusCounts.pending,
+        percentage: total > 0 ? Math.round((statusCounts.pending / total) * 100) : 0
       },
-      inProgress: { 
-        count: statusCounts['in-progress'], 
-        percentage: total > 0 ? Math.round((statusCounts['in-progress'] / total) * 100) : 0 
+      inProgress: {
+        count: statusCounts['in-progress'],
+        percentage: total > 0 ? Math.round((statusCounts['in-progress'] / total) * 100) : 0
       },
-      completed: { 
-        count: statusCounts.completed, 
-        percentage: total > 0 ? Math.round((statusCounts.completed / total) * 100) : 0 
+      completed: {
+        count: statusCounts.completed,
+        percentage: total > 0 ? Math.round((statusCounts.completed / total) * 100) : 0
       },
-      approved: { 
-        count: statusCounts.approved, 
-        percentage: total > 0 ? Math.round((statusCounts.approved / total) * 100) : 0 
+      approved: {
+        count: statusCounts.approved,
+        percentage: total > 0 ? Math.round((statusCounts.approved / total) * 100) : 0
       },
-      rejected: { 
-        count: statusCounts.rejected, 
-        percentage: total > 0 ? Math.round((statusCounts.rejected / total) * 100) : 0 
+      rejected: {
+        count: statusCounts.rejected,
+        percentage: total > 0 ? Math.round((statusCounts.rejected / total) * 100) : 0
       },
-      overdue: { 
-        count: statusCounts.overdue, 
-        percentage: total > 0 ? Math.round((statusCounts.overdue / total) * 100) : 0 
+      overdue: {
+        count: statusCounts.overdue,
+        percentage: total > 0 ? Math.round((statusCounts.overdue / total) * 100) : 0
       },
-      onhold: { 
-        count: statusCounts.onhold, 
-        percentage: total > 0 ? Math.round((statusCounts.onhold / total) * 100) : 0 
+      onhold: {
+        count: statusCounts.onhold,
+        percentage: total > 0 ? Math.round((statusCounts.onhold / total) * 100) : 0
       },
-      reopen: { 
-        count: statusCounts.reopen, 
-        percentage: total > 0 ? Math.round((statusCounts.reopen / total) * 100) : 0 
+      reopen: {
+        count: statusCounts.reopen,
+        percentage: total > 0 ? Math.round((statusCounts.reopen / total) * 100) : 0
       },
-      cancelled: { 
-        count: statusCounts.cancelled, 
-        percentage: total > 0 ? Math.round((statusCounts.cancelled / total) * 100) : 0 
+      cancelled: {
+        count: statusCounts.cancelled,
+        percentage: total > 0 ? Math.round((statusCounts.cancelled / total) * 100) : 0
       }
     });
   };
@@ -486,9 +613,9 @@ const isSameSelectedDate = (taskDate, selectedDate) => {
       if (status === 'all') {
         return ['all'];
       }
-      
+
       const newFilters = prev.filter(f => f !== 'all');
-      
+
       if (newFilters.includes(status)) {
         const updated = newFilters.filter(f => f !== status);
         return updated.length === 0 ? ['all'] : updated;
@@ -498,22 +625,22 @@ const isSameSelectedDate = (taskDate, selectedDate) => {
     });
   };
 
-  // Handle search
-  const handleSearch = (query) => {
-    setSearchQuery(query);
-  };
-
   // Fetch user tasks
   const fetchUserTasks = async (userId) => {
     setLoading(true);
     setError("");
     try {
       const user = users.find((x) => x._id === userId);
+      if (!user) {
+        setError("User not found");
+        return;
+      }
+
       setSelectedUser(user);
       setSelectedUserId(userId);
 
       const params = new URLSearchParams();
-      
+
       if (searchQuery) {
         params.append('search', searchQuery);
       }
@@ -524,19 +651,19 @@ const isSameSelectedDate = (taskDate, selectedDate) => {
       if (res.data.success) {
         const tasksData = res.data.tasks || [];
         setTasks(tasksData);
-        
+
         // Fetch stats from backend
         await fetchTaskStatusCounts(userId);
         setOpenDialog(true);
       } else {
         setError("Failed to fetch user tasks");
       }
-      
+
     } catch (err) {
       console.error("Error fetching user tasks:", err);
       setError(
-        err?.response?.data?.error || 
-        err?.message || 
+        err?.response?.data?.error ||
+        err?.message ||
         "Error fetching tasks. Please try again."
       );
     } finally {
@@ -546,9 +673,12 @@ const isSameSelectedDate = (taskDate, selectedDate) => {
 
   // Reset filters
   const resetFilters = () => {
-    setSelectedEmployeeType('all');
     setSearchQuery('');
     setActiveStatusFilters(['all']);
+    setDateFilter('all');
+    setPriorityFilter('all');
+    setFromDate('');
+    setToDate('');
   };
 
   // Format date
@@ -564,7 +694,7 @@ const isSameSelectedDate = (taskDate, selectedDate) => {
 
   // Get status count for specific user
   const getStatusCount = (status) => {
-    switch(status) {
+    switch (status) {
       case 'total': return userTaskStats.total || 0;
       case 'pending': return userTaskStats.pending?.count || 0;
       case 'in-progress': return userTaskStats.inProgress?.count || 0;
@@ -628,9 +758,9 @@ const isSameSelectedDate = (taskDate, selectedDate) => {
           {/* Total Tasks Card */}
           <div className="emp-all-task-overall-stat-card">
             <div className="emp-all-task-overall-stat-content">
-              <div 
+              <div
                 className="emp-all-task-overall-stat-icon"
-                style={{ 
+                style={{
                   background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
                 }}
               >
@@ -654,20 +784,20 @@ const isSameSelectedDate = (taskDate, selectedDate) => {
               ) || 0;
 
               return (
-                <div 
+                <div
                   key={status.value}
                   className="emp-all-task-overall-stat-card"
-                  style={{ 
+                  style={{
                     borderColor: `${status.color}30`,
-                    background: overallStats[status.value] > 0 ? 
-                      `linear-gradient(135deg, ${status.color}15 0%, ${status.color}08 100%)` : 
+                    background: overallStats[status.value] > 0 ?
+                      `linear-gradient(135deg, ${status.color}15 0%, ${status.color}08 100%)` :
                       'rgba(255, 255, 255, 0.7)'
                   }}
                 >
                   <div className="emp-all-task-overall-stat-content">
-                    <div 
+                    <div
                       className="emp-all-task-overall-stat-icon"
-                      style={{ 
+                      style={{
                         background: getStatusGradient(status.value)
                       }}
                     >
@@ -675,7 +805,7 @@ const isSameSelectedDate = (taskDate, selectedDate) => {
                         color: "white",
                       })}
                     </div>
-                    <div 
+                    <div
                       className="emp-all-task-overall-stat-number"
                       style={{
                         background: getStatusGradient(status.value)
@@ -728,9 +858,9 @@ const isSameSelectedDate = (taskDate, selectedDate) => {
               </p>
             </div>
           </div>
-          <button 
+          <button
             onClick={() => setShowStatusFilters(!showStatusFilters)}
-            style={{ 
+            style={{
               background: 'none',
               border: '1px solid rgba(102, 126, 234, 0.2)',
               borderRadius: '0.5rem',
@@ -747,7 +877,7 @@ const isSameSelectedDate = (taskDate, selectedDate) => {
             {showStatusFilters ? 'Hide' : 'Show'}
           </button>
         </div>
-        
+
         {showStatusFilters && (
           <div className="emp-all-task-status-grid">
             {nonZeroStatuses.map((status) => {
@@ -755,29 +885,29 @@ const isSameSelectedDate = (taskDate, selectedDate) => {
               const isActive = activeStatusFilters.includes(status.value);
               const percentage = status.value !== 'all' ? userTaskStats[status.value]?.percentage || 0 : 0;
               const gradient = statusGradients[status.value] || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-              
+
               return (
-                <div 
+                <div
                   key={status.value}
                   className={`emp-all-task-status-card ${isActive ? 'emp-all-task-status-card-active' : ''}`}
                   onClick={() => handleStatusFilterToggle(status.value)}
-                  style={{ 
+                  style={{
                     borderColor: isActive ? status.color : 'rgba(102, 126, 234, 0.15)',
                     background: isActive ? `${status.color}15` : 'rgba(255, 255, 255, 0.7)'
                   }}
                 >
                   <div className="emp-all-task-status-content">
-                    <div 
+                    <div
                       className="emp-all-task-status-card-icon"
-                      style={{ 
+                      style={{
                         background: gradient
                       }}
                     >
-                      {React.createElement(status.icon, { 
-                        color: "white" 
+                      {React.createElement(status.icon, {
+                        color: "white"
                       })}
                     </div>
-                    <div 
+                    <div
                       className="emp-all-task-status-card-number"
                       style={{
                         background: gradient,
@@ -790,15 +920,15 @@ const isSameSelectedDate = (taskDate, selectedDate) => {
                     <div className="emp-all-task-status-card-label">
                       {status.label}
                     </div>
-                    
+
                     {status.value !== 'all' && (
                       <div style={{ width: '100%', marginTop: '0.25rem' }}>
-                        <div style={{ 
-                          display: 'flex', 
-                          justifyContent: 'space-between', 
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
                           marginBottom: '0.125rem'
                         }}>
-                          <span style={{ 
+                          <span style={{
                             fontSize: '0.65rem',
                             fontWeight: 700,
                             background: gradient,
@@ -808,16 +938,16 @@ const isSameSelectedDate = (taskDate, selectedDate) => {
                             {percentage}%
                           </span>
                         </div>
-                        <div style={{ 
-                          width: '100%', 
-                          height: 4, 
-                          borderRadius: 2, 
+                        <div style={{
+                          width: '100%',
+                          height: 4,
+                          borderRadius: 2,
                           backgroundColor: 'rgba(102, 126, 234, 0.1)',
                           overflow: 'hidden'
                         }}>
-                          <div style={{ 
-                            width: `${percentage}%`, 
-                            height: '100%', 
+                          <div style={{
+                            width: `${percentage}%`,
+                            height: '100%',
                             borderRadius: 2,
                             background: gradient
                           }} />
@@ -826,14 +956,14 @@ const isSameSelectedDate = (taskDate, selectedDate) => {
                     )}
 
                     {isActive && (
-                      <div style={{ 
+                      <div style={{
                         marginTop: '0.25rem',
                         padding: '0.125rem 0.5rem',
                         borderRadius: '0.25rem',
                         backgroundColor: 'rgba(102, 126, 234, 0.1)',
                         border: '1px solid rgba(102, 126, 234, 0.2)'
                       }}>
-                        <span style={{ 
+                        <span style={{
                           fontSize: '0.6rem',
                           fontWeight: 600,
                           color: '#667eea'
@@ -857,15 +987,15 @@ const isSameSelectedDate = (taskDate, selectedDate) => {
     const isSelected = selectedUserId === user._id;
     const userStats = getUserTaskStats(user);
     const completionRate = userStats.completionRate || 0;
-    const badgeClass = completionRate >= 80 ? 'emp-all-task-user-avatar-badge-high' : 
-                      completionRate >= 50 ? 'emp-all-task-user-avatar-badge-medium' : 
-                      'emp-all-task-user-avatar-badge-low';
-    const progressClass = completionRate >= 80 ? 'emp-all-task-progress-fill-high' : 
-                         completionRate >= 50 ? 'emp-all-task-progress-fill-medium' : 
-                         'emp-all-task-progress-fill-low';
+    const badgeClass = completionRate >= 80 ? 'emp-all-task-user-avatar-badge-high' :
+      completionRate >= 50 ? 'emp-all-task-user-avatar-badge-medium' :
+        'emp-all-task-user-avatar-badge-low';
+    const progressClass = completionRate >= 80 ? 'emp-all-task-progress-fill-high' :
+      completionRate >= 50 ? 'emp-all-task-progress-fill-medium' :
+        'emp-all-task-progress-fill-low';
 
     return (
-      <div 
+      <div
         className={`emp-all-task-user-card ${isSelected ? 'emp-all-task-user-card-selected' : ''}`}
         onClick={() => {
           setSelectedUserId(user._id);
@@ -907,11 +1037,11 @@ const isSameSelectedDate = (taskDate, selectedDate) => {
                 <div className="emp-all-task-stat-label">DONE</div>
               </div>
               <div>
-                <div 
+                <div
                   className="emp-all-task-stat-number emp-all-task-rate-stat"
                   style={{
-                    color: completionRate >= 80 ? "#28a745" : 
-                          completionRate >= 50 ? "#FFC107" : "#F44336"
+                    color: completionRate >= 80 ? "#28a745" :
+                      completionRate >= 50 ? "#FFC107" : "#F44336"
                   }}
                 >
                   {completionRate}%
@@ -926,7 +1056,7 @@ const isSameSelectedDate = (taskDate, selectedDate) => {
                 <div className="emp-all-task-progress-percentage">{completionRate}%</div>
               </div>
               <div className="emp-all-task-progress-bar">
-                <div 
+                <div
                   className={`emp-all-task-progress-fill ${progressClass}`}
                   style={{ width: `${completionRate}%` }}
                 ></div>
@@ -934,20 +1064,7 @@ const isSameSelectedDate = (taskDate, selectedDate) => {
             </div>
           </div>
 
-          <div className="emp-all-task-user-tags">
-            {user.employeeType && (
-              <div className="emp-all-task-tag">
-                {user.employeeType.toUpperCase()}
-              </div>
-            )}
-            {user.department && (
-              <div className="emp-all-task-tag emp-all-task-tag-outlined">
-                {user.department}
-              </div>
-            )}
-          </div>
-
-          <button 
+          <button
             className={`emp-all-task-action-button ${isSelected ? 'emp-all-task-action-button-primary' : 'emp-all-task-action-button-outlined'}`}
             onClick={(e) => {
               e.stopPropagation();
@@ -981,7 +1098,7 @@ const isSameSelectedDate = (taskDate, selectedDate) => {
                     {selectedUser?.name}'s Task Dashboard
                   </div>
                   <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                    <div style={{ 
+                    <div style={{
                       padding: '0.25rem 0.5rem',
                       borderRadius: '0.5rem',
                       backgroundColor: 'rgba(102, 126, 234, 0.1)',
@@ -991,17 +1108,7 @@ const isSameSelectedDate = (taskDate, selectedDate) => {
                     }}>
                       {selectedUser?.role || 'No Role'}
                     </div>
-                    <div style={{ 
-                      padding: '0.25rem 0.5rem',
-                      borderRadius: '0.5rem',
-                      backgroundColor: 'rgba(118, 75, 162, 0.1)',
-                      color: '#764ba2',
-                      fontSize: '0.75rem',
-                      fontWeight: 600
-                    }}>
-                      {selectedUser?.employeeType || 'No Type'}
-                    </div>
-                    <div style={{ 
+                    <div style={{
                       display: 'flex',
                       alignItems: 'center',
                       gap: '0.25rem',
@@ -1014,7 +1121,7 @@ const isSameSelectedDate = (taskDate, selectedDate) => {
                   </div>
                 </div>
               </div>
-              <button 
+              <button
                 className="emp-all-task-modal-close"
                 onClick={() => setOpenDialog(false)}
               >
@@ -1029,7 +1136,7 @@ const isSameSelectedDate = (taskDate, selectedDate) => {
             <div className="emp-all-task-list-container">
               <div className="emp-all-task-list-header">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <div style={{ 
+                  <div style={{
                     padding: '0.75rem',
                     borderRadius: '0.75rem',
                     background: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)',
@@ -1054,12 +1161,12 @@ const isSameSelectedDate = (taskDate, selectedDate) => {
                     className="emp-all-task-task-search"
                     placeholder="Search tasks..."
                     value={searchQuery}
-                    onChange={(e) => handleSearch(e.target.value)}
+                    onChange={(e) => setSearchQuery(e.target.value)}
                   />
                   {searchQuery && (
-                    <button 
-                      onClick={() => handleSearch('')}
-                      style={{ 
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      style={{
                         background: 'none',
                         border: 'none',
                         color: '#6b7280',
@@ -1071,65 +1178,52 @@ const isSameSelectedDate = (taskDate, selectedDate) => {
                   )}
                 </div>
               </div>
-<div className="emp-all-task-extra-filters">
-  <select value={dateFilter} onChange={e => setDateFilter(e.target.value)}>
-    <option value="all">All Dates</option>
-    <option value="today">Today</option>
-    <option value="tomorrow">Tomorrow</option>
-    <option value="week">This Week</option>
-    <option value="overdue">Overdue</option>
-  </select>
 
-  <select value={priorityFilter} onChange={e => setPriorityFilter(e.target.value)}>
-    <option value="all">All Priority</option>
-    <option value="low">Low</option>
-    <option value="medium">Medium</option>
-    <option value="high">High</option>
-  </select>
-<div className="emp-all-task-date-range">
-  <input
-    type="date"
-    value={fromDate}
-    onChange={(e) => setFromDate(e.target.value)}
-    className="emp-all-task-date-picker"
-    placeholder="From"
-  />
+              <div className="emp-all-task-extra-filters">
+                <select value={dateFilter} onChange={e => setDateFilter(e.target.value)}>
+                  <option value="all">All Dates</option>
+                  <option value="today">Today</option>
+                  <option value="tomorrow">Tomorrow</option>
+                  <option value="week">This Week</option>
+                  <option value="overdue">Overdue</option>
+                </select>
 
-  <span className="emp-all-task-date-separator">to</span>
+                <select value={priorityFilter} onChange={e => setPriorityFilter(e.target.value)}>
+                  <option value="all">All Priority</option>
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
 
-  <input
-    type="date"
-    value={toDate}
-    onChange={(e) => setToDate(e.target.value)}
-    className="emp-all-task-date-picker"
-    placeholder="To"
-  />
-
-  {(fromDate || toDate) && (
-    <button
-      className="emp-all-task-clear-date"
-      onClick={() => {
-        setFromDate("");
-        setToDate("");
-      }}
-    >
-      Clear
-    </button>
-  )}
-</div>
-
-
-{specificDate && (
-  <button
-    className="emp-all-task-clear-date"
-    onClick={() => setSpecificDate("")}
-  >
-    Clear Date
-  </button>
-)}
-
-</div>
-
+                <div className="emp-all-task-date-range">
+                  <input
+                    type="date"
+                    value={fromDate}
+                    onChange={(e) => setFromDate(e.target.value)}
+                    className="emp-all-task-date-picker"
+                    placeholder="From"
+                  />
+                  <span className="emp-all-task-date-separator">to</span>
+                  <input
+                    type="date"
+                    value={toDate}
+                    onChange={(e) => setToDate(e.target.value)}
+                    className="emp-all-task-date-picker"
+                    placeholder="To"
+                  />
+                  {(fromDate || toDate) && (
+                    <button
+                      className="emp-all-task-clear-date"
+                      onClick={() => {
+                        setFromDate("");
+                        setToDate("");
+                      }}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </div>
 
               {/* Loading State */}
               {loading ? (
@@ -1153,16 +1247,15 @@ const isSameSelectedDate = (taskDate, selectedDate) => {
                   {filteredTasks.map((task) => {
                     const status = task.userStatus || task.status || task.overallStatus;
                     const statusOption = STATUS_OPTIONS.find(s => s.value === status) || STATUS_OPTIONS[0];
-                    
-                    return (
-                   <div 
-  key={task._id}
-  className={`emp-all-task-task-item ${
-    isSameDay(task.dueDateTime || task.createdAt, today) ? "today-task" : ""
-  }`}
-  style={{ borderLeftColor: statusOption.color }}
->
 
+                    return (
+                      <div
+                        key={task._id}
+                        className={`emp-all-task-task-item ${
+                          isSameDay(task.dueDateTime || task.createdAt, today) ? "today-task" : ""
+                          }`}
+                        style={{ borderLeftColor: statusOption.color }}
+                      >
                         <div className="emp-all-task-task-header">
                           <div className="emp-all-task-task-title">
                             {task.title || 'No Title'}
@@ -1171,13 +1264,13 @@ const isSameSelectedDate = (taskDate, selectedDate) => {
                             {task.priority || 'medium'}
                           </div>
                         </div>
-                        
+
                         {task.description && (
                           <div className="emp-all-task-task-description">
                             {task.description}
                           </div>
                         )}
-                        
+
                         <div className="emp-all-task-task-footer">
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                             <FiHash size={12} />
@@ -1206,12 +1299,58 @@ const isSameSelectedDate = (taskDate, selectedDate) => {
     );
   };
 
+  // ✅ Add error display component
+  const renderError = () => {
+    if (!error) return null;
+
+    return (
+      <div className="emp-all-task-error-alert">
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '1rem',
+          padding: '1rem',
+          backgroundColor: '#fee2e2',
+          border: '1px solid #fca5a5',
+          borderRadius: '0.5rem',
+          margin: '1rem 0'
+        }}>
+          <FiAlertTriangle color="#dc2626" size={24} />
+          <div style={{ flex: 1 }}>
+            <strong style={{ color: '#dc2626' }}>Error:</strong>
+            <p style={{ margin: '0.25rem 0', color: '#dc2626' }}>{error}</p>
+          </div>
+          <button
+            onClick={() => setError("")}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#dc2626',
+              cursor: 'pointer',
+              fontSize: '1.5rem'
+            }}
+          >
+            &times;
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   if (!canManage) {
     return (
       <div className="emp-all-task-section">
         <div className="emp-all-task-access-denied">
           <h2 className="emp-all-task-access-title">Access Denied</h2>
           <p>You don't have the required permissions to view this page.</p>
+          <p>Your role: {currentUserRole || 'Not detected'}</p>
+          {currentUser && (
+            <div style={{ marginTop: '1rem', textAlign: 'left' }}>
+              <p><strong>User Info:</strong> {currentUser.name}</p>
+              <p><strong>Email:</strong> {currentUser.email}</p>
+              <p><strong>Job Role ID:</strong> {currentUser.jobRole}</p>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -1219,6 +1358,8 @@ const isSameSelectedDate = (taskDate, selectedDate) => {
 
   return (
     <div className="emp-all-task-section">
+      {renderError()}
+
       {/* Header */}
       <div className="emp-all-task-header">
         <div className="emp-all-task-header-content">
@@ -1227,6 +1368,9 @@ const isSameSelectedDate = (taskDate, selectedDate) => {
               <h1>📊 Employee Task Management</h1>
               <p className="emp-all-task-header-subtitle">
                 Comprehensive dashboard with advanced filtering and analytics
+              </p>
+              <p style={{ fontSize: '0.9rem', color: '#6b7280', marginTop: '0.5rem' }}>
+                Logged in as: {currentUser?.name} ({currentUserRole})
               </p>
             </div>
             <div className="emp-all-task-header-stats">
@@ -1239,7 +1383,7 @@ const isSameSelectedDate = (taskDate, selectedDate) => {
               </div>
             </div>
           </div>
-          
+
           {renderOverallStats()}
         </div>
       </div>
@@ -1267,40 +1411,19 @@ const isSameSelectedDate = (taskDate, selectedDate) => {
               <input
                 type="text"
                 className="emp-all-task-search-input"
-                placeholder="Search employees..."
+                placeholder="Search employees by name, email or ID..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
-              <select 
-                className="emp-all-task-select-input"
-                value={selectedEmployeeType}
-                onChange={(e) => setSelectedEmployeeType(e.target.value)}
+              <button
+                className="emp-all-task-reset-filter-button"
+                onClick={resetFilters}
+                disabled={!searchQuery && activeStatusFilters.length === 1 && activeStatusFilters[0] === 'all'}
               >
-                {EMPLOYEE_TYPES.map((type) => (
-                  <option key={type.value} value={type.value}>
-                    {type.label}
-                  </option>
-                ))}
-              </select>
+                <FiRefreshCw size={16} />
+                Reset
+              </button>
             </div>
-          </div>
-
-          {/* Type Chips */}
-          <div className="emp-all-task-type-chips">
-            {EMPLOYEE_TYPES.map((type) => (
-              <div
-                key={type.value}
-                className={`emp-all-task-chip ${selectedEmployeeType === type.value ? 'emp-all-task-chip-active' : 'emp-all-task-chip-inactive'}`}
-                onClick={() => setSelectedEmployeeType(type.value)}
-                style={{
-                  borderColor: selectedEmployeeType === type.value ? type.color : undefined,
-                  color: selectedEmployeeType === type.value ? type.color : undefined
-                }}
-              >
-                {React.createElement(type.icon, { size: 14 })}
-                {type.label}
-              </div>
-            ))}
           </div>
 
           {/* Stats Grid */}
@@ -1366,13 +1489,13 @@ const isSameSelectedDate = (taskDate, selectedDate) => {
                 <FiUsers />
               </div>
               <h3>No Employees Found</h3>
-              <p>Try selecting a different employee type or check your search terms</p>
-              <button 
+              <p>Try checking your search terms</p>
+              <button
                 className="emp-all-task-reset-button"
                 onClick={resetFilters}
               >
                 <FiRefreshCw size={16} />
-                Reset All Filters
+                Reset Search
               </button>
             </div>
           ) : (

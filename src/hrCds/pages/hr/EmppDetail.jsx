@@ -680,10 +680,10 @@ const EmployeeDirectory = () => {
         }
       };
       
-      console.log("🌐 Making API request to: /users/company-users");
+      console.log("🌐 Making API request to: /users/department-users");
       
       // Use the correct endpoint from the controller
-      const usersRes = await axios.get("/users/company-users", config);
+      const usersRes = await axios.get("/users/department-users", config);
       console.log("✅ API Response received:", {
         status: usersRes.status,
         statusText: usersRes.statusText,

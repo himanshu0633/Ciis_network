@@ -242,7 +242,7 @@ const AdminTaskManagement = () => {
       let userCompany = '';
       let userDepartment = '';
       
-      // Check if it's the full user object from company-users API
+      // Check if it's the full user object from department-users API
       if (user.id && typeof user.id === 'string') {
         foundUserId = user.id;
         console.log('✅ Found user ID in "id" field:', foundUserId);
@@ -573,8 +573,8 @@ const AdminTaskManagement = () => {
     try {
       console.log('📡 Fetching supporting data...');
       
-      // First, fetch company-users to get users from same company
-      const usersResult = await apiCall('get', '/users/company-users');
+      // First, fetch department-users to get users from same department
+      const usersResult = await apiCall('get', '/users/department-users');
       
       console.log('👥 Raw users API response:', usersResult);
       
