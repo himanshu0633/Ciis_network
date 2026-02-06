@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
@@ -34,7 +34,8 @@ import {
   Dashboard,
   People,
   Settings,
-  Analytics
+  Analytics,
+  Business
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import API_URL from '../config';
@@ -48,6 +49,75 @@ const SuperAdminLogin = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [companyLoading, setCompanyLoading] = useState(true);
+  const [companyDetails, setCompanyDetails] = useState(null);
+  const [companyIdentifier, setCompanyIdentifier] = useState('');
+
+  // Extract company identifier from URL (if any)
+  useEffect(() => {
+    const extractCompanyIdentifier = () => {
+      const path = window.location.pathname;
+      console.log('🔗 Current path:', path);
+      
+      const match1 = path.match(/\/company\/([^/]+)\/super-admin-login/);
+      if (match1 && match1[1]) {
+        console.log('✅ Extracted identifier from /company/{id}/super-admin-login:', match1[1]);
+        return match1[1];
+      }
+
+      const match2 = path.match(/\/company\/([^/]+)/);
+      if (match2 && match2[1]) {
+        console.log('✅ Extracted identifier from /company/{id}:', match2[1]);
+        return match2[1];
+      }
+
+      const segments = path.split('/').filter(Boolean);
+      if (segments.length >= 2 && segments[0] === 'company') {
+        console.log('✅ Extracted identifier from segments:', segments[1]);
+        return segments[1];
+      }
+
+      console.log('⚠️ No company identifier found in URL, using default');
+      return 'ciis'; // Default company identifier for super admin
+    };
+
+    const identifier = extractCompanyIdentifier();
+    if (identifier) {
+      console.log('🎯 Setting company identifier:', identifier);
+      setCompanyIdentifier(identifier);
+      fetchCompanyDetails(identifier);
+    } else {
+      setCompanyLoading(false);
+    }
+  }, []);
+
+  const fetchCompanyDetails = async (identifier) => {
+    try {
+      setCompanyLoading(true);
+      const response = await axios.get(`${API_URL}/company/details/${identifier}`);
+
+      if (response.data.success) {
+        setCompanyDetails(response.data.company);
+        document.title = `${response.data.company.companyName} - Super Admin Login`;
+      }
+    } catch (error) {
+      console.error('Error fetching company details:', error);
+
+      if (error.response?.status === 404) {
+        toast.error('Company not found. Using default configuration.');
+      } else if (error.response?.status === 403) {
+        toast.error(error.response.data.message || 'Company account is not active');
+      }
+
+      // Default company details for super admin
+      setCompanyDetails({
+        companyName: 'CIIS NETWORK',
+        logo: null
+      });
+    } finally {
+      setCompanyLoading(false);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -87,12 +157,25 @@ const SuperAdminLogin = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post(`${API_URL}/super-admin/login`, form);
+      const response = await axios.post(`${API_URL}/super-admin/login`, {
+        ...form,
+        companyIdentifier: companyIdentifier || 'ciis'
+      });
 
       if (response.data.success) {
         // Save super admin data to localStorage
         localStorage.setItem('superAdmin', JSON.stringify(response.data.data));
         localStorage.setItem('token', response.data.token);
+
+        // Save company details if available
+        if (companyDetails) {
+          localStorage.setItem('companyDetails', JSON.stringify(companyDetails));
+        }
+
+        // Save company identifier
+        if (companyIdentifier) {
+          localStorage.setItem('companyIdentifier', companyIdentifier);
+        }
 
         toast.success('Login successful! Redirecting...');
 
@@ -124,7 +207,7 @@ const SuperAdminLogin = () => {
         p: 2
       }}
     >
-      <Container maxWidth="lg">
+      <Container maxWidth="md">
         <Fade in>
           <Paper
             elevation={24}
@@ -134,7 +217,7 @@ const SuperAdminLogin = () => {
               boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
             }}
           >
-            <Grid container sx={{ minHeight: '600px' }}>
+            <Grid container sx={{ minHeight: '500px' }}>
               {/* LEFT SECTION - Super Admin Features */}
               <Grid
                 item
@@ -174,13 +257,13 @@ const SuperAdminLogin = () => {
                     width: '100%'
                   }}
                 >
-                  {/* Super Admin Icon */}
+                  {/* Company/Super Admin Logo */}
                   <Box
                     sx={{
                       width: 120,
                       height: 120,
                       borderRadius: 3,
-                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                      backgroundColor: 'white',
                       backdropFilter: 'blur(10px)',
                       display: 'flex',
                       alignItems: 'center',
@@ -190,15 +273,31 @@ const SuperAdminLogin = () => {
                       boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
                     }}
                   >
-                    <AdminPanelSettings
-                      sx={{
-                        fontSize: 48,
-                        color: 'white'
-                      }}
-                    />
+                    {companyLoading ? (
+                      <CircularProgress size={40} color="inherit" />
+                    ) : companyDetails?.logo ? (
+                      <Box
+                        component="img"
+                        src={companyDetails.logo}
+                        alt={companyDetails.companyName}
+                        sx={{
+                          width: 80,
+                          height: 80,
+                          objectFit: 'contain',
+                          borderRadius: '8px'
+                        }}
+                      />
+                    ) : (
+                      <AdminPanelSettings
+                        sx={{
+                          fontSize: 48,
+                          color: 'white'
+                        }}
+                      />
+                    )}
                   </Box>
 
-                  {/* Super Admin Title */}
+                  {/* Company/Super Admin Title */}
                   <Typography
                     variant="h4"
                     sx={{
@@ -209,7 +308,7 @@ const SuperAdminLogin = () => {
                       textShadow: '0 2px 4px rgba(0,0,0,0.1)'
                     }}
                   >
-                    CIIS NETWORK
+                    {companyLoading ? 'Loading...' : (companyDetails?.companyName || 'CIIS NETWORK')}
                   </Typography>
 
                   <Typography
@@ -220,7 +319,7 @@ const SuperAdminLogin = () => {
                       mb: 4
                     }}
                   >
-                   Super Admin Portal
+                    {companyDetails?.companyName ? 'Super Admin Portal' : 'Master Control Panel'}
                   </Typography>
 
                   {/* Features List */}
@@ -316,7 +415,7 @@ const SuperAdminLogin = () => {
                   p: { xs: 4, md: 6 }
                 }}
               >
-                <Box sx={{ maxWidth: '400px', mx: 'auto', width: '100%' }}>
+                <Box sx={{ maxWidth: '380px', mx: 'auto', width: '100%' }}>
                   {/* Form Header */}
                   <Box sx={{ textAlign: 'center', mb: 4 }}>
                     <Typography
@@ -328,7 +427,7 @@ const SuperAdminLogin = () => {
                         letterSpacing: '-0.5px'
                       }}
                     >
-                      CIIS NETWORK
+                      {companyDetails?.companyName || 'CIIS NETWORK'}
                     </Typography>
                     <Typography
                       variant="body1"

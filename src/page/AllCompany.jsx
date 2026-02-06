@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
+import API_URL from "../config";
 import {
   Business,
   People,
@@ -42,7 +43,6 @@ import {
 
 const AllCompany = () => {
   const navigate = useNavigate();
-  // const API_BASE = "http://localhost:3000/api";
 
   // State variables
   const [loading, setLoading] = useState(true);
@@ -89,28 +89,96 @@ const AllCompany = () => {
     }
   };
 
-  // Fetch all companies with user counts
+  // Fetch all users and group by company
+  const fetchAllUsers = async () => {
+    console.log("🔍 Fetching all users...");
+    
+    try {
+      const token = localStorage.getItem("token");
+      const headers = { Authorization: `Bearer ${token}` };
+      
+      console.log("📡 API URL:", `${API_URL}/super-admin/users`);
+      
+      const response = await axios.get(`${API_URL}/super-admin/users`, { headers });
+      
+      console.log("✅ Users API response received");
+      console.log("Total users:", response.data?.length || 0);
+      
+      if (response.data && response.data.length > 0) {
+        // Create a map of users grouped by company ID
+        const usersByCompany = {};
+        
+        response.data.forEach(user => {
+          const companyId = user.company?._id || user.company;
+          if (companyId) {
+            if (!usersByCompany[companyId]) {
+              usersByCompany[companyId] = [];
+            }
+            usersByCompany[companyId].push(user);
+          } else {
+            console.log("⚠️ User without company:", user.email);
+          }
+        });
+        
+        console.log("📊 Users grouped by company:", Object.keys(usersByCompany).length, "companies have users");
+        
+        return usersByCompany;
+      }
+      return {};
+    } catch (error) {
+      console.error("❌ ERROR in fetchAllUsers:", error.response?.data || error.message);
+      console.error("Status:", error.response?.status);
+      return {};
+    }
+  };
+
+  // Main function to fetch companies with users
   const fetchCompaniesWithUsers = async () => {
-    if (!validateSuperAdmin()) return;
+    if (!validateSuperAdmin()) {
+      console.log("❌ Validation failed");
+      return;
+    }
 
     try {
       setLoading(true);
+      console.log("🔄 Starting to fetch companies with users...");
+      
       const token = localStorage.getItem("token");
       const headers = { Authorization: `Bearer ${token}` };
 
-      const response = await axios.get(
-        `${API_URL}/super-admin/companies-with-users`,
+      // Step 1: Fetch all companies
+      console.log("📡 Fetching companies from:", `${API_URL}/super-admin/companies`);
+      const companiesRes = await axios.get(
+        `${API_URL}/super-admin/companies`,
         { headers }
       );
 
-      if (response.data && response.data.length > 0) {
-        setCompanies(response.data);
-        setFilteredCompanies(response.data);
-      } else {
-        await fetchCompaniesAndUsersSeparately();
-      }
+      const companiesData = companiesRes.data || [];
+      console.log("✅ Companies fetched:", companiesData.length);
+
+      // Step 2: Fetch all users
+      const usersByCompany = await fetchAllUsers();
+
+      // Step 3: Combine companies with their users
+      const companiesWithUsers = companiesData.map(company => {
+        const companyUsers = usersByCompany[company._id] || [];
+        return {
+          ...company,
+          userCount: companyUsers.length,
+          users: companyUsers.slice(0, 3) // Show only first 3 users for preview
+        };
+      });
+
+      console.log("📊 Final companies data with user counts:");
+      companiesWithUsers.forEach(company => {
+        console.log(`   - ${company.companyName}: ${company.userCount} users`);
+      });
+
+      setCompanies(companiesWithUsers);
+      setFilteredCompanies(companiesWithUsers);
+
     } catch (error) {
-      console.error("Error fetching data:", error);
+      console.error("❌ ERROR in fetchCompaniesWithUsers:", error);
       
       if (error.response?.status === 401) {
         toast.error("Session expired. Please login again!");
@@ -119,30 +187,45 @@ const AllCompany = () => {
         return;
       }
 
+      toast.error("Failed to load data. Please try again.");
+      
+      // Try alternative method
       await fetchCompaniesAndUsersSeparately();
     } finally {
       setLoading(false);
+      console.log("🏁 Data loading completed");
     }
   };
 
   // Fallback method for separate API calls
   const fetchCompaniesAndUsersSeparately = async () => {
+    console.log("🔄 Trying fallback method...");
+    
     try {
       const token = localStorage.getItem("token");
       const headers = { Authorization: `Bearer ${token}` };
 
+      // Fetch companies
       const companiesRes = await axios.get(
         `${API_URL}/super-admin/companies`,
         { headers }
       );
 
+      const companiesData = companiesRes.data || [];
+      console.log("📊 Companies in fallback:", companiesData.length);
+
+      // For each company, fetch users separately
       const companiesWithUsers = await Promise.all(
-        companiesRes.data.map(async (company) => {
+        companiesData.map(async (company) => {
           try {
+            console.log(`👥 Fetching users for company: ${company.companyName} (${company._id})`);
+            
             const usersRes = await axios.get(
               `${API_URL}/super-admin/company/${company._id}/users`,
               { headers }
             );
+            
+            console.log(`   ✅ Users for ${company.companyName}:`, usersRes.data.length);
             
             return {
               ...company,
@@ -150,6 +233,7 @@ const AllCompany = () => {
               users: usersRes.data.slice(0, 3)
             };
           } catch (err) {
+            console.error(`   ❌ Error fetching users for ${company.companyName}:`, err.message);
             return {
               ...company,
               userCount: 0,
@@ -159,11 +243,13 @@ const AllCompany = () => {
         })
       );
 
+      console.log("✅ Fallback completed successfully");
       setCompanies(companiesWithUsers);
       setFilteredCompanies(companiesWithUsers);
+      
     } catch (error) {
-      toast.error("Failed to load data");
-      console.error("Backup fetch error:", error);
+      console.error("❌ Fallback method failed:", error);
+      toast.error("Failed to load company data");
     }
   };
 
@@ -172,10 +258,12 @@ const AllCompany = () => {
     let results = companies;
 
     if (searchTerm) {
+      const term = searchTerm.toLowerCase();
       results = results.filter(company =>
-        company.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        company.companyEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        company.companyCode?.toLowerCase().includes(searchTerm.toLowerCase())
+        company.companyName?.toLowerCase().includes(term) ||
+        company.companyEmail?.toLowerCase().includes(term) ||
+        company.companyCode?.toLowerCase().includes(term) ||
+        company.ownerName?.toLowerCase().includes(term)
       );
     }
 
@@ -185,11 +273,15 @@ const AllCompany = () => {
       results = results.filter(company => company.isActive === false);
     }
 
+    console.log(`🔍 Filter applied: ${searchTerm ? 'Search: ' + searchTerm : ''} ${filter !== 'all' ? 'Filter: ' + filter : ''}`);
+    console.log(`   Results: ${results.length} companies`);
+    
     setFilteredCompanies(results);
   }, [searchTerm, filter, companies]);
 
   // Initial load
   useEffect(() => {
+    console.log("🚀 AllCompany component mounted");
     fetchCompaniesWithUsers();
   }, []);
 
@@ -197,17 +289,40 @@ const AllCompany = () => {
   const fetchCompanyUsers = async (companyId) => {
     try {
       setUsersLoading(true);
+      console.log(`👥 Fetching users for company ID: ${companyId}`);
+      
       const token = localStorage.getItem("token");
       const headers = { Authorization: `Bearer ${token}` };
       
-      const response = await axios.get(
-        `${API_URL}/super-admin/company/${companyId}/users`,
-        { headers }
-      );
+      // Try multiple endpoints
+      let users = [];
       
-      setCompanyUsers(response.data);
+      try {
+        // First try the direct company users endpoint
+        const response = await axios.get(
+          `${API_URL}/super-admin/company/${companyId}/users`,
+          { headers }
+        );
+        users = response.data;
+        console.log(`✅ Got ${users.length} users from company-specific endpoint`);
+      } catch (error) {
+        console.log(`⚠️ Company-specific endpoint failed, trying all users endpoint`);
+        
+        // Fallback: Fetch all users and filter by company
+        const allUsersRes = await axios.get(
+          `${API_URL}/super-admin/users`,
+          { headers }
+        );
+        
+        users = allUsersRes.data.filter(user => 
+          user.company?._id === companyId || user.company === companyId
+        );
+        console.log(`✅ Got ${users.length} users from all users endpoint`);
+      }
+      
+      setCompanyUsers(users);
     } catch (error) {
-      console.error("Error fetching company users:", error);
+      console.error("❌ Error fetching company users:", error);
       toast.error("Failed to load users");
       setCompanyUsers([]);
     } finally {
@@ -217,6 +332,7 @@ const AllCompany = () => {
 
   // Open users popup
   const handleOpenUsersPopup = async (company) => {
+    console.log(`📂 Opening users popup for: ${company.companyName}`);
     setSelectedCompany(company);
     await fetchCompanyUsers(company._id);
     setUsersPopupOpen(true);
@@ -224,6 +340,7 @@ const AllCompany = () => {
 
   // Close users popup
   const handleCloseUsersPopup = () => {
+    console.log("📂 Closing users popup");
     setUsersPopupOpen(false);
     setSelectedCompany(null);
     setCompanyUsers([]);
@@ -232,8 +349,11 @@ const AllCompany = () => {
   // Export to CSV
   const handleExportCSV = () => {
     try {
+      console.log("📤 Exporting CSV...");
+      
       const csvRows = [];
       
+      // Headers
       csvRows.push([
         'Company Code',
         'Company Name',
@@ -245,6 +365,7 @@ const AllCompany = () => {
         'Created Date'
       ].join(','));
       
+      // Data rows
       filteredCompanies.forEach(company => {
         csvRows.push([
           company.companyCode || '',
@@ -271,29 +392,34 @@ const AllCompany = () => {
       link.click();
       document.body.removeChild(link);
       
+      console.log(`✅ CSV exported with ${filteredCompanies.length} companies`);
       toast.success("Report exported successfully!");
     } catch (error) {
+      console.error("❌ Export error:", error);
       toast.error("Failed to export report");
-      console.error("Export error:", error);
     }
   };
 
   // View company details
   const handleViewCompanyDetails = (companyId) => {
+    console.log(`👁️ Viewing details for company ID: ${companyId}`);
     navigate(`/super-admin/company/${companyId}`);
   };
 
   // Toggle company expansion
   const toggleCompanyExpansion = async (companyId) => {
     if (expandedCompany === companyId) {
+      console.log(`📂 Collapsing company: ${companyId}`);
       setExpandedCompany(null);
     } else {
+      console.log(`📂 Expanding company: ${companyId}`);
       setExpandedCompany(companyId);
     }
   };
 
   // Create user for specific company
   const handleCreateUserForCompany = (companyId, companyCode) => {
+    console.log(`👤 Creating user for company: ${companyId}, Code: ${companyCode}`);
     window.open(`http://localhost:5173/create-user?company=${companyId}&companyCode=${companyCode}`, '_blank');
   };
 
@@ -318,12 +444,45 @@ const AllCompany = () => {
     }
   };
 
+  // Debug function
+  const handleDebug = () => {
+    console.log("=== DEBUG INFO ===");
+    console.log("Companies:", companies.length);
+    console.log("Filtered Companies:", filteredCompanies.length);
+    console.log("Search Term:", searchTerm);
+    console.log("Filter:", filter);
+    
+    companies.forEach((company, index) => {
+      console.log(`Company ${index + 1}: ${company.companyName}`);
+      console.log(`  - Users: ${company.userCount}`);
+      console.log(`  - Users array:`, company.users?.length || 0);
+    });
+    
+    console.log("API URL:", API_URL);
+    console.log("LocalStorage superAdmin:", localStorage.getItem("superAdmin")?.substring(0, 100) + "...");
+    console.log("LocalStorage token exists:", !!localStorage.getItem("token"));
+  };
+
   // Loading state
   if (loading) {
     return (
       <div style={styles.loadingContainer}>
         <div style={styles.spinner}></div>
         <p>Loading Companies Data...</p>
+        <button 
+          onClick={handleDebug}
+          style={{
+            padding: "8px 16px",
+            background: "#6366f1",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer",
+            marginTop: "20px"
+          }}
+        >
+          Debug in Console
+        </button>
       </div>
     );
   }
@@ -331,10 +490,25 @@ const AllCompany = () => {
   return (
     <div style={styles.container}>
       {/* Header Section */}
-      <div style={styles.headerSection}>        
+      <div style={styles.headerSection}>
         <div style={styles.titleSection}>
           <Business style={styles.titleIcon} />
           <h1>All Companies & Users</h1>
+          <button 
+            onClick={handleDebug}
+            style={{
+              marginLeft: "20px",
+              padding: "8px 16px",
+              background: "#f59e0b",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+              fontSize: "12px"
+            }}
+          >
+            Debug
+          </button>
         </div>
 
         {/* Stats Cards */}
@@ -411,6 +585,20 @@ const AllCompany = () => {
             <Business style={styles.emptyIcon} />
             <h3>No companies found</h3>
             <p>Try changing your search or filter criteria</p>
+            <button 
+              onClick={fetchCompaniesWithUsers}
+              style={{
+                padding: "10px 20px",
+                background: "#6366f1",
+                color: "white",
+                border: "none",
+                borderRadius: "8px",
+                cursor: "pointer",
+                marginTop: "15px"
+              }}
+            >
+              Retry Loading
+            </button>
           </div>
         ) : (
           filteredCompanies.map((company) => (
@@ -467,7 +655,10 @@ const AllCompany = () => {
               </div>
 
               {/* Company Details */}
-              <div style={styles.companyDetails}>
+              <div style={{
+                ...styles.companyDetails,
+                display: expandedCompany === company._id ? 'block' : 'none'
+              }}>
                 <div style={styles.detailGrid}>
                   <div style={styles.detailItem}>
                     <label>Email</label>
@@ -527,6 +718,21 @@ const AllCompany = () => {
                 ) : (
                   <div style={styles.noUsers}>
                     <p>No users in this company yet</p>
+                    <button
+                      onClick={() => handleCreateUserForCompany(company._id, company.companyCode)}
+                      style={{
+                        padding: "8px 16px",
+                        background: "#10b981",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "6px",
+                        cursor: "pointer",
+                        marginTop: "10px",
+                        fontSize: "12px"
+                      }}
+                    >
+                      + Add First User
+                    </button>
                   </div>
                 )}
               </div>
@@ -722,6 +928,19 @@ const AllCompany = () => {
               <People style={{ fontSize: 64, color: '#d1d5db', marginBottom: 20 }} />
               <h3 style={{ color: '#6b7280', marginBottom: 8 }}>No Users Found</h3>
               <p style={{ color: '#9ca3af' }}>This company doesn't have any users yet.</p>
+              {selectedCompany && (
+                <Button 
+                  onClick={() => handleCreateUserForCompany(selectedCompany._id, selectedCompany.companyCode)}
+                  variant="contained"
+                  style={{
+                    marginTop: "20px",
+                    background: "#10b981",
+                    color: "white"
+                  }}
+                >
+                  + Create First User
+                </Button>
+              )}
             </div>
           )}
         </DialogContent>
