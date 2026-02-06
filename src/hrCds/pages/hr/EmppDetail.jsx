@@ -1,7 +1,4 @@
-// department wise h isme usi department ke log dikhenge jo login hoga 
-
-
-import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import axios from "../../../utils/axiosConfig";
 import './employee-directory.css';
 
@@ -47,20 +44,16 @@ const useUser = () => {
       const companyData = localStorage.getItem('companyDetails');
       
       if (!userData) {
-        console.log("❌ No user data found in localStorage");
+        console.warn("❌ No user data found in localStorage");
         return null;
       }
       
-      console.log("📋 Raw user data from localStorage:", userData);
       const parsedUser = JSON.parse(userData);
-      console.log("📋 Parsed user data:", parsedUser);
       
       let companyDetails = null;
-      
       if (companyData) {
         try {
           companyDetails = JSON.parse(companyData);
-          console.log("🏢 Company details from localStorage:", companyDetails);
         } catch (e) {
           console.error('❌ Error parsing company details:', e);
         }
@@ -72,7 +65,17 @@ const useUser = () => {
         companyDetails
       };
       
-      console.log("👤 Combined user object:", combinedUser);
+      console.log("👤 Current user from localStorage:", {
+        id: combinedUser.id || combinedUser._id,
+        email: combinedUser.email,
+        company: combinedUser.company,
+        companyId: combinedUser.companyId,
+        department: combinedUser.department,
+        departmentId: combinedUser.departmentId,
+        jobRole: combinedUser.jobRole || combinedUser.role,
+        isAdmin: ['admin', 'superadmin'].includes((combinedUser.jobRole || combinedUser.role || '').toLowerCase())
+      });
+      
       return combinedUser;
       
     } catch (err) {
@@ -83,9 +86,9 @@ const useUser = () => {
   
   const getCurrentUserJobRole = useCallback(() => {
     const user = getCurrentUser();
-    const jobRole = user?.jobRole || user?.role || null;
+    const jobRole = user?.jobRole || user?.role || '';
     console.log("👔 Current user job role:", jobRole);
-    return jobRole;
+    return jobRole.toLowerCase();
   }, [getCurrentUser]);
   
   const getCurrentUserId = useCallback(() => {
@@ -97,21 +100,21 @@ const useUser = () => {
   
   const getCurrentUserCompanyId = useCallback(() => {
     const user = getCurrentUser();
-    const companyId = user?.company || user?.companyId || null;
+    const companyId = user?.company || user?.companyId || user?.companyDetails?._id || null;
     console.log("🏢 Current user company ID:", companyId);
     return companyId;
   }, [getCurrentUser]);
   
   const getCurrentUserCompanyCode = useCallback(() => {
     const user = getCurrentUser();
-    const companyCode = user?.companyCode || user?.company?.companyCode || null;
+    const companyCode = user?.companyCode || user?.companyDetails?.companyCode || null;
     console.log("🏷️ Current user company code:", companyCode);
     return companyCode;
   }, [getCurrentUser]);
   
   const getCurrentUserCompanyName = useCallback(() => {
     const user = getCurrentUser();
-    const companyName = user?.companyName || user?.company?.companyName || null;
+    const companyName = user?.companyName || user?.companyDetails?.companyName || null;
     console.log("🏢 Current user company name:", companyName);
     return companyName;
   }, [getCurrentUser]);
@@ -125,21 +128,21 @@ const useUser = () => {
   
   const isCurrentUserAdmin = useMemo(() => {
     const jobRole = getCurrentUserJobRole();
-    const isAdmin = ['admin', 'SuperAdmin'].includes(jobRole);
-    console.log("👑 Is current user admin?", isAdmin, "Job role:", jobRole);
+    const isAdmin = ['admin', 'superadmin'].includes(jobRole);
+    console.log("👑 Is current user admin?", isAdmin);
     return isAdmin;
   }, [getCurrentUserJobRole]);
   
   const isCurrentUserManagerOrHR = useMemo(() => {
     const jobRole = getCurrentUserJobRole();
-    const isManagerOrHR = ['manager', 'hr'].includes(jobRole);
-    console.log("👥 Is current user manager/HR?", isManagerOrHR, "Job role:", jobRole);
+    const isManagerOrHR = ['manager', 'hr', 'human resources'].includes(jobRole);
+    console.log("👥 Is current user manager/HR?", isManagerOrHR);
     return isManagerOrHR;
   }, [getCurrentUserJobRole]);
   
   const getAuthToken = useCallback(() => {
     const token = localStorage.getItem('token');
-    console.log("🔑 Token from localStorage:", token ? "Present (length: " + token.length + ")" : "Missing");
+    console.log("🔑 Token present:", !!token);
     return token;
   }, []);
   
@@ -157,50 +160,14 @@ const useUser = () => {
   };
 };
 
-// Role Filter Component
-const EmployeeDirectoryRoleFilter = ({ selected, onChange, stats }) => {
-  console.log("🎯 RoleFilter props:", { selected, stats });
-  
-  const roleOptions = useMemo(() => [
-    { value: 'all', label: 'All Employees', count: stats.total },
-    { value: 'active', label: 'Active', count: stats.active, color: 'success' },
-    { value: 'inactive', label: 'Inactive', count: stats.inactive, color: 'error' }
-  ], [stats]);
-  
-  return (
-    <div className="EmployeeDirectory-role-filter">
-      <select
-        className="EmployeeDirectory-role-select"
-        value={selected}
-        onChange={(e) => {
-          console.log("🔄 Role filter changed to:", e.target.value);
-          onChange(e.target.value);
-        }}
-      >
-        {roleOptions.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label} ({option.count})
-          </option>
-        ))}
-      </select>
-    </div>
-  );
-};
-
 // Employee Card Component
 const EmployeeDirectoryEmployeeCard = React.memo(({ 
   emp, 
   onView, 
   onMenuOpen,
-  currentUserId 
+  currentUserId,
+  jobRoles // Add jobRoles prop
 }) => {
-  console.log("👤 EmployeeCard rendering:", { 
-    empId: emp._id || emp.id, 
-    name: emp.name,
-    currentUserId,
-    isCurrentUser: currentUserId === (emp._id || emp.id)
-  });
-  
   const getInitials = (name) => {
     if (!name) return 'U';
     return name
@@ -220,21 +187,36 @@ const EmployeeDirectoryEmployeeCard = React.memo(({
     return phoneStr;
   };
   
+  // Helper function to get job role name
+  const getJobRoleName = (jobRoleId) => {
+    if (!jobRoleId || !jobRoles || jobRoles.length === 0) {
+      return typeof emp.jobRole === 'string' ? emp.jobRole.charAt(0).toUpperCase() + emp.jobRole.slice(1) : 'N/A';
+    }
+    
+    // Check if jobRoleId is a string or object
+    const roleId = typeof jobRoleId === 'object' ? jobRoleId._id || jobRoleId.id : jobRoleId;
+    
+    // Find matching job role
+    const jobRole = jobRoles.find(role => 
+      role._id === roleId || 
+      role.id === roleId ||
+      role.roleNumber === roleId
+    );
+    
+    return jobRole ? jobRole.roleName : (typeof emp.jobRole === 'string' ? emp.jobRole : 'N/A');
+  };
+  
   const isCurrentUserEmp = currentUserId === (emp._id || emp.id);
   
   return (
     <div 
       className="EmployeeDirectory-employee-card"
-      onClick={() => {
-        console.log("👁️ Viewing employee:", emp.name || emp.email);
-        onView(emp);
-      }}
+      onClick={() => onView(emp)}
     >
       <button 
         className="EmployeeDirectory-employee-card-menu"
         onClick={(e) => {
           e.stopPropagation();
-          console.log("📱 Opening menu for:", emp.name || emp.email);
           onMenuOpen(e, emp);
         }}
       >
@@ -301,7 +283,7 @@ const EmployeeDirectoryEmployeeCard = React.memo(({
                 <FiUser size={12} />
               </div>
               <div className="EmployeeDirectory-detail-text">
-                {emp.jobRole.charAt(0).toUpperCase() + emp.jobRole.slice(1)}
+                {getJobRoleName(emp.jobRole)}
               </div>
             </div>
           )}
@@ -311,7 +293,6 @@ const EmployeeDirectoryEmployeeCard = React.memo(({
           className="EmployeeDirectory-view-profile-btn"
           onClick={(e) => {
             e.stopPropagation();
-            console.log("👁️ View profile clicked for:", emp.name || emp.email);
             onView(emp);
           }}
         >
@@ -322,25 +303,17 @@ const EmployeeDirectoryEmployeeCard = React.memo(({
   );
 });
 
-// Edit Form Component
+// Edit Form Component - UPDATED
 const EditEmployeeForm = React.memo(({ 
   editingUser, 
   formData, 
   onInputChange, 
   departments, 
+  jobRoles, // Add jobRoles prop
   isCurrentUserAdmin,
   isSelfEdit,
-  currentUserId 
+  currentUserId
 }) => {
-  console.log("✏️ EditEmployeeForm props:", {
-    editingUserId: editingUser?._id || editingUser?.id,
-    formDataKeys: Object.keys(formData),
-    departmentsCount: departments.length,
-    isCurrentUserAdmin,
-    isSelfEdit,
-    currentUserId
-  });
-
   const genderOptions = [
     { value: 'male', label: 'Male' },
     { value: 'female', label: 'Female' },
@@ -354,22 +327,29 @@ const EditEmployeeForm = React.memo(({
     { value: 'widowed', label: 'Widowed' }
   ];
   
-  const jobRoleOptions = [
-    { value: 'admin', label: 'Admin' },
-    { value: 'manager', label: 'Manager' },
-    { value: 'hr', label: 'HR' },
-    { value: 'user', label: 'User' }
-  ];
-  
-  const canEditDepartment = isCurrentUserAdmin;
-  const canEditJobRole = isCurrentUserAdmin && !isSelfEdit;
-  
   if (!editingUser) {
-    console.log("⚠️ EditEmployeeForm: No editing user");
     return null;
   }
   
-  console.log("✅ EditEmployeeForm rendering for:", editingUser.name);
+  // PERMISSION LOGIC
+  const isEditingSelf = currentUserId === (editingUser._id || editingUser.id);
+  
+  // All users can edit basic personal info
+  // Only admins can edit job role, department, status, employee ID
+  const canEditJobRole = isCurrentUserAdmin && !isEditingSelf;
+  const canEditDepartment = isCurrentUserAdmin;
+  const canEditStatus = isCurrentUserAdmin && !isEditingSelf;
+  const canEditEmployeeId = isCurrentUserAdmin;
+  
+  console.log("✏️ Edit form permissions:", {
+    isEditingSelf,
+    canEditJobRole,
+    canEditDepartment,
+    canEditStatus,
+    canEditEmployeeId,
+    currentUserId,
+    editingUserId: editingUser._id || editingUser.id
+  });
   
   return (
     <form onSubmit={(e) => e.preventDefault()}>
@@ -385,10 +365,7 @@ const EditEmployeeForm = React.memo(({
                 type="text"
                 className="EmployeeDirectory-form-input"
                 value={formData.name || ''}
-                onChange={(e) => {
-                  console.log("📝 Name changed:", e.target.value);
-                  onInputChange('name', e.target.value);
-                }}
+                onChange={(e) => onInputChange('name', e.target.value)}
                 required
               />
             </div>
@@ -410,10 +387,7 @@ const EditEmployeeForm = React.memo(({
                 type="tel"
                 className="EmployeeDirectory-form-input"
                 value={formData.phone || ''}
-                onChange={(e) => {
-                  console.log("📱 Phone changed:", e.target.value);
-                  onInputChange('phone', e.target.value);
-                }}
+                onChange={(e) => onInputChange('phone', e.target.value)}
               />
             </div>
             
@@ -423,10 +397,7 @@ const EditEmployeeForm = React.memo(({
                 type="date"
                 className="EmployeeDirectory-form-input"
                 value={formData.dob ? new Date(formData.dob).toISOString().split('T')[0] : ''}
-                onChange={(e) => {
-                  console.log("📅 DOB changed:", e.target.value);
-                  onInputChange('dob', e.target.value);
-                }}
+                onChange={(e) => onInputChange('dob', e.target.value)}
               />
             </div>
             
@@ -435,10 +406,7 @@ const EditEmployeeForm = React.memo(({
               <select
                 className="EmployeeDirectory-form-select"
                 value={formData.gender || ''}
-                onChange={(e) => {
-                  console.log("⚧️ Gender changed:", e.target.value);
-                  onInputChange('gender', e.target.value);
-                }}
+                onChange={(e) => onInputChange('gender', e.target.value)}
               >
                 <option value="">Select Gender</option>
                 {genderOptions.map(option => (
@@ -452,10 +420,7 @@ const EditEmployeeForm = React.memo(({
               <select
                 className="EmployeeDirectory-form-select"
                 value={formData.maritalStatus || ''}
-                onChange={(e) => {
-                  console.log("💍 Marital status changed:", e.target.value);
-                  onInputChange('maritalStatus', e.target.value);
-                }}
+                onChange={(e) => onInputChange('maritalStatus', e.target.value)}
               >
                 <option value="">Select Marital Status</option>
                 {maritalStatusOptions.map(option => (
@@ -469,10 +434,7 @@ const EditEmployeeForm = React.memo(({
               <textarea
                 className="EmployeeDirectory-form-input EmployeeDirectory-form-textarea"
                 value={formData.address || ''}
-                onChange={(e) => {
-                  console.log("🏠 Address changed:", e.target.value);
-                  onInputChange('address', e.target.value);
-                }}
+                onChange={(e) => onInputChange('address', e.target.value)}
                 rows="3"
               />
             </div>
@@ -490,11 +452,9 @@ const EditEmployeeForm = React.memo(({
                 type="text"
                 className="EmployeeDirectory-form-input"
                 value={formData.employeeId || ''}
-                onChange={(e) => {
-                  console.log("🆔 Employee ID changed:", e.target.value);
-                  onInputChange('employeeId', e.target.value);
-                }}
-                disabled={!isCurrentUserAdmin}
+                onChange={(e) => onInputChange('employeeId', e.target.value)}
+                disabled={!canEditEmployeeId}
+                title={!canEditEmployeeId ? "Only admins can change employee ID" : ""}
               />
             </div>
             
@@ -503,17 +463,14 @@ const EditEmployeeForm = React.memo(({
               <select
                 className="EmployeeDirectory-form-select"
                 value={formData.jobRole || ''}
-                onChange={(e) => {
-                  console.log("👔 Job role changed:", e.target.value);
-                  onInputChange('jobRole', e.target.value);
-                }}
+                onChange={(e) => onInputChange('jobRole', e.target.value)}
                 disabled={!canEditJobRole}
                 title={!canEditJobRole ? "Only admins can change job role (not for yourself)" : ""}
               >
                 <option value="">Select Job Role</option>
-                {jobRoleOptions.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
+                {jobRoles.map(role => (
+                  <option key={role._id} value={role._id}>
+                    {role.roleName} ({role.roleNumber})
                   </option>
                 ))}
               </select>
@@ -524,10 +481,7 @@ const EditEmployeeForm = React.memo(({
               <select
                 className="EmployeeDirectory-form-select"
                 value={formData.department || ''}
-                onChange={(e) => {
-                  console.log("📊 Department changed:", e.target.value);
-                  onInputChange('department', e.target.value);
-                }}
+                onChange={(e) => onInputChange('department', e.target.value)}
                 disabled={!canEditDepartment}
                 title={!canEditDepartment ? "Only admins can change department" : ""}
               >
@@ -543,11 +497,9 @@ const EditEmployeeForm = React.memo(({
               <select
                 className="EmployeeDirectory-form-select"
                 value={formData.isActive === false ? 'inactive' : 'active'}
-                onChange={(e) => {
-                  console.log("📈 Status changed:", e.target.value);
-                  onInputChange('isActive', e.target.value === 'active');
-                }}
-                disabled={!isCurrentUserAdmin}
+                onChange={(e) => onInputChange('isActive', e.target.value === 'active')}
+                disabled={!canEditStatus}
+                title={!canEditStatus ? "Only admins can change status (not for yourself)" : ""}
               >
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
@@ -560,16 +512,17 @@ const EditEmployeeForm = React.memo(({
   );
 });
 
-// Main Component
+// Main Component - UPDATED
 const EmployeeDirectory = () => {
   console.log("🚀 EmployeeDirectory component mounted");
   
   // Custom hooks
   const user = useUser();
   
-  // State
+  // State - Add jobRoles state
   const [employees, setEmployees] = useState([]);
   const [departments, setDepartments] = useState([]);
+  const [jobRoles, setJobRoles] = useState([]); // New state for job roles
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -586,30 +539,12 @@ const EmployeeDirectory = () => {
   const [isMobile, setIsMobile] = useState(false);
   const [viewMode, setViewMode] = useState('grid');
   
-  console.log("📊 Component state:", {
-    employeesCount: employees.length,
-    departmentsCount: departments.length,
-    loading,
-    error,
-    selectedUserId: selectedUser?._id || selectedUser?.id,
-    selectedFilter,
-    searchTerm,
-    editingUserId: editingUser?._id || editingUser?.id,
-    selectedMenuUserId: selectedMenuUser?._id || selectedMenuUser?.id,
-    deleteConfirmOpen,
-    userToDeleteId: userToDelete?._id || userToDelete?.id,
-    isMobile,
-    viewMode
-  });
-  
   // Form handling
   const {
     formData: editFormData,
     handleChange: handleInputChange,
     resetForm: resetEditForm,
   } = useForm({});
-  
-  console.log("📝 Edit form data:", editFormData);
   
   // Get current user info
   const currentUserId = user.getCurrentUserId();
@@ -619,7 +554,6 @@ const EmployeeDirectory = () => {
   const currentUserCompanyName = user.getCurrentUserCompanyName();
   const isCurrentUserAdmin = user.isCurrentUserAdmin;
   const isCurrentUserManagerOrHR = user.isCurrentUserManagerOrHR;
-  const currentUser = user.getCurrentUser();
   
   console.log("👤 Current user info:", {
     currentUserId,
@@ -628,25 +562,164 @@ const EmployeeDirectory = () => {
     currentUserCompanyCode,
     currentUserCompanyName,
     isCurrentUserAdmin,
-    isCurrentUserManagerOrHR,
-    currentUser
+    isCurrentUserManagerOrHR
   });
   
   // Snackbar helper
   const showSnackbar = useCallback((message, severity = 'success') => {
     console.log(`🍿 Snackbar: ${severity} - ${message}`);
-    setSnackbar({ open: true, message, severity });
+    setSnackbar({ 
+      open: true, 
+      message, 
+      severity,
+      id: Date.now()
+    });
+    
     setTimeout(() => {
       setSnackbar(prev => ({ ...prev, open: false }));
     }, 3000);
   }, []);
   
+  // NEW FUNCTION: Fetch Job Roles from API
+  const fetchJobRoles = useCallback(async () => {
+    console.log("🌐 Fetching job roles from API");
+    
+    if (!currentUserCompanyId) {
+      console.error("❌ No company ID found for fetching job roles");
+      return [];
+    }
+    
+    try {
+      const token = user.getAuthToken();
+      
+      const config = {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      };
+      
+      // API call to fetch job roles with company ID
+      const response = await axios.get(`/job-roles?company=${currentUserCompanyId}`, config);
+      
+      console.log("📊 Job roles API response:", response.data);
+      
+      if (response.data && response.data.success) {
+        // Extract job roles from response
+        let jobRolesData = [];
+        
+        if (Array.isArray(response.data.jobRoles)) {
+          jobRolesData = response.data.jobRoles;
+        } else if (Array.isArray(response.data.data)) {
+          jobRolesData = response.data.data;
+        } else if (response.data.message && Array.isArray(response.data.message)) {
+          jobRolesData = response.data.message;
+        }
+        
+        console.log(`✅ Fetched ${jobRolesData.length} job roles`);
+        
+        // Transform data if needed
+        const formattedJobRoles = jobRolesData.map(role => ({
+          _id: role._id || role.id,
+          roleName: role.roleName || role.name || 'Unnamed Role',
+          roleNumber: role.roleNumber || role.roleNo || role.number || 'N/A',
+          description: role.description || '',
+          company: role.company || currentUserCompanyId
+        }));
+        
+        setJobRoles(formattedJobRoles);
+        return formattedJobRoles;
+      } else {
+        console.log("❌ Failed to fetch job roles");
+        setJobRoles([]);
+        return [];
+      }
+      
+    } catch (err) {
+      console.error("❌ Error fetching job roles:", err);
+      setJobRoles([]);
+      return [];
+    }
+  }, [currentUserCompanyId, user.getAuthToken]);
+  
+  // Helper function to get job role name by ID
+  const getJobRoleName = useCallback((jobRoleId) => {
+    if (!jobRoleId || jobRoles.length === 0) {
+      return 'N/A';
+    }
+    
+    // Check if jobRoleId is a string or object
+    const roleId = typeof jobRoleId === 'object' ? jobRoleId._id || jobRoleId.id : jobRoleId;
+    
+    // Find matching job role
+    const jobRole = jobRoles.find(role => 
+      role._id === roleId || 
+      role.id === roleId ||
+      role.roleNumber === roleId
+    );
+    
+    return jobRole ? jobRole.roleName : 'N/A';
+  }, [jobRoles]);
+  
+  // Helper function to get job role details by ID
+  const getJobRoleDetails = useCallback((jobRoleId) => {
+    if (!jobRoleId || jobRoles.length === 0) {
+      return null;
+    }
+    
+    const roleId = typeof jobRoleId === 'object' ? jobRoleId._id || jobRoleId.id : jobRoleId;
+    
+    const jobRole = jobRoles.find(role => 
+      role._id === roleId || 
+      role.id === roleId ||
+      role.roleNumber === roleId
+    );
+    
+    return jobRole;
+  }, [jobRoles]);
+  
+  // Helper function to check if current user can edit a specific user
+  const canEditUser = useCallback((targetUser) => {
+    if (!targetUser) {
+      console.log("❌ canEditUser: targetUser is null");
+      return false;
+    }
+    
+    const targetUserId = targetUser._id || targetUser.id;
+    console.log("🔍 canEditUser check - ALLOWING EDIT FOR ALL:", {
+      targetUserName: targetUser.name,
+      currentUserId,
+      isSameUser: currentUserId === targetUserId
+    });
+    
+    return true;
+  }, [currentUserId]);
+  
+  // Helper function to check if current user can delete a specific user
+  const canDeleteUser = useCallback((targetUser) => {
+    if (!targetUser) return false;
+    
+    const targetUserId = targetUser._id || targetUser.id;
+    
+    // Cannot delete yourself
+    if (currentUserId === targetUserId) {
+      console.log("❌ canDeleteUser: Cannot delete yourself");
+      return false;
+    }
+    
+    // Only admin can delete users
+    if (!isCurrentUserAdmin) {
+      console.log("❌ canDeleteUser: Only admins can delete");
+      return false;
+    }
+    
+    console.log("✅ canDeleteUser: Admin can delete");
+    return true;
+  }, [currentUserId, isCurrentUserAdmin]);
+  
   // Responsive check
   useEffect(() => {
     const checkMobile = () => {
-      const mobile = window.innerWidth <= 768;
-      console.log("📱 Responsive check:", mobile ? "Mobile" : "Desktop");
-      setIsMobile(mobile);
+      setIsMobile(window.innerWidth <= 768);
     };
     
     checkMobile();
@@ -655,9 +728,9 @@ const EmployeeDirectory = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
   
-  // Fetch data with company filtering
+  // Fetch data - UPDATED to include job roles
   const fetchData = useCallback(async () => {
-    console.log("🔍 fetchData function called");
+    console.log("🔍 Starting fetchData");
     
     if (!currentUserCompanyId) {
       console.error("❌ No company ID found");
@@ -666,13 +739,11 @@ const EmployeeDirectory = () => {
       return;
     }
     
-    console.log("🏢 Starting fetch for company:", currentUserCompanyId);
     setLoading(true);
     setError(null);
     
     try {
       const token = user.getAuthToken();
-      console.log("🔑 Token for request:", token ? "Present" : "Missing");
       
       const config = {
         headers: {
@@ -680,203 +751,68 @@ const EmployeeDirectory = () => {
         }
       };
       
-      console.log("🌐 Making API request to: /users/company-users");
-      
-      // Use the correct endpoint from the controller
+      // Fetch users
+      console.log("🌐 Fetching users from /users/company-users");
       const usersRes = await axios.get("/users/company-users", config);
-      console.log("✅ API Response received:", {
-        status: usersRes.status,
-        statusText: usersRes.statusText,
-        dataKeys: Object.keys(usersRes.data)
-      });
-      
-      console.log("📦 Full API response data:", JSON.stringify(usersRes.data, null, 2));
       
       let employeesData = [];
       
-      // DEEP DEBUG: Check ALL possible response structures
-      console.log("🔬 DEEP DEBUG - Checking response structure:");
-      
-      // Check if success exists
-      console.log("1. data.success exists?", usersRes.data?.success);
-      
-      // Check if message exists
-      console.log("2. data.message exists?", usersRes.data?.message);
-      
-      // Check message type
-      if (usersRes.data?.message) {
-        console.log("3. data.message type:", typeof usersRes.data.message);
-        console.log("4. data.message keys:", Object.keys(usersRes.data.message));
-      }
-      
-      // Check if users array exists in different locations
-      console.log("5. data.users exists?", usersRes.data?.users);
-      console.log("6. data.data exists?", usersRes.data?.data);
-      console.log("7. data.message?.users exists?", usersRes.data?.message?.users);
-      console.log("8. data.message?.data exists?", usersRes.data?.message?.data);
-      
       if (usersRes.data && usersRes.data.success) {
-        console.log("✅ API call successful");
-        
-        // Check EVERY possible location for users array
-        if (usersRes.data.message && usersRes.data.message.users && Array.isArray(usersRes.data.message.users)) {
+        // Extract users array from response
+        if (usersRes.data.message && usersRes.data.message.users) {
           employeesData = usersRes.data.message.users;
-          console.log(`📍 Found ${employeesData.length} users in data.message.users`);
-          console.log("📍 First user sample:", employeesData[0] ? {
-            id: employeesData[0].id || employeesData[0]._id,
-            name: employeesData[0].name,
-            email: employeesData[0].email,
-            company: employeesData[0].company,
-            department: employeesData[0].department
-          } : "No users");
-        } 
-        else if (usersRes.data.users && Array.isArray(usersRes.data.users)) {
+        } else if (usersRes.data.users) {
           employeesData = usersRes.data.users;
-          console.log(`📍 Found ${employeesData.length} users in data.users`);
-        }
-        else if (usersRes.data.message && Array.isArray(usersRes.data.message)) {
+        } else if (usersRes.data.message && Array.isArray(usersRes.data.message)) {
           employeesData = usersRes.data.message;
-          console.log(`📍 Found ${employeesData.length} users in data.message array`);
-        }
-        else if (usersRes.data.data && Array.isArray(usersRes.data.data)) {
+        } else if (usersRes.data.data && Array.isArray(usersRes.data.data)) {
           employeesData = usersRes.data.data;
-          console.log(`📍 Found ${employeesData.length} users in data.data`);
-        }
-        else if (Array.isArray(usersRes.data)) {
-          employeesData = usersRes.data;
-          console.log(`📍 Found ${employeesData.length} users in data array`);
-        }
-        else {
-          console.log("❌ No users array found in any expected location");
-          console.log("❌ Actual response structure:", {
-            data: usersRes.data,
-            message: usersRes.data?.message,
-            keys: Object.keys(usersRes.data)
-          });
         }
         
         console.log(`📊 Total users fetched: ${employeesData.length}`);
         
-        if (employeesData.length > 0) {
-          console.log("📋 Users data sample:", employeesData.slice(0, 3).map(emp => ({
-            id: emp.id || emp._id,
-            name: emp.name,
-            email: emp.email,
-            company: emp.company,
-            department: emp.department,
-            jobRole: emp.jobRole
-          })));
-        }
-        
-        // Filter by company on client side if needed
-        // Also filter by department for non-admin users
-        console.log("🎯 Starting filter process:");
-        console.log("🎯 Current user company ID:", currentUserCompanyId);
-        console.log("🎯 Current user department ID:", currentUserDepartmentId);
-        console.log("🎯 Is current user admin?", isCurrentUserAdmin);
-        
+        // Filter by company
         const filteredEmployees = employeesData.filter(emp => {
-          if (!emp) {
-            console.log("❌ Skipping null employee");
-            return false;
-          }
-          
-          console.log(`\n🔍 Processing employee: ${emp.name || emp.email || 'Unnamed'}`);
+          if (!emp) return false;
           
           // Check company
           const empCompanyId = emp.company?._id || emp.company || emp.companyId;
-          console.log(`   Employee company ID: ${empCompanyId}`);
-          console.log(`   Expected company ID: ${currentUserCompanyId}`);
-          
-          const isSameCompany = empCompanyId === currentUserCompanyId;
-          console.log(`   Same company? ${isSameCompany}`);
-          
-          if (!isSameCompany) {
-            console.log(`   ❌ Filtered out - different company`);
-            return false;
-          }
-          
-          // If user is not admin, filter by department
-          if (!isCurrentUserAdmin && currentUserDepartmentId) {
-            const empDeptId = emp.department?._id || emp.department || emp.departmentId;
-            console.log(`   Employee department ID: ${empDeptId}`);
-            console.log(`   Expected department ID: ${currentUserDepartmentId}`);
-            
-            const deptMatch = empDeptId === currentUserDepartmentId;
-            console.log(`   Same department? ${deptMatch}`);
-            
-            if (!deptMatch) {
-              console.log(`   ❌ Filtered out - different department`);
-            }
-            return deptMatch;
-          }
-          
-          console.log(`   ✅ Included`);
-          return true;
+          return empCompanyId === currentUserCompanyId;
         });
         
-        console.log(`\n✅ Filter completed:`);
-        console.log(`   Total before filter: ${employeesData.length}`);
-        console.log(`   Total after filter: ${filteredEmployees.length}`);
-        console.log(`   Filtered employees:`, filteredEmployees.map(e => ({
-          name: e.name,
-          email: e.email,
-          company: e.company,
-          department: e.department
-        })));
-        
+        console.log(`✅ After filtering: ${filteredEmployees.length} employees`);
         setEmployees(filteredEmployees);
         
       } else {
-        console.log("❌ API call not successful:", usersRes.data);
-        console.log('Alternative response structure:', usersRes.data);
+        console.log("❌ Failed to fetch users");
         setEmployees([]);
       }
       
       // Fetch departments
-      console.log("\n📊 Fetching departments...");
+      console.log("🌐 Fetching departments");
       const deptRes = await axios.get("/departments", config);
-      console.log("✅ Departments API response:", {
-        status: deptRes.status,
-        dataKeys: Object.keys(deptRes.data)
-      });
-      console.log("📋 Departments data:", deptRes.data);
       
       if (deptRes.data && deptRes.data.success && Array.isArray(deptRes.data.departments)) {
-        console.log(`📍 Found ${deptRes.data.departments.length} departments`);
-        
-        // Filter departments by company if needed
+        // Filter departments by company
         const filteredDepartments = deptRes.data.departments.filter(dept => {
           const deptCompanyId = dept.company?._id || dept.company;
           return deptCompanyId === currentUserCompanyId;
         });
         
-        console.log(`✅ Filtered to ${filteredDepartments.length} departments for current company`);
-        console.log("📋 Filtered departments:", filteredDepartments.map(d => ({
-          id: d._id,
-          name: d.name,
-          company: d.company
-        })));
-        
+        console.log(`📊 Departments: ${filteredDepartments.length}`);
         setDepartments(filteredDepartments);
       } else {
-        console.log("❌ No departments found or unexpected structure");
-        console.log("❌ Full response:", deptRes.data);
         setDepartments([]);
       }
       
+      // Fetch job roles - NEW
+      await fetchJobRoles();
+      
     } catch (err) {
       console.error("❌ Failed to fetch data:", err);
-      console.error("❌ Error details:", {
-        message: err.message,
-        code: err.code,
-        config: err.config,
-        response: err.response
-      });
       setError(err.response?.data?.message || 'Failed to load data');
       showSnackbar('Failed to load data', 'error');
     } finally {
-      console.log("🏁 Fetch completed, setting loading to false");
       setLoading(false);
     }
   }, [
@@ -884,33 +820,27 @@ const EmployeeDirectory = () => {
     currentUserDepartmentId, 
     isCurrentUserAdmin, 
     showSnackbar, 
-    user.getAuthToken
+    user.getAuthToken,
+    fetchJobRoles // Add to dependencies
   ]);
   
   // Initial data fetch
   useEffect(() => {
-    console.log("🎬 Initial useEffect running");
     fetchData();
   }, [fetchData]);
   
   // Handle view user
   const handleOpenUser = useCallback((userData) => {
-    console.log("👁️ Opening user view:", {
-      userId: userData._id || userData.id,
-      name: userData.name,
-      email: userData.email
-    });
+    console.log("👁️ Opening user view:", userData.name);
     setSelectedUser(userData);
   }, []);
   
   const handleCloseUser = useCallback(() => {
-    console.log("❌ Closing user view");
     setSelectedUser(null);
   }, []);
   
   // Handle menu
   const handleMenuOpen = useCallback((event, userData) => {
-    console.log("📱 Opening context menu for:", userData.name || userData.email);
     const rect = event.currentTarget.getBoundingClientRect();
     setMenuAnchorEl({
       top: rect.bottom,
@@ -920,35 +850,18 @@ const EmployeeDirectory = () => {
   }, []);
   
   const handleMenuClose = useCallback(() => {
-    console.log("❌ Closing context menu");
     setMenuAnchorEl(null);
     setSelectedMenuUser(null);
   }, []);
   
   // Handle edit
   const handleEdit = useCallback((userData) => {
-    console.log("✏️ Handle edit called for:", {
-      userId: userData._id || userData.id,
-      name: userData.name,
-      currentUserId,
-      isCurrentUserAdmin,
-      isCurrentUserManagerOrHR
-    });
+    console.log("✏️ Handle edit called - ALL USERS ALLOWED");
     
     if (!userData) return;
     
-    // Check permissions
-    const canModify = currentUserId === (userData._id || userData.id) || isCurrentUserAdmin || isCurrentUserManagerOrHR;
-    console.log("🔐 Can modify?", canModify);
+    console.log("✅ Opening edit form for:", userData.name);
     
-    if (!canModify) {
-      console.log("❌ Permission denied for edit");
-      showSnackbar('You do not have permission to edit this user', 'error');
-      handleMenuClose();
-      return;
-    }
-    
-    console.log("✅ Permission granted, opening edit form");
     setEditingUser(userData);
     
     // Prepare form data
@@ -958,80 +871,77 @@ const EmployeeDirectory = () => {
       jobRole: userData.jobRole || ''
     };
     
-    console.log("📝 Form data to set:", formDataToSet);
     resetEditForm(formDataToSet);
     handleMenuClose();
-  }, [
-    currentUserId, 
-    isCurrentUserAdmin, 
-    isCurrentUserManagerOrHR, 
-    resetEditForm, 
-    showSnackbar, 
-    handleMenuClose
-  ]);
+  }, [resetEditForm, handleMenuClose]);
   
   const handleCancelEdit = useCallback(() => {
-    console.log("❌ Canceling edit");
     setEditingUser(null);
     resetEditForm({});
   }, [resetEditForm]);
   
-  // Handle save
+  // Handle save - UPDATED for job roles
   const handleSaveEdit = useCallback(async () => {
-    console.log("💾 Handle save edit called");
+    console.log("💾 Saving edit");
     
     if (!editingUser) {
-      console.log("❌ No editing user");
       return;
     }
     
-    // Check permissions
-    const canModify = currentUserId === (editingUser._id || editingUser.id) || isCurrentUserAdmin || isCurrentUserManagerOrHR;
-    console.log("🔐 Can modify?", canModify);
-    
-    if (!canModify) {
-      console.log("❌ Permission denied for save");
-      showSnackbar('You do not have permission to edit this user', 'error');
-      return;
-    }
-    
-    console.log("✅ Starting save process");
     setSaving(true);
     
     try {
       const userId = editingUser._id || editingUser.id;
-      console.log("🆔 User ID to update:", userId);
       
       if (!userId) {
-        console.log("❌ User ID is missing");
         showSnackbar('User ID is missing', 'error');
         return;
       }
       
       // Prepare update data
       const updateData = { ...editFormData };
-      console.log("📝 Update data before cleanup:", updateData);
       
       // Handle department
       if (updateData.department && typeof updateData.department === 'object') {
         updateData.department = updateData.department._id;
-        console.log("📊 Department converted to ID:", updateData.department);
       }
       
-      // Clean up data - non-admins cannot update certain fields
+      // Handle job role - convert to ID if it's an object
+      if (updateData.jobRole && typeof updateData.jobRole === 'object') {
+        updateData.jobRole = updateData.jobRole._id || updateData.jobRole.id;
+      }
+      
+      // IMPORTANT: Non-admin users can only update personal info
+      const isSelfEdit = currentUserId === userId;
+      
       if (!isCurrentUserAdmin) {
-        console.log("👤 Non-admin user, removing restricted fields");
+        console.log("👤 Non-admin user saving - removing restricted fields");
+        
+        // Non-admins can only update these fields
+        const allowedFields = [
+          'name', 'phone', 'dob', 'gender', 'maritalStatus', 'address'
+        ];
+        
+        // Remove all fields except allowed ones
+        Object.keys(updateData).forEach(key => {
+          if (!allowedFields.includes(key) && key !== 'email') {
+            delete updateData[key];
+          }
+        });
+        
+        // Always remove these sensitive fields for non-admins
         delete updateData.jobRole;
         delete updateData.department;
         delete updateData.isActive;
         delete updateData.employeeId;
       }
       
-      // Self-edit restrictions
-      if (currentUserId === userId) {
-        console.log("👤 Self-edit, removing jobRole and department");
+      // Self-edit restrictions (even for admins)
+      if (isSelfEdit) {
+        console.log("👤 Self-edit - removing job role and department");
         delete updateData.jobRole;
         delete updateData.department;
+        delete updateData.isActive;
       }
       
       // Remove unnecessary fields
@@ -1044,11 +954,10 @@ const EmployeeDirectory = () => {
         delete updateData[field];
       });
       
-      console.log("📝 Update data after cleanup:", updateData);
+      console.log("📤 Final update data:", updateData);
       
       // Validate required fields
       if (!updateData.name?.trim()) {
-        console.log("❌ Name is required");
         showSnackbar('Name is required', 'error');
         setSaving(false);
         return;
@@ -1063,19 +972,10 @@ const EmployeeDirectory = () => {
         }
       };
       
-      console.log("🌐 Sending PUT request to:", `/users/${userId}`);
-      console.log("📤 Request payload:", updateData);
-      
       const res = await axios.put(`/users/${userId}`, updateData, config);
-      
-      console.log("✅ Update response:", {
-        status: res.status,
-        data: res.data
-      });
       
       if (res.data && res.data.success) {
         const updatedUser = res.data.user || res.data.data;
-        console.log("✅ User updated successfully:", updatedUser);
         
         // Update local state
         setEmployees(prev => prev.map(emp => 
@@ -1084,7 +984,6 @@ const EmployeeDirectory = () => {
         
         // Update local storage if editing current user
         if (currentUserId === userId) {
-          console.log("💾 Updating current user in localStorage");
           const currentUserData = user.getCurrentUser();
           const updatedCurrentUser = { ...currentUserData, ...updateData };
           localStorage.setItem('user', JSON.stringify(updatedCurrentUser));
@@ -1096,33 +995,24 @@ const EmployeeDirectory = () => {
         showSnackbar('Employee updated successfully');
         
         // Refresh data
-        console.log("🔄 Refreshing data");
         fetchData();
         
       } else {
-        console.log("❌ Update failed:", res.data);
         showSnackbar(res.data.message || 'Update failed', 'error');
       }
       
     } catch (err) {
       console.error("❌ Update failed:", err);
-      console.error("❌ Error details:", {
-        message: err.message,
-        response: err.response?.data,
-        status: err.response?.status
-      });
       const errorMessage = err.response?.data?.message || 'Failed to update employee';
       showSnackbar(errorMessage, 'error');
     } finally {
-      console.log("🏁 Save process completed");
       setSaving(false);
     }
   }, [
     editingUser, 
     editFormData, 
     currentUserId, 
-    isCurrentUserAdmin, 
-    isCurrentUserManagerOrHR,
+    isCurrentUserAdmin,
     showSnackbar, 
     resetEditForm, 
     user,
@@ -1131,46 +1021,29 @@ const EmployeeDirectory = () => {
   
   // Handle delete
   const handleDeleteClick = useCallback((userData) => {
-    console.log("🗑️ Handle delete click called for:", {
-      userId: userData._id || userData.id,
-      name: userData.name
-    });
-    
     if (!userData) return;
     
-    // Check permissions
-    const canDelete = isCurrentUserAdmin && (currentUserId !== (userData.id || userData._id));
-    console.log("🔐 Can delete?", canDelete, {
-      isCurrentUserAdmin,
-      currentUserId,
-      targetUserId: userData.id || userData._id
-    });
+    const canDelete = canDeleteUser(userData);
     
     if (!canDelete) {
       const message = isCurrentUserAdmin ? 
         'You cannot delete your own account' : 
         'You do not have permission to delete users';
-      console.log("❌ Delete permission denied:", message);
       showSnackbar(message, 'error');
       handleMenuClose();
       return;
     }
     
-    console.log("✅ Opening delete confirmation");
     setUserToDelete(userData);
     setDeleteConfirmOpen(true);
     handleMenuClose();
-  }, [isCurrentUserAdmin, currentUserId, showSnackbar, handleMenuClose]);
+  }, [canDeleteUser, isCurrentUserAdmin, showSnackbar, handleMenuClose]);
   
   const handleDeleteConfirm = useCallback(async () => {
-    console.log("🗑️ Handle delete confirm called");
-    
     if (!userToDelete) {
-      console.log("❌ No user to delete");
       return;
     }
     
-    console.log("✅ Starting delete process for:", userToDelete.name);
     setDeleting(true);
     
     try {
@@ -1184,18 +1057,9 @@ const EmployeeDirectory = () => {
         }
       };
       
-      console.log("🌐 Sending DELETE request to:", `/users/${userId}`);
-      
       const response = await axios.delete(`/users/${userId}`, config);
       
-      console.log("✅ Delete response:", {
-        status: response.status,
-        data: response.data
-      });
-      
       if (response.data && response.data.success) {
-        console.log("✅ User deleted successfully");
-        
         // Remove from state
         setEmployees(prev => prev.filter(emp => 
           (emp._id !== userId && emp.id !== userId)
@@ -1207,40 +1071,58 @@ const EmployeeDirectory = () => {
         
         // Close modal if viewing deleted user
         if (selectedUser && (selectedUser.id === userId || selectedUser._id === userId)) {
-          console.log("👁️ Closing detail modal for deleted user");
           handleCloseUser();
         }
         
         // Refresh data
-        console.log("🔄 Refreshing data after delete");
         fetchData();
         
       } else {
-        console.log("❌ Delete failed:", response.data);
         showSnackbar(response.data.message || 'Delete failed', 'error');
       }
       
     } catch (err) {
       console.error("❌ Delete failed:", err);
-      console.error("❌ Error details:", {
-        message: err.message,
-        response: err.response?.data,
-        status: err.response?.status
-      });
       const errorMessage = err.response?.data?.message || 'Failed to delete employee';
       showSnackbar(errorMessage, 'error');
     } finally {
-      console.log("🏁 Delete process completed");
       setDeleting(false);
     }
   }, [userToDelete, selectedUser, handleCloseUser, showSnackbar, fetchData, user.getAuthToken]);
   
+  // Helper functions
+  const formatPhoneNumber = useCallback((phone) => {
+    if (!phone) return 'Not provided';
+    const phoneStr = phone.toString();
+    if (phoneStr.length === 10) {
+      return phoneStr.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3');
+    }
+    return phoneStr;
+  }, []);
+  
+  const getDepartmentName = useCallback((dept) => {
+    if (!dept) return 'Not assigned';
+    if (typeof dept === 'object') return dept.name || 'Department';
+    const department = departments.find(d => d._id === dept);
+    return department ? department.name : 'Not assigned';
+  }, [departments]);
+  
+  const formatDate = useCallback((dateString) => {
+    if (!dateString) return 'Not specified';
+    try {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch (e) {
+      return 'Invalid date';
+    }
+  }, []);
+  
   // Stats calculation
   const stats = useMemo(() => {
-    console.log("📈 Calculating stats from employees:", employees.length);
-    
     if (!Array.isArray(employees)) {
-      console.log("❌ Employees is not an array");
       return {
         total: 0,
         active: 0,
@@ -1251,26 +1133,16 @@ const EmployeeDirectory = () => {
     const activeEmployees = employees.filter(emp => emp && emp.isActive !== false);
     const inactiveEmployees = employees.filter(emp => emp && emp.isActive === false);
     
-    const statsResult = {
+    return {
       total: employees.length,
       active: activeEmployees.length,
       inactive: inactiveEmployees.length
     };
-    
-    console.log("📊 Stats calculated:", statsResult);
-    return statsResult;
   }, [employees]);
   
   // Filter employees
   const filteredEmployees = useMemo(() => {
-    console.log("🔍 Filtering employees:", {
-      totalEmployees: employees.length,
-      selectedFilter,
-      searchTermLength: searchTerm.length
-    });
-    
     if (!Array.isArray(employees)) {
-      console.log("❌ Employees is not an array");
       return [];
     }
     
@@ -1278,87 +1150,32 @@ const EmployeeDirectory = () => {
     
     if (selectedFilter === "active") {
       filtered = filtered.filter(emp => emp && emp.isActive !== false);
-      console.log("✅ Active filter applied, remaining:", filtered.length);
     } else if (selectedFilter === "inactive") {
       filtered = filtered.filter(emp => emp && emp.isActive === false);
-      console.log("✅ Inactive filter applied, remaining:", filtered.length);
     }
     
     if (searchTerm) {
       const search = searchTerm.toLowerCase();
-      console.log("🔍 Searching for:", search);
-      
       filtered = filtered.filter((emp) => {
-        const matches = (
+        const jobRoleName = getJobRoleName(emp.jobRole).toLowerCase();
+        
+        return (
           (emp.name && emp.name.toLowerCase().includes(search)) ||
           (emp.email && emp.email.toLowerCase().includes(search)) ||
           (emp.employeeId && emp.employeeId.toLowerCase().includes(search)) ||
           (emp.phone && emp.phone.toString().includes(search)) ||
-          (emp.jobRole && emp.jobRole.toLowerCase().includes(search)) ||
+          (emp.jobRole && jobRoleName.includes(search)) ||
           (emp.department && typeof emp.department === 'object' && 
            emp.department.name && emp.department.name.toLowerCase().includes(search))
         );
-        
-        if (matches) {
-          console.log(`   ✅ "${emp.name}" matches search`);
-        }
-        
-        return matches;
       });
-      
-      console.log("✅ Search filter applied, remaining:", filtered.length);
     }
     
-    console.log("🔍 Final filtered count:", filtered.length);
     return filtered;
-  }, [employees, selectedFilter, searchTerm]);
-  
-  // Helper functions
-  const formatPhoneNumber = useCallback((phone) => {
-    console.log("📱 Formatting phone:", phone);
-    if (!phone) return 'Not provided';
-    const phoneStr = phone.toString();
-    if (phoneStr.length === 10) {
-      return phoneStr.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3');
-    }
-    return phoneStr;
-  }, []);
-  
-  const getDepartmentName = useCallback((dept) => {
-    console.log("📊 Getting department name for:", dept);
-    if (!dept) return 'Not assigned';
-    if (typeof dept === 'object') return dept.name || 'Department';
-    const department = departments.find(d => d._id === dept);
-    return department ? department.name : 'Not assigned';
-  }, [departments]);
-  
-  const formatDate = useCallback((dateString) => {
-    console.log("📅 Formatting date:", dateString);
-    if (!dateString) return 'Not specified';
-    try {
-      return new Date(dateString).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-    } catch (e) {
-      console.error("❌ Error formatting date:", e);
-      return 'Invalid date';
-    }
-  }, []);
-  
-  console.log("🎨 Component rendering with:", {
-    loading,
-    error,
-    employeesCount: employees.length,
-    filteredEmployeesCount: filteredEmployees.length,
-    stats,
-    currentUserCompanyId
-  });
+  }, [employees, selectedFilter, searchTerm, getJobRoleName]);
   
   // Loading state
   if (loading) {
-    console.log("⏳ Rendering loading state");
     return (
       <div className="EmployeeDirectory-loading-container">
         <div className="EmployeeDirectory-spinner"></div>
@@ -1369,7 +1186,6 @@ const EmployeeDirectory = () => {
   
   // Error state
   if (error) {
-    console.log("❌ Rendering error state:", error);
     return (
       <div className="EmployeeDirectory-error-container">
         <FiAlertTriangle size={48} color="#d32f2f" />
@@ -1387,7 +1203,6 @@ const EmployeeDirectory = () => {
   
   // Check if no company data
   if (!currentUserCompanyId) {
-    console.log("❌ No company ID, rendering missing info state");
     return (
       <div className="EmployeeDirectory-error-container">
         <FiAlertTriangle size={48} color="#ff9800" />
@@ -1403,14 +1218,12 @@ const EmployeeDirectory = () => {
     );
   }
   
-  console.log("✅ Rendering main component");
-  
   return (
     <div className="EmployeeDirectory">
       <div className="EmployeeDirectory-header">
         <div className="EmployeeDirectory-company-info">
           <div className="EmployeeDirectory-company-avatar">
-        
+            {/* Company logo/avatar */}
           </div>
           <div>
             <h1 className="EmployeeDirectory-title">Employee Directory</h1>
@@ -1438,39 +1251,19 @@ const EmployeeDirectory = () => {
               <div className="EmployeeDirectory-view-toggle">
                 <button 
                   className={`EmployeeDirectory-view-toggle-btn ${viewMode === 'grid' ? 'active' : ''}`}
-                  onClick={() => {
-                    console.log("🔄 View mode changed to: grid");
-                    setViewMode('grid');
-                  }}
+                  onClick={() => setViewMode('grid')}
                 >
                   <FiGrid size={14} />
                 </button>
                 <button 
                   className={`EmployeeDirectory-view-toggle-btn ${viewMode === 'list' ? 'active' : ''}`}
-                  onClick={() => {
-                    console.log("🔄 View mode changed to: list");
-                    setViewMode('list');
-                  }}
+                  onClick={() => setViewMode('list')}
                 >
                   <FiList size={14} />
                 </button>
               </div>
             )}
           </div>
-          
-          {isMobile && (
-            <div className="EmployeeDirectory-mobile-actions">
-              <button 
-                className="EmployeeDirectory-btn EmployeeDirectory-btn-outlined"
-                onClick={() => {
-                  console.log("🔍 Clearing search term");
-                  setSearchTerm('');
-                }}
-              >
-                <FiFilter size={16} /> Filters
-              </button>
-            </div>
-          )}
         </div>
       </div>
 
@@ -1489,29 +1282,24 @@ const EmployeeDirectory = () => {
                 className="EmployeeDirectory-search-input"
                 placeholder="Search employees by name, email, ID, department..."
                 value={searchTerm}
-                onChange={(e) => {
-                  console.log("🔍 Search term changed:", e.target.value);
-                  setSearchTerm(e.target.value);
-                }}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
               {searchTerm && (
-                <button className="EmployeeDirectory-clear-search" onClick={() => {
-                  console.log("❌ Clearing search term");
-                  setSearchTerm('');
-                }}>
+                <button className="EmployeeDirectory-clear-search" onClick={() => setSearchTerm('')}>
                   <FiX size={16} />
                 </button>
               )}
             </div>
             
-            <EmployeeDirectoryRoleFilter
-              selected={selectedFilter}
-              onChange={(value) => {
-                console.log("🎯 Role filter changed to:", value);
-                setSelectedFilter(value);
-              }}
-              stats={stats}
-            />
+            <select
+              className="EmployeeDirectory-role-select"
+              value={selectedFilter}
+              onChange={(e) => setSelectedFilter(e.target.value)}
+            >
+              <option value="all">All Employees ({stats.total})</option>
+              <option value="active">Active ({stats.active})</option>
+              <option value="inactive">Inactive ({stats.inactive})</option>
+            </select>
           </div>
         </div>
       )}
@@ -1544,12 +1332,13 @@ const EmployeeDirectory = () => {
             {filteredEmployees.length} employee{filteredEmployees.length !== 1 ? 's' : ''} found
             {selectedFilter !== 'all' && ` • ${selectedFilter === 'active' ? 'Active' : 'Inactive'} employees`}
             {searchTerm && ` • Matching "${searchTerm}"`}
-            {!isCurrentUserAdmin && currentUserDepartmentId && (
-              <span className="EmployeeDirectory-department-filter-note">
-                • Showing only your department
-              </span>
-            )}
           </p>
+        </div>
+        
+        {/* Permission note */}
+        <div className="EmployeeDirectory-permission-note">
+          <FiInfo size={16} />
+          <span>All users can view and edit employee information in this company.</span>
         </div>
       </div>
 
@@ -1562,16 +1351,10 @@ const EmployeeDirectory = () => {
               className="EmployeeDirectory-search-input"
               placeholder="Search employees..."
               value={searchTerm}
-              onChange={(e) => {
-                console.log("🔍 Mobile search term changed:", e.target.value);
-                setSearchTerm(e.target.value);
-              }}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
             {searchTerm && (
-              <button className="EmployeeDirectory-clear-search" onClick={() => {
-                console.log("❌ Clearing mobile search term");
-                setSearchTerm('');
-              }}>
+              <button className="EmployeeDirectory-clear-search" onClick={() => setSearchTerm('')}>
                 <FiX size={16} />
               </button>
             )}
@@ -1581,10 +1364,7 @@ const EmployeeDirectory = () => {
             <select
               className="EmployeeDirectory-role-select"
               value={selectedFilter}
-              onChange={(e) => {
-                console.log("🎯 Mobile filter changed to:", e.target.value);
-                setSelectedFilter(e.target.value);
-              }}
+              onChange={(e) => setSelectedFilter(e.target.value)}
             >
               <option value="all">All Employees</option>
               <option value="active">Active</option>
@@ -1609,7 +1389,6 @@ const EmployeeDirectory = () => {
           <button 
             className="EmployeeDirectory-btn EmployeeDirectory-btn-outlined"
             onClick={() => {
-              console.log("🔄 Clearing all filters");
               setSearchTerm('');
               setSelectedFilter('all');
             }}
@@ -1626,12 +1405,13 @@ const EmployeeDirectory = () => {
               onView={handleOpenUser}
               onMenuOpen={handleMenuOpen}
               currentUserId={currentUserId}
+              jobRoles={jobRoles} // Pass jobRoles to card component
             />
           ))}
         </div>
       )}
 
-      {/* User Detail Modal */}
+      {/* User Detail Modal - UPDATED */}
       {selectedUser && (
         <div className="EmployeeDirectory-modal-overlay" onClick={handleCloseUser}>
           <div className="EmployeeDirectory-modal EmployeeDirectory-user-detail-modal" onClick={e => e.stopPropagation()}>
@@ -1641,7 +1421,7 @@ const EmployeeDirectory = () => {
                 <div className="EmployeeDirectory-modal-subtitle">
                   {selectedUser.employeeId && <span>ID: {selectedUser.employeeId}</span>}
                   {selectedUser.jobRole && (
-                    <span>• {selectedUser.jobRole.charAt(0).toUpperCase() + selectedUser.jobRole.slice(1)}</span>
+                    <span>• {getJobRoleName(selectedUser.jobRole)}</span>
                   )}
                   {selectedUser.department && (
                     <span>• {getDepartmentName(selectedUser.department)}</span>
@@ -1650,14 +1430,6 @@ const EmployeeDirectory = () => {
               </div>
               
               <div>
-                <button 
-                  className="EmployeeDirectory-btn EmployeeDirectory-btn-outlined"
-                  onClick={() => handleEdit(selectedUser)}
-                  style={{ marginRight: '8px' }}
-                  disabled={!isCurrentUserAdmin && !isCurrentUserManagerOrHR && currentUserId !== (selectedUser._id || selectedUser.id)}
-                >
-                  <FiEdit size={14} /> Edit
-                </button>
                 <button className="EmployeeDirectory-modal-close" onClick={handleCloseUser}>
                   <FiX size={20} />
                 </button>
@@ -1721,7 +1493,12 @@ const EmployeeDirectory = () => {
                     <div className="EmployeeDirectory-detail-item">
                       <div className="EmployeeDirectory-detail-label">Job Role</div>
                       <div className="EmployeeDirectory-detail-value">
-                        {selectedUser.jobRole ? selectedUser.jobRole.charAt(0).toUpperCase() + selectedUser.jobRole.slice(1) : 'Not assigned'}
+                        {getJobRoleName(selectedUser.jobRole)}
+                        {(() => {
+                          const jobRoleDetails = getJobRoleDetails(selectedUser.jobRole);
+                          return jobRoleDetails && jobRoleDetails.roleNumber ? 
+                            ` (${jobRoleDetails.roleNumber})` : '';
+                        })()}
                       </div>
                     </div>
                     
@@ -1758,6 +1535,13 @@ const EmployeeDirectory = () => {
             </div>
             
             <div className="EmployeeDirectory-modal-footer">
+              <button 
+                className="EmployeeDirectory-btn EmployeeDirectory-btn-outlined"
+                onClick={() => handleEdit(selectedUser)}
+                style={{ marginRight: '8px' }}
+              >
+                <FiEdit size={14} /> Edit
+              </button>
               <button className="EmployeeDirectory-btn EmployeeDirectory-btn-outlined" onClick={handleCloseUser}>
                 Close
               </button>
@@ -1766,7 +1550,7 @@ const EmployeeDirectory = () => {
         </div>
       )}
 
-      {/* Edit Modal */}
+      {/* Edit Modal - UPDATED */}
       {editingUser && (
         <div className="EmployeeDirectory-modal-overlay" onClick={handleCancelEdit}>
           <div className="EmployeeDirectory-modal EmployeeDirectory-edit-modal" onClick={e => e.stopPropagation()}>
@@ -1788,6 +1572,7 @@ const EmployeeDirectory = () => {
                 formData={editFormData}
                 onInputChange={handleInputChange}
                 departments={departments}
+                jobRoles={jobRoles} // Pass jobRoles to edit form
                 isCurrentUserAdmin={isCurrentUserAdmin}
                 isSelfEdit={currentUserId === (editingUser._id || editingUser.id)}
                 currentUserId={currentUserId}
@@ -1835,10 +1620,7 @@ const EmployeeDirectory = () => {
                 </h2>
               </div>
               {!deleting && (
-                <button className="EmployeeDirectory-modal-close" onClick={() => {
-                  console.log("❌ Closing delete confirmation");
-                  setDeleteConfirmOpen(false);
-                }}>
+                <button className="EmployeeDirectory-modal-close" onClick={() => setDeleteConfirmOpen(false)}>
                   <FiX size={20} />
                 </button>
               )}
@@ -1860,10 +1642,7 @@ const EmployeeDirectory = () => {
             <div className="EmployeeDirectory-modal-footer">
               <button 
                 className="EmployeeDirectory-btn EmployeeDirectory-btn-outlined"
-                onClick={() => {
-                  console.log("❌ Cancel delete");
-                  setDeleteConfirmOpen(false);
-                }}
+                onClick={() => setDeleteConfirmOpen(false)}
                 disabled={deleting}
               >
                 Cancel
@@ -1914,13 +1693,12 @@ const EmployeeDirectory = () => {
             <button 
               className="EmployeeDirectory-menu-item" 
               onClick={() => handleEdit(selectedMenuUser)}
-              disabled={!isCurrentUserAdmin && !isCurrentUserManagerOrHR && currentUserId !== (selectedMenuUser.id || selectedMenuUser._id)}
             >
               <FiEdit size={16} color="#1976d2" />
               <span className="EmployeeDirectory-menu-item-text">Edit</span>
             </button>
             
-            {isCurrentUserAdmin && currentUserId !== (selectedMenuUser.id || selectedMenuUser._id) && (
+            {canDeleteUser(selectedMenuUser) && (
               <button 
                 className="EmployeeDirectory-menu-item" 
                 onClick={() => handleDeleteClick(selectedMenuUser)}
@@ -1946,10 +1724,7 @@ const EmployeeDirectory = () => {
             <span>{snackbar.message}</span>
             <button 
               className="EmployeeDirectory-alert-close"
-              onClick={() => {
-                console.log("❌ Closing snackbar");
-                setSnackbar(prev => ({ ...prev, open: false }));
-              }}
+              onClick={() => setSnackbar(prev => ({ ...prev, open: false }))}
             >
               <FiX size={16} />
             </button>

@@ -1,4 +1,4 @@
-// UserDashboard.js - UPDATED
+// UserDashboard.js - FULLY UPDATED WITH JOB ROLE INTEGRATION
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import axios from '../../utils/axiosConfig';
 import { ToastContainer, toast } from 'react-toastify';
@@ -61,12 +61,12 @@ const UserDashboard = () => {
   const [leaveData, setLeaveData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [recentActivity, setRecentActivity] = useState([]);
+  const [jobRoles, setJobRoles] = useState([]);
+  const [jobRolesLoading, setJobRolesLoading] = useState(false);
   
-  // State for confirmation popup
   const [showClockOutConfirm, setShowClockOutConfirm] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Get user and company details
   const user = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null;
   const token = localStorage.getItem('token');
   const companyDetails = localStorage.getItem('companyDetails') ? JSON.parse(localStorage.getItem('companyDetails')) : null;
@@ -75,18 +75,269 @@ const UserDashboard = () => {
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
 
-  // Check if user belongs to the current company
-  const isUserInCurrentCompany = useMemo(() => {
-    if (!user || !companyDetails) return false;
+  const getCompanyId = () => {
+    const companyId = 
+      companyDetails?._id || 
+      companyDetails?.id ||
+      user?.company ||
+      user?.companyId ||
+      user?.companyDetails?._id;
     
-    // Check if user's companyCode matches companyDetails companyCode
+    console.log("🏢 Company ID:", {
+      companyDetailsId: companyDetails?._id,
+      userCompany: user?.company,
+      finalCompanyId: companyId
+    });
+    
+    return companyId;
+  };
+
+  // ✅ UPDATED: Enhanced Fetch Job Roles Function
+  const fetchJobRoles = async () => {
+    const companyId = getCompanyId();
+    
+    if (!companyId) {
+      console.error("❌ No company ID found");
+      toast.warning('Company information not found');
+      return [];
+    }
+    
+    setJobRolesLoading(true);
+    
+    try {
+      console.log(`🌐 Fetching job roles for company: ${companyId}`);
+      
+      let jobRolesData = [];
+      const endpoints = [
+        `/job-roles?company=${companyId}`,
+        `/job-roles?company=${companyId}`,
+        `/api/job-roles`,
+        `/job-roles`
+      ];
+      
+      // Try each endpoint until one works
+      for (const endpoint of endpoints) {
+        try {
+          const response = await axios.get(endpoint, {
+            headers: { 
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          console.log(`✅ Success from ${endpoint}:`, response.data);
+          
+          if (response.data) {
+            // Extract job roles from different possible response structures
+            if (Array.isArray(response.data.jobRoles)) {
+              jobRolesData = response.data.jobRoles;
+            } else if (Array.isArray(response.data.data)) {
+              jobRolesData = response.data.data;
+            } else if (response.data.message && Array.isArray(response.data.message)) {
+              jobRolesData = response.data.message;
+            } else if (Array.isArray(response.data)) {
+              jobRolesData = response.data;
+            } else if (response.data.jobRole) {
+              // Single job role object
+              jobRolesData = [response.data.jobRole];
+            }
+            
+            if (jobRolesData.length > 0) break; // Stop if we got data
+          }
+        } catch (error) {
+          console.log(`⚠️ ${endpoint} failed:`, error.message);
+          continue; // Try next endpoint
+        }
+      }
+      
+      console.log(`✅ Final job roles data: ${jobRolesData.length} roles`);
+      
+      // Format the job roles data
+      const formattedJobRoles = jobRolesData.map(role => ({
+        _id: role._id || role.id || role.roleId || Math.random().toString(36).substr(2, 9),
+        roleName: role.roleName || role.name || role.jobRole || role.title || 'Unnamed Role',
+        roleNumber: role.roleNumber || role.roleNo || role.number || role.code || role.roleCode || 'N/A',
+        description: role.description || role.desc || '',
+        company: role.company || companyId
+      }));
+      
+      // If still no roles, create default ones
+      if (formattedJobRoles.length === 0) {
+        console.log("📝 Creating default job roles");
+        formattedJobRoles.push(
+          { _id: 'admin', roleName: 'Admin', roleNumber: 'ADM001', description: 'Administrator' },
+          { _id: 'manager', roleName: 'Manager', roleNumber: 'MGR001', description: 'Manager' },
+          { _id: 'employee', roleName: 'Employee', roleNumber: 'EMP001', description: 'Employee' },
+          { _id: 'hr', roleName: 'HR', roleNumber: 'HR001', description: 'Human Resources' },
+          { _id: 'superadmin', roleName: 'Super Admin', roleNumber: 'SADM001', description: 'Super Administrator' }
+        );
+      }
+      
+      setJobRoles(formattedJobRoles);
+      console.log("📋 Job roles set successfully:", formattedJobRoles);
+      return formattedJobRoles;
+      
+    } catch (err) {
+      console.error("❌ Error fetching job roles:", err);
+      
+      // Create default job roles as fallback
+      const defaultRoles = [
+        { _id: 'admin', roleName: 'Admin', roleNumber: 'ADM001' },
+        { _id: 'manager', roleName: 'Manager', roleNumber: 'MGR001' },
+        { _id: 'employee', roleName: 'Employee', roleNumber: 'EMP001' },
+        { _id: 'hr', roleName: 'HR', roleNumber: 'HR001' },
+        { _id: 'superadmin', roleName: 'Super Admin', roleNumber: 'SADM001' }
+      ];
+      
+      setJobRoles(defaultRoles);
+      toast.warning('Using default job roles - API unavailable');
+      return defaultRoles;
+    } finally {
+      setJobRolesLoading(false);
+    }
+  };
+
+  // ✅ UPDATED: Smart Job Role Name Resolver
+  const getJobRoleDisplayName = (jobRoleData) => {
+    // Debug logging
+    console.log("🔍 Getting job role display name:", {
+      inputJobRoleData: jobRoleData,
+      userObject: user,
+      availableJobRoles: jobRoles.map(r => ({ id: r._id, name: r.roleName })),
+      jobRolesCount: jobRoles.length
+    });
+    
+    // If no jobRoles loaded yet, show loading or default
+    if (jobRolesLoading) {
+      return 'Loading...';
+    }
+    
+    // If jobRoles is empty after loading, show default
+    if (jobRoles.length === 0) {
+      return 'Employee';
+    }
+    
+    // Strategy 1: Direct string/object matching
+    let jobRoleId = null;
+    let jobRoleName = null;
+    
+    // Extract job role ID/name from different possible sources
+    if (typeof jobRoleData === 'string') {
+      jobRoleId = jobRoleData;
+      jobRoleName = jobRoleData;
+    } else if (jobRoleData && typeof jobRoleData === 'object') {
+      jobRoleId = jobRoleData._id || jobRoleData.id || jobRoleData.roleId;
+      jobRoleName = jobRoleData.roleName || jobRoleData.name || jobRoleData.jobRole;
+    }
+    
+    // Also check user object directly
+    if (!jobRoleId && user) {
+      jobRoleId = user.jobRole || user.role || user.roleId;
+      jobRoleName = user.jobRoleName || user.roleName;
+    }
+    
+    console.log("📊 Extracted job role info:", { jobRoleId, jobRoleName });
+    
+    // Strategy 2: Find in jobRoles array
+    let foundRole = null;
+    
+    // First try to find by ID
+    if (jobRoleId) {
+      foundRole = jobRoles.find(role => 
+        role._id === jobRoleId || 
+        role.id === jobRoleId ||
+        role.roleNumber === jobRoleId
+      );
+      
+      if (foundRole) {
+        console.log("✅ Found role by ID:", foundRole.roleName);
+        return foundRole.roleName;
+      }
+    }
+    
+    // Then try to find by name
+    if (jobRoleName) {
+      foundRole = jobRoles.find(role => 
+        role.roleName === jobRoleName ||
+        role.name === jobRoleName
+      );
+      
+      if (foundRole) {
+        console.log("✅ Found role by name:", foundRole.roleName);
+        return foundRole.roleName;
+      }
+    }
+    
+    // Strategy 3: Check if jobRoleName looks like a displayable name
+    if (jobRoleName && (jobRoleName.includes(' ') || jobRoleName.length > 3)) {
+      console.log("✅ Using jobRoleName as display name:", jobRoleName);
+      return jobRoleName.charAt(0).toUpperCase() + jobRoleName.slice(1);
+    }
+    
+    // Strategy 4: Try to find any role that matches user's data
+    if (user) {
+      // Check if user has role information in other fields
+      const userRoleFields = [
+        user.role,
+        user.jobRole,
+        user.position,
+        user.designation,
+        user.title
+      ].filter(Boolean);
+      
+      for (const roleField of userRoleFields) {
+        foundRole = jobRoles.find(role => 
+          role._id === roleField ||
+          role.roleNumber === roleField ||
+          role.roleName.toLowerCase() === roleField.toLowerCase()
+        );
+        
+        if (foundRole) {
+          console.log("✅ Found role in user fields:", foundRole.roleName);
+          return foundRole.roleName;
+        }
+      }
+    }
+    
+    // Strategy 5: Try partial matching
+    if (jobRoleId || jobRoleName) {
+      const searchTerm = (jobRoleId || jobRoleName || '').toLowerCase();
+      foundRole = jobRoles.find(role => 
+        role._id.toLowerCase().includes(searchTerm) ||
+        role.roleNumber.toLowerCase().includes(searchTerm) ||
+        role.roleName.toLowerCase().includes(searchTerm)
+      );
+      
+      if (foundRole) {
+        console.log("✅ Found role by partial match:", foundRole.roleName);
+        return foundRole.roleName;
+      }
+    }
+    
+    // Final fallback
+    console.log("📝 Using default 'Employee' role");
+    return 'Employee';
+  };
+
+  const isUserInCurrentCompany = useMemo(() => {
+    if (!user || !companyDetails) {
+      console.log("⚠️ User or company details missing");
+      return false;
+    }
+    
     const userCompanyCode = user.companyCode || (user.company && user.company.companyCode);
     const companyCode = companyDetails.companyCode;
     
-    return userCompanyCode === companyCode;
+    const isSameCompany = userCompanyCode === companyCode;
+    console.log("🏢 Company check:", {
+      userCompanyCode,
+      companyCode,
+      isSameCompany
+    });
+    
+    return isSameCompany;
   }, [user, companyDetails]);
 
-  // Add lateDates array
   const lateDates = useMemo(() => {
     return attendanceData
       .filter(record => record.status === 'LATE')
@@ -222,7 +473,6 @@ const UserDashboard = () => {
 
   const fetchAttendanceData = async () => {
     try {
-      // Check if user belongs to current company
       if (!isUserInCurrentCompany) {
         toast.error('Access denied: User does not belong to this company');
         return;
@@ -255,7 +505,6 @@ const UserDashboard = () => {
 
   const fetchLeaveData = async () => {
     try {
-      // Check if user belongs to current company
       if (!isUserInCurrentCompany) {
         return;
       }
@@ -271,7 +520,6 @@ const UserDashboard = () => {
 
   const fetchCurrentStatus = async () => {
     try {
-      // Check if user belongs to current company
       if (!isUserInCurrentCompany) {
         setIsRunning(false);
         return;
@@ -296,7 +544,6 @@ const UserDashboard = () => {
 
   const handleIn = async () => {
     try {
-      // Check if user belongs to current company
       if (!isUserInCurrentCompany) {
         toast.error('Cannot clock in: Company mismatch');
         return;
@@ -334,7 +581,6 @@ const UserDashboard = () => {
     try {
       setIsProcessing(true);
       
-      // Check if user belongs to current company
       if (!isUserInCurrentCompany) {
         toast.error('Cannot clock out: Company mismatch');
         setIsProcessing(false);
@@ -353,15 +599,12 @@ const UserDashboard = () => {
       setShowClockOutConfirm(false);
       toast.success("Clocked out successfully!");
 
-      // Clear auth data (LOGOUT)
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       localStorage.removeItem("companyDetails");
 
-      // Optional: clear axios default header
       delete axios.defaults.headers.common["Authorization"];
 
-      // Small delay so toast is visible
       setTimeout(() => {
         window.location.href = "/login";
       }, 1200);
@@ -413,7 +656,7 @@ const UserDashboard = () => {
       }
       const newMonth = prev + 1;
       
-        setTimeout(() => {
+      setTimeout(() => {
         fetchAttendanceData();
       }, 100);
       
@@ -440,17 +683,32 @@ const UserDashboard = () => {
     }
   };
 
-  // Load initial data
+  // ✅ UPDATED: Load initial data with job roles
   useEffect(() => {
     const loadInitialData = async () => {
-      // Check if user belongs to current company before fetching
+      console.log("🚀 Loading initial dashboard data");
+      
       if (isUserInCurrentCompany) {
-        await fetchAttendanceData();
-        await fetchLeaveData();
-        await fetchCurrentStatus();
+        try {
+          // First fetch job roles
+          await fetchJobRoles();
+          
+          // Then fetch other data
+          await Promise.all([
+            fetchAttendanceData(),
+            fetchLeaveData(),
+            fetchCurrentStatus()
+          ]);
+          
+          console.log("✅ All dashboard data loaded successfully");
+        } catch (error) {
+          console.error("❌ Error loading dashboard data:", error);
+          toast.error('Some data failed to load');
+        }
       } else {
+        console.log("⚠️ User does not belong to current company");
         toast.error('User does not belong to this company. Please log in again.');
-        // Redirect to login after a delay
+        
         setTimeout(() => {
           window.location.href = "/login";
         }, 3000);
@@ -461,7 +719,6 @@ const UserDashboard = () => {
   }, []);
 
   useEffect(() => {
-    // Timer effect
     if (isRunning) {
       intervalRef.current = setInterval(() => {
         setTimer(prev => prev + 1);
@@ -474,7 +731,6 @@ const UserDashboard = () => {
   }, [isRunning]);
 
   useEffect(() => {
-    // Fetch attendance data when calendar month/year changes
     if ((attendanceData.length > 0 || loading) && isUserInCurrentCompany) {
       const fetchData = async () => {
         await fetchAttendanceData();
@@ -491,7 +747,9 @@ const UserDashboard = () => {
   const calendarDays = getCalendarGrid(calendarYear, calendarMonth);
   const isMobile = useIsMobile();
 
-  // Show access denied message if user doesn't belong to company
+  // ✅ Get user's job role display name
+  const userJobRoleDisplay = getJobRoleDisplayName(user?.jobRole);
+
   if (!isUserInCurrentCompany) {
     return (
       <div className="dashboard-container">
@@ -546,7 +804,6 @@ const UserDashboard = () => {
         pauseOnHover
       />
       
-      {/* Clock Out Confirmation Popup */}
       {showClockOutConfirm && (
         <div className="confirmation-overlay">
           <div className="confirmation-popup">
@@ -593,7 +850,6 @@ const UserDashboard = () => {
         </div>
       )}
       
-      {/* Header */}
       <div className="dashboard-header">
         <div className="dashboard-header-content">
           <div className="dashboard-user-details">
@@ -610,9 +866,10 @@ const UserDashboard = () => {
             </p>
 
             <div className="dashboard-user-tags">
+              {/* ✅ UPDATED: Job Role Display */}
               <span className="dashboard-tag dashboard-tag-role">
                 <FiBriefcase size={14} />
-                {user?.jobRole || user?.role || 'Employee'}
+                {userJobRoleDisplay}
               </span>
               <span className="dashboard-tag dashboard-tag-type">
                 <FiUser size={14} />
@@ -666,7 +923,6 @@ const UserDashboard = () => {
         </div>
       </div>
 
-      {/* Current Month Stats */}
       <div className="dashboard-stats-grid">
         <div className="dashboard-stat-card stat-card-present">
           <div className="stat-card-header">
@@ -730,7 +986,6 @@ const UserDashboard = () => {
       </div>
 
       <div className="dashboard-content-grid">
-        {/* Calendar */}
         <div className="dashboard-calendar-card">
           <div className="calendar-header">
             <div className="calendar-title-section">
@@ -836,7 +1091,6 @@ const UserDashboard = () => {
           </div>
         </div>
 
-        {/* Recent Activity */}
         <div className="dashboard-activity-card">
           <div className="activity-header">
             <div className="activity-title-section">
@@ -912,7 +1166,6 @@ const UserDashboard = () => {
         </div>
       </div>
 
-      {/* Current Month Info */}
       <div className="dashboard-month-info">
         <div className="month-info-content">
           <div className="month-info-left">
