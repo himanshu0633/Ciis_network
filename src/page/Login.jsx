@@ -24,10 +24,7 @@ import {
   Login as LoginIcon,
   LockOutlined,
   EmailOutlined,
-  Business,
-  Person,
-  LocationOn,
-  Phone
+  Business
 } from '@mui/icons-material';
 import axios from '../utils/axiosConfig';
 import { useNavigate } from 'react-router-dom';
@@ -58,21 +55,18 @@ const Login = () => {
       const path = window.location.pathname;
       console.log('🔗 Current path:', path);
       
-      // Pattern 1: /company/{identifier}/login
       const match1 = path.match(/\/company\/([^/]+)\/login/);
       if (match1 && match1[1]) {
         console.log('✅ Extracted identifier from /company/{id}/login:', match1[1]);
         return match1[1];
       }
 
-      // Pattern 2: /company/{identifier}
       const match2 = path.match(/\/company\/([^/]+)/);
       if (match2 && match2[1]) {
         console.log('✅ Extracted identifier from /company/{id}:', match2[1]);
         return match2[1];
       }
 
-      // Pattern 3: Check URL segments
       const segments = path.split('/').filter(Boolean);
       if (segments.length >= 2 && segments[0] === 'company') {
         console.log('✅ Extracted identifier from segments:', segments[1]);
@@ -96,34 +90,24 @@ const Login = () => {
   const fetchCompanyDetails = async (identifier) => {
     try {
       setCompanyLoading(true);
-      console.log('🔍 Fetching company details for:', identifier);
-
       const response = await axios.get(`/company/details/${identifier}`);
 
       if (response.data.success) {
-        console.log('✅ Company details fetched:', response.data.company);
         setCompanyDetails(response.data.company);
         document.title = `${response.data.company.companyName} - Login`;
-        
-        // Store company details in localStorage for future use
-        localStorage.setItem('companyDetails', JSON.stringify(response.data.company));
       }
     } catch (error) {
-      console.error('❌ Error fetching company details:', error);
+      console.error('Error fetching company details:', error);
 
       if (error.response?.status === 404) {
         toast.error('Company not found. Please check the URL.');
       } else if (error.response?.status === 403) {
         toast.error(error.response.data.message || 'Company account is not active');
-      } else {
-        toast.error('Failed to load company details. Please try again.');
       }
 
-      // Set fallback company details
       setCompanyDetails({
-        companyName: 'Company Portal',
-        logo: null,
-        ownerName: 'Administrator'
+        companyName: 'CIIS NETWORK',
+        logo: null
       });
     } finally {
       setCompanyLoading(false);
@@ -132,7 +116,6 @@ const Login = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-
     setForm((prev) => ({
       ...prev,
       [name]: value
@@ -166,199 +149,100 @@ const Login = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Login.jsx में handleSubmit function update करें
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  if (!validateForm()) return;
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
 
-  setLoading(true);
+    setLoading(true);
 
-  try {
-    console.log('🔐 Login attempt for:', form.email);
-    console.log('🏢 Company identifier from URL:', companyIdentifier);
-
-    // ✅ Prepare login data based on what backend accepts
-    const loginData = {
-      email: form.email.trim(),
-      password: form.password
-    };
-
-    // ✅ Add companyIdentifier field (backend इसे accept करता है)
-    if (companyIdentifier) {
-      loginData.companyIdentifier = companyIdentifier;
-      // ✅ Optional: companyCode भी भेजें (दोनों में से कोई एक काम करेगा)
-      loginData.companyCode = companyIdentifier;
-    }
-
-    console.log('📤 Sending login data:', { 
-      ...loginData, 
-      password: '***' 
-    });
-
-    const res = await axios.post('/auth/login', loginData);
-    console.log('✅ Login response received:', res.data);
-
-    if (res.data.requiresTwoFactor) {
-      setTwoFactorRequired(true);
-      toast.info('Two-factor authentication required');
-      return;
-    }
-
-    // ✅ Save token
-    if (!res.data.token) {
-      throw new Error('No token received from server');
-    }
-    
-    localStorage.setItem('token', res.data.token);
-    console.log('💾 Token saved to localStorage');
-
-    // ✅ Save user data
-    const userData = res.data.user;
-    if (!userData) {
-      throw new Error('No user data received from server');
-    }
-    
-    localStorage.setItem('user', JSON.stringify(userData));
-    console.log('👤 User data saved:', {
-      id: userData._id,
-      name: userData.name,
-      email: userData.email,
-      companyCode: userData.companyCode
-    });
-
-    // ✅ Save company details from response
-    if (res.data.companyDetails) {
-      localStorage.setItem('companyDetails', JSON.stringify(res.data.companyDetails));
-      console.log('🏢 Company details saved:', res.data.companyDetails);
-    }
-
-    // ✅ Set auth context
-    setUser(userData);
-    setIsAuthenticated(true);
-
-    toast.success("Login successful!");
-
-    // ✅ Check company code match for debugging
-    const storedCompanyCode = res.data.companyDetails?.companyCode;
-    const userCompanyCode = userData.companyCode;
-    
-    if (storedCompanyCode && userCompanyCode) {
-      console.log('🔍 Company code check:', {
-        stored: storedCompanyCode,
-        user: userCompanyCode,
-        match: storedCompanyCode === userCompanyCode
-      });
-    }
-
-    // ✅ Debug: Log localStorage
-    console.log('📊 localStorage after login:');
-    console.log('- token:', localStorage.getItem('token')?.substring(0, 20) + '...');
-    console.log('- user:', JSON.parse(localStorage.getItem('user') || '{}'));
-    console.log('- companyDetails:', JSON.parse(localStorage.getItem('companyDetails') || '{}'));
-
-    // ✅ Decode token to see payload
     try {
-      const token = localStorage.getItem('token');
-      if (token) {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        console.log('🔐 Decoded token payload:', payload);
-      }
-    } catch (decodeError) {
-      console.warn('⚠️ Could not decode token:', decodeError);
-    }
+      const loginData = {
+        ...form,
+        companyIdentifier: companyIdentifier || null
+      };
 
-    // ✅ Redirect logic
-    let redirectPath = '/dashboard'; // Default
-    
-    const userRole = userData.role?.name || userData.role || userData.jobRole;
-    console.log('🎭 User role detected:', userRole);
-    
-    if (userRole) {
-      const roleLower = userRole.toLowerCase();
-      
-      if (roleLower.includes('admin') || roleLower.includes('manager')) {
-        redirectPath = '/admin/dashboard';
-      } else if (roleLower.includes('employee') || roleLower.includes('staff')) {
-        redirectPath = '/user/dashboard';
-      }
-    }
+      const res = await axios.post('/auth/login', loginData);
 
-    console.log('🔄 Redirecting to:', redirectPath);
-    
-    // Small delay to show success message
-    setTimeout(() => {
+      if (res.data.requiresTwoFactor) {
+        setTwoFactorRequired(true);
+        toast.info('Two-factor authentication required');
+        return;
+      }
+
+      // Save token
+      localStorage.setItem('token', res.data.token);
+
+      // Save user data
+      const userData = res.data.user;
+      localStorage.setItem('user', JSON.stringify(userData));
+
+      setUser(userData);
+      setIsAuthenticated(true);
+
+      // Save company identifier
+      if (companyIdentifier) {
+        localStorage.setItem('companyIdentifier', companyIdentifier);
+      }
+
+      if (companyDetails) {
+        localStorage.setItem('companyDetails', JSON.stringify(companyDetails));
+      }
+
+      toast.success("Login successful!");
+
+      // Redirect based on role
+      const redirectPath =
+        userData.role === 'admin' ? '/ciisUser/user-dashboard' : '/ciisUser/user-dashboard';
+
       navigate(redirectPath);
-    }, 1000);
+    } catch (err) {
+      console.error('Login error:', err);
 
-  } catch (err) {
-    console.error('❌ Login error:', err);
-    
-    let errorMsg = 'Login failed. Please try again.';
-    let shouldRetry = false;
+      let errorMsg = 'Login failed. Please try again.';
+      let shouldRetry = false;
 
-    if (err.response?.data) {
-      const { errorCode, message, remainingAttempts, expectedCode } = err.response.data;
-      console.log('🔍 Server error response:', err.response.data);
+      if (err.response?.data) {
+        const { errorCode, message, remainingAttempts } = err.response.data;
 
-      errorMsg = message || errorMsg;
+        errorMsg = message;
 
-      switch (errorCode) {
-        case 'ACCOUNT_LOCKED':
-          const retryAfter = err.response.data.retryAfter;
-          const lockTime = new Date(retryAfter).toLocaleTimeString();
-          errorMsg = `Account locked until ${lockTime}. Please try again later.`;
-          break;
+        switch (errorCode) {
+          case 'ACCOUNT_LOCKED':
+            const retryAfter = err.response.data.retryAfter;
+            const lockTime = new Date(retryAfter).toLocaleTimeString();
+            errorMsg = `Account locked until ${lockTime}. Please try again later.`;
+            break;
 
-        case 'ACCOUNT_DEACTIVATED':
-          errorMsg = 'Your account has been deactivated. Contact your administrator.';
-          break;
+          case 'ACCOUNT_DEACTIVATED':
+            errorMsg = 'Your account has been deactivated. Contact your administrator.';
+            break;
 
-        case 'SUBSCRIPTION_EXPIRED':
-          errorMsg = 'Company subscription has expired. Contact your company admin.';
-          break;
+          case 'SUBSCRIPTION_EXPIRED':
+            errorMsg = 'Company subscription has expired. Contact your company admin.';
+            break;
 
-        case 'INVALID_CREDENTIALS':
-          if (remainingAttempts) {
-            errorMsg += ` ${remainingAttempts} attempts remaining.`;
-            shouldRetry = remainingAttempts > 0;
-          }
-          break;
+          case 'INVALID_CREDENTIALS':
+            if (remainingAttempts) {
+              errorMsg += ` ${remainingAttempts} attempts remaining.`;
+              shouldRetry = remainingAttempts > 0;
+            }
+            break;
 
-        case 'COMPANY_MISMATCH':
-          if (expectedCode) {
-            errorMsg = `Invalid company access. You belong to company: ${expectedCode.toUpperCase()}`;
-          } else {
-            errorMsg = 'User does not belong to this company.';
-          }
-          break;
+          case 'COMPANY_NOT_FOUND':
+            errorMsg = 'Company not found. Please check your URL.';
+            break;
 
-        case 'NO_COMPANY':
-          errorMsg = 'User is not associated with any company. Contact administrator.';
-          break;
-
-        case 'COMPANY_DEACTIVATED':
-          errorMsg = 'Company account is deactivated.';
-          break;
-
-        default:
-          break;
+          default:
+            break;
+        }
       }
-    } else if (err.message) {
-      errorMsg = err.message;
+
+      toast.error(errorMsg);
+      setErrors((prev) => ({ ...prev, general: errorMsg, shouldRetry }));
+    } finally {
+      setLoading(false);
     }
-
-    console.error('❌ Login error details:', {
-      message: errorMsg,
-      status: err.response?.status,
-      data: err.response?.data
-    });
-
-    toast.error(errorMsg);
-    setErrors((prev) => ({ ...prev, general: errorMsg, shouldRetry }));
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const handleTwoFactorSubmit = async () => {
     if (!twoFactorCode.trim()) {
@@ -381,31 +265,12 @@ const handleSubmit = async (e) => {
       setIsAuthenticated(true);
 
       toast.success("Two-factor authentication successful!");
-      navigate('/dashboard');
+      navigate('/ciisUser/user-dashboard');
     } catch (err) {
       toast.error('Invalid two-factor code. Please try again.');
       setTwoFactorCode('');
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Add a test login function for debugging
-  const testLogin = async (testEmail, testPassword) => {
-    try {
-      console.log('🧪 Testing login with:', testEmail);
-      
-      const res = await axios.post('/auth/login', {
-        email: testEmail,
-        password: testPassword,
-        companyCode: companyIdentifier
-      });
-      
-      console.log('🧪 Test login response:', res.data);
-      return res.data;
-    } catch (error) {
-      console.error('🧪 Test login error:', error.response?.data);
-      throw error;
     }
   };
 
@@ -420,385 +285,428 @@ const handleSubmit = async (e) => {
         p: 2
       }}
     >
-      <Container maxWidth="lg">
-        <Grid container spacing={3} justifyContent="center">
-          {/* Company Details Card */}
-          {companyDetails && (
-            <Grid item xs={12} md={5}>
-              <Fade in={!companyLoading}>
-                <Card
-                  sx={{
-                    height: '100%',
-                    borderRadius: 3,
-                    boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-                    overflow: 'hidden'
-                  }}
-                >
-                  <CardContent sx={{ p: 4, height: '100%' }}>
-                    <Box sx={{ textAlign: 'center', mb: 3 }}>
-                      {companyDetails.logo ? (
-                        <Box
-                          component="img"
-                          src={companyDetails.logo}
-                          alt={companyDetails.companyName}
-                          sx={{
-                            width: 120,
-                            height: 120,
-                            margin: '0 auto 20px',
-                            borderRadius: 2,
-                            objectFit: 'contain',
-                            p: 2,
-                            backgroundColor: 'white',
-                            boxShadow: '0 8px 16px rgba(0,0,0,0.1)'
-                          }}
-                        />
-                      ) : (
-                        <Avatar
-                          sx={{
-                            width: 120,
-                            height: 120,
-                            margin: '0 auto 20px',
-                            background:
-                              'linear-gradient(135deg, #4CAF50 0%, #8BC34A 100%)',
-                            boxShadow: '0 8px 16px rgba(76,175,80,0.3)'
-                          }}
-                        >
-                          <Business sx={{ fontSize: 48 }} />
-                        </Avatar>
-                      )}
-
-                      <Typography variant="h5" gutterBottom sx={{ fontWeight: 700 }}>
-                        {companyDetails.companyName}
-                      </Typography>
-
-                      <Typography variant="body2" color="text.secondary" gutterBottom>
-                        {companyDetails.companyEmail}
-                      </Typography>
-                      
-                      <Typography variant="caption" color="primary" sx={{ display: 'block' }}>
-                        Company Code: {companyDetails.companyCode}
-                      </Typography>
-                    </Box>
-
-                    <Divider sx={{ mb: 3 }} />
-
-                    <Box sx={{ '& > *:not(:last-child)': { mb: 2 } }}>
-                      {companyDetails.ownerName && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <Person color="primary" />
-                          <Box>
-                            <Typography variant="caption" color="text.secondary">
-                              Owner
-                            </Typography>
-                            <Typography variant="body2">{companyDetails.ownerName}</Typography>
-                          </Box>
-                        </Box>
-                      )}
-
-                      {companyDetails.companyPhone && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <Phone color="primary" />
-                          <Box>
-                            <Typography variant="caption" color="text.secondary">
-                              Phone
-                            </Typography>
-                            <Typography variant="body2">{companyDetails.companyPhone}</Typography>
-                          </Box>
-                        </Box>
-                      )}
-
-                      {companyDetails.companyAddress && (
-                        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
-                          <LocationOn color="primary" sx={{ mt: 0.5 }} />
-                          <Box>
-                            <Typography variant="caption" color="text.secondary">
-                              Address
-                            </Typography>
-                            <Typography variant="body2">{companyDetails.companyAddress}</Typography>
-                          </Box>
-                        </Box>
-                      )}
-                    </Box>
-
-                    <Divider sx={{ my: 3 }} />
-                    
-                    {/* Debug info - only in development */}
-                    {process.env.NODE_ENV === 'development' && (
-                      <Box sx={{ mt: 2, p: 1, bgcolor: 'warning.light', borderRadius: 1 }}>
-                        <Typography variant="caption" sx={{ display: 'block' }}>
-                          🔍 Debug Info:
-                        </Typography>
-                        <Typography variant="caption" sx={{ display: 'block', fontSize: '0.7rem' }}>
-                          Identifier: {companyIdentifier}
-                        </Typography>
-                        <Typography variant="caption" sx={{ display: 'block', fontSize: '0.7rem' }}>
-                          Path: {window.location.pathname}
-                        </Typography>
-                      </Box>
-                    )}
-
-                    <Typography
-                      variant="caption"
-                      color="text.disabled"
-                      sx={{ display: 'block', textAlign: 'center', mt: 2 }}
-                    >
-                      Secure enterprise portal • {new Date().getFullYear()}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Fade>
-            </Grid>
-          )}
-
-          {/* Login Form Card */}
-          <Grid item xs={12} md={7}>
-            <Fade in>
-              <Paper
+      <Container maxWidth="md">
+        <Fade in>
+          <Paper
+            elevation={24}
+            sx={{
+              borderRadius: 4,
+              overflow: 'hidden',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+            }}
+          >
+            <Grid container sx={{ minHeight: '600px' }}>
+              {/* LEFT SECTION - Company Branding */}
+              <Grid
+                item
+                xs={12}
+                md={5}
                 sx={{
-                  p: 4,
-                  borderRadius: 3,
-                  boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-                  position: 'relative'
+                  background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  p: { xs: 6.5, md: 4 },
+                  position: 'relative',
+                  overflow: 'hidden'
                 }}
               >
-                {/* Debug button for development */}
-                {process.env.NODE_ENV === 'development' && (
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    color="warning"
-                    sx={{ position: 'absolute', top: 10, right: 10 }}
-                    onClick={() => {
-                      console.log('🔍 Current state:', {
-                        form,
-                        companyIdentifier,
-                        companyDetails,
-                        localStorage: {
-                          token: localStorage.getItem('token')?.substring(0, 20) + '...',
-                          user: JSON.parse(localStorage.getItem('user') || '{}'),
-                          companyDetails: JSON.parse(localStorage.getItem('companyDetails') || '{}')
-                        }
-                      });
-                      
-                      // Test with sample credentials
-                      // testLogin('test@example.com', 'password123');
-                    }}
-                  >
-                    Debug
-                  </Button>
-                )}
+                {/* Subtle pattern overlay */}
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundImage: 'radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 1px, transparent 1px)',
+                    backgroundSize: '40px 40px',
+                    opacity: 0.3
+                  }}
+                />
 
-                <Box sx={{ textAlign: 'center', mb: 4 }}>
-                  <Avatar
+                <Box
+                  sx={{
+                    position: 'relative',
+                    zIndex: 1,
+                    textAlign: 'center',
+                    color: 'white'
+                  }}
+                >
+                  {/* Company Logo */}
+                  <Box
                     sx={{
-                      width: 72,
-                      height: 72,
-                      margin: '0 auto 20px',
-                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                      width: 120,
+                      height: 120,
+                      borderRadius: 3,
+                      backgroundColor: 'white',
+                      backdropFilter: 'blur(10px)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      margin: '0 auto 32px',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
                     }}
                   >
-                    <LockOutlined sx={{ fontSize: 36 }} />
-                  </Avatar>
-
-                  <Typography variant="h4" gutterBottom sx={{ fontWeight: 700 }}>
-                    {twoFactorRequired ? 'Two-Factor Authentication' : 'Welcome Back'}
-                  </Typography>
-
-                  <Typography variant="body1" color="text.secondary">
-                    {twoFactorRequired
-                      ? 'Enter the code from your authenticator app'
-                      : companyDetails
-                      ? `Sign in to ${companyDetails.companyName}`
-                      : 'Sign in to continue'}
-                  </Typography>
-                  
-                  {companyIdentifier && !companyLoading && (
-                    <Typography variant="caption" color="primary" sx={{ display: 'block', mt: 1 }}>
-                      Company: {companyIdentifier.toUpperCase()}
-                    </Typography>
-                  )}
-                </Box>
-
-                {errors.general && (
-                  <Alert 
-                    severity="error" 
-                    sx={{ mb: 3 }}
-                    action={
-                      errors.shouldRetry && (
-                        <Button color="inherit" size="small" onClick={handleSubmit}>
-                          Retry
-                        </Button>
-                      )
-                    }
-                  >
-                    {errors.general}
-                  </Alert>
-                )}
-
-                {!twoFactorRequired ? (
-                  <form onSubmit={handleSubmit}>
-                    <TextField
-                      fullWidth
-                      label="Email Address"
-                      name="email"
-                      type="email"
-                      value={form.email}
-                      onChange={handleChange}
-                      error={!!errors.email}
-                      helperText={errors.email}
-                      disabled={loading}
-                      autoComplete="email"
-                      margin="normal"
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <EmailOutlined color="action" />
-                          </InputAdornment>
-                        )
-                      }}
-                    />
-
-                    <TextField
-                      fullWidth
-                      label="Password"
-                      name="password"
-                      type={showPassword ? 'text' : 'password'}
-                      value={form.password}
-                      onChange={handleChange}
-                      error={!!errors.password}
-                      helperText={errors.password}
-                      disabled={loading}
-                      autoComplete="current-password"
-                      margin="normal"
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <LockOutlined color="action" />
-                          </InputAdornment>
-                        ),
-                        endAdornment: (
-                          <InputAdornment position="end">
-                            <IconButton
-                              onClick={() => setShowPassword(!showPassword)}
-                              edge="end"
-                            >
-                              {showPassword ? <VisibilityOff /> : <Visibility />}
-                            </IconButton>
-                          </InputAdornment>
-                        )
-                      }}
-                    />
-
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-                      <Link
-                        href={`${window.location.pathname.replace('/login', '/forgot-password')}`}
-                        variant="body2"
-                      >
-                        Forgot password?
-                      </Link>
-                    </Box>
-
-                    <Button
-                      type="submit"
-                      fullWidth
-                      variant="contained"
-                      disabled={loading}
-                      sx={{
-                        mt: 3,
-                        py: 1.5,
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        '&:hover': {
-                          background: 'linear-gradient(135deg, #5a67d8 0%, #6c429b 100%)'
-                        }
-                      }}
-                      startIcon={
-                        loading ? (
-                          <CircularProgress size={20} color="inherit" />
-                        ) : (
-                          <LoginIcon />
-                        )
-                      }
-                    >
-                      {loading ? 'Signing in...' : 'Sign In'}
-                    </Button>
-
-                    <Box sx={{ mt: 3, textAlign: 'center' }}>
-                      <Link
-                        href={`${window.location.pathname.replace('/login', '/register')}`}
-                        variant="body2"
-                      >
-                        Don't have an account? Sign up
-                      </Link>
-                    </Box>
-                  </form>
-                ) : (
-                  <Box>
-                    <TextField
-                      fullWidth
-                      label="Enter 6-digit code"
-                      value={twoFactorCode}
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/\D/g, '').slice(0, 6);
-                        setTwoFactorCode(value);
-                        if (errors.twoFactor) {
-                          setErrors((prev) => ({ ...prev, twoFactor: '' }));
-                        }
-                      }}
-                      error={!!errors.twoFactor}
-                      helperText={errors.twoFactor}
-                      disabled={loading}
-                      margin="normal"
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <LockOutlined color="action" />
-                          </InputAdornment>
-                        )
-                      }}
-                    />
-
-                    <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
-                      <Button
-                        fullWidth
-                        variant="outlined"
-                        onClick={() => setTwoFactorRequired(false)}
-                        disabled={loading}
-                      >
-                        Back
-                      </Button>
-
-                      <Button
-                        fullWidth
-                        variant="contained"
-                        onClick={handleTwoFactorSubmit}
-                        disabled={loading || twoFactorCode.length !== 6}
+                    {companyLoading ? (
+                      <CircularProgress size={40} color="inherit" />
+                    ) : companyDetails?.logo ? (
+                      <Box
+                        component="img"
+                        src={companyDetails.logo}
+                        alt={companyDetails.companyName}
                         sx={{
-                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                          width: 80,
+                          height: 80,
+                          objectFit: 'contain'
                         }}
-                      >
-                        {loading ? 'Verifying...' : 'Verify'}
-                      </Button>
-                    </Box>
+                      />
+                    ) : (
+                      <Business
+                        sx={{
+                          fontSize: 48,
+                          color: 'white'
+                        }}
+                      />
+                    )}
+                  </Box>
 
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ mt: 2, textAlign: 'center' }}
+                  {/* Company Name */}
+                  <Typography
+                      variant="h4"
+                      sx={{
+                        fontFamily: '"Oswald", sans-serif',
+                        fontWeight: 600,
+                        mb: 1,
+                        letterSpacing: '-0.5px',
+                        textShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                      }}
                     >
-                      Having trouble? <Link href="#" variant="body2">Resend code</Link>
+                      {companyLoading ? 'Loading...' : (companyDetails?.companyName || 'CIIS NETWORK')}
+                    </Typography>
+
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      opacity: 0.9,
+                      letterSpacing: '0.5px'
+                    }}
+                  >
+                    Secure Enterprise Portal
+                  </Typography>
+                </Box>
+              </Grid>
+
+              {/* RIGHT SECTION - Login Form */}
+              <Grid
+                item
+                xs={12}
+                md={7}
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  p: { xs: 4, md: 6 }
+                }}
+              >
+                <Box sx={{ maxWidth: '400px', mx: 'auto', width: '100%' }}>
+                  {/* Form Header */}
+                  <Box sx={{ textAlign: 'center', mb: 4 }}>
+                    <Typography
+                      variant="h4"
+                      sx={{
+                        fontWeight: 700,
+                        mb: 1,
+                        color: 'text.primary',
+                        letterSpacing: '-0.5px'
+                      }}
+                    >
+                      {twoFactorRequired ? 'Two-Factor Authentication' : 'Welcome Back'}
+                    </Typography>
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        color: 'text.secondary',
+                        mb: 3
+                      }}
+                    >
+                      {twoFactorRequired
+                        ? 'Enter the code from your authenticator app'
+                        : `Sign in to ${companyDetails?.companyName || 'CIIS NETWORK'}`}
                     </Typography>
                   </Box>
-                )}
 
-                <Box sx={{ mt: 4, textAlign: 'center' }}>
-                  <Typography variant="caption" color="text.disabled">
-                    By signing in, you agree to our Terms of Service and Privacy Policy
-                  </Typography>
+                  {/* Error Alert */}
+                  {errors.general && (
+                    <Alert
+                      severity="error"
+                      sx={{
+                        mb: 3,
+                        borderRadius: 2,
+                        '& .MuiAlert-icon': {
+                          alignItems: 'center'
+                        }
+                      }}
+                    >
+                      {errors.general}
+                    </Alert>
+                  )}
+
+                  {/* Login Form */}
+                  {!twoFactorRequired ? (
+                    <form onSubmit={handleSubmit}>
+                      {/* Email Input */}
+                      <TextField
+                        fullWidth
+                        label="Email Address"
+                        name="email"
+                        type="email"
+                        value={form.email}
+                        onChange={handleChange}
+                        error={!!errors.email}
+                        helperText={errors.email}
+                        disabled={loading}
+                        autoComplete="email"
+                        margin="normal"
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: 2,
+                            '&:hover fieldset': {
+                              borderColor: 'primary.main'
+                            }
+                          }
+                        }}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <EmailOutlined color="action" />
+                            </InputAdornment>
+                          )
+                        }}
+                      />
+
+                      {/* Password Input */}
+                      <TextField
+                        fullWidth
+                        label="Password"
+                        name="password"
+                        type={showPassword ? 'text' : 'password'}
+                        value={form.password}
+                        onChange={handleChange}
+                        error={!!errors.password}
+                        helperText={errors.password}
+                        disabled={loading}
+                        autoComplete="current-password"
+                        margin="normal"
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: 2,
+                            '&:hover fieldset': {
+                              borderColor: 'primary.main'
+                            }
+                          }
+                        }}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <LockOutlined color="action" />
+                            </InputAdornment>
+                          ),
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              <IconButton
+                                onClick={() => setShowPassword(!showPassword)}
+                                edge="end"
+                                size="small"
+                              >
+                                {showPassword ? <VisibilityOff /> : <Visibility />}
+                              </IconButton>
+                            </InputAdornment>
+                          )
+                        }}
+                      />
+
+                      {/* Forgot Password Link */}
+                      {/* <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+                        <Link
+                          href={`${window.location.pathname.replace('/login', '/forgot-password')}`}
+                          variant="body2"
+                          sx={{
+                            color: 'primary.main',
+                            textDecoration: 'none',
+                            fontWeight: 500,
+                            '&:hover': {
+                              textDecoration: 'underline'
+                            }
+                          }}
+                        >
+                          Forgot password?
+                        </Link>
+                      </Box> */}
+
+                      {/* Sign In Button */}
+                      <Button
+                        type="submit"
+                        fullWidth
+                        variant="contained"
+                        disabled={loading}
+                        sx={{
+                          mt: 3,
+                          py: 1.5,
+                          borderRadius: 2,
+                          fontSize: '1rem',
+                          fontWeight: 600,
+                          textTransform: 'none',
+                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                          boxShadow: '0 4px 14px 0 rgba(102, 126, 234, 0.4)',
+                          '&:hover': {
+                            background: 'linear-gradient(135deg, #5a6fd8 0%, #6a3a9a 100%)',
+                            boxShadow: '0 6px 20px rgba(102, 126, 234, 0.5)'
+                          }
+                        }}
+                        startIcon={
+                          loading ? (
+                            <CircularProgress size={20} color="inherit" />
+                          ) : (
+                            <LoginIcon />
+                          )
+                        }
+                      >
+                        {loading ? 'Signing in...' : 'Sign In'}
+                      </Button>
+
+                      {/* Sign Up Link */}
+                      {/* <Box sx={{ mt: 3, textAlign: 'center' }}>
+                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                          Don't have an account?{' '}
+                          <Link
+                            href={`${window.location.pathname.replace('/login', '/register')}`}
+                            variant="body2"
+                            sx={{
+                              color: 'primary.main',
+                              fontWeight: 600,
+                              textDecoration: 'none',
+                              '&:hover': {
+                                textDecoration: 'underline'
+                              }
+                            }}
+                          >
+                            Sign up
+                          </Link>
+                        </Typography>
+                      </Box> */}
+                    </form>
+                  ) : (
+                    /* Two-Factor Authentication Form */
+                    <Box>
+                      <TextField
+                        fullWidth
+                        label="Enter 6-digit code"
+                        value={twoFactorCode}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                          setTwoFactorCode(value);
+                          if (errors.twoFactor) {
+                            setErrors((prev) => ({ ...prev, twoFactor: '' }));
+                          }
+                        }}
+                        error={!!errors.twoFactor}
+                        helperText={errors.twoFactor}
+                        disabled={loading}
+                        margin="normal"
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: 2
+                          }
+                        }}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <LockOutlined color="action" />
+                            </InputAdornment>
+                          )
+                        }}
+                      />
+
+                      <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
+                        <Button
+                          fullWidth
+                          variant="outlined"
+                          onClick={() => setTwoFactorRequired(false)}
+                          disabled={loading}
+                          sx={{
+                            borderRadius: 2,
+                            textTransform: 'none',
+                            fontWeight: 600
+                          }}
+                        >
+                          Back
+                        </Button>
+
+                        <Button
+                          fullWidth
+                          variant="contained"
+                          onClick={handleTwoFactorSubmit}
+                          disabled={loading || twoFactorCode.length !== 6}
+                          sx={{
+                            borderRadius: 2,
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                            boxShadow: '0 4px 14px 0 rgba(102, 126, 234, 0.4)',
+                            '&:hover': {
+                              background: 'linear-gradient(135deg, #5a6fd8 0%, #6a3a9a 100%)',
+                              boxShadow: '0 6px 20px rgba(102, 126, 234, 0.5)'
+                            }
+                          }}
+                        >
+                          {loading ? 'Verifying...' : 'Verify'}
+                        </Button>
+                      </Box>
+
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          mt: 2,
+                          textAlign: 'center',
+                          color: 'text.secondary'
+                        }}
+                      >
+                        Having trouble?{' '}
+                        <Link href="#" variant="body2" sx={{ fontWeight: 600 }}>
+                          Resend code
+                        </Link>
+                      </Typography>
+                    </Box>
+                  )}
+
+                  {/* Terms & Privacy */}
+                  <Box sx={{ mt: 4, textAlign: 'center' }}>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: 'text.disabled',
+                        lineHeight: 1.5,
+                        display: 'block'
+                      }}
+                    >
+                      By signing in, you agree to our{' '}
+                      <Link href="#" variant="caption" sx={{ color: 'text.disabled' }}>
+                        Terms of Service
+                      </Link>{' '}
+                      and{' '}
+                      <Link href="#" variant="caption" sx={{ color: 'text.disabled' }}>
+                        Privacy Policy
+                      </Link>
+                    </Typography>
+                  </Box>
                 </Box>
-              </Paper>
-            </Fade>
-          </Grid>
-        </Grid>
+              </Grid>
+            </Grid>
+          </Paper>
+        </Fade>
       </Container>
     </Box>
   );

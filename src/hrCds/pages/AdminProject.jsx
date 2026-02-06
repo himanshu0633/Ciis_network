@@ -46,6 +46,11 @@ const Icons = {
   CloudUpload: () => <span>📤</span>,
 };
 
+// Helper function to get user ID (handles both id and _id fields)
+const getUserId = (user) => {
+  return user._id || user.id;
+};
+
 export const AdminProject = () => {
   // FORM STATES
   const [projectId, setProjectId] = useState(null);
@@ -125,8 +130,8 @@ export const AdminProject = () => {
 
   // Filter users for member dropdown
   const filteredUsers = users.filter(u => 
-    u.name?.toLowerCase().includes(memberSearchTerm.toLowerCase()) ||
-    u.email?.toLowerCase().includes(memberSearchTerm.toLowerCase())
+    (u.name?.toLowerCase() || "").includes(memberSearchTerm.toLowerCase()) ||
+    (u.email?.toLowerCase() || "").includes(memberSearchTerm.toLowerCase())
   );
 
   // Handle member toggle
@@ -144,25 +149,71 @@ export const AdminProject = () => {
   };
 
   // Get selected users for display
-  const getSelectedUsers = () => users.filter(u => members.includes(u._id));
+  const getSelectedUsers = () => users.filter(u => members.includes(getUserId(u)));
 
+  // FIXED: Fetch users with proper API response handling
   const fetchUsers = async () => {
     try {
-      const res = await axios.get("/users/all-users");
-      setUsers(res.data);
+      const res = await axios.get("/users/company-users");
+      
+      // Handle nested API response structure
+      if (res.data && res.data.success && res.data.message && res.data.message.users) {
+        // API returns {success: true, message: {users: [...]}}
+        setUsers(res.data.message.users || []);
+      } else if (Array.isArray(res.data)) {
+        // If response is directly an array
+        setUsers(res.data || []);
+      } else if (res.data && Array.isArray(res.data.data)) {
+        // If response is {data: [...]}
+        setUsers(res.data.data || []);
+      } else if (res.data && Array.isArray(res.data.users)) {
+        // If response is {users: [...]}
+        setUsers(res.data.users || []);
+      } else {
+        console.warn("Unexpected users API response structure:", res.data);
+        setUsers([]);
+        showSnackbar("⚠️ Could not load users in expected format", "warning");
+      }
     } catch (error) {
       console.error("Error fetching users:", error);
-      showSnackbar("Error loading users", "error");
+      showSnackbar("❌ Error loading users", "error");
+      setUsers([]);
     }
   };
 
+  // FIXED: Fetch projects with proper API response handling
   const fetchProjects = async () => {
     try {
       const res = await axios.get("/projects");
-      setProjects(res.data.items || []);
+      
+      // Handle different possible response structures
+      if (Array.isArray(res.data)) {
+        // If response is directly an array
+        setProjects(res.data || []);
+      } else if (res.data && Array.isArray(res.data.data)) {
+        // If response is {data: [...]}
+        setProjects(res.data.data || []);
+      } else if (res.data && Array.isArray(res.data.projects)) {
+        // If response is {projects: [...]}
+        setProjects(res.data.projects || []);
+      } else if (res.data && res.data.success && Array.isArray(res.data.data)) {
+        // If response is {success: true, data: [...]}
+        setProjects(res.data.data || []);
+      } else if (res.data && res.data.success && Array.isArray(res.data.items)) {
+        // If response is {success: true, items: [...]}
+        setProjects(res.data.items || []);
+      } else if (res.data && res.data.message && Array.isArray(res.data.message)) {
+        // If response is {message: [...]}
+        setProjects(res.data.message || []);
+      } else {
+        console.warn("Unexpected projects API response:", res.data);
+        setProjects([]);
+        showSnackbar("⚠️ Could not load projects in expected format", "warning");
+      }
     } catch (error) {
       console.error("Error fetching projects:", error);
-      showSnackbar("Error loading projects", "error");
+      showSnackbar("❌ Error loading projects", "error");
+      setProjects([]);
     }
   };
 
@@ -171,22 +222,22 @@ export const AdminProject = () => {
     if (!searchTerm) return true;
     const searchLower = searchTerm.toLowerCase();
     return (
-      project.projectName.toLowerCase().includes(searchLower) ||
-      project.description.toLowerCase().includes(searchLower) ||
-      project.status.toLowerCase().includes(searchLower) ||
-      project.priority.toLowerCase().includes(searchLower)
+      (project.projectName || "").toLowerCase().includes(searchLower) ||
+      (project.description || "").toLowerCase().includes(searchLower) ||
+      (project.status || "").toLowerCase().includes(searchLower) ||
+      (project.priority || "").toLowerCase().includes(searchLower)
     );
   }).sort((a, b) => {
     switch (sortBy) {
       case "newest":
-        return new Date(b.createdAt) - new Date(a.createdAt);
+        return new Date(b.createdAt || b.createdDate || 0) - new Date(a.createdAt || a.createdDate || 0);
       case "oldest":
-        return new Date(a.createdAt) - new Date(b.createdAt);
+        return new Date(a.createdAt || a.createdDate || 0) - new Date(b.createdAt || b.createdDate || 0);
       case "priority":
         const priorityOrder = { high: 3, medium: 2, low: 1 };
-        return (priorityOrder[b.priority?.toLowerCase()] || 0) - (priorityOrder[a.priority?.toLowerCase()] || 0);
+        return (priorityOrder[(b.priority || "").toLowerCase()] || 0) - (priorityOrder[(a.priority || "").toLowerCase()] || 0);
       case "name":
-        return a.projectName.localeCompare(b.projectName);
+        return (a.projectName || "").localeCompare(b.projectName || "");
       default:
         return 0;
     }
@@ -235,20 +286,31 @@ export const AdminProject = () => {
     if (file) formData.append("pdfFile", file);
 
     try {
+      let response;
       if (projectId) {
-        await axios.put(`/projects/${projectId}`, formData, {
+        response = await axios.put(`/projects/${projectId}`, formData, {
           headers: { "Content-Type": "multipart/form-data" }
         });
-        showSnackbar("Project updated successfully!", "success");
       } else {
-        await axios.post("/projects", formData, {
+        response = await axios.post("/projects", formData, {
           headers: { "Content-Type": "multipart/form-data" }
         });
-        showSnackbar("Project created successfully!", "success");
       }
 
-      resetForm();
-      fetchProjects();
+      // Check response structure
+      const success = response.data?.success || 
+                     (response.status >= 200 && response.status < 300);
+      
+      if (success) {
+        showSnackbar(
+          projectId ? "Project updated successfully!" : "Project created successfully!", 
+          "success"
+        );
+        resetForm();
+        fetchProjects();
+      } else {
+        showSnackbar(response.data?.message || "Operation failed", "error");
+      }
     } catch (err) {
       console.error("Error saving project:", err);
       const errorMsg = err.response?.data?.message || "Something went wrong";
@@ -263,25 +325,38 @@ export const AdminProject = () => {
     if (!window.confirm(`Are you sure you want to delete "${projectName}"?`)) return;
 
     try {
-      await axios.delete(`/projects/${id}`);
-      showSnackbar("Project deleted successfully!", "success");
-      fetchProjects();
+      const response = await axios.delete(`/projects/${id}`);
+      
+      const success = response.data?.success || 
+                     (response.status >= 200 && response.status < 300);
+      
+      if (success) {
+        showSnackbar("Project deleted successfully!", "success");
+        fetchProjects();
+      } else {
+        showSnackbar(response.data?.message || "Failed to delete project", "error");
+      }
     } catch (error) {
       console.error("Error deleting project:", error);
       showSnackbar("Error deleting project", "error");
     }
   };
 
-  // EDIT PROJECT
+  // EDIT PROJECT - FIXED to handle different ID fields
   const editProject = (p) => {
-    setProjectId(p._id);
-    setProjectName(p.projectName);
-    setDescription(p.description);
+    const projectId = getUserId(p);
+    setProjectId(projectId);
+    setProjectName(p.projectName || "");
+    setDescription(p.description || "");
     setStartDate(p.startDate ? new Date(p.startDate).toISOString().split('T')[0] : "");
     setEndDate(p.endDate ? new Date(p.endDate).toISOString().split('T')[0] : "");
-    setPriority(p.priority.charAt(0).toUpperCase() + p.priority.slice(1));
-    setStatus(p.status.charAt(0).toUpperCase() + p.status.slice(1));
-    setMembers(p.users.map(u => u._id));
+    setPriority((p.priority || "Medium").charAt(0).toUpperCase() + (p.priority || "Medium").slice(1).toLowerCase());
+    setStatus((p.status || "Active").charAt(0).toUpperCase() + (p.status || "Active").slice(1).toLowerCase());
+    
+    // Handle users array (could be array of objects or IDs)
+    const userIDs = (p.users || []).map(u => getUserId(u));
+    setMembers(userIDs);
+    
     setFile(null);
     setFileName("");
     
@@ -367,7 +442,10 @@ export const AdminProject = () => {
   };
 
   const getStatusColor = (status) => {
-    switch (status?.toLowerCase()) {
+    if (!status) return "#9E9E9E";
+    
+    const statusLower = status.toLowerCase();
+    switch (statusLower) {
       case "active": return "#66BB6A";
       case "completed": return "#29B6F6";
       case "on hold":
@@ -379,7 +457,10 @@ export const AdminProject = () => {
   };
 
   const getPriorityColor = (priority) => {
-    switch (priority?.toLowerCase()) {
+    if (!priority) return "#9E9E9E";
+    
+    const priorityLower = priority.toLowerCase();
+    switch (priorityLower) {
       case "high": return "#EF5350";
       case "medium": return "#FFA726";
       case "low": return "#66BB6A";
@@ -484,6 +565,14 @@ export const AdminProject = () => {
   const DetailsDialog = () => {
     if (!openDetailsDialog || !selectedProject) return null;
     
+    // Safe getter for user object
+    const getSafeUser = (user) => ({
+      _id: getUserId(user),
+      name: user.name || "Unknown User",
+      email: user.email || "No email",
+      role: user.role || user.jobRole || "Member"
+    });
+    
     return (
       <div className="AdminProject-dialog-backdrop">
         <div className="AdminProject-dialog" style={{ maxWidth: "900px" }}>
@@ -520,10 +609,10 @@ export const AdminProject = () => {
                 <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
                   <div>
                     <h3 style={{ fontSize: "1.5rem", fontWeight: "800", marginBottom: "8px", color: "#667eea" }}>
-                      {selectedProject.projectName}
+                      {selectedProject.projectName || "Unnamed Project"}
                     </h3>
                     <p style={{ color: "#666", marginBottom: "16px" }}>
-                      {selectedProject.description}
+                      {selectedProject.description || "No description available"}
                     </p>
                   </div>
 
@@ -536,11 +625,11 @@ export const AdminProject = () => {
                           </h4>
                           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                             {[
-                              { label: "Status", value: selectedProject.status },
-                              { label: "Priority", value: selectedProject.priority },
+                              { label: "Status", value: selectedProject.status || "Not set" },
+                              { label: "Priority", value: selectedProject.priority || "Not set" },
                               { label: "Start Date", value: selectedProject.startDate ? new Date(selectedProject.startDate).toLocaleDateString() : "Not set" },
                               { label: "End Date", value: selectedProject.endDate ? new Date(selectedProject.endDate).toLocaleDateString() : "Not set" },
-                              { label: "Created On", value: new Date(selectedProject.createdAt).toLocaleDateString() }
+                              { label: "Created On", value: selectedProject.createdAt ? new Date(selectedProject.createdAt).toLocaleDateString() : "Not set" }
                             ].map((item, idx) => (
                               <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                                 <span style={{ fontSize: "0.875rem", color: "#666" }}>{item.label}</span>
@@ -598,26 +687,29 @@ export const AdminProject = () => {
                         <Icons.Group /> Team Members ({selectedProject.users?.length || 0})
                       </h4>
                       <div style={{ display: "grid", gridTemplateColumns: "repeat(1, 1fr)", gap: "16px" }}>
-                        {selectedProject.users?.map((user) => (
-                          <div key={user._id} style={{ border: "1px solid #eee", padding: "16px", borderRadius: "8px" }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                              <div className="AdminProject-avatar">
-                                {user.name?.charAt(0)}
-                              </div>
-                              <div>
-                                <div style={{ fontSize: "1rem", fontWeight: "600" }}>{user.name}</div>
-                                <div style={{ fontSize: "0.75rem", color: "#666", display: "block" }}>
-                                  {user.email}
+                        {(selectedProject.users || []).map((user) => {
+                          const safeUser = getSafeUser(user);
+                          return (
+                            <div key={safeUser._id} style={{ border: "1px solid #eee", padding: "16px", borderRadius: "8px" }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                                <div className="AdminProject-avatar">
+                                  {safeUser.name.charAt(0)}
                                 </div>
-                                {user.role && (
-                                  <span className="AdminProject-chip" style={{ marginTop: "4px", fontSize: "0.7rem", background: "rgba(0,0,0,0.05)", padding: "2px 8px" }}>
-                                    {user.role}
-                                  </span>
-                                )}
+                                <div>
+                                  <div style={{ fontSize: "1rem", fontWeight: "600" }}>{safeUser.name}</div>
+                                  <div style={{ fontSize: "0.75rem", color: "#666", display: "block" }}>
+                                    {safeUser.email}
+                                  </div>
+                                  {safeUser.role && (
+                                    <span className="AdminProject-chip" style={{ marginTop: "4px", fontSize: "0.7rem", background: "rgba(0,0,0,0.05)", padding: "2px 8px" }}>
+                                      {safeUser.role}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
@@ -634,25 +726,25 @@ export const AdminProject = () => {
                   {selectedProject.tasks?.length > 0 ? (
                     <div className="AdminProject-task-list">
                       {selectedProject.tasks.map((task) => (
-                        <div key={task._id} className="AdminProject-task-item">
+                        <div key={task._id || task.id} className="AdminProject-task-item">
                           <div className="AdminProject-task-content">
                             <div className="AdminProject-task-header">
                               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                                 <Icons.Task />
-                                <div className="AdminProject-task-title">{task.title}</div>
+                                <div className="AdminProject-task-title">{task.title || "Untitled Task"}</div>
                               </div>
                               <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                                 <span className="AdminProject-chip AdminProject-chip-status" style={{
                                   "--status-color": getStatusColor(task.status),
-                                  "--status-color-rgb": getStatusColor(task.status).replace('#', '').match(/.{2}/g).map(c => parseInt(c, 16)).join(',')
+                                  "--status-color-rgb": getStatusColor(task.status).replace('#', '').match(/.{2}/g)?.map(c => parseInt(c, 16)).join(',') || "102, 187, 106"
                                 }}>
-                                  {task.status}
+                                  {task.status || "Not set"}
                                 </span>
                                 <span className="AdminProject-chip AdminProject-chip-priority" style={{
                                   "--priority-color": getPriorityColor(task.priority),
-                                  "--priority-color-rgb": getPriorityColor(task.priority).replace('#', '').match(/.{2}/g).map(c => parseInt(c, 16)).join(',')
+                                  "--priority-color-rgb": getPriorityColor(task.priority).replace('#', '').match(/.{2}/g)?.map(c => parseInt(c, 16)).join(',') || "255, 167, 38"
                                 }}>
-                                  {task.priority}
+                                  {task.priority || "Not set"}
                                 </span>
                               </div>
                             </div>
@@ -727,7 +819,7 @@ export const AdminProject = () => {
                                 {selectedProject.pdfFile.filename || "Project Document"}
                               </div>
                               <div style={{ fontSize: "0.875rem", color: "#666" }}>
-                                Project main document • Uploaded on: {new Date(selectedProject.createdAt).toLocaleDateString()}
+                                Project main document • Uploaded on: {selectedProject.createdAt ? new Date(selectedProject.createdAt).toLocaleDateString() : "Unknown"}
                               </div>
                             </div>
                           </div>
@@ -762,7 +854,7 @@ export const AdminProject = () => {
                       {selectedProject.tasks
                         .filter(task => task.pdfFile?.path)
                         .map((task) => (
-                          <div key={task._id} className="AdminProject-stat-card" style={{ border: "1px solid #eee" }}>
+                          <div key={task._id || task.id} className="AdminProject-stat-card" style={{ border: "1px solid #eee" }}>
                             <div className="AdminProject-stat-content">
                               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                                 <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
@@ -772,7 +864,7 @@ export const AdminProject = () => {
                                       {task.pdfFile.filename || "Task Document"}
                                     </div>
                                     <div style={{ fontSize: "0.75rem", color: "#666", display: "block" }}>
-                                      From task: {task.title}
+                                      From task: {task.title || "Untitled"}
                                     </div>
                                     <div style={{ fontSize: "0.75rem", color: "#666", display: "block" }}>
                                       Assigned to: {task.assignedTo?.name || "Unassigned"}
@@ -975,15 +1067,9 @@ export const AdminProject = () => {
                   value={priority}
                   onChange={(e) => setPriority(e.target.value)}
                 >
-                  <option value="Low">
-                    <Icons.Bolt /> Low Priority
-                  </option>
-                  <option value="Medium">
-                    <Icons.Bolt /> Medium Priority
-                  </option>
-                  <option value="High">
-                    <Icons.Bolt /> High Priority
-                  </option>
+                  <option value="Low">Low Priority</option>
+                  <option value="Medium">Medium Priority</option>
+                  <option value="High">High Priority</option>
                 </select>
               </div>
               <div className="AdminProject-form-group">
@@ -993,21 +1079,11 @@ export const AdminProject = () => {
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
                 >
-                  <option value="Active">
-                    <Icons.PlayArrow /> Active
-                  </option>
-                  <option value="On Hold">
-                    <Icons.Pause /> On Hold
-                  </option>
-                  <option value="Completed">
-                    <Icons.CheckCircle /> Completed
-                  </option>
-                  <option value="Planning">
-                    <Icons.Schedule /> Planning
-                  </option>
-                  <option value="Cancelled">
-                    <Icons.Stop /> Cancelled
-                  </option>
+                  <option value="Active">Active</option>
+                  <option value="On Hold">On Hold</option>
+                  <option value="Completed">Completed</option>
+                  <option value="Planning">Planning</option>
+                  <option value="Cancelled">Cancelled</option>
                 </select>
               </div>
             </div>
@@ -1049,33 +1125,42 @@ export const AdminProject = () => {
                     </div>
                     
                     <div className="AdminProject-dropdown-options">
-                      {filteredUsers.map((u) => (
-                        <div 
-                          key={u._id}
-                          className={`AdminProject-dropdown-option ${members.includes(u._id) ? 'selected' : ''}`}
-                          onClick={() => handleMemberToggle(u._id)}
-                        >
-                          <div className="AdminProject-dropdown-option-checkbox">
-                            <input
-                              type="checkbox"
-                              checked={members.includes(u._id)}
-                              onChange={() => {}}
-                              className="AdminProject-checkbox"
-                            />
-                          </div>
-                          <div className="AdminProject-dropdown-option-avatar">
-                            {u.name?.charAt(0)}
-                          </div>
-                          <div className="AdminProject-dropdown-option-info">
-                            <div className="AdminProject-dropdown-option-name">{u.name}</div>
-                            <div className="AdminProject-dropdown-option-email">{u.email}</div>
-                          </div>
-                        </div>
-                      ))}
-                      
-                      {filteredUsers.length === 0 && (
+                      {Array.isArray(users) && users.length > 0 ? (
+                        filteredUsers.map((u) => {
+                          const userId = getUserId(u);
+                          return (
+                            <div 
+                              key={userId}
+                              className={`AdminProject-dropdown-option ${members.includes(userId) ? 'selected' : ''}`}
+                              onClick={() => handleMemberToggle(userId)}
+                            >
+                              <div className="AdminProject-dropdown-option-checkbox">
+                                <input
+                                  type="checkbox"
+                                  checked={members.includes(userId)}
+                                  onChange={() => {}}
+                                  className="AdminProject-checkbox"
+                                />
+                              </div>
+                              <div className="AdminProject-dropdown-option-avatar">
+                                {u.name?.charAt(0) || "U"}
+                              </div>
+                              <div className="AdminProject-dropdown-option-info">
+                                <div className="AdminProject-dropdown-option-name">{u.name || "Unknown User"}</div>
+                                <div className="AdminProject-dropdown-option-email">{u.email || "No email"}</div>
+                              </div>
+                            </div>
+                          );
+                        })
+                      ) : (
                         <div className="AdminProject-dropdown-no-results">
-                          No members found
+                          No users available. Please check connection.
+                        </div>
+                      )}
+                      
+                      {filteredUsers.length === 0 && users.length > 0 && (
+                        <div className="AdminProject-dropdown-no-results">
+                          No members found for "{memberSearchTerm}"
                         </div>
                       )}
                     </div>
@@ -1095,18 +1180,21 @@ export const AdminProject = () => {
               
               {/* Selected Members Avatars */}
               <div className="AdminProject-avatar-group">
-                {getSelectedUsers().map((u) => (
-                  <div key={u._id} className="AdminProject-avatar" title={`${u.name} (${u.email})`}>
-                    {u.name?.charAt(0)}
-                    <span 
-                      className="AdminProject-avatar-remove"
-                      onClick={() => handleMemberRemove(u._id)}
-                      title="Remove"
-                    >
-                      ×
-                    </span>
-                  </div>
-                ))}
+                {getSelectedUsers().map((u) => {
+                  const userId = getUserId(u);
+                  return (
+                    <div key={userId} className="AdminProject-avatar" title={`${u.name || "Unknown"} (${u.email || "No email"})`}>
+                      {u.name?.charAt(0) || "U"}
+                      <span 
+                        className="AdminProject-avatar-remove"
+                        onClick={() => handleMemberRemove(userId)}
+                        title="Remove"
+                      >
+                        ×
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
               
               {errors.members && (
@@ -1134,9 +1222,9 @@ export const AdminProject = () => {
                     <Icons.Pdf /> Selected: {fileName}
                   </div>
                 )}
-                {projectId && projects.find(p => p._id === projectId)?.pdfFile?.filename && (
+                {projectId && projects.find(p => getUserId(p) === projectId)?.pdfFile?.filename && (
                   <div className="AdminProject-file-info">
-                    <Icons.Pdf /> Current file: {projects.find(p => p._id === projectId)?.pdfFile?.filename}
+                    <Icons.Pdf /> Current file: {projects.find(p => getUserId(p) === projectId)?.pdfFile?.filename}
                   </div>
                 )}
               </div>
@@ -1223,133 +1311,136 @@ export const AdminProject = () => {
           </div>
         ) : (
           <div className="AdminProject-grid">
-            {filteredProjects.map((p) => (
-              <div key={p._id} className="AdminProject-project-card">
-                <div 
-                  className="AdminProject-project-top-bar"
-                  style={{
-                    "--status-color": getStatusColor(p.status),
-                    "--priority-color": getPriorityColor(p.priority)
-                  }}
-                />
-                
-                <div className="AdminProject-project-content">
-                  <div className="AdminProject-project-header">
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
-                        <Icons.Folder style={{ color: "#667eea", fontSize: "20px" }} />
-                        <div className="AdminProject-project-title">
-                          {p.projectName}
+            {filteredProjects.map((p) => {
+              const projectId = getUserId(p);
+              return (
+                <div key={projectId} className="AdminProject-project-card">
+                  <div 
+                    className="AdminProject-project-top-bar"
+                    style={{
+                      "--status-color": getStatusColor(p.status),
+                      "--priority-color": getPriorityColor(p.priority)
+                    }}
+                  />
+                  
+                  <div className="AdminProject-project-content">
+                    <div className="AdminProject-project-header">
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+                          <Icons.Folder style={{ color: "#667eea", fontSize: "20px" }} />
+                          <div className="AdminProject-project-title">
+                            {p.projectName || "Unnamed Project"}
+                          </div>
+                        </div>
+                        <div className="AdminProject-chip-group">
+                          <span className="AdminProject-chip AdminProject-chip-status" style={{
+                            "--status-color": getStatusColor(p.status),
+                            "--status-color-rgb": getStatusColor(p.status).replace('#', '').match(/.{2}/g)?.map(c => parseInt(c, 16)).join(',') || "102, 187, 106"
+                          }}>
+                            {p.status || "Not set"}
+                          </span>
+                          <span className="AdminProject-chip AdminProject-chip-priority" style={{
+                            "--priority-color": getPriorityColor(p.priority),
+                            "--priority-color-rgb": getPriorityColor(p.priority).replace('#', '').match(/.{2}/g)?.map(c => parseInt(c, 16)).join(',') || "255, 167, 38"
+                          }}>
+                            {p.priority || "Not set"}
+                          </span>
                         </div>
                       </div>
-                      <div className="AdminProject-chip-group">
-                        <span className="AdminProject-chip AdminProject-chip-status" style={{
-                          "--status-color": getStatusColor(p.status),
-                          "--status-color-rgb": getStatusColor(p.status).replace('#', '').match(/.{2}/g).map(c => parseInt(c, 16)).join(',')
-                        }}>
-                          {p.status}
-                        </span>
-                        <span className="AdminProject-chip AdminProject-chip-priority" style={{
-                          "--priority-color": getPriorityColor(p.priority),
-                          "--priority-color-rgb": getPriorityColor(p.priority).replace('#', '').match(/.{2}/g).map(c => parseInt(c, 16)).join(',')
-                        }}>
-                          {p.priority}
-                        </span>
-                      </div>
-                    </div>
-                    <button className="AdminProject-icon-button">
-                      <Icons.MoreVert />
-                    </button>
-                  </div>
-                  
-                  <div className="AdminProject-project-description">
-                    {p.description}
-                  </div>
-                  
-                  {/* Progress Bar */}
-                  <div className="AdminProject-progress-container">
-                    <div className="AdminProject-progress-header">
-                      <div className="AdminProject-progress-label">Task Progress</div>
-                      <div className="AdminProject-progress-value">{getTaskProgress(p.tasks)}%</div>
-                    </div>
-                    <div className="AdminProject-progress-bar">
-                      <div 
-                        className="AdminProject-progress-fill"
-                        style={{ width: `${getTaskProgress(p.tasks)}%` }}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="AdminProject-project-meta">
-                    <div className="AdminProject-project-meta-left">
-                      <Icons.Calendar />
-                      <span>
-                        {p.startDate ? new Date(p.startDate).toLocaleDateString() : "No start"} - {p.endDate ? new Date(p.endDate).toLocaleDateString() : "No end"}
-                      </span>
-                    </div>
-                    <div className="AdminProject-project-meta-right">
-                      <Icons.Group />
-                      <span>{p.users?.length || 0}</span>
-                      <Icons.Task />
-                      <span>{p.tasks?.length || 0}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="AdminProject-divider" />
-                  
-                  <div className="AdminProject-project-actions">
-                    {/* PDF Actions */}
-                    <div className="AdminProject-pdf-actions">
-                      {p.pdfFile?.path ? (
-                        <>
-                          <button
-                            className="AdminProject-icon-button"
-                            onClick={() => viewPdf(p.pdfFile.path, p.pdfFile.filename)}
-                            title="View PDF"
-                          >
-                            <Icons.Visibility />
-                          </button>
-                          <button
-                            className="AdminProject-icon-button AdminProject-icon-button-green"
-                            onClick={() => downloadPdf(p.pdfFile.path, p.pdfFile.filename)}
-                            title="Download PDF"
-                          >
-                            <Icons.Download />
-                          </button>
-                        </>
-                      ) : (
-                        <span style={{ fontSize: "0.75rem", color: "#666" }}>No document</span>
-                      )}
+                      <button className="AdminProject-icon-button">
+                        <Icons.MoreVert />
+                      </button>
                     </div>
                     
-                    {/* Action Buttons */}
-                    <div className="AdminProject-action-buttons">
-                      <button
-                        className="AdminProject-icon-button"
-                        onClick={() => viewProjectDetails(p)}
-                        title="View Details"
-                      >
-                        <Icons.Visibility />
-                      </button>
-                      <button
-                        className="AdminProject-icon-button"
-                        onClick={() => editProject(p)}
-                        title="Edit"
-                      >
-                        <Icons.Edit />
-                      </button>
-                      <button
-                        className="AdminProject-icon-button AdminProject-icon-button-red"
-                        onClick={() => deleteProject(p._id, p.projectName)}
-                        title="Delete"
-                      >
-                        <Icons.Delete />
-                      </button>
+                    <div className="AdminProject-project-description">
+                      {p.description || "No description available"}
+                    </div>
+                    
+                    {/* Progress Bar */}
+                    <div className="AdminProject-progress-container">
+                      <div className="AdminProject-progress-header">
+                        <div className="AdminProject-progress-label">Task Progress</div>
+                        <div className="AdminProject-progress-value">{getTaskProgress(p.tasks)}%</div>
+                      </div>
+                      <div className="AdminProject-progress-bar">
+                        <div 
+                          className="AdminProject-progress-fill"
+                          style={{ width: `${getTaskProgress(p.tasks)}%` }}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="AdminProject-project-meta">
+                      <div className="AdminProject-project-meta-left">
+                        <Icons.Calendar />
+                        <span>
+                          {p.startDate ? new Date(p.startDate).toLocaleDateString() : "No start"} - {p.endDate ? new Date(p.endDate).toLocaleDateString() : "No end"}
+                        </span>
+                      </div>
+                      <div className="AdminProject-project-meta-right">
+                        <Icons.Group />
+                        <span>{p.users?.length || 0}</span>
+                        <Icons.Task />
+                        <span>{p.tasks?.length || 0}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="AdminProject-divider" />
+                    
+                    <div className="AdminProject-project-actions">
+                      {/* PDF Actions */}
+                      <div className="AdminProject-pdf-actions">
+                        {p.pdfFile?.path ? (
+                          <>
+                            <button
+                              className="AdminProject-icon-button"
+                              onClick={() => viewPdf(p.pdfFile.path, p.pdfFile.filename)}
+                              title="View PDF"
+                            >
+                              <Icons.Visibility />
+                            </button>
+                            <button
+                              className="AdminProject-icon-button AdminProject-icon-button-green"
+                              onClick={() => downloadPdf(p.pdfFile.path, p.pdfFile.filename)}
+                              title="Download PDF"
+                            >
+                              <Icons.Download />
+                            </button>
+                          </>
+                        ) : (
+                          <span style={{ fontSize: "0.75rem", color: "#666" }}>No document</span>
+                        )}
+                      </div>
+                      
+                      {/* Action Buttons */}
+                      <div className="AdminProject-action-buttons">
+                        <button
+                          className="AdminProject-icon-button"
+                          onClick={() => viewProjectDetails(p)}
+                          title="View Details"
+                        >
+                          <Icons.Visibility />
+                        </button>
+                        <button
+                          className="AdminProject-icon-button"
+                          onClick={() => editProject(p)}
+                          title="Edit"
+                        >
+                          <Icons.Edit />
+                        </button>
+                        <button
+                          className="AdminProject-icon-button AdminProject-icon-button-red"
+                          onClick={() => deleteProject(projectId, p.projectName || "Unnamed Project")}
+                          title="Delete"
+                        >
+                          <Icons.Delete />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
