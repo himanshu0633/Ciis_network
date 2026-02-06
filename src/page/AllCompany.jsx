@@ -20,7 +20,16 @@ import {
   Person,
   CheckCircle,
   Cancel,
-  MoreVert
+  MoreVert,
+  Edit,
+  LocationOn,
+  Security,
+  CalendarToday,
+  Domain,
+  Link,
+  Image,
+  Storage,
+  Person as PersonIcon
 } from "@mui/icons-material";
 import {
   Dialog,
@@ -38,7 +47,15 @@ import {
   TableHead,
   TableRow,
   Paper,
-  Tooltip
+  Tooltip,
+  TextField,
+  Box,
+  Typography,
+  Divider,
+  Grid,
+  LinearProgress,
+  Switch,
+  FormControlLabel
 } from "@mui/material";
 
 const AllCompany = () => {
@@ -54,9 +71,14 @@ const AllCompany = () => {
   
   // Popup states
   const [usersPopupOpen, setUsersPopupOpen] = useState(false);
+  const [companyDetailsPopupOpen, setCompanyDetailsPopupOpen] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [companyUsers, setCompanyUsers] = useState([]);
   const [usersLoading, setUsersLoading] = useState(false);
+  const [companyDetails, setCompanyDetails] = useState(null);
+  const [companyDetailsLoading, setCompanyDetailsLoading] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [editedCompany, setEditedCompany] = useState(null);
 
   // Validation function
   const validateSuperAdmin = () => {
@@ -86,6 +108,84 @@ const AllCompany = () => {
       localStorage.clear();
       navigate("/super-admin/login");
       return false;
+    }
+  };
+
+  // Fetch company details by ID
+  const fetchCompanyDetails = async (companyId) => {
+    try {
+      setCompanyDetailsLoading(true);
+      const token = localStorage.getItem("token");
+      const headers = { Authorization: `Bearer ${token}` };
+      
+      console.log("📡 Fetching company details from:", `${API_URL}/company/${companyId}`);
+      
+      const response = await axios.get(
+        `${API_URL}/company/${companyId}`,
+        { headers }
+      );
+      
+      console.log("✅ Company details API response:", response.data);
+      
+      if (response.data) {
+        setCompanyDetails(response.data.company);
+        setEditedCompany(response.data.company); // Initialize edit form with current data
+        setCompanyDetailsPopupOpen(true);
+      } else {
+        toast.error("Company details not found");
+      }
+    } catch (error) {
+      console.error("❌ ERROR fetching company details:", error);
+      
+      if (error.response?.status === 401) {
+        toast.error("Session expired. Please login again!");
+        localStorage.clear();
+        navigate("/super-admin/login");
+        return;
+      }
+      
+      toast.error("Failed to load company details");
+    } finally {
+      setCompanyDetailsLoading(false);
+    }
+  };
+
+  // Update company details
+  const handleUpdateCompany = async () => {
+    try {
+      if (!validateSuperAdmin()) return;
+      
+      const token = localStorage.getItem("token");
+      const headers = { Authorization: `Bearer ${token}` };
+      
+      console.log("🔄 Updating company:", editedCompany._id);
+      console.log("Updated data:", editedCompany);
+      
+      const response = await axios.put(
+        `${API_URL}/company/${editedCompany?._id}`,
+        editedCompany,
+        { headers }
+      );
+      
+      if (response.data) {
+        toast.success("Company updated successfully!");
+        
+        // Update the companies list
+        const updatedCompanies = companies.map(company => 
+          company._id === editedCompany._id ? { ...company, ...editedCompany } : company
+        );
+        
+        setCompanies(updatedCompanies);
+        setFilteredCompanies(updatedCompanies);
+        setCompanyDetails(response.data);
+        setEditMode(false);
+        
+        // Refresh the data
+        fetchCompaniesWithUsers();
+      }
+    } catch (error) {
+      console.error("❌ ERROR updating company:", error);
+      toast.error(error.response?.data?.message || "Failed to update company");
     }
   };
 
@@ -340,10 +440,64 @@ const AllCompany = () => {
 
   // Close users popup
   const handleCloseUsersPopup = () => {
-    console.log("📂 Closing users popup");
     setUsersPopupOpen(false);
     setSelectedCompany(null);
     setCompanyUsers([]);
+  };
+
+  // Open company details popup
+  const handleOpenCompanyDetails = async (company) => {
+    console.log(`🏢 Opening company details for: ${company.companyName}`);
+    setSelectedCompany(company);
+    await fetchCompanyDetails(company._id);
+  };
+
+  // Close company details popup
+  const handleCloseCompanyDetails = () => {
+    setCompanyDetailsPopupOpen(false);
+    setSelectedCompany(null);
+    setCompanyDetails(null);
+    setEditMode(false);
+    setEditedCompany(null);
+  };
+
+  // Handle edit field change
+  const handleEditChange = (field, value) => {
+    setEditedCompany(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  // Format date
+  const formatDate = (dateString) => {
+    if (!dateString) return "Not available";
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      return "Invalid date";
+    }
+  };
+
+  // Calculate days remaining
+  const getDaysRemaining = (expiryDate) => {
+    if (!expiryDate) return 0;
+    try {
+      const expiry = new Date(expiryDate);
+      const today = new Date();
+      const diffTime = expiry - today;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays > 0 ? diffDays : 0;
+    } catch (error) {
+      return 0;
+    }
   };
 
   // Export to CSV
@@ -398,12 +552,6 @@ const AllCompany = () => {
       console.error("❌ Export error:", error);
       toast.error("Failed to export report");
     }
-  };
-
-  // View company details
-  const handleViewCompanyDetails = (companyId) => {
-    console.log(`👁️ Viewing details for company ID: ${companyId}`);
-    navigate(`/super-admin/company/${companyId}`);
   };
 
   // Toggle company expansion
@@ -740,7 +888,7 @@ const AllCompany = () => {
               {/* Action Buttons */}
               <div style={styles.actionButtons}>
                 <button
-                  onClick={() => handleViewCompanyDetails(company._id)}
+                  onClick={() => handleOpenCompanyDetails(company)}
                   style={styles.viewDetailsButton}
                 >
                   <Visibility style={{ marginRight: "8px" }} />
@@ -782,7 +930,399 @@ const AllCompany = () => {
         </div>
       </div>
 
-      {/* Users Popup Dialog */}
+      {/* Company Details Popup Dialog */}
+      <Dialog
+        open={companyDetailsPopupOpen}
+        onClose={handleCloseCompanyDetails}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          style: {
+            borderRadius: '12px',
+            maxHeight: '90vh'
+          }
+        }}
+      >
+        <DialogTitle style={styles.companyDialogTitle}>
+          <div style={styles.companyDialogHeader}>
+            <div style={styles.companyDialogTitleContent}>
+              <Business style={{ fontSize: 28, marginRight: 10, color: '#6366f1' }} />
+              <div>
+                <h2 style={{ margin: 0, fontSize: '22px', color: '#1e293b' }}>
+                  {selectedCompany?.companyName || 'Company'} Details
+                </h2>
+                <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: '#6b7280' }}>
+                  {editMode ? 'Edit Mode' : 'View Mode'} | Company Code: {selectedCompany?.companyCode}
+                </p>
+              </div>
+            </div>
+            <Box>
+              {!editMode ? (
+                <Button
+                  startIcon={<Edit />}
+                  onClick={() => setEditMode(true)}
+                  variant="outlined"
+                  size="small"
+                  style={{ marginRight: '10px' }}
+                >
+                  Edit
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    onClick={() => {
+                      setEditMode(false);
+                      setEditedCompany(companyDetails);
+                    }}
+                    variant="outlined"
+                    size="small"
+                    style={{ marginRight: '10px' }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleUpdateCompany}
+                    variant="contained"
+                    size="small"
+                    color="primary"
+                  >
+                    Save
+                  </Button>
+                </>
+              )}
+              <IconButton onClick={handleCloseCompanyDetails} style={styles.closeButton}>
+                <Close />
+              </IconButton>
+            </Box>
+          </div>
+        </DialogTitle>
+        
+        <DialogContent dividers style={styles.companyDialogContent}>
+          {companyDetailsLoading ? (
+            <div style={styles.loadingUsers}>
+              <div style={styles.smallSpinner}></div>
+              <p>Loading company details...</p>
+            </div>
+          ) : companyDetails ? (
+            <Grid container spacing={3}>
+              {/* Company Logo and Status */}
+              <Grid item xs={12}>
+                <Box sx={styles.companyDetailsHeader}>
+                  <Avatar
+                    src={companyDetails.logo}
+                    sx={styles.companyDetailsLogo}
+                    alt={companyDetails.companyName}
+                  >
+                    {companyDetails.companyName?.charAt(0) || 'C'}
+                  </Avatar>
+                  <Box sx={styles.companyDetailsStatus}>
+                    {editMode ? (
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={editedCompany?.isActive || false}
+                            onChange={(e) => handleEditChange('isActive', e.target.checked)}
+                            color="primary"
+                          />
+                        }
+                        label={editedCompany?.isActive ? "Active" : "Inactive"}
+                      />
+                    ) : (
+                      <Chip
+                        icon={companyDetails.isActive ? <CheckCircle /> : <Cancel />}
+                        label={companyDetails.isActive ? "Active" : "Inactive"}
+                        color={companyDetails.isActive ? "success" : "error"}
+                        size="medium"
+                      />
+                    )}
+                  </Box>
+                </Box>
+              </Grid>
+
+              {/* Basic Information */}
+              <Grid item xs={12} md={6}>
+                <Typography variant="subtitle1" gutterBottom sx={{ color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Business fontSize="small" /> Basic Information
+                </Typography>
+                <Divider sx={{ mb: 2 }} />
+                
+                <Box sx={styles.detailField}>
+                  <Typography variant="body2" color="textSecondary">Company Name</Typography>
+                  {editMode ? (
+                    <TextField
+                      fullWidth
+                      size="small"
+                      value={editedCompany?.companyName || ''}
+                      onChange={(e) => handleEditChange('companyName', e.target.value)}
+                      variant="outlined"
+                    />
+                  ) : (
+                    <Typography variant="body1">{companyDetails.companyName}</Typography>
+                  )}
+                </Box>
+                
+                <Box sx={styles.detailField}>
+                  <Typography variant="body2" color="textSecondary">Company Code</Typography>
+                  {editMode ? (
+                    <TextField
+                      fullWidth
+                      size="small"
+                      value={editedCompany?.companyCode || ''}
+                      onChange={(e) => handleEditChange('companyCode', e.target.value)}
+                      variant="outlined"
+                    />
+                  ) : (
+                    <Typography variant="body1">{companyDetails.companyCode}</Typography>
+                  )}
+                </Box>
+                
+                <Box sx={styles.detailField}>
+                  <Typography variant="body2" color="textSecondary">Owner Name</Typography>
+                  {editMode ? (
+                    <TextField
+                      fullWidth
+                      size="small"
+                      value={editedCompany?.ownerName || ''}
+                      onChange={(e) => handleEditChange('ownerName', e.target.value)}
+                      variant="outlined"
+                    />
+                  ) : (
+                    <Typography variant="body1">{companyDetails.ownerName}</Typography>
+                  )}
+                </Box>
+              </Grid>
+
+              {/* Contact Information */}
+              <Grid item xs={12} md={6}>
+                <Typography variant="subtitle1" gutterBottom sx={{ color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Email fontSize="small" /> Contact Information
+                </Typography>
+                <Divider sx={{ mb: 2 }} />
+                
+                <Box sx={styles.detailField}>
+                  <Typography variant="body2" color="textSecondary">Email</Typography>
+                  {editMode ? (
+                    <TextField
+                      fullWidth
+                      size="small"
+                      value={editedCompany?.companyEmail || ''}
+                      onChange={(e) => handleEditChange('companyEmail', e.target.value)}
+                      variant="outlined"
+                      type="email"
+                    />
+                  ) : (
+                    <Typography variant="body1">{companyDetails.companyEmail}</Typography>
+                  )}
+                </Box>
+                
+                <Box sx={styles.detailField}>
+                  <Typography variant="body2" color="textSecondary">Phone</Typography>
+                  {editMode ? (
+                    <TextField
+                      fullWidth
+                      size="small"
+                      value={editedCompany?.companyPhone || ''}
+                      onChange={(e) => handleEditChange('companyPhone', e.target.value)}
+                      variant="outlined"
+                    />
+                  ) : (
+                    <Typography variant="body1">{companyDetails.companyPhone}</Typography>
+                  )}
+                </Box>
+                
+                <Box sx={styles.detailField}>
+                  <Typography variant="body2" color="textSecondary">Domain</Typography>
+                  {editMode ? (
+                    <TextField
+                      fullWidth
+                      size="small"
+                      value={editedCompany?.companyDomain || ''}
+                      onChange={(e) => handleEditChange('companyDomain', e.target.value)}
+                      variant="outlined"
+                    />
+                  ) : (
+                    <Typography variant="body1">{companyDetails.companyDomain}</Typography>
+                  )}
+                </Box>
+              </Grid>
+
+              {/* Address */}
+              <Grid item xs={12}>
+                <Typography variant="subtitle1" gutterBottom sx={{ color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <LocationOn fontSize="small" /> Address
+                </Typography>
+                <Divider sx={{ mb: 2 }} />
+                {editMode ? (
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={2}
+                    value={editedCompany?.companyAddress || ''}
+                    onChange={(e) => handleEditChange('companyAddress', e.target.value)}
+                    variant="outlined"
+                    size="small"
+                  />
+                ) : (
+                  <Typography variant="body1">{companyDetails.companyAddress}</Typography>
+                )}
+              </Grid>
+
+              {/* URLs */}
+              <Grid item xs={12} md={6}>
+                <Typography variant="subtitle1" gutterBottom sx={{ color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Link fontSize="small" /> URLs
+                </Typography>
+                <Divider sx={{ mb: 2 }} />
+                
+                <Box sx={styles.detailField}>
+                  <Typography variant="body2" color="textSecondary">Login URL</Typography>
+                  {editMode ? (
+                    <TextField
+                      fullWidth
+                      size="small"
+                      value={editedCompany?.loginUrl || ''}
+                      onChange={(e) => handleEditChange('loginUrl', e.target.value)}
+                      variant="outlined"
+                    />
+                  ) : (
+                    <Typography variant="body1" style={{ fontFamily: 'monospace', fontSize: '0.9rem' }}>
+                      {window.location.origin}{companyDetails.loginUrl}
+                    </Typography>
+                  )}
+                </Box>
+                
+                <Box sx={styles.detailField}>
+                  <Typography variant="body2" color="textSecondary">Logo URL</Typography>
+                  {editMode ? (
+                    <TextField
+                      fullWidth
+                      size="small"
+                      value={editedCompany?.logo || ''}
+                      onChange={(e) => handleEditChange('logo', e.target.value)}
+                      variant="outlined"
+                    />
+                  ) : (
+                    <Typography variant="body1" style={{ fontFamily: 'monospace', fontSize: '0.9rem' }}>
+                      {companyDetails.logo || 'Not provided'}
+                    </Typography>
+                  )}
+                </Box>
+              </Grid>
+
+              {/* Database */}
+              <Grid item xs={12} md={6}>
+                <Typography variant="subtitle1" gutterBottom sx={{ color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Storage fontSize="small" /> Database
+                </Typography>
+                <Divider sx={{ mb: 2 }} />
+                
+                <Box sx={styles.detailField}>
+                  <Typography variant="body2" color="textSecondary">Database Identifier</Typography>
+                  {editMode ? (
+                    <TextField
+                      fullWidth
+                      size="small"
+                      value={editedCompany?.dbIdentifier || ''}
+                      onChange={(e) => handleEditChange('dbIdentifier', e.target.value)}
+                      variant="outlined"
+                    />
+                  ) : (
+                    <Typography variant="body1" style={{ fontFamily: 'monospace', fontSize: '0.9rem' }}>
+                      {companyDetails.dbIdentifier}
+                    </Typography>
+                  )}
+                </Box>
+              </Grid>
+
+              {/* Dates */}
+              <Grid item xs={12} md={6}>
+                <Typography variant="subtitle1" gutterBottom sx={{ color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <CalendarToday fontSize="small" /> Dates
+                </Typography>
+                <Divider sx={{ mb: 2 }} />
+                
+                <Box sx={styles.detailField}>
+                  <Typography variant="body2" color="textSecondary">Created On</Typography>
+                  <Typography variant="body1">{formatDate(companyDetails.createdAt)}</Typography>
+                </Box>
+                
+                <Box sx={styles.detailField}>
+                  <Typography variant="body2" color="textSecondary">Last Updated</Typography>
+                  <Typography variant="body1">{formatDate(companyDetails.updatedAt)}</Typography>
+                </Box>
+              </Grid>
+
+              {/* Subscription */}
+              {companyDetails.subscriptionExpiry && (
+                <Grid item xs={12} md={6}>
+                  <Typography variant="subtitle1" gutterBottom sx={{ color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Security fontSize="small" /> Subscription Status
+                  </Typography>
+                  <Divider sx={{ mb: 2 }} />
+                  
+                  <Box sx={styles.detailField}>
+                    <Typography variant="body2" color="textSecondary">Expires On</Typography>
+                    <Typography variant="body1">{formatDate(companyDetails.subscriptionExpiry)}</Typography>
+                  </Box>
+                  
+                  <Box sx={styles.detailField}>
+                    <Typography variant="body2" color="textSecondary">Days Remaining</Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography variant="h6" sx={{ 
+                        color: getDaysRemaining(companyDetails.subscriptionExpiry) > 30 ? 'success.main' : 
+                               getDaysRemaining(companyDetails.subscriptionExpiry) > 7 ? 'warning.main' : 'error.main'
+                      }}>
+                        {getDaysRemaining(companyDetails.subscriptionExpiry)}
+                      </Typography>
+                      <Typography variant="body2" color="textSecondary">days</Typography>
+                    </Box>
+                  </Box>
+                  
+                  <LinearProgress 
+                    variant="determinate" 
+                    value={Math.min((getDaysRemaining(companyDetails.subscriptionExpiry) / 30) * 100, 100)}
+                    sx={{ 
+                      mt: 1,
+                      height: 6,
+                      borderRadius: 3,
+                      backgroundColor: 'grey.200',
+                      '& .MuiLinearProgress-bar': {
+                        backgroundColor: getDaysRemaining(companyDetails.subscriptionExpiry) > 30 ? 'success.main' : 
+                                       getDaysRemaining(companyDetails.subscriptionExpiry) > 7 ? 'warning.main' : 'error.main'
+                      }
+                    }}
+                  />
+                </Grid>
+              )}
+            </Grid>
+          ) : (
+            <Box sx={styles.noData}>
+              <Business sx={{ fontSize: 64, color: '#d1d5db', mb: 2 }} />
+              <Typography variant="h6" color="textSecondary">Company details not found</Typography>
+            </Box>
+          )}
+        </DialogContent>
+        
+        <DialogActions style={styles.companyDialogActions}>
+          <Button 
+            onClick={handleCloseCompanyDetails}
+            style={styles.closeDialogButton}
+          >
+            Close
+          </Button>
+          {selectedCompany && (
+            <Button 
+              onClick={() => handleCreateUserForCompany(selectedCompany._id, selectedCompany.companyCode)}
+              variant="contained"
+              style={styles.addUserDialogButton}
+            >
+              + Add User to this Company
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
+
+      {/* Users Popup Dialog (Existing) */}
       <Dialog
         open={usersPopupOpen}
         onClose={handleCloseUsersPopup}
@@ -1448,6 +1988,62 @@ const styles = {
     '&:hover': {
       background: "#059669",
     },
+  },
+  // Company Details Dialog Styles
+  companyDialogTitle: {
+    padding: "20px 24px",
+    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+    color: "white",
+  },
+  companyDialogHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  companyDialogTitleContent: {
+    display: "flex",
+    alignItems: "center",
+  },
+  companyDialogContent: {
+    padding: "20px",
+    overflowY: "auto",
+  },
+  companyDetailsHeader: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    mb: 3,
+    p: 2,
+    bgcolor: 'grey.50',
+    borderRadius: 2,
+  },
+  companyDetailsLogo: {
+    width: 80,
+    height: 80,
+    fontSize: 32,
+    bgcolor: 'primary.main',
+  },
+  companyDetailsStatus: {
+    display: 'flex',
+    alignItems: 'center',
+  },
+  detailField: {
+    mb: 2,
+    p: 1.5,
+    bgcolor: 'grey.50',
+    borderRadius: 1,
+  },
+  companyDialogActions: {
+    padding: "16px 24px",
+    background: "#f8fafc",
+    borderTop: "1px solid #e5e7eb",
+  },
+  noData: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    py: 6,
   },
 };
 

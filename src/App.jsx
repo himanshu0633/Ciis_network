@@ -2,7 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./page/Login";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import AllCompany from "./page/AllCompany.jsx";
+
 
 // Layouts
 import Layout from "./admin/components/Layout";
@@ -55,6 +55,8 @@ import SuperAdminLogin from "./page/SuperAdminLogin";
 import SuperAdminDashboard from "./page/SuperAdminDashboard.jsx";
 import CompanyManagement from "./page/CompanyManagement.jsx";
 import JobRoleManagement from "./admin/page/JobRoleManagement.jsx";
+import AllCompany from "./page/AllCompany.jsx";
+import CompanyDetails from "./page/CompanyDetails";
 
 function App() {
   const user = JSON.parse(localStorage.getItem("user"));
@@ -85,6 +87,7 @@ function App() {
           <Route path="SuperAdminDashboard" element={<SuperAdminDashboard />} />
           <Route path="JobRoleManagement" element={<JobRoleManagement />} />
           <Route path="all-company" element={<AllCompany />} />
+          <Route path="company-details" element={<CompanyDetails />} />
         </Route>
 
 
