@@ -21,7 +21,12 @@ import {
   Image,
   Storage,
   Settings,
-  People
+  People,
+  ListAlt,
+  Close,
+  Save,
+  Delete,
+  Code
 } from "@mui/icons-material";
 import {
   Card,
@@ -34,7 +39,20 @@ import {
   Box,
   LinearProgress,
   Avatar,
-  CircularProgress
+  CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  IconButton,
+  Switch,
+  FormControlLabel,
+  Alert
 } from "@mui/material";
 
 const CompanyDetails = () => {
@@ -49,6 +67,19 @@ const CompanyDetails = () => {
   });
   const [recentUsers, setRecentUsers] = useState([]);
   const [userRole, setUserRole] = useState("");
+  
+  // Modal States
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [editFormData, setEditFormData] = useState({
+    name: "",
+    email: "",
+    role: "",
+    department: "",
+    isActive: true
+  });
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [departments, setDepartments] = useState([]);
 
   // Current logged-in user की company fetch करें
   const fetchCurrentUserCompany = async () => {
@@ -65,86 +96,112 @@ const CompanyDetails = () => {
 
       const headers = { Authorization: `Bearer ${token}` };
 
-      // Step 1: सबसे पहले आपके नए API से company users fetch करें
+      // Step 1: Company users API से data fetch करें
       try {
         const response = await axios.get(
           `${API_URL}/users/company-users`,
           { headers }
         );
         
+        console.log("Full API Response:", response.data);
+        
         if (response.data && response.data.success) {
           const data = response.data.message;
-          console.log("Company users API response:", data);
           
-          // Company details को पूरा data के साथ set करें
-          const companyId =
-    data.company?.id?._id ||
-    data.company?._id;
-
-    if (!companyId) {
-    toast.error("Company ID not found from API");
-    return;
-    }
-
-    const companyData = {
-    _id: companyId,
-    companyName: data.company?.name || "Company",
-    companyCode: data.company?.companyCode || "",
-    logo: data.company?.id?.logo || "",
-    isActive: data.company?.id?.isActive ?? true,
-
-    companyEmail: "ciisnetwork@gmail.com",
-    companyPhone: "8340185442",
-    companyAddress: "123 Example Street",
-    companyDomain: "gmail.com",
-    ownerName: "company",
-    loginUrl: "/company/CIISNE/login",
-    dbIdentifier: "company_1770057695345_h1bxxgl",
-    createdAt: "2026-02-03T12:11:00.000Z",
-    updatedAt: "2026-02-03T12:11:00.000Z",
-    subscriptionExpiry: "2026-03-05T12:11:00.000Z"
-    };
-
+          // Debug: Check what data we're getting
+          console.log("Company data from API:", data.company);
+          console.log("Users data from API:", data.users);
+          console.log("Current user data:", data.currentUser);
           
-          // Try to get more company details from users data
-          if (data.users && data.users.length > 0) {
-            const firstUser = data.users[0];
-            if (firstUser.company) {
-              companyData.companyEmail = firstUser.company.companyEmail || companyData.companyEmail;
-              companyData.companyPhone = firstUser.company.companyPhone || companyData.companyPhone;
-              companyData.companyAddress = firstUser.company.companyAddress || companyData.companyAddress;
-              companyData.logo = firstUser.company.logo || companyData.logo;
-            }
+          // Extract company ID properly
+          let companyId = "";
+          let companyDetails = {};
+          
+          // Multiple ways to get company ID
+          if (data.company?.id?._id) {
+            companyId = data.company.id._id;
+            companyDetails = data.company.id;
+          } else if (data.company?._id) {
+            companyId = data.company._id;
+            companyDetails = data.company;
+          } else if (data.company?.id) {
+            companyId = data.company.id;
+            companyDetails = data.company;
+          } else if (data.users && data.users.length > 0 && data.users[0].company) {
+            // Try to get from first user's company data
+            companyId = data.users[0].company._id || data.users[0].company.id;
+            companyDetails = data.users[0].company;
           }
+          
+          if (!companyId) {
+            console.error("Company ID not found in response");
+            toast.error("Company information not found in API response");
+            await fetchCompanyFromLocalStorage(headers);
+            return;
+          }
+          
+          // Build company data object
+          const companyData = {
+            _id: companyId,
+            companyName: companyDetails.name || data.company?.name || "Company",
+            companyCode: companyDetails.companyCode || data.company?.companyCode || "",
+            logo: companyDetails.logo || data.company?.logo || "",
+            isActive: companyDetails.isActive ?? data.company?.isActive ?? true,
+            companyEmail: companyDetails.email || data.company?.email || companyDetails.companyEmail || "ciisnetwork@gmail.com",
+            companyPhone: companyDetails.phone || data.company?.phone || companyDetails.companyPhone || "8340185442",
+            companyAddress: companyDetails.address || data.company?.address || companyDetails.companyAddress || "123 Example Street",
+            companyDomain: companyDetails.domain || data.company?.domain || "gmail.com",
+            ownerName: companyDetails.ownerName || data.company?.ownerName || "company",
+            loginUrl: companyDetails.loginUrl || data.company?.loginUrl || `/company/${companyDetails.companyCode || "COMPANY"}/login`,
+            dbIdentifier: companyDetails.dbIdentifier || data.company?.dbIdentifier || `company_${companyId}`,
+            createdAt: companyDetails.createdAt || data.company?.createdAt || new Date().toISOString(),
+            updatedAt: companyDetails.updatedAt || data.company?.updatedAt || new Date().toISOString(),
+            subscriptionExpiry: companyDetails.subscriptionExpiry || data.company?.subscriptionExpiry || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+          };
+          
+          console.log("Final company data:", companyData);
           
           setCompany(companyData);
           
           // Users data
           const users = data.users || [];
+          console.log("Total users fetched:", users.length);
+          
           setRecentUsers(users.slice(0, 5)); // First 5 users for recent
+          
+          // Extract unique departments
+          const uniqueDepartments = [...new Set(users.map(user => user.department).filter(Boolean))];
+          setDepartments(uniqueDepartments);
           
           // Calculate statistics
           const activeUsers = users.filter(user => user.isActive).length;
-          const departments = new Set(users.map(user => user.department)).size;
+          const deptCount = new Set(users.map(user => user.department)).size;
           
           setStats({
             totalUsers: data.count || users.length,
             activeUsers,
-            departments,
-            todayLogins: 0 // You can add logic for today's logins if available
+            departments: deptCount,
+            todayLogins: 0
           });
           
           // Set user role from current user
           if (data.currentUser) {
-            setUserRole(data.currentUser.name || "user");
+            setUserRole(data.currentUser.name || data.currentUser.role || "user");
           }
           
           // Store in localStorage for future use
           localStorage.setItem("company", JSON.stringify(companyData));
+          
+          // Also store company code if available
+          if (companyData.companyCode) {
+            localStorage.setItem("companyCode", companyData.companyCode);
+          }
+          
           return;
         }
       } catch (apiError) {
-        console.log("Company users API failed:", apiError.message);
+        console.error("Company users API failed:", apiError);
+        console.log("API Error details:", apiError.response?.data);
         // Fallback: Try to get company from localStorage
         await fetchCompanyFromLocalStorage(headers);
       }
@@ -165,6 +222,85 @@ const CompanyDetails = () => {
     }
   };
 
+  // Alternative method: Fetch company details directly
+  const fetchCompanyDirectly = async (headers) => {
+    try {
+      // Try to get company ID from localStorage first
+      const storedCompany = localStorage.getItem("company");
+      if (storedCompany) {
+        const companyInfo = JSON.parse(storedCompany);
+        const companyId = companyInfo._id;
+        
+        if (companyId) {
+          // Fetch company details directly
+          const companyRes = await axios.get(
+            `${API_URL}/super-admin/company/${companyId}`,
+            { headers }
+          );
+          
+          if (companyRes.data) {
+            const companyData = companyRes.data;
+            setCompany({
+              _id: companyData._id,
+              companyName: companyData.companyName || companyData.name,
+              companyCode: companyData.companyCode,
+              logo: companyData.logo,
+              isActive: companyData.isActive,
+              companyEmail: companyData.companyEmail,
+              companyPhone: companyData.companyPhone,
+              companyAddress: companyData.companyAddress,
+              companyDomain: companyData.companyDomain,
+              ownerName: companyData.ownerName,
+              loginUrl: companyData.loginUrl,
+              dbIdentifier: companyData.dbIdentifier,
+              createdAt: companyData.createdAt,
+              updatedAt: companyData.updatedAt,
+              subscriptionExpiry: companyData.subscriptionExpiry
+            });
+            
+            // Then fetch users
+            await fetchCompanyUsers(companyData._id, headers);
+            return true;
+          }
+        }
+      }
+      return false;
+    } catch (error) {
+      console.error("Error fetching company directly:", error);
+      return false;
+    }
+  };
+
+  // Fetch company users separately
+  const fetchCompanyUsers = async (companyId, headers) => {
+    try {
+      const usersRes = await axios.get(
+        `${API_URL}/super-admin/company/${companyId}/users`,
+        { headers }
+      );
+      
+      const users = usersRes.data || [];
+      setRecentUsers(users.slice(0, 5));
+      
+      // Extract unique departments
+      const uniqueDepartments = [...new Set(users.map(user => user.department).filter(Boolean))];
+      setDepartments(uniqueDepartments);
+      
+      const activeUsers = users.filter(user => user.isActive).length;
+      const deptCount = new Set(users.map(user => user.department)).size;
+      
+      setStats({
+        totalUsers: users.length,
+        activeUsers,
+        departments: deptCount,
+        todayLogins: 0
+      });
+      
+    } catch (usersError) {
+      console.error("Error fetching users:", usersError);
+    }
+  };
+
   // Fallback method
   const fetchCompanyFromLocalStorage = async (headers) => {
     try {
@@ -172,9 +308,13 @@ const CompanyDetails = () => {
       if (companyData) {
         const companyInfo = JSON.parse(companyData);
         
+        console.log("Company from localStorage:", companyInfo);
+        
         // Set default values if missing
         const fullCompanyData = {
           ...companyInfo,
+          companyName: companyInfo.companyName || companyInfo.name || "Company",
+          companyCode: companyInfo.companyCode || "",
           companyEmail: companyInfo.companyEmail || "ciisnetwork@gmail.com",
           companyPhone: companyInfo.companyPhone || "8340185442",
           companyAddress: companyInfo.companyAddress || "123 Example Street",
@@ -190,30 +330,39 @@ const CompanyDetails = () => {
         
         setCompany(fullCompanyData);
         
-        // Try to fetch users
-        try {
-          const usersRes = await axios.get(
-            `${API_URL}/super-admin/company/${fullCompanyData._id}/users`,
-            { headers }
-          );
-          
-          const users = usersRes.data || [];
-          setRecentUsers(users.slice(0, 5));
-          
-          const activeUsers = users.filter(user => user.isActive).length;
-          const departments = new Set(users.map(user => user.department)).size;
-          
-          setStats({
-            totalUsers: users.length,
-            activeUsers,
-            departments,
-            todayLogins: 0
-          });
-        } catch (usersError) {
-          console.error("Error fetching users:", usersError);
+        // Try to fetch users using company ID
+        if (fullCompanyData._id) {
+          await fetchCompanyUsers(fullCompanyData._id, headers);
+        } else {
+          toast.error("Company ID not found in localStorage");
         }
       } else {
-        toast.error("Company data not found");
+        toast.error("Company data not found in localStorage");
+        
+        // Try direct fetch as last resort
+        const fetched = await fetchCompanyDirectly(headers);
+        if (!fetched) {
+          // Create dummy company data for testing
+          const dummyCompany = {
+            _id: "dummy_company_id",
+            companyName: "Test Company",
+            companyCode: "TEST001",
+            logo: "https://cds.ciisnetwork.in/logoo.png",
+            isActive: true,
+            companyEmail: "test@company.com",
+            companyPhone: "9876543210",
+            companyAddress: "Test Address, Test City",
+            companyDomain: "company.com",
+            ownerName: "Test Owner",
+            loginUrl: "/company/TEST001/login",
+            dbIdentifier: "company_dummy_001",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            subscriptionExpiry: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+          };
+          setCompany(dummyCompany);
+          localStorage.setItem("company", JSON.stringify(dummyCompany));
+        }
       }
     } catch (error) {
       console.error("Error in fallback method:", error);
@@ -255,6 +404,134 @@ const CompanyDetails = () => {
   // Handle manual refresh
   const handleRefresh = () => {
     fetchCurrentUserCompany();
+  };
+
+  // Handle user edit - Open modal with user data
+  const handleEditUser = (user) => {
+    setSelectedUser(user);
+    setEditFormData({
+      name: user.name || "",
+      email: user.email || "",
+      role: user.role || "user",
+      department: user.department || "",
+      isActive: user.isActive ?? true,
+      phone: user.phone || "",
+      designation: user.designation || ""
+    });
+    setEditModalOpen(true);
+  };
+
+  // Handle form input changes
+  const handleInputChange = (e) => {
+    const { name, value, checked } = e.target;
+    setEditFormData(prev => ({
+      ...prev,
+      [name]: name === 'isActive' ? checked : value
+    }));
+  };
+
+  // Save user changes
+  const handleSaveUser = async () => {
+    if (!selectedUser) return;
+    
+    try {
+      setSaveLoading(true);
+      const token = localStorage.getItem("token");
+      const headers = { Authorization: `Bearer ${token}` };
+      
+      // Determine which API to use based on your backend
+      const userId = selectedUser.id || selectedUser._id;
+      
+      // Update user API call - adjust endpoint as needed
+      const response = await axios.put(
+        `${API_URL}/users/${userId}`,
+        editFormData,
+        { headers }
+      );
+      
+      if (response.data.success) {
+        toast.success("User updated successfully!");
+        
+        // Update local state
+        const updatedUsers = recentUsers.map(user => 
+          (user.id === userId || user._id === userId) 
+            ? { ...user, ...editFormData }
+            : user
+        );
+        setRecentUsers(updatedUsers);
+        
+        // Update stats
+        const activeUsers = updatedUsers.filter(user => user.isActive).length;
+        setStats(prev => ({
+          ...prev,
+          activeUsers
+        }));
+        
+        setEditModalOpen(false);
+      } else {
+        toast.error(response.data.message || "Failed to update user");
+      }
+    } catch (error) {
+      console.error("Error updating user:", error);
+      toast.error(error.response?.data?.message || "Failed to update user");
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
+  // Delete user
+  const handleDeleteUser = async () => {
+    if (!selectedUser || !window.confirm("Are you sure you want to delete this user?")) {
+      return;
+    }
+    
+    try {
+      setSaveLoading(true);
+      const token = localStorage.getItem("token");
+      const headers = { Authorization: `Bearer ${token}` };
+      
+      const userId = selectedUser.id || selectedUser._id;
+      
+      const response = await axios.delete(
+        `${API_URL}/users/${userId}`,
+        { headers }
+      );
+      
+      if (response.data.success) {
+        toast.success("User deleted successfully!");
+        
+        // Remove user from list
+        const filteredUsers = recentUsers.filter(user => 
+          user.id !== userId && user._id !== userId
+        );
+        setRecentUsers(filteredUsers);
+        
+        // Update stats
+        setStats(prev => ({
+          ...prev,
+          totalUsers: prev.totalUsers - 1,
+          activeUsers: filteredUsers.filter(user => user.isActive).length
+        }));
+        
+        setEditModalOpen(false);
+      } else {
+        toast.error(response.data.message || "Failed to delete user");
+      }
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      toast.error(error.response?.data?.message || "Failed to delete user");
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
+  // Handle view all users
+  const handleViewAllUsers = () => {
+    if (company && company._id) {
+      navigate(`/Ciis-network/company/${company._id}/users`);
+    } else {
+      toast.error("Company ID not available");
+    }
   };
 
   // Initial load
@@ -350,12 +627,33 @@ const CompanyDetails = () => {
                       sx={styles.statusChip}
                     />
                     
-                    <Chip
-                      label={`Code: ${company.companyCode}`}
-                      variant="outlined"
-                      sx={styles.codeChip}
-                    />
+                    {company.companyCode && (
+                      <Chip
+                        icon={<Code />}
+                        label={`Code: ${company.companyCode}`}
+                        variant="outlined"
+                        color="primary"
+                        sx={styles.codeChip}
+                      />
+                    )}
+                    
+                    {!company.companyCode && (
+                      <Chip
+                        icon={<Code />}
+                        label="Code: Not Available"
+                        variant="outlined"
+                        color="warning"
+                        sx={styles.codeChip}
+                      />
+                    )}
                   </Box>
+                  
+                  {/* Debug Info - Remove in production */}
+                  {process.env.NODE_ENV === 'development' && (
+                    <Typography variant="caption" color="textSecondary" sx={{ mt: 1 }}>
+                      Company ID: {company._id}
+                    </Typography>
+                  )}
                 </Box>
               </Box>
 
@@ -363,6 +661,20 @@ const CompanyDetails = () => {
 
               {/* Company Details Grid */}
               <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <Box sx={styles.detailItem}>
+                    <Code sx={styles.detailIcon} />
+                    <Box>
+                      <Typography variant="body2" color="textSecondary">
+                        Company Code
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+                        {company.companyCode || "Not Available"}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Grid>
+
                 <Grid item xs={12} md={6}>
                   <Box sx={styles.detailItem}>
                     <Email sx={styles.detailIcon} />
@@ -616,17 +928,33 @@ const CompanyDetails = () => {
             </CardContent>
           </Card>
 
-          {/* Recent Users Card */}
+          {/* Recent Users Card - Updated with edit functionality */}
           <Card sx={styles.usersCard}>
             <CardContent>
-              <Typography variant="h6" gutterBottom sx={styles.usersTitle}>
-                Recent Users ({recentUsers.length})
-              </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h6" sx={styles.usersTitle}>
+                  Recent Users ({recentUsers.length})
+                </Typography>
+                <Button
+                  size="small"
+                  startIcon={<ListAlt />}
+                  onClick={handleViewAllUsers}
+                  variant="outlined"
+                  disabled={!company._id}
+                >
+                  View All
+                </Button>
+              </Box>
               
               {recentUsers.length > 0 ? (
                 <Box sx={styles.usersList}>
                   {recentUsers.map((user, index) => (
-                    <Box key={user.id || index} sx={styles.userItem}>
+                    <Box 
+                      key={user.id || user._id || index} 
+                      sx={styles.userItem}
+                      onClick={() => handleEditUser(user)}
+                      style={{ cursor: 'pointer' }}
+                    >
                       <Avatar sx={styles.userAvatar}>
                         {user.name?.charAt(0) || 'U'}
                       </Avatar>
@@ -640,12 +968,15 @@ const CompanyDetails = () => {
                         </Typography>
                       </Box>
                       
-                      <Chip
-                        size="small"
-                        label={user.isActive ? 'Active' : 'Inactive'}
-                        color={user.isActive ? 'success' : 'error'}
-                        sx={styles.userStatus}
-                      />
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Chip
+                          size="small"
+                          label={user.isActive ? 'Active' : 'Inactive'}
+                          color={user.isActive ? 'success' : 'error'}
+                          sx={styles.userStatus}
+                        />
+                        <Edit fontSize="small" color="action" />
+                      </Box>
                     </Box>
                   ))}
                 </Box>
@@ -663,59 +994,182 @@ const CompanyDetails = () => {
                 variant="outlined"
                 onClick={() => navigate(`/Ciis-network/create-user?company=${company._id}&companyCode=${company.companyCode}`)}
                 sx={{ mt: 2 }}
+                startIcon={<Person />}
+                disabled={!company._id}
               >
                 Add New User
               </Button>
             </CardContent>
           </Card>
-
-          {/* Actions Card */}
-          <Card sx={styles.actionsCard}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom sx={styles.actionsTitle}>
-                Quick Actions
-              </Typography>
-              
-              <Box sx={styles.actionsList}>
-                <Button
-                  fullWidth
-                  startIcon={<Edit />}
-                  variant="contained"
-                  onClick={() => navigate(`/Ciis-network/company/edit/${company._id}`)}
-                  sx={styles.actionButton}
-                >
-                  Edit Company
-                </Button>
-                
-                <Button
-                  fullWidth
-                  startIcon={<Person />}
-                  variant="outlined"
-                  onClick={() => navigate(`/Ciis-network/create-user?company=${company._id}&companyCode=${company.companyCode}`)}
-                  sx={styles.actionButton}
-                >
-                  Add New User
-                </Button>
-                
-                <Button
-                  fullWidth
-                  startIcon={<Settings />}
-                  variant="outlined"
-                  onClick={() => navigate(`/Ciis-network/company/settings/${company._id}`)}
-                  sx={styles.actionButton}
-                >
-                  Company Settings
-                </Button>
-              </Box>
-            </CardContent>
-          </Card>
         </Grid>
       </Grid>
+
+      {/* Edit User Modal */}
+      <Dialog 
+        open={editModalOpen} 
+        onClose={() => setEditModalOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={styles.modalTitle}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Person />
+            Edit User Details
+          </Box>
+          <IconButton
+            aria-label="close"
+            onClick={() => setEditModalOpen(false)}
+            sx={styles.closeButton}
+          >
+            <Close />
+          </IconButton>
+        </DialogTitle>
+        
+        <DialogContent>
+          {selectedUser && (
+            <Box sx={styles.modalContent}>
+              <Alert severity="info" sx={{ mb: 3 }}>
+                Editing user: <strong>{selectedUser.name}</strong>
+              </Alert>
+              
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Full Name"
+                    name="name"
+                    value={editFormData.name}
+                    onChange={handleInputChange}
+                    variant="outlined"
+                    size="small"
+                  />
+                </Grid>
+                
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Email Address"
+                    name="email"
+                    value={editFormData.email}
+                    onChange={handleInputChange}
+                    variant="outlined"
+                    size="small"
+                    type="email"
+                  />
+                </Grid>
+                
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Phone Number"
+                    name="phone"
+                    value={editFormData.phone}
+                    onChange={handleInputChange}
+                    variant="outlined"
+                    size="small"
+                  />
+                </Grid>
+                
+                <Grid item xs={12} sm={6}>
+                  <FormControl fullWidth size="small">
+                    <InputLabel>Role</InputLabel>
+                    <Select
+                      name="role"
+                      value={editFormData.role}
+                      onChange={handleInputChange}
+                      label="Role"
+                    >
+                      <MenuItem value="user">User</MenuItem>
+                      <MenuItem value="admin">Admin</MenuItem>
+                      <MenuItem value="manager">Manager</MenuItem>
+                      <MenuItem value="supervisor">Supervisor</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                
+                <Grid item xs={12} sm={6}>
+                  <FormControl fullWidth size="small">
+                    <InputLabel>Department</InputLabel>
+                    <Select
+                      name="department"
+                      value={editFormData.department}
+                      onChange={handleInputChange}
+                      label="Department"
+                    >
+                      <MenuItem value="">Select Department</MenuItem>
+                      {departments.map((dept, index) => (
+                        <MenuItem key={index} value={dept}>
+                          {dept}
+                        </MenuItem>
+                      ))}
+                      <MenuItem value="new">+ Add New Department</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Designation"
+                    name="designation"
+                    value={editFormData.designation}
+                    onChange={handleInputChange}
+                    variant="outlined"
+                    size="small"
+                  />
+                </Grid>
+                
+                <Grid item xs={12}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={editFormData.isActive}
+                        onChange={handleInputChange}
+                        name="isActive"
+                        color="primary"
+                      />
+                    }
+                    label="Active User"
+                  />
+                </Grid>
+              </Grid>
+            </Box>
+          )}
+        </DialogContent>
+        
+        <DialogActions sx={styles.modalActions}>
+          <Button
+            onClick={() => setEditModalOpen(false)}
+            color="inherit"
+            disabled={saveLoading}
+          >
+            Cancel
+          </Button>
+          
+          <Button
+            onClick={handleDeleteUser}
+            color="error"
+            startIcon={<Delete />}
+            disabled={saveLoading}
+          >
+            Delete
+          </Button>
+          
+          <Button
+            onClick={handleSaveUser}
+            variant="contained"
+            startIcon={<Save />}
+            disabled={saveLoading}
+          >
+            {saveLoading ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
 
-// Styles (same as original)
+// Updated Styles
 const styles = {
   container: {
     p: 3,
@@ -791,13 +1245,17 @@ const styles = {
   statusContainer: {
     display: 'flex',
     gap: 2,
-    mt: 1
+    mt: 1,
+    flexWrap: 'wrap'
   },
   statusChip: {
     fontWeight: 600
   },
   codeChip: {
-    fontWeight: 500
+    fontWeight: 500,
+    '& .MuiChip-icon': {
+      fontSize: '16px !important'
+    }
   },
   detailItem: {
     display: 'flex',
@@ -905,7 +1363,13 @@ const styles = {
     gap: 2,
     p: 2,
     bgcolor: 'grey.50',
-    borderRadius: 1
+    borderRadius: 1,
+    transition: 'all 0.2s',
+    '&:hover': {
+      bgcolor: 'grey.100',
+      transform: 'translateY(-2px)',
+      boxShadow: 1
+    }
   },
   userAvatar: {
     width: 40,
@@ -928,25 +1392,25 @@ const styles = {
     justifyContent: 'center',
     py: 4
   },
-  actionsCard: {
-    borderRadius: 2,
-    boxShadow: 2
-  },
-  actionsTitle: {
-    fontWeight: 600,
-    color: 'text.primary',
-    borderBottom: '2px solid',
-    borderColor: 'info.main',
-    pb: 1
-  },
-  actionsList: {
+  // Modal Styles
+  modalTitle: {
     display: 'flex',
-    flexDirection: 'column',
-    gap: 2
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    bgcolor: 'primary.50',
+    borderBottom: '1px solid',
+    borderColor: 'primary.100'
   },
-  actionButton: {
-    py: 1.5,
-    borderRadius: 1
+  closeButton: {
+    color: 'text.secondary'
+  },
+  modalContent: {
+    pt: 2
+  },
+  modalActions: {
+    p: 3,
+    borderTop: '1px solid',
+    borderColor: 'grey.200'
   }
 };
 
