@@ -34,14 +34,7 @@ const Layout = () => {
   return (
     <LayoutContainer>
       <CssBaseline />
-      <Header
-        toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-        isSidebarOpen={sidebarOpen}
-      />
-      <Sidebar
-        isOpen={sidebarOpen}
-        closeSidebar={() => setSidebarOpen(false)}
-      />
+    
       <MainContent open={sidebarOpen}>
 
         <Outlet />

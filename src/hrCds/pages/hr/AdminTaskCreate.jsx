@@ -13,7 +13,7 @@ import {
   FiEye, FiClock, FiCheckCircle, FiXCircle, FiAlertTriangle,
   FiMoreVertical, FiRefreshCw, FiUserCheck, FiUserX,
   FiLogOut, FiEdit3, FiTrash, FiMessageCircle,
-  FiZoomIn, FiImage, FiCamera
+  FiZoomIn, FiImage, FiCamera,  FiBriefcase
 } from 'react-icons/fi';
 
 const AdminTaskManagement = () => {
@@ -25,6 +25,16 @@ const AdminTaskManagement = () => {
   const [jobRole, setJobRole] = useState('');
   const [userId, setUserId] = useState('');
   const [authError, setAuthError] = useState(false);
+  const [initialAuthCheck, setInitialAuthCheck] = useState(false);
+  
+  // NEW: Current user details for filtering
+  const [currentUser, setCurrentUser] = useState({
+    id: '',
+    name: '',
+    company: '',
+    department: '',
+    role: ''
+  });
   
   // Pagination States
   const [page, setPage] = useState(0);
@@ -131,12 +141,51 @@ const AdminTaskManagement = () => {
 
   const navigate = useNavigate();
 
-  // Filter users based on search
-  const filteredUsers = users.filter(user => 
-    user.name?.toLowerCase().includes(userSearch.toLowerCase()) ||
-    user.email?.toLowerCase().includes(userSearch.toLowerCase()) ||
-    user.role?.toLowerCase().includes(userSearch.toLowerCase())
-  );
+  // 🆕 NEW FUNCTION: Check if user belongs to same company and department
+  const checkSameCompanyDepartment = (targetUser) => {
+    if (!currentUser || !targetUser) return false;
+    
+    // Check same company
+    const currentCompany = currentUser.company?._id || currentUser.company;
+    const targetCompany = targetUser.company?._id || targetUser.company;
+    
+    if (currentCompany.toString() !== targetCompany.toString()) {
+      console.log('❌ Different company:', {
+        current: currentCompany,
+        target: targetCompany
+      });
+      return false;
+    }
+    
+    // Check same department
+    const currentDept = currentUser.department?._id || currentUser.department;
+    const targetDept = targetUser.department?._id || targetUser.department;
+    
+    if (currentDept.toString() !== targetDept.toString()) {
+      console.log('❌ Different department:', {
+        current: currentDept,
+        target: targetDept
+      });
+      return false;
+    }
+    
+    console.log('✅ Same company and department');
+    return true;
+  };
+
+  // 🆕 Filter users based on search AND same company/department
+  const filteredUsers = users.filter(user => {
+    // First check if user is from same company and department (excluding self)
+    const isSameCompanyDept = checkSameCompanyDepartment(user);
+    const isSelf = (user.id || user._id) === currentUser.id;
+    
+    if (!isSameCompanyDept || isSelf) return false;
+    
+    // Then apply search filter
+    return user.name?.toLowerCase().includes(userSearch.toLowerCase()) ||
+           user.email?.toLowerCase().includes(userSearch.toLowerCase()) ||
+           user.role?.toLowerCase().includes(userSearch.toLowerCase());
+  });
 
   // Filter groups based on search
   const filteredGroups = groups.filter(group => 
@@ -144,33 +193,151 @@ const AdminTaskManagement = () => {
     group.description?.toLowerCase().includes(groupSearch.toLowerCase())
   );
 
-  // Fetch user data
+  // Fetch user data - UPDATED to get full user details including company and department
   const fetchUserData = () => {
     try {
       const userStr = localStorage.getItem('user');
       const token = localStorage.getItem('token');
       
+      console.log('🔐 Checking localStorage for auth data...');
+      console.log('🔐 User string exists:', !!userStr);
+      console.log('🔐 Token exists:', !!token);
+      
       if (!userStr || !token) {
+        console.log('❌ No user or token found in localStorage');
         setAuthError(true);
-        setSnackbar({ open: true, message: 'Please login to continue', severity: 'error' });
+        setInitialAuthCheck(true);
+        setSnackbar({ 
+          open: true, 
+          message: 'Please login to continue', 
+          severity: 'error' 
+        });
         return;
       }
 
-      const user = JSON.parse(userStr);
-      if (!user || !user.role || !user.id) {
+      let user;
+      try {
+        user = JSON.parse(userStr);
+        console.log('👤 Parsed user data from localStorage:', user);
+      } catch (parseError) {
+        console.error('❌ Error parsing user data:', parseError);
         setAuthError(true);
-        setSnackbar({ open: true, message: 'Invalid user data', severity: 'error' });
+        setInitialAuthCheck(true);
+        setSnackbar({ 
+          open: true, 
+          message: 'Invalid user data format', 
+          severity: 'error' 
+        });
+        return;
+      }
+      
+      // 🔍 Debug: Log all fields in user object
+      console.log('🔍 Available fields in user object:', Object.keys(user || {}));
+      
+      // Based on your API response, check for user ID in different formats
+      let foundUserId = null;
+      let userRole = 'user';
+      let userName = '';
+      let userJobRole = '';
+      let userCompany = '';
+      let userDepartment = '';
+      
+      // Check if it's the full user object from company-users API
+      if (user.id && typeof user.id === 'string') {
+        foundUserId = user.id;
+        console.log('✅ Found user ID in "id" field:', foundUserId);
+        userRole = user.role || 'user';
+        userName = user.name || 'Unknown User';
+        userJobRole = currentUser.id || '';
+        userCompany = user.company || '';
+        userDepartment = user.department || '';
+      }
+      // Check if it's the nested user object from login response
+      else if (user.user && user.user.id) {
+        foundUserId = user.user.id;
+        console.log('✅ Found user ID in nested "user.id" field:', foundUserId);
+        userRole = user.user.role || 'user';
+        userName = user.user.name || 'Unknown User';
+        userJobRole = user.user.jobRole || '';
+        userCompany = user.user.company || '';
+        userDepartment = user.user.department || '';
+      }
+      // Check for other common ID fields
+      else if (user._id) {
+        foundUserId = user._id;
+        console.log('✅ Found user ID in "_id" field:', foundUserId);
+        userRole = user.role || 'user';
+        userName = user.name || 'Unknown User';
+        userJobRole = user.jobRole || '';
+        userCompany = user.company || '';
+        userDepartment = user.department || '';
+      }
+      else if (user.userId) {
+        foundUserId = user.userId;
+        console.log('✅ Found user ID in "userId" field:', foundUserId);
+        userRole = user.role || 'userrr';
+        userName = user.name || 'Unknown User';
+        userJobRole = user.id || '';
+        userCompany = user.company || '';
+        userDepartment = user.department || '';
+      }
+      // Check if it's a direct ID string
+      else if (typeof user === 'string') {
+        foundUserId = user;
+        console.log('✅ User data is a string, using as ID:', foundUserId);
+        userRole = 'user';
+      }
+      
+      // Final validation
+      if (!foundUserId) {
+        console.warn('❌ Invalid user data: no ID field found');
+        console.warn('🔍 Full user object:', user);
+        
+        setAuthError(true);
+        setInitialAuthCheck(true);
+        setSnackbar({ 
+          open: true, 
+          message: 'Invalid user data. Please login again.', 
+          severity: 'error' 
+        });
         return;
       }
 
-      setUserRole(user.role);
-      setJobRole(user.jobRole || '');
-      setUserId(user.id);
+      console.log('✅ User authenticated successfully:', { 
+        userId: foundUserId, 
+        name: userName,
+        role: userRole,
+        jobRole: userJobRole,
+        company: userCompany,
+        department: userDepartment
+      });
+
+      // Set user data
+      setUserRole(userRole);
+      setJobRole(userJobRole);
+      setUserId(foundUserId);
+      
+      // 🆕 Set current user details for filtering
+      setCurrentUser({
+        id: foundUserId,
+        name: userName,
+        company: userCompany,
+        department: userDepartment,
+        role: userRole
+      });
+      
       setAuthError(false);
+      setInitialAuthCheck(true);
+        
     } catch (error) {
-      console.error('Error parsing user data:', error);
+      console.error('❌ Unexpected error in fetchUserData:', error);
       setAuthError(true);
-      setSnackbar({ open: true, message: 'Error loading user data', severity: 'error' });
+      setInitialAuthCheck(true);
+      setSnackbar({ 
+        open: true, 
+        message: 'Error loading user data', 
+        severity: 'error' 
+      });
     }
   };
 
@@ -179,6 +346,7 @@ const AdminTaskManagement = () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
+        console.error('❌ No authentication token found');
         setAuthError(true);
         throw new Error('No authentication token found');
       }
@@ -217,14 +385,48 @@ const AdminTaskManagement = () => {
 
       return response.data;
     } catch (error) {
-      console.error(`API Error (${method} ${url}):`, error);
+      console.error(`❌ API Error (${method} ${url}):`, error);
       
+      // Handle authentication errors
       if (error.response?.status === 401) {
+        console.error('🔐 Authentication failed (401)');
         setAuthError(true);
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        setSnackbar({ open: true, message: 'Session expired. Please login again.', severity: 'error' });
-        navigate('/login');
+        setSnackbar({ 
+          open: true, 
+          message: 'Session expired. Please login again.', 
+          severity: 'error' 
+        });
+      } else if (error.response?.status === 403) {
+        console.error('🚫 Access denied (403)');
+        setSnackbar({ 
+          open: true, 
+          message: 'Access denied. You do not have permission to perform this action.', 
+          severity: 'error' 
+        });
+      } else if (error.response?.status === 404) {
+        console.error('🔍 Resource not found (404)');
+        setSnackbar({ 
+          open: true, 
+          message: 'Resource not found.', 
+          severity: 'error' 
+        });
+      } else if (!error.response) {
+        console.error('🌐 Network error');
+        setSnackbar({ 
+          open: true, 
+          message: 'Network error. Please check your connection.', 
+          severity: 'error' 
+        });
+      } else {
+        // Other errors
+        const errorMessage = error.response?.data?.message || error.response?.data?.error || 'An error occurred';
+        setSnackbar({ 
+          open: true, 
+          message: errorMessage, 
+          severity: 'error' 
+        });
       }
       
       throw error;
@@ -265,14 +467,21 @@ const AdminTaskManagement = () => {
 
   // Fetch tasks with pagination, filters and date range
   const fetchTasks = async (page = 0, limit = rowsPerPage, filters = {}) => {
-    if (authError || !userId) return;
+    if (authError || !userId) {
+      console.log('⏸️ Skipping fetchTasks due to auth error or missing userId');
+      return;
+    }
 
     setLoading(true);
     try {
-      // Build query parameters
+      console.log('📋 Fetching tasks for user:', userId);
+      console.log('📋 Filters:', filters);
+      
+      // Build query parameters - Only show tasks created by current user
       const params = {
         page: page + 1,
-        limit: limit
+        limit: limit,
+        createdBy: userId // Only show tasks created by current user
       };
 
       // Add filters to params
@@ -280,7 +489,6 @@ const AdminTaskManagement = () => {
       if (statusFilter) params.status = statusFilter;
       if (priorityFilter) params.priority = priorityFilter;
       if (assignedToFilter) params.assignedTo = assignedToFilter;
-      if (createdByFilter) params.createdBy = createdByFilter;
       if (overdueFilter) params.overdue = overdueFilter;
       
       // Add date range filters
@@ -291,13 +499,33 @@ const AdminTaskManagement = () => {
         params.endDate = new Date(dateRange.endDate).toISOString();
       }
 
-      const queryString = new URLSearchParams(params).toString();
+      console.log('🌐 Fetching tasks from API with params:', params);
       
-      const tasksResult = await apiCall('get', `/task/assigned`);
+      // Build query string
+      const queryString = Object.keys(params)
+        .filter(key => params[key] !== undefined && params[key] !== null && params[key] !== '')
+        .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
+        .join('&');
+      
+      const url = queryString ? `/task/assigned?${queryString}` : '/task/assigned';
+      const tasksResult = await apiCall('get', url);
+      
+      console.log('✅ Tasks API response:', tasksResult);
       
       // Handle tasks response
-      const tasksArray = tasksResult.tasks || tasksResult.data || tasksResult.groupedTasks ? 
-        Object.values(tasksResult.groupedTasks || {}).flat() : [];
+      let tasksArray = [];
+      if (tasksResult.groupedTasks) {
+        // Flatten grouped tasks
+        tasksArray = Object.values(tasksResult.groupedTasks).flat();
+      } else if (tasksResult.tasks) {
+        tasksArray = tasksResult.tasks;
+      } else if (tasksResult.data) {
+        tasksArray = tasksResult.data;
+      } else if (Array.isArray(tasksResult)) {
+        tasksArray = tasksResult;
+      }
+      
+      console.log('📊 Processed tasks array:', tasksArray);
       setTasks(tasksArray);
       
       // Set total count for pagination
@@ -307,7 +535,7 @@ const AdminTaskManagement = () => {
       calculateFilteredStats(tasksArray);
 
     } catch (error) {
-      console.error('Error fetching tasks:', error);
+      console.error('❌ Error fetching tasks:', error);
       setTasks([]);
       setTotalTasks(0);
       setFilteredStats({
@@ -318,7 +546,10 @@ const AdminTaskManagement = () => {
         rejected: 0,
         overdue: 0
       });
-      setSnackbar({ open: true, message: 'Failed to load tasks', severity: 'error' });
+      // Don't show snackbar for auth errors (handled in apiCall)
+      if (error.response?.status !== 401 && error.response?.status !== 403) {
+        setSnackbar({ open: true, message: 'Failed to load tasks', severity: 'error' });
+      }
     } finally {
       setLoading(false);
     }
@@ -340,38 +571,72 @@ const AdminTaskManagement = () => {
   // Fetch all supporting data (users, groups, notifications)
   const fetchSupportingData = async () => {
     try {
-      const [usersResult, groupsResult, notificationsResult] = await Promise.allSettled([
-        apiCall('get', '/task/assignable-users'),
-        apiCall('get', '/groups'),
-        apiCall('get', '/task/notifications/all')
-      ]);
-
-      // Handle users response
-      if (usersResult.status === 'fulfilled') {
-        const usersData = usersResult.value;
-        setUsers(usersData.users || usersData.data || []);
+      console.log('📡 Fetching supporting data...');
+      
+      // First, fetch company-users to get users from same company
+      const usersResult = await apiCall('get', '/users/company-users');
+      
+      console.log('👥 Raw users API response:', usersResult);
+      
+      // ✅ Extract users array from API response
+      let usersArray = [];
+      
+      // Your API response has users in message.users
+      if (usersResult.message && usersResult.message.users && Array.isArray(usersResult.message.users)) {
+        usersArray = usersResult.message.users;
+        console.log('✅ Found users in usersResult.message.users');
       }
-
-      // Handle groups response
-      if (groupsResult.status === 'fulfilled') {
-        const groupsData = groupsResult.value;
-        setGroups(groupsData.groups || groupsData.data || []);
+      else if (usersResult.users && Array.isArray(usersResult.users)) {
+        usersArray = usersResult.users;
+        console.log('✅ Found users in usersResult.users');
       }
-
-      // Handle notifications response
-      if (notificationsResult.status === 'fulfilled') {
-        const notificationsData = notificationsResult.value;
-        setNotifications(notificationsData.notifications || []);
-        setUnreadNotificationCount(notificationsData.unreadCount || 0);
+      else if (usersResult.data && Array.isArray(usersResult.data)) {
+        usersArray = usersResult.data;
+        console.log('✅ Found users in usersResult.data');
       }
+      else if (Array.isArray(usersResult)) {
+        usersArray = usersResult;
+        console.log('✅ Found users as direct array');
+      }
+      
+      console.log('👥 Total users found:', usersArray.length);
+      
+      // 🆕 FILTER: Only show users from same company and department as current user
+      if (currentUser.company && currentUser.department) {
+        usersArray = usersArray.filter(user => {
+          const userCompany = user.company?._id || user.company;
+          const userDepartment = user.department?._id || user.department;
+          
+          const sameCompany = userCompany && userCompany.toString() === currentUser.company.toString();
+          const sameDepartment = userDepartment && userDepartment.toString() === currentUser.department.toString();
+          
+          return sameCompany && sameDepartment;
+        });
+        console.log('👥 Filtered users (same company & department):', usersArray.length);
+      }
+      
+      setUsers(usersArray);
+
+      // Fetch groups - only groups created by current user
+      const groupsResult = await apiCall('get', '/groups');
+      console.log('👥 Groups data:', groupsResult);
+      setGroups(groupsResult.groups || groupsResult.data || []);
+
+      // Fetch notifications
+      const notificationsResult = await apiCall('get', '/task/notifications/all');
+      console.log('🔔 Notifications data:', notificationsResult);
+      setNotifications(notificationsResult.notifications || []);
+      setUnreadNotificationCount(notificationsResult.unreadCount || 0);
 
     } catch (error) {
-      console.error('Error fetching supporting data:', error);
+      console.error('❌ Error fetching supporting data:', error);
+      // Don't show snackbar here to avoid multiple error messages
     }
   };
 
   // Fetch all data
   const fetchAllData = async (page = 0, limit = rowsPerPage) => {
+    console.log('🔄 Fetching all data...');
     await Promise.all([
       fetchTasks(page, limit, getCurrentFilters()),
       fetchSupportingData()
@@ -425,7 +690,8 @@ const AdminTaskManagement = () => {
         title: newTask.title,
         dueDateTime: parsedDueDateTime.toISOString(),
         dueDateTimeLocal: newTask.dueDateTime,
-        priority: newTask.priority
+        priority: newTask.priority,
+        assignedUsers: newTask.assignedUsers
       });
 
       // Handle file uploads
@@ -446,9 +712,8 @@ const AdminTaskManagement = () => {
       resetNewTaskForm();
       fetchAllData(page, rowsPerPage);
     } catch (error) {
-      console.error('Error creating task:', error);
-      const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Failed to create task';
-      setSnackbar({ open: true, message: errorMessage, severity: 'error' });
+      console.error('❌ Error creating task:', error);
+      // Error message already shown by apiCall
     } finally {
       setIsCreatingTask(false);
     }
@@ -495,9 +760,8 @@ const AdminTaskManagement = () => {
       setSnackbar({ open: true, message: 'Task updated successfully', severity: 'success' });
       fetchAllData(page, rowsPerPage);
     } catch (error) {
-      console.error('Error updating task:', error);
-      const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Failed to update task';
-      setSnackbar({ open: true, message: errorMessage, severity: 'error' });
+      console.error('❌ Error updating task:', error);
+      // Error message already shown by apiCall
     } finally {
       setIsUpdatingTask(false);
     }
@@ -511,13 +775,12 @@ const AdminTaskManagement = () => {
       setSnackbar({ open: true, message: 'Task deleted successfully', severity: 'success' });
       fetchAllData(page, rowsPerPage);
     } catch (error) {
-      console.error('Error deleting task:', error);
-      const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Failed to delete task';
-      setSnackbar({ open: true, message: errorMessage, severity: 'error' });
+      console.error('❌ Error deleting task:', error);
+      // Error message already shown by apiCall
     }
   };
 
-  // Enhanced Group Management
+  // Enhanced Group Management - 🆕 Only show users from same company/department
   const handleCreateGroup = async () => {
     if (!newGroup.name || !newGroup.description) {
       setSnackbar({ open: true, message: 'Please fill group name and description', severity: 'error' });
@@ -526,6 +789,21 @@ const AdminTaskManagement = () => {
 
     if (newGroup.members.length === 0) {
       setSnackbar({ open: true, message: 'Please select at least one member', severity: 'error' });
+      return;
+    }
+
+    // 🆕 Check if all selected members are from same company/department
+    const invalidMembers = newGroup.members.filter(memberId => {
+      const user = users.find(u => (u.id || u._id) === memberId);
+      return !checkSameCompanyDepartment(user);
+    });
+
+    if (invalidMembers.length > 0) {
+      setSnackbar({ 
+        open: true, 
+        message: 'Cannot add users from different company/department to group', 
+        severity: 'error' 
+      });
       return;
     }
 
@@ -542,9 +820,8 @@ const AdminTaskManagement = () => {
       resetGroupForm();
       fetchSupportingData();
     } catch (error) {
-      console.error('Error in group operation:', error);
-      const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Group operation failed';
-      setSnackbar({ open: true, message: errorMessage, severity: 'error' });
+      console.error('❌ Error in group operation:', error);
+      // Error message already shown by apiCall
     } finally {
       setIsCreatingGroup(false);
     }
@@ -558,9 +835,8 @@ const AdminTaskManagement = () => {
       setSnackbar({ open: true, message: 'Group deleted successfully', severity: 'success' });
       fetchSupportingData();
     } catch (error) {
-      console.error('Error deleting group:', error);
-      const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Failed to delete group';
-      setSnackbar({ open: true, message: errorMessage, severity: 'error' });
+      console.error('❌ Error deleting group:', error);
+      // Error message already shown by apiCall
     }
   };
 
@@ -583,9 +859,8 @@ const AdminTaskManagement = () => {
       resetStatusForm();
       fetchAllData(page, rowsPerPage);
     } catch (error) {
-      console.error('Error updating status:', error);
-      const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Failed to update status';
-      setSnackbar({ open: true, message: errorMessage, severity: 'error' });
+      console.error('❌ Error updating status:', error);
+      // Error message already shown by apiCall
     }
   };
 
@@ -598,7 +873,11 @@ const AdminTaskManagement = () => {
         setTaskUserStatuses(task.statusInfo);
       } else if (task.statusByUser && Array.isArray(task.statusByUser)) {
         const enrichedStatuses = task.statusByUser.map(status => {
-          const user = users.find(u => u._id === status.user || u._id === status.user?._id);
+          const user = users.find(u => 
+            u.id === status.user || 
+            u._id === status.user ||
+            (status.user?._id && (u.id === status.user._id || u._id === status.user._id))
+          );
           return {
             userId: status.user,
             name: user?.name || 'Unknown User',
@@ -615,7 +894,7 @@ const AdminTaskManagement = () => {
       
       setOpenUserStatusDialog(true);
     } catch (error) {
-      console.error('Error fetching user statuses:', error);
+      console.error('❌ Error fetching user statuses:', error);
       setSnackbar({ open: true, message: 'Failed to load user statuses', severity: 'error' });
     }
   };
@@ -628,7 +907,7 @@ const AdminTaskManagement = () => {
       setSelectedTask(tasks.find(task => task._id === taskId));
       setOpenRemarksDialog(true);
     } catch (error) {
-      console.error('Error fetching remarks:', error);
+      console.error('❌ Error fetching remarks:', error);
       setSnackbar({ open: true, message: 'Failed to load remarks', severity: 'error' });
     }
   };
@@ -712,15 +991,8 @@ const AdminTaskManagement = () => {
       });
 
     } catch (error) {
-      console.error('Error adding remark:', error);
-      
-      if (error.response?.status === 413) {
-        setSnackbar({ open: true, message: 'File size too large. Maximum 5MB per image', severity: 'error' });
-      } else if (error.response?.status === 400) {
-        setSnackbar({ open: true, message: error.response.data.error || 'Invalid file type', severity: 'error' });
-      } else {
-        setSnackbar({ open: true, message: 'Failed to add remark', severity: 'error' });
-      }
+      console.error('❌ Error adding remark:', error);
+      // Error message already shown by apiCall
     } finally {
       setIsUploadingRemark(false);
     }
@@ -734,7 +1006,7 @@ const AdminTaskManagement = () => {
       setSelectedTask(tasks.find(task => task._id === taskId));
       setOpenActivityDialog(true);
     } catch (error) {
-      console.error('Error fetching activity logs:', error);
+      console.error('❌ Error fetching activity logs:', error);
       setSnackbar({ open: true, message: 'Failed to load activity logs', severity: 'error' });
     }
   };
@@ -746,7 +1018,7 @@ const AdminTaskManagement = () => {
       fetchSupportingData();
       setSnackbar({ open: true, message: 'Notification marked as read', severity: 'success' });
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      console.error('❌ Error marking notification as read:', error);
     }
   };
 
@@ -756,7 +1028,7 @@ const AdminTaskManagement = () => {
       fetchSupportingData();
       setSnackbar({ open: true, message: 'All notifications marked as read', severity: 'success' });
     } catch (error) {
-      console.error('Error marking all notifications as read:', error);
+      console.error('❌ Error marking all notifications as read:', error);
     }
   };
 
@@ -767,7 +1039,6 @@ const AdminTaskManagement = () => {
     if (statusFilter) filters.status = statusFilter;
     if (priorityFilter) filters.priority = priorityFilter;
     if (assignedToFilter) filters.assignedTo = assignedToFilter;
-    if (createdByFilter) filters.createdBy = createdByFilter;
     if (overdueFilter) filters.overdue = overdueFilter;
     if (dateRange.startDate) filters.startDate = dateRange.startDate;
     if (dateRange.endDate) filters.endDate = dateRange.endDate;
@@ -784,7 +1055,6 @@ const AdminTaskManagement = () => {
     setStatusFilter('');
     setPriorityFilter('');
     setAssignedToFilter('');
-    setCreatedByFilter('');
     setOverdueFilter('');
     setDateRange({
       startDate: null,
@@ -851,12 +1121,22 @@ const AdminTaskManagement = () => {
     // Format dueDateTime for datetime-local input
     const formattedDueDateTime = formatDateForInput(task.dueDateTime);
     
+    // Extract assigned user IDs from task
+    const assignedUserIds = task.assignedUsers?.map(user => 
+      user.id || user._id || user
+    ) || [];
+    
+    // Extract assigned group IDs from task
+    const assignedGroupIds = task.assignedGroups?.map(group => 
+      group._id || group.id || group
+    ) || [];
+    
     setEditTask({
       title: task.title || '',
       description: task.description || '',
       dueDateTime: formattedDueDateTime,
-      assignedUsers: task.assignedUsers?.map(u => u._id || u) || [],
-      assignedGroups: task.assignedGroups?.map(g => g._id || g) || [],
+      assignedUsers: assignedUserIds,
+      assignedGroups: assignedGroupIds,
       priorityDays: task.priorityDays || '1',
       priority: task.priority || 'medium'
     });
@@ -879,7 +1159,7 @@ const AdminTaskManagement = () => {
     setNewGroup({
       name: group.name,
       description: group.description,
-      members: group.members?.map(m => m._id || m) || []
+      members: group.members?.map(m => m.id || m._id || m) || []
     });
     setOpenGroupDialog(true);
   };
@@ -887,14 +1167,14 @@ const AdminTaskManagement = () => {
   // Data Helpers based on your API response
   const getUserName = (userId) => {
     if (typeof userId === 'object') {
-      return userId.name || 'Unknown User';
+      return userId.name || userId.Name || 'Unknown User';
     }
-    const user = users.find(u => u._id === userId);
+    const user = users.find(u => u.id === userId || u._id === userId);
     return user ? user.name : 'Unknown User';
   };
 
   const getGroupName = (groupId) => {
-    const group = groups.find(g => g._id === groupId);
+    const group = groups.find(g => g._id === groupId || g.id === groupId);
     return group ? group.name : 'Unknown Group';
   };
 
@@ -907,7 +1187,7 @@ const AdminTaskManagement = () => {
   const getAssignedUsersCount = (task) => {
     let count = task.assignedUsers?.length || 0;
     task.assignedGroups?.forEach(groupId => {
-      const group = groups.find(g => g._id === groupId);
+      const group = groups.find(g => g._id === groupId || g.id === groupId);
       if (group) count += group.members?.length || 0;
     });
     return count;
@@ -921,14 +1201,14 @@ const AdminTaskManagement = () => {
   const getUserStatusForTask = (task, userId) => {
     if (task.statusInfo && Array.isArray(task.statusInfo)) {
       const userStatus = task.statusInfo.find(s => 
-        s.userId === userId || s.userId?._id === userId
+        s.userId === userId || s.userId?._id === userId || s.userId?.id === userId
       );
       return userStatus?.status || 'pending';
     }
     
     if (task.statusByUser && Array.isArray(task.statusByUser)) {
       const userStatus = task.statusByUser.find(s => 
-        s.user === userId || s.user?._id === userId
+        s.user === userId || s.user?._id === userId || s.user?.id === userId
       );
       return userStatus?.status || 'pending';
     }
@@ -943,8 +1223,8 @@ const AdminTaskManagement = () => {
     // Add direct assigned users
     if (task.assignedUsers && Array.isArray(task.assignedUsers)) {
       task.assignedUsers.forEach(user => {
-        const userId = user._id || user;
-        const userObj = users.find(u => u._id === userId);
+        const userId = user.id || user._id || user;
+        const userObj = users.find(u => u.id === userId || u._id === userId);
         if (userObj) {
           assignedUsers.push({
             user: userObj,
@@ -958,11 +1238,13 @@ const AdminTaskManagement = () => {
     // Add group members
     if (task.assignedGroups && Array.isArray(task.assignedGroups)) {
       task.assignedGroups.forEach(groupId => {
-        const group = groups.find(g => g._id === groupId);
+        const group = groups.find(g => g._id === groupId || g.id === groupId);
         if (group && group.members) {
           group.members.forEach(memberId => {
-            const userObj = users.find(u => u._id === memberId);
-            if (userObj && !assignedUsers.some(u => u.user._id === userObj._id)) {
+            const userObj = users.find(u => u.id === memberId || u._id === memberId);
+            if (userObj && !assignedUsers.some(u => 
+              (u.user.id === userObj.id || u.user._id === userObj._id)
+            )) {
               assignedUsers.push({
                 user: userObj,
                 status: getUserStatusForTask(task, memberId),
@@ -1025,6 +1307,24 @@ const AdminTaskManagement = () => {
       >
         {safePriority.charAt(0).toUpperCase() + safePriority.slice(1)}
       </span>
+    );
+  };
+
+  // 🆕 User Info Chip Component
+  const AdminTaskManagementUserInfoChip = ({ user }) => {
+    return (
+      <div className="AdminTaskManagement-user-info-chip">
+        <div className="AdminTaskManagement-user-info-avatar">
+          {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+        </div>
+        <div className="AdminTaskManagement-user-info-details">
+          <div className="AdminTaskManagement-user-info-name">{user?.name || 'Unknown'}</div>
+          <div className="AdminTaskManagement-user-info-meta">
+            <span> {user?.company?.companyName || user?.company || 'No Company'}</span>
+            <span>{user?.department?.name || user?.department || 'No Department'}</span>
+          </div>
+        </div>
+      </div>
     );
   };
 
@@ -1218,24 +1518,8 @@ const AdminTaskManagement = () => {
               onChange={(e) => setAssignedToFilter(e.target.value)}
             >
               <option value="">All Users</option>
-              {users.map(user => (
-                <option key={user._id} value={user._id}>
-                  {user.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="AdminTaskManagement-filter-select-container">
-            <label>Created By</label>
-            <select
-              className="AdminTaskManagement-filter-select"
-              value={createdByFilter}
-              onChange={(e) => setCreatedByFilter(e.target.value)}
-            >
-              <option value="">All Creators</option>
-              {users.map(user => (
-                <option key={user._id} value={user._id}>
+              {filteredUsers.map(user => (
+                <option key={user.id || user._id} value={user.id || user._id}>
                   {user.name}
                 </option>
               ))}
@@ -1399,7 +1683,7 @@ const AdminTaskManagement = () => {
                                   {getUserName(remark.user)}
                                 </div>
                                 <div className="AdminTaskManagement-remark-user-details">
-                                  {users.find(u => u._id === remark.user)?.role || 'User'} • {new Date(remark.createdAt).toLocaleDateString()} at {' '}
+                                  {users.find(u => u.id === remark.user || u._id === remark.user)?.role || 'User'} • {new Date(remark.createdAt).toLocaleDateString()} at {' '}
                                   {new Date(remark.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </div>
                               </div>
@@ -1595,7 +1879,7 @@ const AdminTaskManagement = () => {
                           <div className="AdminTaskManagement-activity-user-info">
                             <div className="AdminTaskManagement-activity-user-name">{getUserName(log.user)}</div>
                             <div className="AdminTaskManagement-activity-user-role">
-                              {users.find(u => u._id === log.user)?.role || 'User'}
+                              {users.find(u => u.id === log.user || u._id === log.user)?.role || 'User'}
                             </div>
                           </div>
                         </div>
@@ -1661,33 +1945,44 @@ const AdminTaskManagement = () => {
         <div className="AdminTaskManagement-modal-body">
           <div className="AdminTaskManagement-user-statuses">
             {taskUserStatuses.length > 0 ? (
-              taskUserStatuses.map((userStatus, index) => (
-                <div key={index} className="AdminTaskManagement-card AdminTaskManagement-card-outline">
-                  <div className="AdminTaskManagement-card-content">
-                    <div className="AdminTaskManagement-user-status-item">
-                      <div className="AdminTaskManagement-user-status-header">
-                        <div className="AdminTaskManagement-user-status-user">
-                          <div className="AdminTaskManagement-user-status-avatar">
-                            {userStatus.name?.charAt(0)?.toUpperCase() || 'U'}
-                          </div>
-                          <div className="AdminTaskManagement-user-status-info">
-                            <div className="AdminTaskManagement-user-status-name">{userStatus.name}</div>
-                            <div className="AdminTaskManagement-user-status-details">
-                              {userStatus.role} • {userStatus.email}
+              taskUserStatuses.map((userStatus, index) => {
+                // Find user info from users array
+                const user = users.find(u => 
+                  u.id === userStatus.userId || 
+                  u._id === userStatus.userId ||
+                  (userStatus.user && (u.id === userStatus.user.id || u._id === userStatus.user._id))
+                );
+                
+                return (
+                  <div key={index} className="AdminTaskManagement-card AdminTaskManagement-card-outline">
+                    <div className="AdminTaskManagement-card-content">
+                      <div className="AdminTaskManagement-user-status-item">
+                        <div className="AdminTaskManagement-user-status-header">
+                          <div className="AdminTaskManagement-user-status-user">
+                            <div className="AdminTaskManagement-user-status-avatar">
+                              {user?.name?.charAt(0)?.toUpperCase() || userStatus.name?.charAt(0)?.toUpperCase() || 'U'}
+                            </div>
+                            <div className="AdminTaskManagement-user-status-info">
+                              <div className="AdminTaskManagement-user-status-name">
+                                {user?.name || userStatus.name || 'Unknown User'}
+                              </div>
+                              <div className="AdminTaskManagement-user-status-details">
+                                {user?.role || userStatus.role || 'N/A'} • {user?.email || userStatus.email || 'N/A'}
+                              </div>
                             </div>
                           </div>
+                          <AdminTaskManagementStatusChip status={userStatus.status} />
                         </div>
-                        <AdminTaskManagementStatusChip status={userStatus.status} />
+                        {userStatus.updatedAt && (
+                          <div className="AdminTaskManagement-user-status-updated">
+                            Last updated: {new Date(userStatus.updatedAt).toLocaleString()}
+                          </div>
+                        )}
                       </div>
-                      {userStatus.updatedAt && (
-                        <div className="AdminTaskManagement-user-status-updated">
-                          Last updated: {new Date(userStatus.updatedAt).toLocaleString()}
-                        </div>
-                      )}
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             ) : (
               <div className="AdminTaskManagement-text-center">
                 <FiUsers size={32} className="AdminTaskManagement-empty-icon" />
@@ -1721,7 +2016,7 @@ const AdminTaskManagement = () => {
     }
   }, [openCreateDialog]);
 
-  // Create Task Dialog
+  // Create Task Dialog - 🆕 Updated to show only same company/department users
   const renderCreateTaskDialog = () => (
     <div className={`AdminTaskManagement-modal ${openCreateDialog ? 'AdminTaskManagement-modal-open' : ''}`}>
       <div className="AdminTaskManagement-modal-content AdminTaskManagement-modal-large">
@@ -1804,9 +2099,9 @@ const AdminTaskManagement = () => {
               </div>
             </div>
 
-            {/* Assign to Users with Search */}
+            {/* 🆕 Assign to Users with Search - Only shows same company/department users */}
             <div className="AdminTaskManagement-form-group">
-              <label>Assign to Users</label>
+              <label>Assign to Users (Same Company & Department only)</label>
               <div className="AdminTaskManagement-multi-select-container">
                 <div className="AdminTaskManagement-select-search-bar">
                   <FiSearch className="AdminTaskManagement-select-search-icon" />
@@ -1824,41 +2119,39 @@ const AdminTaskManagement = () => {
                   )}
                 </div>
                 <div className="AdminTaskManagement-multi-select-options">
-                  {filteredUsers.map((user) => (
-                    <div key={user._id} className="AdminTaskManagement-multi-select-option">
-                      <input
-                        type="checkbox"
-                        id={`AdminTaskManagement-user-${user._id}`}
-                        checked={newTask.assignedUsers.includes(user._id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setNewTask({
-                              ...newTask,
-                              assignedUsers: [...newTask.assignedUsers, user._id]
-                            });
-                          } else {
-                            setNewTask({
-                              ...newTask,
-                              assignedUsers: newTask.assignedUsers.filter(id => id !== user._id)
-                            });
-                          }
-                        }}
-                      />
-                      <label htmlFor={`AdminTaskManagement-user-${user._id}`} className="AdminTaskManagement-multi-select-label">
-                        <div className="AdminTaskManagement-multi-select-text">
-                          <div className="AdminTaskManagement-multi-select-primary">{user.name}</div>
-                          <div className="AdminTaskManagement-multi-select-secondary">
-                            <span>{user.role}</span>
-                            <span className="AdminTaskManagement-separator">•</span>
-                            <span>{user.email}</span>
-                          </div>
-                        </div>
-                      </label>
-                    </div>
-                  ))}
-                  {filteredUsers.length === 0 && (
+                  {filteredUsers.length > 0 ? (
+                    filteredUsers.map((user) => (
+                      <div key={user.id || user._id} className="AdminTaskManagement-multi-select-option">
+                        <input
+                          type="checkbox"
+                          id={`AdminTaskManagement-user-${user.id || user._id}`}
+                          checked={newTask.assignedUsers.includes(user.id || user._id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setNewTask({
+                                ...newTask,
+                                assignedUsers: [...newTask.assignedUsers, user.id || user._id]
+                              });
+                            } else {
+                              setNewTask({
+                                ...newTask,
+                                assignedUsers: newTask.assignedUsers.filter(id => id !== (user.id || user._id))
+                              });
+                            }
+                          }}
+                        />
+                        <label htmlFor={`AdminTaskManagement-user-${user.id || user._id}`} className="AdminTaskManagement-multi-select-label">
+                          <AdminTaskManagementUserInfoChip user={user} />
+                        </label>
+                      </div>
+                    ))
+                  ) : (
                     <div className="AdminTaskManagement-multi-select-empty">
-                      No users found
+                      <div className="AdminTaskManagement-empty-state">
+                        <FiUsers size={32} className="AdminTaskManagement-empty-icon" />
+                        <h5>No users available</h5>
+                        <p>Only users from same company and department are shown</p>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1866,7 +2159,7 @@ const AdminTaskManagement = () => {
               {newTask.assignedUsers.length > 0 && (
                 <div className="AdminTaskManagement-selected-chips">
                   {newTask.assignedUsers.map(value => {
-                    const user = users.find(u => u._id === value);
+                    const user = users.find(u => u.id === value || u._id === value);
                     return user ? (
                       <span key={value} className="AdminTaskManagement-selected-chip">
                         {user.name}
@@ -1921,7 +2214,9 @@ const AdminTaskManagement = () => {
                         <div className="AdminTaskManagement-multi-select-text">
                           <div className="AdminTaskManagement-multi-select-primary">{group.name}</div>
                           <div className="AdminTaskManagement-multi-select-secondary">
-                            {group.members?.length || 0} members • {group.description || 'No description'}
+                            <span>{group.description}</span>
+                            <span className="AdminTaskManagement-separator">•</span>
+                            <span>{group.members?.length || 0} members</span>
                           </div>
                         </div>
                       </label>
@@ -1939,7 +2234,7 @@ const AdminTaskManagement = () => {
                   {newTask.assignedGroups.map(value => {
                     const group = groups.find(g => g._id === value);
                     return group ? (
-                      <span key={value} className="AdminTaskManagement-selected-chip AdminTaskManagement-selected-chip-secondary">
+                      <span key={value} className="AdminTaskManagement-selected-chip">
                         {group.name}
                       </span>
                     ) : null;
@@ -1949,24 +2244,30 @@ const AdminTaskManagement = () => {
             </div>
 
             <div className="AdminTaskManagement-form-group">
-              <label>Attachments</label>
-              <div className="AdminTaskManagement-attachment-buttons">
-                <button className="AdminTaskManagement-btn AdminTaskManagement-btn-outline AdminTaskManagement-attachment-btn">
-                  <FiFileText /> Upload Files
-                  <input
-                    type="file"
-                    multiple
-                    onChange={(e) => setNewTask({ ...newTask, files: e.target.files })}
-                  />
-                </button>
-                <button className="AdminTaskManagement-btn AdminTaskManagement-btn-outline AdminTaskManagement-attachment-btn">
-                  <FiMic /> Voice Note
-                  <input
-                    type="file"
-                    accept="audio/*"
-                    onChange={(e) => setNewTask({ ...newTask, voiceNote: e.target.files[0] })}
-                  />
-                </button>
+              <label>Attachments (Optional)</label>
+              <div className="AdminTaskManagement-file-upload">
+                <input
+                  type="file"
+                  multiple
+                  onChange={(e) => setNewTask({ ...newTask, files: e.target.files })}
+                />
+                <div className="AdminTaskManagement-file-upload-hint">
+                  <FiPaperclip /> You can upload multiple files
+                </div>
+              </div>
+            </div>
+
+            <div className="AdminTaskManagement-form-group">
+              <label>Voice Note (Optional)</label>
+              <div className="AdminTaskManagement-file-upload">
+                <input
+                  type="file"
+                  accept="audio/*"
+                  onChange={(e) => setNewTask({ ...newTask, voiceNote: e.target.files[0] })}
+                />
+                <div className="AdminTaskManagement-file-upload-hint">
+                  <FiMic /> Record or upload voice note
+                </div>
               </div>
             </div>
           </div>
@@ -1975,6 +2276,7 @@ const AdminTaskManagement = () => {
           <button 
             className="AdminTaskManagement-btn" 
             onClick={() => setOpenCreateDialog(false)}
+            disabled={isCreatingTask}
           >
             Cancel
           </button>
@@ -1990,13 +2292,13 @@ const AdminTaskManagement = () => {
     </div>
   );
 
-  // Edit Task Dialog
+  // Edit Task Dialog - 🆕 Updated to show only same company/department users
   const renderEditTaskDialog = () => (
     <div className={`AdminTaskManagement-modal ${openEditDialog ? 'AdminTaskManagement-modal-open' : ''}`}>
       <div className="AdminTaskManagement-modal-content AdminTaskManagement-modal-large">
         <div className="AdminTaskManagement-modal-header">
           <div className="AdminTaskManagement-modal-title-row">
-            <h3>Edit Task: {selectedTask?.title}</h3>
+            <h3>Edit Task</h3>
             <button 
               className="AdminTaskManagement-icon-btn"
               onClick={() => setOpenEditDialog(false)}
@@ -2037,14 +2339,10 @@ const AdminTaskManagement = () => {
                 value={editTask.dueDateTime || ''}
                 onChange={(e) => {
                   const value = e.target.value;
-                  console.log('📅 Editing datetime:', value);
+                  console.log('📅 Edit selected datetime:', value);
                   setEditTask({ ...editTask, dueDateTime: value });
                 }}
-                min={new Date().toISOString().slice(0, 16)}
               />
-              <small className="AdminTaskManagement-form-hint">
-                Current: {selectedTask?.dueDateTime ? new Date(selectedTask.dueDateTime).toLocaleString() : 'Not set'}
-              </small>
             </div>
 
             <div className="AdminTaskManagement-form-row">
@@ -2073,148 +2371,76 @@ const AdminTaskManagement = () => {
               </div>
             </div>
 
-            {/* Assign to Users with Search */}
+            {/* 🆕 Assign to Users (Edit mode) - Only shows same company/department users */}
             <div className="AdminTaskManagement-form-group">
-              <label>Assign to Users</label>
+              <label>Assign to Users (Same Company & Department only)</label>
               <div className="AdminTaskManagement-multi-select-container">
-                <div className="AdminTaskManagement-select-search-bar">
-                  <FiSearch className="AdminTaskManagement-select-search-icon" />
-                  <input
-                    type="text"
-                    className="AdminTaskManagement-select-search-input"
-                    placeholder="Search users..."
-                    value={userSearch}
-                    onChange={(e) => setUserSearch(e.target.value)}
-                  />
-                  {userSearch && (
-                    <button className="AdminTaskManagement-select-search-clear" onClick={() => setUserSearch('')}>
-                      <FiX size={14} />
-                    </button>
-                  )}
-                </div>
-                <div className="AdminTaskManagement-multi-select-options">
-                  {filteredUsers.map((user) => (
-                    <div key={user._id} className="AdminTaskManagement-multi-select-option">
+                {filteredUsers.length > 0 ? (
+                  filteredUsers.map((user) => (
+                    <div key={user.id || user._id} className="AdminTaskManagement-checkbox-option">
                       <input
                         type="checkbox"
-                        id={`AdminTaskManagement-edit-user-${user._id}`}
-                        checked={editTask.assignedUsers.includes(user._id)}
+                        id={`AdminTaskManagement-edit-user-${user.id || user._id}`}
+                        checked={editTask.assignedUsers.includes(user.id || user._id)}
                         onChange={(e) => {
                           if (e.target.checked) {
                             setEditTask({
                               ...editTask,
-                              assignedUsers: [...editTask.assignedUsers, user._id]
+                              assignedUsers: [...editTask.assignedUsers, user.id || user._id]
                             });
                           } else {
                             setEditTask({
                               ...editTask,
-                              assignedUsers: editTask.assignedUsers.filter(id => id !== user._id)
+                              assignedUsers: editTask.assignedUsers.filter(id => id !== (user.id || user._id))
                             });
                           }
                         }}
                       />
-                      <label htmlFor={`AdminTaskManagement-edit-user-${user._id}`} className="AdminTaskManagement-multi-select-label">
-                        <div className="AdminTaskManagement-multi-select-text">
-                          <div className="AdminTaskManagement-multi-select-primary">{user.name}</div>
-                          <div className="AdminTaskManagement-multi-select-secondary">
-                            <span>{user.role}</span>
-                            <span className="AdminTaskManagement-separator">•</span>
-                            <span>{user.email}</span>
-                          </div>
-                        </div>
+                      <label htmlFor={`AdminTaskManagement-edit-user-${user.id || user._id}`}>
+                        <AdminTaskManagementUserInfoChip user={user} />
                       </label>
                     </div>
-                  ))}
-                  {filteredUsers.length === 0 && (
-                    <div className="AdminTaskManagement-multi-select-empty">
-                      No users found
-                    </div>
-                  )}
-                </div>
+                  ))
+                ) : (
+                  <div className="AdminTaskManagement-empty-state">
+                    <FiUsers size={32} className="AdminTaskManagement-empty-icon" />
+                    <h5>No users available</h5>
+                    <p>Only users from same company and department are shown</p>
+                  </div>
+                )}
               </div>
-              {editTask.assignedUsers.length > 0 && (
-                <div className="AdminTaskManagement-selected-chips">
-                  {editTask.assignedUsers.map(value => {
-                    const user = users.find(u => u._id === value);
-                    return user ? (
-                      <span key={value} className="AdminTaskManagement-selected-chip">
-                        {user.name}
-                      </span>
-                    ) : null;
-                  })}
-                </div>
-              )}
             </div>
 
-            {/* Assign to Groups with Search */}
+            {/* Assign to Groups (Edit mode) */}
             <div className="AdminTaskManagement-form-group">
               <label>Assign to Groups</label>
               <div className="AdminTaskManagement-multi-select-container">
-                <div className="AdminTaskManagement-select-search-bar">
-                  <FiSearch className="AdminTaskManagement-select-search-icon" />
-                  <input
-                    type="text"
-                    className="AdminTaskManagement-select-search-input"
-                    placeholder="Search groups..."
-                    value={groupSearch}
-                    onChange={(e) => setGroupSearch(e.target.value)}
-                  />
-                  {groupSearch && (
-                    <button className="AdminTaskManagement-select-search-clear" onClick={() => setGroupSearch('')}>
-                      <FiX size={14} />
-                    </button>
-                  )}
-                </div>
-                <div className="AdminTaskManagement-multi-select-options">
-                  {filteredGroups.map((group) => (
-                    <div key={group._id} className="AdminTaskManagement-multi-select-option">
-                      <input
-                        type="checkbox"
-                        id={`AdminTaskManagement-edit-group-${group._id}`}
-                        checked={editTask.assignedGroups.includes(group._id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setEditTask({
-                              ...editTask,
-                              assignedGroups: [...editTask.assignedGroups, group._id]
-                            });
-                          } else {
-                            setEditTask({
-                              ...editTask,
-                              assignedGroups: editTask.assignedGroups.filter(id => id !== group._id)
-                            });
-                          }
-                        }}
-                      />
-                      <label htmlFor={`AdminTaskManagement-edit-group-${group._id}`} className="AdminTaskManagement-multi-select-label">
-                        <div className="AdminTaskManagement-multi-select-text">
-                          <div className="AdminTaskManagement-multi-select-primary">{group.name}</div>
-                          <div className="AdminTaskManagement-multi-select-secondary">
-                            {group.members?.length || 0} members • {group.description || 'No description'}
-                          </div>
-                        </div>
-                      </label>
-                    </div>
-                  ))}
-                  {filteredGroups.length === 0 && (
-                    <div className="AdminTaskManagement-multi-select-empty">
-                      No groups found
-                    </div>
-                  )}
-                </div>
+                {groups.map((group) => (
+                  <div key={group._id} className="AdminTaskManagement-checkbox-option">
+                    <input
+                      type="checkbox"
+                      id={`AdminTaskManagement-edit-group-${group._id}`}
+                      checked={editTask.assignedGroups.includes(group._id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setEditTask({
+                            ...editTask,
+                            assignedGroups: [...editTask.assignedGroups, group._id]
+                          });
+                        } else {
+                          setEditTask({
+                            ...editTask,
+                            assignedGroups: editTask.assignedGroups.filter(id => id !== group._id)
+                          });
+                        }
+                      }}
+                    />
+                    <label htmlFor={`AdminTaskManagement-edit-group-${group._id}`}>
+                      {group.name} ({group.members?.length || 0} members)
+                    </label>
+                  </div>
+                ))}
               </div>
-              {editTask.assignedGroups.length > 0 && (
-                <div className="AdminTaskManagement-selected-chips">
-                  {editTask.assignedGroups.map(value => {
-                    const group = groups.find(g => g._id === value);
-                    return group ? (
-                      <span key={value} className="AdminTaskManagement-selected-chip AdminTaskManagement-selected-chip-secondary">
-                        {group.name}
-                      </span>
-                    ) : null;
-                  })}
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -2222,6 +2448,7 @@ const AdminTaskManagement = () => {
           <button 
             className="AdminTaskManagement-btn" 
             onClick={() => setOpenEditDialog(false)}
+            disabled={isUpdatingTask}
           >
             Cancel
           </button>
@@ -2237,16 +2464,19 @@ const AdminTaskManagement = () => {
     </div>
   );
 
-  // Group Management Dialog
-  const renderGroupManagementDialog = () => (
+  // Group Management Dialog - 🆕 Updated to show only same company/department users
+  const renderGroupDialog = () => (
     <div className={`AdminTaskManagement-modal ${openGroupDialog ? 'AdminTaskManagement-modal-open' : ''}`}>
-      <div className="AdminTaskManagement-modal-content AdminTaskManagement-modal-large">
+      <div className="AdminTaskManagement-modal-content AdminTaskManagement-modal-medium">
         <div className="AdminTaskManagement-modal-header">
           <div className="AdminTaskManagement-modal-title-row">
             <h3>{editingGroup ? 'Edit Group' : 'Create New Group'}</h3>
             <button 
               className="AdminTaskManagement-icon-btn"
-              onClick={() => setOpenGroupDialog(false)}
+              onClick={() => {
+                setOpenGroupDialog(false);
+                resetGroupForm();
+              }}
             >
               <FiX size={20} />
             </button>
@@ -2277,49 +2507,45 @@ const AdminTaskManagement = () => {
             </div>
 
             <div className="AdminTaskManagement-form-group">
-              <label>Select Members</label>
+              <label>Select Members (Same Company & Department only) *</label>
               <div className="AdminTaskManagement-multi-select-container">
-                <div className="AdminTaskManagement-multi-select-options">
-                  {users.map((user) => (
-                    <div key={user._id} className="AdminTaskManagement-multi-select-option">
+                {filteredUsers.length > 0 ? (
+                  filteredUsers.map((user) => (
+                    <div key={user.id || user._id} className="AdminTaskManagement-checkbox-option">
                       <input
                         type="checkbox"
-                        id={`AdminTaskManagement-group-member-${user._id}`}
-                        checked={newGroup.members.includes(user._id)}
+                        id={`AdminTaskManagement-group-member-${user.id || user._id}`}
+                        checked={newGroup.members.includes(user.id || user._id)}
                         onChange={(e) => {
                           if (e.target.checked) {
                             setNewGroup({
                               ...newGroup,
-                              members: [...newGroup.members, user._id]
+                              members: [...newGroup.members, user.id || user._id]
                             });
                           } else {
                             setNewGroup({
                               ...newGroup,
-                              members: newGroup.members.filter(id => id !== user._id)
+                              members: newGroup.members.filter(id => id !== (user.id || user._id))
                             });
                           }
                         }}
                       />
-                      <label htmlFor={`AdminTaskManagement-group-member-${user._id}`} className="AdminTaskManagement-multi-select-label">
-                        <div className="AdminTaskManagement-multi-select-text">
-                          <div className="AdminTaskManagement-multi-select-primary">{user.name}</div>
-                          <div className="AdminTaskManagement-multi-select-secondary">{user.role}</div>
-                        </div>
+                      <label htmlFor={`AdminTaskManagement-group-member-${user.id || user._id}`}>
+                        <AdminTaskManagementUserInfoChip user={user} />
                       </label>
                     </div>
-                  ))}
-                </div>
+                  ))
+                ) : (
+                  <div className="AdminTaskManagement-empty-state">
+                    <FiUsers size={32} className="AdminTaskManagement-empty-icon" />
+                    <h5>No users available</h5>
+                    <p>Only users from same company and department are shown</p>
+                  </div>
+                )}
               </div>
               {newGroup.members.length > 0 && (
                 <div className="AdminTaskManagement-selected-chips">
-                  {newGroup.members.map(value => {
-                    const user = users.find(u => u._id === value);
-                    return user ? (
-                      <span key={value} className="AdminTaskManagement-selected-chip">
-                        {user.name}
-                      </span>
-                    ) : null;
-                  })}
+                  <div className="AdminTaskManagement-selected-label">{newGroup.members.length} member(s) selected</div>
                 </div>
               )}
             </div>
@@ -2328,7 +2554,11 @@ const AdminTaskManagement = () => {
         <div className="AdminTaskManagement-modal-footer">
           <button 
             className="AdminTaskManagement-btn" 
-            onClick={() => setOpenGroupDialog(false)}
+            onClick={() => {
+              setOpenGroupDialog(false);
+              resetGroupForm();
+            }}
+            disabled={isCreatingGroup}
           >
             Cancel
           </button>
@@ -2337,399 +2567,391 @@ const AdminTaskManagement = () => {
             onClick={handleCreateGroup}
             disabled={isCreatingGroup}
           >
-            {isCreatingGroup ? (editingGroup ? 'Updating...' : 'Creating...') : (editingGroup ? 'Update Group' : 'Create Group')}
+            {isCreatingGroup ? 'Saving...' : editingGroup ? 'Update Group' : 'Create Group'}
           </button>
         </div>
       </div>
     </div>
   );
 
-  // Group Management Tab Content
-  const renderGroupManagementTab = () => (
-    <div>
-      <div className="AdminTaskManagement-tab-header">
-        <h4>Group Management ({groups.length} groups)</h4>
-        <button
-          className="AdminTaskManagement-btn AdminTaskManagement-btn-primary"
-          onClick={() => {
-            setEditingGroup(null);
-            setNewGroup({ name: '', description: '', members: [] });
-            setOpenGroupDialog(true);
-          }}
-        >
-          <FiPlus /> Create Group
-        </button>
-      </div>
-
-      <div className="AdminTaskManagement-groups-grid">
-        {groups.map(group => (
-          <div key={group._id} className="AdminTaskManagement-group-card">
-            <div className="AdminTaskManagement-group-card-content">
-              <div className="AdminTaskManagement-group-card-header">
-                <div className="AdminTaskManagement-group-card-info">
-                  <h5>{group.name}</h5>
-                  <p>{group.description}</p>
-                </div>
-                <div className="AdminTaskManagement-group-card-actions">
-                  <button
-                    className="AdminTaskManagement-icon-btn"
-                    onClick={() => openGroupEditDialog(group)}
-                  >
-                    <FiEdit size={16} />
-                  </button>
-                  <button
-                    className="AdminTaskManagement-icon-btn AdminTaskManagement-icon-btn-danger"
-                    onClick={() => handleDeleteGroup(group._id)}
-                  >
-                    <FiTrash2 size={16} />
-                  </button>
-                </div>
-              </div>
-              <div className="AdminTaskManagement-group-card-divider"></div>
-              <div className="AdminTaskManagement-group-card-members">
-                <div className="AdminTaskManagement-group-card-members-label">
-                  Members ({group.members?.length || 0})
-                </div>
-                <div className="AdminTaskManagement-group-card-members-list">
-                  {group.members?.slice(0, 3).map(memberId => {
-                    const member = users.find(u => u._id === memberId);
-                    return member ? (
-                      <div key={memberId} className="AdminTaskManagement-group-card-member">
-                        <div className="AdminTaskManagement-group-card-member-avatar">
-                          {member.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="AdminTaskManagement-group-card-member-name">{member.name}</div>
-                      </div>
-                    ) : null;
-                  })}
-                  {(group.members?.length || 0) > 3 && (
-                    <div className="AdminTaskManagement-group-card-members-more">
-                      +{(group.members?.length || 0) - 3} more members
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {groups.length === 0 && (
-        <div className="AdminTaskManagement-empty-state">
-          <FiUsers size={48} className="AdminTaskManagement-empty-icon" />
-          <h5>No groups created yet</h5>
-          <p>Create your first group to assign tasks to multiple users at once</p>
-        </div>
-      )}
-    </div>
-  );
-
+  // Main useEffect for data fetching
   useEffect(() => {
+    // Debug localStorage
+    const debugLocalStorage = () => {
+      console.log('=== LOCALSTORAGE DEBUG ===');
+      const userStr = localStorage.getItem('user');
+      const token = localStorage.getItem('token');
+      
+      console.log('Token exists:', !!token);
+      console.log('User string:', userStr);
+      
+      try {
+        const parsed = JSON.parse(userStr || '{}');
+        console.log('Parsed user object:', parsed);
+        console.log('Parsed user keys:', Object.keys(parsed));
+        
+        // Check specific fields
+        if (parsed.user) {
+          console.log('Nested user object:', parsed.user);
+          console.log('Nested user keys:', Object.keys(parsed.user));
+        }
+      } catch (e) {
+        console.log('Cannot parse as JSON:', e.message);
+      }
+      
+      console.log('=== END DEBUG ===');
+    };
+    
+    debugLocalStorage();
     fetchUserData();
   }, []);
 
   useEffect(() => {
-    if (!authError && userId) {
-      fetchAllData(page, rowsPerPage);
-    }
-  }, [authError, userId]);
+    console.log('🔄 Auth check completed:', {
+      authError,
+      initialAuthCheck,
+      userId,
+      currentUser
+    });
 
-  // Debug useEffect for date states
+    if (initialAuthCheck) {
+      if (authError) {
+        console.log('❌ Skipping data fetch due to auth error');
+      } else if (userId) {
+        console.log('✅ User authenticated, fetching data...');
+        fetchAllData(page, rowsPerPage);
+      }
+    }
+  }, [authError, initialAuthCheck, userId, page, rowsPerPage]);
+
+  // Log debug info for date inputs
   useEffect(() => {
-    console.log('🔍 Debug newTask.dueDateTime:', newTask.dueDateTime);
-    if (newTask.dueDateTime) {
-      const parsed = parseDateTimeInput(newTask.dueDateTime);
-      console.log('🔍 Parsed as Date:', parsed);
-      console.log('🔍 Is valid?', parsed && !isNaN(parsed.getTime()));
+    if (openCreateDialog || openEditDialog) {
+      console.log('🔍 Debug newTask.dueDateTime:', newTask.dueDateTime);
+      console.log('🔍 Debug editTask.dueDateTime:', editTask.dueDateTime);
     }
-  }, [newTask.dueDateTime]);
+  }, [openCreateDialog, openEditDialog, newTask.dueDateTime, editTask.dueDateTime]);
 
+  // Handle auth error redirect
   useEffect(() => {
-    console.log('🔍 Debug editTask.dueDateTime:', editTask.dueDateTime);
-    if (editTask.dueDateTime) {
-      const parsed = parseDateTimeInput(editTask.dueDateTime);
-      console.log('🔍 Parsed as Date:', parsed);
+    if (authError && initialAuthCheck) {
+      const timer = setTimeout(() => {
+        navigate('/login');
+      }, 2000);
+      return () => clearTimeout(timer);
     }
-  }, [editTask.dueDateTime]);
+  }, [authError, initialAuthCheck, navigate]);
 
-  // Check if user is admin
-  const isAdmin = ['admin', 'manager', 'hr', 'SuperAdmin'].includes(userRole);
-  const isReportingAuditor = jobRole === 'Reporting-Auditor';
+  // Render Tasks Table with Enhanced UI
+  const renderTasksTable = () => {
+    if (loading && tasks.length === 0) {
+      return (
+        <div className="AdminTaskManagement-loading-container">
+          <div className="AdminTaskManagement-loading-spinner"></div>
+          <p>Loading tasks...</p>
+        </div>
+      );
+    }
 
-  if (!isAdmin && !isReportingAuditor) {
+    if (tasks.length === 0) {
+      return (
+        <div className="AdminTaskManagement-empty-state">
+          <FiCalendar size={48} className="AdminTaskManagement-empty-icon" />
+          <h4>No tasks found</h4>
+          <p>Try adjusting your filters or create a new task</p>
+          <button 
+            className="AdminTaskManagement-btn AdminTaskManagement-btn-primary"
+            onClick={() => setOpenCreateDialog(true)}
+          >
+            <FiPlus /> Create New Task
+          </button>
+        </div>
+      );
+    }
+
     return (
-      <div className="AdminTaskManagement-access-denied">
-        <div className="AdminTaskManagement-card AdminTaskManagement-text-center">
-          <div className="AdminTaskManagement-card-content">
-            <FiAlertCircle size={48} className="AdminTaskManagement-warning-icon" />
-            <h3>Access Denied</h3>
-            <p>You need admin privileges to access this page.</p>
-            <button className="AdminTaskManagement-btn AdminTaskManagement-btn-primary" onClick={() => navigate('/')}>
-              Go to Dashboard
+      <div className="AdminTaskManagement-table-responsive">
+        <table className="AdminTaskManagement-table">
+          <thead>
+            <tr>
+              <th>Task</th>
+              <th>Status</th>
+              <th>Priority</th>
+              <th>Due Date</th>
+              <th>Assigned To</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tasks.map((task) => (
+              <tr key={task._id} className={isOverdue(task) ? 'AdminTaskManagement-task-overdue' : ''}>
+                <td>
+                  <div className="AdminTaskManagement-task-title-cell">
+                    <div className="AdminTaskManagement-task-title">{task.title}</div>
+                    <div className="AdminTaskManagement-task-description">{task.description}</div>
+                  </div>
+                </td>
+                <td>
+                  <AdminTaskManagementStatusChip status={getTaskStatus(task)} />
+                </td>
+                <td>
+                  <AdminTaskManagementPriorityChip priority={task.priority} />
+                </td>
+                <td>
+                  <div className="AdminTaskManagement-due-date-cell">
+                    <div>{new Date(task.dueDateTime || task.dueDate).toLocaleDateString()}</div>
+                    <div className="AdminTaskManagement-due-time">
+                      {new Date(task.dueDateTime || task.dueDate).toLocaleTimeString([], { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                      })}
+                    </div>
+                    {isOverdue(task) && (
+                      <div className="AdminTaskManagement-overdue-badge">
+                        <FiAlertTriangle size={12} /> Overdue
+                      </div>
+                    )}
+                  </div>
+                </td>
+                <td>
+                  <div className="AdminTaskManagement-assigned-users">
+                    {getAllAssignedUsersWithStatus(task).map((assignedUser, index) => (
+                      <div key={index} className="AdminTaskManagement-user-badge">
+                        <span className="AdminTaskManagement-user-initial">
+                          {assignedUser.user.name?.charAt(0)?.toUpperCase() || 'U'}
+                        </span>
+                        <span className="AdminTaskManagement-user-info">
+                          <span className="AdminTaskManagement-user-name">{assignedUser.user.name}</span>
+                          <span className={`AdminTaskManagement-user-status AdminTaskManagement-user-status-${assignedUser.status}`}>
+                            {assignedUser.status}
+                          </span>
+                        </span>
+                      </div>
+                    ))}
+                    <div className="AdminTaskManagement-assigned-count">
+                      {getAssignedUsersCount(task)} assigned
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div className="AdminTaskManagement-action-buttons">
+                    <button
+                      className="AdminTaskManagement-icon-btn AdminTaskManagement-btn-sm"
+                      onClick={() => openEditTaskDialog(task)}
+                      title="Edit"
+                    >
+                      <FiEdit />
+                    </button>
+                    <button
+                      className="AdminTaskManagement-icon-btn AdminTaskManagement-btn-sm"
+                      onClick={() => fetchRemarks(task._id)}
+                      title="Remarks"
+                    >
+                      <FiMessageSquare />
+                    </button>
+                    <button
+                      className="AdminTaskManagement-icon-btn AdminTaskManagement-btn-sm"
+                      onClick={() => fetchActivityLogs(task._id)}
+                      title="Activity Logs"
+                    >
+                      <FiActivity />
+                    </button>
+                    <button
+                      className="AdminTaskManagement-icon-btn AdminTaskManagement-btn-sm"
+                      onClick={() => fetchUserStatuses(task)}
+                      title="User Statuses"
+                    >
+                      <FiUsers />
+                    </button>
+                    <button
+                      className="AdminTaskManagement-icon-btn AdminTaskManagement-btn-sm"
+                      onClick={() => openStatusChangeDialog(task)}
+                      title="Change Status"
+                    >
+                      <FiCheckCircle />
+                    </button>
+                    <button
+                      className="AdminTaskManagement-icon-btn AdminTaskManagement-btn-sm AdminTaskManagement-btn-danger"
+                      onClick={() => handleDeleteTask(task._id)}
+                      title="Delete"
+                    >
+                      <FiTrash2 />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {/* Pagination */}
+        <div className="AdminTaskManagement-pagination">
+          <div className="AdminTaskManagement-pagination-info">
+            Showing {tasks.length} of {totalTasks} tasks
+          </div>
+          <div className="AdminTaskManagement-pagination-controls">
+            <button
+              className="AdminTaskManagement-btn AdminTaskManagement-btn-outline"
+              onClick={() => handleChangePage(null, page - 1)}
+              disabled={page === 0}
+            >
+              Previous
             </button>
+            <span className="AdminTaskManagement-pagination-page">
+              Page {page + 1} of {Math.ceil(totalTasks / rowsPerPage)}
+            </span>
+            <button
+              className="AdminTaskManagement-btn AdminTaskManagement-btn-outline"
+              onClick={() => handleChangePage(null, page + 1)}
+              disabled={page >= Math.ceil(totalTasks / rowsPerPage) - 1}
+            >
+              Next
+            </button>
+            <select
+              className="AdminTaskManagement-select"
+              value={rowsPerPage}
+              onChange={handleChangeRowsPerPage}
+            >
+              <option value={10}>10 per page</option>
+              <option value={25}>25 per page</option>
+              <option value={50}>50 per page</option>
+              <option value={100}>100 per page</option>
+            </select>
           </div>
         </div>
       </div>
     );
-  }
+  };
 
-  if (loading && tasks.length === 0) {
-    return (
-      <div className="AdminTaskManagement-loading-container">
-        <div className="AdminTaskManagement-loading-spinner"></div>
-        <p>Loading data...</p>
+  // Snackbar/Toast Notification
+  const renderSnackbar = () => (
+    <div className={`AdminTaskManagement-snackbar ${snackbar.open ? 'AdminTaskManagement-snackbar-open' : ''} AdminTaskManagement-snackbar-${snackbar.severity}`}>
+      <div className="AdminTaskManagement-snackbar-content">
+        <div className="AdminTaskManagement-snackbar-message">
+          {snackbar.message}
+        </div>
+        <button
+          className="AdminTaskManagement-snackbar-close"
+          onClick={() => setSnackbar({ ...snackbar, open: false })}
+        >
+          <FiX size={18} />
+        </button>
       </div>
-    );
-  }
+    </div>
+  );
 
   return (
-    <div className="AdminTaskManagement">
-      {/* Header */}
-      <div className="AdminTaskManagement-header-card">
+    <div className="AdminTaskManagement-container">
+      {/* Header with Current User Info */}
+      <div className="AdminTaskManagement-header">
         <div className="AdminTaskManagement-header-content">
-          <div className="AdminTaskManagement-header-text">
-            <h1>Admin Task Management</h1>
-            <p>Manage all tasks, users, and groups in the system</p>
+          <div className="AdminTaskManagement-header-title">
+            <h2>Task Management</h2>
+            <div className="AdminTaskManagement-header-subtitle">
+              Manage and assign tasks to users and groups
+              {currentUser.company && currentUser.department && (
+                <div className="AdminTaskManagement-header-info">
+                  <span><FiBriefcase /> Company: {currentUser.company?.companyName || currentUser.company}</span>
+                  <span><FiBriefcase /> Department: {currentUser.department?.name || currentUser.department}</span>
+                </div>
+              )}
+            </div>
           </div>
           <div className="AdminTaskManagement-header-actions">
+            {userRole && (
+              <div className="AdminTaskManagement-user-info">
+                <div className="AdminTaskManagement-user-role-badge">
+                  {userRole}
+                </div>
+                {jobRole && (
+                  <div className="AdminTaskManagement-user-jobrole">
+                    {jobRole}
+                  </div>
+                )}
+              </div>
+            )}
             <button 
-              className="AdminTaskManagement-icon-btn AdminTaskManagement-notification-btn"
+              className="AdminTaskManagement-icon-btn AdminTaskManagement-btn-notifications"
               onClick={() => setOpenNotifications(true)}
             >
-              <FiBell size={18} />
+              <FiBell />
               {unreadNotificationCount > 0 && (
-                <span className="AdminTaskManagement-notification-badge">{unreadNotificationCount}</span>
+                <span className="AdminTaskManagement-notification-badge">
+                  {unreadNotificationCount}
+                </span>
               )}
             </button>
-
-            <button
-              className="AdminTaskManagement-btn AdminTaskManagement-btn-outline"
-              onClick={() => fetchAllData(page, rowsPerPage)}
-              disabled={loading}
-            >
-              <FiRefreshCw /> Refresh
-            </button>
-            <button
+            <button 
               className="AdminTaskManagement-btn AdminTaskManagement-btn-primary"
               onClick={() => setOpenCreateDialog(true)}
             >
               <FiPlus /> Create Task
             </button>
+            <button 
+              className="AdminTaskManagement-btn"
+              onClick={() => setOpenGroupDialog(true)}
+            >
+              <FiUsers /> Manage Groups
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Stats Cards with Filtered Data */}
-      {renderFilteredStatsCards()}
-
-      {/* Tabs */}
-      <div className="AdminTaskManagement-tabs-container">
-        <div className="AdminTaskManagement-tabs-header">
-          <button 
-            className={`AdminTaskManagement-tab-btn ${activeTab === 0 ? 'AdminTaskManagement-tab-active' : ''}`}
-            onClick={() => setActiveTab(0)}
-          >
-            All Tasks
-          </button>
-          <button 
-            className={`AdminTaskManagement-tab-btn ${activeTab === 1 ? 'AdminTaskManagement-tab-active' : ''}`}
-            onClick={() => setActiveTab(1)}
-          >
-            User Management
-          </button>
-          <button 
-            className={`AdminTaskManagement-tab-btn ${activeTab === 2 ? 'AdminTaskManagement-tab-active' : ''}`}
-            onClick={() => setActiveTab(2)}
-          >
-            Group Management
-          </button>
-        </div>
-
-        <div className="AdminTaskManagement-tab-content">
-          {activeTab === 0 && (
-            <>
-              {/* Enhanced Filters with Date Range */}
-              {renderEnhancedFilters()}
-
-              {/* Tasks Table with Pagination */}
-              <div className="AdminTaskManagement-table-container">
-                <table className="AdminTaskManagement-tasks-table">
-                  <thead>
-                    <tr>
-                      <th>Title</th>
-                      <th>Description</th>
-                      <th>Due Date</th>
-                      <th>Priority</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {tasks.map((task) => (
-                      <tr key={task._id} className={`AdminTaskManagement-table-row AdminTaskManagement-status-${getTaskStatus(task)}`}>
-                        <td>
-                          <div className="AdminTaskManagement-task-title">{task.title}</div>
-                        </td>
-                        <td>
-                          <div className="AdminTaskManagement-task-description" title={task.description}>
-                            {task.description}
-                          </div>
-                        </td>
-                        <td>
-                          <div className={`AdminTaskManagement-task-due-date ${isOverdue(task) ? 'AdminTaskManagement-task-overdue' : ''}`}>
-                            <FiCalendar size={14} />
-                            {task.dueDateTime ? new Date(task.dueDateTime).toLocaleDateString() : 
-                             task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'N/A'}
-                            {isOverdue(task) && <FiAlertTriangle size={14} />}
-                          </div>
-                        </td>
-                        <td>
-                          <AdminTaskManagementPriorityChip priority={task.priority} />
-                        </td>
-                        <td>
-                          <AdminTaskManagementStatusChip status={getTaskStatus(task)} />
-                        </td>
-                        <td>
-                          <div className="AdminTaskManagement-table-actions">
-                            <button
-                              className="AdminTaskManagement-icon-btn AdminTaskManagement-icon-btn-sm"
-                              onClick={() => openEditTaskDialog(task)}
-                              title="Edit"
-                            >
-                              <FiEdit3 size={16} />
-                            </button>
-                            <button
-                              className="AdminTaskManagement-icon-btn AdminTaskManagement-icon-btn-sm AdminTaskManagement-icon-btn-info"
-                              onClick={() => fetchUserStatuses(task)}
-                              title="View User Statuses"
-                            >
-                              <FiUsers size={16} />
-                            </button>
-                            <button
-                              className="AdminTaskManagement-icon-btn AdminTaskManagement-icon-btn-sm"
-                              onClick={() => fetchRemarks(task._id)}
-                              title="Remarks"
-                            >
-                              <FiMessageSquare size={16} />
-                            </button>
-                            <button
-                              className="AdminTaskManagement-icon-btn AdminTaskManagement-icon-btn-sm"
-                              onClick={() => fetchActivityLogs(task._id)}
-                              title="Activity Logs"
-                            >
-                              <FiActivity size={16} />
-                            </button>
-                            <button
-                              className="AdminTaskManagement-icon-btn AdminTaskManagement-icon-btn-sm"
-                              onClick={() => openStatusChangeDialog(task)}
-                              title="Change Status"
-                            >
-                              <FiUserCheck size={16} />
-                            </button>
-                            <button
-                              className="AdminTaskManagement-icon-btn AdminTaskManagement-icon-btn-sm AdminTaskManagement-icon-btn-danger"
-                              onClick={() => handleDeleteTask(task._id)}
-                              title="Delete"
-                            >
-                              <FiTrash size={16} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                
-                {/* Pagination */}
-                <div className="AdminTaskManagement-pagination">
-                  <div className="AdminTaskManagement-pagination-info">
-                    Showing {page * rowsPerPage + 1} to {Math.min((page + 1) * rowsPerPage, totalTasks)} of {totalTasks} tasks
-                  </div>
-                  <div className="AdminTaskManagement-pagination-controls">
-                    <button
-                      className="AdminTaskManagement-pagination-btn"
-                      onClick={() => handleChangePage(null, page - 1)}
-                      disabled={page === 0}
-                    >
-                      Previous
-                    </button>
-                    <div className="AdminTaskManagement-pagination-page">
-                      Page {page + 1} of {Math.ceil(totalTasks / rowsPerPage)}
-                    </div>
-                    <button
-                      className="AdminTaskManagement-pagination-btn"
-                      onClick={() => handleChangePage(null, page + 1)}
-                      disabled={page >= Math.ceil(totalTasks / rowsPerPage) - 1}
-                    >
-                      Next
-                    </button>
-                    <select
-                      className="AdminTaskManagement-pagination-select"
-                      value={rowsPerPage}
-                      onChange={handleChangeRowsPerPage}
-                    >
-                      <option value={5}>5 per page</option>
-                      <option value={10}>10 per page</option>
-                      <option value={25}>25 per page</option>
-                      <option value={50}>50 per page</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {tasks.length === 0 && !loading && (
-                <div className="AdminTaskManagement-empty-state">
-                  <FiCalendar size={48} className="AdminTaskManagement-empty-icon" />
-                  <h5>No tasks found</h5>
-                  <p>Try adjusting your filters or create a new task</p>
-                </div>
-              )}
-            </>
-          )}
-
-          {activeTab === 1 && (
-            <div>
-              <h4>User Management ({users.length} users)</h4>
-              <div className="AdminTaskManagement-users-grid">
-                {users.map(user => (
-                  <div key={user._id} className="AdminTaskManagement-user-card">
-                    <div className="AdminTaskManagement-user-card-content">
-                      <div className="AdminTaskManagement-user-card-avatar">
-                        {user.name?.charAt(0)?.toUpperCase() || 'U'}
-                      </div>
-                      <div className="AdminTaskManagement-user-card-info">
-                        <h5>{user.name}</h5>
-                        <p>{user.role}</p>
-                        <small>{user.email}</small>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+      {/* Authentication Error Message */}
+      {authError && initialAuthCheck && (
+        <div className="AdminTaskManagement-auth-error">
+          <div className="AdminTaskManagement-auth-error-content">
+            <FiAlertCircle size={24} />
+            <div className="AdminTaskManagement-auth-error-text">
+              <h4>Authentication Error</h4>
+              <p>Please login to access this page.</p>
+              <p>Redirecting to login...</p>
             </div>
-          )}
-
-          {activeTab === 2 && renderGroupManagementTab()}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Main Content */}
+      {!authError && (
+        <>
+          {/* Stats Cards */}
+          {renderFilteredStatsCards()}
+          
+          {/* Filters */}
+          {renderEnhancedFilters()}
+          
+          {/* Tasks Table */}
+          <div className="AdminTaskManagement-card">
+            <div className="AdminTaskManagement-card-header">
+              <div className="AdminTaskManagement-card-title">
+                <FiCalendar /> Tasks ({filteredStats.total})
+              </div>
+              <button 
+                className="AdminTaskManagement-icon-btn"
+                onClick={() => fetchAllData(page, rowsPerPage)}
+                disabled={loading}
+              >
+                <FiRefreshCw className={loading ? 'AdminTaskManagement-spin' : ''} />
+              </button>
+            </div>
+            <div className="AdminTaskManagement-card-content">
+              {renderTasksTable()}
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Dialogs */}
       {renderCreateTaskDialog()}
       {renderEditTaskDialog()}
-      {renderGroupManagementDialog()}
+      {renderGroupDialog()}
       {renderStatusChangeDialog()}
-      {renderNotificationsPanel()}
       {renderRemarksDialog()}
       {renderActivityLogsDialog()}
       {renderUserStatusDialog()}
+      {renderNotificationsPanel()}
       {renderImageZoomModal()}
-
-      {/* Snackbar */}
-      {snackbar.open && (
-        <div className={`AdminTaskManagement-snackbar AdminTaskManagement-snackbar-${snackbar.severity}`}>
-          {snackbar.message}
-        </div>
-      )}
+      {renderSnackbar()}
     </div>
   );
 };

@@ -3,6 +3,7 @@ import axios from 'axios';
 import API_URL from '../../../config';
 import './client-management.css';
 import './utility.css';
+
 // Import icons from react-icons
 import {
   FiBell,
@@ -467,7 +468,7 @@ const ServiceProgressCard = ({ service, clientId, clientProjectManagers = [], on
                     }}
                   >
                     <option value="">Select Assignee</option>
-                    {clientProjectManagers.map((pm) => (
+                    {Array.isArray(clientProjectManagers) && clientProjectManagers.map((pm) => (
                       <option key={pm.id || pm._id || pm.name} value={pm.name}>
                         {pm.name}
                       </option>
@@ -807,10 +808,12 @@ const AddClientModal = ({
     }
   };
 
-  const filteredManagers = projectManagers.filter(manager =>
-    manager.name?.toLowerCase().includes(managerSearch.toLowerCase()) ||
-    manager.email?.toLowerCase().includes(managerSearch.toLowerCase())
-  );
+  const filteredManagers = Array.isArray(projectManagers) 
+    ? projectManagers.filter(manager =>
+        manager.name?.toLowerCase().includes(managerSearch.toLowerCase()) ||
+        manager.email?.toLowerCase().includes(managerSearch.toLowerCase())
+      )
+    : [];
 
   if (!open) return null;
 
@@ -907,12 +910,24 @@ const AddClientModal = ({
                       </div>
                       
                       <div className="dropdown-list">
+                        {/* Debug Info - Temporary */}
+                        <div className="debug-dropdown-info" style={{
+                          padding: '8px',
+                          background: '#f0f0f0',
+                          fontSize: '11px',
+                          color: '#666',
+                          borderBottom: '1px solid #ddd'
+                        }}>
+                          Debug: {filteredManagers.length} users available
+                        </div>
+                        
                         {filteredManagers.length > 0 ? (
                           filteredManagers.map((manager) => (
                             <label
                               key={manager._id}
                               className="dropdown-item"
                               onClick={(e) => e.stopPropagation()}
+                              style={{ border: '1px solid #e0e0e0', marginBottom: '4px' }}
                             >
                               <input
                                 type="checkbox"
@@ -933,11 +948,14 @@ const AddClientModal = ({
                                   {manager.name?.charAt(0)?.toUpperCase() || 'U'}
                                 </div>
                                 <div>
-                                  <span className="font-medium">{manager.name}</span>
+                                  <span className="font-medium">{manager.name || 'No Name'}</span>
                                   <div className="dropdown-item-details">
-                                    <span>{manager.role}</span>
+                                    <span>{manager.role || 'User'}</span>
                                     <span>•</span>
-                                    <span>{manager.email}</span>
+                                    <span>{manager.email || 'No email'}</span>
+                                  </div>
+                                  <div style={{ fontSize: '10px', color: '#888' }}>
+                                    ID: {manager._id?.slice(-6) || 'N/A'}
                                   </div>
                                 </div>
                               </div>
@@ -945,7 +963,10 @@ const AddClientModal = ({
                           ))
                         ) : (
                           <div className="dropdown-empty">
-                            No managers found
+                            <p>No users found</p>
+                            <p style={{ fontSize: '12px', color: '#666' }}>
+                              Debug: projectManagers length = {projectManagers?.length || 0}
+                            </p>
                           </div>
                         )}
                       </div>
@@ -1183,6 +1204,11 @@ const ClientManagement = () => {
     itemsPerPage: 10
   });
 
+  const [tasksStats, setTasksStats] = useState({
+    pendingTasks: 0,
+    overdueTasks: 0
+  });
+
   const api = axios.create({
     baseURL: `${API_URL}/clientsservice`,
     timeout: 10000,
@@ -1197,6 +1223,98 @@ const ClientManagement = () => {
     baseURL: `${API_URL}/users`,
     timeout: 10000,
   });
+
+  // Project managers fetch function - UPDATED
+  const fetchProjectManagers = async () => {
+    try {
+      console.log('Fetching project managers...');
+      
+      const response = await usersApi.get('/company-users');
+      console.log('Full Response:', response.data);
+      
+      if (response.data && response.data.success) {
+        // IMPORTANT: Data is in response.data.message.users NOT response.data.users
+        const messageData = response.data.message;
+        console.log('Message Data:', messageData);
+        
+        // Get users from message.users array AND include currentUser
+        const users = messageData?.users || [];
+        const currentUser = messageData?.currentUser;
+        
+        console.log('Users from message.users:', users);
+        console.log('Current User:', currentUser);
+        console.log('Users Count:', users.length);
+        
+        // Combine all users from both sources
+        let allUsers = [...users];
+        
+        // Add current user if not already in array
+        if (currentUser) {
+          // Check if current user already exists in users array
+          const userExists = users.some(u => u.id === currentUser.id || u._id === currentUser.id);
+          
+          if (!userExists) {
+            // Add current user with proper structure
+            allUsers.push({
+              id: currentUser.id,
+              _id: currentUser.id,
+              name: currentUser.name,
+              email: currentUser.email || 'No email',
+              jobRole: currentUser.jobRole,
+              role: currentUser.jobRole,
+              phone: currentUser.phone || '',
+              department: currentUser.department || '',
+              isActive: true
+            });
+          }
+        }
+        
+        console.log('All Users (combined):', allUsers);
+        
+        // Format users to match expected structure for dropdown
+        const formattedManagers = allUsers.map(user => ({
+          _id: user.id || user._id || `temp-${Date.now()}`,
+          name: user.name || 'Unknown User',
+          email: user.email || `${user.name?.toLowerCase().replace(/\s+/g, '')}@example.com`,
+          role: user.jobRole || user.role || 'Team Member',
+          phone: user.phone || '',
+          department: user.department || '',
+          isActive: user.isActive || true
+        }));
+        
+        console.log('Formatted Managers for dropdown:', formattedManagers);
+        setProjectManagers(formattedManagers);
+      } else {
+        console.log('API not successful or no data');
+        // Fallback data
+        setProjectManagers([{
+          _id: "6980f49fc3721b782411d938",
+          name: "ITmanger",
+          email: "manager@gmail.com",
+          role: "Manager",
+          phone: "8340185241",
+          isActive: true
+        }]);
+      }
+    } catch (error) {
+      console.error('Error fetching project managers:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      
+      // Fallback data on error
+      setProjectManagers([{
+        _id: "6980f49fc3721b782411d938",
+        name: "ITmanger",
+        email: "manager@gmail.com",
+        role: "Manager",
+        phone: "8340185241",
+        isActive: true
+      }]);
+    }
+  };
 
   useEffect(() => {
     const requestInterceptor = api.interceptors.request.use(
@@ -1227,13 +1345,20 @@ const ClientManagement = () => {
 
     const usersRequestInterceptor = usersApi.interceptors.request.use(
       (config) => {
+        console.log('Users API Request:', {
+          url: config.url,
+          method: config.method,
+          headers: config.headers
+        });
         const token = localStorage.getItem('token') || localStorage.getItem('authToken');
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
+          console.log('Token attached:', token.slice(0, 20) + '...');
         }
         return config;
       },
       (error) => {
+        console.error('Users API Request Error:', error);
         return Promise.reject(error);
       }
     );
@@ -1245,6 +1370,16 @@ const ClientManagement = () => {
     };
   }, []);
 
+  // Debug useEffect for projectManagers
+  useEffect(() => {
+    console.log('Project Managers State Updated:', {
+      count: projectManagers.length,
+      data: projectManagers,
+      type: typeof projectManagers,
+      isArray: Array.isArray(projectManagers)
+    });
+  }, [projectManagers]);
+
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({
       ...prev,
@@ -1255,7 +1390,7 @@ const ClientManagement = () => {
 
   const getFullManagerObjects = (managerData) => {
     if (!managerData) return [];
-    
+
     if (Array.isArray(managerData) && managerData.length > 0) {
       if (typeof managerData[0] === 'object') {
         return managerData;
@@ -1267,7 +1402,7 @@ const ClientManagement = () => {
         });
       }
     }
-    
+
     return [];
   };
 
@@ -1275,51 +1410,46 @@ const ClientManagement = () => {
     try {
       setLoading(true);
       
-      const [clientsRes, servicesRes, usersRes] = await Promise.all([
+      // Fetch project managers first
+      await fetchProjectManagers();
+      
+      const [clientsRes, servicesRes] = await Promise.all([
         api.get('/', { params: filters }),
-        api.get('/services'),
-        usersApi.get('/all-users').catch(err => {
-          console.warn('Failed to fetch users:', err.message);
-          return { data: [] };
-        })
+        api.get('/services')
       ]);
       
       if (servicesRes.data?.success) {
         setServices(servicesRes.data.data || []);
       }
       
-      if (usersRes.data) {
-        setProjectManagers(usersRes.data);
+      if (clientsRes.data?.success) {
+        const clientsData = clientsRes.data.data || [];
         
-        if (clientsRes.data?.success) {
-          const clientsData = clientsRes.data.data || [];
+        const enhancedClients = clientsData.map(client => {
+          const managerData = client.projectManagers || client.projectManager || [];
+          const fullManagerObjects = getFullManagerObjects(managerData);
           
-          const enhancedClients = clientsData.map(client => {
-            const managerData = client.projectManagers || client.projectManager || [];
-            const fullManagerObjects = getFullManagerObjects(managerData);
-            
-            return {
-              ...client,
-              projectManagers: fullManagerObjects,
-              projectManager: fullManagerObjects.map(pm => pm.name)
-            };
-          });
-          
-          setClients(enhancedClients);
-          
-          if (clientsRes.data.pagination) {
-            setPagination(clientsRes.data.pagination);
-          } else {
-            setPagination({
-              currentPage: filters.page,
-              totalPages: Math.ceil(enhancedClients.length / filters.limit),
-              totalItems: enhancedClients.length,
-              itemsPerPage: filters.limit
-            });
-          }
+          return {
+            ...client,
+            projectManagers: fullManagerObjects,
+            projectManager: fullManagerObjects.map(pm => pm.name)
+          };
+        });
+        
+        setClients(enhancedClients);
+        
+        if (clientsRes.data.pagination) {
+          setPagination(clientsRes.data.pagination);
         } else {
-          setClients([]);
+          setPagination({
+            currentPage: filters.page,
+            totalPages: Math.ceil(enhancedClients.length / filters.limit),
+            totalItems: enhancedClients.length,
+            itemsPerPage: filters.limit
+          });
         }
+      } else {
+        setClients([]);
       }
       
       setError('');
@@ -1417,11 +1547,6 @@ const ClientManagement = () => {
       });
     }
   }, [clients]);
-
-  const [tasksStats, setTasksStats] = useState({
-    pendingTasks: 0,
-    overdueTasks: 0
-  });
 
   const handleAddService = async (serviceName) => {
     if (!serviceName.trim()) return;
@@ -1645,7 +1770,12 @@ const ClientManagement = () => {
     console.log(`Tasks updated for ${serviceName}:`, tasks);
   };
 
-
+  // Helper function to safely map over projectManagers
+  const safeMapProjectManagers = (callback) => {
+    return Array.isArray(projectManagers) 
+      ? projectManagers.map(callback)
+      : [];
+  };
 
   return (
     <div className="client-management">
@@ -1709,6 +1839,8 @@ const ClientManagement = () => {
           </div>
         ))}
       </div>
+
+
 
       {/* Notifications */}
       {error && (
@@ -1790,7 +1922,7 @@ const ClientManagement = () => {
                 onChange={(e) => handleFilterChange('projectManager', e.target.value)}
               >
                 <option value="">All Managers</option>
-                {projectManagers.map((manager) => (
+                {safeMapProjectManagers((manager) => (
                   <option key={manager._id || manager.id} value={manager.name}>
                     {manager.name}
                   </option>
@@ -1826,7 +1958,12 @@ const ClientManagement = () => {
         </div>
         
         <div className="card__content card-content-padded">
-          {clients.length > 0 ? (
+          {loading ? (
+            <div className="loading-container">
+              <div className="spinner"></div>
+              <p>Loading clients...</p>
+            </div>
+          ) : clients.length > 0 ? (
             <>
               {/* Table Container */}
               <div className="table-container">
@@ -2250,7 +2387,7 @@ const ClientManagement = () => {
                 <div className="form-group edit-managers-group">
                   <label className="form-label">Team *</label>
                   <div className="managers-list">
-                    {projectManagers.map((manager) => (
+                    {safeMapProjectManagers((manager) => (
                       <div key={manager._id} className="manager-checkbox-item">
                         <input
                           type="checkbox"

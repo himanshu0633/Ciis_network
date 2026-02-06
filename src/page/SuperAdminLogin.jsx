@@ -36,7 +36,7 @@ const SuperAdminLogin = () => {
         toast.success('Login successful! Redirecting...');
         
         // Redirect to super admin dashboard immediately
-        navigate('/ciis/SuperAdminDashboard');
+        navigate('/Ciis-network/department');
       } else {
         toast.error(response.data.message || 'Login failed');
       }
