@@ -47,7 +47,6 @@ const MyTaskManagement = () => {
   });
   const [editingGroup, setEditingGroup] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-  const [userRole, setUserRole] = useState('');
   const [userId, setUserId] = useState('');
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState(false);
@@ -72,7 +71,7 @@ const MyTaskManagement = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const fetchUserRole = () => {
+  const fetchUserData = () => {
     try {
       const userStr = localStorage.getItem('user');
       if (!userStr) {
@@ -87,7 +86,7 @@ const MyTaskManagement = () => {
       }
 
       const user = JSON.parse(userStr);
-      if (!user || !user.role || !user.id) {
+      if (!user || !user._id) {
         console.error('Invalid user data structure:', user);
         setAuthError(true);
         setSnackbar({
@@ -98,9 +97,9 @@ const MyTaskManagement = () => {
         return;
       }
 
-      setUserRole(user.role);
-      setUserId(user.id);
+      setUserId(user._id); // Using _id instead of id
       setAuthError(false);
+      console.log('User ID set:', user._id);
     } catch (error) {
       console.error('Error parsing user data:', error);
       setAuthError(true);
@@ -293,15 +292,14 @@ const MyTaskManagement = () => {
       const isAssignedUser = task.assignedUsers?.some(assignedUserId => 
         assignedUserId === userId || assignedUserId._id === userId
       );
-      const isPrivilegedUser = ['admin', 'manager', 'hr', 'SuperAdmin'].includes(userRole);
 
       let finalUserId = userId;
       let finalRemarks = remarks;
 
-      if (isTaskCreator || isPrivilegedUser) {
+      if (isTaskCreator) {
         if (selectedUserId) {
           finalUserId = selectedUserId;
-          finalRemarks = remarks || `Status changed to ${newStatus} by ${isTaskCreator ? 'task creator' : userRole}`;
+          finalRemarks = remarks || `Status changed to ${newStatus} by task creator`;
         } else if (task.assignedUsers && task.assignedUsers.length > 1) {
           setStatusChangeDialog({
             open: true,
@@ -312,7 +310,7 @@ const MyTaskManagement = () => {
           });
           return;
         } else {
-          finalRemarks = remarks || `Status changed to ${newStatus} by ${isTaskCreator ? 'task creator' : userRole}`;
+          finalRemarks = remarks || `Status changed to ${newStatus} by task creator`;
         }
       } else if (isAssignedUser) {
         finalRemarks = remarks || `Status changed to ${newStatus}`;
@@ -526,25 +524,11 @@ const MyTaskManagement = () => {
       return;
     }
 
-    if (userRole === 'user' && newTask.dueDateTime) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const dueDate = new Date(newTask.dueDateTime);
-      if (dueDate < today) {
-        setSnackbar({
-          open: true,
-          message: 'You can only create tasks for current and upcoming dates',
-          severity: 'error'
-        });
-        return;
-      }
-    }
-
     setIsCreatingTask(true);
 
     try {
       const formData = new FormData();
-      const finalAssignedUsers = userRole === 'user' ? [userId] : newTask.assignedUsers;
+      const finalAssignedUsers = newTask.assignedUsers.length > 0 ? newTask.assignedUsers : [userId];
 
       formData.append('title', newTask.title);
       formData.append('description', newTask.description);
@@ -753,18 +737,13 @@ const MyTaskManagement = () => {
     const isAssignedUser = task.assignedUsers?.some(assignedUserId => 
       assignedUserId === userId || assignedUserId._id === userId
     );
-    const isPrivileged = ['admin', 'manager', 'hr', 'SuperAdmin'].includes(userRole);
     
-    return isTaskCreator || isAssignedUser || isPrivileged;
+    return isTaskCreator || isAssignedUser;
   };
 
-  const isRegularUser = userRole === 'user';
-  const isPrivilegedUser = ['admin', 'manager', 'hr', 'SuperAdmin'].includes(userRole);
-
   const renderActionButtons = (task) => {
-    const isPrivileged = isPrivilegedUser;
     const isTaskCreator = task.createdBy === userId || task.createdBy?._id === userId;
-    const canEditDelete = isPrivileged || isTaskCreator;
+    const canEditDelete = isTaskCreator;
     
     return (
       <div className="MyTaskManagement-action-buttons">
@@ -819,9 +798,8 @@ const MyTaskManagement = () => {
         value={myStatus}
         onChange={(e) => {
           const isTaskCreator = task.createdBy === userId || task.createdBy?._id === userId;
-          const isPrivileged = isPrivilegedUser;
           
-          if ((isTaskCreator || isPrivileged) && task.assignedUsers && task.assignedUsers.length > 1) {
+          if (isTaskCreator && task.assignedUsers && task.assignedUsers.length > 1) {
             setStatusChangeDialog({
               open: true,
               taskId: task._id,
@@ -861,7 +839,7 @@ const MyTaskManagement = () => {
   };
 
   useEffect(() => {
-    fetchUserRole();
+    fetchUserData();
   }, []);
 
   useEffect(() => {
@@ -901,7 +879,7 @@ const MyTaskManagement = () => {
                 <th>Due Date</th>
                 <th>Priority</th>
                 <th>My Status</th>
-                {showAssignedByMe && isPrivilegedUser && (
+                {showAssignedByMe && (
                   <th>Assigned Users</th>
                 )}
                 <th>Repeat</th>
@@ -956,7 +934,7 @@ const MyTaskManagement = () => {
                       </span>
                     </td>
                     
-                    {showAssignedByMe && isPrivilegedUser && (
+                    {showAssignedByMe && (
                       <td>
                         <div className="MyTaskManagement-assigned-users">
                           {allUsersStatus.slice(0, 2).map((userStatus, index) => (
@@ -1063,7 +1041,7 @@ const MyTaskManagement = () => {
                     </span>
                   </div>
 
-                  {showAssignedByMe && isPrivilegedUser && allUsersStatus.length > 0 && (
+                  {showAssignedByMe && allUsersStatus.length > 0 && (
                     <div className="MyTaskManagement-mobile-assigned-users">
                       <div className="MyTaskManagement-assigned-users-label">Assigned Users:</div>
                       <div className="MyTaskManagement-mobile-users-list">
@@ -1663,75 +1641,71 @@ const MyTaskManagement = () => {
             </div>
           </div>
 
-          {!isRegularUser && (
-            <div className="MyTaskManagement-create-task-section">
-              <h3>👥 Assign to Team Members</h3>
-              
-              <div className="MyTaskManagement-form-group">
-                <label>Select Team Members</label>
-                <select
-                  multiple
-                  className="MyTaskManagement-multi-select"
-                  value={newTask.assignedUsers}
-                  onChange={(e) => {
-                    const selected = Array.from(e.target.selectedOptions, option => option.value);
-                    setNewTask({ ...newTask, assignedUsers: selected });
-                  }}
-                >
-                  {users.map((user) => (
-                    <option key={user._id} value={user._id}>
-                      {user.name} ({user.role})
-                    </option>
-                  ))}
-                </select>
-                <div className="MyTaskManagement-selected-users">
-                  {newTask.assignedUsers.map(userId => {
-                    const user = users.find(u => u._id === userId);
-                    return user ? (
-                      <span key={userId} className="MyTaskManagement-selected-user-chip">
-                        {user.name}
-                      </span>
-                    ) : null;
-                  })}
-                </div>
+          <div className="MyTaskManagement-create-task-section">
+            <h3>👥 Assign to Team Members</h3>
+            
+            <div className="MyTaskManagement-form-group">
+              <label>Select Team Members</label>
+              <select
+                multiple
+                className="MyTaskManagement-multi-select"
+                value={newTask.assignedUsers}
+                onChange={(e) => {
+                  const selected = Array.from(e.target.selectedOptions, option => option.value);
+                  setNewTask({ ...newTask, assignedUsers: selected });
+                }}
+              >
+                {users.map((user) => (
+                  <option key={user._id} value={user._id}>
+                    {user.name} ({user.role})
+                  </option>
+                ))}
+              </select>
+              <div className="MyTaskManagement-selected-users">
+                {newTask.assignedUsers.map(userId => {
+                  const user = users.find(u => u._id === userId);
+                  return user ? (
+                    <span key={userId} className="MyTaskManagement-selected-user-chip">
+                      {user.name}
+                    </span>
+                  ) : null;
+                })}
               </div>
             </div>
-          )}
+          </div>
 
-          {isPrivilegedUser && (
-            <div className="MyTaskManagement-create-task-section">
-              <h3>📁 Assign to Groups</h3>
-              
-              <div className="MyTaskManagement-form-group">
-                <label>Select Groups</label>
-                <select
-                  multiple
-                  className="MyTaskManagement-multi-select"
-                  value={newTask.assignedGroups}
-                  onChange={(e) => {
-                    const selected = Array.from(e.target.selectedOptions, option => option.value);
-                    setNewTask({ ...newTask, assignedGroups: selected });
-                  }}
-                >
-                  {groups.map((group) => (
-                    <option key={group._id} value={group._id}>
-                      {group.name} ({group.members.length} members)
-                    </option>
-                  ))}
-                </select>
-                <div className="MyTaskManagement-selected-groups">
-                  {newTask.assignedGroups.map(groupId => {
-                    const group = groups.find(g => g._id === groupId);
-                    return group ? (
-                      <span key={groupId} className="MyTaskManagement-selected-group-chip">
-                        {group.name} ({group.members.length})
-                      </span>
-                    ) : null;
-                  })}
-                </div>
+          <div className="MyTaskManagement-create-task-section">
+            <h3>📁 Assign to Groups</h3>
+            
+            <div className="MyTaskManagement-form-group">
+              <label>Select Groups</label>
+              <select
+                multiple
+                className="MyTaskManagement-multi-select"
+                value={newTask.assignedGroups}
+                onChange={(e) => {
+                  const selected = Array.from(e.target.selectedOptions, option => option.value);
+                  setNewTask({ ...newTask, assignedGroups: selected });
+                }}
+              >
+                {groups.map((group) => (
+                  <option key={group._id} value={group._id}>
+                    {group.name} ({group.members.length} members)
+                  </option>
+                ))}
+              </select>
+              <div className="MyTaskManagement-selected-groups">
+                {newTask.assignedGroups.map(groupId => {
+                  const group = groups.find(g => g._id === groupId);
+                  return group ? (
+                    <span key={groupId} className="MyTaskManagement-selected-group-chip">
+                      {group.name} ({group.members.length})
+                    </span>
+                  ) : null;
+                })}
               </div>
             </div>
-          )}
+          </div>
         </div>
 
         <div className="MyTaskManagement-create-task-footer">
@@ -1957,7 +1931,7 @@ const MyTaskManagement = () => {
               )}
             </button>
 
-            {tab !== 2 && isPrivilegedUser && (
+            {tab !== 2 && (
               <button
                 className="MyTaskManagement-manage-groups-btn"
                 onClick={() => setTab(2)}
@@ -2018,14 +1992,12 @@ const MyTaskManagement = () => {
                   <span className="MyTaskManagement-tab-badge">{stats.total}</span>
                 )}
               </button>
-              {isPrivilegedUser && (
-                <button
-                  className={`MyTaskManagement-tab ${tab === 1 ? 'MyTaskManagement-active-tab' : ''}`}
-                  onClick={() => setTab(1)}
-                >
-                  👥 Assigned by Me
-                </button>
-              )}
+              <button
+                className={`MyTaskManagement-tab ${tab === 1 ? 'MyTaskManagement-active-tab' : ''}`}
+                onClick={() => setTab(1)}
+              >
+                👥 Assigned by Me
+              </button>
             </div>
 
             {/* Tab Content */}
