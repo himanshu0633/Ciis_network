@@ -11,12 +11,10 @@ import {
   Paper,
   Link,
   Grid,
-  Avatar,
   Fade,
   Alert,
-  Card,
-  CardContent,
-  Divider
+  useTheme,
+  useMediaQuery
 } from '@mui/material';
 import {
   Visibility,
@@ -32,6 +30,11 @@ import { useAuth } from '../context/useAuth';
 import { toast } from 'react-toastify';
 
 const Login = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
+  const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
+
   const [form, setForm] = useState({
     email: '',
     password: ''
@@ -53,33 +56,27 @@ const Login = () => {
   useEffect(() => {
     const extractCompanyIdentifier = () => {
       const path = window.location.pathname;
-      console.log('🔗 Current path:', path);
       
       const match1 = path.match(/\/company\/([^/]+)\/login/);
       if (match1 && match1[1]) {
-        console.log('✅ Extracted identifier from /company/{id}/login:', match1[1]);
         return match1[1];
       }
 
       const match2 = path.match(/\/company\/([^/]+)/);
       if (match2 && match2[1]) {
-        console.log('✅ Extracted identifier from /company/{id}:', match2[1]);
         return match2[1];
       }
 
       const segments = path.split('/').filter(Boolean);
       if (segments.length >= 2 && segments[0] === 'company') {
-        console.log('✅ Extracted identifier from segments:', segments[1]);
         return segments[1];
       }
 
-      console.log('⚠️ No company identifier found in URL');
       return null;
     };
 
     const identifier = extractCompanyIdentifier();
     if (identifier) {
-      console.log('🎯 Setting company identifier:', identifier);
       setCompanyIdentifier(identifier);
       fetchCompanyDetails(identifier);
     } else {
@@ -191,8 +188,7 @@ const Login = () => {
       toast.success("Login successful!");
 
       // Redirect based on role
-      const redirectPath =
-        userData.role === 'admin' ? '/ciisUser/user-dashboard' : '/ciisUser/user-dashboard';
+      const redirectPath = '/ciisUser/user-dashboard';
 
       navigate(redirectPath);
     } catch (err) {
@@ -282,145 +278,226 @@ const Login = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        p: 2
+        p: isMobile ? 1 : 2
       }}
     >
-      <Container maxWidth="md">
+      <Container 
+        maxWidth="md" 
+        sx={{ 
+          px: isMobile ? 1 : 2,
+          py: isMobile ? 2 : 0
+        }}
+      >
         <Fade in>
           <Paper
-            elevation={24}
+            elevation={isMobile ? 6 : 24}
             sx={{
-              borderRadius: 4,
+              borderRadius: isMobile ? 2 : 4,
               overflow: 'hidden',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              minHeight: isMobile ? 'auto' : '600px'
             }}
           >
-            <Grid container sx={{ minHeight: '600px' }}>
-              {/* LEFT SECTION - Company Branding */}
-              <Grid
-                item
-                xs={12}
-                md={5}
-                sx={{
-                  background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  p: { xs: 6.5, md: 4 },
-                  position: 'relative',
-                  overflow: 'hidden'
-                }}
-              >
-                {/* Subtle pattern overlay */}
-                <Box
+            <Grid container sx={{ minHeight: isMobile ? 'auto' : '600px' }}>
+              {/* LEFT SECTION - Company Branding - Hidden on mobile, shown on tablet and desktop */}
+              {!isMobile && (
+                <Grid
+                  item
+                  xs={12}
+                  md={5}
                   sx={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    backgroundImage: 'radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 1px, transparent 1px)',
-                    backgroundSize: '40px 40px',
-                    opacity: 0.3
-                  }}
-                />
-
-                <Box
-                  sx={{
+                    background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    p: isTablet ? 4 : 6,
                     position: 'relative',
-                    zIndex: 1,
-                    textAlign: 'center',
-                    color: 'white'
+                    overflow: 'hidden'
                   }}
                 >
-                  {/* Company Logo */}
+                  {/* Subtle pattern overlay */}
                   <Box
                     sx={{
-                      width: 120,
-                      height: 120,
-                      borderRadius: 3,
-                      backgroundColor: 'white',
-                      backdropFilter: 'blur(10px)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      margin: '0 auto 32px',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
-                      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      backgroundImage: 'radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 1px, transparent 1px)',
+                      backgroundSize: '40px 40px',
+                      opacity: 0.3
+                    }}
+                  />
+
+                  <Box
+                    sx={{
+                      position: 'relative',
+                      zIndex: 1,
+                      textAlign: 'center',
+                      color: 'white'
                     }}
                   >
-                    {companyLoading ? (
-                      <CircularProgress size={40} color="inherit" />
-                    ) : companyDetails?.logo ? (
-                      <Box
-                        component="img"
-                        src={companyDetails.logo}
-                        alt={companyDetails.companyName}
-                        sx={{
-                          width: 80,
-                          height: 80,
-                          objectFit: 'contain'
-                        }}
-                      />
-                    ) : (
-                      <Business
-                        sx={{
-                          fontSize: 48,
-                          color: 'white'
-                        }}
-                      />
-                    )}
-                  </Box>
+                    {/* Company Logo */}
+                    <Box
+                      sx={{
+                        width: isTablet ? 100 : 120,
+                        height: isTablet ? 100 : 120,
+                        borderRadius: 3,
+                        backgroundColor: 'white',
+                        backdropFilter: 'blur(10px)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        margin: '0 auto',
+                        mb: isTablet ? 3 : 4,
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
+                      }}
+                    >
+                      {companyLoading ? (
+                        <CircularProgress size={isTablet ? 30 : 40} color="inherit" />
+                      ) : companyDetails?.logo ? (
+                        <Box
+                          component="img"
+                          src={companyDetails.logo}
+                          alt={companyDetails.companyName}
+                          sx={{
+                            width: isTablet ? 70 : 80,
+                            height: isTablet ? 70 : 80,
+                            objectFit: 'contain'
+                          }}
+                        />
+                      ) : (
+                        <Business
+                          sx={{
+                            fontSize: isTablet ? 40 : 48,
+                            color: 'white'
+                          }}
+                        />
+                      )}
+                    </Box>
 
-                  {/* Company Name */}
-                  <Typography
-                      variant="h4"
+                    {/* Company Name */}
+                    <Typography
+                      variant={isTablet ? "h5" : "h4"}
                       sx={{
                         fontFamily: '"Oswald", sans-serif',
                         fontWeight: 600,
                         mb: 1,
                         letterSpacing: '-0.5px',
-                        textShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                        textShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                        fontSize: isTablet ? '1.5rem' : '2rem'
                       }}
                     >
                       {companyLoading ? 'Loading...' : (companyDetails?.companyName || 'CIIS NETWORK')}
                     </Typography>
 
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      opacity: 0.9,
-                      letterSpacing: '0.5px'
-                    }}
-                  >
-                    Secure Enterprise Portal
-                  </Typography>
-                </Box>
-              </Grid>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        opacity: 0.9,
+                        letterSpacing: '0.5px',
+                        fontSize: isTablet ? '0.875rem' : '1rem'
+                      }}
+                    >
+                      Secure Enterprise Portal
+                    </Typography>
+                  </Box>
+                </Grid>
+              )}
 
               {/* RIGHT SECTION - Login Form */}
               <Grid
                 item
                 xs={12}
-                md={7}
+                md={isDesktop ? 7 : (isTablet ? 12 : 12)}
                 sx={{
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'center',
-                  p: { xs: 4, md: 6 }
+                  p: isMobile ? 3 : isTablet ? 4 : 6
                 }}
               >
-                <Box sx={{ maxWidth: '400px', mx: 'auto', width: '100%' }}>
+                <Box sx={{ 
+                  maxWidth: '400px', 
+                  mx: 'auto', 
+                  width: '100%',
+                  mt: isMobile ? 2 : 0
+                }}>
+                  {/* Mobile Logo */}
+                  {isMobile && (
+                    <Box sx={{ textAlign: 'center', mb: 3 }}>
+                      <Box
+                        sx={{
+                          width: 80,
+                          height: 80,
+                          borderRadius: '50%',
+                          backgroundColor: 'white',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          margin: '0 auto 16px',
+                          border: '2px solid rgba(0, 0, 0, 0.1)',
+                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                        }}
+                      >
+                        {companyLoading ? (
+                          <CircularProgress size={30} color="inherit" />
+                        ) : companyDetails?.logo ? (
+                          <Box
+                            component="img"
+                            src={companyDetails.logo}
+                            alt={companyDetails.companyName}
+                            sx={{
+                              width: 50,
+                              height: 50,
+                              objectFit: 'contain',
+                              borderRadius: '50%'
+                            }}
+                          />
+                        ) : (
+                          <Business
+                            sx={{
+                              fontSize: 36,
+                              color: '#4f46e5'
+                            }}
+                          />
+                        )}
+                      </Box>
+                      <Typography
+                        variant="h5"
+                        sx={{
+                          fontFamily: '"Oswald", sans-serif',
+                          fontWeight: 600,
+                          mb: 1,
+                          color: 'text.primary'
+                        }}
+                      >
+                        {companyLoading ? 'Loading...' : (companyDetails?.companyName || 'CIIS NETWORK')}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: 'text.secondary',
+                          mb: 2
+                        }}
+                      >
+                        Secure Enterprise Portal
+                      </Typography>
+                    </Box>
+                  )}
+
                   {/* Form Header */}
-                  <Box sx={{ textAlign: 'center', mb: 4 }}>
+                  <Box sx={{ textAlign: 'center', mb: isMobile ? 3 : 4 }}>
                     <Typography
-                      variant="h4"
+                      variant={isMobile ? "h5" : "h4"}
                       sx={{
                         fontWeight: 700,
                         mb: 1,
                         color: 'text.primary',
-                        letterSpacing: '-0.5px'
+                        letterSpacing: '-0.5px',
+                        fontSize: isMobile ? '1.5rem' : isTablet ? '1.75rem' : '2rem'
                       }}
                     >
                       {twoFactorRequired ? 'Two-Factor Authentication' : 'Welcome Back'}
@@ -429,7 +506,8 @@ const Login = () => {
                       variant="body1"
                       sx={{
                         color: 'text.secondary',
-                        mb: 3
+                        mb: 3,
+                        fontSize: isMobile ? '0.9rem' : '1rem'
                       }}
                     >
                       {twoFactorRequired
@@ -445,9 +523,7 @@ const Login = () => {
                       sx={{
                         mb: 3,
                         borderRadius: 2,
-                        '& .MuiAlert-icon': {
-                          alignItems: 'center'
-                        }
+                        fontSize: isMobile ? '0.875rem' : '0.9rem'
                       }}
                     >
                       {errors.general}
@@ -470,9 +546,11 @@ const Login = () => {
                         disabled={loading}
                         autoComplete="email"
                         margin="normal"
+                        size={isMobile ? "small" : "medium"}
                         sx={{
                           '& .MuiOutlinedInput-root': {
                             borderRadius: 2,
+                            fontSize: isMobile ? '0.9rem' : '1rem',
                             '&:hover fieldset': {
                               borderColor: 'primary.main'
                             }
@@ -481,7 +559,10 @@ const Login = () => {
                         InputProps={{
                           startAdornment: (
                             <InputAdornment position="start">
-                              <EmailOutlined color="action" />
+                              <EmailOutlined 
+                                fontSize={isMobile ? "small" : "medium"} 
+                                color="action" 
+                              />
                             </InputAdornment>
                           )
                         }}
@@ -500,9 +581,11 @@ const Login = () => {
                         disabled={loading}
                         autoComplete="current-password"
                         margin="normal"
+                        size={isMobile ? "small" : "medium"}
                         sx={{
                           '& .MuiOutlinedInput-root': {
                             borderRadius: 2,
+                            fontSize: isMobile ? '0.9rem' : '1rem',
                             '&:hover fieldset': {
                               borderColor: 'primary.main'
                             }
@@ -511,7 +594,10 @@ const Login = () => {
                         InputProps={{
                           startAdornment: (
                             <InputAdornment position="start">
-                              <LockOutlined color="action" />
+                              <LockOutlined 
+                                fontSize={isMobile ? "small" : "medium"} 
+                                color="action" 
+                              />
                             </InputAdornment>
                           ),
                           endAdornment: (
@@ -519,9 +605,12 @@ const Login = () => {
                               <IconButton
                                 onClick={() => setShowPassword(!showPassword)}
                                 edge="end"
-                                size="small"
+                                size={isMobile ? "small" : "medium"}
                               >
-                                {showPassword ? <VisibilityOff /> : <Visibility />}
+                                {showPassword ? 
+                                  <VisibilityOff fontSize={isMobile ? "small" : "medium"} /> : 
+                                  <Visibility fontSize={isMobile ? "small" : "medium"} />
+                                }
                               </IconButton>
                             </InputAdornment>
                           )
@@ -529,7 +618,7 @@ const Login = () => {
                       />
 
                       {/* Forgot Password Link */}
-                      {/* <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
                         <Link
                           href={`${window.location.pathname.replace('/login', '/forgot-password')}`}
                           variant="body2"
@@ -537,6 +626,7 @@ const Login = () => {
                             color: 'primary.main',
                             textDecoration: 'none',
                             fontWeight: 500,
+                            fontSize: isMobile ? '0.8rem' : '0.875rem',
                             '&:hover': {
                               textDecoration: 'underline'
                             }
@@ -544,7 +634,7 @@ const Login = () => {
                         >
                           Forgot password?
                         </Link>
-                      </Box> */}
+                      </Box>
 
                       {/* Sign In Button */}
                       <Button
@@ -554,9 +644,9 @@ const Login = () => {
                         disabled={loading}
                         sx={{
                           mt: 3,
-                          py: 1.5,
+                          py: isMobile ? 1 : 1.5,
                           borderRadius: 2,
-                          fontSize: '1rem',
+                          fontSize: isMobile ? '0.9rem' : '1rem',
                           fontWeight: 600,
                           textTransform: 'none',
                           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -568,9 +658,12 @@ const Login = () => {
                         }}
                         startIcon={
                           loading ? (
-                            <CircularProgress size={20} color="inherit" />
+                            <CircularProgress 
+                              size={isMobile ? 16 : 20} 
+                              color="inherit" 
+                            />
                           ) : (
-                            <LoginIcon />
+                            <LoginIcon fontSize={isMobile ? "small" : "medium"} />
                           )
                         }
                       >
@@ -578,8 +671,14 @@ const Login = () => {
                       </Button>
 
                       {/* Sign Up Link */}
-                      {/* <Box sx={{ mt: 3, textAlign: 'center' }}>
-                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                      <Box sx={{ mt: 3, textAlign: 'center' }}>
+                        <Typography 
+                          variant="body2" 
+                          sx={{ 
+                            color: 'text.secondary',
+                            fontSize: isMobile ? '0.8rem' : '0.875rem'
+                          }}
+                        >
                           Don't have an account?{' '}
                           <Link
                             href={`${window.location.pathname.replace('/login', '/register')}`}
@@ -588,6 +687,7 @@ const Login = () => {
                               color: 'primary.main',
                               fontWeight: 600,
                               textDecoration: 'none',
+                              fontSize: isMobile ? '0.8rem' : '0.875rem',
                               '&:hover': {
                                 textDecoration: 'underline'
                               }
@@ -596,7 +696,7 @@ const Login = () => {
                             Sign up
                           </Link>
                         </Typography>
-                      </Box> */}
+                      </Box>
                     </form>
                   ) : (
                     /* Two-Factor Authentication Form */
@@ -616,21 +716,31 @@ const Login = () => {
                         helperText={errors.twoFactor}
                         disabled={loading}
                         margin="normal"
+                        size={isMobile ? "small" : "medium"}
                         sx={{
                           '& .MuiOutlinedInput-root': {
-                            borderRadius: 2
+                            borderRadius: 2,
+                            fontSize: isMobile ? '0.9rem' : '1rem'
                           }
                         }}
                         InputProps={{
                           startAdornment: (
                             <InputAdornment position="start">
-                              <LockOutlined color="action" />
+                              <LockOutlined 
+                                fontSize={isMobile ? "small" : "medium"} 
+                                color="action" 
+                              />
                             </InputAdornment>
                           )
                         }}
                       />
 
-                      <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
+                      <Box sx={{ 
+                        mt: 3, 
+                        display: 'flex', 
+                        gap: 2,
+                        flexDirection: isMobile ? 'column' : 'row'
+                      }}>
                         <Button
                           fullWidth
                           variant="outlined"
@@ -639,7 +749,9 @@ const Login = () => {
                           sx={{
                             borderRadius: 2,
                             textTransform: 'none',
-                            fontWeight: 600
+                            fontWeight: 600,
+                            py: isMobile ? 1 : 1.5,
+                            fontSize: isMobile ? '0.9rem' : '1rem'
                           }}
                         >
                           Back
@@ -656,6 +768,8 @@ const Login = () => {
                             fontWeight: 600,
                             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                             boxShadow: '0 4px 14px 0 rgba(102, 126, 234, 0.4)',
+                            py: isMobile ? 1 : 1.5,
+                            fontSize: isMobile ? '0.9rem' : '1rem',
                             '&:hover': {
                               background: 'linear-gradient(135deg, #5a6fd8 0%, #6a3a9a 100%)',
                               boxShadow: '0 6px 20px rgba(102, 126, 234, 0.5)'
@@ -671,11 +785,15 @@ const Login = () => {
                         sx={{
                           mt: 2,
                           textAlign: 'center',
-                          color: 'text.secondary'
+                          color: 'text.secondary',
+                          fontSize: isMobile ? '0.8rem' : '0.875rem'
                         }}
                       >
                         Having trouble?{' '}
-                        <Link href="#" variant="body2" sx={{ fontWeight: 600 }}>
+                        <Link href="#" variant="body2" sx={{ 
+                          fontWeight: 600,
+                          fontSize: isMobile ? '0.8rem' : '0.875rem'
+                        }}>
                           Resend code
                         </Link>
                       </Typography>
@@ -689,15 +807,22 @@ const Login = () => {
                       sx={{
                         color: 'text.disabled',
                         lineHeight: 1.5,
-                        display: 'block'
+                        display: 'block',
+                        fontSize: isMobile ? '0.7rem' : '0.75rem'
                       }}
                     >
                       By signing in, you agree to our{' '}
-                      <Link href="#" variant="caption" sx={{ color: 'text.disabled' }}>
+                      <Link href="#" variant="caption" sx={{ 
+                        color: 'text.disabled',
+                        fontSize: isMobile ? '0.7rem' : '0.75rem'
+                      }}>
                         Terms of Service
                       </Link>{' '}
                       and{' '}
-                      <Link href="#" variant="caption" sx={{ color: 'text.disabled' }}>
+                      <Link href="#" variant="caption" sx={{ 
+                        color: 'text.disabled',
+                        fontSize: isMobile ? '0.7rem' : '0.75rem'
+                      }}>
                         Privacy Policy
                       </Link>
                     </Typography>
