@@ -1229,7 +1229,7 @@ const ClientManagement = () => {
     try {
       console.log('Fetching project managers...');
       
-      const response = await usersApi.get('/department-users');
+      const response = await usersApi.get('/company-users');
       console.log('Full Response:', response.data);
       
       if (response.data && response.data.success) {

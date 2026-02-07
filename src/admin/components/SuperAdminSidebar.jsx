@@ -15,30 +15,10 @@ import {
 } from '@mui/material';
 import {
   Dashboard as DashboardIcon,
-  Business as CompanyIcon, // ✅ NEW icon
-  CorporateFare as DepartmentIcon, // Changed icon
-  WorkOutline as JobRoleIcon, // ✅ NEW icon
-  PersonAdd as CreateUserIcon, // ✅ NEW icon
-  VpnKey as PasswordIcon,
-  Badge as EmpDetailsIcon,
-  EventAvailable as EmpLeavesIcon,
-  Computer as EmpAssetsIcon,
-  Schedule as EmpAttendanceIcon,
-  Task as TaskManagementIcon,
-  Assignment as TaskDetailsIcon,
-  AddTask as AdminTaskIcon,
-  MeetingRoom as MeetingIcon,
-  AssignmentInd as AdminProjectIcon,
-  ListAlt as AllTasksIcon,
-  PeopleAlt as ClientIcon,
-  NotificationsActive as AlertIcon,
-  Today as AttendanceIcon,
-  DevicesOther as MyAssetsIcon,
-  BeachAccess as MyLeavesIcon,
-  TrendingUp as MyPerformanceIcon,
-  ManageAccounts as ProfileIcon,
-  Work as ProjectIcon,
-  AccessTime as ClockIcon,
+  Business as CompanyIcon,
+  CorporateFare as DepartmentIcon,
+  WorkOutline as JobRoleIcon,
+  PersonAdd as CreateUserIcon,
 } from '@mui/icons-material';
 
 // Styled components (same as before)
@@ -103,25 +83,137 @@ const StyledListItemIcon = styled(ListItemIcon)(({ theme }) => ({
   color: 'inherit',
 }));
 
-// Updated Sidebar Component with new routes
 const Sidebar = ({ isOpen, closeSidebar }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  
+  const [companyRole, setCompanyRole] = useState('employee');
+  
+  useEffect(() => {
+    // localStorage से 'superAdmin' key में user object प्राप्त करें
+    try {
+      const userDataString = localStorage.getItem('superAdmin');
+      console.log('superAdmin data from localStorage:', userDataString);
+      
+      if (userDataString) {
+        const userData = JSON.parse(userDataString);
+        console.log('Parsed user data:', userData);
+        
+        if (userData && userData.companyRole) {
+          setCompanyRole(userData.companyRole);
+          console.log('Company role set to:', userData.companyRole);
+        } else {
+          console.log('companyRole not found in user data');
+          setCompanyRole('employee');
+        }
+      } else {
+        console.log('No superAdmin data found in localStorage');
+        setCompanyRole('employee');
+      }
+    } catch (error) {
+      console.error('Error parsing superAdmin data from localStorage:', error);
+      setCompanyRole('employee');
+    }
+  }, []);
 
   const ciisUserMenuItems = [
     { heading: 'Dashboard' },
-    { icon: <DashboardIcon />, name: 'Super Admin Dashboard', route: '/Ciis-network/SuperAdminDashboard' },
+    { 
+      icon: <DashboardIcon />, 
+      name: 'Super Admin Dashboard', 
+      route: '/Ciis-network/SuperAdminDashboard',
+      showForRoles: ['Owner'] // केवल Owner के लिए
+    },
     
     { heading: 'Company Management' },
-    { icon: <CompanyIcon />, name: 'All Company', route: '/Ciis-network/all-company' },
-    { icon: <DepartmentIcon />, name: 'Department', route: '/Ciis-network/department' },
-    { icon: <JobRoleIcon />, name: 'Job Roles', route: '/Ciis-network/JobRoleManagement' },
-    { icon: <CreateUserIcon />, name: 'Create User', route: '/Ciis-network/create-user' },
-    
-    // Removed the old ciisUser routes as per your request
+    { 
+      icon: <CompanyIcon />, 
+      name: 'All Company', 
+      route: '/Ciis-network/all-company',
+      showForRoles: ['Owner'] // केवल Owner के लिए
+    },
+
+    { 
+      icon: <CompanyIcon />, 
+      name: 'Company Details', 
+      route: '/Ciis-network/company-details',
+      showForRoles: ['Owner','employee'] // केवल Owner के लिए
+    },
+    { 
+      icon: <DepartmentIcon />, 
+      name: 'Department', 
+      route: '/Ciis-network/department',
+      showForRoles: ['Owner', 'employee'] // Owner और employee दोनों के लिए
+    },
+    { 
+      icon: <JobRoleIcon />, 
+      name: 'Job Roles', 
+      route: '/Ciis-network/JobRoleManagement',
+      showForRoles: ['Owner', 'employee'] // Owner और employee दोनों के लिए
+    },
+    { 
+      icon: <CreateUserIcon />, 
+      name: 'Create User', 
+      route: '/Ciis-network/create-user',
+      showForRoles: ['Owner', 'employee'] // Owner और employee दोनों के लिए
+    },
+    { 
+      icon: <DashboardIcon />, 
+      name: 'Company Management', 
+      route: '/Ciis-network/CompanyManagement',
+      showForRoles: ['Owner'] // केवल Owner के लिए
+    },
+       { 
+      icon: <DepartmentIcon />, 
+      name: 'Sidebar Management', 
+      route: '/Ciis-network/SidebarManagement',
+      showForRoles: ['Owner', 'employee'] // Owner और employee दोनों के लिए
+    },
   ];
+
+  // फ़िल्टर फ़ंक्शन जो रोल के आधार पर आइटम्स दिखाता है
+  const getFilteredMenuItems = () => {
+    const filteredItems = [];
+    let skipNextHeading = false;
+    
+    for (let i = 0; i < ciisUserMenuItems.length; i++) {
+      const item = ciisUserMenuItems[i];
+      
+      if (item.heading) {
+        if (skipNextHeading) {
+          skipNextHeading = false;
+          continue;
+        }
+        filteredItems.push(item);
+      } else {
+        // Check if item should be shown for current role
+        const shouldShow = !item.showForRoles || item.showForRoles.includes(companyRole);
+        
+        if (shouldShow) {
+          filteredItems.push(item);
+          skipNextHeading = false;
+        } else {
+          // If this item won't be shown and last item was a heading, mark to skip it
+          if (filteredItems.length > 0 && filteredItems[filteredItems.length - 1].heading) {
+            skipNextHeading = true;
+          }
+        }
+      }
+    }
+    
+    // Remove any heading that doesn't have items after it
+    return filteredItems.filter((item, index, array) => {
+      if (item.heading) {
+        const hasMenuItemAfter = array
+          .slice(index + 1)
+          .some(nextItem => !nextItem.heading);
+        return hasMenuItemAfter;
+      }
+      return true;
+    });
+  };
 
   const handleClick = (route) => {
     navigate(route);
@@ -131,19 +223,25 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
   };
 
   const SidebarComponent = isOpen ? SidebarContainer : CollapsedSidebar;
+  const filteredMenuItems = getFilteredMenuItems();
+
+  // Debug information
+  console.log('Current companyRole:', companyRole);
+  console.log('Filtered menu items count:', filteredMenuItems.length);
+  console.log('Filtered items:', filteredMenuItems);
 
   return (
     <SidebarComponent>
       <List>
-        {ciisUserMenuItems.map((item, idx) =>
+        {filteredMenuItems.map((item, idx) =>
           item.heading ? (
             isOpen && (
-              <SectionHeading key={idx}>
+              <SectionHeading key={`heading-${idx}`}>
                 {item.heading}
               </SectionHeading>
             )
           ) : (
-            <StyledListItem key={idx} disablePadding>
+            <StyledListItem key={`item-${idx}`} disablePadding>
               {isOpen ? (
                 <StyledListItemButton
                   selected={location.pathname.startsWith(item.route)}
