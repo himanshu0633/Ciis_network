@@ -10,7 +10,6 @@ import {
   Menu,
   MenuItem,
   useTheme,
-  useMediaQuery,
   CircularProgress
 } from "@mui/material";
 import LogoutIcon from "@mui/icons-material/Logout";

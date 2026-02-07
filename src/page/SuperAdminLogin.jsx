@@ -47,8 +47,11 @@ const SuperAdminLogin = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-
-
+  const [errors, setErrors] = useState({
+    email: '',
+    password: '',
+    general: ''
+  });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -88,7 +91,7 @@ const SuperAdminLogin = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post(`${API_URL}/super-admin/login`, formData);
+      const response = await axios.post(`${API_URL}/super-admin/login`, form);
       
       if (response.data.success) {
         // Save super admin data to localStorage

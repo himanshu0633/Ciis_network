@@ -56,7 +56,7 @@ import SuperAdminLogin from "./page/SuperAdminLogin";
 import SuperAdminDashboard from "./page/SuperAdminDashboard.jsx";
 import CompanyManagement from "./page/CompanyManagement.jsx";
 import JobRoleManagement from "./admin/page/JobRoleManagement.jsx";
-
+import SidebarManagement from "./admin/components/SidebarManagement.jsx";
 function App() {
   const user = JSON.parse(localStorage.getItem("user"));
   const userRole = user?.role;
@@ -71,6 +71,7 @@ function App() {
         <Route path="/SuperAdminLogin" element={<SuperAdminLogin />} />
         <Route path="company/:companyCode/login" element={<Login />} />
         <Route path="/CompanyManagement" element={<CompanyManagement />} />
+        <Route path="/SidebarManagement" element={<SidebarManagement />} />
         <Route
           path="/Ciis-network/*"
           element={
