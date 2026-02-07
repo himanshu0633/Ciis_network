@@ -107,7 +107,7 @@ function App() {
           <Route path="emp-leaves" element={<EmppLeave />} />
           <Route path="emp-assets" element={<EmppAsset />} />
           <Route path="emp-attendance" element={<EmppAttendence />} />
-          <Route path="emp-task-management" element={<EmppTask />} />
+          {/* <Route path="emp-task-management" element={<EmppTask />} /> */}
           <Route path="emp-task-details" element={<TaskDeatils />} />
           <Route path="admin-task-create" element={<AdminTaskCreate />} />
           <Route path="admin-meeting" element={<AdminMeetingPage />} />
@@ -119,7 +119,6 @@ function App() {
           <Route path="attendance" element={<Attendance />} />
           <Route path="my-assets" element={<MyAssets />} />
           <Route path="my-leaves" element={<MyLeaves />} />
-       
           <Route path="my-task-management" element={<MyTaskManagement />} />
           <Route path="profile" element={<Profile />} />
           <Route path="user-dashboard" element={<UserDashboard />} />

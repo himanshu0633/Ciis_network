@@ -70,7 +70,6 @@ import Swal from 'sweetalert2';
 
 // Your routes configuration
 const APP_ROUTES = [
-  { path: 'change-password', name: 'Change Password', icon: 'Key', category: 'settings' },
   { path: 'emp-details', name: 'Employee Details', icon: 'Person', category: 'administration' },
   { path: 'emp-leaves', name: 'Employee Leaves', icon: 'EventNote', category: 'administration' },
   { path: 'emp-assets', name: 'Employee Assets', icon: 'Computer', category: 'administration' },
@@ -88,14 +87,11 @@ const APP_ROUTES = [
   { path: 'my-assets', name: 'My Assets', icon: 'Computer', category: 'main' },
   { path: 'my-leaves', name: 'My Leaves', icon: 'EventNote', category: 'main' },
   { path: 'my-task-management', name: 'My Tasks', icon: 'Task', category: 'tasks' },
-  { path: 'profile', name: 'Profile', icon: 'Person', category: 'settings' },
   { path: 'user-dashboard', name: 'Dashboard', icon: 'Dashboard', category: 'main' },
   { path: 'project', name: 'Projects', icon: 'Groups', category: 'projects' },
   { path: 'task-management', name: 'Task Management', icon: 'Task', category: 'tasks' },
   { path: 'employee-meeting', name: 'Employee Meeting', icon: 'VideoCall', category: 'meetings' },
   { path: 'client-meeting', name: 'Client Meeting', icon: 'VideoCall', category: 'meetings' },
-  { path: 'create-user', name: 'Create User', icon: 'PersonAdd', category: 'administration' },
-  { path: 'sidebar-management', name: 'Sidebar Management', icon: 'Menu', category: 'administration' }
 ];
 
 const SidebarManagement = () => {
@@ -121,7 +117,6 @@ const SidebarManagement = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [previewConfig, setPreviewConfig] = useState(null);
   const [openPreview, setOpenPreview] = useState(false);
-  const [allRoles, setAllRoles] = useState(['admin', 'user', 'hr', 'manager', 'SuperAdmin', 'intern', 'employee', 'team-lead']);
   const [customRoles, setCustomRoles] = useState([]);
 
   // Initialize with your routes
@@ -177,7 +172,7 @@ const SidebarManagement = () => {
     }
   };
 
-  // ✅ FIXED: Fetch departments when company is selected
+  // Fetch departments when company is selected
   useEffect(() => {
     if (selectedCompany) {
       fetchDepartments(selectedCompany);
@@ -204,7 +199,6 @@ const SidebarManagement = () => {
       console.log('Departments API Response:', response.data);
       
       if (response.data && response.data.success && response.data.departments) {
-        // ✅ Ensure we store only department objects with _id and name
         const formattedDepartments = response.data.departments.map(dept => ({
           _id: dept._id || dept.id,
           name: dept.name || dept.departmentName,
@@ -227,7 +221,7 @@ const SidebarManagement = () => {
     }
   };
 
-  // ✅ FIXED: Fetch job roles when department is selected
+  // Fetch job roles when department is selected
   useEffect(() => {
     if (selectedDepartment) {
       fetchJobRoles(selectedDepartment);
@@ -241,7 +235,6 @@ const SidebarManagement = () => {
     try {
       setLoading(prev => ({ ...prev, roles: true }));
       
-      // ✅ Ensure departmentId is a string, not an object
       const deptId = typeof departmentId === 'object' ? departmentId._id || departmentId.id : departmentId;
       
       if (!deptId) {
@@ -255,7 +248,6 @@ const SidebarManagement = () => {
       console.log('Fetching job roles for department:', deptId);
       
       try {
-        // Try to get job roles from API
         const response = await axios.get(`/api/job-roles/department/${deptId}`, {
           headers: { 
             Authorization: `Bearer ${token}`,
@@ -267,19 +259,18 @@ const SidebarManagement = () => {
         
         if (response.data && response.data.success && response.data.jobRoles) {
           const formattedRoles = response.data.jobRoles.map(role => ({
-            _id: role._id || role.id,
-            name: role.name || role.roleName,
-            description: role.description || ''
+            _id: role._id, // ID
+            name: role.name, // Name
+            description: role.description || role.name
           }));
           setJobRoles(formattedRoles);
           return;
         }
       } catch (apiError) {
-        console.log('Job roles API failed, trying alternative methods:', apiError.message);
+        console.log('Job roles API failed:', apiError.message);
       }
       
-      // Alternative: Get roles from system roles
-      setJobRoles(allRoles.map(role => ({ name: role })));
+      setJobRoles([]);
       
     } catch (error) {
       console.error('Error fetching job roles:', error);
@@ -289,7 +280,7 @@ const SidebarManagement = () => {
     }
   };
 
-  // ✅ FIXED: Fetch existing configurations
+  // Fetch existing configurations
   const fetchExistingConfigs = async (companyId) => {
     try {
       setLoading(prev => ({ ...prev, fetching: true }));
@@ -305,15 +296,12 @@ const SidebarManagement = () => {
       console.log('Existing configs response:', response.data);
       
       if (response.data && response.data.success) {
-        // ✅ Ensure we handle populated data correctly
         const formattedConfigs = (response.data.data || []).map(config => {
-          // Extract departmentId correctly (could be string or object)
           let departmentId = config.departmentId;
           if (typeof departmentId === 'object') {
             departmentId = departmentId._id || departmentId.id;
           }
           
-          // Extract companyId correctly
           let companyId = config.companyId;
           if (typeof companyId === 'object') {
             companyId = companyId._id || companyId.id;
@@ -361,28 +349,28 @@ const SidebarManagement = () => {
 
   // Handle role selection
   const handleRoleChange = (event) => {
-    const role = event.target.value;
-    setSelectedRole(role);
+    const roleId = event.target.value;
+    setSelectedRole(roleId);
     
     // Load existing config for this combination
-    if (selectedCompany && selectedDepartment && role) {
-      loadExistingConfig(selectedCompany, selectedDepartment, role);
+    if (selectedCompany && selectedDepartment && roleId) {
+      loadExistingConfig(selectedCompany, selectedDepartment, roleId);
     } else {
       setSelectedItems([]);
     }
   };
 
-  // ✅ FIXED: Load existing configuration
-  const loadExistingConfig = async (companyId, departmentId, role) => {
+  // Load existing configuration
+  const loadExistingConfig = async (companyId, departmentId, roleId) => {
     try {
-      console.log('Loading config for:', { companyId, departmentId, role });
+      console.log('Loading config for:', { companyId, departmentId, roleId });
       
       const token = localStorage.getItem('token');
       const response = await axios.get(`/api/sidebar/config`, {
         params: { 
           companyId, 
           departmentId, 
-          role 
+          role: roleId 
         },
         headers: { 
           Authorization: `Bearer ${token}`,
@@ -403,29 +391,28 @@ const SidebarManagement = () => {
     }
   };
 
-  // ✅ FIXED: Edit existing configuration
+  // Edit existing configuration
   const handleEdit = async (config) => {
     try {
       console.log('Editing config:', config);
       
-      // Extract IDs correctly
       const companyId = typeof config.companyId === 'object' ? config.companyId._id : config.companyId;
       const departmentId = typeof config.departmentId === 'object' ? config.departmentId._id : config.departmentId;
-      const role = config.role;
+      const roleId = config.role; // Backend से role में ID आती है
       
-      console.log('Extracted IDs:', { companyId, departmentId, role });
+      console.log('Extracted IDs:', { companyId, departmentId, roleId });
       
       // Set the values
       setSelectedCompany(companyId);
       setSelectedDepartment(departmentId);
-      setSelectedRole(role);
+      setSelectedRole(roleId);
       setSelectedItems(config.menuItems.map(item => item.id));
       setActiveTab(0);
       
       // Show success message
       setSnackbar({
         open: true,
-        message: `Loaded configuration for ${role} role`,
+        message: `Loaded configuration for role`,
         severity: 'success'
       });
       
@@ -468,10 +455,8 @@ const SidebarManagement = () => {
     setSelectedItems(prev => {
       const allSelected = categoryIds.every(id => prev.includes(id));
       if (allSelected) {
-        // Deselect all
         return prev.filter(id => !categoryIds.includes(id));
       } else {
-        // Select all
         return [...new Set([...prev, ...categoryIds])];
       }
     });
@@ -521,7 +506,7 @@ const SidebarManagement = () => {
       const configData = {
         companyId: selectedCompany,
         departmentId: selectedDepartment,
-        role: selectedRole,
+        role: selectedRole, // ✅ Backend में role field में ID भेजें
         menuItems: selectedItems.map(id => {
           const page = availablePages.find(p => p.id === id);
           return {
@@ -571,7 +556,6 @@ const SidebarManagement = () => {
       console.log('Save response:', response.data);
 
       if (response.data.success) {
-        // Refresh existing configs
         await fetchExistingConfigs(selectedCompany);
         
         setSnackbar({
@@ -580,7 +564,6 @@ const SidebarManagement = () => {
           severity: 'success'
         });
         
-        // Also reload the config for current selection
         await loadExistingConfig(selectedCompany, selectedDepartment, selectedRole);
       } else {
         throw new Error(response.data.message || 'Save failed');
@@ -605,7 +588,7 @@ const SidebarManagement = () => {
     }
   };
 
-  // ✅ FIXED: Delete configuration
+  // Delete configuration
   const handleDelete = async (configId) => {
     const result = await Swal.fire({
       title: 'Are you sure?',
@@ -649,7 +632,7 @@ const SidebarManagement = () => {
     }
   };
 
-  // ✅ FIXED: Refresh job roles manually
+  // Refresh job roles manually
   const handleRefreshRoles = async () => {
     if (selectedDepartment) {
       await fetchJobRoles(selectedDepartment);
@@ -681,29 +664,58 @@ const SidebarManagement = () => {
         if (!value) {
           return 'Role name is required!';
         }
-        const allAvailableRoles = getAllAvailableRoles();
-        if (allAvailableRoles.includes(value.toLowerCase())) {
+        const allRoles = getAllAvailableRoles();
+        const roleExists = allRoles.some(role => 
+          role.name.toLowerCase() === value.toLowerCase()
+        );
+        if (roleExists) {
           return 'Role already exists!';
         }
       }
     }).then((result) => {
       if (result.isConfirmed) {
-        const newRole = result.value.toLowerCase();
+        const newRoleName = result.value.toUpperCase();
+        const newRole = {
+          _id: `custom_${Date.now()}`,
+          name: newRoleName,
+          description: `${newRoleName} (Custom)`,
+          isCustom: true
+        };
+        
         setCustomRoles(prev => [...prev, newRole]);
+        
+        // Auto-select the new role
+        setSelectedRole(newRole._id);
+        
         setSnackbar({
           open: true,
-          message: `Role "${result.value}" added successfully`,
+          message: `Custom role "${newRoleName}" added successfully`,
           severity: 'success'
         });
       }
     });
   };
 
-  // Get all available roles
+  // Get all available roles for dropdown
   const getAllAvailableRoles = () => {
-    const jobRoleNames = jobRoles.map(role => typeof role === 'string' ? role : role.name).filter(Boolean);
-    return [...new Set([...allRoles, ...customRoles, ...jobRoleNames])]
-      .sort();
+    const allRolesList = [...jobRoles, ...customRoles];
+    return allRolesList.sort((a, b) => a.name.localeCompare(b.name));
+  };
+
+  // Get role name by ID
+  const getRoleNameById = (roleId) => {
+    if (!roleId) return 'Unknown Role';
+    
+    const allRoles = getAllAvailableRoles();
+    const role = allRoles.find(r => r._id === roleId);
+    
+    if (role) return role.name;
+    
+    // Check in existing configs
+    const config = existingConfigs.find(c => c.role === roleId);
+    if (config && config.roleName) return config.roleName;
+    
+    return roleId; // Return ID if name not found
   };
 
   // Render icon component
@@ -745,14 +757,13 @@ const SidebarManagement = () => {
     return categoryNames[category] || category;
   };
 
-  // ✅ FIXED: Get company name
+  // Get company name
   const getCompanyName = (companyId) => {
     if (!companyId) return 'Unknown Company';
     
     const company = companies.find(c => c._id === companyId);
     if (company) return company.companyName;
     
-    // Check if companyId is an object
     if (typeof companyId === 'object') {
       return companyId.companyName || 'Unknown Company';
     }
@@ -760,14 +771,13 @@ const SidebarManagement = () => {
     return 'Unknown Company';
   };
 
-  // ✅ FIXED: Get department name
+  // Get department name
   const getDepartmentName = (departmentId) => {
     if (!departmentId) return 'Unknown Department';
     
     const department = departments.find(d => d._id === departmentId);
     if (department) return department.name;
     
-    // Check if departmentId is an object
     if (typeof departmentId === 'object') {
       return departmentId.name || departmentId.departmentName || 'Unknown Department';
     }
@@ -917,15 +927,26 @@ const SidebarManagement = () => {
                         </MenuItem>
                       ) : (
                         getAllAvailableRoles().map((role) => (
-                          <MenuItem key={role} value={role}>
+                          <MenuItem key={role._id} value={role._id}>
                             <Box sx={{ display: 'flex', alignItems: 'center' }}>
                               <SecurityIcon sx={{ mr: 1.5, fontSize: 'small', color: 'primary.main' }} />
-                              <Typography variant="body2">
-                                {role.charAt(0).toUpperCase() + role.slice(1)}
-                                {customRoles.includes(role) && (
-                                  <Chip label="Custom" size="small" sx={{ ml: 1, height: 18, fontSize: '0.6rem' }} />
+                              <Box>
+                                <Typography variant="body2">
+                                  {role.name}
+                                </Typography>
+                                {role.description && (
+                                  <Typography variant="caption" color="text.secondary" display="block">
+                                    {role.description}
+                                  </Typography>
                                 )}
-                              </Typography>
+                              </Box>
+                              {role.isCustom && (
+                                <Chip 
+                                  label="Custom" 
+                                  size="small" 
+                                  sx={{ ml: 1, height: 18, fontSize: '0.6rem' }} 
+                                />
+                              )}
                             </Box>
                           </MenuItem>
                         ))
@@ -933,17 +954,15 @@ const SidebarManagement = () => {
                       {getAllAvailableRoles().length === 0 && !loading.roles && selectedDepartment && (
                         <MenuItem disabled>No roles found</MenuItem>
                       )}
+                      <Divider />
+                      <MenuItem value="custom">
+                        <Box sx={{ display: 'flex', alignItems: 'center', color: 'primary.main' }}>
+                          <AddIcon sx={{ mr: 1.5, fontSize: 'small' }} />
+                          <Typography variant="body2">Add Custom Role</Typography>
+                        </Box>
+                      </MenuItem>
                     </Select>
                     <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-                      <Button
-                        size="small"
-                        startIcon={<AddIcon />}
-                        onClick={handleAddRole}
-                        disabled={!selectedDepartment}
-                        variant="outlined"
-                      >
-                        Add Role
-                      </Button>
                       <Button
                         size="small"
                         startIcon={<RefreshIcon />}
@@ -951,7 +970,7 @@ const SidebarManagement = () => {
                         disabled={!selectedDepartment || loading.roles}
                         variant="outlined"
                       >
-                        Refresh
+                        Refresh Roles
                       </Button>
                     </Box>
                   </FormControl>
@@ -992,13 +1011,13 @@ const SidebarManagement = () => {
                             />
                             <Chip 
                               icon={<SecurityIcon />}
-                              label={selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1)} 
+                              label={getRoleNameById(selectedRole)} 
                               size="small"
                               color="primary"
                             />
                           </Box>
                           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                            {selectedItems.length} menu items selected
+                            Role ID: {selectedRole} • {selectedItems.length} menu items selected
                           </Typography>
                         </Box>
                         <Button
@@ -1272,14 +1291,14 @@ const SidebarManagement = () => {
                           <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
                             <SecurityIcon sx={{ fontSize: '0.8rem', mr: 0.5, color: 'text.secondary' }} />
                             <Chip 
-                              label={config.role} 
+                              label={getRoleNameById(config.role)} 
                               size="small" 
                               sx={{ height: 20, fontSize: '0.7rem' }}
                               color="primary"
                             />
                           </Box>
                           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                            {config.menuItems.length} menu items • Updated: {new Date(config.updatedAt || config.createdAt).toLocaleDateString()}
+                            Role ID: {config.role} • {config.menuItems.length} menu items • Updated: {new Date(config.updatedAt || config.createdAt).toLocaleDateString()}
                           </Typography>
                         </Box>
                         <Box>
@@ -1360,7 +1379,7 @@ const SidebarManagement = () => {
             {previewConfig && 
               `${getCompanyName(previewConfig.companyId)} - 
                ${getDepartmentName(previewConfig.departmentId)} - 
-               ${previewConfig.role}`
+               ${getRoleNameById(previewConfig.role)}`
             }
           </Typography>
         </DialogTitle>

@@ -39,6 +39,7 @@ import {
   Paper,
   Tooltip
 } from "@mui/material";
+import API_URL from "../config";
 
 const AllCompany = () => {
   const navigate = useNavigate();
