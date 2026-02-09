@@ -14,7 +14,7 @@ import {
   Close,
   PersonAdd,
 } from "@mui/icons-material";
-import API_URL from "../config";
+
 
 const SuperAdminDashboard = () => {
   const navigate = useNavigate();

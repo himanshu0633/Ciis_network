@@ -54,77 +54,11 @@ const SuperAdminLogin = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-<<<<<<< HEAD
-  const [errors, setErrors] = useState({});
-  const [companyLoading, setCompanyLoading] = useState(true);
-  const [companyDetails, setCompanyDetails] = useState(null);
-  const [companyIdentifier, setCompanyIdentifier] = useState('');
-  const [drawerOpen, setDrawerOpen] = useState(false);
-
-  // Extract company identifier from URL (if any)
-  useEffect(() => {
-    const extractCompanyIdentifier = () => {
-      const path = window.location.pathname;
-      
-      const match1 = path.match(/\/company\/([^/]+)\/super-admin-login/);
-      if (match1 && match1[1]) {
-        return match1[1];
-      }
-
-      const match2 = path.match(/\/company\/([^/]+)/);
-      if (match2 && match2[1]) {
-        return match2[1];
-      }
-
-      const segments = path.split('/').filter(Boolean);
-      if (segments.length >= 2 && segments[0] === 'company') {
-        return segments[1];
-      }
-
-      return 'ciis'; // Default company identifier for super admin
-    };
-
-    const identifier = extractCompanyIdentifier();
-    if (identifier) {
-      setCompanyIdentifier(identifier);
-      fetchCompanyDetails(identifier);
-    } else {
-      setCompanyLoading(false);
-    }
-  }, []);
-
-  const fetchCompanyDetails = async (identifier) => {
-    try {
-      setCompanyLoading(true);
-      const response = await axios.get(`${API_URL}/company/details/${identifier}`);
-
-      if (response.data.success) {
-        setCompanyDetails(response.data.company);
-        document.title = `${response.data.company.companyName} - Super Admin Login`;
-      }
-    } catch (error) {
-      console.error('Error fetching company details:', error);
-
-      if (error.response?.status === 404) {
-        toast.error('Company not found. Using default configuration.');
-      }
-
-      // Default company details for super admin
-      setCompanyDetails({
-        companyName: 'CIIS NETWORK',
-        logo: null
-      });
-    } finally {
-      setCompanyLoading(false);
-    }
-  };
-=======
   const [errors, setErrors] = useState({
     email: '',
     password: '',
     general: ''
   });
->>>>>>> 240a4e8eaa1426703358d465c5a80169fe41fa38
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -164,16 +98,8 @@ const SuperAdminLogin = () => {
     setLoading(true);
 
     try {
-<<<<<<< HEAD
-      const response = await axios.post(`${API_URL}/super-admin/login`, {
-        ...form,
-        companyIdentifier: companyIdentifier || 'ciis'
-      });
-
-=======
       const response = await axios.post(`${API_URL}/super-admin/login`, form);
       
->>>>>>> 240a4e8eaa1426703358d465c5a80169fe41fa38
       if (response.data.success) {
         localStorage.setItem('superAdmin', JSON.stringify(response.data.data));
         localStorage.setItem('token', response.data.token);

@@ -21,16 +21,6 @@ import {
   PersonAdd as CreateUserIcon,
 } from '@mui/icons-material';
 
-<<<<<<< HEAD
-const Sidebar = () => {
-  const menuItems = [
-    { path: '/Ciis-network/SuperAdminDashboard', label: 'Dashboard', icon: '📊' },
-    { path: '/Ciis-network/all-company', label: 'All Company', icon: '🏭' }, 
-    { path: '/Ciis-network/company-details', label: 'Company Details', icon: '🏢' },
-    { path: '/Ciis-network/department', label: 'Department', icon: '🏢' },
-    { path: '/Ciis-network/JobRoleManagement', label: 'Job Roles', icon: '👔' },
-    { path: '/Ciis-network/create-user', label: 'Create User', icon: '👤' },
-=======
 // Styled components (same as before)
 const SidebarContainer = styled(Box)(({ theme }) => ({
   width: 240,
@@ -181,7 +171,6 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
       route: '/Ciis-network/SidebarManagement',
       showForRoles: ['Owner', 'employee'] // Owner और employee दोनों के लिए
     },
->>>>>>> 240a4e8eaa1426703358d465c5a80169fe41fa38
   ];
 
   // फ़िल्टर फ़ंक्शन जो रोल के आधार पर आइटम्स दिखाता है

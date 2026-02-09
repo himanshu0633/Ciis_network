@@ -56,14 +56,9 @@ import SuperAdminLogin from "./page/SuperAdminLogin";
 import SuperAdminDashboard from "./page/SuperAdminDashboard.jsx";
 import CompanyManagement from "./page/CompanyManagement.jsx";
 import JobRoleManagement from "./admin/page/JobRoleManagement.jsx";
-<<<<<<< HEAD
-import AllCompany from "./page/AllCompany.jsx";
-import CompanyDetails from "./page/CompanyDetails";
-
-=======
 import SidebarManagement from "./admin/components/SidebarManagement.jsx";
 import CompanyDetails from "./admin/components/CompanyDetails.jsx";
->>>>>>> 240a4e8eaa1426703358d465c5a80169fe41fa38
+import AllCompany from "./page/AllCompany.jsx"
 function App() {
   const user = JSON.parse(localStorage.getItem("user"));
   const userRole = user?.role;
@@ -95,12 +90,8 @@ function App() {
           <Route path="SuperAdminDashboard" element={<SuperAdminDashboard />} />
           <Route path="JobRoleManagement" element={<JobRoleManagement />} />
           <Route path="all-company" element={<AllCompany />} />
-<<<<<<< HEAD
-          <Route path="company-details" element={<CompanyDetails />} />
-=======
           <Route path="CompanyManagement" element={<CompanyManagement />} />
           <Route path="SidebarManagement" element={<SidebarManagement />} />
->>>>>>> 240a4e8eaa1426703358d465c5a80169fe41fa38
         </Route>
 
 
