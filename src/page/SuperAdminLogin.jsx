@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
@@ -16,12 +16,11 @@ import {
   Fade,
   Alert,
   Card,
-  CardContent,
-  Divider,
   List,
   ListItem,
   ListItemIcon,
-  ListItemText
+  ListItemText,
+  Drawer
 } from '@mui/material';
 import {
   Visibility,
@@ -34,21 +33,90 @@ import {
   Dashboard,
   People,
   Settings,
-  Analytics
+  Analytics,
+  Business,
+  Menu as MenuIcon
 } from '@mui/icons-material';
+import { useTheme, useMediaQuery } from '@mui/material';
 import { toast } from 'react-toastify';
 import API_URL from '../config';
 
 const SuperAdminLogin = () => {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
+  const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
+
   const [form, setForm] = useState({
     email: '',
     password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [companyLoading, setCompanyLoading] = useState(true);
+  const [companyDetails, setCompanyDetails] = useState(null);
+  const [companyIdentifier, setCompanyIdentifier] = useState('');
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
+  // Extract company identifier from URL (if any)
+  useEffect(() => {
+    const extractCompanyIdentifier = () => {
+      const path = window.location.pathname;
+      
+      const match1 = path.match(/\/company\/([^/]+)\/super-admin-login/);
+      if (match1 && match1[1]) {
+        return match1[1];
+      }
 
+      const match2 = path.match(/\/company\/([^/]+)/);
+      if (match2 && match2[1]) {
+        return match2[1];
+      }
+
+      const segments = path.split('/').filter(Boolean);
+      if (segments.length >= 2 && segments[0] === 'company') {
+        return segments[1];
+      }
+
+      return 'ciis'; // Default company identifier for super admin
+    };
+
+    const identifier = extractCompanyIdentifier();
+    if (identifier) {
+      setCompanyIdentifier(identifier);
+      fetchCompanyDetails(identifier);
+    } else {
+      setCompanyLoading(false);
+    }
+  }, []);
+
+  const fetchCompanyDetails = async (identifier) => {
+    try {
+      setCompanyLoading(true);
+      const response = await axios.get(`${API_URL}/company/details/${identifier}`);
+
+      if (response.data.success) {
+        setCompanyDetails(response.data.company);
+        document.title = `${response.data.company.companyName} - Super Admin Login`;
+      }
+    } catch (error) {
+      console.error('Error fetching company details:', error);
+
+      if (error.response?.status === 404) {
+        toast.error('Company not found. Using default configuration.');
+      }
+
+      // Default company details for super admin
+      setCompanyDetails({
+        companyName: 'CIIS NETWORK',
+        logo: null
+      });
+    } finally {
+      setCompanyLoading(false);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -88,17 +156,25 @@ const SuperAdminLogin = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post(`${API_URL}/super-admin/login`, formData);
-      
+      const response = await axios.post(`${API_URL}/super-admin/login`, {
+        ...form,
+        companyIdentifier: companyIdentifier || 'ciis'
+      });
+
       if (response.data.success) {
-        // Save super admin data to localStorage
         localStorage.setItem('superAdmin', JSON.stringify(response.data.data));
         localStorage.setItem('token', response.data.token);
 
+        if (companyDetails) {
+          localStorage.setItem('companyDetails', JSON.stringify(companyDetails));
+        }
+
+        if (companyIdentifier) {
+          localStorage.setItem('companyIdentifier', companyIdentifier);
+        }
+
         toast.success('Login successful! Redirecting...');
-        
-        // Redirect to super admin dashboard immediately
-        navigate('/Ciis-network/SuperAdminDashboard');
+        navigate('/Ciis-network/department');
       } else {
         toast.error(response.data.message || 'Login failed');
       }
@@ -114,6 +190,297 @@ const SuperAdminLogin = () => {
     }
   };
 
+  // Mobile Drawer for features
+  const FeaturesDrawer = () => (
+    <Drawer
+      anchor="left"
+      open={drawerOpen}
+      onClose={() => setDrawerOpen(false)}
+      PaperProps={{
+        sx: {
+          width: 280,
+          background: 'linear-gradient(135deg, #1e3a8a 0%, #3730a3 100%)',
+          color: 'white',
+          p: 2
+        }
+      }}
+    >
+      <Box sx={{ p: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+          <AdminPanelSettings sx={{ mr: 2, fontSize: 32 }} />
+          <Typography variant="h6" fontWeight={600}>
+            Super Admin Features
+          </Typography>
+        </Box>
+        
+        <List>
+          <ListItem sx={{ px: 0, py: 1.5 }}>
+            <ListItemIcon sx={{ minWidth: 40 }}>
+              <Dashboard sx={{ color: 'white', fontSize: 24 }} />
+            </ListItemIcon>
+            <ListItemText
+              primary="Manage all companies"
+              primaryTypographyProps={{
+                sx: { color: 'white', fontSize: '0.95rem' }
+              }}
+            />
+          </ListItem>
+          <ListItem sx={{ px: 0, py: 1.5 }}>
+            <ListItemIcon sx={{ minWidth: 40 }}>
+              <People sx={{ color: 'white', fontSize: 24 }} />
+            </ListItemIcon>
+            <ListItemText
+              primary="View all users"
+              primaryTypographyProps={{
+                sx: { color: 'white', fontSize: '0.95rem' }
+              }}
+            />
+          </ListItem>
+          <ListItem sx={{ px: 0, py: 1.5 }}>
+            <ListItemIcon sx={{ minWidth: 40 }}>
+              <Settings sx={{ color: 'white', fontSize: 24 }} />
+            </ListItemIcon>
+            <ListItemText
+              primary="System configuration"
+              primaryTypographyProps={{
+                sx: { color: 'white', fontSize: '0.95rem' }
+              }}
+            />
+          </ListItem>
+          <ListItem sx={{ px: 0, py: 1.5 }}>
+            <ListItemIcon sx={{ minWidth: 40 }}>
+              <Analytics sx={{ color: 'white', fontSize: 24 }} />
+            </ListItemIcon>
+            <ListItemText
+              primary="Analytics and reports"
+              primaryTypographyProps={{
+                sx: { color: 'white', fontSize: '0.95rem' }
+              }}
+            />
+          </ListItem>
+          <ListItem sx={{ px: 0, py: 1.5 }}>
+            <ListItemIcon sx={{ minWidth: 40 }}>
+              <Security sx={{ color: 'white', fontSize: 24 }} />
+            </ListItemIcon>
+            <ListItemText
+              primary="Master access control"
+              primaryTypographyProps={{
+                sx: { color: 'white', fontSize: '0.95rem' }
+              }}
+            />
+          </ListItem>
+        </List>
+      </Box>
+    </Drawer>
+  );
+
+  // Features Section Component
+  const FeaturesSection = () => (
+    <Grid
+      item
+      xs={12}
+      md={5}
+      sx={{
+        background: 'linear-gradient(135deg, #1e3a8a 0%, #3730a3 100%)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        p: isMobile ? 3 : isTablet ? 4 : 6,
+        position: 'relative',
+        overflow: 'hidden'
+      }}
+    >
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundImage: 'radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 1px, transparent 1px)',
+          backgroundSize: '40px 40px',
+          opacity: 0.3
+        }}
+      />
+
+      <Box
+        sx={{
+          position: 'relative',
+          zIndex: 1,
+          textAlign: 'center',
+          color: 'white',
+          width: '100%'
+        }}
+      >
+        {/* Company/Super Admin Logo */}
+        <Box
+          sx={{
+            width: isMobile ? 80 : 100,
+            height: isMobile ? 80 : 100,
+            borderRadius: 2,
+            backgroundColor: 'white',
+            backdropFilter: 'blur(10px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto',
+            mb: isMobile ? 2 : 3,
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
+          }}
+        >
+          {companyLoading ? (
+            <CircularProgress size={isMobile ? 30 : 40} color="inherit" />
+          ) : companyDetails?.logo ? (
+            <Box
+              component="img"
+              src={companyDetails.logo}
+              alt={companyDetails.companyName}
+              sx={{
+                width: isMobile ? 60 : 70,
+                height: isMobile ? 60 : 70,
+                objectFit: 'contain',
+                borderRadius: '6px'
+              }}
+            />
+          ) : (
+            <AdminPanelSettings
+              sx={{
+                fontSize: isMobile ? 36 : 44,
+                color: 'white'
+              }}
+            />
+          )}
+        </Box>
+
+        {/* Company/Super Admin Title */}
+        <Typography
+          variant={isMobile ? "h5" : "h4"}
+          sx={{
+            fontFamily: '"Oswald", sans-serif',
+            fontWeight: 600,
+            mb: 1,
+            letterSpacing: '-0.5px',
+            textShadow: '0 2px 4px rgba(0,0,0,0.1)',
+            fontSize: isMobile ? '1.5rem' : isTablet ? '1.75rem' : '2rem'
+          }}
+        >
+          {companyLoading ? 'Loading...' : (companyDetails?.companyName || 'CIIS NETWORK')}
+        </Typography>
+
+        <Typography
+          variant="body2"
+          sx={{
+            opacity: 0.9,
+            letterSpacing: '0.5px',
+            mb: isMobile ? 2 : 4,
+            fontSize: isMobile ? '0.8rem' : '0.875rem'
+          }}
+        >
+          {companyDetails?.companyName ? 'Super Admin Portal' : 'Master Control Panel'}
+        </Typography>
+
+        {/* Features List - Hidden on mobile, shown on tablet and desktop */}
+        {!isMobile && (
+          <Card
+            sx={{
+              background: 'rgba(255, 255, 255, 0.1)',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              borderRadius: 2,
+              p: isTablet ? 1.5 : 2
+            }}
+          >
+            <Typography
+              variant="h6"
+              sx={{
+                color: 'white',
+                mb: 2,
+                fontWeight: 600,
+                fontSize: isTablet ? '1rem' : '1.1rem'
+              }}
+            >
+              Super Admin Features:
+            </Typography>
+            <List dense sx={{ p: 0 }}>
+              <ListItem sx={{ px: 0, py: 0.5 }}>
+                <ListItemIcon sx={{ minWidth: isTablet ? 32 : 36 }}>
+                  <Dashboard sx={{ color: 'white', fontSize: isTablet ? 18 : 20 }} />
+                </ListItemIcon>
+                <ListItemText
+                  primary="Manage all companies"
+                  primaryTypographyProps={{
+                    sx: { 
+                      color: 'white', 
+                      fontSize: isTablet ? '0.85rem' : '0.9rem' 
+                    }
+                  }}
+                />
+              </ListItem>
+              <ListItem sx={{ px: 0, py: 0.5 }}>
+                <ListItemIcon sx={{ minWidth: isTablet ? 32 : 36 }}>
+                  <People sx={{ color: 'white', fontSize: isTablet ? 18 : 20 }} />
+                </ListItemIcon>
+                <ListItemText
+                  primary="View all users across companies"
+                  primaryTypographyProps={{
+                    sx: { 
+                      color: 'white', 
+                      fontSize: isTablet ? '0.85rem' : '0.9rem' 
+                    }
+                  }}
+                />
+              </ListItem>
+              <ListItem sx={{ px: 0, py: 0.5 }}>
+                <ListItemIcon sx={{ minWidth: isTablet ? 32 : 36 }}>
+                  <Settings sx={{ color: 'white', fontSize: isTablet ? 18 : 20 }} />
+                </ListItemIcon>
+                <ListItemText
+                  primary="System configuration"
+                  primaryTypographyProps={{
+                    sx: { 
+                      color: 'white', 
+                      fontSize: isTablet ? '0.85rem' : '0.9rem' 
+                    }
+                  }}
+                />
+              </ListItem>
+              <ListItem sx={{ px: 0, py: 0.5 }}>
+                <ListItemIcon sx={{ minWidth: isTablet ? 32 : 36 }}>
+                  <Analytics sx={{ color: 'white', fontSize: isTablet ? 18 : 20 }} />
+                </ListItemIcon>
+                <ListItemText
+                  primary="Analytics and reports"
+                  primaryTypographyProps={{
+                    sx: { 
+                      color: 'white', 
+                      fontSize: isTablet ? '0.85rem' : '0.9rem' 
+                    }
+                  }}
+                />
+              </ListItem>
+              <ListItem sx={{ px: 0, py: 0.5 }}>
+                <ListItemIcon sx={{ minWidth: isTablet ? 32 : 36 }}>
+                  <Security sx={{ color: 'white', fontSize: isTablet ? 18 : 20 }} />
+                </ListItemIcon>
+                <ListItemText
+                  primary="Master access control"
+                  primaryTypographyProps={{
+                    sx: { 
+                      color: 'white', 
+                      fontSize: isTablet ? '0.85rem' : '0.9rem' 
+                    }
+                  }}
+                />
+              </ListItem>
+            </List>
+          </Card>
+        )}
+      </Box>
+    </Grid>
+  );
+
   return (
     <Box
       sx={{
@@ -122,223 +489,132 @@ const SuperAdminLogin = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        p: 2
+        p: isMobile ? 1 : 2
       }}
     >
-      <Container maxWidth="lg">
+      <Container 
+        maxWidth="md" 
+        sx={{ 
+          px: isMobile ? 1 : 2,
+          py: isMobile ? 2 : 0
+        }}
+      >
         <Fade in>
           <Paper
-            elevation={24}
+            elevation={isMobile ? 6 : 24}
             sx={{
-              borderRadius: 4,
+              borderRadius: isMobile ? 2 : 4,
               overflow: 'hidden',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              minHeight: isMobile ? 'auto' : '500px'
             }}
           >
-            <Grid container sx={{ minHeight: '600px' }}>
-              {/* LEFT SECTION - Super Admin Features */}
-              <Grid
-                item
-                xs={12}
-                md={5}
-                sx={{
-                  background: 'linear-gradient(135deg, #1e3a8a 0%, #3730a3 100%)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  p: { xs: 6.5, md: 4 },
-                  position: 'relative',
-                  overflow: 'hidden'
-                }}
-              >
-                {/* Subtle pattern overlay */}
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    backgroundImage: 'radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 1px, transparent 1px)',
-                    backgroundSize: '40px 40px',
-                    opacity: 0.3
-                  }}
-                />
+            <Grid container sx={{ minHeight: isMobile ? 'auto' : '500px' }}>
+              {/* Left Features Section - Shown on tablet and desktop */}
+              {!isMobile && <FeaturesSection />}
 
-                <Box
-                  sx={{
-                    position: 'relative',
-                    zIndex: 1,
-                    textAlign: 'center',
-                    color: 'white',
-                    width: '100%'
-                  }}
-                >
-                  {/* Super Admin Icon */}
-                  <Box
+              {/* Mobile Features Button */}
+              {isMobile && (
+                <Box sx={{ 
+                  position: 'absolute', 
+                  top: 16, 
+                  left: 16, 
+                  zIndex: 10 
+                }}>
+                  <IconButton
+                    onClick={() => setDrawerOpen(true)}
                     sx={{
-                      width: 120,
-                      height: 120,
-                      borderRadius: 3,
-                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                      background: 'rgba(255, 255, 255, 0.2)',
                       backdropFilter: 'blur(10px)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      margin: '0 auto 32px',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
-                      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
+                      color: 'white'
                     }}
                   >
-                    <AdminPanelSettings
-                      sx={{
-                        fontSize: 48,
-                        color: 'white'
-                      }}
-                    />
-                  </Box>
-
-                  {/* Super Admin Title */}
-                  <Typography
-                    variant="h4"
-                    sx={{
-                      fontFamily: '"Oswald", sans-serif',
-                      fontWeight: 600,
-                      mb: 1,
-                      letterSpacing: '-0.5px',
-                      textShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                    }}
-                  >
-                    CIIS NETWORK
-                  </Typography>
-
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      opacity: 0.9,
-                      letterSpacing: '0.5px',
-                      mb: 4
-                    }}
-                  >
-                   Super Admin Portal
-                  </Typography>
-
-                  {/* Features List */}
-                  <Card
-                    sx={{
-                      background: 'rgba(255, 255, 255, 0.1)',
-                      backdropFilter: 'blur(10px)',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
-                      borderRadius: 2,
-                      p: 2
-                    }}
-                  >
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        color: 'white',
-                        mb: 2,
-                        fontWeight: 600
-                      }}
-                    >
-                      Super Admin Features:
-                    </Typography>
-                    <List dense>
-                      <ListItem sx={{ px: 0, py: 0.5 }}>
-                        <ListItemIcon sx={{ minWidth: 36 }}>
-                          <Dashboard sx={{ color: 'white', fontSize: 20 }} />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary="📊 Manage all companies"
-                          primaryTypographyProps={{
-                            sx: { color: 'white', fontSize: '0.9rem' }
-                          }}
-                        />
-                      </ListItem>
-                      <ListItem sx={{ px: 0, py: 0.5 }}>
-                        <ListItemIcon sx={{ minWidth: 36 }}>
-                          <People sx={{ color: 'white', fontSize: 20 }} />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary="👥 View all users across companies"
-                          primaryTypographyProps={{
-                            sx: { color: 'white', fontSize: '0.9rem' }
-                          }}
-                        />
-                      </ListItem>
-                      <ListItem sx={{ px: 0, py: 0.5 }}>
-                        <ListItemIcon sx={{ minWidth: 36 }}>
-                          <Settings sx={{ color: 'white', fontSize: 20 }} />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary="⚙️ System configuration"
-                          primaryTypographyProps={{
-                            sx: { color: 'white', fontSize: '0.9rem' }
-                          }}
-                        />
-                      </ListItem>
-                      <ListItem sx={{ px: 0, py: 0.5 }}>
-                        <ListItemIcon sx={{ minWidth: 36 }}>
-                          <Analytics sx={{ color: 'white', fontSize: 20 }} />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary="📈 Analytics and reports"
-                          primaryTypographyProps={{
-                            sx: { color: 'white', fontSize: '0.9rem' }
-                          }}
-                        />
-                      </ListItem>
-                      <ListItem sx={{ px: 0, py: 0.5 }}>
-                        <ListItemIcon sx={{ minWidth: 36 }}>
-                          <Security sx={{ color: 'white', fontSize: 20 }} />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary="🔐 Master access control"
-                          primaryTypographyProps={{
-                            sx: { color: 'white', fontSize: '0.9rem' }
-                          }}
-                        />
-                      </ListItem>
-                    </List>
-                  </Card>
+                    <MenuIcon />
+                  </IconButton>
                 </Box>
-              </Grid>
+              )}
 
               {/* RIGHT SECTION - Login Form */}
               <Grid
                 item
                 xs={12}
-                md={7}
+                md={isDesktop ? 7 : (isTablet ? 12 : 12)}
                 sx={{
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'center',
-                  p: { xs: 4, md: 6 }
+                  p: isMobile ? 3 : isTablet ? 4 : 6
                 }}
               >
-                <Box sx={{ maxWidth: '400px', mx: 'auto', width: '100%' }}>
+                <Box sx={{ 
+                  maxWidth: '370px', 
+                  mx: 'auto', 
+                  width: '100%',
+                  mt: isMobile ? 3 : 0
+                }}>
                   {/* Form Header */}
-                  <Box sx={{ textAlign: 'center', mb: 4 }}>
+                  <Box sx={{ textAlign: 'center', mb: isMobile ? 2 : 4 }}>
+                    {isMobile && (
+                      <Box
+                        sx={{
+                          width: 60,
+                          height: 60,
+                          borderRadius: '50%',
+                          backgroundColor: 'white',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          margin: '0 auto 16px',
+                          border: '2px solid rgba(0, 0, 0, 0.1)',
+                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                        }}
+                      >
+                        {companyLoading ? (
+                          <CircularProgress size={24} color="inherit" />
+                        ) : companyDetails?.logo ? (
+                          <Box
+                            component="img"
+                            src={companyDetails.logo}
+                            alt={companyDetails.companyName}
+                            sx={{
+                              width: 40,
+                              height: 40,
+                              objectFit: 'contain',
+                              borderRadius: '50%'
+                            }}
+                          />
+                        ) : (
+                          <AdminPanelSettings
+                            sx={{
+                              fontSize: 32,
+                              color: '#1e3a8a'
+                            }}
+                          />
+                        )}
+                      </Box>
+                    )}
+
                     <Typography
-                      variant="h4"
+                      variant={isMobile ? "h5" : "h4"}
                       sx={{
                         fontWeight: 700,
                         mb: 1,
                         color: 'text.primary',
-                        letterSpacing: '-0.5px'
+                        letterSpacing: '-0.5px',
+                        fontSize: isMobile ? '1.5rem' : isTablet ? '1.75rem' : '2rem'
                       }}
                     >
-                      CIIS NETWORK
+                      {companyDetails?.companyName || 'CIIS NETWORK'}
                     </Typography>
                     <Typography
                       variant="body1"
                       sx={{
                         color: 'text.secondary',
-                        mb: 3
+                        mb: isMobile ? 2 : 3,
+                        fontSize: isMobile ? '0.9rem' : '1rem'
                       }}
                     >
-                      Access the master control panel
+                      {isMobile ? 'Super Admin Login' : 'Access the master control panel'}
                     </Typography>
                   </Box>
 
@@ -349,9 +625,7 @@ const SuperAdminLogin = () => {
                       sx={{
                         mb: 3,
                         borderRadius: 2,
-                        '& .MuiAlert-icon': {
-                          alignItems: 'center'
-                        }
+                        fontSize: isMobile ? '0.875rem' : '0.9rem'
                       }}
                     >
                       {errors.general}
@@ -373,9 +647,11 @@ const SuperAdminLogin = () => {
                       disabled={loading}
                       autoComplete="email"
                       margin="normal"
+                      size={isMobile ? "small" : "medium"}
                       sx={{
                         '& .MuiOutlinedInput-root': {
                           borderRadius: 2,
+                          fontSize: isMobile ? '0.9rem' : '1rem',
                           '&:hover fieldset': {
                             borderColor: 'primary.main'
                           }
@@ -384,7 +660,10 @@ const SuperAdminLogin = () => {
                       InputProps={{
                         startAdornment: (
                           <InputAdornment position="start">
-                            <EmailOutlined color="action" />
+                            <EmailOutlined 
+                              fontSize={isMobile ? "small" : "medium"} 
+                              color="action" 
+                            />
                           </InputAdornment>
                         )
                       }}
@@ -403,9 +682,11 @@ const SuperAdminLogin = () => {
                       disabled={loading}
                       autoComplete="current-password"
                       margin="normal"
+                      size={isMobile ? "small" : "medium"}
                       sx={{
                         '& .MuiOutlinedInput-root': {
                           borderRadius: 2,
+                          fontSize: isMobile ? '0.9rem' : '1rem',
                           '&:hover fieldset': {
                             borderColor: 'primary.main'
                           }
@@ -414,7 +695,10 @@ const SuperAdminLogin = () => {
                       InputProps={{
                         startAdornment: (
                           <InputAdornment position="start">
-                            <LockOutlined color="action" />
+                            <LockOutlined 
+                              fontSize={isMobile ? "small" : "medium"} 
+                              color="action" 
+                            />
                           </InputAdornment>
                         ),
                         endAdornment: (
@@ -422,9 +706,12 @@ const SuperAdminLogin = () => {
                             <IconButton
                               onClick={() => setShowPassword(!showPassword)}
                               edge="end"
-                              size="small"
+                              size={isMobile ? "small" : "medium"}
                             >
-                              {showPassword ? <VisibilityOff /> : <Visibility />}
+                              {showPassword ? 
+                                <VisibilityOff fontSize={isMobile ? "small" : "medium"} /> : 
+                                <Visibility fontSize={isMobile ? "small" : "medium"} />
+                              }
                             </IconButton>
                           </InputAdornment>
                         )
@@ -439,9 +726,9 @@ const SuperAdminLogin = () => {
                       disabled={loading}
                       sx={{
                         mt: 3,
-                        py: 1.5,
+                        py: isMobile ? 1 : 1.5,
                         borderRadius: 2,
-                        fontSize: '1rem',
+                        fontSize: isMobile ? '0.9rem' : '1rem',
                         fontWeight: 600,
                         textTransform: 'none',
                         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -453,18 +740,53 @@ const SuperAdminLogin = () => {
                       }}
                       startIcon={
                         loading ? (
-                          <CircularProgress size={20} color="inherit" />
+                          <CircularProgress 
+                            size={isMobile ? 16 : 20} 
+                            color="inherit" 
+                          />
                         ) : (
-                          <LoginIcon />
+                          <LoginIcon fontSize={isMobile ? "small" : "medium"} />
                         )
                       }
                     >
                       {loading ? 'Logging in...' : 'Login as Super Admin'}
                     </Button>
 
+                    {/* Mobile Features Button */}
+                    {isMobile && (
+                      <Button
+                        fullWidth
+                        variant="outlined"
+                        onClick={() => setDrawerOpen(true)}
+                        sx={{
+                          mt: 2,
+                          py: 1,
+                          borderRadius: 2,
+                          fontSize: '0.9rem',
+                          fontWeight: 600,
+                          textTransform: 'none',
+                          borderColor: '#1e3a8a',
+                          color: '#1e3a8a',
+                          '&:hover': {
+                            borderColor: '#3730a3',
+                            backgroundColor: 'rgba(30, 58, 138, 0.04)'
+                          }
+                        }}
+                        startIcon={<AdminPanelSettings fontSize="small" />}
+                      >
+                        View Features
+                      </Button>
+                    )}
+
                     {/* Regular Login Link */}
                     <Box sx={{ mt: 3, textAlign: 'center' }}>
-                      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                      <Typography 
+                        variant="body2" 
+                        sx={{ 
+                          color: 'text.secondary',
+                          fontSize: isMobile ? '0.8rem' : '0.875rem'
+                        }}
+                      >
                         Regular company login?{' '}
                         <Link
                           href="/"
@@ -473,6 +795,7 @@ const SuperAdminLogin = () => {
                             color: 'primary.main',
                             fontWeight: 600,
                             textDecoration: 'none',
+                            fontSize: isMobile ? '0.8rem' : '0.875rem',
                             '&:hover': {
                               textDecoration: 'underline'
                             }
@@ -484,22 +807,29 @@ const SuperAdminLogin = () => {
                     </Box>
                   </form>
 
-                  {/* Terms & Privacy */}
+                  {/* Terms & Privacy - Smaller on mobile */}
                   <Box sx={{ mt: 4, textAlign: 'center' }}>
                     <Typography
                       variant="caption"
                       sx={{
                         color: 'text.disabled',
                         lineHeight: 1.5,
-                        display: 'block'
+                        display: 'block',
+                        fontSize: isMobile ? '0.7rem' : '0.75rem'
                       }}
                     >
                       By signing in, you agree to our{' '}
-                      <Link href="#" variant="caption" sx={{ color: 'text.disabled' }}>
+                      <Link href="#" variant="caption" sx={{ 
+                        color: 'text.disabled',
+                        fontSize: isMobile ? '0.7rem' : '0.75rem'
+                      }}>
                         Terms of Service
                       </Link>{' '}
                       and{' '}
-                      <Link href="#" variant="caption" sx={{ color: 'text.disabled' }}>
+                      <Link href="#" variant="caption" sx={{ 
+                        color: 'text.disabled',
+                        fontSize: isMobile ? '0.7rem' : '0.75rem'
+                      }}>
                         Privacy Policy
                       </Link>
                     </Typography>
@@ -509,6 +839,9 @@ const SuperAdminLogin = () => {
             </Grid>
           </Paper>
         </Fade>
+
+        {/* Mobile Drawer for Features */}
+        {isMobile && <FeaturesDrawer />}
       </Container>
     </Box>
   );

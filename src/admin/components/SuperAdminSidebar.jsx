@@ -3,7 +3,8 @@ import { NavLink } from 'react-router-dom';
 const Sidebar = () => {
   const menuItems = [
     { path: '/Ciis-network/SuperAdminDashboard', label: 'Dashboard', icon: '📊' },
-    { path: '/Ciis-network/all-company', label: 'All Company', icon: '🏭' }, // ✅ NEW
+    { path: '/Ciis-network/all-company', label: 'All Company', icon: '🏭' }, 
+    { path: '/Ciis-network/company-details', label: 'Company Details', icon: '🏢' },
     { path: '/Ciis-network/department', label: 'Department', icon: '🏢' },
     { path: '/Ciis-network/JobRoleManagement', label: 'Job Roles', icon: '👔' },
     { path: '/Ciis-network/create-user', label: 'Create User', icon: '👤' },
