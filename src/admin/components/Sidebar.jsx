@@ -237,7 +237,7 @@ const Sidebar = ({ isMobile = false }) => {
         timer: 2000,
       });
 
-      setTimeout(() => navigate("/login"), 1800);
+      setTimeout(() => navigate("/"), 1800);
     }
   };
 

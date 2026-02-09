@@ -2881,7 +2881,7 @@ const AdminTaskManagementUserInfoChip = ({ user }) => {
       <div className="AdminTaskManagement-header">
         <div className="AdminTaskManagement-header-content">
           <div className="AdminTaskManagement-header-title">
-            <h2>Task Management</h2>
+            <h2>Admin Task Management</h2>
             <div className="AdminTaskManagement-header-subtitle">
               Manage and assign tasks to users and groups
               {currentUser.company && currentUser.department && (
