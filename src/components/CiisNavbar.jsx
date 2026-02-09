@@ -60,12 +60,10 @@ const CiisNavbar = () => {
           </ul>
 
           <div className="nav-actions">
-            <Link to="/company/CIISNE/login">
-              <button className="login-btn">Login</button>
+            <Link to="/RegisterCompany">
+              <button className="login-btn">Register your company</button>
             </Link>
-            <Link to="/SuperAdminLogin">
-              <button className="login-btn">SuperAdminLogin</button>
-            </Link>
+          
           </div>
 
         </div>

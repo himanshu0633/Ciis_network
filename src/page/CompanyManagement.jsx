@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, memo } from "react";
 import axios from "axios";
+import API_URL from "../config";
 
-// const API_BASE = "http://localhost:3000/api";
+// const API_URL = "http://localhost:3000/api";
 
 /**
  * ✅ Memoized FormField (Important)
@@ -92,7 +93,7 @@ const CompanyManagement = () => {
 
   const fetchCompanies = async () => {
     try {
-      const res = await axios.get(`${API_BASE}/company`);
+      const res = await axios.get(`${API_URL}/company`);
 
       if (res.data?.success && Array.isArray(res.data?.data)) {
         setCompanies(res.data.data);
@@ -218,12 +219,12 @@ const CompanyManagement = () => {
 
       if (isEditing && selectedCompany?._id) {
         const res = await axios.patch(
-          `${API_BASE}/company/${selectedCompany._id}`,
+          `${API_URL}/company/${selectedCompany._id}`,
           formData
         );
         setMsg(res.data?.message || "Company updated successfully ✅");
       } else {
-        const res = await axios.post(`${API_BASE}/company`, formData);
+        const res = await axios.post(`${API_URL}/company`, formData);
         setMsg(res.data?.message || "Company created successfully 🎉");
       }
 
@@ -231,7 +232,6 @@ const CompanyManagement = () => {
       setSelectedCompany(null);
       setIsEditing(false);
       setViewMode("create");
-
       fetchCompanies();
     } catch (err) {
       console.error("Submit error:", err.response?.data || err.message);
@@ -293,7 +293,7 @@ const CompanyManagement = () => {
     }
 
     try {
-      await axios.patch(`${API_BASE}/company/${id}/deactivate`);
+      await axios.patch(`${API_URL}/company/${id}/deactivate`);
       setMsg("Company deactivated successfully ✅");
       fetchCompanies();
 
@@ -308,7 +308,7 @@ const CompanyManagement = () => {
   // ✅ Activate
   const handleActivate = async (id) => {
     try {
-      await axios.patch(`${API_BASE}/company/${id}/activate`);
+      await axios.patch(`${API_URL}/company/${id}/activate`);
       setMsg("Company activated successfully ✅");
       fetchCompanies();
 
@@ -327,7 +327,7 @@ const CompanyManagement = () => {
     }
 
     try {
-      await axios.delete(`${API_BASE}/company/${id}`);
+      await axios.delete(`${API_URL}/company/${id}`);
       setMsg("Company deleted successfully ✅");
       fetchCompanies();
 
@@ -350,7 +350,7 @@ const CompanyManagement = () => {
     clearMessages();
 
     try {
-      const res = await axios.get(`${API_BASE}/company/code/${searchCode.trim()}`);
+      const res = await axios.get(`${API_URL}/company/code/${searchCode.trim()}`);
       if (res.data?.company) {
         setSelectedCompany(res.data.company);
         setViewMode("view");
@@ -372,7 +372,7 @@ const CompanyManagement = () => {
     clearMessages();
 
     try {
-      const res = await axios.get(`${API_BASE}/company/${searchId.trim()}`);
+      const res = await axios.get(`${API_URL}/company/${searchId.trim()}`);
       if (res.data?.company) {
         setSelectedCompany(res.data.company);
         setViewMode("view");

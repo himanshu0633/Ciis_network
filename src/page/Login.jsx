@@ -146,35 +146,46 @@ const Login = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateForm()) return;
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  if (!validateForm()) return;
 
-    setLoading(true);
+  setLoading(true);
 
-    try {
-      const loginData = {
-        ...form,
-        companyIdentifier: companyIdentifier || null
-      };
+  try {
+    // Create login data with correct field names
+    const loginData = {
+      email: form.email.trim(),
+      password: form.password,
+      companyCode: companyIdentifier || null  // Changed from companyIdentifier to companyCode
+    };
 
-      const res = await axios.post('/auth/login', loginData);
+    console.log('Login attempt:', {
+      email: loginData.email,
+      companyCode: loginData.companyCode,
+      timestamp: new Date().toISOString()
+    });
 
-      if (res.data.requiresTwoFactor) {
-        setTwoFactorRequired(true);
-        toast.info('Two-factor authentication required');
-        return;
-      }
+    const res = await axios.post('/auth/login', loginData);
 
-      // Save token
+    if (res.data.requiresTwoFactor) {
+      setTwoFactorRequired(true);
+      toast.info('Two-factor authentication required');
+      return;
+    }
+
+    // Save token
+    if (res.data.token) {
       localStorage.setItem('token', res.data.token);
+    }
 
-      // Save user data
+    // Save user data
+    if (res.data.user) {
       const userData = res.data.user;
       localStorage.setItem('user', JSON.stringify(userData));
-
       setUser(userData);
       setIsAuthenticated(true);
+<<<<<<< HEAD
 
       // Save company identifier
       if (companyIdentifier) {
@@ -237,8 +248,113 @@ const Login = () => {
       setErrors((prev) => ({ ...prev, general: errorMsg, shouldRetry }));
     } finally {
       setLoading(false);
+=======
+>>>>>>> 240a4e8eaa1426703358d465c5a80169fe41fa38
     }
-  };
+
+    // Save company info
+    if (companyIdentifier) {
+      localStorage.setItem('companyIdentifier', companyIdentifier);
+      localStorage.setItem('companyCode', companyIdentifier); // Also save as companyCode for consistency
+    }
+
+    if (companyDetails) {
+      localStorage.setItem('companyDetails', JSON.stringify(companyDetails));
+    }
+
+    toast.success("Login successful!");
+
+    // Check for redirect path in response or use default
+    let redirectPath = '/ciisUser/user-dashboard';
+    
+    if (res.data.redirectTo) {
+      redirectPath = res.data.redirectTo;
+    } else if (res.data.user?.role) {
+      redirectPath = res.data.user.role === 'admin' 
+        ? '/admin/dashboard' 
+        : '/ciisUser/user-dashboard';
+    }
+
+    console.log('Redirecting to:', redirectPath);
+    navigate(redirectPath);
+    
+  } catch (err) {
+    console.error('Login error details:', {
+      message: err.message,
+      response: err.response?.data,
+      status: err.response?.status,
+      config: {
+        url: err.config?.url,
+        data: err.config?.data
+      }
+    });
+
+    let errorMsg = 'Login failed. Please try again.';
+    let shouldRetry = false;
+
+    if (err.response?.data) {
+      const { errorCode, message, remainingAttempts } = err.response.data;
+
+      // Use server message if available
+      if (message) errorMsg = message;
+
+      switch (errorCode) {
+        case 'ACCOUNT_LOCKED':
+          const retryAfter = err.response.data.retryAfter;
+          const lockTime = new Date(retryAfter).toLocaleTimeString();
+          errorMsg = `Account locked until ${lockTime}. Please try again later.`;
+          break;
+
+        case 'ACCOUNT_DEACTIVATED':
+          errorMsg = 'Your account has been deactivated. Contact your administrator.';
+          break;
+
+        case 'SUBSCRIPTION_EXPIRED':
+          errorMsg = 'Company subscription has expired. Contact your company admin.';
+          break;
+
+        case 'INVALID_CREDENTIALS':
+          errorMsg = 'Invalid email or password.';
+          if (remainingAttempts !== undefined) {
+            errorMsg += ` ${remainingAttempts} attempts remaining.`;
+            shouldRetry = remainingAttempts > 0;
+          }
+          break;
+
+        case 'COMPANY_NOT_FOUND':
+          errorMsg = 'Company not found. Please check your URL.';
+          break;
+
+        case 'USER_NOT_FOUND':
+          errorMsg = 'No account found with this email.';
+          break;
+
+        case 'INVALID_COMPANY_CODE':
+          errorMsg = 'Invalid company code. Please check the URL.';
+          break;
+
+        default:
+          // For generic 401 error
+          if (err.response.status === 401) {
+            errorMsg = 'Invalid credentials. Please check your email and password.';
+          }
+          break;
+      }
+    } else if (err.code === 'ERR_NETWORK') {
+      errorMsg = 'Network error. Please check your connection.';
+    }
+
+    toast.error(errorMsg);
+    setErrors((prev) => ({ 
+      ...prev, 
+      general: errorMsg, 
+      shouldRetry 
+    }));
+    
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleTwoFactorSubmit = async () => {
     if (!twoFactorCode.trim()) {

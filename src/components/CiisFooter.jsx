@@ -2,6 +2,7 @@ import React from 'react';
 import { FaTwitter, FaFacebookF, FaInstagram, FaLinkedinIn, FaMapMarkerAlt, FaPhone, FaEnvelope } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import './CiisFooter.css';
+import { Link, useLocation } from 'react-router-dom';
 
 const CiisFooter = () => {
   const navigate = useNavigate();
@@ -35,6 +36,10 @@ const CiisFooter = () => {
               <p className="ciis-footer-description">
                 Innovative solutions for streamlined employee management and business excellence.
               </p>
+         
+            <Link to="/SuperAdminLogin">
+              <button >SuperAdminLogin</button>
+            </Link>
             </div>
           </div>
 
@@ -81,9 +86,16 @@ const CiisFooter = () => {
         {/* Bottom Bar */}
         <div className="ciis-footer-bottom">
           <div className="ciis-bottom-content">
-            <p className="ciis-copyright">
+
+ <Link to="/company/CIISNE/login">
+              <p className="ciis-copyright">
+              
               © 2025 CIIS Network. All rights reserved.
             </p>
+            </Link>
+
+
+            
             
             <div className="ciis-legal-links">
               <a href="#privacy" className="ciis-legal-link">Privacy</a>

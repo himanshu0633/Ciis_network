@@ -54,6 +54,7 @@ const SuperAdminLogin = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+<<<<<<< HEAD
   const [errors, setErrors] = useState({});
   const [companyLoading, setCompanyLoading] = useState(true);
   const [companyDetails, setCompanyDetails] = useState(null);
@@ -117,6 +118,13 @@ const SuperAdminLogin = () => {
       setCompanyLoading(false);
     }
   };
+=======
+  const [errors, setErrors] = useState({
+    email: '',
+    password: '',
+    general: ''
+  });
+>>>>>>> 240a4e8eaa1426703358d465c5a80169fe41fa38
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -156,11 +164,16 @@ const SuperAdminLogin = () => {
     setLoading(true);
 
     try {
+<<<<<<< HEAD
       const response = await axios.post(`${API_URL}/super-admin/login`, {
         ...form,
         companyIdentifier: companyIdentifier || 'ciis'
       });
 
+=======
+      const response = await axios.post(`${API_URL}/super-admin/login`, form);
+      
+>>>>>>> 240a4e8eaa1426703358d465c5a80169fe41fa38
       if (response.data.success) {
         localStorage.setItem('superAdmin', JSON.stringify(response.data.data));
         localStorage.setItem('token', response.data.token);
