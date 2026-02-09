@@ -1,10 +1,9 @@
-import React, { useState, useCallback, memo } from "react";
+import React, { useState, useCallback, memo, useEffect } from "react";
 import axios from "axios";
 import API_URL from "../../config";
-/**
- * ✅ Memoized FormField
- * Prevents cursor jumping in inputs
- */
+import { useNavigate } from "react-router-dom";
+
+
 const FormField = memo(
   ({ label, name, type = "text", placeholder, required, value, onChange, error, autoComplete }) => {
     return (
@@ -71,11 +70,14 @@ const CompanyRegister = () => {
   const [msg, setMsg] = useState("");
   const [error, setError] = useState("");
   const [formErrors, setFormErrors] = useState({});
+  const [apiErrors, setApiErrors] = useState({}); // New state for API errors
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const [logoLoading, setLogoLoading] = useState(false);
 
   const clearMessages = () => {
     setMsg("");
     setError("");
+    setApiErrors({}); // Clear API errors too
   };
 
   /**
@@ -91,6 +93,12 @@ const CompanyRegister = () => {
 
     // Clear field error instantly
     setFormErrors((prev) => ({
+      ...prev,
+      [name]: "",
+    }));
+    
+    // Clear API error for this field
+    setApiErrors((prev) => ({
       ...prev,
       [name]: "",
     }));
@@ -127,10 +135,11 @@ const CompanyRegister = () => {
       errors.ownerEmail = "Invalid owner email format";
     }
 
-    // Phone format check
-    const phoneRegex = /^[0-9+\-\s()]{10,15}$/;
-    if (companyPhone && !phoneRegex.test(companyPhone)) {
-      errors.companyPhone = "Phone must be 10-15 digits";
+    // Phone format check - Updated to exactly 10 digits
+    const phoneRegex = /^\d{10}$/;
+    const phoneDigits = companyPhone.replace(/\D/g, '');
+    if (companyPhone && !phoneRegex.test(phoneDigits)) {
+      errors.companyPhone = "Phone must be exactly 10 digits";
     }
 
     // Password strength
@@ -154,7 +163,23 @@ const CompanyRegister = () => {
       ownerPassword: "",
     });
     setFormErrors({});
+    setApiErrors({});
   };
+
+  // Function to map backend field names to frontend field names
+  const mapFieldName = (backendField) => {
+    const fieldMap = {
+      'phone': 'companyPhone',
+      'email': 'companyEmail',
+      'address': 'companyAddress',
+      'name': 'companyName',
+      // Add more mappings as needed
+    };
+    return fieldMap[backendField] || backendField;
+  };
+
+  const navigate = useNavigate();
+
 
   // ✅ Register Company
   const handleSubmit = async (e) => {
@@ -170,9 +195,14 @@ const CompanyRegister = () => {
     }
 
     setIsSubmitting(true);
+    setLogoLoading(true);
 
     try {
-      const formData = { ...form };
+      // Format phone number to remove any non-digits
+      const formData = { 
+        ...form,
+        companyPhone: form.companyPhone.replace(/\D/g, '')
+      };
 
       const res = await axios.post(`${API_URL}/company`, formData);
       
@@ -191,12 +221,37 @@ const CompanyRegister = () => {
       console.error("Registration error:", err.response?.data || err.message);
 
       let errorMessage = "Something went wrong ❌";
+      const errorData = err.response?.data;
 
-      if (err.response?.data) {
-        if (Array.isArray(err.response.data.errors)) {
-          errorMessage = err.response.data.errors.join(". ");
-        } else if (err.response.data.message) {
-          errorMessage = err.response.data.message;
+      if (errorData) {
+        // Set the main error message
+        if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+
+        // Handle validation errors from details object
+        if (errorData.details) {
+          const newApiErrors = {};
+          
+          Object.entries(errorData.details).forEach(([field, errorInfo]) => {
+            if (errorInfo && errorInfo.message) {
+              const frontendField = mapFieldName(field);
+              newApiErrors[frontendField] = errorInfo.message;
+            }
+          });
+          
+          setApiErrors(newApiErrors);
+          
+          // Show first error as main error
+          const firstError = Object.values(newApiErrors)[0];
+          if (firstError) {
+            errorMessage = firstError;
+          }
+        }
+        
+        // Handle array errors
+        if (Array.isArray(errorData.errors)) {
+          errorMessage = errorData.errors.join(". ");
         }
       } else if (err.request) {
         errorMessage = "No response from server. Please check your connection.";
@@ -208,15 +263,86 @@ const CompanyRegister = () => {
       setRegistrationSuccess(false);
     } finally {
       setIsSubmitting(false);
+      setLogoLoading(false);
     }
   };
 
+  // Combine form errors and API errors for display
+  const getFieldError = (fieldName) => {
+    return apiErrors[fieldName] || formErrors[fieldName];
+  };
+
+  // Add CSS for spinner animation
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
   return (
     <div style={{ maxWidth: 900, margin: "60px auto", padding: 20 }}>
+      {/* Logo Box - Added just before the header */}
+      <div
+        style={{
+          width: 100,
+          height: 100,
+          borderRadius: 8,
+          backgroundColor: 'white',
+          backdropFilter: 'blur(10px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          margin: '0 auto 20px auto',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+          position: 'relative',
+          zIndex: 1
+        }}
+      >
+        {logoLoading ? (
+          <div className="spinner" style={{
+            width: 40,
+            height: 40,
+            border: '3px solid #f3f3f3',
+            borderTop: '3px solid #2563eb',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite'
+          }}></div>
+        ) : form.logo ? (
+          <img
+            src={form.logo}
+            alt="Company Logo Preview"
+            style={{
+              width: 70,
+              height: 70,
+              objectFit: 'contain',
+              borderRadius: '6px'
+            }}
+            onError={(e) => {
+              e.target.style.display = 'none';
+              e.target.parentNode.innerHTML = `
+                <div style="font-size: 44px; color: #2563eb;">🏢</div>
+              `;
+            }}
+          />
+        ) : (
+          <div style={{ fontSize: "44px", color: "#2563eb" }}>🏢</div>
+        )}
+      </div>
+
       {/* Header */}
       <div style={{ textAlign: "center", marginBottom: 40 }}>
         <h1 style={{ fontSize: "2.5rem", color: "#1e40af", marginBottom: 8 }}>
-          🏢 Company Registration
+          Company Registration
         </h1>
         <p style={{ color: "#6b7280", fontSize: "1.1rem" }}>
           Register your company and create owner account
@@ -255,17 +381,49 @@ const CompanyRegister = () => {
         </div>
       )}
 
-      {/* Error Message */}
-      {error && !msg && (
-        <div style={errorBox}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      {/* Error Message - Always show when there's an error */}
+      {error && (
+        <div style={{
+          ...errorBox,
+          marginBottom: 30,
+        }}>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
             <span style={{ fontSize: "1.5rem" }}>❌</span>
-            <div>
-              <strong>Registration Failed</strong>
-              <p style={{ margin: "5px 0 0 0" }}>{error}</p>
+            <div style={{ flex: 1 }}>
+              <strong style={{ display: "block", marginBottom: 5 }}>
+                Registration Failed
+              </strong>
+              <p style={{ margin: "0 0 10px 0" }}>{error}</p>
+              
+              {/* Show specific field errors if available */}
+              {Object.keys(apiErrors).length > 0 && (
+                <div style={{ 
+                  marginTop: 10,
+                  paddingTop: 10,
+                  borderTop: '1px solid rgba(220, 38, 38, 0.3)'
+                }}>
+                  <p style={{ margin: "0 0 8px 0", fontSize: "14px", fontWeight: "500" }}>
+                    Please fix the following errors:
+                  </p>
+                  <ul style={{ 
+                    margin: 0, 
+                    paddingLeft: 20,
+                    fontSize: "14px"
+                  }}>
+                    {Object.entries(apiErrors).map(([field, message]) => (
+                      <li key={field} style={{ marginBottom: 4 }}>
+                        <strong>{field}:</strong> {message}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           </div>
-          <button onClick={clearMessages} style={clearBtnRed}>
+          <button 
+            onClick={clearMessages} 
+            style={clearBtnRed}
+          >
             Dismiss
           </button>
         </div>
@@ -305,7 +463,7 @@ const CompanyRegister = () => {
                   required
                   value={form.companyName}
                   onChange={handleChange}
-                  error={formErrors.companyName}
+                  error={getFieldError("companyName")}
                   autoComplete="off"
                 />
 
@@ -317,7 +475,7 @@ const CompanyRegister = () => {
                   required
                   value={form.companyEmail}
                   onChange={handleChange}
-                  error={formErrors.companyEmail}
+                  error={getFieldError("companyEmail")}
                   autoComplete="off"
                 />
               </div>
@@ -329,7 +487,7 @@ const CompanyRegister = () => {
                 required
                 value={form.companyAddress}
                 onChange={handleChange}
-                error={formErrors.companyAddress}
+                error={getFieldError("companyAddress")}
                 autoComplete="off"
               />
 
@@ -337,12 +495,13 @@ const CompanyRegister = () => {
                 <FormField
                   label="Company Phone"
                   name="companyPhone"
-                  placeholder="+1234567890"
+                  placeholder="Enter 10 digits (e.g., 9389111476)"
                   required
                   value={form.companyPhone}
                   onChange={handleChange}
-                  error={formErrors.companyPhone}
+                  error={getFieldError("companyPhone")}
                   autoComplete="off"
+                  type="tel"
                 />
 
                 <FormField
@@ -352,7 +511,7 @@ const CompanyRegister = () => {
                   required={false}
                   value={form.logo}
                   onChange={handleChange}
-                  error={formErrors.logo}
+                  error={getFieldError("logo")}
                   autoComplete="off"
                 />
               </div>
@@ -388,19 +547,19 @@ const CompanyRegister = () => {
                   required
                   value={form.ownerName}
                   onChange={handleChange}
-                  error={formErrors.ownerName}
+                  error={getFieldError("ownerName")}
                   autoComplete="off"
                 />
 
                 <FormField
-                  label="Owner Email"
+                  label="Owner Email / For Super Admin Login"
                   name="ownerEmail"
                   type="email"
                   placeholder="owner@example.com"
                   required
                   value={form.ownerEmail}
                   onChange={handleChange}
-                  error={formErrors.ownerEmail}
+                  error={getFieldError("ownerEmail")}
                   autoComplete="off"
                 />
               </div>
@@ -409,11 +568,11 @@ const CompanyRegister = () => {
                 label="Owner Password"
                 name="ownerPassword"
                 type="password"
-                placeholder="Enter strong password (min 6 characters)"
+                placeholder="Enter strong password (min 8 characters)"
                 required
                 value={form.ownerPassword}
                 onChange={handleChange}
-                error={formErrors.ownerPassword}
+                error={getFieldError("ownerPassword")}
                 autoComplete="new-password"
               />
             </div>
@@ -462,7 +621,14 @@ const CompanyRegister = () => {
               >
                 {isSubmitting ? (
                   <>
-                    <span className="spinner"></span>
+                    <div style={{
+                      width: 20,
+                      height: 20,
+                      border: '2px solid #f3f3f3',
+                      borderTop: '2px solid #fff',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite'
+                    }}></div>
                     Registering...
                   </>
                 ) : (
@@ -540,7 +706,6 @@ const errorBox = {
   background: "#fee2e2",
   borderRadius: 12,
   border: "2px solid #f87171",
-  marginBottom: 30,
   position: "relative",
 };
 
