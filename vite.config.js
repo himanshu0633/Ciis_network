@@ -10,14 +10,6 @@ export default defineConfig({
   ],
 
   // Fix for Material-UI v4 + Vite compatibility
-  optimizeDeps: {
-    include: [
-      "@material-ui/core",
-      "@material-ui/styles",
-      "@material-ui/icons",
-      "@material-ui/utils"
-    ]
-  },
 
    build: {
     commonjsOptions: {
