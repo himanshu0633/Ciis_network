@@ -26,7 +26,8 @@ import {
   Close,
   Save,
   Delete,
-  Code
+  Code,
+  Work // Added for job roles
 } from "@mui/icons-material";
 import {
   Card,
@@ -52,7 +53,8 @@ import {
   IconButton,
   Switch,
   FormControlLabel,
-  Alert
+  Alert,
+  Autocomplete // Added for better dropdown experience
 } from "@mui/material";
 
 const CompanyDetails = () => {
@@ -76,10 +78,92 @@ const CompanyDetails = () => {
     email: "",
     role: "",
     department: "",
-    isActive: true
+    isActive: true,
+    phone: "",
+    designation: ""
   });
   const [saveLoading, setSaveLoading] = useState(false);
+  
+  // Separate states for departments and job roles
   const [departments, setDepartments] = useState([]);
+  const [jobRoles, setJobRoles] = useState([]);
+  const [loadingDepartments, setLoadingDepartments] = useState(false);
+  const [loadingJobRoles, setLoadingJobRoles] = useState(false);
+
+  // Fetch departments API
+  const fetchDepartments = async (companyId) => {
+    if (!companyId) return;
+    
+    try {
+      setLoadingDepartments(true);
+      const token = localStorage.getItem("token");
+      const headers = { Authorization: `Bearer ${token}` };
+      
+      const response = await axios.get(
+        `${API_URL}/departments?company=${companyId}`,
+        { headers }
+      );
+      
+      console.log("Departments API Response:", response.data);
+      
+      if (response.data && response.data.success) {
+        // Handle different response formats
+        const departmentsData = response.data.departments || response.data.data || response.data.message || [];
+        setDepartments(departmentsData);
+        
+        // Extract department names for dropdown
+        const departmentNames = departmentsData.map(dept => 
+          typeof dept === 'string' ? dept : (dept.name || dept.departmentName || '')
+        ).filter(Boolean);
+        
+        setDepartments(departmentNames);
+      } else {
+        toast.error("Failed to fetch departments");
+      }
+    } catch (error) {
+      console.error("Error fetching departments:", error);
+      toast.error(error.response?.data?.message || "Error loading departments");
+    } finally {
+      setLoadingDepartments(false);
+    }
+  };
+
+  // Fetch job roles API
+  const fetchJobRoles = async (companyId) => {
+    if (!companyId) return;
+    
+    try {
+      setLoadingJobRoles(true);
+      const token = localStorage.getItem("token");
+      const headers = { Authorization: `Bearer ${token}` };
+      
+      const response = await axios.get(
+        `${API_URL}/job-roles?company=${companyId}`,
+        { headers }
+      );
+      
+      console.log("Job Roles API Response:", response.data);
+      
+      if (response.data && response.data.success) {
+        // Handle different response formats
+        const jobRolesData = response.data.jobRoles || response.data.data || response.data.message || [];
+        
+        // Extract job role names for dropdown
+        const roleNames = jobRolesData.map(role => 
+          typeof role === 'string' ? role : (role.name || role.roleName || role.title || '')
+        ).filter(Boolean);
+        
+        setJobRoles(roleNames);
+      } else {
+        toast.error("Failed to fetch job roles");
+      }
+    } catch (error) {
+      console.error("Error fetching job roles:", error);
+      toast.error(error.response?.data?.message || "Error loading job roles");
+    } finally {
+      setLoadingJobRoles(false);
+    }
+  };
 
   // Current logged-in user की company fetch करें
   const fetchCurrentUserCompany = async () => {
@@ -107,11 +191,6 @@ const CompanyDetails = () => {
         
         if (response.data && response.data.success) {
           const data = response.data.message;
-          
-          // Debug: Check what data we're getting
-          console.log("Company data from API:", data.company);
-          console.log("Users data from API:", data.users);
-          console.log("Current user data:", data.currentUser);
           
           // Extract company ID properly
           let companyId = "";
@@ -169,10 +248,6 @@ const CompanyDetails = () => {
           
           setRecentUsers(users.slice(0, 5)); // First 5 users for recent
           
-          // Extract unique departments
-          const uniqueDepartments = [...new Set(users.map(user => user.department).filter(Boolean))];
-          setDepartments(uniqueDepartments);
-          
           // Calculate statistics
           const activeUsers = users.filter(user => user.isActive).length;
           const deptCount = new Set(users.map(user => user.department)).size;
@@ -196,6 +271,10 @@ const CompanyDetails = () => {
           if (companyData.companyCode) {
             localStorage.setItem("companyCode", companyData.companyCode);
           }
+          
+          // Fetch departments and job roles for this company
+          fetchDepartments(companyId);
+          fetchJobRoles(companyId);
           
           return;
         }
@@ -222,86 +301,7 @@ const CompanyDetails = () => {
     }
   };
 
-  // Alternative method: Fetch company details directly
-  const fetchCompanyDirectly = async (headers) => {
-    try {
-      // Try to get company ID from localStorage first
-      const storedCompany = localStorage.getItem("company");
-      if (storedCompany) {
-        const companyInfo = JSON.parse(storedCompany);
-        const companyId = companyInfo._id;
-        
-        if (companyId) {
-          // Fetch company details directly
-          const companyRes = await axios.get(
-            `${API_URL}/super-admin/company/${companyId}`,
-            { headers }
-          );
-          
-          if (companyRes.data) {
-            const companyData = companyRes.data;
-            setCompany({
-              _id: companyData._id,
-              companyName: companyData.companyName || companyData.name,
-              companyCode: companyData.companyCode,
-              logo: companyData.logo,
-              isActive: companyData.isActive,
-              companyEmail: companyData.companyEmail,
-              companyPhone: companyData.companyPhone,
-              companyAddress: companyData.companyAddress,
-              companyDomain: companyData.companyDomain,
-              ownerName: companyData.ownerName,
-              loginUrl: companyData.loginUrl,
-              dbIdentifier: companyData.dbIdentifier,
-              createdAt: companyData.createdAt,
-              updatedAt: companyData.updatedAt,
-              subscriptionExpiry: companyData.subscriptionExpiry
-            });
-            
-            // Then fetch users
-            await fetchCompanyUsers(companyData._id, headers);
-            return true;
-          }
-        }
-      }
-      return false;
-    } catch (error) {
-      console.error("Error fetching company directly:", error);
-      return false;
-    }
-  };
-
-  // Fetch company users separately
-  const fetchCompanyUsers = async (companyId, headers) => {
-    try {
-      const usersRes = await axios.get(
-        `${API_URL}/super-admin/company/${companyId}/users`,
-        { headers }
-      );
-      
-      const users = usersRes.data || [];
-      setRecentUsers(users.slice(0, 5));
-      
-      // Extract unique departments
-      const uniqueDepartments = [...new Set(users.map(user => user.department).filter(Boolean))];
-      setDepartments(uniqueDepartments);
-      
-      const activeUsers = users.filter(user => user.isActive).length;
-      const deptCount = new Set(users.map(user => user.department)).size;
-      
-      setStats({
-        totalUsers: users.length,
-        activeUsers,
-        departments: deptCount,
-        todayLogins: 0
-      });
-      
-    } catch (usersError) {
-      console.error("Error fetching users:", usersError);
-    }
-  };
-
-  // Fallback method
+  // Fetch company from localStorage
   const fetchCompanyFromLocalStorage = async (headers) => {
     try {
       const companyData = localStorage.getItem("company");
@@ -330,39 +330,38 @@ const CompanyDetails = () => {
         
         setCompany(fullCompanyData);
         
-        // Try to fetch users using company ID
+        // Fetch departments and job roles for this company
         if (fullCompanyData._id) {
-          await fetchCompanyUsers(fullCompanyData._id, headers);
+          fetchDepartments(fullCompanyData._id);
+          fetchJobRoles(fullCompanyData._id);
+          
+          // Try to fetch users using company ID
+          try {
+            const usersRes = await axios.get(
+              `${API_URL}/super-admin/company/${fullCompanyData._id}/users`,
+              { headers }
+            );
+            
+            const users = usersRes.data || [];
+            setRecentUsers(users.slice(0, 5));
+            
+            const activeUsers = users.filter(user => user.isActive).length;
+            const deptCount = new Set(users.map(user => user.department)).size;
+            
+            setStats({
+              totalUsers: users.length,
+              activeUsers,
+              departments: deptCount,
+              todayLogins: 0
+            });
+          } catch (usersError) {
+            console.error("Error fetching users:", usersError);
+          }
         } else {
           toast.error("Company ID not found in localStorage");
         }
       } else {
         toast.error("Company data not found in localStorage");
-        
-        // Try direct fetch as last resort
-        const fetched = await fetchCompanyDirectly(headers);
-        if (!fetched) {
-          // Create dummy company data for testing
-          const dummyCompany = {
-            _id: "dummy_company_id",
-            companyName: "Test Company",
-            companyCode: "TEST001",
-            logo: "https://cds.ciisnetwork.in/logoo.png",
-            isActive: true,
-            companyEmail: "test@company.com",
-            companyPhone: "9876543210",
-            companyAddress: "Test Address, Test City",
-            companyDomain: "company.com",
-            ownerName: "Test Owner",
-            loginUrl: "/company/TEST001/login",
-            dbIdentifier: "company_dummy_001",
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            subscriptionExpiry: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-          };
-          setCompany(dummyCompany);
-          localStorage.setItem("company", JSON.stringify(dummyCompany));
-        }
       }
     } catch (error) {
       console.error("Error in fallback method:", error);
@@ -430,6 +429,22 @@ const CompanyDetails = () => {
     }));
   };
 
+  // Handle department change with Autocomplete
+  const handleDepartmentChange = (event, newValue) => {
+    setEditFormData(prev => ({
+      ...prev,
+      department: newValue
+    }));
+  };
+
+  // Handle job role change with Autocomplete
+  const handleRoleChange = (event, newValue) => {
+    setEditFormData(prev => ({
+      ...prev,
+      role: newValue
+    }));
+  };
+
   // Save user changes
   const handleSaveUser = async () => {
     if (!selectedUser) return;
@@ -442,7 +457,7 @@ const CompanyDetails = () => {
       // Determine which API to use based on your backend
       const userId = selectedUser.id || selectedUser._id;
       
-      // Update user API call - adjust endpoint as needed
+      // Update user API call
       const response = await axios.put(
         `${API_URL}/users/${userId}`,
         editFormData,
@@ -531,6 +546,30 @@ const CompanyDetails = () => {
       navigate(`/Ciis-network/company/${company._id}/users`);
     } else {
       toast.error("Company ID not available");
+    }
+  };
+
+  // Handle add new department
+  const handleAddNewDepartment = () => {
+    const newDept = prompt("Enter new department name:");
+    if (newDept && newDept.trim()) {
+      setDepartments(prev => [...prev, newDept.trim()]);
+      setEditFormData(prev => ({
+        ...prev,
+        department: newDept.trim()
+      }));
+    }
+  };
+
+  // Handle add new job role
+  const handleAddNewJobRole = () => {
+    const newRole = prompt("Enter new job role:");
+    if (newRole && newRole.trim()) {
+      setJobRoles(prev => [...prev, newRole.trim()]);
+      setEditFormData(prev => ({
+        ...prev,
+        role: newRole.trim()
+      }));
     }
   };
 
@@ -647,13 +686,6 @@ const CompanyDetails = () => {
                       />
                     )}
                   </Box>
-                  
-                  {/* Debug Info - Remove in production */}
-                  {process.env.NODE_ENV === 'development' && (
-                    <Typography variant="caption" color="textSecondary" sx={{ mt: 1 }}>
-                      Company ID: {company._id}
-                    </Typography>
-                  )}
                 </Box>
               </Box>
 
@@ -768,20 +800,6 @@ const CompanyDetails = () => {
                       </Typography>
                       <Typography variant="body1" sx={styles.dbText}>
                         {company.dbIdentifier}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <Box sx={styles.detailItem}>
-                    <Image sx={styles.detailIcon} />
-                    <Box>
-                      <Typography variant="body2" color="textSecondary">
-                        Logo URL
-                      </Typography>
-                      <Typography variant="body1" sx={styles.urlText}>
-                        {company.logo || "Not provided"}
                       </Typography>
                     </Box>
                   </Box>
@@ -928,7 +946,7 @@ const CompanyDetails = () => {
             </CardContent>
           </Card>
 
-          {/* Recent Users Card - Updated with edit functionality */}
+          {/* Recent Users Card */}
           <Card sx={styles.usersCard}>
             <CardContent>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -1042,6 +1060,7 @@ const CompanyDetails = () => {
                     onChange={handleInputChange}
                     variant="outlined"
                     size="small"
+                    required
                   />
                 </Grid>
                 
@@ -1055,6 +1074,7 @@ const CompanyDetails = () => {
                     variant="outlined"
                     size="small"
                     type="email"
+                    required
                   />
                 </Grid>
                 
@@ -1071,43 +1091,6 @@ const CompanyDetails = () => {
                 </Grid>
                 
                 <Grid item xs={12} sm={6}>
-                  <FormControl fullWidth size="small">
-                    <InputLabel>Role</InputLabel>
-                    <Select
-                      name="role"
-                      value={editFormData.role}
-                      onChange={handleInputChange}
-                      label="Role"
-                    >
-                      <MenuItem value="user">User</MenuItem>
-                      <MenuItem value="admin">Admin</MenuItem>
-                      <MenuItem value="manager">Manager</MenuItem>
-                      <MenuItem value="supervisor">Supervisor</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-                
-                <Grid item xs={12} sm={6}>
-                  <FormControl fullWidth size="small">
-                    <InputLabel>Department</InputLabel>
-                    <Select
-                      name="department"
-                      value={editFormData.department}
-                      onChange={handleInputChange}
-                      label="Department"
-                    >
-                      <MenuItem value="">Select Department</MenuItem>
-                      {departments.map((dept, index) => (
-                        <MenuItem key={index} value={dept}>
-                          {dept}
-                        </MenuItem>
-                      ))}
-                      <MenuItem value="new">+ Add New Department</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-                
-                <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
                     label="Designation"
@@ -1116,6 +1099,122 @@ const CompanyDetails = () => {
                     onChange={handleInputChange}
                     variant="outlined"
                     size="small"
+                  />
+                </Grid>
+                
+                <Grid item xs={12}>
+                  <Autocomplete
+                    freeSolo
+                    options={jobRoles}
+                    value={editFormData.role}
+                    onChange={handleRoleChange}
+                    onInputChange={(event, newValue) => {
+                      if (newValue === "add-new") {
+                        handleAddNewJobRole();
+                      }
+                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Job Role"
+                        variant="outlined"
+                        size="small"
+                        fullWidth
+                        InputProps={{
+                          ...params.InputProps,
+                          startAdornment: (
+                            <>
+                              <Work sx={{ mr: 1, color: 'action.active' }} />
+                              {params.InputProps.startAdornment}
+                            </>
+                          )
+                        }}
+                      />
+                    )}
+                    renderOption={(props, option) => (
+                      <li {...props}>
+                        {option === "add-new" ? (
+                          <Box sx={{ display: 'flex', alignItems: 'center', color: 'primary.main' }}>
+                            <Work sx={{ mr: 1 }} />
+                            <Typography>+ Add New Job Role</Typography>
+                          </Box>
+                        ) : (
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <Work sx={{ mr: 1, color: 'action.active' }} />
+                            <Typography>{option}</Typography>
+                          </Box>
+                        )}
+                      </li>
+                    )}
+                    loading={loadingJobRoles}
+                    loadingText="Loading job roles..."
+                    noOptionsText={
+                      <Button 
+                        startIcon={<Work />} 
+                        onClick={handleAddNewJobRole}
+                        size="small"
+                      >
+                        Add New Job Role
+                      </Button>
+                    }
+                  />
+                </Grid>
+                
+                <Grid item xs={12}>
+                  <Autocomplete
+                    freeSolo
+                    options={departments}
+                    value={editFormData.department}
+                    onChange={handleDepartmentChange}
+                    onInputChange={(event, newValue) => {
+                      if (newValue === "add-new") {
+                        handleAddNewDepartment();
+                      }
+                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Department"
+                        variant="outlined"
+                        size="small"
+                        fullWidth
+                        InputProps={{
+                          ...params.InputProps,
+                          startAdornment: (
+                            <>
+                              <Business sx={{ mr: 1, color: 'action.active' }} />
+                              {params.InputProps.startAdornment}
+                            </>
+                          )
+                        }}
+                      />
+                    )}
+                    renderOption={(props, option) => (
+                      <li {...props}>
+                        {option === "add-new" ? (
+                          <Box sx={{ display: 'flex', alignItems: 'center', color: 'primary.main' }}>
+                            <Business sx={{ mr: 1 }} />
+                            <Typography>+ Add New Department</Typography>
+                          </Box>
+                        ) : (
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <Business sx={{ mr: 1, color: 'action.active' }} />
+                            <Typography>{option}</Typography>
+                          </Box>
+                        )}
+                      </li>
+                    )}
+                    loading={loadingDepartments}
+                    loadingText="Loading departments..."
+                    noOptionsText={
+                      <Button 
+                        startIcon={<Business />} 
+                        onClick={handleAddNewDepartment}
+                        size="small"
+                      >
+                        Add New Department
+                      </Button>
+                    }
                   />
                 </Grid>
                 
@@ -1169,7 +1268,7 @@ const CompanyDetails = () => {
   );
 };
 
-// Updated Styles
+// Styles remain the same as before
 const styles = {
   container: {
     p: 3,
@@ -1392,7 +1491,6 @@ const styles = {
     justifyContent: 'center',
     py: 4
   },
-  // Modal Styles
   modalTitle: {
     display: 'flex',
     justifyContent: 'space-between',
