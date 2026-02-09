@@ -208,8 +208,9 @@ const CompanyRegister = () => {
       
       setMsg(res.data?.message || "Company registered successfully! 🎉");
       setRegistrationSuccess(true);
-      
-      // Reset form after successful registration
+      setTimeout(() => {
+        navigate("/SuperAdminLogin"); 
+      }, 2000);
       resetForm();
       
       // Auto-clear success message after 5 seconds

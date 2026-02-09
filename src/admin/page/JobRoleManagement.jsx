@@ -337,7 +337,7 @@ const JobRoleManagement = () => {
           </Box>
           
           <Box display="flex" gap={2} alignItems="center">
-            {isSuperAdmin && (
+            {/* {isSuperAdmin && (
               <FormControlLabel
                 control={
                   <Switch
@@ -348,7 +348,7 @@ const JobRoleManagement = () => {
                 }
                 label="Show All Companies"
               />
-            )}
+            )} */}
             
             <TextField
               size="small"
