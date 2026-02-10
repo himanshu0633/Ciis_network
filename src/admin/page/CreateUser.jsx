@@ -491,10 +491,7 @@ const CreateUser = () => {
           </Typography>
         </FormControl>
 
-        {/* Optional Fields Section */}
-        <Typography variant="subtitle1" fontWeight={600} color="primary" mt={3} gutterBottom>
-          Optional Information
-        </Typography>
+      
 
         <TextField
           label="Phone Number"

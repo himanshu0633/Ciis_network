@@ -5,8 +5,8 @@ import { toast } from "react-toastify";
 import API_URL from "../../config";
 import {
   Business,
-  Email,
-  Phone,
+
+  
   LocationOn,
   Person,
   CalendarToday,
@@ -75,7 +75,7 @@ const CompanyDetails = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [editFormData, setEditFormData] = useState({
     name: "",
-    email: "",
+    // email: "",
     role: "",
     department: "",
     isActive: true,
@@ -226,9 +226,9 @@ const CompanyDetails = () => {
             companyCode: companyDetails.companyCode || data.company?.companyCode || "",
             logo: companyDetails.logo || data.company?.logo || "",
             isActive: companyDetails.isActive ?? data.company?.isActive ?? true,
-            companyEmail: companyDetails.email || data.company?.email || companyDetails.companyEmail || "ciisnetwork@gmail.com",
-            companyPhone: companyDetails.phone || data.company?.phone || companyDetails.companyPhone || "8340185442",
-            companyAddress: companyDetails.address || data.company?.address || companyDetails.companyAddress || "123 Example Street",
+            // companyEmail: companyDetails.email || data.company?.email || companyDetails.companyEmail || "ciisnetwork@gmail.com",
+            // companyPhone: companyDetails.phone || data.company?.phone || companyDetails.companyPhone || "8340185442",
+            // companyAddress: companyDetails.address || data.company?.address || companyDetails.companyAddress || "123 Example Street",
             companyDomain: companyDetails.domain || data.company?.domain || "gmail.com",
             ownerName: companyDetails.ownerName || data.company?.ownerName || "company",
             loginUrl: companyDetails.loginUrl || data.company?.loginUrl || `/company/${companyDetails.companyCode || "COMPANY"}/login`,
@@ -315,9 +315,9 @@ const CompanyDetails = () => {
           ...companyInfo,
           companyName: companyInfo.companyName || companyInfo.name || "Company",
           companyCode: companyInfo.companyCode || "",
-          companyEmail: companyInfo.companyEmail || "ciisnetwork@gmail.com",
-          companyPhone: companyInfo.companyPhone || "8340185442",
-          companyAddress: companyInfo.companyAddress || "123 Example Street",
+          // companyEmail: companyInfo.companyEmail || "ciisnetwork@gmail.com",
+          // companyPhone: companyInfo.companyPhone || "8340185442",
+          // companyAddress: companyInfo.companyAddress || "123 Example Street",
           companyDomain: companyInfo.companyDomain || "gmail.com",
           ownerName: companyInfo.ownerName || "company",
           loginUrl: companyInfo.loginUrl || "/company/CIISNE/login",
@@ -410,11 +410,11 @@ const CompanyDetails = () => {
     setSelectedUser(user);
     setEditFormData({
       name: user.name || "",
-      email: user.email || "",
+      // email: user.email || "",
       role: user.role || "user",
       department: user.department || "",
       isActive: user.isActive ?? true,
-      phone: user.phone || "",
+      // phone: user.phone || "",
       designation: user.designation || ""
     });
     setEditModalOpen(true);
@@ -707,7 +707,7 @@ const CompanyDetails = () => {
                   </Box>
                 </Grid>
 
-                <Grid item xs={12} md={6}>
+                {/* <Grid item xs={12} md={6}>
                   <Box sx={styles.detailItem}>
                     <Email sx={styles.detailIcon} />
                     <Box>
@@ -719,9 +719,9 @@ const CompanyDetails = () => {
                       </Typography>
                     </Box>
                   </Box>
-                </Grid>
+                </Grid> */}
 
-                <Grid item xs={12} md={6}>
+                {/* <Grid item xs={12} md={6}>
                   <Box sx={styles.detailItem}>
                     <Phone sx={styles.detailIcon} />
                     <Box>
@@ -733,9 +733,9 @@ const CompanyDetails = () => {
                       </Typography>
                     </Box>
                   </Box>
-                </Grid>
+                </Grid> */}
 
-                <Grid item xs={12} md={6}>
+                {/* <Grid item xs={12} md={6}>
                   <Box sx={styles.detailItem}>
                     <LocationOn sx={styles.detailIcon} />
                     <Box>
@@ -747,9 +747,9 @@ const CompanyDetails = () => {
                       </Typography>
                     </Box>
                   </Box>
-                </Grid>
+                </Grid> */}
 
-                <Grid item xs={12} md={6}>
+                {/* <Grid item xs={12} md={6}>
                   <Box sx={styles.detailItem}>
                     <Person sx={styles.detailIcon} />
                     <Box>
@@ -761,9 +761,9 @@ const CompanyDetails = () => {
                       </Typography>
                     </Box>
                   </Box>
-                </Grid>
+                </Grid> */}
 
-                <Grid item xs={12} md={6}>
+                {/* <Grid item xs={12} md={6}>
                   <Box sx={styles.detailItem}>
                     <Domain sx={styles.detailIcon} />
                     <Box>
@@ -775,7 +775,7 @@ const CompanyDetails = () => {
                       </Typography>
                     </Box>
                   </Box>
-                </Grid>
+                </Grid> */}
 
                 <Grid item xs={12} md={6}>
                   <Box sx={styles.detailItem}>
@@ -790,7 +790,7 @@ const CompanyDetails = () => {
                     </Box>
                   </Box>
                 </Grid>
-
+{/* 
                 <Grid item xs={12} md={6}>
                   <Box sx={styles.detailItem}>
                     <Storage sx={styles.detailIcon} />
@@ -803,14 +803,14 @@ const CompanyDetails = () => {
                       </Typography>
                     </Box>
                   </Box>
-                </Grid>
+                </Grid> */}
               </Grid>
 
               <Divider sx={{ my: 3 }} />
 
               {/* Dates Section */}
               <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
+                {/* <Grid item xs={12} md={6}>
                   <Box sx={styles.dateItem}>
                     <CalendarToday sx={styles.dateIcon} />
                     <Box>
@@ -822,8 +822,8 @@ const CompanyDetails = () => {
                       </Typography>
                     </Box>
                   </Box>
-                </Grid>
-
+                </Grid> */}
+{/* 
                 <Grid item xs={12} md={6}>
                   <Box sx={styles.dateItem}>
                     <CalendarToday sx={styles.dateIcon} />
@@ -836,9 +836,9 @@ const CompanyDetails = () => {
                       </Typography>
                     </Box>
                   </Box>
-                </Grid>
+                </Grid> */}
 
-                <Grid item xs={12}>
+                {/* <Grid item xs={12}>
                   <Box sx={styles.subscriptionCard}>
                     <Box sx={styles.subscriptionHeader}>
                       <Security sx={styles.subscriptionIcon} />
@@ -883,7 +883,7 @@ const CompanyDetails = () => {
                       />
                     </Box>
                   </Box>
-                </Grid>
+                </Grid> */}
               </Grid>
             </CardContent>
           </Card>
@@ -1064,7 +1064,7 @@ const CompanyDetails = () => {
                   />
                 </Grid>
                 
-                <Grid item xs={12}>
+                {/* <Grid item xs={12}>
                   <TextField
                     fullWidth
                     label="Email Address"
@@ -1076,9 +1076,9 @@ const CompanyDetails = () => {
                     type="email"
                     required
                   />
-                </Grid>
+                </Grid> */}
                 
-                <Grid item xs={12} sm={6}>
+                {/* <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
                     label="Phone Number"
@@ -1088,7 +1088,7 @@ const CompanyDetails = () => {
                     variant="outlined"
                     size="small"
                   />
-                </Grid>
+                </Grid> */}
                 
                 <Grid item xs={12} sm={6}>
                   <TextField
@@ -1504,7 +1504,7 @@ const styles = {
   },
   modalContent: {
     pt: 2
-  },
+   },
   modalActions: {
     p: 3,
     borderTop: '1px solid',

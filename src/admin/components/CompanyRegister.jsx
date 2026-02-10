@@ -310,34 +310,33 @@ const CompanyRegister = () => {
         }}
       >
         {logoLoading ? (
-          <div className="spinner" style={{
-            width: 40,
-            height: 40,
-            border: '3px solid #f3f3f3',
-            borderTop: '3px solid #2563eb',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite'
-          }}></div>
-        ) : form.logo ? (
-          <img
-            src={form.logo}
-            alt="Company Logo Preview"
-            style={{
-              width: 70,
-              height: 70,
-              objectFit: 'contain',
-              borderRadius: '6px'
-            }}
-            onError={(e) => {
-              e.target.style.display = 'none';
-              e.target.parentNode.innerHTML = `
-                <div style="font-size: 44px; color: #2563eb;">🏢</div>
-              `;
-            }}
-          />
-        ) : (
-          <div style={{ fontSize: "44px", color: "#2563eb" }}>🏢</div>
-        )}
+            <div
+              style={{
+                width: 40,
+                height: 40,
+                border: "3px solid #f3f3f3",
+                borderTop: "3px solid #2563eb",
+                borderRadius: "50%",
+                animation: "spin 1s linear infinite",
+              }}
+            />
+          ) : (
+            <img
+              src="/logoo.png"
+              alt="Company Logo"
+              style={{
+                width: 70,
+                height: 70,
+                objectFit: "contain",
+                borderRadius: "6px",
+              }}
+              onError={(e) => {
+                console.log("Logo not found ❌");
+                e.target.style.display = "none";
+              }}
+            />
+          )}
+
       </div>
 
       {/* Header */}

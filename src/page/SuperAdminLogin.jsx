@@ -97,6 +97,7 @@ const SuperAdminLogin = () => {
         // Save super admin data to localStorage
         localStorage.setItem('superAdmin', JSON.stringify(response.data.data));
         localStorage.setItem('token', response.data.token);
+        localStorage.setItem('company', JSON.stringify(response.data.data));
 
         toast.success('Login successful! Redirecting...');
         
