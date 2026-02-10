@@ -52,7 +52,7 @@ import {
   AdminPanelSettings
 } from '@mui/icons-material';
 import Swal from "sweetalert2";
-import axios from 'axios';
+import  axiosInstance  from '../utils/axiosConfig';
 
 const drawerWidthOpen = 260;
 const drawerWidthClosed = 70;
@@ -450,7 +450,7 @@ const Sidebar = ({ isMobile = false }) => {
         role: userData.jobRole
       });
 
-      const response = await axios.get(`/api/sidebar/config`, {
+      const response = await axiosInstance.get(`/sidebar/config`, {
         params: {
           companyId: userData.company,
           departmentId: userData.department,

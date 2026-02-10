@@ -12,6 +12,7 @@ import {
 } from 'react-icons/fi';
 
 import "../Css/TaskManagement.css";
+import API_URL from '../../config';
 
 const StatCard = ({ color = 'primary', clickable = true, active = false, children, onClick }) => {
   return (
@@ -1139,7 +1140,7 @@ const formatDateForBackend = (dateTimeString) => {
           <a
             className="user-create-task-action-button"
             // eslint-disable-next-line no-undef
-            href={`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/${task.files[0].path || task.files[0]}`}
+            href={`${API_URL || 'http://localhost:3000'||'https://backendcds.ciisnetwork.in'}/${task.files[0].path || task.files[0]}`}
             target="_blank"
             rel="noopener noreferrer"
             title="Download Files"
@@ -1392,11 +1393,11 @@ const formatDateForBackend = (dateTimeString) => {
                                 Attached Image:
                               </div>
                               <div 
-                                onClick={() => setZoomImage(`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/${remark.image}`)}
+                                onClick={() => setZoomImage(`${API_URL || 'http://localhost:3000'||'https://backendcds.ciisnetwork.in'}/${remark.image}`)}
                                 style={{ cursor: 'pointer' }}
                               >
                                 <img
-                                  src={`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/${remark.image}`}
+                                  src={`${API_URL || 'http://localhost:3000'||'https://backendcds.ciisnetwork.in'}/${remark.image}`}
                                   alt="Remark attachment"
                                   style={{
                                     width: '100%',
@@ -1578,7 +1579,7 @@ const formatDateForBackend = (dateTimeString) => {
                       {task.files?.length > 0 && (
                         <a
                           className="user-create-task-action-button"
-                          href={`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/${task.files[0].path || task.files[0]}`}
+                          href={`${API_URL || 'http://localhost:3000'||'https://backendcds.ciisnetwork.in'}/${task.files[0].path || task.files[0]}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           title={`${task.files.length} file(s)`}

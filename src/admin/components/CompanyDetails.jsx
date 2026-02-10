@@ -384,7 +384,7 @@ const CompanyDetails = () => {
           // Try to fetch users using company ID
           try {
             const usersRes = await axios.get(
-              `${API_URL}/super-admin/company/${fullCompanyData._id}/users`,
+              `${API_URL}/superAdmin/company/${fullCompanyData._id}/users`,
               { headers }
             );
             
