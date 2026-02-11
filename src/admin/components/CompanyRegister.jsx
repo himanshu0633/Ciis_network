@@ -26,42 +26,79 @@ const FormField = memo(
           )}
         </div>
 
-        <input
-          type={type}
-          name={name}
-          placeholder={placeholder}
-          value={value}
-          onChange={onChange}
-          autoComplete={autoComplete || "off"}
-          style={{
-            width: "100%",
-            padding: "10px 12px",
-            borderRadius: 6,
-            border: error ? "1.5px solid #ef4444" : "1px solid #e5e7eb",
-            fontSize: "13px",
-            backgroundColor: error ? "#fef2f2" : "#f9fafb",
-            outline: "none",
-            transition: "all 0.2s ease",
-            fontWeight: "500",
-            color: "#111827",
-            boxShadow: error ? "0 1px 2px rgba(239, 68, 68, 0.1)" : "0 1px 1px rgba(0, 0, 0, 0.05)",
-            WebkitAppearance: "none",
-          }}
-          onFocus={(e) => {
-            e.target.style.borderColor = error ? "#ef4444" : "#3b82f6";
-            e.target.style.backgroundColor = error ? "#fef2f2" : "#ffffff";
-            e.target.style.boxShadow = error 
-              ? "0 0 0 2px rgba(239, 68, 68, 0.1)" 
-              : "0 0 0 2px rgba(59, 130, 246, 0.1)";
-          }}
-          onBlur={(e) => {
-            e.target.style.borderColor = error ? "#ef4444" : "#e5e7eb";
-            e.target.style.backgroundColor = error ? "#fef2f2" : "#f9fafb";
-            e.target.style.boxShadow = error 
-              ? "0 1px 2px rgba(239, 68, 68, 0.1)" 
-              : "0 1px 1px rgba(0, 0, 0, 0.05)";
-          }}
-        />
+        {type === "file" ? (
+          <input
+            type="file"
+            name={name}
+            onChange={onChange}
+            accept="image/*"
+            style={{
+              width: "100%",
+              padding: "10px 12px",
+              borderRadius: 6,
+              border: error ? "1.5px solid #ef4444" : "1px solid #e5e7eb",
+              fontSize: "13px",
+              backgroundColor: error ? "#fef2f2" : "#f9fafb",
+              outline: "none",
+              transition: "all 0.2s ease",
+              fontWeight: "500",
+              color: "#111827",
+              boxShadow: error ? "0 1px 2px rgba(239, 68, 68, 0.1)" : "0 1px 1px rgba(0, 0, 0, 0.05)",
+              WebkitAppearance: "none",
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = error ? "#ef4444" : "#3b82f6";
+              e.target.style.backgroundColor = error ? "#fef2f2" : "#ffffff";
+              e.target.style.boxShadow = error 
+                ? "0 0 0 2px rgba(239, 68, 68, 0.1)" 
+                : "0 0 0 2px rgba(59, 130, 246, 0.1)";
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = error ? "#ef4444" : "#e5e7eb";
+              e.target.style.backgroundColor = error ? "#fef2f2" : "#f9fafb";
+              e.target.style.boxShadow = error 
+                ? "0 1px 2px rgba(239, 68, 68, 0.1)" 
+                : "0 1px 1px rgba(0, 0, 0, 0.05)";
+            }}
+          />
+        ) : (
+          <input
+            type={type}
+            name={name}
+            placeholder={placeholder}
+            value={value}
+            onChange={onChange}
+            autoComplete={autoComplete || "off"}
+            style={{
+              width: "100%",
+              padding: "10px 12px",
+              borderRadius: 6,
+              border: error ? "1.5px solid #ef4444" : "1px solid #e5e7eb",
+              fontSize: "13px",
+              backgroundColor: error ? "#fef2f2" : "#f9fafb",
+              outline: "none",
+              transition: "all 0.2s ease",
+              fontWeight: "500",
+              color: "#111827",
+              boxShadow: error ? "0 1px 2px rgba(239, 68, 68, 0.1)" : "0 1px 1px rgba(0, 0, 0, 0.05)",
+              WebkitAppearance: "none",
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = error ? "#ef4444" : "#3b82f6";
+              e.target.style.backgroundColor = error ? "#fef2f2" : "#ffffff";
+              e.target.style.boxShadow = error 
+                ? "0 0 0 2px rgba(239, 68, 68, 0.1)" 
+                : "0 0 0 2px rgba(59, 130, 246, 0.1)";
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = error ? "#ef4444" : "#e5e7eb";
+              e.target.style.backgroundColor = error ? "#fef2f2" : "#f9fafb";
+              e.target.style.boxShadow = error 
+                ? "0 1px 2px rgba(239, 68, 68, 0.1)" 
+                : "0 1px 1px rgba(0, 0, 0, 0.05)";
+            }}
+          />
+        )}
 
         {error && (
           <div
@@ -108,7 +145,7 @@ const CompanyRegister = () => {
     companyAddress: "",
     companyPhone: "",
     ownerName: "",
-    logo: "",
+    logoFile: null,
     ownerEmail: "",
     ownerPassword: "",
   });
@@ -120,6 +157,7 @@ const CompanyRegister = () => {
   const [apiErrors, setApiErrors] = useState({});
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [logoLoading, setLogoLoading] = useState(false);
+  const [logoPreview, setLogoPreview] = useState("");
 
   const navigate = useNavigate();
 
@@ -134,12 +172,47 @@ const CompanyRegister = () => {
   };
 
   const handleChange = useCallback((e) => {
-    const { name, value } = e.target;
+    const { name, value, type, files } = e.target;
 
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    if (type === "file") {
+      const file = files[0];
+      if (file) {
+        // Validate file type
+        if (!file.type.match("image.*")) {
+          setFormErrors((prev) => ({
+            ...prev,
+            [name]: "Only image files are allowed",
+          }));
+          return;
+        }
+        
+        // Validate file size (max 2MB)
+        if (file.size > 2 * 1024 * 1024) {
+          setFormErrors((prev) => ({
+            ...prev,
+            [name]: "File size should be less than 2MB",
+          }));
+          return;
+        }
+
+        setForm((prev) => ({
+          ...prev,
+          [name]: file,
+        }));
+
+        // Create preview
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setLogoPreview(e.target.result);
+        };
+        reader.readAsDataURL(file);
+      }
+    } else {
+      setForm((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
 
     setFormErrors((prev) => ({
       ...prev,
@@ -201,10 +274,11 @@ const CompanyRegister = () => {
       companyAddress: "",
       companyPhone: "",
       ownerName: "",
-      logo: "",
+      logoFile: null,
       ownerEmail: "",
       ownerPassword: "",
     });
+    setLogoPreview("");
     setFormErrors({});
     setApiErrors({});
   };
@@ -217,6 +291,26 @@ const CompanyRegister = () => {
       'name': 'companyName',
     };
     return fieldMap[backendField] || backendField;
+  };
+
+  const uploadLogoToServer = async (file) => {
+    if (!file) return null;
+    
+    const formData = new FormData();
+    formData.append('logo', file);
+    
+    try {
+      const uploadRes = await axios.post(`${API_URL}/upload-logo`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      return uploadRes.data.logoUrl;
+    } catch (err) {
+      console.error("Logo upload failed:", err);
+      throw new Error("Failed to upload logo");
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -235,10 +329,28 @@ const CompanyRegister = () => {
     setLogoLoading(true);
 
     try {
+      let logoUrl = "";
+      
+      // Upload logo if exists
+      if (form.logoFile) {
+        try {
+          logoUrl = await uploadLogoToServer(form.logoFile);
+        } catch (uploadError) {
+          setError("Logo upload failed. Please try again or skip logo for now.");
+          setIsSubmitting(false);
+          setLogoLoading(false);
+          return;
+        }
+      }
+
       const formData = { 
         ...form,
+        logo: logoUrl, // Send the uploaded logo URL
         companyPhone: form.companyPhone.replace(/\D/g, '')
       };
+
+      // Remove the file object before sending
+      delete formData.logoFile;
 
       const res = await axios.post(`${API_URL}/company`, formData);
       
@@ -780,6 +892,7 @@ const CompanyRegister = () => {
                     display: "grid",
                     gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
                     gap: isMobile ? 12 : 16,
+                    marginBottom: isMobile ? 12 : 16,
                   }}>
                     <FormField
                       label="Company Phone"
@@ -793,16 +906,113 @@ const CompanyRegister = () => {
                       type="tel"
                     />
 
-                    <FormField
-                      label="Logo URL (optional)"
-                      name="logo"
-                      placeholder="https://example.com/logo.png"
-                      required={false}
-                      value={form.logo}
-                      onChange={handleChange}
-                      error={getFieldError("logo")}
-                      autoComplete="off"
-                    />
+                    <div style={{ marginBottom: "18px", width: "100%" }}>
+                      <div style={{ display: "flex", alignItems: "center", marginBottom: "6px", flexWrap: "wrap" }}>
+                        <label style={{ 
+                          display: "block", 
+                          fontWeight: "600", 
+                          color: "#1f2937",
+                          fontSize: "13px",
+                          marginRight: "4px"
+                        }}>
+                          Company Logo
+                        </label>
+                        <span style={{ 
+                          color: "#6b7280", 
+                          fontSize: "10px",
+                          fontWeight: "500"
+                        }}>• Optional (Max 2MB)</span>
+                      </div>
+
+                      <div style={{
+                        display: "flex",
+                        flexDirection: isMobile ? "column" : "row",
+                        gap: 12,
+                        alignItems: isMobile ? "stretch" : "center",
+                      }}>
+                        <div style={{ flex: 1 }}>
+                          <input
+                            type="file"
+                            name="logoFile"
+                            onChange={handleChange}
+                            accept="image/*"
+                            style={{
+                              width: "100%",
+                              padding: "10px 12px",
+                              borderRadius: 6,
+                              border: getFieldError("logoFile") ? "1.5px solid #ef4444" : "1px solid #e5e7eb",
+                              fontSize: "13px",
+                              backgroundColor: getFieldError("logoFile") ? "#fef2f2" : "#f9fafb",
+                              outline: "none",
+                              transition: "all 0.2s ease",
+                              fontWeight: "500",
+                              color: "#111827",
+                              boxShadow: getFieldError("logoFile") ? "0 1px 2px rgba(239, 68, 68, 0.1)" : "0 1px 1px rgba(0, 0, 0, 0.05)",
+                              WebkitAppearance: "none",
+                            }}
+                          />
+                        </div>
+                        
+                        {logoPreview && (
+                          <div style={{
+                            width: isMobile ? "100%" : "80px",
+                            height: isMobile ? "60px" : "80px",
+                            borderRadius: 6,
+                            overflow: "hidden",
+                            border: "1px solid #e5e7eb",
+                            background: "#f9fafb",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}>
+                            <img 
+                              src={logoPreview} 
+                              alt="Logo preview" 
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "contain",
+                                padding: "4px",
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      {getFieldError("logoFile") && (
+                        <div
+                          style={{
+                            color: "#dc2626",
+                            fontSize: "11px",
+                            marginTop: 4,
+                            padding: "6px 10px",
+                            background: "#fef2f2",
+                            borderRadius: 4,
+                            display: "flex",
+                            alignItems: "flex-start",
+                            gap: 6,
+                            borderLeft: "2px solid #dc2626",
+                            animation: "slideIn 0.2s ease-out",
+                            wordBreak: "break-word",
+                          }}
+                        >
+                          <div style={{
+                            width: 16,
+                            height: 16,
+                            borderRadius: "50%",
+                            background: "#dc2626",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flexShrink: 0,
+                            marginTop: 1
+                          }}>
+                            <span style={{ color: "white", fontSize: "10px" }}>!</span>
+                          </div>
+                          <span style={{ fontWeight: "500", flex: 1 }}>{getFieldError("logoFile")}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
