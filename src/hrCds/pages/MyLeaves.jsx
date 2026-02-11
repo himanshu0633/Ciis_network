@@ -29,7 +29,6 @@ const MyLeaves = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [debugInfo, setDebugInfo] = useState([]);
   
   // Job Roles और Departments State
   const [jobRoles, setJobRoles] = useState([]);
@@ -57,22 +56,11 @@ const MyLeaves = () => {
     items: [],
   });
   const [isMobile, setIsMobile] = useState(false);
-  const [showDebug, setShowDebug] = useState(false); // Debug panel toggle
 
   // Get user and company details
   const user = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null;
   const token = localStorage.getItem('token');
   const companyDetails = localStorage.getItem('companyDetails') ? JSON.parse(localStorage.getItem('companyDetails')) : null;
-
-  // ✅ Add debug log
-  const addDebugLog = (message, data = null) => {
-    console.log(`🔍 DEBUG: ${message}`, data);
-    setDebugInfo(prev => [...prev.slice(-10), {
-      timestamp: new Date().toLocaleTimeString(),
-      message,
-      data: data ? JSON.stringify(data).substring(0, 100) + '...' : null
-    }]);
-  };
 
   // Check mobile viewport
   useEffect(() => {
@@ -84,10 +72,9 @@ const MyLeaves = () => {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  // ✅ Get Company ID Function - FIXED
+  // ✅ Get Company ID Function
   const getCompanyId = () => {
     if (!user && !companyDetails) {
-      addDebugLog("No user or company details found");
       return null;
     }
     
@@ -104,21 +91,15 @@ const MyLeaves = () => {
     const foundSource = sources.find(s => s.value);
     
     if (foundSource) {
-      addDebugLog(`Company ID found in ${foundSource.source}:`, foundSource.value);
       return foundSource.value;
     }
     
-    addDebugLog("No company ID found in any source", { user, companyDetails });
     return null;
   };
 
-  // ✅ FIXED: Resolve User Job Role Function (from your original code)
+  // ✅ Resolve User Job Role Function
   const resolveUserJobRole = (roles) => {
-    // ✅ FIX 1: Check if roles is undefined/null/empty first
     if (!roles || roles.length === 0) {
-      addDebugLog("Roles array is empty or undefined");
-      
-      // Check user object directly for role information
       if (!user) {
         return "Employee";
       }
@@ -136,17 +117,11 @@ const MyLeaves = () => {
       return "Employee";
     }
     
-    // ✅ FIX 2: Check user object properly
     if (!user) {
-      addDebugLog("User object is null/undefined");
       return "Employee";
     }
     
-    // ✅ FIX 3: Check user.jobRole properly
     if (!user?.jobRole && !user?.role && !user?.roleId) {
-      addDebugLog("User has no jobRole, role, or roleId property");
-      
-      // Try to get from roleName or jobRoleName
       if (user?.roleName) {
         return user.roleName;
       }
@@ -157,53 +132,33 @@ const MyLeaves = () => {
       return "Employee";
     }
     
-    // ✅ FIX 4: Use the role ID from user
     const roleId = user.jobRole || user.role || user.roleId;
-    addDebugLog(`Looking for role with ID: ${roleId} in ${roles.length} roles`);
     
-    // ✅ FIX 5: Find the role with proper string comparison
     const role = roles.find(
       r => {
-        // Try multiple ID fields
         const match = String(r._id) === String(roleId) || 
                      String(r.id) === String(roleId) ||
                      String(r.roleId) === String(roleId) ||
                      String(r.roleNumber) === String(roleId) ||
                      r.roleName?.toLowerCase() === String(roleId).toLowerCase();
-        
-        if (match) {
-          addDebugLog(`Role match found:`, {
-            roleId: r._id,
-            roleName: r.roleName,
-            userRoleId: roleId
-          });
-        }
         return match;
       }
     );
 
-    // ✅ FIX 6: Return role name or fallback
     if (role) {
       return role.roleName || "Employee";
     }
     
-    // Additional fallback: check if user has roleName directly
     if (user?.roleName) {
       return user.roleName;
     }
     
-    // Default fallback
-    addDebugLog("No matching role found, returning default 'Employee'");
     return "Employee";
   };
 
-  // ✅ FIXED: Resolve User Department Function (from your original code)
+  // ✅ Resolve User Department Function
   const resolveUserDepartment = (depts) => {
-    // ✅ FIX 1: Check if depts is undefined/null/empty first
     if (!depts || depts.length === 0) {
-      addDebugLog("Departments array is empty or undefined");
-      
-      // Check user object directly for department information
       if (!user) {
         return "General";
       }
@@ -218,17 +173,11 @@ const MyLeaves = () => {
       return "General";
     }
     
-    // ✅ FIX 2: Check user object properly
     if (!user) {
-      addDebugLog("User object is null/undefined");
       return "General";
     }
     
-    // ✅ FIX 3: Check user.department properly
     if (!user?.department && !user?.dept && !user?.departmentId) {
-      addDebugLog("User has no department, dept, or departmentId property");
-      
-      // Try to get from departmentName
       if (user?.departmentName) {
         return user.departmentName;
       }
@@ -236,58 +185,40 @@ const MyLeaves = () => {
       return "General";
     }
     
-    // ✅ FIX 4: Use the department ID from user
     const deptId = user.department || user.dept || user.departmentId;
-    addDebugLog(`Looking for department with ID: ${deptId} in ${depts.length} departments`);
     
-    // ✅ FIX 5: Find the department with proper string comparison
     const dept = depts.find(
       d => {
-        // Try multiple ID fields
         const match = String(d._id) === String(deptId) || 
                      String(d.id) === String(deptId) ||
                      String(d.departmentId) === String(deptId) ||
                      String(d.departmentCode) === String(deptId) ||
                      d.departmentName?.toLowerCase() === String(deptId).toLowerCase();
-        
-        if (match) {
-          addDebugLog(`Department match found:`, {
-            deptId: d._id,
-            deptName: d.departmentName,
-            userDeptId: deptId
-          });
-        }
         return match;
       }
     );
 
-    // ✅ FIX 6: Return department name or fallback
     if (dept) {
       return dept.departmentName || "General";
     }
     
-    // Additional fallback: check if user has departmentName directly
     if (user?.departmentName) {
       return user.departmentName;
     }
     
-    // Default fallback
-    addDebugLog("No matching department found, returning default 'General'");
     return "General";
   };
 
-  // ✅ UPDATED: Fetch Job Roles Function
+  // ✅ Fetch Job Roles Function
   const fetchJobRoles = async () => {
     const companyId = getCompanyId();
     
     if (!companyId) {
-      addDebugLog("No company ID available for job roles");
       setUserJobRoleName("Employee");
       return [];
     }
     
     setJobRolesLoading(true);
-    addDebugLog(`Starting job roles fetch for company: ${companyId}`);
     
     try {
       const res = await axios.get(`/job-roles?company=${companyId}`, {
@@ -296,8 +227,6 @@ const MyLeaves = () => {
           'Content-Type': 'application/json'
         }
       });
-      
-      addDebugLog("Job roles API response:", res.data);
       
       // Handle different response structures
       let roles = [];
@@ -311,29 +240,18 @@ const MyLeaves = () => {
         roles = res.data.roles;
       }
       
-      // Ensure roles is an array
       if (!Array.isArray(roles)) {
         roles = [];
       }
       
-      addDebugLog(`Found ${roles.length} job roles`);
-      
-      // Set job roles
       setJobRoles(roles);
       
-      // ✅ Use the fixed resolveUserJobRole function
       const roleName = resolveUserJobRole(roles);
       setUserJobRoleName(roleName);
-      
-      addDebugLog(`User job role resolved to: ${roleName}`);
       
       return roles;
       
     } catch (err) {
-      console.error("Job role fetch failed", err);
-      addDebugLog("Job role fetch failed", err.response?.data || err.message);
-      
-      // ✅ Use the fixed resolveUserJobRole with empty array as fallback
       const roleName = resolveUserJobRole([]);
       setUserJobRoleName(roleName);
       
@@ -348,18 +266,16 @@ const MyLeaves = () => {
     }
   };
 
-  // ✅ UPDATED: Fetch Departments Function
+  // ✅ Fetch Departments Function
   const fetchDepartments = async () => {
     const companyId = getCompanyId();
     
     if (!companyId) {
-      addDebugLog("No company ID available for departments");
       setUserDepartmentName("General");
       return [];
     }
     
     setDepartmentsLoading(true);
-    addDebugLog(`Starting departments fetch for company: ${companyId}`);
     
     try {
       const res = await axios.get(`/departments?company=${companyId}`, {
@@ -368,8 +284,6 @@ const MyLeaves = () => {
           'Content-Type': 'application/json'
         }
       });
-      
-      addDebugLog("Departments API response:", res.data);
       
       // Handle different response structures
       let depts = [];
@@ -383,29 +297,18 @@ const MyLeaves = () => {
         depts = res.data.departmentList;
       }
       
-      // Ensure depts is an array
       if (!Array.isArray(depts)) {
         depts = [];
       }
       
-      addDebugLog(`Found ${depts.length} departments`);
-      
-      // Set departments
       setDepartments(depts);
       
-      // ✅ Use the fixed resolveUserDepartment function
       const deptName = resolveUserDepartment(depts);
       setUserDepartmentName(deptName);
-      
-      addDebugLog(`User department resolved to: ${deptName}`);
       
       return depts;
       
     } catch (err) {
-      console.error("Department fetch failed", err);
-      addDebugLog("Department fetch failed", err.response?.data || err.message);
-      
-      // ✅ Use the fixed resolveUserDepartment with empty array as fallback
       const deptName = resolveUserDepartment([]);
       setUserDepartmentName(deptName);
       
@@ -420,25 +323,14 @@ const MyLeaves = () => {
     }
   };
 
-  // ✅ UPDATED: Load User Info Function
+  // ✅ Load User Info Function
   const loadUserInfo = async () => {
-    addDebugLog("=== Starting user info load ===");
-    addDebugLog("User object:", user);
-    addDebugLog("Company details:", companyDetails);
-    
     try {
-      // Run both fetches in parallel
       await Promise.all([
         fetchJobRoles(),
         fetchDepartments()
       ]);
-      
-      addDebugLog("=== User info load complete ===");
-      addDebugLog(`Final Job Role: ${userJobRoleName}`);
-      addDebugLog(`Final Department: ${userDepartmentName}`);
-      
     } catch (error) {
-      addDebugLog("Error loading user info:", error);
       setNotification({
         message: "Failed to load user information",
         severity: "error",
@@ -486,12 +378,10 @@ const MyLeaves = () => {
     else setLoading(true);
 
     try {
-      addDebugLog("Fetching leaves data");
       const res = await axios.get("/leaves/status");
       const list = res.data.leaves || [];
       setLeaves(list);
       calculateStats(list);
-      addDebugLog(`Fetched ${list.length} leaves`);
       
       if (showRefresh) {
         setNotification({
@@ -500,7 +390,6 @@ const MyLeaves = () => {
         });
       }
     } catch (error) {
-      addDebugLog("Error fetching leaves:", error);
       setNotification({
         message: "Failed to fetch leaves",
         severity: "error",
@@ -520,13 +409,8 @@ const MyLeaves = () => {
 
   useEffect(() => {
     const loadData = async () => {
-      addDebugLog("=== Initial data load started ===");
-      // First load user info
       await loadUserInfo();
-      
-      // Then fetch leaves
       await fetchLeaves();
-      addDebugLog("=== Initial data load complete ===");
     };
     
     loadData();
@@ -619,7 +503,6 @@ const MyLeaves = () => {
 
   // Force refresh user info
   const forceRefreshUserInfo = async () => {
-    addDebugLog("Manual refresh triggered");
     await loadUserInfo();
     await fetchLeaves(true);
   };
@@ -675,16 +558,6 @@ const MyLeaves = () => {
                   {companyDetails?.companyName || 'Company'}
                 </span>
               </div>
-              
-              {/* Debug Button */}
-              <button 
-                className="MyLeaves-debug-button"
-                onClick={() => setShowDebug(!showDebug)}
-                title="Toggle debug info"
-              >
-                <FiAlertTriangle size={12} />
-                Debug
-              </button>
             </div>
           </div>
 
@@ -732,47 +605,6 @@ const MyLeaves = () => {
           </div>
         )}
       </div>
-
-      {/* Debug Panel */}
-      {showDebug && (
-        <div className="MyLeaves-debug-panel">
-          <div className="MyLeaves-debug-header">
-            <h3>Debug Information</h3>
-            <button onClick={() => setDebugInfo([])}>Clear</button>
-            <button onClick={() => setShowDebug(false)}>Hide</button>
-          </div>
-          <div className="MyLeaves-debug-content">
-            <div className="MyLeaves-debug-section">
-              <h4>User Object:</h4>
-              <pre>{JSON.stringify(user, null, 2)}</pre>
-            </div>
-            <div className="MyLeaves-debug-section">
-              <h4>Company Details:</h4>
-              <pre>{JSON.stringify(companyDetails, null, 2)}</pre>
-            </div>
-            <div className="MyLeaves-debug-section">
-              <h4>Job Roles ({jobRoles.length}):</h4>
-              <pre>{JSON.stringify(jobRoles, null, 2)}</pre>
-            </div>
-            <div className="MyLeaves-debug-section">
-              <h4>Departments ({departments.length}):</h4>
-              <pre>{JSON.stringify(departments, null, 2)}</pre>
-            </div>
-            <div className="MyLeaves-debug-section">
-              <h4>Logs (latest 10):</h4>
-              <div className="MyLeaves-debug-logs">
-                {debugInfo.map((log, index) => (
-                  <div key={index} className="MyLeaves-debug-log">
-                    <span className="MyLeaves-debug-time">[{log.timestamp}]</span>
-                    <span className="MyLeaves-debug-message">{log.message}</span>
-                    {log.data && <span className="MyLeaves-debug-data">{log.data}</span>}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Stats Cards */}
       <div className="MyLeaves-stats-container">
@@ -822,77 +654,7 @@ const MyLeaves = () => {
           </div>
         </div>
         
-        {/* Job Role and Department Info Card - SIMPLIFIED */}
-        <div className="MyLeaves-info-card">
-          <div className="MyLeaves-info-header">
-            <h3>
-              <FiInfo className="MyLeaves-info-icon" />
-              Employee Information
-            </h3>
-            <div className="MyLeaves-info-status">
-              {jobRolesLoading || departmentsLoading ? (
-                <span className="MyLeaves-loading-small">Loading...</span>
-              ) : (
-                <>
-                  <span className="MyLeaves-status-dot MyLeaves-status-success"></span>
-                  <span>Loaded</span>
-                </>
-              )}
-            </div>
-          </div>
-          <div className="MyLeaves-info-content">
-            <div className="MyLeaves-info-row">
-              <div className="MyLeaves-info-item">
-                <strong>Job Role:</strong>
-                <span className="MyLeaves-info-value">
-                  {userJobRoleName}
-                  {jobRolesLoading && <span className="MyLeaves-loading-tiny"> (updating...)</span>}
-                </span>
-              </div>
-              <div className="MyLeaves-info-item">
-                <strong>Department:</strong>
-                <span className="MyLeaves-info-value">
-                  {userDepartmentName}
-                  {departmentsLoading && <span className="MyLeaves-loading-tiny"> (updating...)</span>}
-                </span>
-              </div>
-            </div>
-            <div className="MyLeaves-info-row">
-              <div className="MyLeaves-info-item">
-                <strong>Employee ID:</strong>
-                <span className="MyLeaves-info-value">
-                  {user?.employeeId || user?.empId || user?.id?.substring(0, 8) || 'N/A'}
-                </span>
-              </div>
-              <div className="MyLeaves-info-item">
-                <strong>Company:</strong>
-                <span className="MyLeaves-info-value">
-                  {companyDetails?.companyName || 'N/A'}
-                </span>
-              </div>
-            </div>
-          </div>
-          <div className="MyLeaves-info-footer">
-            <button 
-              className="MyLeaves-info-refresh"
-              onClick={loadUserInfo}
-              disabled={jobRolesLoading || departmentsLoading}
-            >
-              <FiRefreshCw size={12} />
-              Refresh Info
-            </button>
-            <button 
-              className="MyLeaves-info-force"
-              onClick={() => {
-                setUserJobRoleName("Employee");
-                setUserDepartmentName("General");
-                loadUserInfo();
-              }}
-            >
-              Reset & Reload
-            </button>
-          </div>
-        </div>
+   
       </div>
 
       {/* Tabs Section */}
@@ -1103,33 +865,7 @@ const MyLeaves = () => {
                 Fill in the details to submit a leave request
               </p>
               
-              {/* Applicant Info */}
-              <div className="MyLeaves-applicant-info">
-                <div className="MyLeaves-applicant-card">
-                  <div className="MyLeaves-applicant-header">
-                    <FiUser className="MyLeaves-applicant-icon" />
-                    <h4>Applicant Information</h4>
-                  </div>
-                  <div className="MyLeaves-applicant-details">
-                    <div className="MyLeaves-applicant-detail">
-                      <span className="MyLeaves-applicant-label">Name:</span>
-                      <span className="MyLeaves-applicant-value">{user?.name || 'N/A'}</span>
-                    </div>
-                    <div className="MyLeaves-applicant-detail">
-                      <span className="MyLeaves-applicant-label">Job Role:</span>
-                      <span className="MyLeaves-applicant-value">{userJobRoleName}</span>
-                    </div>
-                    <div className="MyLeaves-applicant-detail">
-                      <span className="MyLeaves-applicant-label">Department:</span>
-                      <span className="MyLeaves-applicant-value">{userDepartmentName}</span>
-                    </div>
-                    <div className="MyLeaves-applicant-detail">
-                      <span className="MyLeaves-applicant-label">Employee ID:</span>
-                      <span className="MyLeaves-applicant-value">{user?.employeeId || user?.empId || 'N/A'}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+ 
 
               {/* Leave Form */}
               <div className="MyLeaves-form">
@@ -1145,12 +881,12 @@ const MyLeaves = () => {
                     onChange={handleChange}
                     className="MyLeaves-form-select"
                   >
-                    <option value="Casual">Casual Leave</option>
-                    <option value="Sick">Sick Leave</option>
-                    <option value="Earned">Earned Leave</option>
-                    <option value="Maternity">Maternity Leave</option>
-                    <option value="Paternity">Paternity Leave</option>
-                    <option value="Unpaid">Unpaid Leave</option>
+                    <option value="Casual">Casual </option>
+                    <option value="Sick">Sick </option>
+                    <option value="Paid">Paid </option>
+                    <option value="Unpaid">Unpaid</option>
+                    <option value="Other">Other</option>
+                    
                   </select>
                 </div>
 
@@ -1314,18 +1050,6 @@ const MyLeaves = () => {
           </button>
         </div>
       )}
-      
-      {/* Debug info in console */}
-      <div style={{ display: 'none' }}>
-        Current State: {JSON.stringify({
-          userJobRoleName,
-          userDepartmentName,
-          jobRolesCount: jobRoles.length,
-          departmentsCount: departments.length,
-          user: user ? 'exists' : 'null',
-          companyDetails: companyDetails ? 'exists' : 'null'
-        })}
-      </div>
     </div>
   );
 };

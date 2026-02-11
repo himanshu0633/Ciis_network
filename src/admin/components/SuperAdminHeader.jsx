@@ -107,7 +107,7 @@ const SuperAdminHeader = ({ toggleSidebar, isSidebarOpen }) => {
         // This is more customizable and looks better than window.confirm
         if (window.confirm('Are you sure you want to logout?')) {
             localStorage.removeItem('token');
-            navigate('/login');
+            navigate('/');
 
             // Optional: Show success message
             alert('Logged out successfully!'); // or use toast notification

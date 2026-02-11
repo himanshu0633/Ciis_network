@@ -1981,20 +1981,7 @@ const ClientManagement = () => {
         </div>
       )}
 
-      {/* Debug Info */}
-      <div className="debug-info" style={{ 
-        background: '#f0f0f0', 
-        padding: '10px', 
-        margin: '10px 0', 
-        borderRadius: '4px',
-        fontSize: '12px'
-      }}>
-        <p><strong>Debug Info:</strong></p>
-        <p>companyCode from localStorage: <strong>{companyCode || 'Not found'}</strong></p>
-        <p>companyIdentifier from localStorage: <strong>{companyIdentifier || 'Not found'}</strong></p>
-        <p>Total clients from API: <strong>{clients.length}</strong></p>
-        <p>Filtered clients (showing): <strong>{filteredClients.length}</strong></p>
-      </div>
+
 
       {/* Main Content Card */}
       <div className="card">

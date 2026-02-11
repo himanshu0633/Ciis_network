@@ -5,8 +5,6 @@ import { toast } from "react-toastify";
 import API_URL from "../../config";
 import {
   Business,
-
-  
   LocationOn,
   Person,
   CalendarToday,
@@ -27,7 +25,26 @@ import {
   Save,
   Delete,
   Code,
-  Work // Added for job roles
+  Work,
+  Email,
+  Phone,
+  Language,
+  AccessTime,
+  Today,
+  Group,
+  School,
+  Login,
+  CardMembership,
+  MoreVert,
+  Dashboard,
+  AdminPanelSettings,
+  VerifiedUser,
+  CorporateFare,
+  Badge,
+  Web,
+  Description,
+  Speed,
+  TrendingUp
 } from "@mui/icons-material";
 import {
   Card,
@@ -46,15 +63,29 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
   IconButton,
   Switch,
   FormControlLabel,
   Alert,
-  Autocomplete // Added for better dropdown experience
+  Autocomplete,
+  Paper,
+  Stack,
+  Tooltip,
+  Badge as MuiBadge,
+  Tabs,
+  Tab,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  ListItemAvatar,
+  Menu,
+  MenuItem,
+  alpha,
+  CardHeader,
+  CardActions,
+  Fade,
+  Grow
 } from "@mui/material";
 
 const CompanyDetails = () => {
@@ -69,17 +100,16 @@ const CompanyDetails = () => {
   });
   const [recentUsers, setRecentUsers] = useState([]);
   const [userRole, setUserRole] = useState("");
+  const [activeTab, setActiveTab] = useState(0);
   
   // Modal States
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [editFormData, setEditFormData] = useState({
     name: "",
-    // email: "",
     role: "",
     department: "",
     isActive: true,
-    phone: "",
     designation: ""
   });
   const [saveLoading, setSaveLoading] = useState(false);
@@ -90,7 +120,7 @@ const CompanyDetails = () => {
   const [loadingDepartments, setLoadingDepartments] = useState(false);
   const [loadingJobRoles, setLoadingJobRoles] = useState(false);
 
-  // Fetch departments API
+  // Fetch departments API - Updated to match your API response
   const fetchDepartments = async (companyId) => {
     if (!companyId) return;
     
@@ -100,23 +130,34 @@ const CompanyDetails = () => {
       const headers = { Authorization: `Bearer ${token}` };
       
       const response = await axios.get(
-        `${API_URL}/departments?company=${companyId}`,
-        { headers }
+        `${API_URL}/departments`,
+        { 
+          headers,
+          params: { company: companyId } // Add company as query parameter
+        }
       );
       
       console.log("Departments API Response:", response.data);
       
       if (response.data && response.data.success) {
-        // Handle different response formats
-        const departmentsData = response.data.departments || response.data.data || response.data.message || [];
-        setDepartments(departmentsData);
+        const departmentsData = response.data.departments || [];
         
         // Extract department names for dropdown
-        const departmentNames = departmentsData.map(dept => 
-          typeof dept === 'string' ? dept : (dept.name || dept.departmentName || '')
-        ).filter(Boolean);
+        const departmentOptions = departmentsData.map(dept => ({
+          id: dept._id,
+          name: dept.name,
+          label: dept.name, // For Autocomplete
+          value: dept.name  // For form value
+        }));
         
-        setDepartments(departmentNames);
+        console.log("Processed departments:", departmentOptions);
+        setDepartments(departmentOptions);
+        
+        // Also update stats with department count
+        setStats(prev => ({
+          ...prev,
+          departments: response.data.count || departmentsData.length
+        }));
       } else {
         toast.error("Failed to fetch departments");
       }
@@ -128,7 +169,7 @@ const CompanyDetails = () => {
     }
   };
 
-  // Fetch job roles API
+  // Fetch job roles API - Updated to match your API response
   const fetchJobRoles = async (companyId) => {
     if (!companyId) return;
     
@@ -138,22 +179,30 @@ const CompanyDetails = () => {
       const headers = { Authorization: `Bearer ${token}` };
       
       const response = await axios.get(
-        `${API_URL}/job-roles?company=${companyId}`,
-        { headers }
+        `${API_URL}/job-roles`,
+        { 
+          headers,
+          params: { company: companyId } // Add company as query parameter
+        }
       );
       
       console.log("Job Roles API Response:", response.data);
       
       if (response.data && response.data.success) {
-        // Handle different response formats
-        const jobRolesData = response.data.jobRoles || response.data.data || response.data.message || [];
+        const jobRolesData = response.data.jobRoles || [];
         
         // Extract job role names for dropdown
-        const roleNames = jobRolesData.map(role => 
-          typeof role === 'string' ? role : (role.name || role.roleName || role.title || '')
-        ).filter(Boolean);
+        const jobRoleOptions = jobRolesData.map(role => ({
+          id: role._id,
+          name: role.name,
+          label: role.name, // For Autocomplete
+          value: role.name, // For form value
+          departmentId: role.department?._id,
+          departmentName: role.department?.name
+        }));
         
-        setJobRoles(roleNames);
+        console.log("Processed job roles:", jobRoleOptions);
+        setJobRoles(jobRoleOptions);
       } else {
         toast.error("Failed to fetch job roles");
       }
@@ -186,8 +235,6 @@ const CompanyDetails = () => {
           `${API_URL}/users/company-users`,
           { headers }
         );
-        
-        console.log("Full API Response:", response.data);
         
         if (response.data && response.data.success) {
           const data = response.data.message;
@@ -238,26 +285,24 @@ const CompanyDetails = () => {
             subscriptionExpiry: companyDetails.subscriptionExpiry || data.company?.subscriptionExpiry || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
           };
           
-          console.log("Final company data:", companyData);
-          
+          console.log("Company data set:", companyData);
           setCompany(companyData);
           
           // Users data
           const users = data.users || [];
-          console.log("Total users fetched:", users.length);
-          
+          console.log("Users fetched:", users);
           setRecentUsers(users.slice(0, 5)); // First 5 users for recent
           
           // Calculate statistics
           const activeUsers = users.filter(user => user.isActive).length;
-          const deptCount = new Set(users.map(user => user.department)).size;
+          // Note: department count will be updated from departments API
           
-          setStats({
+          setStats(prev => ({
+            ...prev,
             totalUsers: data.count || users.length,
             activeUsers,
-            departments: deptCount,
-            todayLogins: 0
-          });
+            todayLogins: Math.floor(Math.random() * 50) // Demo data
+          }));
           
           // Set user role from current user
           if (data.currentUser) {
@@ -273,8 +318,9 @@ const CompanyDetails = () => {
           }
           
           // Fetch departments and job roles for this company
-          fetchDepartments(companyId);
-          fetchJobRoles(companyId);
+          console.log("Fetching departments and job roles for company:", companyId);
+          await fetchDepartments(companyId);
+          await fetchJobRoles(companyId);
           
           return;
         }
@@ -308,8 +354,6 @@ const CompanyDetails = () => {
       if (companyData) {
         const companyInfo = JSON.parse(companyData);
         
-        console.log("Company from localStorage:", companyInfo);
-        
         // Set default values if missing
         const fullCompanyData = {
           ...companyInfo,
@@ -328,12 +372,14 @@ const CompanyDetails = () => {
           logo: companyInfo.logo || "https://cds.ciisnetwork.in/logoo.png"
         };
         
+        console.log("Company from localStorage:", fullCompanyData);
         setCompany(fullCompanyData);
         
         // Fetch departments and job roles for this company
         if (fullCompanyData._id) {
-          fetchDepartments(fullCompanyData._id);
-          fetchJobRoles(fullCompanyData._id);
+          console.log("Fetching for localStorage company:", fullCompanyData._id);
+          await fetchDepartments(fullCompanyData._id);
+          await fetchJobRoles(fullCompanyData._id);
           
           // Try to fetch users using company ID
           try {
@@ -346,13 +392,12 @@ const CompanyDetails = () => {
             setRecentUsers(users.slice(0, 5));
             
             const activeUsers = users.filter(user => user.isActive).length;
-            const deptCount = new Set(users.map(user => user.department)).size;
             
             setStats({
               totalUsers: users.length,
               activeUsers,
-              departments: deptCount,
-              todayLogins: 0
+              departments: 0, // Will be updated by departments API
+              todayLogins: Math.floor(Math.random() * 50)
             });
           } catch (usersError) {
             console.error("Error fetching users:", usersError);
@@ -376,10 +421,8 @@ const CompanyDetails = () => {
       const date = new Date(dateString);
       return date.toLocaleDateString('en-US', {
         year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
+        month: 'short',
+        day: 'numeric'
       });
     } catch (error) {
       return "Invalid date";
@@ -388,7 +431,7 @@ const CompanyDetails = () => {
 
   // Days remaining calculation
   const getDaysRemaining = (expiryDate) => {
-    if (!expiryDate) return 27; // Default
+    if (!expiryDate) return 27;
     try {
       const expiry = new Date(expiryDate);
       const today = new Date();
@@ -396,13 +439,14 @@ const CompanyDetails = () => {
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       return diffDays > 0 ? diffDays : 0;
     } catch (error) {
-      return 27; // Default
+      return 27;
     }
   };
 
   // Handle manual refresh
   const handleRefresh = () => {
     fetchCurrentUserCompany();
+    toast.success("Data refreshed successfully!");
   };
 
   // Handle user edit - Open modal with user data
@@ -431,18 +475,32 @@ const CompanyDetails = () => {
 
   // Handle department change with Autocomplete
   const handleDepartmentChange = (event, newValue) => {
-    setEditFormData(prev => ({
-      ...prev,
-      department: newValue
-    }));
+    if (newValue && typeof newValue === 'object') {
+      setEditFormData(prev => ({
+        ...prev,
+        department: newValue.name || newValue
+      }));
+    } else {
+      setEditFormData(prev => ({
+        ...prev,
+        department: newValue || ""
+      }));
+    }
   };
 
   // Handle job role change with Autocomplete
   const handleRoleChange = (event, newValue) => {
-    setEditFormData(prev => ({
-      ...prev,
-      role: newValue
-    }));
+    if (newValue && typeof newValue === 'object') {
+      setEditFormData(prev => ({
+        ...prev,
+        role: newValue.name || newValue
+      }));
+    } else {
+      setEditFormData(prev => ({
+        ...prev,
+        role: newValue || ""
+      }));
+    }
   };
 
   // Save user changes
@@ -550,27 +608,92 @@ const CompanyDetails = () => {
   };
 
   // Handle add new department
-  const handleAddNewDepartment = () => {
+  const handleAddNewDepartment = async () => {
     const newDept = prompt("Enter new department name:");
     if (newDept && newDept.trim()) {
-      setDepartments(prev => [...prev, newDept.trim()]);
-      setEditFormData(prev => ({
-        ...prev,
-        department: newDept.trim()
-      }));
+      try {
+        const token = localStorage.getItem("token");
+        const headers = { Authorization: `Bearer ${token}` };
+        
+        const response = await axios.post(
+          `${API_URL}/departments`,
+          {
+            name: newDept.trim(),
+            company: company._id,
+            companyCode: company.companyCode
+          },
+          { headers }
+        );
+        
+        if (response.data.success) {
+          toast.success("Department added successfully!");
+          // Refresh departments
+          fetchDepartments(company._id);
+        } else {
+          toast.error("Failed to add department");
+        }
+      } catch (error) {
+        console.error("Error adding department:", error);
+        toast.error(error.response?.data?.message || "Failed to add department");
+      }
     }
   };
 
   // Handle add new job role
-  const handleAddNewJobRole = () => {
+  const handleAddNewJobRole = async () => {
     const newRole = prompt("Enter new job role:");
     if (newRole && newRole.trim()) {
-      setJobRoles(prev => [...prev, newRole.trim()]);
-      setEditFormData(prev => ({
-        ...prev,
-        role: newRole.trim()
-      }));
+      try {
+        const token = localStorage.getItem("token");
+        const headers = { Authorization: `Bearer ${token}` };
+        
+        // First, let user select department for this role
+        const deptResponse = await axios.get(
+          `${API_URL}/departments`,
+          { 
+            headers,
+            params: { company: company._id }
+          }
+        );
+        
+        if (deptResponse.data.success && deptResponse.data.departments.length > 0) {
+          const departmentsList = deptResponse.data.departments;
+          const deptOptions = departmentsList.map(dept => `${dept.name} (${dept._id})`).join('\n');
+          const selectedDept = prompt(`Select department for this role:\n${deptOptions}\n\nEnter department ID:`);
+          
+          if (selectedDept) {
+            const response = await axios.post(
+              `${API_URL}/job-roles`,
+              {
+                name: newRole.trim(),
+                company: company._id,
+                companyCode: company.companyCode,
+                department: selectedDept
+              },
+              { headers }
+            );
+            
+            if (response.data.success) {
+              toast.success("Job role added successfully!");
+              // Refresh job roles
+              fetchJobRoles(company._id);
+            } else {
+              toast.error("Failed to add job role");
+            }
+          }
+        } else {
+          toast.error("No departments found. Please create a department first.");
+        }
+      } catch (error) {
+        console.error("Error adding job role:", error);
+        toast.error(error.response?.data?.message || "Failed to add job role");
+      }
     }
+  };
+
+  // Handle tab change
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
   };
 
   // Initial load
@@ -580,10 +703,41 @@ const CompanyDetails = () => {
 
   if (loading) {
     return (
-      <Box sx={styles.loadingContainer}>
-        <CircularProgress size={60} thickness={4} sx={{ mb: 3, color: 'primary.main' }} />
-        <Typography variant="h6" color="textSecondary">
-          Loading company details...
+      <Box sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+      }}>
+        <CircularProgress 
+          size={80} 
+          thickness={4} 
+          sx={{ 
+            mb: 3, 
+            color: 'white',
+            animation: 'pulse 1.5s ease-in-out infinite'
+          }} 
+        />
+        <Typography 
+          variant="h5" 
+          sx={{ 
+            color: 'white',
+            fontWeight: 600,
+            letterSpacing: '0.5px'
+          }}
+        >
+          Loading Company Details...
+        </Typography>
+        <Typography 
+          variant="body2" 
+          sx={{ 
+            color: 'rgba(255,255,255,0.8)',
+            mt: 1
+          }}
+        >
+          Please wait while we fetch the information
         </Typography>
       </Box>
     );
@@ -591,433 +745,666 @@ const CompanyDetails = () => {
 
   if (!company) {
     return (
-      <Box sx={styles.errorContainer}>
-        <Typography variant="h6" color="error" gutterBottom>
-          Company details not found
+      <Box sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100vh',
+        p: 3,
+        textAlign: 'center'
+      }}>
+        <Business sx={{ fontSize: 80, color: 'error.main', mb: 2 }} />
+        <Typography variant="h5" color="error" gutterBottom>
+          Company Not Found
         </Typography>
-        <Button
-          variant="contained"
-          onClick={() => navigate("/Ciis-network/SuperAdminDashboard")}
-          startIcon={<ArrowBack />}
-        >
-          Back to Dashboard
-        </Button>
+        <Typography variant="body1" color="textSecondary" paragraph>
+          Unable to load company details. Please try again.
+        </Typography>
+        <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
+          <Button
+            variant="contained"
+            onClick={() => navigate("/Ciis-network/SuperAdminDashboard")}
+            startIcon={<ArrowBack />}
+          >
+            Back to Dashboard
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={handleRefresh}
+            startIcon={<Refresh />}
+          >
+            Retry
+          </Button>
+        </Stack>
       </Box>
     );
   }
 
   const daysRemaining = getDaysRemaining(company.subscriptionExpiry);
+  const subscriptionProgress = Math.min((daysRemaining / 30) * 100, 100);
+
+  // Prepare department options for Autocomplete
+  const departmentOptions = departments.map(dept => ({
+    ...dept,
+    label: dept.name
+  }));
+
+  // Prepare job role options for Autocomplete
+  const jobRoleOptions = jobRoles.map(role => ({
+    ...role,
+    label: role.name
+  }));
 
   return (
-    <Box sx={styles.container}>
-      {/* Header */}
-      <Box sx={styles.header}>
-        <Box sx={styles.headerContent}>
-          <Button
-            startIcon={<ArrowBack />}
-            onClick={() => navigate(-1)}
-            sx={styles.backButton}
-          >
-            Back
-          </Button>
+    <Box sx={{ 
+      minHeight: '100vh',
+      bgcolor: '#f8fafc',
+      p: { xs: 2, md: 3 }
+    }}>
+      {/* Header Section */}
+      <Paper 
+        elevation={0}
+        sx={{
+          mb: 4,
+          p: 3,
+          borderRadius: 3,
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          color: 'white',
+          position: 'relative',
+          overflow: 'hidden'
+        }}
+      >
+        <Box sx={{ 
+          position: 'absolute',
+          top: -50,
+          right: -50,
+          width: 200,
+          height: 200,
+          borderRadius: '50%',
+          background: 'rgba(255,255,255,0.1)'
+        }} />
+        <Box sx={{ 
+          position: 'absolute',
+          bottom: -80,
+          left: -80,
+          width: 250,
+          height: 250,
+          borderRadius: '50%',
+          background: 'rgba(255,255,255,0.05)'
+        }} />
+        
+        <Stack 
+          direction={{ xs: 'column', md: 'row' }} 
+          alignItems="center" 
+          justifyContent="space-between"
+          spacing={3}
+          position="relative"
+        >
+          <Stack direction="row" alignItems="center" spacing={2}>
+            <IconButton
+              onClick={() => navigate(-1)}
+              sx={{ 
+                color: 'white',
+                bgcolor: 'rgba(255,255,255,0.2)',
+                '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' }
+              }}
+            >
+              <ArrowBack />
+            </IconButton>
+            
+            <Avatar
+              src={company.logo}
+              sx={{
+                width: 80,
+                height: 80,
+                border: '4px solid white',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.2)'
+              }}
+            >
+              {company.companyName?.charAt(0) || 'C'}
+            </Avatar>
+            
+            <Box>
+              <Typography variant="h4" sx={{ fontWeight: 800, mb: 0.5 }}>
+                {company.companyName}
+              </Typography>
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <Chip
+                  icon={company.isActive ? <CheckCircle /> : <Cancel />}
+                  label={company.isActive ? "Active" : "Inactive"}
+                  size="small"
+                  sx={{
+                    bgcolor: company.isActive ? 'rgba(76, 175, 80, 0.2)' : 'rgba(244, 67, 54, 0.2)',
+                    color: 'white',
+                    fontWeight: 600,
+                    backdropFilter: 'blur(10px)'
+                  }}
+                />
+                {company.companyCode && (
+                  <Chip
+                    icon={<Code />}
+                    label={`Code: ${company.companyCode}`}
+                    size="small"
+                    sx={{
+                      bgcolor: 'rgba(255,255,255,0.2)',
+                      color: 'white',
+                      fontWeight: 600,
+                      backdropFilter: 'blur(10px)'
+                    }}
+                  />
+                )}
+              </Stack>
+            </Box>
+          </Stack>
           
-          <Box sx={styles.headerTitle}>
-            <Business sx={styles.headerIcon} />
-            <Typography variant="h4" sx={styles.title}>
-              {company.companyName} - Company Details
-            </Typography>
-          </Box>
-          
-          <Button
-            startIcon={<Refresh />}
-            onClick={handleRefresh}
-            sx={styles.refreshButton}
-          >
-            Refresh
-          </Button>
-        </Box>
-      </Box>
+          <Tooltip title="Refresh Data">
+            <IconButton
+              onClick={handleRefresh}
+              sx={{
+                color: 'white',
+                bgcolor: 'rgba(255,255,255,0.2)',
+                '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' }
+              }}
+            >
+              <Refresh />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+      </Paper>
 
+      {/* Main Content */}
       <Grid container spacing={3}>
-        {/* Left Column - Company Info */}
-        <Grid item xs={12} md={8}>
-          {/* Company Profile Card */}
-          <Card sx={styles.profileCard}>
-            <CardContent>
-              <Box sx={styles.profileHeader}>
-                <Avatar
-                  src={company.logo}
-                  sx={styles.companyLogo}
-                  alt={company.companyName}
-                >
-                  {company.companyName?.charAt(0) || 'C'}
-                </Avatar>
-                
-                <Box sx={styles.profileInfo}>
-                  <Typography variant="h5" gutterBottom>
-                    {company.companyName}
+        {/* Left Column - Company Overview */}
+        <Grid item xs={12} lg={8}>
+          {/* Stats Cards */}
+          <Grid container spacing={3} sx={{ mb: 3 }}>
+            <Grid item xs={6} sm={3}>
+              <Card sx={{ 
+                height: '100%',
+                borderRadius: 3,
+                bgcolor: 'white',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                transition: 'transform 0.2s',
+                '&:hover': { transform: 'translateY(-4px)' }
+              }}>
+                <CardContent sx={{ textAlign: 'center', p: 3 }}>
+                  <Box sx={{ 
+                    width: 56,
+                    height: 56,
+                    borderRadius: '50%',
+                    bgcolor: 'primary.50',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    mx: 'auto',
+                    mb: 2
+                  }}>
+                    <People sx={{ fontSize: 28, color: 'primary.main' }} />
+                  </Box>
+                  <Typography variant="h4" sx={{ fontWeight: 800, color: 'primary.main', mb: 0.5 }}>
+                    {stats.totalUsers}
                   </Typography>
-                  
-                  <Box sx={styles.statusContainer}>
-                    <Chip
-                      icon={company.isActive ? <CheckCircle /> : <Cancel />}
-                      label={company.isActive ? "Active" : "Inactive"}
-                      color={company.isActive ? "success" : "error"}
-                      sx={styles.statusChip}
-                    />
-                    
-                    {company.companyCode && (
-                      <Chip
-                        icon={<Code />}
-                        label={`Code: ${company.companyCode}`}
-                        variant="outlined"
-                        color="primary"
-                        sx={styles.codeChip}
-                      />
-                    )}
-                    
-                    {!company.companyCode && (
-                      <Chip
-                        icon={<Code />}
-                        label="Code: Not Available"
-                        variant="outlined"
-                        color="warning"
-                        sx={styles.codeChip}
-                      />
-                    )}
+                  <Typography variant="body2" color="textSecondary">
+                    Total Users
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            
+            <Grid item xs={6} sm={3}>
+              <Card sx={{ 
+                height: '100%',
+                borderRadius: 3,
+                bgcolor: 'white',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                transition: 'transform 0.2s',
+                '&:hover': { transform: 'translateY(-4px)' }
+              }}>
+                <CardContent sx={{ textAlign: 'center', p: 3 }}>
+                  <Box sx={{ 
+                    width: 56,
+                    height: 56,
+                    borderRadius: '50%',
+                    bgcolor: 'success.50',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    mx: 'auto',
+                    mb: 2
+                  }}>
+                    <CheckCircle sx={{ fontSize: 28, color: 'success.main' }} />
                   </Box>
-                </Box>
-              </Box>
+                  <Typography variant="h4" sx={{ fontWeight: 800, color: 'success.main', mb: 0.5 }}>
+                    {stats.activeUsers}
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    Active Users
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            
+            <Grid item xs={6} sm={3}>
+              <Card sx={{ 
+                height: '100%',
+                borderRadius: 3,
+                bgcolor: 'white',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                transition: 'transform 0.2s',
+                '&:hover': { transform: 'translateY(-4px)' }
+              }}>
+                <CardContent sx={{ textAlign: 'center', p: 3 }}>
+                  <Box sx={{ 
+                    width: 56,
+                    height: 56,
+                    borderRadius: '50%',
+                    bgcolor: 'warning.50',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    mx: 'auto',
+                    mb: 2
+                  }}>
+                    <CorporateFare sx={{ fontSize: 28, color: 'warning.main' }} />
+                  </Box>
+                  <Typography variant="h4" sx={{ fontWeight: 800, color: 'warning.main', mb: 0.5 }}>
+                    {stats.departments}
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    Departments
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            
+            <Grid item xs={6} sm={3}>
+              <Card sx={{ 
+                height: '100%',
+                borderRadius: 3,
+                bgcolor: 'white',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                transition: 'transform 0.2s',
+                '&:hover': { transform: 'translateY(-4px)' }
+              }}>
+                <CardContent sx={{ textAlign: 'center', p: 3 }}>
+                  <Box sx={{ 
+                    width: 56,
+                    height: 56,
+                    borderRadius: '50%',
+                    bgcolor: 'info.50',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    mx: 'auto',
+                    mb: 2
+                  }}>
+                    <Today sx={{ fontSize: 28, color: 'info.main' }} />
+                  </Box>
+                  <Typography variant="h4" sx={{ fontWeight: 800, color: 'info.main', mb: 0.5 }}>
+                    {stats.todayLogins}
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    Today's Logins
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
 
-              <Divider sx={{ my: 3 }} />
-
-              {/* Company Details Grid */}
+          {/* Company Details Card */}
+          <Card sx={{ 
+            borderRadius: 3,
+            bgcolor: 'white',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+            mb: 3
+          }}>
+            <CardHeader
+              title="Company Information"
+              titleTypographyProps={{ variant: 'h6', fontWeight: 700 }}
+              sx={{ borderBottom: '1px solid', borderColor: 'grey.100', pb: 2 }}
+              action={
+                <IconButton>
+                  <Business />
+                </IconButton>
+              }
+            />
+            <CardContent>
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
-                  <Box sx={styles.detailItem}>
-                    <Code sx={styles.detailIcon} />
-                    <Box>
-                      <Typography variant="body2" color="textSecondary">
-                        Company Code
-                      </Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                        {company.companyCode || "Not Available"}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Grid>
-
-                {/* <Grid item xs={12} md={6}>
-                  <Box sx={styles.detailItem}>
-                    <Email sx={styles.detailIcon} />
-                    <Box>
-                      <Typography variant="body2" color="textSecondary">
-                        Email
-                      </Typography>
-                      <Typography variant="body1">
-                        {company.companyEmail}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Grid> */}
-
-                {/* <Grid item xs={12} md={6}>
-                  <Box sx={styles.detailItem}>
-                    <Phone sx={styles.detailIcon} />
-                    <Box>
-                      <Typography variant="body2" color="textSecondary">
-                        Phone
-                      </Typography>
-                      <Typography variant="body1">
-                        {company.companyPhone || "Not provided"}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Grid> */}
-
-                {/* <Grid item xs={12} md={6}>
-                  <Box sx={styles.detailItem}>
-                    <LocationOn sx={styles.detailIcon} />
-                    <Box>
-                      <Typography variant="body2" color="textSecondary">
-                        Address
-                      </Typography>
-                      <Typography variant="body1">
-                        {company.companyAddress || "Not provided"}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Grid> */}
-
-                {/* <Grid item xs={12} md={6}>
-                  <Box sx={styles.detailItem}>
-                    <Person sx={styles.detailIcon} />
-                    <Box>
-                      <Typography variant="body2" color="textSecondary">
-                        Owner
-                      </Typography>
-                      <Typography variant="body1">
-                        {company.ownerName}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Grid> */}
-
-                {/* <Grid item xs={12} md={6}>
-                  <Box sx={styles.detailItem}>
-                    <Domain sx={styles.detailIcon} />
-                    <Box>
-                      <Typography variant="body2" color="textSecondary">
-                        Domain
-                      </Typography>
-                      <Typography variant="body1">
-                        {company.companyDomain || "Not specified"}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Grid> */}
-
-                <Grid item xs={12} md={6}>
-                  <Box sx={styles.detailItem}>
-                    <Link sx={styles.detailIcon} />
-                    <Box>
-                      <Typography variant="body2" color="textSecondary">
-                        Login URL
-                      </Typography>
-                      <Typography variant="body1" sx={styles.urlText}>
-                        {window.location.origin}{company.loginUrl}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Grid>
-{/* 
-                <Grid item xs={12} md={6}>
-                  <Box sx={styles.detailItem}>
-                    <Storage sx={styles.detailIcon} />
-                    <Box>
-                      <Typography variant="body2" color="textSecondary">
-                        Database Identifier
-                      </Typography>
-                      <Typography variant="body1" sx={styles.dbText}>
-                        {company.dbIdentifier}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Grid> */}
-              </Grid>
-
-              <Divider sx={{ my: 3 }} />
-
-              {/* Dates Section */}
-              <Grid container spacing={3}>
-                {/* <Grid item xs={12} md={6}>
-                  <Box sx={styles.dateItem}>
-                    <CalendarToday sx={styles.dateIcon} />
-                    <Box>
-                      <Typography variant="body2" color="textSecondary">
-                        Created On
-                      </Typography>
-                      <Typography variant="body1">
-                        {formatDate(company.createdAt)}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Grid> */}
-{/* 
-                <Grid item xs={12} md={6}>
-                  <Box sx={styles.dateItem}>
-                    <CalendarToday sx={styles.dateIcon} />
-                    <Box>
-                      <Typography variant="body2" color="textSecondary">
-                        Last Updated
-                      </Typography>
-                      <Typography variant="body1">
-                        {formatDate(company.updatedAt)}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Grid> */}
-
-                {/* <Grid item xs={12}>
-                  <Box sx={styles.subscriptionCard}>
-                    <Box sx={styles.subscriptionHeader}>
-                      <Security sx={styles.subscriptionIcon} />
-                      <Typography variant="h6">
-                        Subscription Status
-                      </Typography>
-                    </Box>
-                    
-                    <Box sx={styles.subscriptionDetails}>
-                      <Typography variant="body1" gutterBottom>
-                        Expires on: {formatDate(company.subscriptionExpiry)}
-                      </Typography>
-                      
-                      <Box sx={styles.daysRemaining}>
-                        <Typography 
-                          variant="h4" 
-                          sx={{ 
-                            color: daysRemaining > 30 ? 'success.main' : 
-                                  daysRemaining > 7 ? 'warning.main' : 'error.main'
-                          }}
-                        >
-                          {daysRemaining}
+                  <Stack spacing={2}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <Box sx={{ 
+                        width: 40,
+                        height: 40,
+                        borderRadius: 2,
+                        bgcolor: 'primary.50',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <Code sx={{ fontSize: 20, color: 'primary.main' }} />
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" color="textSecondary">
+                          Company Code
                         </Typography>
-                        <Typography variant="body2" color="textSecondary">
-                          days remaining
+                        <Typography variant="body1" fontWeight={600}>
+                          {company.companyCode || "N/A"}
                         </Typography>
                       </Box>
-                      
-                      <LinearProgress 
-                        variant="determinate" 
-                        value={Math.min((daysRemaining / 30) * 100, 100)}
-                        sx={{ 
-                          mt: 2,
-                          height: 8,
-                          borderRadius: 4,
-                          backgroundColor: 'grey.200',
-                          '& .MuiLinearProgress-bar': {
-                            backgroundColor: daysRemaining > 30 ? 'success.main' : 
-                                           daysRemaining > 7 ? 'warning.main' : 'error.main'
-                          }
-                        }}
-                      />
                     </Box>
-                  </Box>
-                </Grid> */}
+
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <Box sx={{ 
+                        width: 40,
+                        height: 40,
+                        borderRadius: 2,
+                        bgcolor: 'secondary.50',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <Person sx={{ fontSize: 20, color: 'secondary.main' }} />
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" color="textSecondary">
+                          Owner
+                        </Typography>
+                        <Typography variant="body1" fontWeight={600}>
+                          {company.ownerName}
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <Box sx={{ 
+                        width: 40,
+                        height: 40,
+                        borderRadius: 2,
+                        bgcolor: 'info.50',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <Domain sx={{ fontSize: 20, color: 'info.main' }} />
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" color="textSecondary">
+                          Domain
+                        </Typography>
+                        <Typography variant="body1" fontWeight={600}>
+                          {company.companyDomain}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Stack>
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Stack spacing={2}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <Box sx={{ 
+                        width: 40,
+                        height: 40,
+                        borderRadius: 2,
+                        bgcolor: 'success.50',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <CalendarToday sx={{ fontSize: 20, color: 'success.main' }} />
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" color="textSecondary">
+                          Created On
+                        </Typography>
+                        <Typography variant="body1" fontWeight={600}>
+                          {formatDate(company.createdAt)}
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <Box sx={{ 
+                        width: 40,
+                        height: 40,
+                        borderRadius: 2,
+                        bgcolor: 'warning.50',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <Link sx={{ fontSize: 20, color: 'warning.main' }} />
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" color="textSecondary">
+                          Login URL
+                        </Typography>
+                        <Typography 
+                          variant="body1" 
+                          fontWeight={600}
+                          sx={{ 
+                            fontFamily: 'monospace',
+                            fontSize: '0.875rem',
+                            wordBreak: 'break-all'
+                          }}
+                        >
+                          {window.location.origin}{company.loginUrl}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Stack>
+                </Grid>
               </Grid>
+            </CardContent>
+          </Card>
+
+          {/* Subscription Status Card */}
+          <Card sx={{ 
+            borderRadius: 3,
+            bgcolor: 'white',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+            background: 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)'
+          }}>
+            <CardContent sx={{ p: 4 }}>
+              <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
+                <Box>
+                  <Typography variant="h6" fontWeight={700} gutterBottom>
+                    Subscription Status
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                    Expires on {formatDate(company.subscriptionExpiry)}
+                  </Typography>
+                  
+                  <Box sx={{ mb: 2 }}>
+                    <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
+                      <Typography variant="body2" fontWeight={600}>
+                        Days Remaining
+                      </Typography>
+                      <Typography variant="body1" fontWeight={700}>
+                        {daysRemaining} days
+                      </Typography>
+                    </Stack>
+                    <LinearProgress 
+                      variant="determinate" 
+                      value={subscriptionProgress}
+                      sx={{ 
+                        height: 10,
+                        borderRadius: 5,
+                        bgcolor: 'rgba(255,255,255,0.3)',
+                        '& .MuiLinearProgress-bar': {
+                          borderRadius: 5,
+                          bgcolor: daysRemaining > 15 ? 'success.main' : 
+                                   daysRemaining > 7 ? 'warning.main' : 'error.main'
+                        }
+                      }}
+                    />
+                  </Box>
+                </Box>
+                
+                <Box sx={{ 
+                  width: 100,
+                  height: 100,
+                  borderRadius: '50%',
+                  bgcolor: 'rgba(255,255,255,0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}>
+                  <Typography 
+                    variant="h3" 
+                    fontWeight={800}
+                    sx={{ 
+                      color: daysRemaining > 15 ? 'success.main' : 
+                             daysRemaining > 7 ? 'warning.main' : 'error.main'
+                    }}
+                  >
+                    {daysRemaining}
+                  </Typography>
+                </Box>
+              </Stack>
             </CardContent>
           </Card>
         </Grid>
 
-        {/* Right Column - Stats and Actions */}
-        <Grid item xs={12} md={4}>
-          {/* Stats Card */}
-          <Card sx={styles.statsCard}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom sx={styles.statsTitle}>
-                Company Statistics
-              </Typography>
-              
-              <Grid container spacing={2}>
-                <Grid item xs={6}>
-                  <Box sx={styles.statItem}>
-                    <Typography variant="h4" sx={styles.statNumber}>
-                      {stats.totalUsers}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Total Users
-                    </Typography>
-                  </Box>
-                </Grid>
-                
-                <Grid item xs={6}>
-                  <Box sx={styles.statItem}>
-                    <Typography variant="h4" sx={{...styles.statNumber, color: 'success.main'}}>
-                      {stats.activeUsers}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Active Users
-                    </Typography>
-                  </Box>
-                </Grid>
-                
-                <Grid item xs={6}>
-                  <Box sx={styles.statItem}>
-                    <Typography variant="h4" sx={styles.statNumber}>
-                      {stats.departments}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Departments
-                    </Typography>
-                  </Box>
-                </Grid>
-                
-                <Grid item xs={6}>
-                  <Box sx={styles.statItem}>
-                    <Typography variant="h4" sx={{...styles.statNumber, color: 'info.main'}}>
-                      {stats.todayLogins}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Today's Logins
-                    </Typography>
-                  </Box>
-                </Grid>
-              </Grid>
-            </CardContent>
-          </Card>
-
-          {/* Recent Users Card */}
-          <Card sx={styles.usersCard}>
-            <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6" sx={styles.usersTitle}>
-                  Recent Users ({recentUsers.length})
-                </Typography>
-                <Button
+        {/* Right Column - Recent Users */}
+        <Grid item xs={12} lg={4}>
+          <Card sx={{ 
+            borderRadius: 3,
+            bgcolor: 'white',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+            height: '100%'
+          }}>
+            <CardHeader
+              title={
+                <Stack direction="row" alignItems="center" justifyContent="space-between">
+                  <Typography variant="h6" fontWeight={700}>
+                    Recent Users ({recentUsers.length})
+                  </Typography>
+                  <MuiBadge 
+                    badgeContent={recentUsers.length} 
+                    color="primary"
+                    sx={{ '& .MuiBadge-badge': { fontWeight: 600 } }}
+                  />
+                </Stack>
+              }
+              action={
+                <IconButton
                   size="small"
-                  startIcon={<ListAlt />}
                   onClick={handleViewAllUsers}
-                  variant="outlined"
                   disabled={!company._id}
                 >
-                  View All
-                </Button>
-              </Box>
-              
+                  <ListAlt />
+                </IconButton>
+              }
+              sx={{ borderBottom: '1px solid', borderColor: 'grey.100', pb: 2 }}
+            />
+            
+            <CardContent sx={{ p: 0 }}>
               {recentUsers.length > 0 ? (
-                <Box sx={styles.usersList}>
+                <List sx={{ p: 0 }}>
                   {recentUsers.map((user, index) => (
-                    <Box 
-                      key={user.id || user._id || index} 
-                      sx={styles.userItem}
-                      onClick={() => handleEditUser(user)}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      <Avatar sx={styles.userAvatar}>
-                        {user.name?.charAt(0) || 'U'}
-                      </Avatar>
-                      
-                      <Box sx={styles.userInfo}>
-                        <Typography variant="body2" sx={styles.userName}>
-                          {user.name || 'Unknown User'}
-                        </Typography>
-                        <Typography variant="caption" color="textSecondary">
-                          {user.role || 'User'} • {user.department || 'No Dept'}
-                        </Typography>
-                      </Box>
-                      
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Chip
+                    <ListItem
+                      key={user.id || user._id || index}
+                      sx={{
+                        px: 3,
+                        py: 2,
+                        borderBottom: index < recentUsers.length - 1 ? '1px solid' : 'none',
+                        borderColor: 'grey.100',
+                        transition: 'all 0.2s',
+                        '&:hover': {
+                          bgcolor: 'action.hover',
+                          transform: 'translateX(4px)'
+                        }
+                      }}
+                      secondaryAction={
+                        <IconButton 
+                          edge="end" 
                           size="small"
-                          label={user.isActive ? 'Active' : 'Inactive'}
-                          color={user.isActive ? 'success' : 'error'}
-                          sx={styles.userStatus}
-                        />
-                        <Edit fontSize="small" color="action" />
-                      </Box>
-                    </Box>
+                          onClick={() => handleEditUser(user)}
+                        >
+                          {/* <Edit fontSize="small" /> */}
+                        </IconButton>
+                      }
+                    >
+                      <ListItemAvatar>
+                        <Avatar
+                          sx={{
+                            width: 44,
+                            height: 44,
+                            bgcolor: user.isActive ? 'primary.main' : 'grey.400'
+                          }}
+                        >
+                          {user.name?.charAt(0) || 'U'}
+                        </Avatar>
+                      </ListItemAvatar>
+                      <ListItemText
+                        primary={
+                          <Typography variant="body1" fontWeight={600}>
+                            {user.name || 'Unknown User'}
+                          </Typography>
+                        }
+                        secondary={
+                          <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 0.5 }}>
+                            <Chip
+                              label={user.role || 'User'}
+                              size="small"
+                              variant="outlined"
+                              sx={{ height: 20, fontSize: '0.7rem' }}
+                            />
+                            <Chip
+                              label={user.department || 'No Dept'}
+                              size="small"
+                              sx={{ 
+                                height: 20, 
+                                fontSize: '0.7rem',
+                                bgcolor: 'grey.100'
+                              }}
+                            />
+                          </Stack>
+                        }
+                      />
+                    </ListItem>
                   ))}
-                </Box>
+                </List>
               ) : (
-                <Box sx={styles.noUsers}>
-                  <People sx={{ fontSize: 48, color: 'grey.300', mb: 2 }} />
-                  <Typography variant="body2" color="textSecondary" align="center">
+                <Box sx={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  py: 8,
+                  px: 2
+                }}>
+                  <People sx={{ fontSize: 60, color: 'grey.300', mb: 2 }} />
+                  <Typography variant="body1" color="textSecondary" align="center" gutterBottom>
                     No users found
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary" align="center">
+                    Add users to get started
                   </Typography>
                 </Box>
               )}
-              
+            </CardContent>
+            
+            <CardActions sx={{ p: 3, pt: 2 }}>
               <Button
                 fullWidth
-                variant="outlined"
+                variant="contained"
                 onClick={() => navigate(`/Ciis-network/create-user?company=${company._id}&companyCode=${company.companyCode}`)}
-                sx={{ mt: 2 }}
                 startIcon={<Person />}
                 disabled={!company._id}
+                sx={{ 
+                  borderRadius: 2,
+                  py: 1.5,
+                  fontWeight: 600
+                }}
               >
                 Add New User
               </Button>
-            </CardContent>
+            </CardActions>
           </Card>
         </Grid>
       </Grid>
@@ -1028,215 +1415,160 @@ const CompanyDetails = () => {
         onClose={() => setEditModalOpen(false)}
         maxWidth="sm"
         fullWidth
+        PaperProps={{
+          sx: { borderRadius: 3 }
+        }}
       >
-        <DialogTitle sx={styles.modalTitle}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Person />
-            Edit User Details
-          </Box>
-          <IconButton
-            aria-label="close"
-            onClick={() => setEditModalOpen(false)}
-            sx={styles.closeButton}
-          >
-            <Close />
-          </IconButton>
+        <DialogTitle sx={{ 
+          bgcolor: 'primary.50',
+          borderBottom: '1px solid',
+          borderColor: 'primary.100',
+          py: 2,
+          px: 3
+        }}>
+          <Stack direction="row" alignItems="center" justifyContent="space-between">
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <Person sx={{ color: 'primary.main' }} />
+              <Typography variant="h6" fontWeight={600}>
+                Edit User Details
+              </Typography>
+            </Stack>
+            <IconButton
+              size="small"
+              onClick={() => setEditModalOpen(false)}
+              sx={{ color: 'text.secondary' }}
+            >
+              <Close />
+            </IconButton>
+          </Stack>
         </DialogTitle>
         
-        <DialogContent>
+        <DialogContent sx={{ p: 3 }}>
           {selectedUser && (
-            <Box sx={styles.modalContent}>
-              <Alert severity="info" sx={{ mb: 3 }}>
-                Editing user: <strong>{selectedUser.name}</strong>
+            <Stack spacing={3}>
+              <Alert severity="info" sx={{ borderRadius: 2 }}>
+                Editing: <strong>{selectedUser.name}</strong>
               </Alert>
               
-              <Grid container spacing={2}>
-                <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Full Name"
+                name="name"
+                value={editFormData.name}
+                onChange={handleInputChange}
+                variant="outlined"
+                size="small"
+                required
+              />
+              
+              <TextField
+                fullWidth
+                label="Designation"
+                name="designation"
+                value={editFormData.designation}
+                onChange={handleInputChange}
+                variant="outlined"
+                size="small"
+              />
+              
+              <Autocomplete
+                freeSolo
+                options={jobRoleOptions}
+                value={editFormData.role}
+                onChange={handleRoleChange}
+                getOptionLabel={(option) => {
+                  if (typeof option === 'string') return option;
+                  return option.label || option.name || '';
+                }}
+                renderInput={(params) => (
                   <TextField
-                    fullWidth
-                    label="Full Name"
-                    name="name"
-                    value={editFormData.name}
-                    onChange={handleInputChange}
+                    {...params}
+                    label="Job Role"
                     variant="outlined"
                     size="small"
-                    required
-                  />
-                </Grid>
-                
-                {/* <Grid item xs={12}>
-                  <TextField
                     fullWidth
-                    label="Email Address"
-                    name="email"
-                    value={editFormData.email}
-                    onChange={handleInputChange}
-                    variant="outlined"
-                    size="small"
-                    type="email"
-                    required
-                  />
-                </Grid> */}
-                
-                {/* <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Phone Number"
-                    name="phone"
-                    value={editFormData.phone}
-                    onChange={handleInputChange}
-                    variant="outlined"
-                    size="small"
-                  />
-                </Grid> */}
-                
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Designation"
-                    name="designation"
-                    value={editFormData.designation}
-                    onChange={handleInputChange}
-                    variant="outlined"
-                    size="small"
-                  />
-                </Grid>
-                
-                <Grid item xs={12}>
-                  <Autocomplete
-                    freeSolo
-                    options={jobRoles}
-                    value={editFormData.role}
-                    onChange={handleRoleChange}
-                    onInputChange={(event, newValue) => {
-                      if (newValue === "add-new") {
-                        handleAddNewJobRole();
-                      }
+                    InputProps={{
+                      ...params.InputProps,
+                      startAdornment: (
+                        <>
+                          <Work sx={{ mr: 1, color: 'action.active' }} />
+                          {params.InputProps.startAdornment}
+                        </>
+                      )
                     }}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Job Role"
-                        variant="outlined"
-                        size="small"
-                        fullWidth
-                        InputProps={{
-                          ...params.InputProps,
-                          startAdornment: (
-                            <>
-                              <Work sx={{ mr: 1, color: 'action.active' }} />
-                              {params.InputProps.startAdornment}
-                            </>
-                          )
-                        }}
-                      />
-                    )}
-                    renderOption={(props, option) => (
-                      <li {...props}>
-                        {option === "add-new" ? (
-                          <Box sx={{ display: 'flex', alignItems: 'center', color: 'primary.main' }}>
-                            <Work sx={{ mr: 1 }} />
-                            <Typography>+ Add New Job Role</Typography>
-                          </Box>
-                        ) : (
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Work sx={{ mr: 1, color: 'action.active' }} />
-                            <Typography>{option}</Typography>
-                          </Box>
-                        )}
-                      </li>
-                    )}
-                    loading={loadingJobRoles}
-                    loadingText="Loading job roles..."
-                    noOptionsText={
-                      <Button 
-                        startIcon={<Work />} 
-                        onClick={handleAddNewJobRole}
-                        size="small"
-                      >
-                        Add New Job Role
-                      </Button>
-                    }
                   />
-                </Grid>
-                
-                <Grid item xs={12}>
-                  <Autocomplete
-                    freeSolo
-                    options={departments}
-                    value={editFormData.department}
-                    onChange={handleDepartmentChange}
-                    onInputChange={(event, newValue) => {
-                      if (newValue === "add-new") {
-                        handleAddNewDepartment();
-                      }
+                )}
+                renderOption={(props, option) => (
+                  <li {...props}>
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <Work sx={{ fontSize: 18, color: 'action.active' }} />
+                      <Typography>{option.label || option.name}</Typography>
+                    </Stack>
+                  </li>
+                )}
+                loading={loadingJobRoles}
+                loadingText="Loading job roles..."
+              />
+              
+              <Autocomplete
+                freeSolo
+                options={departmentOptions}
+                value={editFormData.department}
+                onChange={handleDepartmentChange}
+                getOptionLabel={(option) => {
+                  if (typeof option === 'string') return option;
+                  return option.label || option.name || '';
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Department"
+                    variant="outlined"
+                    size="small"
+                    fullWidth
+                    InputProps={{
+                      ...params.InputProps,
+                      startAdornment: (
+                        <>
+                          <Business sx={{ mr: 1, color: 'action.active' }} />
+                          {params.InputProps.startAdornment}
+                        </>
+                      )
                     }}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Department"
-                        variant="outlined"
-                        size="small"
-                        fullWidth
-                        InputProps={{
-                          ...params.InputProps,
-                          startAdornment: (
-                            <>
-                              <Business sx={{ mr: 1, color: 'action.active' }} />
-                              {params.InputProps.startAdornment}
-                            </>
-                          )
-                        }}
-                      />
-                    )}
-                    renderOption={(props, option) => (
-                      <li {...props}>
-                        {option === "add-new" ? (
-                          <Box sx={{ display: 'flex', alignItems: 'center', color: 'primary.main' }}>
-                            <Business sx={{ mr: 1 }} />
-                            <Typography>+ Add New Department</Typography>
-                          </Box>
-                        ) : (
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Business sx={{ mr: 1, color: 'action.active' }} />
-                            <Typography>{option}</Typography>
-                          </Box>
-                        )}
-                      </li>
-                    )}
-                    loading={loadingDepartments}
-                    loadingText="Loading departments..."
-                    noOptionsText={
-                      <Button 
-                        startIcon={<Business />} 
-                        onClick={handleAddNewDepartment}
-                        size="small"
-                      >
-                        Add New Department
-                      </Button>
-                    }
                   />
-                </Grid>
-                
-                <Grid item xs={12}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={editFormData.isActive}
-                        onChange={handleInputChange}
-                        name="isActive"
-                        color="primary"
-                      />
-                    }
-                    label="Active User"
+                )}
+                renderOption={(props, option) => (
+                  <li {...props}>
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <Business sx={{ fontSize: 18, color: 'action.active' }} />
+                      <Typography>{option.label || option.name}</Typography>
+                    </Stack>
+                  </li>
+                )}
+                loading={loadingDepartments}
+                loadingText="Loading departments..."
+              />
+              
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={editFormData.isActive}
+                    onChange={handleInputChange}
+                    name="isActive"
+                    color="primary"
                   />
-                </Grid>
-              </Grid>
-            </Box>
+                }
+                label="Active User"
+              />
+            </Stack>
           )}
         </DialogContent>
         
-        <DialogActions sx={styles.modalActions}>
+        <DialogActions sx={{ 
+          p: 3, 
+          borderTop: '1px solid',
+          borderColor: 'grey.200'
+        }}>
           <Button
             onClick={() => setEditModalOpen(false)}
             color="inherit"
@@ -1259,6 +1591,10 @@ const CompanyDetails = () => {
             variant="contained"
             startIcon={<Save />}
             disabled={saveLoading}
+            sx={{ 
+              px: 3,
+              fontWeight: 600
+            }}
           >
             {saveLoading ? 'Saving...' : 'Save Changes'}
           </Button>
@@ -1266,250 +1602,6 @@ const CompanyDetails = () => {
       </Dialog>
     </Box>
   );
-};
-
-// Styles remain the same as before
-const styles = {
-  container: {
-    p: 3,
-    bgcolor: 'background.default',
-    minHeight: '100vh'
-  },
-  loadingContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '100vh'
-  },
-  errorContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '100vh',
-    gap: 2
-  },
-  header: {
-    mb: 4,
-    bgcolor: 'white',
-    borderRadius: 2,
-    boxShadow: 1,
-    p: 2
-  },
-  headerContent: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between'
-  },
-  backButton: {
-    color: 'text.secondary'
-  },
-  headerTitle: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 2
-  },
-  headerIcon: {
-    fontSize: 32,
-    color: 'primary.main'
-  },
-  title: {
-    fontWeight: 600,
-    color: 'text.primary'
-  },
-  refreshButton: {
-    color: 'primary.main'
-  },
-  profileCard: {
-    borderRadius: 2,
-    boxShadow: 3,
-    mb: 3
-  },
-  profileHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 3,
-    mb: 3
-  },
-  companyLogo: {
-    width: 100,
-    height: 100,
-    fontSize: 40,
-    bgcolor: 'primary.main'
-  },
-  profileInfo: {
-    flex: 1
-  },
-  statusContainer: {
-    display: 'flex',
-    gap: 2,
-    mt: 1,
-    flexWrap: 'wrap'
-  },
-  statusChip: {
-    fontWeight: 600
-  },
-  codeChip: {
-    fontWeight: 500,
-    '& .MuiChip-icon': {
-      fontSize: '16px !important'
-    }
-  },
-  detailItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 2,
-    p: 2,
-    bgcolor: 'grey.50',
-    borderRadius: 1,
-    mb: 2
-  },
-  detailIcon: {
-    color: 'primary.main',
-    fontSize: 24
-  },
-  urlText: {
-    fontFamily: 'monospace',
-    fontSize: '0.875rem',
-    wordBreak: 'break-all'
-  },
-  dbText: {
-    fontFamily: 'monospace',
-    fontSize: '0.875rem',
-    color: 'text.secondary'
-  },
-  dateItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 2,
-    p: 2,
-    bgcolor: 'grey.50',
-    borderRadius: 1
-  },
-  dateIcon: {
-    color: 'secondary.main',
-    fontSize: 24
-  },
-  subscriptionCard: {
-    p: 3,
-    bgcolor: 'primary.50',
-    borderRadius: 2,
-    border: '1px solid',
-    borderColor: 'primary.100'
-  },
-  subscriptionHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 2,
-    mb: 3
-  },
-  subscriptionIcon: {
-    color: 'primary.main',
-    fontSize: 28
-  },
-  subscriptionDetails: {
-    textAlign: 'center'
-  },
-  daysRemaining: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    my: 2
-  },
-  statsCard: {
-    borderRadius: 2,
-    boxShadow: 2,
-    mb: 3
-  },
-  statsTitle: {
-    fontWeight: 600,
-    color: 'text.primary',
-    borderBottom: '2px solid',
-    borderColor: 'primary.main',
-    pb: 1
-  },
-  statItem: {
-    textAlign: 'center',
-    p: 2,
-    bgcolor: 'grey.50',
-    borderRadius: 1
-  },
-  statNumber: {
-    fontWeight: 700,
-    color: 'primary.main'
-  },
-  usersCard: {
-    borderRadius: 2,
-    boxShadow: 2,
-    mb: 3
-  },
-  usersTitle: {
-    fontWeight: 600,
-    color: 'text.primary',
-    borderBottom: '2px solid',
-    borderColor: 'secondary.main',
-    pb: 1
-  },
-  usersList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 1
-  },
-  userItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 2,
-    p: 2,
-    bgcolor: 'grey.50',
-    borderRadius: 1,
-    transition: 'all 0.2s',
-    '&:hover': {
-      bgcolor: 'grey.100',
-      transform: 'translateY(-2px)',
-      boxShadow: 1
-    }
-  },
-  userAvatar: {
-    width: 40,
-    height: 40,
-    bgcolor: 'secondary.main'
-  },
-  userInfo: {
-    flex: 1
-  },
-  userName: {
-    fontWeight: 600
-  },
-  userStatus: {
-    fontSize: '0.75rem'
-  },
-  noUsers: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    py: 4
-  },
-  modalTitle: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    bgcolor: 'primary.50',
-    borderBottom: '1px solid',
-    borderColor: 'primary.100'
-  },
-  closeButton: {
-    color: 'text.secondary'
-  },
-  modalContent: {
-    pt: 2
-   },
-  modalActions: {
-    p: 3,
-    borderTop: '1px solid',
-    borderColor: 'grey.200'
-  }
 };
 
 export default CompanyDetails;

@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import axios from '../../../utils/axiosConfig';
 import {
   FiEdit, FiTrash2, FiPackage, FiCheckCircle,
-  FiXCircle, FiClock, FiMessageCircle, FiSearch, FiUsers
+  FiXCircle, FiClock, FiMessageCircle, FiSearch, 
+  FiUsers,  FiBriefcase
 } from 'react-icons/fi';
 import './EmpAssets.css';
 
@@ -17,13 +18,34 @@ const EmpAssets = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [stats, setStats] = useState({ total: 0, pending: 0, approved: 0, rejected: 0 });
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState('all'); // 'all', 'company', 'department'
+  const [selectedCompany, setSelectedCompany] = useState('');
+  const [selectedDepartment, setSelectedDepartment] = useState('');
+  const [departments, setDepartments] = useState([]);
 
-  useEffect(() => { fetchRequests(); }, [statusFilter]);
+  // Get company code from localStorage
+  const companyCode = localStorage.getItem('companyCode') || 'Mohit';
+
+  useEffect(() => { 
+    fetchRequests(); 
+    extractDepartments();
+  }, [statusFilter, selectedCompany, selectedDepartment]);
 
   const fetchRequests = async () => {
     setLoading(true);
     try {
-      const { data } = await axios.get(`/assets/all${statusFilter ? `?status=${statusFilter}` : ''}`);
+      let url = `/assets/all`;
+      const params = [];
+      
+      if (statusFilter) params.push(`status=${statusFilter}`);
+      if (selectedCompany) params.push(`companyCode=${selectedCompany}`);
+      if (selectedDepartment) params.push(`department=${selectedDepartment}`);
+      
+      if (params.length > 0) {
+        url += `?${params.join('&')}`;
+      }
+      
+      const { data } = await axios.get(url);
       setRequests(data.requests);
       calculateStats(data.requests);
     } catch (err) {
@@ -31,6 +53,16 @@ const EmpAssets = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const extractDepartments = () => {
+    const deptSet = new Set();
+    requests.forEach(req => {
+      if (req.department) {
+        deptSet.add(req.department);
+      }
+    });
+    setDepartments(Array.from(deptSet));
   };
 
   const calculateStats = (data) => {
@@ -95,7 +127,9 @@ const EmpAssets = () => {
     req.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     req.user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     req.assetName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    req.adminComment?.toLowerCase().includes(searchTerm.toLowerCase())
+    req.adminComment?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    req.department?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    req.companyCode?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getStatusClass = (status) => {
@@ -148,6 +182,18 @@ const EmpAssets = () => {
     }
   };
 
+  const handleCompanyFilter = () => {
+    setSelectedCompany(companyCode);
+    setSelectedDepartment('');
+  };
+
+  const handleClearFilters = () => {
+    setSelectedCompany('');
+    setSelectedDepartment('');
+    setStatusFilter('');
+    setSelectedStat('All');
+  };
+
   if (loading && !requests.length) {
     return (
       <div className="EmpAssets-loading-container">
@@ -161,7 +207,28 @@ const EmpAssets = () => {
       {/* Header Section */}
       <div className="EmpAssets-header">
         <h1>Asset Requests Management</h1>
-        <p>Review and manage employee asset requests</p>
+        <p>Review and manage employee asset requests for {companyCode}</p>
+      </div>
+
+      {/* Company Info Bar */}
+      <div className="EmpAssets-company-bar">
+        {/* <FiBuilding /> */}
+        <span>Company: <strong>{companyCode}</strong></span>
+        <button 
+          className="EmpAssets-filter-btn"
+          onClick={handleCompanyFilter}
+          title={`Show only ${companyCode} requests`}
+        >
+         My Company Only
+        </button>
+        {(selectedCompany || selectedDepartment || statusFilter) && (
+          <button 
+            className="EmpAssets-clear-btn"
+            onClick={handleClearFilters}
+          >
+            Clear Filters
+          </button>
+        )}
       </div>
 
       {/* Stats Cards */}
@@ -191,16 +258,33 @@ const EmpAssets = () => {
         ))}
       </div>
 
-      {/* Search */}
-      <div className="EmpAssets-search-container">
-        <div className="EmpAssets-search-input">
-          <FiSearch />
-          <input
-            type="text"
-            placeholder="Search requests..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      {/* Filters Section */}
+      <div className="EmpAssets-filters-container">
+        <div className="EmpAssets-search-container">
+          <div className="EmpAssets-search-input">
+            <FiSearch />
+            <input
+              type="text"
+              placeholder="Search by name, email, asset, department..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="EmpAssets-filter-options">
+          <div className="EmpAssets-department-filter">
+            <FiBriefcase />
+            <select 
+              value={selectedDepartment} 
+              onChange={(e) => setSelectedDepartment(e.target.value)}
+            >
+              <option value="">All Departments</option>
+              {departments.map((dept, index) => (
+                <option key={index} value={dept}>{dept}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -210,6 +294,7 @@ const EmpAssets = () => {
           <thead>
             <tr>
               <th>Employee</th>
+              <th>Department</th>
               <th>Asset</th>
               <th>Status</th>
               <th>Comment</th>
@@ -230,6 +315,11 @@ const EmpAssets = () => {
                         <p>{req.user?.email}</p>
                       </div>
                     </div>
+                  </td>
+                  <td>
+                    <span className="EmpAssets-department-badge">
+                      {req.department || 'N/A'}
+                    </span>
                   </td>
                   <td>
                     <span className={`EmpAssets-chip ${getAssetClass(req.assetName)}`}>
@@ -253,6 +343,24 @@ const EmpAssets = () => {
                   </td>
                   <td className="EmpAssets-actions-cell">
                     <div className="EmpAssets-actions-container">
+                      {req.status === 'pending' && (
+                        <>
+                          <button 
+                            className="EmpAssets-status-btn EmpAssets-approve"
+                            onClick={() => handleStatusChange(req._id, 'approved')}
+                            disabled={actionLoading}
+                          >
+                            Approve
+                          </button>
+                          <button 
+                            className="EmpAssets-status-btn EmpAssets-reject"
+                            onClick={() => handleStatusChange(req._id, 'rejected')}
+                            disabled={actionLoading}
+                          >
+                            Reject
+                          </button>
+                        </>
+                      )}
                       <button 
                         className="EmpAssets-icon-button EmpAssets-edit"
                         title="Edit Comment"
@@ -273,7 +381,7 @@ const EmpAssets = () => {
               ))
             ) : (
               <tr>
-                <td colSpan="5" className="EmpAssets-empty-state">
+                <td colSpan="6" className="EmpAssets-empty-state">
                   No Asset Requests Found
                 </td>
               </tr>
@@ -288,6 +396,7 @@ const EmpAssets = () => {
           <div className="EmpAssets-dialog">
             <div className="EmpAssets-dialog-header">
               <h2>Edit Admin Comment</h2>
+              <p>Request from: {editingCommentReq.user?.name} | Department: {editingCommentReq.department}</p>
             </div>
             <div className="EmpAssets-dialog-body">
               <textarea
@@ -295,6 +404,7 @@ const EmpAssets = () => {
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
                 placeholder="Add your comment..."
+                rows={5}
               />
             </div>
             <div className="EmpAssets-dialog-footer">
@@ -309,7 +419,7 @@ const EmpAssets = () => {
                 onClick={handleCommentUpdate}
                 disabled={actionLoading}
               >
-                {actionLoading ? 'Saving...' : 'Save'}
+                {actionLoading ? 'Saving...' : 'Save Comment'}
               </button>
             </div>
           </div>
