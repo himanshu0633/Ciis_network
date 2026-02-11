@@ -90,12 +90,7 @@ const APP_ROUTES = [
   { path: 'task-management', name: 'Create Task', icon: 'Task', category: 'tasks' },
   { path: 'employee-meeting', name: 'Employee Meeting', icon: 'VideoCall', category: 'meetings' },
   { path: 'client-meeting', name: 'Client Meeting', icon: 'VideoCall', category: 'meetings' },
-  // { path: 'company-details', name: 'Company Details', icon: 'Business', category: 'superadmin' },
-  // { path: 'department', name: 'Department Details', icon: 'Apartment', category: 'superadmin' },
-  // { path: 'SuperAdminDashboard', name: 'Super Admin Dashboard', icon: 'Dashboard', category: 'superadmin' },
-  // { path: 'CompanyManagement', name: 'Company Management', icon: 'Business', category: 'superadmin' },
-  // { path: 'JobRoleManagement', name: 'Job Role Management', icon: 'Key', category: 'superadmin' },
-  // { path: 'SidebarManagement', name: 'Sidebar Management', icon: 'Menu', category: 'superadmin' },   
+    
 ];
 
 const SidebarManagement = () => {
