@@ -91,7 +91,7 @@ const SuperAdminLogin = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post(`${API_URL}/super-admin/login`, form);
+      const response = await axios.post(`${API_URL}/superAdmin/login`, form);
       
       if (response.data.success) {
         // Save super admin data to localStorage

@@ -245,7 +245,7 @@ const handleLogout = () => {
             <Divider />
             <MenuItem disabled>
               <ListItemIcon><VersionIcon fontSize="small" /></ListItemIcon>
-              <ListItemText>Version 5.2.10</ListItemText>
+              <ListItemText>Version 5.2.11</ListItemText>
             </MenuItem>
             <MenuItem>
               <ListItemIcon><ViewLogsIcon fontSize="small" /></ListItemIcon>

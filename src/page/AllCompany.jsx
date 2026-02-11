@@ -133,7 +133,7 @@ const AllCompany = () => {
       if (!superAdminRaw || !token) {
         toast.error("Please login as super admin");
         localStorage.clear();
-        navigate("/super-admin/login");
+        navigate("/superAdmin/login");
         return false;
       }
 
@@ -230,7 +230,7 @@ const AllCompany = () => {
       const token = localStorage.getItem("token");
       const headers = { Authorization: `Bearer ${token}` };
       
-      const response = await axios.get(`${API_URL}/super-admin/users`, { headers });
+      const response = await axios.get(`${API_URL}/superAdmin/users`, { headers });
       
       if (response.data && response.data.length > 0) {
         const usersByCompany = {};
@@ -266,7 +266,7 @@ const AllCompany = () => {
 
       // Fetch companies
       const companiesRes = await axios.get(
-        `${API_URL}/super-admin/companies`,
+        `${API_URL}/superAdmin/companies`,
         { headers }
       );
 
@@ -344,13 +344,13 @@ const AllCompany = () => {
       
       try {
         const response = await axios.get(
-          `${API_URL}/super-admin/company/${companyId}/users`,
+          `${API_URL}/superAdmin/company/${companyId}/users`,
           { headers }
         );
         users = response.data;
       } catch (error) {
         const allUsersRes = await axios.get(
-          `${API_URL}/super-admin/users`,
+          `${API_URL}/superAdmin/users`,
           { headers }
         );
         

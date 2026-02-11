@@ -65,7 +65,8 @@ import {
   CheckCircle as CheckCircleIcon,
   Refresh as RefreshIcon
 } from '@mui/icons-material';
-import axios from 'axios';
+import axios from "../../utils/axiosConfig";
+import axiosInstance from "../../utils/axiosConfig";
 import Swal from 'sweetalert2';
 
 // Your routes configuration
@@ -89,12 +90,7 @@ const APP_ROUTES = [
   { path: 'task-management', name: 'Create Task', icon: 'Task', category: 'tasks' },
   { path: 'employee-meeting', name: 'Employee Meeting', icon: 'VideoCall', category: 'meetings' },
   { path: 'client-meeting', name: 'Client Meeting', icon: 'VideoCall', category: 'meetings' },
-  // { path: 'company-details', name: 'Company Details', icon: 'Business', category: 'superadmin' },
-  // { path: 'department', name: 'Department Details', icon: 'Apartment', category: 'superadmin' },
-  // { path: 'SuperAdminDashboard', name: 'Super Admin Dashboard', icon: 'Dashboard', category: 'superadmin' },
-  // { path: 'CompanyManagement', name: 'Company Management', icon: 'Business', category: 'superadmin' },
-  // { path: 'JobRoleManagement', name: 'Job Role Management', icon: 'Key', category: 'superadmin' },
-  // { path: 'SidebarManagement', name: 'Sidebar Management', icon: 'Menu', category: 'superadmin' },   
+    
 ];
 
 const SidebarManagement = () => {
@@ -228,15 +224,15 @@ const SidebarManagement = () => {
 
       // Try different API endpoints
       const endpoints = [
-        '/api/auth/me',
-        '/api/user/profile',
-        '/api/company/current',
-        '/api/company/my-company'
+        '/auth/me',
+        '/user/profile',
+        '/company/current',
+        '/company/my-company'
       ];
 
       for (const endpoint of endpoints) {
         try {
-          const response = await axios.get(endpoint, {
+          const response = await axiosInstance.get(endpoint, {
             headers: { 
               Authorization: `Bearer ${token}`,
               'Content-Type': 'application/json'
@@ -311,7 +307,7 @@ const SidebarManagement = () => {
         const companyId = result.value;
         try {
           const token = localStorage.getItem('token');
-          const response = await axios.get(`/api/company/${companyId}`, {
+          const response = await axiosInstance.get(`/company/${companyId}`, {
             headers: { 
               Authorization: `Bearer ${token}`,
               'Content-Type': 'application/json'
@@ -353,7 +349,7 @@ const SidebarManagement = () => {
     try {
       setLoading(prev => ({ ...prev, departments: true }));
       const token = localStorage.getItem('token');
-      const response = await axios.get(`/api/departments?company=${companyId}`, {
+      const response = await axiosInstance.get(`/departments?company=${companyId}`, {
         headers: { 
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -410,7 +406,7 @@ const SidebarManagement = () => {
       console.log('Fetching job roles for department:', deptId);
       
       try {
-        const response = await axios.get(`/api/job-roles/department/${deptId}`, {
+        const response = await axiosInstance.get(`/job-roles/department/${deptId}`, {
           headers: { 
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -445,7 +441,7 @@ const SidebarManagement = () => {
     try {
       setLoading(prev => ({ ...prev, fetching: true }));
       const token = localStorage.getItem('token');
-      const response = await axios.get(`/api/sidebar`, {
+      const response = await axiosInstance.get(`/sidebar`, {
         params: { companyId },
         headers: { 
           Authorization: `Bearer ${token}`,
@@ -512,7 +508,7 @@ const SidebarManagement = () => {
       console.log('Loading config for:', { companyId, departmentId, roleId });
       
       const token = localStorage.getItem('token');
-      const response = await axios.get(`/api/sidebar/config`, {
+      const response = await axiosInstance.get(`/sidebar/config`, {
         params: { 
           companyId, 
           departmentId, 
@@ -657,7 +653,7 @@ const SidebarManagement = () => {
       console.log('Saving config data:', configData);
 
       // Check if config exists
-      const checkResponse = await axios.get(`/api/sidebar/config`, {
+      const checkResponse = await axiosInstance.get(`/sidebar/config`, {
         params: { 
           companyId: company._id, 
           departmentId: selectedDepartment, 
@@ -672,7 +668,7 @@ const SidebarManagement = () => {
       let response;
       if (checkResponse.data && checkResponse.data.success && checkResponse.data.data) {
         // Update existing config
-        response = await axios.put(`/api/sidebar/${checkResponse.data.data._id}`, configData, {
+        response = await axiosInstance.put(`/sidebar/${checkResponse.data.data._id}`, configData, {
           headers: { 
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -680,7 +676,7 @@ const SidebarManagement = () => {
         });
       } else {
         // Create new config
-        response = await axios.post('/api/sidebar', configData, {
+        response = await axios.post('/sidebar', configData, {
           headers: { 
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -738,7 +734,7 @@ const SidebarManagement = () => {
     if (result.isConfirmed) {
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.delete(`/api/sidebar/${configId}`, {
+        const response = await axiosInstance.delete(`/api/sidebar/${configId}`, {
           headers: { 
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json'
