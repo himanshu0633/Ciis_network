@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "../../../utils/axiosConfig";
 import API_URL from "../../../config";
 import { toast } from "react-toastify";
+import "./AdminMeetingPage.css"; // Import CSS file
 
 export default function AdminMeetingPage() {
   const [users, setUsers] = useState([]);
@@ -9,7 +10,8 @@ export default function AdminMeetingPage() {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState("create");
-  const [statusModal, setStatusModal] = useState({ open: false, data: [] });
+  const [statusModal, setStatusModal] = useState({ open: false, data: [], meetingTitle: "" });
+  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, meetingId: null, meetingTitle: "" });
 
   const [form, setForm] = useState({
     title: "",
@@ -22,54 +24,41 @@ export default function AdminMeetingPage() {
 
   const adminId = localStorage.getItem("userId");
 
-  // 🟢 Fetch all users - FIXED
+  // 🟢 Fetch all users
   const fetchUsers = async () => {
     try {
       const res = await axios.get(`${API_URL}/users/department-users`);
-      
-      // The API response structure is: {success: true, message: {users: [...]}}
-      if (res.data && res.data.success && res.data.message && res.data.message.users) {
+      if (res.data?.success && res.data.message?.users) {
         setUsers(res.data.message.users || []);
       } else {
         console.warn("Unexpected API response structure:", res.data);
         setUsers([]);
-        toast.error("❌ Invalid response format from server");
       }
     } catch (err) {
       console.error("Error fetching users:", err);
       toast.error("❌ Failed to load users");
-      setUsers([]); // Ensure users is always an array
+      setUsers([]);
     }
   };
 
-  // 🟢 Fetch all meetings - FIXED
+  // 🟢 Fetch all meetings
   const fetchMeetings = async () => {
     try {
       setRefreshing(true);
       const res = await axios.get(`${API_URL}/meetings`);
       
-      // Handle different possible response structures
-      if (Array.isArray(res.data)) {
-        // If response is directly an array
-        setMeetings(res.data);
-      } else if (res.data && Array.isArray(res.data.data)) {
-        // If response is {data: [...]}
-        setMeetings(res.data.data);
-      } else if (res.data && Array.isArray(res.data.meetings)) {
-        // If response is {meetings: [...]}
-        setMeetings(res.data.meetings);
-      } else if (res.data && res.data.success && Array.isArray(res.data.data)) {
-        // If response is {success: true, data: [...]}
-        setMeetings(res.data.data);
-      } else {
+      if (Array.isArray(res.data)) setMeetings(res.data);
+      else if (res.data?.data) setMeetings(res.data.data);
+      else if (res.data?.meetings) setMeetings(res.data.meetings);
+      else if (res.data?.success && res.data.data) setMeetings(res.data.data);
+      else {
         console.warn("Unexpected meetings API response:", res.data);
         setMeetings([]);
-        toast.warning("⚠️ Could not load meetings in expected format");
       }
     } catch (err) {
       console.error("Error fetching meetings:", err);
       toast.error("❌ Failed to fetch meetings");
-      setMeetings([]); // Ensure meetings is always an array
+      setMeetings([]);
     } finally {
       setRefreshing(false);
     }
@@ -85,10 +74,8 @@ export default function AdminMeetingPage() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // 🟢 Helper function to get user ID (handles both id and _id fields)
-  const getUserId = (user) => {
-    return user._id || user.id;
-  };
+  // 🟢 Helper function to get user ID
+  const getUserId = (user) => user._id || user.id;
 
   // 🟢 Handle attendee selection
   const handleAttendeeChange = (id) => {
@@ -109,20 +96,60 @@ export default function AdminMeetingPage() {
     }));
   };
 
-  // 🟢 Create meeting
+  // 🟢 Format date from YYYY-MM-DD to DD-MM-YYYY
+  const formatDateToDDMMYYYY = (dateStr) => {
+    if (!dateStr) return "";
+    const [year, month, day] = dateStr.split('-');
+    return `${day}-${month}-${year}`;
+  };
+
+  // 🟢 Create meeting - FIXED VERSION
   const createMeeting = async (e) => {
     e.preventDefault();
-    if (!form.title || !form.date || !form.time || form.attendees.length === 0) {
-      toast.warning("⚠️ Please fill all fields and select attendees");
+    
+    // Validation
+    if (!form.title || !form.date || !form.time) {
+      toast.warning("⚠️ Please fill all required fields");
+      return;
+    }
+
+    if (form.attendees.length === 0) {
+      toast.warning("⚠️ Please select at least one attendee");
+      return;
+    }
+
+    const adminId = localStorage.getItem("userId");
+    if (!adminId) {
+      toast.error("❌ Admin not authenticated. Please login again.");
       return;
     }
 
     setLoading(true);
+    
     try {
-      const payload = { ...form, createdBy: adminId };
+      // Format date to DD-MM-YYYY as shown in UI mockup
+      const formattedDate = formatDateToDDMMYYYY(form.date);
+      
+      // Create payload matching the UI mockup exactly
+      const payload = {
+        import: form.title,                    // Changed from 'title' to 'import' to match UI
+        description: form.description || "",
+        date: formattedDate,                  // Format: DD-MM-YYYY (e.g., 19-02-2026)
+        time: form.time,
+        recurring: form.recurring === "No" ? "No Recurrence" : form.recurring, // Exact string from UI
+        attendees: form.attendees,
+        createdBy: adminId
+      };
+
+      // Debug log to see what's being sent
+      console.log("🚀 Sending meeting payload:", JSON.stringify(payload, null, 2));
+
       const res = await axios.post(`${API_URL}/meetings/create`, payload);
-      if (res.data.success) {
+      
+      if (res.data?.success) {
         toast.success("✅ Meeting created successfully!");
+        
+        // Reset form
         setForm({
           title: "",
           description: "",
@@ -131,32 +158,62 @@ export default function AdminMeetingPage() {
           recurring: "No",
           attendees: [],
         });
-        fetchMeetings();
+        
+        // Refresh meetings and switch to manage tab
+        await fetchMeetings();
         setActiveTab("manage");
       } else {
-        toast.error(res.data.message || "❌ Failed to create meeting");
+        toast.error(res.data?.message || "❌ Failed to create meeting");
       }
     } catch (err) {
-      console.error(err);
-      toast.error("❌ Failed to create meeting");
+      console.error("❌ Create meeting error:", err);
+      
+      // Detailed error handling
+      if (err.response) {
+        // Server responded with error
+        const status = err.response.status;
+        const serverMessage = err.response.data?.message || err.response.data?.error || err.response.statusText;
+        const errorDetails = err.response.data?.details || "";
+        
+        console.error("Error response data:", err.response.data);
+        
+        if (status === 400) {
+          toast.error(`❌ Invalid data: ${serverMessage}`);
+          if (errorDetails) console.error("Details:", errorDetails);
+        } else if (status === 401) {
+          toast.error("❌ Unauthorized. Please login again.");
+        } else if (status === 403) {
+          toast.error("❌ You don't have permission to create meetings.");
+        } else if (status === 409) {
+          toast.error("❌ Meeting conflict. Please check the date/time.");
+        } else if (status === 500) {
+          toast.error(`❌ Server error (500). Please check: 
+            • Date format should be DD-MM-YYYY
+            • Field name should be 'import' not 'title'
+            • Recurrence should be 'No Recurrence' not 'No'`);
+        } else {
+          toast.error(`❌ Error ${status}: ${serverMessage}`);
+        }
+      } else if (err.request) {
+        // No response received
+        toast.error("❌ Cannot connect to server. Please check your internet connection.");
+      } else {
+        // Other errors
+        toast.error(`❌ Failed to create meeting: ${err.message}`);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   // 🟢 Show view status
-  const showStatus = async (meetingId) => {
+  const showStatus = async (meetingId, meetingTitle) => {
     try {
       const res = await axios.get(`${API_URL}/meetings/view-status/${meetingId}`);
-      if (res.data && res.data.length === 0) {
-        toast.info("No attendees found for this meeting");
-        return;
-      }
-
       setStatusModal({
         open: true,
         data: res.data || [],
-        meetingTitle: meetings.find(m => m._id === meetingId)?.title || "Meeting"
+        meetingTitle: meetingTitle || "Meeting"
       });
     } catch (err) {
       console.error(err);
@@ -165,14 +222,15 @@ export default function AdminMeetingPage() {
   };
 
   // 🟢 Delete meeting
-  const deleteMeeting = async (meetingId) => {
-    if (!window.confirm("Are you sure you want to delete this meeting?")) return;
+  const deleteMeeting = async () => {
+    if (!deleteConfirm.meetingId) return;
     
     try {
-      const res = await axios.delete(`${API_URL}/meetings/${meetingId}`);
+      const res = await axios.delete(`${API_URL}/meetings/${deleteConfirm.meetingId}`);
       if (res.data.success) {
         toast.success("✅ Meeting deleted successfully!");
         fetchMeetings();
+        setDeleteConfirm({ open: false, meetingId: null, meetingTitle: "" });
       } else {
         toast.error(res.data.message || "❌ Failed to delete meeting");
       }
@@ -182,17 +240,38 @@ export default function AdminMeetingPage() {
     }
   };
 
-  // 🟢 Format date and time
+  // 🟢 Format date and time for display
   const formatDateTime = (date, time) => {
     if (!date) return { date: "N/A", time: "N/A", isPast: false, isToday: false };
     
-    const meetingDate = new Date(date);
+    // Handle DD-MM-YYYY format from backend
+    let meetingDate;
+    if (typeof date === 'string' && date.includes('-')) {
+      const parts = date.split('-');
+      if (parts.length === 3) {
+        // Check if it's DD-MM-YYYY or YYYY-MM-DD
+        if (parts[0].length === 4) {
+          // YYYY-MM-DD format
+          meetingDate = new Date(date);
+        } else {
+          // DD-MM-YYYY format
+          const [day, month, year] = parts;
+          meetingDate = new Date(`${year}-${month}-${day}`);
+        }
+      } else {
+        meetingDate = new Date(date);
+      }
+    } else {
+      meetingDate = new Date(date);
+    }
+    
     const now = new Date();
     const isToday = meetingDate.toDateString() === now.toDateString();
     const isPast = meetingDate < now;
+    const isTomorrow = meetingDate.getTime() - now.getTime() < 86400000 && meetingDate > now;
 
     return {
-      date: isToday ? "Today" : meetingDate.toLocaleDateString('en-US', { 
+      date: isToday ? "Today" : isTomorrow ? "Tomorrow" : meetingDate.toLocaleDateString('en-US', { 
         weekday: 'short', 
         month: 'short', 
         day: 'numeric' 
@@ -203,175 +282,257 @@ export default function AdminMeetingPage() {
         hour12: true 
       }) : "N/A",
       isPast,
-      isToday
+      isToday,
+      isTomorrow
     };
   };
 
   return (
-    <div style={styles.container}>
-      {/* Header */}
-      <div style={styles.header}>
-        <h2 style={styles.heading}>📅 Meeting Management</h2>
-        <p style={styles.subtitle}>Create and manage team meetings</p>
+    <div className="amp-container">
+      {/* Header with Gradient */}
+      <div className="amp-header">
+        <div className="amp-header-content">
+          <div className="amp-header-left">
+            <div className="amp-header-icon">📅</div>
+            <div>
+              <h1 className="amp-header-title">Meeting Management</h1>
+              <p className="amp-header-subtitle">Create and manage team meetings efficiently</p>
+            </div>
+          </div>
+          <div className="amp-stats">
+            <div className="amp-stat-item">
+              <span className="amp-stat-value">{meetings.length}</span>
+              <span className="amp-stat-label">Total Meetings</span>
+            </div>
+            <div className="amp-stat-item">
+              <span className="amp-stat-value">{users.length}</span>
+              <span className="amp-stat-label">Team Members</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Navigation Tabs */}
-      <div style={styles.tabContainer}>
-        <button 
-          style={{
-            ...styles.tab,
-            ...(activeTab === "create" ? styles.activeTab : {})
-          }}
-          onClick={() => setActiveTab("create")}
-        >
-          ➕ Create Meeting
-        </button>
-        <button 
-          style={{
-            ...styles.tab,
-            ...(activeTab === "manage" ? styles.activeTab : {})
-          }}
-          onClick={() => setActiveTab("manage")}
-        >
-          📋 Manage Meetings ({meetings.length})
-        </button>
+      {/* Navigation Tabs - Modern Design */}
+      <div className="amp-tabs-container">
+        <div className="amp-tabs">
+          <button 
+            className={`amp-tab ${activeTab === "create" ? "amp-tab-active" : ""}`}
+            onClick={() => setActiveTab("create")}
+          >
+            <span className="amp-tab-icon">➕</span>
+            <span>Create Meeting</span>
+          </button>
+          <button 
+            className={`amp-tab ${activeTab === "manage" ? "amp-tab-active" : ""}`}
+            onClick={() => setActiveTab("manage")}
+          >
+            <span className="amp-tab-icon">📋</span>
+            <span>Manage Meetings</span>
+            {meetings.length > 0 && (
+              <span className="amp-tab-badge">{meetings.length}</span>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Create Meeting Form */}
       {activeTab === "create" && (
-        <div style={styles.formSection}>
-          <div style={styles.formCard}>
-            <h3 style={styles.formTitle}>Create New Meeting</h3>
-            <form onSubmit={createMeeting} style={styles.form}>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Meeting Title *</label>
-                <input
-                  type="text"
-                  name="title"
-                  placeholder="Enter meeting title..."
-                  value={form.title}
-                  onChange={handleChange}
-                  style={styles.input}
-                  required
-                />
+        <div className="amp-create-section">
+          <div className="amp-form-card">
+            <div className="amp-form-header">
+              <div className="amp-form-title-wrapper">
+                <div className="amp-form-icon">📅</div>
+                <h2 className="amp-form-title">Create New Meeting</h2>
               </div>
+              <p className="amp-form-subtitle">Fill in the details to schedule a meeting</p>
+            </div>
 
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Description</label>
-                <textarea
-                  name="description"
-                  placeholder="Meeting description..."
-                  value={form.description}
-                  onChange={handleChange}
-                  style={styles.textarea}
-                  rows="3"
-                ></textarea>
-              </div>
+            <form onSubmit={createMeeting} className="amp-form">
+              <div className="amp-form-grid">
+                {/* Left Column */}
+                <div className="amp-form-left">
+                  <div className="amp-form-group">
+                    <label className="amp-label amp-required">Meeting Title</label>
+                    <input
+                      type="text"
+                      name="title"
+                      placeholder="e.g., Weekly Team Sync"
+                      value={form.title}
+                      onChange={handleChange}
+                      className="amp-input"
+                      required
+                    />
+                    <small style={{ color: '#666', marginTop: '4px', display: 'block' }}>
+                      Note: This will be sent as 'import' field to backend
+                    </small>
+                  </div>
 
-              <div style={styles.formRow}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Date *</label>
-                  <input
-                    type="date"
-                    name="date"
-                    value={form.date}
-                    onChange={handleChange}
-                    style={styles.input}
-                    min={new Date().toISOString().split('T')[0]}
-                    required
-                  />
-                </div>
+                  <div className="amp-form-group">
+                    <label className="amp-label">Description</label>
+                    <textarea
+                      name="description"
+                      placeholder="Meeting agenda, goals, etc..."
+                      value={form.description}
+                      onChange={handleChange}
+                      className="amp-textarea"
+                      rows="4"
+                    />
+                  </div>
 
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Time *</label>
-                  <input
-                    type="time"
-                    name="time"
-                    value={form.time}
-                    onChange={handleChange}
-                    style={styles.input}
-                    required
-                  />
-                </div>
-
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Recurring</label>
-                  <select
-                    name="recurring"
-                    value={form.recurring}
-                    onChange={handleChange}
-                    style={styles.input}
-                  >
-                    <option value="No">No Recurrence</option>
-                    <option value="Daily">Daily</option>
-                    <option value="Weekly">Weekly</option>
-                    <option value="Monthly">Monthly</option>
-                  </select>
-                </div>
-              </div>
-
-              <div style={styles.formGroup}>
-                <div style={styles.attendeesHeader}>
-                  <label style={styles.label}>Select Attendees *</label>
-                  <button 
-                    type="button" 
-                    onClick={selectAllAttendees}
-                    style={styles.selectAllBtn}
-                    disabled={!Array.isArray(users) || users.length === 0}
-                  >
-                    {form.attendees.length === (users?.length || 0) ? "Deselect All" : "Select All"}
-                  </button>
-                </div>
-                <div style={styles.attendeesGrid}>
-                  {Array.isArray(users) && users.length > 0 ? (
-                    users.map((u) => {
-                      const userId = getUserId(u);
-                      return (
-                        <label key={userId} style={styles.checkboxCard}>
-                          <input
-                            type="checkbox"
-                            onChange={() => handleAttendeeChange(userId)}
-                            checked={form.attendees.includes(userId)}
-                            style={styles.checkboxInput}
-                          />
-                          <div style={{
-                            ...styles.checkboxContent,
-                            ...(form.attendees.includes(userId) ? styles.checkboxContentSelected : {})
-                          }}>
-                            <span style={styles.userName}>{u.name || "Unnamed User"}</span>
-                            <span style={styles.userEmail}>{u.email || "No email"}</span>
-                          </div>
-                        </label>
-                      );
-                    })
-                  ) : (
-                    <div style={styles.noUsersMessage}>
-                      No users available. Please check your connection.
+                  <div className="amp-form-row">
+                    <div className="amp-form-group">
+                      <label className="amp-label amp-required">Date</label>
+                      <div className="amp-input-icon-wrapper">
+                        <span className="amp-input-icon">📅</span>
+                        <input
+                          type="date"
+                          name="date"
+                          value={form.date}
+                          onChange={handleChange}
+                          className="amp-input amp-input-with-icon"
+                          min={new Date().toISOString().split('T')[0]}
+                          required
+                        />
+                      </div>
+                      <small style={{ color: '#666', marginTop: '4px', display: 'block' }}>
+                        Will be converted to DD-MM-YYYY format
+                      </small>
                     </div>
-                  )}
+
+                    <div className="amp-form-group">
+                      <label className="amp-label amp-required">Time</label>
+                      <div className="amp-input-icon-wrapper">
+                        <span className="amp-input-icon">⏰</span>
+                        <input
+                          type="time"
+                          name="time"
+                          value={form.time}
+                          onChange={handleChange}
+                          className="amp-input amp-input-with-icon"
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="amp-form-group">
+                    <label className="amp-label">Recurrence</label>
+                    <div className="amp-select-wrapper">
+                      <select
+                        name="recurring"
+                        value={form.recurring}
+                        onChange={handleChange}
+                        className="amp-select"
+                      >
+                        <option value="No">No Recurrence</option>
+                        <option value="Daily">Daily</option>
+                        <option value="Weekly">Weekly</option>
+                        <option value="Monthly">Monthly</option>
+                      </select>
+                    </div>
+                    <small style={{ color: '#666', marginTop: '4px', display: 'block' }}>
+                      'No' will be sent as 'No Recurrence'
+                    </small>
+                  </div>
                 </div>
-                <div style={styles.attendeeCount}>
-                  {form.attendees.length} of {Array.isArray(users) ? users.length : 0} attendees selected
+
+                {/* Right Column - Attendees */}
+                <div className="amp-form-right">
+                  <div className="amp-attendees-header">
+                    <div className="amp-attendees-title-wrapper">
+                      <label className="amp-label amp-required">Select Attendees</label>
+                      <span className="amp-attendees-count">
+                        {form.attendees.length} / {users.length} selected
+                      </span>
+                    </div>
+                    <button 
+                      type="button" 
+                      onClick={selectAllAttendees}
+                      className="amp-select-all-btn"
+                      disabled={!users.length}
+                    >
+                      {form.attendees.length === users.length ? "Deselect All" : "Select All"}
+                    </button>
+                  </div>
+
+                  <div className="amp-attendees-grid-container">
+                    {users.length > 0 ? (
+                      <div className="amp-attendees-grid">
+                        {users.map((u) => {
+                          const userId = getUserId(u);
+                          const isSelected = form.attendees.includes(userId);
+                          return (
+                            <label 
+                              key={userId} 
+                              className={`amp-attendee-card ${isSelected ? 'amp-attendee-selected' : ''}`}
+                            >
+                              <input
+                                type="checkbox"
+                                onChange={() => handleAttendeeChange(userId)}
+                                checked={isSelected}
+                                className="amp-attendee-checkbox"
+                              />
+                              <div className="amp-attendee-avatar">
+                                {u.name?.charAt(0).toUpperCase() || 'U'}
+                              </div>
+                              <div className="amp-attendee-info">
+                                <span className="amp-attendee-name">{u.name || "Unknown User"}</span>
+                                <span className="amp-attendee-email">{u.email || "No email"}</span>
+                              </div>
+                              {isSelected && (
+                                <span className="amp-attendee-check">✓</span>
+                              )}
+                            </label>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="amp-no-users">
+                        <div className="amp-no-users-icon">👥</div>
+                        <p>No users available</p>
+                        <span>Please check your connection</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              <button 
-                type="submit" 
-                disabled={loading || !Array.isArray(users) || users.length === 0} 
-                style={{
-                  ...styles.submitButton,
-                  ...((loading || !Array.isArray(users) || users.length === 0) ? styles.disabledButton : {})
-                }}
-              >
-                {loading ? (
-                  <>
-                    <div style={styles.spinner}></div>
-                    Creating Meeting...
-                  </>
-                ) : (
-                  "📅 Create Meeting"
-                )}
-              </button>
+              {/* Form Actions */}
+              <div className="amp-form-actions">
+                <button 
+                  type="button"
+                  className="amp-btn amp-btn-secondary"
+                  onClick={() => {
+                    setForm({
+                      title: "",
+                      description: "",
+                      date: "",
+                      time: "",
+                      recurring: "No",
+                      attendees: [],
+                    });
+                  }}
+                >
+                  Clear Form
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={loading || !users.length} 
+                  className="amp-btn amp-btn-primary"
+                >
+                  {loading ? (
+                    <>
+                      <span className="amp-spinner"></span>
+                      Creating Meeting...
+                    </>
+                  ) : (
+                    <>
+                      <span>📅</span>
+                      Create Meeting
+                    </>
+                  )}
+                </button>
+              </div>
             </form>
           </div>
         </div>
@@ -379,104 +540,125 @@ export default function AdminMeetingPage() {
 
       {/* Manage Meetings */}
       {activeTab === "manage" && (
-        <div style={styles.manageSection}>
-          <div style={styles.sectionHeader}>
-            <h3 style={styles.sectionTitle}>All Meetings</h3>
+        <div className="amp-manage-section">
+          <div className="amp-manage-header">
+            <div className="amp-manage-title-wrapper">
+              <h2 className="amp-manage-title">All Meetings</h2>
+              <p className="amp-manage-subtitle">
+                {meetings.length} {meetings.length === 1 ? 'meeting' : 'meetings'} scheduled
+              </p>
+            </div>
             <button 
               onClick={fetchMeetings} 
               disabled={refreshing}
-              style={styles.refreshButton}
+              className="amp-refresh-btn"
             >
-              {refreshing ? (
-                <>
-                  <div style={styles.spinner}></div>
-                  Refreshing...
-                </>
-              ) : (
-                "🔄 Refresh"
-              )}
+              <span className={`amp-refresh-icon ${refreshing ? 'amp-spin' : ''}`}>🔄</span>
+              {refreshing ? 'Refreshing...' : 'Refresh'}
             </button>
           </div>
 
-          {!Array.isArray(meetings) || meetings.length === 0 ? (
-            <div style={styles.emptyState}>
-              <div style={styles.emptyIcon}>📅</div>
-              <h4 style={styles.emptyTitle}>No Meetings Yet</h4>
-              <p style={styles.emptyText}>Create your first meeting to get started</p>
+          {!meetings.length ? (
+            <div className="amp-empty-state">
+              <div className="amp-empty-icon">📅</div>
+              <h3 className="amp-empty-title">No Meetings Yet</h3>
+              <p className="amp-empty-text">Get started by creating your first meeting</p>
               <button 
                 onClick={() => setActiveTab("create")}
-                style={styles.createFirstButton}
+                className="amp-btn amp-btn-primary amp-empty-btn"
               >
+                <span>➕</span>
                 Create Meeting
               </button>
             </div>
           ) : (
-            <div style={styles.meetingsGrid}>
+            <div className="amp-meetings-grid">
               {meetings.map((meeting) => {
                 const datetime = formatDateTime(meeting.date, meeting.time);
+                const attendeeCount = Array.isArray(meeting.attendees) ? meeting.attendees.length : 0;
+                
                 return (
-                  <div key={meeting._id || meeting.id} style={styles.meetingCard}>
-                    <div style={styles.cardHeader}>
-                      <h4 style={styles.meetingTitle}>{meeting.title || "Untitled Meeting"}</h4>
-                      <div style={styles.cardActions}>
-                        <button 
-                          onClick={() => showStatus(meeting._id || meeting.id)}
-                          style={styles.statusButton}
-                          title="View Status"
-                        >
-                          👁️
-                        </button>
-                        <button 
-                          onClick={() => deleteMeeting(meeting._id || meeting.id)}
-                          style={styles.deleteButton}
-                          title="Delete Meeting"
-                        >
-                          🗑️
-                        </button>
-                      </div>
-                    </div>
+                  <div key={meeting._id || meeting.id} className="amp-meeting-card">
+                    <div className="amp-meeting-status-bar" data-status={
+                      datetime.isPast ? 'past' : datetime.isToday ? 'today' : 'upcoming'
+                    } />
                     
-                    {meeting.description && (
-                      <p style={styles.meetingDescription}>{meeting.description}</p>
-                    )}
-                    
-                    <div style={styles.meetingDetails}>
-                      <div style={styles.detailItem}>
-                        <span style={styles.detailIcon}>📅</span>
-                        <span style={{
-                          ...styles.detailText,
-                          ...(datetime.isToday ? styles.todayText : {}),
-                          ...(datetime.isPast ? styles.pastText : {})
-                        }}>
-                          {datetime.date} at {datetime.time}
-                        </span>
-                      </div>
-                      
-                      {meeting.recurring && meeting.recurring !== "No" && (
-                        <div style={styles.detailItem}>
-                          <span style={styles.detailIcon}>🔁</span>
-                          <span style={styles.detailText}>{meeting.recurring}</span>
+                    <div className="amp-meeting-content">
+                      <div className="amp-meeting-header">
+                        <div className="amp-meeting-title-wrapper">
+                          <span className="amp-meeting-icon">📅</span>
+                          <h3 className="amp-meeting-title">{meeting.import || meeting.title || "Untitled Meeting"}</h3>
                         </div>
-                      )}
-                      
-                      <div style={styles.detailItem}>
-                        <span style={styles.detailIcon}>👥</span>
-                        <span style={styles.detailText}>
-                          {(Array.isArray(meeting.attendees) ? meeting.attendees.length : 0)} attendees
-                        </span>
+                        <div className="amp-meeting-badges">
+                          {meeting.recurring && meeting.recurring !== "No Recurrence" && meeting.recurring !== "No" && (
+                            <span className="amp-badge amp-badge-recurring">
+                              🔁 {meeting.recurring}
+                            </span>
+                          )}
+                          <span className={`amp-badge amp-badge-status ${
+                            datetime.isPast ? 'amp-badge-past' : 
+                            datetime.isToday ? 'amp-badge-today' : 'amp-badge-upcoming'
+                          }`}>
+                            {datetime.isPast ? 'Past' : datetime.isToday ? 'Today' : 'Upcoming'}
+                          </span>
+                        </div>
                       </div>
-                    </div>
 
-                    <div style={styles.cardFooter}>
-                      <span style={styles.createdBy}>
-                        Created by: {meeting.createdBy?.name || "Admin"}
-                      </span>
-                      <button 
-                        onClick={() => showStatus(meeting._id || meeting.id)}
-                        style={styles.viewStatusButton}
-                      >
-                        View Attendance
-                      </button>
+                      {meeting.description && (
+                        <p className="amp-meeting-description">{meeting.description}</p>
+                      )}
+
+                      <div className="amp-meeting-details">
+                        <div className="amp-detail-item">
+                          <span className="amp-detail-icon">📆</span>
+                          <span className={`amp-detail-text ${
+                            datetime.isPast ? 'amp-text-past' : 
+                            datetime.isToday ? 'amp-text-today' : ''
+                          }`}>
+                            {datetime.date}
+                          </span>
+                        </div>
+                        <div className="amp-detail-item">
+                          <span className="amp-detail-icon">⏰</span>
+                          <span className="amp-detail-text">{datetime.time}</span>
+                        </div>
+                        <div className="amp-detail-item">
+                          <span className="amp-detail-icon">👥</span>
+                          <span className="amp-detail-text">{attendeeCount} attendees</span>
+                        </div>
+                      </div>
+
+                      <div className="amp-meeting-footer">
+                        <div className="amp-creator-info">
+                          <span className="amp-creator-avatar">
+                            {meeting.createdBy?.name?.charAt(0) || 'A'}
+                          </span>
+                          <span className="amp-creator-name">
+                            {meeting.createdBy?.name || 'Admin'}
+                          </span>
+                        </div>
+                        
+                        <div className="amp-meeting-actions">
+                          <button 
+                            onClick={() => showStatus(meeting._id || meeting.id, meeting.import || meeting.title)}
+                            className="amp-action-btn amp-action-view"
+                            title="View Attendance"
+                          >
+                            👁️
+                          </button>
+                          <button 
+                            onClick={() => setDeleteConfirm({
+                              open: true,
+                              meetingId: meeting._id || meeting.id,
+                              meetingTitle: meeting.import || meeting.title
+                            })}
+                            className="amp-action-btn amp-action-delete"
+                            title="Delete Meeting"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 );
@@ -488,485 +670,129 @@ export default function AdminMeetingPage() {
 
       {/* Status Modal */}
       {statusModal.open && (
-        <div style={styles.modalOverlay}>
-          <div style={styles.modal}>
-            <div style={styles.modalHeader}>
-              <h3>Attendance Status - {statusModal.meetingTitle}</h3>
+        <div className="amp-modal-overlay" onClick={() => setStatusModal({ open: false, data: [], meetingTitle: "" })}>
+          <div className="amp-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="amp-modal-header">
+              <div className="amp-modal-title-wrapper">
+                <span className="amp-modal-icon">📋</span>
+                <h3 className="amp-modal-title">Attendance Status</h3>
+              </div>
               <button 
-                onClick={() => setStatusModal({ open: false, data: [] })}
-                style={styles.closeButton}
+                onClick={() => setStatusModal({ open: false, data: [], meetingTitle: "" })}
+                className="amp-modal-close"
               >
                 ✕
               </button>
             </div>
-            <div style={styles.modalContent}>
-              {Array.isArray(statusModal.data) && statusModal.data.length > 0 ? (
-                statusModal.data.map((item, index) => (
-                  <div key={index} style={styles.statusItem}>
-                    <span style={styles.userName}>{item.userId?.name || item.user?.name || "Unknown User"}</span>
-                    <span style={{
-                      ...styles.statusBadge,
-                      ...(item.viewed ? styles.statusSeen : styles.statusPending)
-                    }}>
-                      {item.viewed ? "✅ Seen" : "❌ Not Seen"}
-                    </span>
+            
+            <div className="amp-modal-subheader">
+              <span className="amp-meeting-badge">{statusModal.meetingTitle}</span>
+              <span className="amp-attendee-total">
+                {statusModal.data.length} {statusModal.data.length === 1 ? 'attendee' : 'attendees'}
+              </span>
+            </div>
+
+            <div className="amp-modal-content">
+              {statusModal.data.length > 0 ? (
+                <div className="amp-status-list">
+                  <div className="amp-status-header">
+                    <span>Attendee</span>
+                    <span>Status</span>
                   </div>
-                ))
+                  {statusModal.data.map((item, index) => (
+                    <div key={index} className="amp-status-item">
+                      <div className="amp-status-user">
+                        <div className="amp-status-avatar">
+                          {item.userId?.name?.charAt(0) || item.user?.name?.charAt(0) || 'U'}
+                        </div>
+                        <div className="amp-status-user-info">
+                          <span className="amp-status-user-name">
+                            {item.userId?.name || item.user?.name || "Unknown User"}
+                          </span>
+                          <span className="amp-status-user-email">
+                            {item.userId?.email || item.user?.email || "No email"}
+                          </span>
+                        </div>
+                      </div>
+                      <div className={`amp-status-badge ${item.viewed ? 'amp-status-seen' : 'amp-status-pending'}`}>
+                        {item.viewed ? (
+                          <>
+                            <span>✅</span>
+                            <span>Seen</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>⏳</span>
+                            <span>Not Seen</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               ) : (
-                <div style={styles.noStatusData}>
-                  No attendance data available
+                <div className="amp-no-status">
+                  <div className="amp-no-status-icon">📭</div>
+                  <p>No attendance data available</p>
+                  <span>No one has viewed this meeting yet</span>
                 </div>
               )}
+            </div>
+
+            <div className="amp-modal-footer">
+              <button 
+                onClick={() => setStatusModal({ open: false, data: [], meetingTitle: "" })}
+                className="amp-btn amp-btn-secondary"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm.open && (
+        <div className="amp-modal-overlay" onClick={() => setDeleteConfirm({ open: false, meetingId: null, meetingTitle: "" })}>
+          <div className="amp-modal amp-modal-sm" onClick={(e) => e.stopPropagation()}>
+            <div className="amp-modal-header amp-modal-header-danger">
+              <div className="amp-modal-title-wrapper">
+                <span className="amp-modal-icon">⚠️</span>
+                <h3 className="amp-modal-title">Delete Meeting</h3>
+              </div>
+              <button 
+                onClick={() => setDeleteConfirm({ open: false, meetingId: null, meetingTitle: "" })}
+                className="amp-modal-close"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="amp-modal-content amp-modal-content-center">
+              <div className="amp-delete-icon">🗑️</div>
+              <p className="amp-delete-text">
+                Are you sure you want to delete <strong>"{deleteConfirm.meetingTitle}"</strong>?
+              </p>
+              <p className="amp-delete-subtext">This action cannot be undone.</p>
+            </div>
+
+            <div className="amp-modal-footer amp-modal-footer-center">
+              <button 
+                onClick={() => setDeleteConfirm({ open: false, meetingId: null, meetingTitle: "" })}
+                className="amp-btn amp-btn-secondary"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={deleteMeeting}
+                className="amp-btn amp-btn-danger"
+              >
+                Delete Meeting
+              </button>
             </div>
           </div>
         </div>
       )}
     </div>
   );
-}
-
-// Enhanced Styling
-const styles = {
-  container: {
-    padding: "24px",
-    maxWidth: "1200px",
-    margin: "0 auto",
-    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
-    backgroundColor: "#f8fafc",
-    minHeight: "100vh",
-  },
-  header: {
-    textAlign: "center",
-    marginBottom: "32px",
-  },
-  heading: {
-    fontSize: "2rem",
-    fontWeight: "700",
-    color: "#1e293b",
-    marginBottom: "8px",
-  },
-  subtitle: {
-    fontSize: "1.1rem",
-    color: "#64748b",
-    fontWeight: "400",
-  },
-  tabContainer: {
-    display: "flex",
-    background: "#fff",
-    borderRadius: "12px",
-    padding: "4px",
-    marginBottom: "32px",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-  },
-  tab: {
-    flex: 1,
-    padding: "12px 16px",
-    border: "none",
-    background: "transparent",
-    borderRadius: "8px",
-    fontSize: "14px",
-    fontWeight: "600",
-    cursor: "pointer",
-    transition: "all 0.2s ease",
-    color: "#64748b",
-  },
-  activeTab: {
-    background: "#3b82f6",
-    color: "#fff",
-    boxShadow: "0 2px 4px rgba(59, 130, 246, 0.3)",
-  },
-  formSection: {
-    background: "transparent",
-  },
-  formCard: {
-    background: "#fff",
-    borderRadius: "16px",
-    padding: "32px",
-    boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)",
-  },
-  formTitle: {
-    fontSize: "1.5rem",
-    fontWeight: "600",
-    color: "#1e293b",
-    marginBottom: "24px",
-  },
-  form: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "24px",
-  },
-  formGroup: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-  },
-  formRow: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr 1fr",
-    gap: "16px",
-  },
-  label: {
-    fontSize: "14px",
-    fontWeight: "600",
-    color: "#374151",
-    marginBottom: "4px",
-  },
-  input: {
-    padding: "12px 16px",
-    border: "1px solid #d1d5db",
-    borderRadius: "8px",
-    fontSize: "14px",
-    transition: "all 0.2s ease",
-    backgroundColor: "#fff",
-  },
-  textarea: {
-    padding: "12px 16px",
-    border: "1px solid #d1d5db",
-    borderRadius: "8px",
-    fontSize: "14px",
-    resize: "vertical",
-    minHeight: "80px",
-    fontFamily: "inherit",
-  },
-  attendeesHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  selectAllBtn: {
-    padding: "6px 12px",
-    border: "1px solid #d1d5db",
-    borderRadius: "6px",
-    background: "#fff",
-    fontSize: "12px",
-    cursor: "pointer",
-    transition: "all 0.2s ease",
-  },
-  attendeesGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-    gap: "8px",
-    maxHeight: "200px",
-    overflowY: "auto",
-    padding: "8px",
-    border: "1px solid #e5e7eb",
-    borderRadius: "8px",
-  },
-  checkboxCard: {
-    display: "flex",
-    cursor: "pointer",
-  },
-  checkboxInput: {
-    display: "none",
-  },
-  checkboxContent: {
-    flex: 1,
-    padding: "8px 12px",
-    border: "1px solid #e5e7eb",
-    borderRadius: "6px",
-    transition: "all 0.2s ease",
-    backgroundColor: "#f9fafb",
-  },
-  checkboxContentSelected: {
-    borderColor: "#3b82f6",
-    backgroundColor: "#dbeafe",
-  },
-  userName: {
-    display: "block",
-    fontSize: "13px",
-    fontWeight: "500",
-    color: "#1f2937",
-  },
-  userEmail: {
-    display: "block",
-    fontSize: "11px",
-    color: "#6b7280",
-    marginTop: "2px",
-  },
-  attendeeCount: {
-    fontSize: "12px",
-    color: "#6b7280",
-    textAlign: "right",
-    marginTop: "4px",
-  },
-  noUsersMessage: {
-    padding: '20px',
-    textAlign: 'center',
-    color: '#6b7280',
-    fontSize: '14px',
-    gridColumn: '1 / -1',
-  },
-  submitButton: {
-    padding: "14px 24px",
-    background: "#3b82f6",
-    color: "#fff",
-    border: "none",
-    borderRadius: "8px",
-    fontSize: "15px",
-    fontWeight: "600",
-    cursor: "pointer",
-    transition: "all 0.2s ease",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "8px",
-  },
-  disabledButton: {
-    opacity: 0.5,
-    cursor: "not-allowed",
-  },
-  manageSection: {
-    background: "transparent",
-  },
-  sectionHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "24px",
-  },
-  sectionTitle: {
-    fontSize: "1.5rem",
-    fontWeight: "600",
-    color: "#1e293b",
-  },
-  refreshButton: {
-    padding: "10px 16px",
-    background: "#10b981",
-    color: "#fff",
-    border: "none",
-    borderRadius: "8px",
-    fontSize: "14px",
-    fontWeight: "500",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    transition: "all 0.2s ease",
-  },
-  emptyState: {
-    textAlign: "center",
-    padding: "60px 20px",
-    background: "#fff",
-    borderRadius: "16px",
-    boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)",
-  },
-  emptyIcon: {
-    fontSize: "4rem",
-    marginBottom: "16px",
-  },
-  emptyTitle: {
-    fontSize: "1.25rem",
-    fontWeight: "600",
-    color: "#374151",
-    marginBottom: "8px",
-  },
-  emptyText: {
-    color: "#6b7280",
-    marginBottom: "20px",
-  },
-  createFirstButton: {
-    padding: "12px 24px",
-    background: "#3b82f6",
-    color: "#fff",
-    border: "none",
-    borderRadius: "8px",
-    fontSize: "14px",
-    fontWeight: "500",
-    cursor: "pointer",
-  },
-  meetingsGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(400px, 1fr))",
-    gap: "20px",
-  },
-  meetingCard: {
-    background: "#fff",
-    borderRadius: "12px",
-    padding: "20px",
-    boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
-    border: "1px solid #e5e7eb",
-    transition: "all 0.2s ease",
-  },
-  cardHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: "12px",
-  },
-  meetingTitle: {
-    fontSize: "1.1rem",
-    fontWeight: "600",
-    color: "#1f2937",
-    margin: 0,
-    flex: 1,
-    marginRight: "12px",
-  },
-  cardActions: {
-    display: "flex",
-    gap: "4px",
-  },
-  statusButton: {
-    padding: "6px",
-    border: "none",
-    background: "transparent",
-    cursor: "pointer",
-    borderRadius: "4px",
-    fontSize: "14px",
-  },
-  deleteButton: {
-    padding: "6px",
-    border: "none",
-    background: "transparent",
-    cursor: "pointer",
-    borderRadius: "4px",
-    fontSize: "14px",
-    color: "#ef4444",
-  },
-  meetingDescription: {
-    color: "#6b7280",
-    fontSize: "14px",
-    lineHeight: "1.5",
-    marginBottom: "16px",
-  },
-  meetingDetails: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-    marginBottom: "16px",
-  },
-  detailItem: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-  },
-  detailIcon: {
-    fontSize: "14px",
-    width: "20px",
-  },
-  detailText: {
-    fontSize: "14px",
-    color: "#374151",
-  },
-  todayText: {
-    color: "#059669",
-    fontWeight: "600",
-  },
-  pastText: {
-    color: "#6b7280",
-    textDecoration: "line-through",
-  },
-  cardFooter: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingTop: "12px",
-    borderTop: "1px solid #f3f4f6",
-  },
-  createdBy: {
-    fontSize: "12px",
-    color: "#9ca3af",
-  },
-  viewStatusButton: {
-    padding: "6px 12px",
-    background: "#f3f4f6",
-    color: "#374151",
-    border: "none",
-    borderRadius: "6px",
-    fontSize: "12px",
-    fontWeight: "500",
-    cursor: "pointer",
-    transition: "all 0.2s ease",
-  },
-  spinner: {
-    width: "16px",
-    height: "16px",
-    border: "2px solid transparent",
-    borderTop: "2px solid currentColor",
-    borderRadius: "50%",
-    animation: "spin 1s linear infinite",
-  },
-  modalOverlay: {
-    position: "fixed",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    background: "rgba(0,0,0,0.5)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 1000,
-    padding: "20px",
-  },
-  modal: {
-    background: "#fff",
-    borderRadius: "12px",
-    padding: "0",
-    maxWidth: "500px",
-    width: "100%",
-    maxHeight: "80vh",
-    overflow: "hidden",
-    boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)",
-  },
-  modalHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "20px 24px",
-    borderBottom: "1px solid #e5e7eb",
-  },
-  closeButton: {
-    padding: "4px",
-    border: "none",
-    background: "transparent",
-    cursor: "pointer",
-    fontSize: "18px",
-    color: "#6b7280",
-  },
-  modalContent: {
-    padding: "24px",
-    maxHeight: "400px",
-    overflowY: "auto",
-  },
-  statusItem: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "12px 0",
-    borderBottom: "1px solid #f3f4f6",
-  },
-  noStatusData: {
-    textAlign: "center",
-    color: "#6b7280",
-    padding: "20px",
-  },
-  statusBadge: {
-    padding: "4px 8px",
-    borderRadius: "12px",
-    fontSize: "12px",
-    fontWeight: "500",
-  },
-  statusSeen: {
-    background: "#dcfce7",
-    color: "#166534",
-  },
-  statusPending: {
-    background: "#fef2f2",
-    color: "#991b1b",
-  },
-};
-
-// Add CSS animation for spinner
-if (typeof document !== 'undefined') {
-  const spinnerStyle = document.createElement('style');
-  spinnerStyle.textContent = `
-    @keyframes spin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-  `;
-  if (!document.querySelector('style[data-spinner-animation]')) {
-    spinnerStyle.setAttribute('data-spinner-animation', 'true');
-    document.head.appendChild(spinnerStyle);
-  }
 }
