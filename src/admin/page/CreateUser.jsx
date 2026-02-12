@@ -1,39 +1,46 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Box, Button, TextField, Typography, Paper, MenuItem, 
-  CircularProgress, IconButton, InputAdornment, Grid,
-  Autocomplete, FormControl, InputLabel, Select
+  Box, Button, TextField, Typography, Paper, MenuItem,
+  CircularProgress, IconButton, InputAdornment,
+  Autocomplete, FormControl, InputLabel, Select, Divider
 } from '@mui/material';
-import { Visibility, VisibilityOff, Add } from '@mui/icons-material';
+import { 
+  Visibility, VisibilityOff, Add, Business, Person, 
+  Work, Lock, Email, Phone, Home, Cake, Badge, 
+  AccountBalance, Emergency, FamilyRestroom 
+} from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import axios from '../../utils/axiosConfig';
+import './CreateUser.css';
 
 // Constants
 const genderOptions = ['male', 'female', 'other'];
 const maritalStatusOptions = ['single', 'married', 'divorced', 'widowed'];
+const employeeTypeOptions = ['permanent', 'probation', 'contract', 'intern', 'trainee'];
 
 // Initial form state
 const initialFormState = {
-  name: '', email: '', password: '', confirmPassword: '', 
+  name: '', email: '', password: '', confirmPassword: '',
   department: '', jobRole: '',
   phone: '', address: '', gender: '', maritalStatus: '', dob: '', salary: '',
   accountNumber: '', ifsc: '', bankName: '', bankHolderName: '',
   employeeType: '', properties: [], propertyOwned: '', additionalDetails: '',
-  fatherName: '', motherName: '', emergencyName: '', emergencyPhone: '', 
+  fatherName: '', motherName: '', emergencyName: '', emergencyPhone: '',
   emergencyRelation: '', emergencyAddress: ''
 };
 
 const CreateUser = () => {
   const [form, setForm] = useState(initialFormState);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [departments, setDepartments] = useState([]);
   const [jobRoles, setJobRoles] = useState([]);
   const [loadingDepartments, setLoadingDepartments] = useState(false);
   const [loadingJobRoles, setLoadingJobRoles] = useState(false);
   const navigate = useNavigate();
-  
+
   // LocalStorage se company data
   const [companyId, setCompanyId] = useState('');
   const [companyCode, setCompanyCode] = useState('');
@@ -43,28 +50,20 @@ const CreateUser = () => {
   useEffect(() => {
     const fetchDataFromLocalStorage = () => {
       try {
-        // Current user ka data localStorage se
         const userData = JSON.parse(localStorage.getItem('superAdmin'));
-        
+
         if (userData) {
           console.log("📋 LocalStorage User Data:", userData);
           setCurrentUser(userData);
-          
-          // Company data extract karna
+
           if (userData.company && userData.companyCode) {
             setCompanyId(userData.company);
             setCompanyCode(userData.companyCode);
-            console.log("✅ Company data set from localStorage:", {
-              companyId: userData.company,
-              companyCode: userData.companyCode
-            });
           } else {
-            console.log("❌ Company data missing in user object");
             toast.error("Company information not found in your profile");
             navigate('/dashboard');
           }
         } else {
-          console.log("❌ No user data found in localStorage");
           toast.error("Please login again");
           navigate('/login');
         }
@@ -78,10 +77,13 @@ const CreateUser = () => {
     fetchDataFromLocalStorage();
   }, [navigate]);
 
-  // Company ID ke change pe departments fetch karna
+  // ✅ FIXED: Departments fetch with DEBUGGING
   useEffect(() => {
     if (companyId) {
+      console.log("🔍 Company ID found, fetching departments for:", companyId);
       fetchDepartments();
+    } else {
+      console.log("⚠️ No company ID yet");
     }
   }, [companyId]);
 
@@ -91,89 +93,194 @@ const CreateUser = () => {
       fetchJobRolesByDepartment(form.department);
     } else {
       setJobRoles([]);
+      setForm(prev => ({ ...prev, jobRole: '' }));
     }
   }, [form.department]);
 
+  // ✅ FIXED: Fetch Departments - All possible endpoints try karo
   const fetchDepartments = async () => {
     try {
       if (!companyId) {
-        console.log("⚠️ Company ID not available, skipping department fetch");
+        toast.error("Company ID not found");
         return;
       }
       
       setLoadingDepartments(true);
-      console.log(`📡 Fetching departments for company: ${companyId}`);
+      console.log("📡 Fetching departments for company:", companyId);
       
-      const response = await axios.get(`/departments?company=${companyId}`);
+      let response = null;
+      let success = false;
       
-      if (response.data && response.data.departments) {
-        setDepartments(response.data.departments);
-        console.log("✅ Departments loaded:", response.data.departments);
-      } else if (response.data && Array.isArray(response.data)) {
-        setDepartments(response.data);
-        console.log("✅ Departments loaded (array format):", response.data);
+      // 🔥 TRY MULTIPLE ENDPOINTS - Backend ke according adjust karo
+      const endpoints = [
+        `/departments?company=${companyId}`,
+        `/departments/company/${companyId}`,
+        `/api/departments?company=${companyId}`,
+        `/department?companyId=${companyId}`,
+        `/departments?companyId=${companyId}`,
+        `/departments?companyCode=${companyCode}`
+      ];
+      
+      for (const endpoint of endpoints) {
+        try {
+          console.log(`🔄 Trying endpoint: ${endpoint}`);
+          response = await axios.get(endpoint);
+          console.log(`✅ Success with: ${endpoint}`, response.data);
+          success = true;
+          break;
+        } catch (err) {
+          console.log(`❌ Failed: ${endpoint}`, err.message);
+        }
+      }
+      
+      if (!success) {
+        throw new Error("All endpoints failed");
+      }
+
+      // 🔥 HANDLE ALL RESPONSE FORMATS
+      let departmentsData = [];
+      
+      // Response data ko normalize karo
+      const data = response.data;
+      console.log("📦 Raw response data:", data);
+      
+      if (data) {
+        // Case 1: Direct array
+        if (Array.isArray(data)) {
+          departmentsData = data;
+        }
+        // Case 2: { departments: [...] }
+        else if (data.departments && Array.isArray(data.departments)) {
+          departmentsData = data.departments;
+        }
+        // Case 3: { data: [...] }
+        else if (data.data && Array.isArray(data.data)) {
+          departmentsData = data.data;
+        }
+        // Case 4: { result: [...] }
+        else if (data.result && Array.isArray(data.result)) {
+          departmentsData = data.result;
+        }
+        // Case 5: { success: true, data: [...] }
+        else if (data.success && data.data && Array.isArray(data.data)) {
+          departmentsData = data.data;
+        }
+        // Case 6: { success: true, departments: [...] }
+        else if (data.success && data.departments && Array.isArray(data.departments)) {
+          departmentsData = data.departments;
+        }
+      }
+      
+      console.log("✅ Processed departments:", departmentsData);
+      setDepartments(departmentsData);
+
+      if (departmentsData.length === 0) {
+        toast.warning('No departments found for this company');
       } else {
-        console.log("⚠️ No departments found");
-        setDepartments([]);
-        toast.info('No departments found for this company');
+        toast.success(`${departmentsData.length} departments loaded`);
       }
+
     } catch (err) {
-      console.error("❌ Failed to load departments:", err);
-      
-      if (err.response) {
-        console.error("Error response:", err.response.data);
-        console.error("Error status:", err.response.status);
-      }
-      
-      toast.error('Failed to load departments');
+      console.error("❌ All department fetch attempts failed:", err);
+      toast.error('Failed to load departments. Check API endpoint.');
       setDepartments([]);
+      
+      // 🔥 DEBUG: Show current company ID
+      console.log("🔍 Current company ID:", companyId);
+      console.log("🔍 Current company Code:", companyCode);
+      console.log("🔍 Current user:", currentUser);
+      
     } finally {
       setLoadingDepartments(false);
     }
   };
 
-  // Job roles fetch karne ka function
+  // ✅ FIXED: Fetch Job Roles - Multiple endpoints
   const fetchJobRolesByDepartment = async (departmentId) => {
     try {
       if (!departmentId) {
-        console.log("⚠️ No department ID provided");
         setJobRoles([]);
         return;
       }
 
       setLoadingJobRoles(true);
-      console.log(`📡 Fetching job roles for department: ${departmentId}`);
+      console.log("📡 Fetching job roles for department:", departmentId);
       
-      const response = await axios.get(`/job-roles/department/${departmentId}`);
+      let response = null;
+      let success = false;
       
-      if (response.data && response.data.success) {
-        setJobRoles(response.data.jobRoles || []);
-        console.log("✅ Job roles loaded:", response.data.jobRoles);
-        
-        // Agar koi job role selected nahi hai, aur job roles available hain, to pehla select karo
-        if (!form.jobRole && response.data.jobRoles.length > 0) {
-          setForm(prev => ({ ...prev, jobRole: response.data.jobRoles[0]._id }));
+      // 🔥 TRY MULTIPLE ENDPOINTS
+      const endpoints = [
+        `/job-roles?department=${departmentId}`,
+        `/job-roles/department/${departmentId}`,
+        `/api/job-roles?department=${departmentId}`,
+        `/job-roles?departmentId=${departmentId}`,
+        `/job-roles?dept=${departmentId}`,
+        `/job-roles/by-department/${departmentId}`
+      ];
+      
+      for (const endpoint of endpoints) {
+        try {
+          console.log(`🔄 Trying endpoint: ${endpoint}`);
+          response = await axios.get(endpoint);
+          console.log(`✅ Success with: ${endpoint}`, response.data);
+          success = true;
+          break;
+        } catch (err) {
+          console.log(`❌ Failed: ${endpoint}`, err.message);
         }
-      } else {
-        console.log("⚠️ No job roles found for this department");
-        setJobRoles([]);
       }
+      
+      if (!success) {
+        throw new Error("All job role endpoints failed");
+      }
+
+      // 🔥 HANDLE ALL RESPONSE FORMATS
+      let jobRolesData = [];
+      const data = response.data;
+      
+      if (data) {
+        if (Array.isArray(data)) {
+          jobRolesData = data;
+        }
+        else if (data.jobRoles && Array.isArray(data.jobRoles)) {
+          jobRolesData = data.jobRoles;
+        }
+        else if (data.data && Array.isArray(data.data)) {
+          jobRolesData = data.data;
+        }
+        else if (data.result && Array.isArray(data.result)) {
+          jobRolesData = data.result;
+        }
+        else if (data.success && data.jobRoles && Array.isArray(data.jobRoles)) {
+          jobRolesData = data.jobRoles;
+        }
+        else if (data.success && data.data && Array.isArray(data.data)) {
+          jobRolesData = data.data;
+        }
+      }
+      
+      console.log("✅ Processed job roles:", jobRolesData);
+      setJobRoles(jobRolesData);
+
+      // Auto-select first job role
+      if (jobRolesData.length > 0) {
+        const firstRoleId = jobRolesData[0]._id || jobRolesData[0].id;
+        setForm(prev => ({ ...prev, jobRole: firstRoleId }));
+        toast.info(`${jobRolesData.length} job role(s) available`);
+      } else {
+        toast.warning('No job roles found for this department');
+      }
+
     } catch (err) {
       console.error("❌ Failed to load job roles:", err);
-      
-      if (err.response) {
-        console.error("Error response:", err.response.data);
-        console.error("Error status:", err.response.status);
-      }
-      
-      toast.error('Failed to load job roles for this department');
+      toast.error('Failed to load job roles');
       setJobRoles([]);
     } finally {
       setLoadingJobRoles(false);
     }
   };
 
-  // Handle input changes
   const handleTextChange = (e) => {
     const { name, value } = e.target;
 
@@ -196,31 +303,32 @@ const CreateUser = () => {
     }
   };
 
-  // Handle department selection
   const handleDepartmentChange = (event, newValue) => {
     if (newValue) {
-      setForm(prev => ({ 
-        ...prev, 
-        department: newValue._id,
-        jobRole: '' // Reset job role when department changes
+      const departmentId = newValue._id || newValue.id;
+      console.log("✅ Department selected:", departmentId, newValue.name || newValue.departmentName);
+      
+      setForm(prev => ({
+        ...prev,
+        department: departmentId,
+        jobRole: ''
       }));
-      console.log("Selected department:", newValue.name, "ID:", newValue._id);
     } else {
-      setForm(prev => ({ 
-        ...prev, 
+      setForm(prev => ({
+        ...prev,
         department: '',
         jobRole: ''
       }));
+      setJobRoles([]);
     }
   };
 
-  // Handle job role selection
   const handleJobRoleChange = (e) => {
     const { value } = e.target;
+    console.log("✅ Job Role selected:", value);
     setForm(prev => ({ ...prev, jobRole: value }));
   };
 
-  // Form validation
   const validateForm = () => {
     if (!form.name || form.name.length < 2) {
       toast.error('Name must be at least 2 characters');
@@ -246,65 +354,45 @@ const CreateUser = () => {
       toast.error('Please select a job role');
       return false;
     }
-    
     if (!companyId || !companyCode) {
       toast.error('Company information is missing');
       return false;
     }
-    
     return true;
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
-    
     if (!companyId || !companyCode) {
       toast.error("Company reference is missing");
       return;
     }
 
-    console.log("🚀 Submitting form:");
-    console.log("Company ID:", companyId);
-    console.log("Company Code:", companyCode);
-    console.log("Department ID:", form.department);
-    console.log("Job Role ID:", form.jobRole);
-    console.log("Form data:", form);
-
     setLoading(true);
     try {
       const { confirmPassword, ...submitData } = form;
-      
-      // ✅ FIXED: createdBy and createdByName remove karna hai
-      // Server automatically createdBy set karega
+
       const userData = {
         ...submitData,
         company: companyId,
         companyCode: companyCode
-        // ❌ createdBy and createdByName mat bhejo
       };
 
-      console.log("📦 Final data being sent to server:", userData);
+      console.log("📦 Submitting user data:", userData);
       
       const response = await axios.post('/auth/register', userData);
-      
       console.log("✅ Server response:", response.data);
       toast.success('✅ User created successfully');
       
-      // Reset form
-      setForm({
-        ...initialFormState
-      });
-      
+      setForm({ ...initialFormState });
+
     } catch (err) {
       console.error("❌ Registration error:", err);
-      console.error("Response data:", err.response?.data);
-      
       const msg = err?.response?.data?.message || '❌ User creation failed';
       toast.error(msg);
-      
+
       if (err.response?.status === 409) {
         toast.error('Email already exists in this company');
       }
@@ -313,284 +401,423 @@ const CreateUser = () => {
     }
   };
 
-  // Helper function to get current user's info display
-  const renderCurrentUserInfo = () => {
-    if (!currentUser) return null;
-    
-    return (
-      <Box sx={{ mb: 2, p: 2, bgcolor: '#f0f9ff', borderRadius: 2, border: '1px solid #bae6fd' }}>
-        <Typography variant="body2" color="primary" fontWeight={600}>
-          Creating user for: {currentUser.companyCode}
-        </Typography>
-        <Typography variant="caption" color="text.secondary" display="block">
-          Logged in as: {currentUser.name} ({currentUser.jobRole})
-        </Typography>
-        <Typography variant="caption" color="text.secondary" display="block">
-          Company ID: {companyId?.substring(0, 8)}...
-        </Typography>
-      </Box>
-    );
+  // Get selected department object
+  const selectedDepartment = departments.find(
+    dept => (dept._id === form.department || dept.id === form.department)
+  ) || null;
+
+  // Get user display name
+  const getUserDisplayName = () => {
+    if (currentUser?.name) {
+      return currentUser.name.toUpperCase();
+    }
+    return 'USER';
   };
 
-  // Get selected department object for Autocomplete
-  const selectedDepartment = departments.find(dept => dept._id === form.department) || null;
-  
-  // Get selected job role object
-  const selectedJobRole = jobRoles.find(role => role._id === form.jobRole) || null;
+  // 🔥 DEBUG: Show current state
+  console.log("🏢 Current departments state:", departments);
+  console.log("📋 Selected department:", selectedDepartment);
+  console.log("🎯 Form department ID:", form.department);
 
   return (
-    <Paper sx={{ p: 4, borderRadius: 3, height: '100%' }} elevation={6}>
-      <Typography variant="h5" fontWeight={600} gutterBottom>
-        Create New User
-      </Typography>
-      
-      {/* Display current user and company info */}
-      {renderCurrentUserInfo()}
-      
-      <Typography variant="body2" color="text.secondary" mb={3}>
-        All fields marked with * are required
-      </Typography>
+    <Box className="create-user-container">
+      <Paper className="user-paper" elevation={6}>
+        {/* Header Section */}
+        <Box className="form-header">
+          <Box>
+            <Typography className="header-title">
+              Create New User
+            </Typography>
+            <Typography className="header-subtitle">
+              <Badge fontSize="small" />
+              Add a new team member to your organization
+            </Typography>
+          </Box>
+        </Box>
 
-      <form onSubmit={handleSubmit}>
-        {/* Required Fields */}
-        <Typography variant="subtitle1" fontWeight={600} color="primary" gutterBottom>
-          Required Information
+        {/* Company Info Box */}
+        {currentUser && (
+          <Box className="company-info-box">
+            <Typography className="company-name">
+              <Business sx={{ fontSize: 24 }} /> 
+              {getUserDisplayName()}
+            </Typography>
+            <Typography className="company-details">
+              <Person fontSize="small" /> Created by: {currentUser.name} ({currentUser.jobRole || 'super_admin'})
+            </Typography>
+            <Typography className="company-details">
+              <Work fontSize="small" /> Company ID: {companyId?.substring(0, 8)}...
+            </Typography>
+            <Typography className="company-details" sx={{ color: '#1976d2', fontWeight: 500 }}>
+              <Badge fontSize="small" /> Departments: {departments.length} loaded
+            </Typography>
+          </Box>
+        )}
+
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          <span className="required-star">*</span> All marked fields are required
         </Typography>
 
-        <TextField
-          label="Full Name *"
-          name="name"
-          fullWidth
-          required
-          margin="normal"
-          value={form.name}
-          onChange={handleTextChange}
-          helperText="Only letters and spaces"
-        />
+        <Divider className="custom-divider" />
 
-        <TextField
-          label="Email Address *"
-          name="email"
-          type="email"
-          fullWidth
-          required
-          margin="normal"
-          value={form.email}
-          onChange={handleTextChange}
-        />
+        <form onSubmit={handleSubmit}>
+          {/* Personal Information Section */}
+          <Typography className="section-title">
+            <Person className="section-icon" /> Personal Information
+          </Typography>
 
-        <TextField
-          label="Password *"
-          name="password"
-          type={showPassword ? 'text' : 'password'}
-          fullWidth
-          required
-          margin="normal"
-          value={form.password}
-          onChange={handleTextChange}
-          InputProps={{
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton onClick={() => setShowPassword(prev => !prev)}>
-                  {showPassword ? <VisibilityOff /> : <Visibility />}
-                </IconButton>
-              </InputAdornment>
-            )
-          }}
-          helperText="Minimum 8 characters"
-        />
+          <Box className="form-grid">
+            {/* ROW 1: Name & Email */}
+            <Box className="form-row">
+              <TextField
+                label="Full Name"
+                name="name"
+                fullWidth
+                required
+                value={form.name}
+                onChange={handleTextChange}
+                className="custom-textfield"
+                helperText="Only letters and spaces"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Person color="primary" fontSize="small" />
+                    </InputAdornment>
+                  ),
+                }}
+              />
 
-        <TextField
-          label="Confirm Password *"
-          name="confirmPassword"
-          type={showPassword ? 'text' : 'password'}
-          fullWidth
-          required
-          margin="normal"
-          value={form.confirmPassword}
-          onChange={handleTextChange}
-        />
+              <TextField
+                label="Email Address"
+                name="email"
+                type="email"
+                fullWidth
+                required
+                value={form.email}
+                onChange={handleTextChange}
+                className="custom-textfield"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Email color="primary" fontSize="small" />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Box>
 
-        {/* Department Field */}
-        <Autocomplete
-          options={departments}
-          getOptionLabel={(option) => option.name || ''}
-          value={selectedDepartment}
-          onChange={handleDepartmentChange}
-          loading={loadingDepartments}
-          renderInput={(params) => (
+            {/* ROW 2: Password & Confirm Password */}
+            <Box className="form-row">
+              <TextField
+                label="Password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                fullWidth
+                required
+                value={form.password}
+                onChange={handleTextChange}
+                className="custom-textfield password-field"
+                helperText="Minimum 8 characters"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Lock color="primary" fontSize="small" />
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={() => setShowPassword(prev => !prev)}>
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  )
+                }}
+              />
+
+              <TextField
+                label="Confirm Password"
+                name="confirmPassword"
+                type={showConfirmPassword ? 'text' : 'password'}
+                fullWidth
+                required
+                value={form.confirmPassword}
+                onChange={handleTextChange}
+                className="custom-textfield password-field"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Lock color="primary" fontSize="small" />
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={() => setShowConfirmPassword(prev => !prev)}>
+                        {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  )
+                }}
+              />
+            </Box>
+
+            {/* ROW 3: Department & Job Role - FIXED */}
+            <Box className="form-row">
+              {/* Department - Autocomplete */}
+              <Autocomplete
+                options={departments}
+                getOptionLabel={(option) => {
+                  if (!option) return '';
+                  return option.name || option.departmentName || option.title || 'Unnamed';
+                }}
+                value={selectedDepartment}
+                onChange={handleDepartmentChange}
+                loading={loadingDepartments}
+                isOptionEqualToValue={(option, value) => {
+                  if (!option || !value) return false;
+                  return (option._id === value._id) || (option.id === value.id);
+                }}
+                noOptionsText={
+                  loadingDepartments 
+                    ? "Loading departments..." 
+                    : "No departments found"
+                }
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Department"
+                    required
+                    fullWidth
+                    className="custom-textfield"
+                    helperText={
+                      loadingDepartments
+                        ? "Loading departments..."
+                        : departments.length === 0
+                          ? "No departments available. Please create departments first."
+                          : `${departments.length} department(s) available`
+                    }
+                    error={departments.length === 0 && !loadingDepartments}
+                    InputProps={{
+                      ...params.InputProps,
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Business color={departments.length === 0 ? "disabled" : "primary"} fontSize="small" />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                )}
+              />
+
+              {/* Job Role - Select */}
+              <FormControl 
+                fullWidth 
+                required 
+                className="custom-textfield"
+                error={jobRoles.length === 0 && form.department && !loadingJobRoles}
+              >
+                <InputLabel>Job Role</InputLabel>
+                <Select
+                  label="Job Role"
+                  name="jobRole"
+                  value={form.jobRole || ''}
+                  onChange={handleJobRoleChange}
+                  disabled={!form.department || loadingJobRoles || jobRoles.length === 0}
+                  startAdornment={
+                    <InputAdornment position="start">
+                      <Work 
+                        color={
+                          !form.department ? "disabled" : 
+                          loadingJobRoles ? "action" : 
+                          jobRoles.length === 0 ? "disabled" : "primary"
+                        } 
+                        fontSize="small" 
+                      />
+                    </InputAdornment>
+                  }
+                >
+                  {loadingJobRoles ? (
+                    <MenuItem disabled>
+                      <CircularProgress size={20} sx={{ mr: 1 }} />
+                      Loading job roles...
+                    </MenuItem>
+                  ) : jobRoles.length === 0 ? (
+                    <MenuItem disabled>
+                      {form.department ? "No job roles found for this department" : "Select a department first"}
+                    </MenuItem>
+                  ) : (
+                    jobRoles.map((role) => (
+                      <MenuItem key={role._id || role.id} value={role._id || role.id}>
+                        {role.name || role.title || role.roleName}
+                        {role.description && ` - ${role.description}`}
+                      </MenuItem>
+                    ))
+                  )}
+                </Select>
+                {form.department && jobRoles.length === 0 && !loadingJobRoles && (
+                  <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.5 }}>
+                    No job roles defined for this department
+                  </Typography>
+                )}
+              </FormControl>
+            </Box>
+
+            {/* ROW 4: Phone Number & Employee Type */}
+         
+
+       
+
+            {/* ROW 6: Gender & Marital Status */}
+            <Box className="form-row">
+              <FormControl fullWidth className="custom-textfield">
+                <InputLabel>Gender</InputLabel>
+                <Select
+                  label="Gender"
+                  name="gender"
+                  value={form.gender}
+                  onChange={handleTextChange}
+                >
+                  <MenuItem value="">Select</MenuItem>
+                  {genderOptions.map(option => (
+                    <MenuItem key={option} value={option}>
+                      {option.charAt(0).toUpperCase() + option.slice(1)}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <FormControl fullWidth className="custom-textfield">
+                <InputLabel>Marital Status</InputLabel>
+                <Select
+                  label="Marital Status"
+                  name="maritalStatus"
+                  value={form.maritalStatus}
+                  onChange={handleTextChange}
+                >
+                  <MenuItem value="">Select</MenuItem>
+                  {maritalStatusOptions.map(option => (
+                    <MenuItem key={option} value={option}>
+                      {option.charAt(0).toUpperCase() + option.slice(1)}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+
+                 {/* ROW 5: Date of Birth & Salary */}
+            <Box className="form-row">
+              <TextField
+                label="Date of Birth"
+                name="dob"
+                type="date"
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+                value={form.dob}
+                onChange={handleTextChange}
+                className="custom-textfield"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Cake color="primary" fontSize="small" />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+
+             
+            </Box>
+
+               <Box className="form-row">
+              <TextField
+                label="Phone Number"
+                name="phone"
+                fullWidth
+                value={form.phone}
+                onChange={handleTextChange}
+                className="custom-textfield"
+                inputProps={{ maxLength: 10 }}
+                helperText="10 digits only"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Phone color="primary" fontSize="small" />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+
+            
+            </Box>
+          </Box>
+
+
+          <Divider className="custom-divider" />
+
+          {/* Address Information */}
+          <Typography className="section-title">
+            <Home className="section-icon" /> Address Information
+          </Typography>
+
+          <Box className="form-grid">
             <TextField
-              {...params}
-              label="Department *"
-              required
-              margin="normal"
+              label="Address"
+              name="address"
               fullWidth
-              helperText={
-                loadingDepartments 
-                  ? "Loading departments..." 
-                  : departments.length === 0 
-                    ? "No departments found. Please create departments first." 
-                    : "Select a department"
-              }
+              value={form.address}
+              onChange={handleTextChange}
+              multiline
+              rows={2}
+              className="custom-textfield"
               InputProps={{
-                ...params.InputProps,
-                endAdornment: (
-                  <>
-                    {loadingDepartments ? <CircularProgress color="inherit" size={20} /> : null}
-                    {params.InputProps.endAdornment}
-                  </>
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Home color="primary" fontSize="small" />
+                  </InputAdornment>
                 ),
               }}
             />
-          )}
-          renderOption={(props, option) => (
-            <MenuItem {...props} key={option._id}>
-              {option.name}
-            </MenuItem>
-          )}
-          isOptionEqualToValue={(option, value) => option._id === value._id}
-          disabled={loadingDepartments || departments.length === 0}
-        />
+          </Box>
 
-        {/* Job Role Field - Department ke hisab se */}
-        <FormControl fullWidth margin="normal" required>
-          <InputLabel>Job Role *</InputLabel>
-          <Select
-            label="Job Role *"
-            name="jobRole"
-            value={form.jobRole}
-            onChange={handleJobRoleChange}
-            disabled={!form.department || loadingJobRoles || jobRoles.length === 0}
-          >
-            {loadingJobRoles ? (
-              <MenuItem disabled>
-                <CircularProgress size={20} sx={{ mr: 1 }} />
-                Loading job roles...
-              </MenuItem>
-            ) : jobRoles.length === 0 ? (
-              <MenuItem disabled>
-                {form.department ? "No job roles found for this department" : "Please select a department first"}
-              </MenuItem>
-            ) : (
-              jobRoles.map((role) => (
-                <MenuItem key={role._id} value={role._id}>
-                  {role.name}
-                  {role.description && ` - ${role.description}`}
-                </MenuItem>
-              ))
-            )}
-          </Select>
-          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-            {!form.department 
-              ? "Select a department to see available job roles" 
-              : loadingJobRoles 
-                ? "Loading job roles..." 
-                : jobRoles.length > 0 
-                  ? `${jobRoles.length} job role(s) available` 
-                  : "No job roles defined for this department"}
-          </Typography>
-        </FormControl>
-
-      
-
-        <TextField
-          label="Phone Number"
-          name="phone"
-          fullWidth
-          margin="normal"
-          value={form.phone}
-          onChange={handleTextChange}
-          inputProps={{ maxLength: 10 }}
-          helperText="10 digits only"
-        />
-
-        <TextField
-          label="Address"
-          name="address"
-          fullWidth
-          margin="normal"
-          value={form.address}
-          onChange={handleTextChange}
-          multiline
-          rows={2}
-        />
-
-        <Grid container spacing={2}>
-          <Grid item xs={6}>
-            <TextField
-              label="Gender"
-              name="gender"
-              fullWidth
-              select
-              margin="normal"
-              value={form.gender}
-              onChange={handleTextChange}
-            >
-              <MenuItem value="">Select</MenuItem>
-              {genderOptions.map(option => (
-                <MenuItem key={option} value={option}>
-                  {option.charAt(0).toUpperCase() + option.slice(1)}
-                </MenuItem>
-              ))}
-            </TextField>
-          </Grid>
-          <Grid item xs={6}>
-            <TextField
-              label="Marital Status"
-              name="maritalStatus"
-              fullWidth
-              select
-              margin="normal"
-              value={form.maritalStatus}
-              onChange={handleTextChange}
-            >
-              <MenuItem value="">Select</MenuItem>
-              {maritalStatusOptions.map(option => (
-                <MenuItem key={option} value={option}>
-                  {option.charAt(0).toUpperCase() + option.slice(1)}
-                </MenuItem>
-              ))}
-            </TextField>
-          </Grid>
-        </Grid>
-
-        <TextField
-          label="Date of Birth"
-          name="dob"
-          type="date"
-          fullWidth
-          margin="normal"
-          InputLabelProps={{ shrink: true }}
-          value={form.dob}
-          onChange={handleTextChange}
-        />
-
-        <Box mt={3}>
+          {/* Rest of the form sections remain same */}
+          <Divider className="custom-divider" />
+          
+          {/* Submit Button */}
           <Button
             type="submit"
             fullWidth
             variant="contained"
             size="large"
+            className="submit-button"
             disabled={loading || !companyId || !companyCode || departments.length === 0 || !form.jobRole}
-            startIcon={loading ? <CircularProgress size={20} /> : <Add />}
+            startIcon={loading ? <CircularProgress size={20} className="loading-spinner" /> : <Add />}
           >
-            {loading ? 'Creating...' : 'Create User'}
+            {loading ? 'Creating User...' : 'Create New User'}
           </Button>
-          
+
+          {/* Debug Info - Remove in production */}
+          {process.env.NODE_ENV === 'development' && (
+            <Box sx={{ mt: 2, p: 2, bgcolor: '#f5f5f5', borderRadius: 2 }}>
+              <Typography variant="caption" display="block" color="text.secondary">
+                🔍 Debug: Company ID: {companyId || 'Not set'} | Departments: {departments.length} | 
+                Selected Dept: {form.department || 'None'} | Job Roles: {jobRoles.length}
+              </Typography>
+            </Box>
+          )}
+
+          {/* Warning Messages */}
           {(!companyId || !companyCode) && (
-            <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
-              Company information is missing. Please login again or contact support.
+            <Typography className="info-message error-message">
+              ⚠️ Company information is missing. Please login again or contact support.
             </Typography>
           )}
-          
-          {departments.length === 0 && companyId && (
-            <Typography variant="caption" color="warning" sx={{ mt: 1, display: 'block' }}>
-              No departments found. Please create departments first before adding users.
+
+          {departments.length === 0 && companyId && !loadingDepartments && (
+            <Typography className="info-message warning-message">
+              ⚠️ No departments found. Please create departments first before adding users.
             </Typography>
           )}
-        </Box>
-      </form>
-    </Paper>
+        </form>
+      </Paper>
+    </Box>
   );
 };
 

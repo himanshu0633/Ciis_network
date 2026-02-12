@@ -3,8 +3,16 @@ import axios from '../utils/axiosConfig';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import { toast } from 'react-toastify';
+import { Box } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
+import useMediaQuery from "@mui/material/useMediaQuery";
 
 const Login = () => {
+ const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
+  const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
+
   const [form, setForm] = useState({
     email: '',
     password: ''
@@ -26,33 +34,27 @@ const Login = () => {
   useEffect(() => {
     const extractCompanyIdentifier = () => {
       const path = window.location.pathname;
-      console.log('🔗 Current path:', path);
       
       const match1 = path.match(/\/company\/([^/]+)\/login/);
       if (match1 && match1[1]) {
-        console.log('✅ Extracted identifier from /company/{id}/login:', match1[1]);
         return match1[1];
       }
 
       const match2 = path.match(/\/company\/([^/]+)/);
       if (match2 && match2[1]) {
-        console.log('✅ Extracted identifier from /company/{id}:', match2[1]);
         return match2[1];
       }
 
       const segments = path.split('/').filter(Boolean);
       if (segments.length >= 2 && segments[0] === 'company') {
-        console.log('✅ Extracted identifier from segments:', segments[1]);
         return segments[1];
       }
 
-      console.log('⚠️ No company identifier found in URL');
       return null;
     };
 
     const identifier = extractCompanyIdentifier();
     if (identifier) {
-      console.log('🎯 Setting company identifier:', identifier);
       setCompanyIdentifier(identifier);
       fetchCompanyDetails(identifier);
     } else {

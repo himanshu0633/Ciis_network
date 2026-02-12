@@ -2,7 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./page/Login";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import AllCompany from "./page/AllCompany.jsx";
+
 
 // Layouts
 import Layout from "./admin/components/Layout";
@@ -44,6 +44,7 @@ import TaskManagement from "./hrCds/pages/TaskManagement";
 import EmployeeMeetingPage from "./hrCds/pages/EmployeeMeetingPage";
 import EmployeeProject from "./hrCds/pages/EmployeeProject";
 import ClientMeeting from "./hrCds/pages/ClientMeeting";
+import Text from "../src/Pages/text.jsx";
 
 
 // Website Pages
@@ -58,6 +59,7 @@ import CompanyManagement from "./page/CompanyManagement.jsx";
 import JobRoleManagement from "./admin/page/JobRoleManagement.jsx";
 import SidebarManagement from "./admin/components/SidebarManagement.jsx";
 import CompanyDetails from "./admin/components/CompanyDetails.jsx";
+import AllCompany from "./page/AllCompany.jsx"
 function App() {
   const user = JSON.parse(localStorage.getItem("user"));
   const userRole = user?.role;
@@ -65,7 +67,7 @@ function App() {
   return (
     <>
       <Routes>
-        {/* ✅ Public Website Routes */}
+       
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<AboutUs />} />
         <Route path="/contact" element={<ContactUs />} />
@@ -130,7 +132,7 @@ function App() {
           <Route path="task-management" element={<TaskManagement />} />
           <Route path="employee-meeting" element={<EmployeeMeetingPage />} />
           <Route path="client-meeting" element={<ClientMeeting />} />
-         
+           <Route path="test" element={<Text />} />
         </Route>
 
         {/* ✅ Catch-all */}

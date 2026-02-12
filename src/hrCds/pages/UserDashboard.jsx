@@ -489,7 +489,7 @@ const UserDashboard = () => {
       });
       
       setIsRunning(true);
-      setTimer(0);
+      setTimer(5);
       toast.success('Clocked in successfully!');
       
       await fetchCurrentStatus();
