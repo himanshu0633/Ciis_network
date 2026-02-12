@@ -3,50 +3,134 @@ import axios from "axios";
 import API_URL from "../../config";
 import { useNavigate } from "react-router-dom";
 
-
 const FormField = memo(
   ({ label, name, type = "text", placeholder, required, value, onChange, error, autoComplete }) => {
     return (
-      <div style={{ marginBottom: 18 }}>
-        <label style={{ display: "block", marginBottom: 6, fontWeight: "500", color: "#374151" }}>
-          {label} {required && <span style={{ color: "#ef4444" }}>*</span>}
-        </label>
+      <div style={{ marginBottom: "18px", width: "100%" }}>
+        <div style={{ display: "flex", alignItems: "center", marginBottom: "6px", flexWrap: "wrap" }}>
+          <label style={{ 
+            display: "block", 
+            fontWeight: "600", 
+            color: "#1f2937",
+            fontSize: "13px",
+            marginRight: "4px"
+          }}>
+            {label}
+          </label>
+          {required && (
+            <span style={{ 
+              color: "#ef4444", 
+              fontSize: "10px",
+              fontWeight: "500"
+            }}>• Required</span>
+          )}
+        </div>
 
-        <input
-          type={type}
-          name={name}
-          placeholder={placeholder}
-          value={value}
-          onChange={onChange}
-          autoComplete={autoComplete || "off"}
-          style={{
-            width: "100%",
-            padding: "12px 14px",
-            borderRadius: 8,
-            border: error ? "2px solid #ef4444" : "1px solid #d1d5db",
-            fontSize: "15px",
-            backgroundColor: error ? "#fef2f2" : "#fff",
-            outline: "none",
-            transition: "border-color 0.2s",
-          }}
-        />
+        {type === "file" ? (
+          <input
+            type="file"
+            name={name}
+            onChange={onChange}
+            accept="image/*"
+            style={{
+              width: "100%",
+              padding: "10px 12px",
+              borderRadius: 6,
+              border: error ? "1.5px solid #ef4444" : "1px solid #e5e7eb",
+              fontSize: "13px",
+              backgroundColor: error ? "#fef2f2" : "#f9fafb",
+              outline: "none",
+              transition: "all 0.2s ease",
+              fontWeight: "500",
+              color: "#111827",
+              boxShadow: error ? "0 1px 2px rgba(239, 68, 68, 0.1)" : "0 1px 1px rgba(0, 0, 0, 0.05)",
+              WebkitAppearance: "none",
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = error ? "#ef4444" : "#3b82f6";
+              e.target.style.backgroundColor = error ? "#fef2f2" : "#ffffff";
+              e.target.style.boxShadow = error 
+                ? "0 0 0 2px rgba(239, 68, 68, 0.1)" 
+                : "0 0 0 2px rgba(59, 130, 246, 0.1)";
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = error ? "#ef4444" : "#e5e7eb";
+              e.target.style.backgroundColor = error ? "#fef2f2" : "#f9fafb";
+              e.target.style.boxShadow = error 
+                ? "0 1px 2px rgba(239, 68, 68, 0.1)" 
+                : "0 1px 1px rgba(0, 0, 0, 0.05)";
+            }}
+          />
+        ) : (
+          <input
+            type={type}
+            name={name}
+            placeholder={placeholder}
+            value={value}
+            onChange={onChange}
+            autoComplete={autoComplete || "off"}
+            style={{
+              width: "100%",
+              padding: "10px 12px",
+              borderRadius: 6,
+              border: error ? "1.5px solid #ef4444" : "1px solid #e5e7eb",
+              fontSize: "13px",
+              backgroundColor: error ? "#fef2f2" : "#f9fafb",
+              outline: "none",
+              transition: "all 0.2s ease",
+              fontWeight: "500",
+              color: "#111827",
+              boxShadow: error ? "0 1px 2px rgba(239, 68, 68, 0.1)" : "0 1px 1px rgba(0, 0, 0, 0.05)",
+              WebkitAppearance: "none",
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = error ? "#ef4444" : "#3b82f6";
+              e.target.style.backgroundColor = error ? "#fef2f2" : "#ffffff";
+              e.target.style.boxShadow = error 
+                ? "0 0 0 2px rgba(239, 68, 68, 0.1)" 
+                : "0 0 0 2px rgba(59, 130, 246, 0.1)";
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = error ? "#ef4444" : "#e5e7eb";
+              e.target.style.backgroundColor = error ? "#fef2f2" : "#f9fafb";
+              e.target.style.boxShadow = error 
+                ? "0 1px 2px rgba(239, 68, 68, 0.1)" 
+                : "0 1px 1px rgba(0, 0, 0, 0.05)";
+            }}
+          />
+        )}
 
         {error && (
           <div
             style={{
               color: "#dc2626",
-              fontSize: "13px",
-              marginTop: 6,
+              fontSize: "11px",
+              marginTop: 4,
               padding: "6px 10px",
               background: "#fef2f2",
-              borderRadius: 6,
+              borderRadius: 4,
               display: "flex",
-              alignItems: "center",
+              alignItems: "flex-start",
               gap: 6,
+              borderLeft: "2px solid #dc2626",
+              animation: "slideIn 0.2s ease-out",
+              wordBreak: "break-word",
             }}
           >
-            <span>⚠️</span>
-            <span>{error}</span>
+            <div style={{
+              width: 16,
+              height: 16,
+              borderRadius: "50%",
+              background: "#dc2626",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+              marginTop: 1
+            }}>
+              <span style={{ color: "white", fontSize: "10px" }}>!</span>
+            </div>
+            <span style={{ fontWeight: "500", flex: 1 }}>{error}</span>
           </div>
         )}
       </div>
@@ -61,7 +145,7 @@ const CompanyRegister = () => {
     companyAddress: "",
     companyPhone: "",
     ownerName: "",
-    logo: "",
+    logoFile: null,
     ownerEmail: "",
     ownerPassword: "",
   });
@@ -70,41 +154,77 @@ const CompanyRegister = () => {
   const [msg, setMsg] = useState("");
   const [error, setError] = useState("");
   const [formErrors, setFormErrors] = useState({});
-  const [apiErrors, setApiErrors] = useState({}); // New state for API errors
+  const [apiErrors, setApiErrors] = useState({});
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [logoLoading, setLogoLoading] = useState(false);
+  const [logoPreview, setLogoPreview] = useState("");
+
+  const navigate = useNavigate();
+
+  const handleBackToHome = () => {
+    navigate("/");
+  };
 
   const clearMessages = () => {
     setMsg("");
     setError("");
-    setApiErrors({}); // Clear API errors too
+    setApiErrors({});
   };
 
-  /**
-   * ✅ Stable handleChange
-   */
   const handleChange = useCallback((e) => {
-    const { name, value } = e.target;
+    const { name, value, type, files } = e.target;
 
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    if (type === "file") {
+      const file = files[0];
+      if (file) {
+        // Validate file type
+        if (!file.type.match("image.*")) {
+          setFormErrors((prev) => ({
+            ...prev,
+            [name]: "Only image files are allowed",
+          }));
+          return;
+        }
+        
+        // Validate file size (max 2MB)
+        if (file.size > 2 * 1024 * 1024) {
+          setFormErrors((prev) => ({
+            ...prev,
+            [name]: "File size should be less than 2MB",
+          }));
+          return;
+        }
 
-    // Clear field error instantly
+        setForm((prev) => ({
+          ...prev,
+          [name]: file,
+        }));
+
+        // Create preview
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setLogoPreview(e.target.result);
+        };
+        reader.readAsDataURL(file);
+      }
+    } else {
+      setForm((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
+
     setFormErrors((prev) => ({
       ...prev,
       [name]: "",
     }));
     
-    // Clear API error for this field
     setApiErrors((prev) => ({
       ...prev,
       [name]: "",
     }));
   }, []);
 
-  // ✅ Client-side validation
   const validateForm = () => {
     const errors = {};
     const {
@@ -117,7 +237,6 @@ const CompanyRegister = () => {
       ownerPassword,
     } = form;
 
-    // Required fields
     if (!companyName?.trim()) errors.companyName = "Company name is required";
     if (!companyEmail?.trim()) errors.companyEmail = "Company email is required";
     if (!companyAddress?.trim()) errors.companyAddress = "Company address is required";
@@ -126,7 +245,6 @@ const CompanyRegister = () => {
     if (!ownerEmail?.trim()) errors.ownerEmail = "Owner email is required";
     if (!ownerPassword?.trim()) errors.ownerPassword = "Owner password is required";
 
-    // Email format check
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (companyEmail && !emailRegex.test(companyEmail)) {
       errors.companyEmail = "Invalid company email format";
@@ -135,14 +253,12 @@ const CompanyRegister = () => {
       errors.ownerEmail = "Invalid owner email format";
     }
 
-    // Phone format check - Updated to exactly 10 digits
     const phoneRegex = /^\d{10}$/;
     const phoneDigits = companyPhone.replace(/\D/g, '');
     if (companyPhone && !phoneRegex.test(phoneDigits)) {
       errors.companyPhone = "Phone must be exactly 10 digits";
     }
 
-    // Password strength
     if (ownerPassword && ownerPassword.length < 6) {
       errors.ownerPassword = "Password must be at least 6 characters";
     }
@@ -158,30 +274,45 @@ const CompanyRegister = () => {
       companyAddress: "",
       companyPhone: "",
       ownerName: "",
-      logo: "",
+      logoFile: null,
       ownerEmail: "",
       ownerPassword: "",
     });
+    setLogoPreview("");
     setFormErrors({});
     setApiErrors({});
   };
 
-  // Function to map backend field names to frontend field names
   const mapFieldName = (backendField) => {
     const fieldMap = {
       'phone': 'companyPhone',
       'email': 'companyEmail',
       'address': 'companyAddress',
       'name': 'companyName',
-      // Add more mappings as needed
     };
     return fieldMap[backendField] || backendField;
   };
 
-  const navigate = useNavigate();
+  const uploadLogoToServer = async (file) => {
+    if (!file) return null;
+    
+    const formData = new FormData();
+    formData.append('logo', file);
+    
+    try {
+      const uploadRes = await axios.post(`${API_URL}/upload-logo`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      return uploadRes.data.logoUrl;
+    } catch (err) {
+      console.error("Logo upload failed:", err);
+      throw new Error("Failed to upload logo");
+    }
+  };
 
-
-  // ✅ Register Company
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -198,11 +329,28 @@ const CompanyRegister = () => {
     setLogoLoading(true);
 
     try {
-      // Format phone number to remove any non-digits
+      let logoUrl = "";
+      
+      // Upload logo if exists
+      if (form.logoFile) {
+        try {
+          logoUrl = await uploadLogoToServer(form.logoFile);
+        } catch (uploadError) {
+          setError("Logo upload failed. Please try again or skip logo for now.");
+          setIsSubmitting(false);
+          setLogoLoading(false);
+          return;
+        }
+      }
+
       const formData = { 
         ...form,
+        logo: logoUrl, // Send the uploaded logo URL
         companyPhone: form.companyPhone.replace(/\D/g, '')
       };
+
+      // Remove the file object before sending
+      delete formData.logoFile;
 
       const res = await axios.post(`${API_URL}/company`, formData);
       
@@ -213,7 +361,6 @@ const CompanyRegister = () => {
       }, 2000);
       resetForm();
       
-      // Auto-clear success message after 5 seconds
       setTimeout(() => {
         setMsg("");
       }, 5000);
@@ -225,12 +372,10 @@ const CompanyRegister = () => {
       const errorData = err.response?.data;
 
       if (errorData) {
-        // Set the main error message
         if (errorData.message) {
           errorMessage = errorData.message;
         }
 
-        // Handle validation errors from details object
         if (errorData.details) {
           const newApiErrors = {};
           
@@ -243,14 +388,12 @@ const CompanyRegister = () => {
           
           setApiErrors(newApiErrors);
           
-          // Show first error as main error
           const firstError = Object.values(newApiErrors)[0];
           if (firstError) {
             errorMessage = firstError;
           }
         }
         
-        // Handle array errors
         if (Array.isArray(errorData.errors)) {
           errorMessage = errorData.errors.join(". ");
         }
@@ -268,18 +411,48 @@ const CompanyRegister = () => {
     }
   };
 
-  // Combine form errors and API errors for display
   const getFieldError = (fieldName) => {
     return apiErrors[fieldName] || formErrors[fieldName];
   };
 
-  // Add CSS for spinner animation
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
       @keyframes spin {
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
+      }
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(-5px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      @keyframes float {
+        0%, 100% {
+          transform: translateY(0px);
+        }
+        50% {
+          transform: translateY(-2px);
+        }
+      }
+      
+      @media (max-width: 768px) {
+        input, button {
+          font-size: 16px !important;
+        }
       }
     `;
     document.head.appendChild(style);
@@ -289,437 +462,827 @@ const CompanyRegister = () => {
     };
   }, []);
 
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const isTablet = typeof window !== 'undefined' && window.innerWidth >= 768 && window.innerWidth < 1024;
+
   return (
-    <div style={{ maxWidth: 900, margin: "60px auto", padding: 20 }}>
-      {/* Logo Box - Added just before the header */}
-      <div
-        style={{
-          width: 100,
-          height: 100,
-          borderRadius: 8,
-          backgroundColor: 'white',
-          backdropFilter: 'blur(10px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          margin: '0 auto 20px auto',
-          border: '1px solid rgba(255, 255, 255, 0.2)',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-          position: 'relative',
-          zIndex: 1
-        }}
-      >
-        {logoLoading ? (
-          <div className="spinner" style={{
-            width: 40,
-            height: 40,
-            border: '3px solid #f3f3f3',
-            borderTop: '3px solid #2563eb',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite'
-          }}></div>
-        ) : form.logo ? (
-          <img
-            src={form.logo}
-            alt="Company Logo Preview"
-            style={{
-              width: 70,
-              height: 70,
-              objectFit: 'contain',
-              borderRadius: '6px'
-            }}
-            onError={(e) => {
-              e.target.style.display = 'none';
-              e.target.parentNode.innerHTML = `
-                <div style="font-size: 44px; color: #2563eb;">🏢</div>
-              `;
-            }}
-          />
-        ) : (
-          <div style={{ fontSize: "44px", color: "#2563eb" }}>🏢</div>
-        )}
-      </div>
-
-      {/* Header */}
-      <div style={{ textAlign: "center", marginBottom: 40 }}>
-        <h1 style={{ fontSize: "2.5rem", color: "#1e40af", marginBottom: 8 }}>
-          Company Registration
-        </h1>
-        <p style={{ color: "#6b7280", fontSize: "1.1rem" }}>
-          Register your company and create owner account
-        </p>
-      </div>
-
-      {/* Success Message */}
-      {msg && (
+    <div style={{
+      minHeight: "100vh",
+      background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
+      padding: isMobile ? "12px 8px" : isTablet ? "16px 12px" : "24px 16px",
+      position: "relative",
+      overflow: "auto",
+    }}>
+      <div style={{
+        maxWidth: "700px",
+        margin: "0 auto",
+        position: "relative",
+        animation: "fadeIn 0.8s ease-out",
+      }}>
         <div style={{
-          ...successBox,
-          textAlign: "center",
-          marginBottom: 30,
+          background: "rgba(255, 255, 255, 0.98)",
+          borderRadius: isMobile ? 10 : 12,
+          border: "1px solid rgba(255, 255, 255, 0.2)",
+          boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)",
+          overflow: "hidden",
+          position: "relative",
         }}>
-          <div style={{ fontSize: "3rem", marginBottom: 10 }}>🎉</div>
-          <h3 style={{ margin: "0 0 10px 0", color: "#065f46" }}>
-            Registration Successful!
-          </h3>
-          <p style={{ margin: 0, fontSize: "1rem" }}>
-            {msg} Your company has been registered successfully.
-          </p>
-          <button 
-            onClick={clearMessages}
-            style={{
-              marginTop: 15,
-              padding: "8px 20px",
-              background: "#10b981",
-              color: "#fff",
-              border: "none",
-              borderRadius: 8,
-              cursor: "pointer",
-              fontWeight: "bold",
-            }}
-          >
-            Continue
-          </button>
-        </div>
-      )}
+          {/* Header Section - Logo Left with Text */}
+          <div style={{
+            background: "linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)",
+            padding: isMobile ? "16px" : isTablet ? "20px" : "24px",
+            position: "relative",
+            overflow: "hidden",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "16px",
+          }}>
+            {/* Logo on Left Side */}
+            <div
+              style={{
+                width: isMobile ? 50 : isTablet ? 60 : 70,
+                height: isMobile ? 50 : isTablet ? 60 : 70,
+                borderRadius: isMobile ? 10 : 12,
+                background: "white",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "2px solid rgba(255, 255, 255, 0.3)",
+                boxShadow: "0 5px 15px rgba(0, 0, 0, 0.15)",
+                position: "relative",
+                zIndex: 2,
+                transition: "all 0.3s ease",
+                animation: "float 3s ease-in-out infinite",
+                flexShrink: 0,
+              }}
+            >
+              <img
+                src="/logoo.png"
+                alt="CIBNETWORK Logo"
+                style={{
+                  width: isMobile ? 35 : isTablet ? 45 : 50,
+                  height: isMobile ? 35 : isTablet ? 45 : 50,
+                  objectFit: "contain",
+                  borderRadius: isMobile ? "6px" : "8px",
+                  filter: "drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2))",
+                }}
+                onError={(e) => {
+                  e.target.style.display = "none";
+                  const parent = e.target.parentElement;
+                  const fallback = document.createElement('div');
+                  fallback.textContent = 'CIBNETWORK';
+                  fallback.style.color = '#ffffff';
+                  fallback.style.fontWeight = 'bold';
+                  fallback.style.fontSize = isMobile ? '10px' : '12px';
+                  parent.appendChild(fallback);
+                }}
+              />
+            </div>
 
-      {/* Error Message - Always show when there's an error */}
-      {error && (
-        <div style={{
-          ...errorBox,
-          marginBottom: 30,
-        }}>
-          <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-            <span style={{ fontSize: "1.5rem" }}>❌</span>
-            <div style={{ flex: 1 }}>
-              <strong style={{ display: "block", marginBottom: 5 }}>
-                Registration Failed
-              </strong>
-              <p style={{ margin: "0 0 10px 0" }}>{error}</p>
+            {/* Text Content on Right */}
+            <div style={{ 
+              position: "relative", 
+              zIndex: 2,
+              flex: 1,
+              textAlign: "left"
+            }}>
+              <h1 style={{
+                fontSize: isMobile ? "1.3rem" : isTablet ? "1.5rem" : "1.7rem",
+                color: "#ffffff",
+                marginBottom: 4,
+                fontWeight: "700",
+                textShadow: "0 1px 4px rgba(0, 0, 0, 0.2)",
+                lineHeight: 1.2,
+              }}>
+                CIIS NETWORK
+              </h1>
               
-              {/* Show specific field errors if available */}
-              {Object.keys(apiErrors).length > 0 && (
-                <div style={{ 
-                  marginTop: 10,
-                  paddingTop: 10,
-                  borderTop: '1px solid rgba(220, 38, 38, 0.3)'
-                }}>
-                  <p style={{ margin: "0 0 8px 0", fontSize: "14px", fontWeight: "500" }}>
-                    Please fix the following errors:
-                  </p>
-                  <ul style={{ 
-                    margin: 0, 
-                    paddingLeft: 20,
-                    fontSize: "14px"
-                  }}>
-                    {Object.entries(apiErrors).map(([field, message]) => (
-                      <li key={field} style={{ marginBottom: 4 }}>
-                        <strong>{field}:</strong> {message}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          </div>
-          <button 
-            onClick={clearMessages} 
-            style={clearBtnRed}
-          >
-            Dismiss
-          </button>
-        </div>
-      )}
-
-      {/* Registration Form */}
-      {!registrationSuccess && (
-        <div style={card}>
-          <form onSubmit={handleSubmit}>
-            {/* Company Details Section */}
-            <div style={{ marginBottom: 30 }}>
-              <div style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                marginBottom: 20,
-                paddingBottom: 10,
-                borderBottom: "2px solid #e5e7eb",
+              <h2 style={{
+                fontSize: isMobile ? "1.1rem" : isTablet ? "1.3rem" : "1.5rem",
+                color: "#ffffff",
+                marginBottom: 6,
+                fontWeight: "600",
+                textShadow: "0 1px 3px rgba(0, 0, 0, 0.2)",
+                lineHeight: 1.2,
               }}>
-                <div style={{
-                  background: "#dbeafe",
-                  padding: "8px",
-                  borderRadius: 8,
-                }}>
-                  <span style={{ fontSize: "1.2rem" }}>🏢</span>
-                </div>
-                <h2 style={{ margin: 0, color: "#1e40af" }}>
-                  Company Details
-                </h2>
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-                <FormField
-                  label="Company Name"
-                  name="companyName"
-                  placeholder="Enter company name"
-                  required
-                  value={form.companyName}
-                  onChange={handleChange}
-                  error={getFieldError("companyName")}
-                  autoComplete="off"
-                />
-
-                <FormField
-                  label="Company Email"
-                  name="companyEmail"
-                  type="email"
-                  placeholder="company@example.com"
-                  required
-                  value={form.companyEmail}
-                  onChange={handleChange}
-                  error={getFieldError("companyEmail")}
-                  autoComplete="off"
-                />
-              </div>
-
-              <FormField
-                label="Company Address"
-                name="companyAddress"
-                placeholder="Full company address"
-                required
-                value={form.companyAddress}
-                onChange={handleChange}
-                error={getFieldError("companyAddress")}
-                autoComplete="off"
-              />
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-                <FormField
-                  label="Company Phone"
-                  name="companyPhone"
-                  placeholder="Enter 10 digits (e.g., 9389111476)"
-                  required
-                  value={form.companyPhone}
-                  onChange={handleChange}
-                  error={getFieldError("companyPhone")}
-                  autoComplete="off"
-                  type="tel"
-                />
-
-                <FormField
-                  label="Logo URL (optional)"
-                  name="logo"
-                  placeholder="https://example.com/logo.png"
-                  required={false}
-                  value={form.logo}
-                  onChange={handleChange}
-                  error={getFieldError("logo")}
-                  autoComplete="off"
-                />
-              </div>
-            </div>
-
-            {/* Owner Details Section */}
-            <div style={{ marginBottom: 30 }}>
-              <div style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                marginBottom: 20,
-                paddingBottom: 10,
-                borderBottom: "2px solid #e5e7eb",
+                Company Registration Form
+              </h2>
+              
+              <p style={{
+                color: "#dbeafe",
+                fontSize: isMobile ? "0.85rem" : "0.9rem",
+                marginBottom: 0,
+                fontWeight: "500",
+                opacity: 0.95,
+                lineHeight: 1.4,
               }}>
-                <div style={{
-                  background: "#f0fdf4",
-                  padding: "8px",
-                  borderRadius: 8,
-                }}>
-                  <span style={{ fontSize: "1.2rem" }}>👤</span>
-                </div>
-                <h2 style={{ margin: 0, color: "#059669" }}>
-                  Owner Account Details
-                </h2>
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-                <FormField
-                  label="Owner Full Name"
-                  name="ownerName"
-                  placeholder="Owner full name"
-                  required
-                  value={form.ownerName}
-                  onChange={handleChange}
-                  error={getFieldError("ownerName")}
-                  autoComplete="off"
-                />
-
-                <FormField
-                  label="Owner Email / For Super Admin Login"
-                  name="ownerEmail"
-                  type="email"
-                  placeholder="owner@example.com"
-                  required
-                  value={form.ownerEmail}
-                  onChange={handleChange}
-                  error={getFieldError("ownerEmail")}
-                  autoComplete="off"
-                />
-              </div>
-
-              <FormField
-                label="Owner Password"
-                name="ownerPassword"
-                type="password"
-                placeholder="Enter strong password (min 8 characters)"
-                required
-                value={form.ownerPassword}
-                onChange={handleChange}
-                error={getFieldError("ownerPassword")}
-                autoComplete="new-password"
-              />
-            </div>
-
-            {/* Terms & Submit */}
-            <div style={{ 
-              background: "#f8fafc", 
-              padding: 20, 
-              borderRadius: 10,
-              marginBottom: 25,
-            }}>
-              <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-                <input 
-                  type="checkbox" 
-                  id="terms" 
-                  required 
-                  style={{ marginTop: 4 }}
-                />
-                <label htmlFor="terms" style={{ fontSize: "14px", color: "#4b5563" }}>
-                  I confirm that all information provided is accurate and I have the authority to 
-                  register this company. By submitting, I agree to the terms and conditions.
-                </label>
-              </div>
-            </div>
-
-            {/* Submit Button */}
-            <div style={{ display: "flex", gap: 15, justifyContent: "center" }}>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                style={{
-                  padding: "15px 40px",
-                  background: "#2563eb",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: 10,
-                  cursor: isSubmitting ? "not-allowed" : "pointer",
-                  fontWeight: "bold",
-                  fontSize: "16px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  opacity: isSubmitting ? 0.7 : 1,
-                  transition: "all 0.3s",
-                }}
-              >
-                {isSubmitting ? (
-                  <>
-                    <div style={{
-                      width: 20,
-                      height: 20,
-                      border: '2px solid #f3f3f3',
-                      borderTop: '2px solid #fff',
-                      borderRadius: '50%',
-                      animation: 'spin 1s linear infinite'
-                    }}></div>
-                    Registering...
-                  </>
-                ) : (
-                  <>
-                    <span>🚀</span>
-                    Register Company
-                  </>
-                )}
-              </button>
-
-              <button
-                type="button"
-                onClick={resetForm}
-                style={{
-                  padding: "15px 30px",
-                  background: "#6b7280",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: 10,
-                  cursor: "pointer",
-                  fontWeight: "bold",
-                  fontSize: "16px",
-                }}
-              >
-                Clear Form
-              </button>
-            </div>
-
-            {/* Help Text */}
-            <div style={{ 
-              textAlign: "center", 
-              marginTop: 25, 
-              color: "#6b7280",
-              fontSize: "14px",
-              padding: "15px",
-              background: "#f9fafb",
-              borderRadius: 8,
-            }}>
-              <p style={{ margin: 0 }}>
-                <strong>Note:</strong> After registration, a company code will be generated 
-                automatically. The owner can use the provided email and password to login.
+                Register your company and create owner account in minutes
               </p>
             </div>
-          </form>
+
+            <div style={{
+              position: "absolute",
+              top: "-50%",
+              right: "-50%",
+              width: "200%",
+              height: "200%",
+              background: "radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)",
+              animation: "spin 20s linear infinite",
+            }} />
+          </div>
+
+          <div style={{ padding: isMobile ? "12px 12px 0" : isTablet ? "16px 16px 0" : "20px 24px 0" }}>
+            {msg && (
+              <div style={{
+                background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                color: "#ffffff",
+                padding: isMobile ? "12px" : isTablet ? "16px" : "20px",
+                borderRadius: isMobile ? 8 : 10,
+                marginBottom: isMobile ? 12 : 16,
+                position: "relative",
+                overflow: "hidden",
+                animation: "slideIn 0.3s ease-out",
+              }}>
+                
+                <div style={{
+                  display: "flex",
+                  alignItems: isMobile ? "flex-start" : "center",
+                  gap: 12,
+                  position: "relative",
+                  flexDirection: isMobile ? "column" : "row",
+                }}>
+                  <div style={{
+                    width: isMobile ? 36 : 40,
+                    height: isMobile ? 36 : 40,
+                    borderRadius: "50%",
+                    background: "rgba(255, 255, 255, 0.2)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: isMobile ? "18px" : "20px",
+                    flexShrink: 0,
+                  }}>
+                    🎉
+                  </div>
+                  
+                  <div style={{ flex: 1, width: "100%" }}>
+                    <h3 style={{
+                      margin: isMobile ? "0 0 4px 0" : "0 0 6px 0",
+                      fontSize: isMobile ? "14px" : isTablet ? "16px" : "18px",
+                      fontWeight: "700",
+                    }}>
+                      Registration Successful!
+                    </h3>
+                    <p style={{
+                      margin: 0,
+                      fontSize: isMobile ? "12px" : "13px",
+                      opacity: 0.95,
+                      lineHeight: 1.4,
+                    }}>
+                      {msg} Redirecting to login page...
+                    </p>
+                    
+                    <button 
+                      onClick={clearMessages}
+                      style={{
+                        marginTop: 12,
+                        padding: isMobile ? "6px 12px" : "8px 16px",
+                        background: "rgba(255, 255, 255, 0.2)",
+                        color: "#ffffff",
+                        border: "1px solid rgba(255, 255, 255, 0.3)",
+                        borderRadius: 6,
+                        cursor: "pointer",
+                        fontWeight: "600",
+                        fontSize: isMobile ? "12px" : "13px",
+                        transition: "all 0.2s",
+                        backdropFilter: "blur(10px)",
+                        width: isMobile ? "100%" : "auto",
+                      }}
+                    >
+                      Continue
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {error && (
+              <div style={{
+                background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
+                color: "#ffffff",
+                padding: isMobile ? "12px" : "16px",
+                borderRadius: isMobile ? 8 : 10,
+                marginBottom: isMobile ? 12 : 16,
+                position: "relative",
+                overflow: "hidden",
+                animation: "slideIn 0.3s ease-out",
+              }}>
+                
+                <div style={{
+                  display: "flex",
+                  alignItems: isMobile ? "flex-start" : "flex-start",
+                  gap: 10,
+                  position: "relative",
+                  flexDirection: isMobile ? "column" : "row",
+                }}>
+                  <div style={{
+                    width: isMobile ? 32 : 36,
+                    height: isMobile ? 32 : 36,
+                    borderRadius: "50%",
+                    background: "rgba(255, 255, 255, 0.2)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: isMobile ? "14px" : "16px",
+                    flexShrink: 0,
+                    marginTop: 1,
+                  }}>
+                    ❌
+                  </div>
+                  
+                  <div style={{ flex: 1, width: "100%" }}>
+                    <strong style={{
+                      display: "block",
+                      marginBottom: 4,
+                      fontSize: isMobile ? "13px" : "15px",
+                      fontWeight: "700",
+                    }}>
+                      Registration Failed
+                    </strong>
+                    <p style={{
+                      margin: "0 0 8px 0",
+                      fontSize: isMobile ? "12px" : "13px",
+                      opacity: 0.95,
+                      lineHeight: 1.4,
+                    }}>
+                      {error}
+                    </p>
+                    
+                    {Object.keys(apiErrors).length > 0 && (
+                      <div style={{
+                        marginTop: 8,
+                        paddingTop: 8,
+                        borderTop: '1px solid rgba(255, 255, 255, 0.3)'
+                      }}>
+                        <p style={{
+                          margin: "0 0 6px 0",
+                          fontSize: "12px",
+                          fontWeight: "600",
+                          opacity: 0.9,
+                        }}>
+                          Please fix the following errors:
+                        </p>
+                        <ul style={{
+                          margin: 0,
+                          paddingLeft: 16,
+                          fontSize: "12px",
+                          opacity: 0.9,
+                        }}>
+                          {Object.entries(apiErrors).map(([field, message]) => (
+                            <li key={field} style={{ marginBottom: 3 }}>
+                              <strong style={{ textTransform: "capitalize" }}>{field}:</strong> {message}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <button 
+                    onClick={clearMessages}
+                    style={{
+                      padding: isMobile ? "4px 10px" : "6px 12px",
+                      background: "rgba(255, 255, 255, 0.15)",
+                      color: "#ffffff",
+                      border: "1px solid rgba(255, 255, 255, 0.3)",
+                      borderRadius: 4,
+                      cursor: "pointer",
+                      fontWeight: "600",
+                      fontSize: isMobile ? "10px" : "11px",
+                      transition: "all 0.2s",
+                      flexShrink: 0,
+                      width: isMobile ? "100%" : "auto",
+                      marginTop: isMobile ? 6 : 0,
+                    }}
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {!registrationSuccess && (
+            <div style={{ padding: isMobile ? "16px 12px" : isTablet ? "20px 16px" : "24px" }}>
+              <form onSubmit={handleSubmit}>
+                <div style={{ marginBottom: isMobile ? 20 : 24 }}>
+                  <div style={{
+                    display: "flex",
+                    alignItems: isMobile ? "flex-start" : "center",
+                    justifyContent: "space-between",
+                    marginBottom: isMobile ? 12 : 20,
+                    paddingBottom: isMobile ? 10 : 12,
+                    borderBottom: "1px solid #e5e7eb",
+                    position: "relative",
+                    flexDirection: isMobile ? "column" : "row",
+                    gap: isMobile ? 10 : 0,
+                  }}>
+                    <div style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                    }}>
+                      <div style={{
+                        background: "linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)",
+                        padding: isMobile ? "8px" : "10px",
+                        borderRadius: isMobile ? 8 : 10,
+                        boxShadow: "0 2px 8px rgba(37, 99, 235, 0.1)",
+                      }}>
+                        <span style={{ fontSize: isMobile ? "16px" : "18px", color: "#1e40af" }}>🏢</span>
+                      </div>
+                      <div>
+                        <h2 style={{
+                          margin: 0,
+                          color: "#1e40af",
+                          fontSize: isMobile ? "16px" : isTablet ? "18px" : "20px",
+                          fontWeight: "700",
+                          lineHeight: 1.2,
+                        }}>
+                          Company Details
+                        </h2>
+                        <p style={{
+                          margin: "3px 0 0 0",
+                          color: "#6b7280",
+                          fontSize: isMobile ? "12px" : "13px",
+                        }}>
+                          Enter your company information
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={handleBackToHome}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        padding: isMobile ? "8px 12px" : "10px 16px",
+                        background: "linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)",
+                        color: "#374151",
+                        border: "none",
+                        borderRadius: 8,
+                        cursor: "pointer",
+                        fontWeight: "600",
+                        fontSize: isMobile ? "12px" : "13px",
+                        transition: "all 0.2s",
+                        boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
+                        width: isMobile ? "100%" : "auto",
+                      }}
+                    >
+                      <span style={{ fontSize: "14px" }}>←</span>
+                      Back to Home
+                    </button>
+                  </div>
+
+                  <div style={{
+                    display: "grid",
+                    gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+                    gap: isMobile ? 12 : 16,
+                    marginBottom: isMobile ? 12 : 16,
+                  }}>
+                    <FormField
+                      label="Company Name"
+                      name="companyName"
+                      placeholder="Enter company name"
+                      required
+                      value={form.companyName}
+                      onChange={handleChange}
+                      error={getFieldError("companyName")}
+                      autoComplete="off"
+                    />
+
+                    <FormField
+                      label="Company Email"
+                      name="companyEmail"
+                      type="email"
+                      placeholder="company@example.com"
+                      required
+                      value={form.companyEmail}
+                      onChange={handleChange}
+                      error={getFieldError("companyEmail")}
+                      autoComplete="off"
+                    />
+                  </div>
+
+                  <div style={{ marginBottom: isMobile ? 12 : 16 }}>
+                    <FormField
+                      label="Company Address"
+                      name="companyAddress"
+                      placeholder="Full company address"
+                      required
+                      value={form.companyAddress}
+                      onChange={handleChange}
+                      error={getFieldError("companyAddress")}
+                      autoComplete="off"
+                    />
+                  </div>
+
+                  <div style={{
+                    display: "grid",
+                    gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+                    gap: isMobile ? 12 : 16,
+                    marginBottom: isMobile ? 12 : 16,
+                  }}>
+                    <FormField
+                      label="Company Phone"
+                      name="companyPhone"
+                      placeholder="Enter 10 digits (e.g., 9389111476)"
+                      required
+                      value={form.companyPhone}
+                      onChange={handleChange}
+                      error={getFieldError("companyPhone")}
+                      autoComplete="off"
+                      type="tel"
+                    />
+
+                    <div style={{ marginBottom: "18px", width: "100%" }}>
+                      <div style={{ display: "flex", alignItems: "center", marginBottom: "6px", flexWrap: "wrap" }}>
+                        <label style={{ 
+                          display: "block", 
+                          fontWeight: "600", 
+                          color: "#1f2937",
+                          fontSize: "13px",
+                          marginRight: "4px"
+                        }}>
+                          Company Logo
+                        </label>
+                        <span style={{ 
+                          color: "#6b7280", 
+                          fontSize: "10px",
+                          fontWeight: "500"
+                        }}>• Optional (Max 2MB)</span>
+                      </div>
+
+                      <div style={{
+                        display: "flex",
+                        flexDirection: isMobile ? "column" : "row",
+                        gap: 12,
+                        alignItems: isMobile ? "stretch" : "center",
+                      }}>
+                        <div style={{ flex: 1 }}>
+                          <input
+                            type="file"
+                            name="logoFile"
+                            onChange={handleChange}
+                            accept="image/*"
+                            style={{
+                              width: "100%",
+                              padding: "10px 12px",
+                              borderRadius: 6,
+                              border: getFieldError("logoFile") ? "1.5px solid #ef4444" : "1px solid #e5e7eb",
+                              fontSize: "13px",
+                              backgroundColor: getFieldError("logoFile") ? "#fef2f2" : "#f9fafb",
+                              outline: "none",
+                              transition: "all 0.2s ease",
+                              fontWeight: "500",
+                              color: "#111827",
+                              boxShadow: getFieldError("logoFile") ? "0 1px 2px rgba(239, 68, 68, 0.1)" : "0 1px 1px rgba(0, 0, 0, 0.05)",
+                              WebkitAppearance: "none",
+                            }}
+                          />
+                        </div>
+                        
+                        {logoPreview && (
+                          <div style={{
+                            width: isMobile ? "100%" : "80px",
+                            height: isMobile ? "60px" : "80px",
+                            borderRadius: 6,
+                            overflow: "hidden",
+                            border: "1px solid #e5e7eb",
+                            background: "#f9fafb",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}>
+                            <img 
+                              src={logoPreview} 
+                              alt="Logo preview" 
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "contain",
+                                padding: "4px",
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      {getFieldError("logoFile") && (
+                        <div
+                          style={{
+                            color: "#dc2626",
+                            fontSize: "11px",
+                            marginTop: 4,
+                            padding: "6px 10px",
+                            background: "#fef2f2",
+                            borderRadius: 4,
+                            display: "flex",
+                            alignItems: "flex-start",
+                            gap: 6,
+                            borderLeft: "2px solid #dc2626",
+                            animation: "slideIn 0.2s ease-out",
+                            wordBreak: "break-word",
+                          }}
+                        >
+                          <div style={{
+                            width: 16,
+                            height: 16,
+                            borderRadius: "50%",
+                            background: "#dc2626",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flexShrink: 0,
+                            marginTop: 1
+                          }}>
+                            <span style={{ color: "white", fontSize: "10px" }}>!</span>
+                          </div>
+                          <span style={{ fontWeight: "500", flex: 1 }}>{getFieldError("logoFile")}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: isMobile ? 20 : 24 }}>
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    marginBottom: isMobile ? 12 : 20,
+                    paddingBottom: isMobile ? 10 : 12,
+                    borderBottom: "1px solid #e5e7eb",
+                  }}>
+                    <div style={{
+                      background: "linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)",
+                      padding: isMobile ? "8px" : "10px",
+                      borderRadius: isMobile ? 8 : 10,
+                      boxShadow: "0 2px 8px rgba(16, 185, 129, 0.1)",
+                    }}>
+                      <span style={{ fontSize: isMobile ? "16px" : "18px", color: "#059669" }}>👤</span>
+                    </div>
+                    <div>
+                      <h2 style={{
+                        margin: 0,
+                        color: "#059669",
+                        fontSize: isMobile ? "16px" : isTablet ? "18px" : "20px",
+                        fontWeight: "700",
+                        lineHeight: 1.2,
+                      }}>
+                        Owner Account Details
+                      </h2>
+                      <p style={{
+                        margin: "3px 0 0 0",
+                        color: "#6b7280",
+                        fontSize: isMobile ? "12px" : "13px",
+                      }}>
+                        Create the owner's login credentials
+                      </p>
+                    </div>
+                  </div>
+
+                  <div style={{
+                    display: "grid",
+                    gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+                    gap: isMobile ? 12 : 16,
+                    marginBottom: isMobile ? 12 : 16,
+                  }}>
+                    <FormField
+                      label="Owner Full Name"
+                      name="ownerName"
+                      placeholder="Owner full name"
+                      required
+                      value={form.ownerName}
+                      onChange={handleChange}
+                      error={getFieldError("ownerName")}
+                      autoComplete="off"
+                    />
+
+                    <FormField
+                      label="Owner Email / For Super Admin Login"
+                      name="ownerEmail"
+                      type="email"
+                      placeholder="owner@example.com"
+                      required
+                      value={form.ownerEmail}
+                      onChange={handleChange}
+                      error={getFieldError("ownerEmail")}
+                      autoComplete="off"
+                    />
+                  </div>
+
+                  <FormField
+                    label="Owner Password"
+                    name="ownerPassword"
+                    type="password"
+                    placeholder="Enter strong password (min 8 characters)"
+                    required
+                    value={form.ownerPassword}
+                    onChange={handleChange}
+                    error={getFieldError("ownerPassword")}
+                    autoComplete="new-password"
+                  />
+                </div>
+
+                <div style={{ 
+                  background: "#f8fafc",
+                  padding: isMobile ? "12px" : "16px",
+                  borderRadius: isMobile ? 8 : 10,
+                  marginBottom: isMobile ? 16 : 20,
+                  border: "1px solid #e5e7eb",
+                }}>
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                    <div style={{
+                      width: 18,
+                      height: 18,
+                      flexShrink: 0,
+                      position: "relative",
+                    }}>
+                      <input 
+                        type="checkbox" 
+                        id="terms" 
+                        required 
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          margin: 0,
+                          borderRadius: 3,
+                          border: "1.5px solid #d1d5db",
+                          cursor: "pointer",
+                          appearance: "none",
+                          position: "relative",
+                          transition: "all 0.2s",
+                        }}
+                        onChange={(e) => {
+                          e.target.style.background = e.target.checked ? "#2563eb" : "#fff";
+                          e.target.style.borderColor = e.target.checked ? "#2563eb" : "#d1d5db";
+                        }}
+                      />
+                    </div>
+                    <label htmlFor="terms" style={{ 
+                      fontSize: isMobile ? "12px" : "13px", 
+                      color: "#4b5563",
+                      lineHeight: 1.4,
+                    }}>
+                      <strong style={{ color: "#1f2937" }}>I confirm that all information provided is accurate</strong> and I have the authority to 
+                      register this company. By submitting, I agree to the{" "}
+                      <span style={{ color: "#2563eb", fontWeight: "600" }}>terms and conditions</span>.
+                    </label>
+                  </div>
+                </div>
+
+                <div style={{
+                  display: "flex",
+                  gap: isMobile ? 10 : 12,
+                  justifyContent: "center",
+                  flexWrap: "wrap",
+                  marginBottom: isMobile ? 16 : 20,
+                  flexDirection: isMobile ? "column" : "row",
+                }}>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    style={{
+                      padding: isMobile ? "12px 20px" : "14px 30px",
+                      background: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: isMobile ? 8 : 10,
+                      cursor: isSubmitting ? "not-allowed" : "pointer",
+                      fontWeight: "700",
+                      fontSize: isMobile ? "13px" : "14px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 8,
+                      opacity: isSubmitting ? 0.8 : 1,
+                      transition: "all 0.3s ease",
+                      minWidth: isMobile ? "100%" : "180px",
+                      boxShadow: "0 4px 12px rgba(37, 99, 235, 0.2)",
+                    }}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <div style={{
+                          width: 18,
+                          height: 18,
+                          border: '2px solid rgba(255, 255, 255, 0.3)',
+                          borderTop: '2px solid #fff',
+                          borderRadius: '50%',
+                          animation: 'spin 1s linear infinite'
+                        }}></div>
+                        <span>Registering...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span style={{ fontSize: "16px" }}>🚀</span>
+                        <span>Register Company</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={resetForm}
+                    style={{
+                      padding: isMobile ? "12px 20px" : "14px 24px",
+                      background: "linear-gradient(135deg, #6b7280 0%, #4b5563 100%)",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: isMobile ? 8 : 10,
+                      cursor: "pointer",
+                      fontWeight: "700",
+                      fontSize: isMobile ? "13px" : "14px",
+                      minWidth: isMobile ? "100%" : "140px",
+                      transition: "all 0.2s",
+                      boxShadow: "0 4px 10px rgba(0, 0, 0, 0.08)",
+                    }}
+                  >
+                    Clear Form
+                  </button>
+                </div>
+
+                <div style={{ 
+                  textAlign: "center", 
+                  padding: isMobile ? "12px" : "16px",
+                  background: "#f9fafb",
+                  borderRadius: isMobile ? 8 : 10,
+                  border: "1px solid #e5e7eb",
+                }}>
+                  <div style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    padding: isMobile ? "6px 12px" : "8px 16px",
+                    background: "rgba(37, 99, 235, 0.1)",
+                    borderRadius: 8,
+                    marginBottom: 8,
+                  }}>
+                    <span style={{ fontSize: "16px", color: "#2563eb" }}>💡</span>
+                    <span style={{ 
+                      color: "#1f2937", 
+                      fontWeight: "600",
+                      fontSize: isMobile ? "12px" : "13px",
+                    }}>
+                      Important Information
+                    </span>
+                  </div>
+                  <p style={{ 
+                    margin: "0",
+                    color: "#6b7280",
+                    fontSize: isMobile ? "12px" : "13px",
+                    lineHeight: 1.5,
+                    maxWidth: "600px",
+                    marginLeft: "auto",
+                    marginRight: "auto",
+                  }}>
+                    <strong>Note:</strong> After registration, a unique company code will be generated 
+                    automatically. The owner can use the provided email and password to login to the 
+                    Super Admin dashboard. Keep your credentials secure.
+                  </p>
+                </div>
+              </form>
+            </div>
+          )}
+
+          <div style={{
+            background: "#f3f4f6",
+            padding: isMobile ? "12px" : "16px 24px",
+            borderTop: "1px solid #e5e7eb",
+            textAlign: "center",
+          }}>
+            <p style={{
+              margin: 0,
+              color: "#6b7280",
+              fontSize: isMobile ? "10px" : "12px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 4,
+              flexWrap: "wrap",
+            }}>
+              <span>🔒</span>
+              <span>Your information is secure and encrypted</span>
+              <span style={{ display: isMobile ? "none" : "inline" }}>•</span>
+              <span>© {new Date().getFullYear()} Company Registration Portal</span>
+            </p>
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };
 
 export default CompanyRegister;
-
-/* ----------------- Styles ----------------- */
-
-const card = {
-  background: "#ffffff",
-  padding: 40,
-  borderRadius: 16,
-  border: "1px solid #e5e7eb",
-  boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-};
-
-const successBox = {
-  color: "#065f46",
-  padding: "30px",
-  background: "#d1fae5",
-  borderRadius: 12,
-  border: "2px solid #10b981",
-  position: "relative",
-};
-
-const errorBox = {
-  color: "#991b1b",
-  padding: "20px",
-  background: "#fee2e2",
-  borderRadius: 12,
-  border: "2px solid #f87171",
-  position: "relative",
-};
-
-const clearBtnRed = {
-  position: "absolute",
-  top: "10px",
-  right: "10px",
-  padding: "5px 12px",
-  background: "transparent",
-  border: "1px solid #dc2626",
-  color: "#dc2626",
-  borderRadius: 6,
-  cursor: "pointer",
-  fontSize: "12px",
-  fontWeight: "bold",
-};

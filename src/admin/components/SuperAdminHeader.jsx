@@ -1,4 +1,4 @@
-import React, { useState, useEffect, } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     AppBar,
     Toolbar,
@@ -85,6 +85,12 @@ const UserProfile = styled(Box)(({ theme }) => ({
 const SuperAdminHeader = ({ toggleSidebar, isSidebarOpen }) => {
     const [anchorEl, setAnchorEl] = useState(null);
     const [isScrolled, setIsScrolled] = useState(false);
+    const [userData, setUserData] = useState({
+        name: 'Admin',
+        companyName: 'CIIS',
+        logo: logo
+    });
+    
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
@@ -93,6 +99,76 @@ const SuperAdminHeader = ({ toggleSidebar, isSidebarOpen }) => {
     const { user } = useAuth();
 
     const open = Boolean(anchorEl);
+
+    // Function to get data from localStorage
+    const getLocalStorageData = () => {
+        try {
+            // Get superAdmin data from localStorage
+            const superAdminStr = localStorage.getItem('superAdmin');
+            let name = 'Admin';
+            
+            if (superAdminStr) {
+                const superAdminData = JSON.parse(superAdminStr);
+                if (superAdminData && superAdminData.name) {
+                    name = superAdminData.name;
+                }
+            }
+
+            // Get company data from localStorage
+            const companyStr = localStorage.getItem('company');
+            let companyName = 'CIIS';
+            let companyLogo = logo;
+            
+            if (companyStr) {
+                const companyData = JSON.parse(companyStr);
+                if (companyData) {
+                    if (companyData.companyName) {
+                        companyName = companyData.companyName;
+                    }
+                    if (companyData.logo) {
+                        companyLogo = companyData.logo;
+                    }
+                }
+            }
+
+            return { name, companyName, logo: companyLogo };
+        } catch (error) {
+            console.error('Error parsing localStorage data:', error);
+            return {
+                name: 'Admin',
+                companyName: 'CIIS',
+                logo: logo
+            };
+        }
+    };
+
+    // Update user data on component mount and when localStorage changes
+    useEffect(() => {
+        const updateUserData = () => {
+            const data = getLocalStorageData();
+            setUserData(data);
+        };
+
+        // Initial update
+        updateUserData();
+
+        // Listen for storage changes (if other tabs update localStorage)
+        const handleStorageChange = (e) => {
+            if (e.key === 'superAdmin' || e.key === 'company') {
+                updateUserData();
+            }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+
+        // Optional: Check localStorage periodically (every 2 seconds)
+        const interval = setInterval(updateUserData, 2000);
+
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            clearInterval(interval);
+        };
+    }, []);
 
     const handleProfileClick = (event) => {
         setAnchorEl(event.currentTarget);
@@ -107,7 +183,7 @@ const SuperAdminHeader = ({ toggleSidebar, isSidebarOpen }) => {
         // This is more customizable and looks better than window.confirm
         if (window.confirm('Are you sure you want to logout?')) {
             localStorage.removeItem('token');
-            navigate('/login');
+            navigate('/');
 
             // Optional: Show success message
             alert('Logged out successfully!'); // or use toast notification
@@ -159,7 +235,7 @@ const SuperAdminHeader = ({ toggleSidebar, isSidebarOpen }) => {
                         onClick={() => navigate('/user/dashboard')}
                     >
                         <img
-                            src={logo}
+                            src={userData.logo}
                             alt="Logo"
                             style={{
                                 height: isMobile ? '35px' : '45px',
@@ -178,42 +254,23 @@ const SuperAdminHeader = ({ toggleSidebar, isSidebarOpen }) => {
                         {!isMobile && (
                             <Box>
                                 <Typography variant="subtitle2" noWrap>
-                                    {user?.name || 'Admin'}
+                                    {userData.name}
                                 </Typography>
                                 <Typography variant="caption" noWrap sx={{ color: 'text.secondary' }}>
-                                    CIIS
+                                    {userData.companyName}
                                 </Typography>
                             </Box>
                         )}
                     </UserProfile>
 
                     <Menu anchorEl={anchorEl} open={open} onClose={handleMenuClose}>
-                        <MenuItem>
-                            <ListItemIcon><SettingsIcon fontSize="small" /></ListItemIcon>
-                            <ListItemText>Settings</ListItemText>
-                        </MenuItem>
-                        <MenuItem>
-                            <ListItemIcon><PrivacyPolicyIcon fontSize="small" /></ListItemIcon>
-                            <ListItemText>Privacy Policy</ListItemText>
-                        </MenuItem>
-                        <MenuItem>
-                            <ListItemIcon><ContactSupportIcon fontSize="small" /></ListItemIcon>
-                            <ListItemText>Contact Support</ListItemText>
-                        </MenuItem>
-                        <Divider />
+                   
+                    
                         <MenuItem onClick={handleLogout}>
                             <ListItemIcon><LogoutIcon fontSize="small" /></ListItemIcon>
                             <ListItemText>Log out</ListItemText>
                         </MenuItem>
-                        <Divider />
-                        <MenuItem disabled>
-                            <ListItemIcon><VersionIcon fontSize="small" /></ListItemIcon>
-                            <ListItemText>Version 5.2.10</ListItemText>
-                        </MenuItem>
-                        <MenuItem>
-                            <ListItemIcon><ViewLogsIcon fontSize="small" /></ListItemIcon>
-                            <ListItemText>View Logs</ListItemText>
-                        </MenuItem>
+                
                     </Menu>
                 </Box>
             </Toolbar>

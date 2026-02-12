@@ -1,37 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Button,
-  TextField,
-  Typography,
-  Container,
-  InputAdornment,
-  IconButton,
-  CircularProgress,
-  Paper,
-  Link,
-  Grid,
-  Fade,
-  Alert,
-  useTheme,
-  useMediaQuery
-} from '@mui/material';
-import {
-  Visibility,
-  VisibilityOff,
-  Login as LoginIcon,
-  LockOutlined,
-  EmailOutlined,
-  Business
-} from '@mui/icons-material';
 import axios from '../utils/axiosConfig';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import { toast } from 'react-toastify';
+import { Box } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
+import useMediaQuery from "@mui/material/useMediaQuery";
 
 const Login = () => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+ const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
 
@@ -146,150 +124,150 @@ const Login = () => {
     return Object.keys(newErrors).length === 0;
   };
 
- const handleSubmit = async (e) => {
-  e.preventDefault();
-  if (!validateForm()) return;
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
 
-  setLoading(true);
+    setLoading(true);
 
-  try {
-    // Create login data with correct field names
-    const loginData = {
-      email: form.email.trim(),
-      password: form.password,
-      companyCode: companyIdentifier || null  // Changed from companyIdentifier to companyCode
-    };
+    try {
+      // Create login data with correct field names
+      const loginData = {
+        email: form.email.trim(),
+        password: form.password,
+        companyCode: companyIdentifier || null
+      };
 
-    console.log('Login attempt:', {
-      email: loginData.email,
-      companyCode: loginData.companyCode,
-      timestamp: new Date().toISOString()
-    });
+      console.log('Login attempt:', {
+        email: loginData.email,
+        companyCode: loginData.companyCode,
+        timestamp: new Date().toISOString()
+      });
 
-    const res = await axios.post('/auth/login', loginData);
+      const res = await axios.post('/auth/login', loginData);
 
-    if (res.data.requiresTwoFactor) {
-      setTwoFactorRequired(true);
-      toast.info('Two-factor authentication required');
-      return;
-    }
-
-    // Save token
-    if (res.data.token) {
-      localStorage.setItem('token', res.data.token);
-    }
-
-    // Save user data
-    if (res.data.user) {
-      const userData = res.data.user;
-      localStorage.setItem('user', JSON.stringify(userData));
-      setUser(userData);
-      setIsAuthenticated(true);
-    }
-
-    // Save company info
-    if (companyIdentifier) {
-      localStorage.setItem('companyIdentifier', companyIdentifier);
-      localStorage.setItem('companyCode', companyIdentifier); // Also save as companyCode for consistency
-    }
-
-    if (companyDetails) {
-      localStorage.setItem('companyDetails', JSON.stringify(companyDetails));
-    }
-
-    toast.success("Login successful!");
-
-    // Check for redirect path in response or use default
-    let redirectPath = '/ciisUser/user-dashboard';
-    
-    if (res.data.redirectTo) {
-      redirectPath = res.data.redirectTo;
-    } else if (res.data.user?.role) {
-      redirectPath = res.data.user.role === 'admin' 
-        ? '/admin/dashboard' 
-        : '/ciisUser/user-dashboard';
-    }
-
-    console.log('Redirecting to:', redirectPath);
-    navigate(redirectPath);
-    
-  } catch (err) {
-    console.error('Login error details:', {
-      message: err.message,
-      response: err.response?.data,
-      status: err.response?.status,
-      config: {
-        url: err.config?.url,
-        data: err.config?.data
+      if (res.data.requiresTwoFactor) {
+        setTwoFactorRequired(true);
+        toast.info('Two-factor authentication required');
+        return;
       }
-    });
 
-    let errorMsg = 'Login failed. Please try again.';
-    let shouldRetry = false;
-
-    if (err.response?.data) {
-      const { errorCode, message, remainingAttempts } = err.response.data;
-
-      // Use server message if available
-      if (message) errorMsg = message;
-
-      switch (errorCode) {
-        case 'ACCOUNT_LOCKED':
-          const retryAfter = err.response.data.retryAfter;
-          const lockTime = new Date(retryAfter).toLocaleTimeString();
-          errorMsg = `Account locked until ${lockTime}. Please try again later.`;
-          break;
-
-        case 'ACCOUNT_DEACTIVATED':
-          errorMsg = 'Your account has been deactivated. Contact your administrator.';
-          break;
-
-        case 'SUBSCRIPTION_EXPIRED':
-          errorMsg = 'Company subscription has expired. Contact your company admin.';
-          break;
-
-        case 'INVALID_CREDENTIALS':
-          errorMsg = 'Invalid email or password.';
-          if (remainingAttempts !== undefined) {
-            errorMsg += ` ${remainingAttempts} attempts remaining.`;
-            shouldRetry = remainingAttempts > 0;
-          }
-          break;
-
-        case 'COMPANY_NOT_FOUND':
-          errorMsg = 'Company not found. Please check your URL.';
-          break;
-
-        case 'USER_NOT_FOUND':
-          errorMsg = 'No account found with this email.';
-          break;
-
-        case 'INVALID_COMPANY_CODE':
-          errorMsg = 'Invalid company code. Please check the URL.';
-          break;
-
-        default:
-          // For generic 401 error
-          if (err.response.status === 401) {
-            errorMsg = 'Invalid credentials. Please check your email and password.';
-          }
-          break;
+      // Save token
+      if (res.data.token) {
+        localStorage.setItem('token', res.data.token);
       }
-    } else if (err.code === 'ERR_NETWORK') {
-      errorMsg = 'Network error. Please check your connection.';
-    }
 
-    toast.error(errorMsg);
-    setErrors((prev) => ({ 
-      ...prev, 
-      general: errorMsg, 
-      shouldRetry 
-    }));
-    
-  } finally {
-    setLoading(false);
-  }
-};
+      // Save user data
+      if (res.data.user) {
+        const userData = res.data.user;
+        localStorage.setItem('user', JSON.stringify(userData));
+        setUser(userData);
+        setIsAuthenticated(true);
+      }
+
+      // Save company info
+      if (companyIdentifier) {
+        localStorage.setItem('companyIdentifier', companyIdentifier);
+        localStorage.setItem('companyCode', companyIdentifier);
+      }
+
+      if (companyDetails) {
+        localStorage.setItem('companyDetails', JSON.stringify(companyDetails));
+      }
+
+      toast.success("Login successful!");
+
+      // Check for redirect path in response or use default
+      let redirectPath = '/ciisUser/user-dashboard';
+      
+      if (res.data.redirectTo) {
+        redirectPath = res.data.redirectTo;
+      } else if (res.data.user?.role) {
+        redirectPath = res.data.user.role === 'admin' 
+          ? '/admin/dashboard' 
+          : '/ciisUser/user-dashboard';
+      }
+
+      console.log('Redirecting to:', redirectPath);
+      navigate(redirectPath);
+      
+    } catch (err) {
+      console.error('Login error details:', {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status,
+        config: {
+          url: err.config?.url,
+          data: err.config?.data
+        }
+      });
+
+      let errorMsg = 'Login failed. Please try again.';
+      let shouldRetry = false;
+
+      if (err.response?.data) {
+        const { errorCode, message, remainingAttempts } = err.response.data;
+
+        // Use server message if available
+        if (message) errorMsg = message;
+
+        switch (errorCode) {
+          case 'ACCOUNT_LOCKED':
+            const retryAfter = err.response.data.retryAfter;
+            const lockTime = new Date(retryAfter).toLocaleTimeString();
+            errorMsg = `Account locked until ${lockTime}. Please try again later.`;
+            break;
+
+          case 'ACCOUNT_DEACTIVATED':
+            errorMsg = 'Your account has been deactivated. Contact your administrator.';
+            break;
+
+          case 'SUBSCRIPTION_EXPIRED':
+            errorMsg = 'Company subscription has expired. Contact your company admin.';
+            break;
+
+          case 'INVALID_CREDENTIALS':
+            errorMsg = 'Invalid email or password.';
+            if (remainingAttempts !== undefined) {
+              errorMsg += ` ${remainingAttempts} attempts remaining.`;
+              shouldRetry = remainingAttempts > 0;
+            }
+            break;
+
+          case 'COMPANY_NOT_FOUND':
+            errorMsg = 'Company not found. Please check your URL.';
+            break;
+
+          case 'USER_NOT_FOUND':
+            errorMsg = 'No account found with this email.';
+            break;
+
+          case 'INVALID_COMPANY_CODE':
+            errorMsg = 'Invalid company code. Please check the URL.';
+            break;
+
+          default:
+            // For generic 401 error
+            if (err.response.status === 401) {
+              errorMsg = 'Invalid credentials. Please check your email and password.';
+            }
+            break;
+        }
+      } else if (err.code === 'ERR_NETWORK') {
+        errorMsg = 'Network error. Please check your connection.';
+      }
+
+      toast.error(errorMsg);
+      setErrors((prev) => ({ 
+        ...prev, 
+        general: errorMsg, 
+        shouldRetry 
+      }));
+      
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleTwoFactorSubmit = async () => {
     if (!twoFactorCode.trim()) {
@@ -321,570 +299,623 @@ const Login = () => {
     }
   };
 
+  // Icons as inline SVG components
+  const VisibilityIcon = () => (
+    <svg className="ciis-login-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+    </svg>
+  );
+
+  const VisibilityOffIcon = () => (
+    <svg className="ciis-login-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/>
+    </svg>
+  );
+
+  const LoginIcon = () => (
+    <svg className="ciis-login-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M11 7L9.6 8.4 12.2 11H2v2h10.2l-2.6 2.6L11 17l5-5-5-5zm9 12h-8v2h8c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-8v2h8v14z"/>
+    </svg>
+  );
+
+  const LockIcon = () => (
+    <svg className="ciis-login-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+    </svg>
+  );
+
+  const EmailIcon = () => (
+    <svg className="ciis-login-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V8l8 5 8-5v10zm-8-7L4 6h16l-8 5z"/>
+    </svg>
+  );
+
+  const BusinessIcon = () => (
+    <svg className="ciis-login-icon" width="48" height="48" viewBox="0 0 24 24" fill="white">
+      <path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/>
+    </svg>
+  );
+
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        p: isMobile ? 1 : 2
-      }}
-    >
-      <Container 
-        maxWidth="md" 
-        sx={{ 
-          px: isMobile ? 1 : 2,
-          py: isMobile ? 2 : 0
-        }}
-      >
-        <Fade in>
-          <Paper
-            elevation={isMobile ? 6 : 24}
-            sx={{
-              borderRadius: isMobile ? 2 : 4,
-              overflow: 'hidden',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-              minHeight: isMobile ? 'auto' : '600px'
-            }}
-          >
-            <Grid container sx={{ minHeight: isMobile ? 'auto' : '600px' }}>
-              {/* LEFT SECTION - Company Branding - Hidden on mobile, shown on tablet and desktop */}
-              {!isMobile && (
-                <Grid
-                  item
-                  xs={12}
-                  md={5}
-                  sx={{
-                    background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    p: isTablet ? 4 : 6,
-                    position: 'relative',
-                    overflow: 'hidden'
-                  }}
-                >
-                  {/* Subtle pattern overlay */}
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      backgroundImage: 'radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 1px, transparent 1px)',
-                      backgroundSize: '40px 40px',
-                      opacity: 0.3
-                    }}
-                  />
+    <div className="ciis-login-container">
+      <style>{`
+        .ciis-login-container {
+          min-height: 100vh;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 16px;
+         
+        }
 
-                  <Box
-                    sx={{
-                      position: 'relative',
-                      zIndex: 1,
-                      textAlign: 'center',
-                      color: 'white'
-                    }}
-                  >
-                    {/* Company Logo */}
-                    <Box
-                      sx={{
-                        width: isTablet ? 100 : 120,
-                        height: isTablet ? 100 : 120,
-                        borderRadius: 3,
-                        backgroundColor: 'white',
-                        backdropFilter: 'blur(10px)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        margin: '0 auto',
-                        mb: isTablet ? 3 : 4,
-                        border: '1px solid rgba(255, 255, 255, 0.2)',
-                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
-                      }}
-                    >
-                      {companyLoading ? (
-                        <CircularProgress size={isTablet ? 30 : 40} color="inherit" />
-                      ) : companyDetails?.logo ? (
-                        <Box
-                          component="img"
-                          src={companyDetails.logo}
-                          alt={companyDetails.companyName}
-                          sx={{
-                            width: isTablet ? 70 : 80,
-                            height: isTablet ? 70 : 80,
-                            objectFit: 'contain'
-                          }}
-                        />
-                      ) : (
-                        <Business
-                          sx={{
-                            fontSize: isTablet ? 40 : 48,
-                            color: 'white'
-                          }}
-                        />
-                      )}
-                    </Box>
+        .ciis-login-paper {
+          border-radius: 16px;
+          overflow: hidden;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+          background: white;
+          max-width: 900px;
+          width: 100%;
+          min-height: 600px;
+          display: flex;
+        }
 
-                    {/* Company Name */}
-                    <Typography
-                      variant={isTablet ? "h5" : "h4"}
-                      sx={{
-                        fontFamily: '"Oswald", sans-serif',
-                        fontWeight: 600,
-                        mb: 1,
-                        letterSpacing: '-0.5px',
-                        textShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                        fontSize: isTablet ? '1.5rem' : '2rem'
-                      }}
-                    >
-                      {companyLoading ? 'Loading...' : (companyDetails?.companyName || 'CIIS NETWORK')}
-                    </Typography>
+        .ciis-login-left {
+          background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 20px;
+          position: relative;
+          overflow: hidden;
+          flex: 0 0 40%;
+        }
 
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        opacity: 0.9,
-                        letterSpacing: '0.5px',
-                        fontSize: isTablet ? '0.875rem' : '1rem'
-                      }}
-                    >
-                      Secure Enterprise Portal
-                    </Typography>
-                  </Box>
-                </Grid>
+        .ciis-login-left-pattern {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-image: radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 1px, transparent 1px);
+          background-size: 40px 40px;
+          opacity: 0.3;
+        }
+
+        .ciis-login-left-content {
+          position: relative;
+          z-index: 1;
+          text-align: center;
+          color: white;
+        }
+
+        .ciis-login-logo-container {
+          // width: 220px;
+          // height: 120px;
+          border-radius: 12px;
+          background-color: rgba(255, 255, 255, 0.1);
+          backdrop-filter: blur(10px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0 auto 32px;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .ciis-login-logo {
+        padding: 8px;
+          // width: 180px;
+          // height: 80px;
+          object-fit: cover;
+        }
+
+        .ciis-login-company-name {
+          font-family: 'Oswald', sans-serif;
+          font-size: 2.125rem;
+          font-weight: 600;
+          margin-bottom: 8px;
+          letter-spacing: -0.5px;
+          text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          color: white;
+        }
+
+        .ciis-login-company-subtitle {
+          opacity: 0.9;
+          letter-spacing: 0.5px;
+          font-size: 0.875rem;
+          color: white;
+        }
+
+        .ciis-login-right {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          padding: 40px 48px;
+        }
+
+        .ciis-login-form-container {
+          max-width: 400px;
+          margin: 0 auto;
+          width: 100%;
+        }
+
+        .ciis-login-form-header {
+          text-align: center;
+          margin-bottom: 32px;
+        }
+
+        .ciis-login-form-title {
+          font-size: 2.125rem;
+          font-weight: 700;
+          margin-bottom: 8px;
+          color: #333;
+          letter-spacing: -0.5px;
+        }
+
+        .ciis-login-form-subtitle {
+          color: #666;
+          margin-bottom: 24px;
+          font-size: 1rem;
+        }
+
+        .ciis-login-error-alert {
+          background-color: #fdeded;
+          color: #5f2120;
+          padding: 12px 16px;
+          border-radius: 8px;
+          margin-bottom: 24px;
+          border: 1px solid #f5c6cb;
+          display: flex;
+          align-items: center;
+        }
+
+        .ciis-login-error-icon {
+          margin-right: 12px;
+          display: flex;
+          align-items: center;
+        }
+
+        .ciis-login-input-group {
+          margin-bottom: 16px;
+        }
+
+        .ciis-login-input-label {
+          display: block;
+          margin-bottom: 6px;
+          color: #333;
+          font-weight: 500;
+          font-size: 0.875rem;
+        }
+
+        .ciis-login-input-container {
+          position: relative;
+          display: flex;
+          align-items: center;
+        }
+
+        .ciis-login-input {
+          width: 100%;
+          padding: 12px 16px;
+          padding-left: 40px;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          font-size: 1rem;
+          transition: border-color 0.3s ease;
+        }
+
+        .ciis-login-input:focus {
+          outline: none;
+          border-color: #667eea;
+          box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+        }
+
+        .ciis-login-input-error {
+          border-color: #f44336;
+        }
+
+        .ciis-login-input-error:focus {
+          border-color: #f44336;
+          box-shadow: 0 0 0 2px rgba(244, 67, 54, 0.2);
+        }
+
+        .ciis-login-input-icon {
+          position: absolute;
+          left: 12px;
+          color: #777;
+        }
+
+        .ciis-login-input-adornment {
+          position: absolute;
+          right: 12px;
+          cursor: pointer;
+          color: #777;
+        }
+
+        .ciis-login-error-text {
+          color: #f44336;
+          font-size: 0.75rem;
+          margin-top: 4px;
+          display: block;
+        }
+
+        .ciis-login-button {
+          width: 100%;
+          padding: 14px;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-size: 1rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          margin-top: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 4px 14px 0 rgba(102, 126, 234, 0.4);
+        }
+
+        .ciis-login-button:hover {
+          background: linear-gradient(135deg, #5a6fd8 0%, #6a3a9a 100%);
+          box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        .ciis-login-button:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .ciis-login-button-icon {
+          margin-right: 8px;
+          display: flex;
+          align-items: center;
+        }
+
+        .ciis-login-spinner {
+          animation: ciis-spin 1s linear infinite;
+        }
+
+        @keyframes ciis-spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+
+        .ciis-login-terms {
+          margin-top: 32px;
+          text-align: center;
+          color: #999;
+          font-size: 0.75rem;
+          line-height: 1.5;
+        }
+
+        .ciis-login-link {
+          color: #999;
+          text-decoration: none;
+        }
+
+        .ciis-login-link:hover {
+          text-decoration: underline;
+        }
+
+        .ciis-login-two-factor-buttons {
+          display: flex;
+          gap: 16px;
+          margin-top: 24px;
+        }
+
+        .ciis-login-secondary-button {
+          flex: 1;
+          padding: 12px;
+          background: transparent;
+          border: 1px solid #667eea;
+          color: #667eea;
+          border-radius: 8px;
+          font-size: 1rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+
+        .ciis-login-secondary-button:hover {
+          background-color: rgba(102, 126, 234, 0.1);
+        }
+
+        .ciis-login-primary-button {
+          flex: 1;
+          padding: 12px;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-size: 1rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 14px 0 rgba(102, 126, 234, 0.4);
+        }
+
+        .ciis-login-primary-button:hover:not(:disabled) {
+          background: linear-gradient(135deg, #5a6fd8 0%, #6a3a9a 100%);
+          box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        .ciis-login-primary-button:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .ciis-login-fade-in {
+          animation: ciis-fade-in 0.5s ease-in-out;
+        }
+
+        @keyframes ciis-fade-in {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive styles */
+        @media (max-width: 768px) {
+          .ciis-login-paper {
+            flex-direction: column;
+            min-height: auto;
+          }
+
+          .ciis-login-left {
+            padding: 32px 24px;
+            flex: none;
+            min-height: 250px;
+          }
+
+          .ciis-login-right {
+            padding: 32px 24px;
+          }
+
+          .ciis-login-form-title {
+            font-size: 1.75rem;
+          }
+
+          .ciis-login-company-name {
+            font-size: 1.75rem;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .ciis-login-container {
+            padding: 8px;
+          }
+
+          .ciis-login-left {
+            padding: 24px 16px;
+          }
+
+          .ciis-login-right {
+            padding: 24px 16px;
+          }
+
+          .ciis-login-logo-container {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 24px;
+          }
+
+          .ciis-login-logo {
+            width: 60px;
+            height: 60px;
+          }
+
+          .ciis-login-two-factor-buttons {
+            flex-direction: column;
+          }
+        }
+      `}</style>
+
+      <div className="ciis-login-paper ciis-login-fade-in">
+        {/* LEFT SECTION - Company Branding */}
+        <div className="ciis-login-left">
+          <div className="ciis-login-left-pattern"></div>
+          
+          <div className="ciis-login-left-content">
+            {/* Company Logo */}
+            <div className="ciis-login-logo-container"  onClick={() => navigate('/dashboard')}
+  style={{ cursor: 'pointer' }}
+  title="Go to Dashboard">
+              {companyLoading ? (
+                <div style={{ color: 'white', display: 'flex', alignItems: 'center' }}>
+                  <div className="ciis-login-spinner" style={{ width: '40px', height: '40px', border: '3px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%' }}></div>
+                </div>
+              ) : companyDetails?.logo ? (
+                <img 
+                  src={companyDetails.logo} 
+                  alt={companyDetails.companyName} 
+                  className="ciis-login-logo"
+                />
+              ) : (
+                <BusinessIcon />
               )}
+            </div>
 
-              {/* RIGHT SECTION - Login Form */}
-              <Grid
-                item
-                xs={12}
-                md={isDesktop ? 7 : (isTablet ? 12 : 12)}
-                sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'center',
-                  p: isMobile ? 3 : isTablet ? 4 : 6
-                }}
-              >
-                <Box sx={{ 
-                  maxWidth: '400px', 
-                  mx: 'auto', 
-                  width: '100%',
-                  mt: isMobile ? 2 : 0
-                }}>
-                  {/* Mobile Logo */}
-                  {isMobile && (
-                    <Box sx={{ textAlign: 'center', mb: 3 }}>
-                      <Box
-                        sx={{
-                          width: 80,
-                          height: 80,
-                          borderRadius: '50%',
-                          backgroundColor: 'white',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          margin: '0 auto 16px',
-                          border: '2px solid rgba(0, 0, 0, 0.1)',
-                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
-                        }}
-                      >
-                        {companyLoading ? (
-                          <CircularProgress size={30} color="inherit" />
-                        ) : companyDetails?.logo ? (
-                          <Box
-                            component="img"
-                            src={companyDetails.logo}
-                            alt={companyDetails.companyName}
-                            sx={{
-                              width: 50,
-                              height: 50,
-                              objectFit: 'contain',
-                              borderRadius: '50%'
-                            }}
-                          />
-                        ) : (
-                          <Business
-                            sx={{
-                              fontSize: 36,
-                              color: '#4f46e5'
-                            }}
-                          />
-                        )}
-                      </Box>
-                      <Typography
-                        variant="h5"
-                        sx={{
-                          fontFamily: '"Oswald", sans-serif',
-                          fontWeight: 600,
-                          mb: 1,
-                          color: 'text.primary'
-                        }}
-                      >
-                        {companyLoading ? 'Loading...' : (companyDetails?.companyName || 'CIIS NETWORK')}
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          color: 'text.secondary',
-                          mb: 2
-                        }}
-                      >
-                        Secure Enterprise Portal
-                      </Typography>
-                    </Box>
-                  )}
+            {/* Company Name */}
+            <h1 className="ciis-login-company-name">
+              {companyLoading ? 'Loading...' : (companyDetails?.companyName || 'CIIS NETWORK')}
+            </h1>
 
-                  {/* Form Header */}
-                  <Box sx={{ textAlign: 'center', mb: isMobile ? 3 : 4 }}>
-                    <Typography
-                      variant={isMobile ? "h5" : "h4"}
-                      sx={{
-                        fontWeight: 700,
-                        mb: 1,
-                        color: 'text.primary',
-                        letterSpacing: '-0.5px',
-                        fontSize: isMobile ? '1.5rem' : isTablet ? '1.75rem' : '2rem'
-                      }}
+            <p className="ciis-login-company-subtitle">
+              Secure Enterprise Portal
+            </p>
+          </div>
+        </div>
+
+        {/* RIGHT SECTION - Login Form */}
+        <div className="ciis-login-right">
+          <div className="ciis-login-form-container">
+            {/* Form Header */}
+            <div className="ciis-login-form-header">
+              <h2 className="ciis-login-form-title">
+                {twoFactorRequired ? 'Two-Factor Authentication' : 'Welcome Back'}
+              </h2>
+              <p className="ciis-login-form-subtitle">
+                {twoFactorRequired
+                  ? 'Enter the code from your authenticator app'
+                  : `Sign in to ${companyDetails?.companyName || 'CIIS NETWORK'}`}
+              </p>
+            </div>
+
+            {/* Error Alert */}
+            {errors.general && (
+              <div className="ciis-login-error-alert">
+                <div className="ciis-login-error-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="#5f2120">
+                    <path d="M11 15h2v2h-2zm0-8h2v6h-2zm.99-5C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/>
+                  </svg>
+                </div>
+                {errors.general}
+              </div>
+            )}
+
+            {/* Login Form */}
+            {!twoFactorRequired ? (
+              <form onSubmit={handleSubmit}>
+                {/* Email Input */}
+                <div className="ciis-login-input-group">
+                  <label className="ciis-login-input-label">Email Address</label>
+                  <div className="ciis-login-input-container">
+                    <div className="ciis-login-input-icon">
+                      <EmailIcon />
+                    </div>
+                    <input
+                      type="email"
+                      name="email"
+                      value={form.email}
+                      onChange={handleChange}
+                      disabled={loading}
+                      autoComplete="email"
+                      className={`ciis-login-input ${errors.email ? 'ciis-login-input-error' : ''}`}
+                      placeholder="Enter your email"
+                    />
+                  </div>
+                  {errors.email && <span className="ciis-login-error-text">{errors.email}</span>}
+                </div>
+
+                {/* Password Input */}
+                <div className="ciis-login-input-group">
+                  <label className="ciis-login-input-label">Password</label>
+                  <div className="ciis-login-input-container">
+                    <div className="ciis-login-input-icon">
+                      <LockIcon />
+                    </div>
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      name="password"
+                      value={form.password}
+                      onChange={handleChange}
+                      disabled={loading}
+                      autoComplete="current-password"
+                      className={`ciis-login-input ${errors.password ? 'ciis-login-input-error' : ''}`}
+                      placeholder="Enter your password"
+                    />
+                    <div 
+                      className="ciis-login-input-adornment"
+                      onClick={() => setShowPassword(!showPassword)}
                     >
-                      {twoFactorRequired ? 'Two-Factor Authentication' : 'Welcome Back'}
-                    </Typography>
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        color: 'text.secondary',
-                        mb: 3,
-                        fontSize: isMobile ? '0.9rem' : '1rem'
-                      }}
-                    >
-                      {twoFactorRequired
-                        ? 'Enter the code from your authenticator app'
-                        : `Sign in to ${companyDetails?.companyName || 'CIIS NETWORK'}`}
-                    </Typography>
-                  </Box>
+                      {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                    </div>
+                  </div>
+                  {errors.password && <span className="ciis-login-error-text">{errors.password}</span>}
+                </div>
 
-                  {/* Error Alert */}
-                  {errors.general && (
-                    <Alert
-                      severity="error"
-                      sx={{
-                        mb: 3,
-                        borderRadius: 2,
-                        fontSize: isMobile ? '0.875rem' : '0.9rem'
-                      }}
-                    >
-                      {errors.general}
-                    </Alert>
-                  )}
-
-                  {/* Login Form */}
-                  {!twoFactorRequired ? (
-                    <form onSubmit={handleSubmit}>
-                      {/* Email Input */}
-                      <TextField
-                        fullWidth
-                        label="Email Address"
-                        name="email"
-                        type="email"
-                        value={form.email}
-                        onChange={handleChange}
-                        error={!!errors.email}
-                        helperText={errors.email}
-                        disabled={loading}
-                        autoComplete="email"
-                        margin="normal"
-                        size={isMobile ? "small" : "medium"}
-                        sx={{
-                          '& .MuiOutlinedInput-root': {
-                            borderRadius: 2,
-                            fontSize: isMobile ? '0.9rem' : '1rem',
-                            '&:hover fieldset': {
-                              borderColor: 'primary.main'
-                            }
-                          }
-                        }}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <EmailOutlined 
-                                fontSize={isMobile ? "small" : "medium"} 
-                                color="action" 
-                              />
-                            </InputAdornment>
-                          )
-                        }}
-                      />
-
-                      {/* Password Input */}
-                      <TextField
-                        fullWidth
-                        label="Password"
-                        name="password"
-                        type={showPassword ? 'text' : 'password'}
-                        value={form.password}
-                        onChange={handleChange}
-                        error={!!errors.password}
-                        helperText={errors.password}
-                        disabled={loading}
-                        autoComplete="current-password"
-                        margin="normal"
-                        size={isMobile ? "small" : "medium"}
-                        sx={{
-                          '& .MuiOutlinedInput-root': {
-                            borderRadius: 2,
-                            fontSize: isMobile ? '0.9rem' : '1rem',
-                            '&:hover fieldset': {
-                              borderColor: 'primary.main'
-                            }
-                          }
-                        }}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <LockOutlined 
-                                fontSize={isMobile ? "small" : "medium"} 
-                                color="action" 
-                              />
-                            </InputAdornment>
-                          ),
-                          endAdornment: (
-                            <InputAdornment position="end">
-                              <IconButton
-                                onClick={() => setShowPassword(!showPassword)}
-                                edge="end"
-                                size={isMobile ? "small" : "medium"}
-                              >
-                                {showPassword ? 
-                                  <VisibilityOff fontSize={isMobile ? "small" : "medium"} /> : 
-                                  <Visibility fontSize={isMobile ? "small" : "medium"} />
-                                }
-                              </IconButton>
-                            </InputAdornment>
-                          )
-                        }}
-                      />
-
-                      {/* Forgot Password Link */}
-                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-                        <Link
-                          href={`${window.location.pathname.replace('/login', '/forgot-password')}`}
-                          variant="body2"
-                          sx={{
-                            color: 'primary.main',
-                            textDecoration: 'none',
-                            fontWeight: 500,
-                            fontSize: isMobile ? '0.8rem' : '0.875rem',
-                            '&:hover': {
-                              textDecoration: 'underline'
-                            }
-                          }}
-                        >
-                          Forgot password?
-                        </Link>
-                      </Box>
-
-                      {/* Sign In Button */}
-                      <Button
-                        type="submit"
-                        fullWidth
-                        variant="contained"
-                        disabled={loading}
-                        sx={{
-                          mt: 3,
-                          py: isMobile ? 1 : 1.5,
-                          borderRadius: 2,
-                          fontSize: isMobile ? '0.9rem' : '1rem',
-                          fontWeight: 600,
-                          textTransform: 'none',
-                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                          boxShadow: '0 4px 14px 0 rgba(102, 126, 234, 0.4)',
-                          '&:hover': {
-                            background: 'linear-gradient(135deg, #5a6fd8 0%, #6a3a9a 100%)',
-                            boxShadow: '0 6px 20px rgba(102, 126, 234, 0.5)'
-                          }
-                        }}
-                        startIcon={
-                          loading ? (
-                            <CircularProgress 
-                              size={isMobile ? 16 : 20} 
-                              color="inherit" 
-                            />
-                          ) : (
-                            <LoginIcon fontSize={isMobile ? "small" : "medium"} />
-                          )
-                        }
-                      >
-                        {loading ? 'Signing in...' : 'Sign In'}
-                      </Button>
-
-                      {/* Sign Up Link */}
-                      <Box sx={{ mt: 3, textAlign: 'center' }}>
-                        <Typography 
-                          variant="body2" 
-                          sx={{ 
-                            color: 'text.secondary',
-                            fontSize: isMobile ? '0.8rem' : '0.875rem'
-                          }}
-                        >
-                          Don't have an account?{' '}
-                          <Link
-                            href={`${window.location.pathname.replace('/login', '/register')}`}
-                            variant="body2"
-                            sx={{
-                              color: 'primary.main',
-                              fontWeight: 600,
-                              textDecoration: 'none',
-                              fontSize: isMobile ? '0.8rem' : '0.875rem',
-                              '&:hover': {
-                                textDecoration: 'underline'
-                              }
-                            }}
-                          >
-                            Sign up
-                          </Link>
-                        </Typography>
-                      </Box>
-                    </form>
+                {/* Sign In Button */}
+                <button
+                  type="submit"
+                  className="ciis-login-button"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <div className="ciis-login-button-icon">
+                        <div className="ciis-login-spinner" style={{ width: '20px', height: '20px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%' }}></div>
+                      </div>
+                      Signing in...
+                    </>
                   ) : (
-                    /* Two-Factor Authentication Form */
-                    <Box>
-                      <TextField
-                        fullWidth
-                        label="Enter 6-digit code"
-                        value={twoFactorCode}
-                        onChange={(e) => {
-                          const value = e.target.value.replace(/\D/g, '').slice(0, 6);
-                          setTwoFactorCode(value);
-                          if (errors.twoFactor) {
-                            setErrors((prev) => ({ ...prev, twoFactor: '' }));
-                          }
-                        }}
-                        error={!!errors.twoFactor}
-                        helperText={errors.twoFactor}
-                        disabled={loading}
-                        margin="normal"
-                        size={isMobile ? "small" : "medium"}
-                        sx={{
-                          '& .MuiOutlinedInput-root': {
-                            borderRadius: 2,
-                            fontSize: isMobile ? '0.9rem' : '1rem'
-                          }
-                        }}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <LockOutlined 
-                                fontSize={isMobile ? "small" : "medium"} 
-                                color="action" 
-                              />
-                            </InputAdornment>
-                          )
-                        }}
-                      />
-
-                      <Box sx={{ 
-                        mt: 3, 
-                        display: 'flex', 
-                        gap: 2,
-                        flexDirection: isMobile ? 'column' : 'row'
-                      }}>
-                        <Button
-                          fullWidth
-                          variant="outlined"
-                          onClick={() => setTwoFactorRequired(false)}
-                          disabled={loading}
-                          sx={{
-                            borderRadius: 2,
-                            textTransform: 'none',
-                            fontWeight: 600,
-                            py: isMobile ? 1 : 1.5,
-                            fontSize: isMobile ? '0.9rem' : '1rem'
-                          }}
-                        >
-                          Back
-                        </Button>
-
-                        <Button
-                          fullWidth
-                          variant="contained"
-                          onClick={handleTwoFactorSubmit}
-                          disabled={loading || twoFactorCode.length !== 6}
-                          sx={{
-                            borderRadius: 2,
-                            textTransform: 'none',
-                            fontWeight: 600,
-                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                            boxShadow: '0 4px 14px 0 rgba(102, 126, 234, 0.4)',
-                            py: isMobile ? 1 : 1.5,
-                            fontSize: isMobile ? '0.9rem' : '1rem',
-                            '&:hover': {
-                              background: 'linear-gradient(135deg, #5a6fd8 0%, #6a3a9a 100%)',
-                              boxShadow: '0 6px 20px rgba(102, 126, 234, 0.5)'
-                            }
-                          }}
-                        >
-                          {loading ? 'Verifying...' : 'Verify'}
-                        </Button>
-                      </Box>
-
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          mt: 2,
-                          textAlign: 'center',
-                          color: 'text.secondary',
-                          fontSize: isMobile ? '0.8rem' : '0.875rem'
-                        }}
-                      >
-                        Having trouble?{' '}
-                        <Link href="#" variant="body2" sx={{ 
-                          fontWeight: 600,
-                          fontSize: isMobile ? '0.8rem' : '0.875rem'
-                        }}>
-                          Resend code
-                        </Link>
-                      </Typography>
-                    </Box>
+                    <>
+                      <div className="ciis-login-button-icon">
+                        <LoginIcon />
+                      </div>
+                      Sign In
+                    </>
                   )}
-
-                  {/* Terms & Privacy */}
-                  <Box sx={{ mt: 4, textAlign: 'center' }}>
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        color: 'text.disabled',
-                        lineHeight: 1.5,
-                        display: 'block',
-                        fontSize: isMobile ? '0.7rem' : '0.75rem'
+                </button>
+              </form>
+            ) : (
+              /* Two-Factor Authentication Form */
+              <div>
+                <div className="ciis-login-input-group">
+                  <label className="ciis-login-input-label">Enter 6-digit code</label>
+                  <div className="ciis-login-input-container">
+                    <div className="ciis-login-input-icon">
+                      <LockIcon />
+                    </div>
+                    <input
+                      type="text"
+                      value={twoFactorCode}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                        setTwoFactorCode(value);
+                        if (errors.twoFactor) {
+                          setErrors((prev) => ({ ...prev, twoFactor: '' }));
+                        }
                       }}
-                    >
-                      By signing in, you agree to our{' '}
-                      <Link href="#" variant="caption" sx={{ 
-                        color: 'text.disabled',
-                        fontSize: isMobile ? '0.7rem' : '0.75rem'
-                      }}>
-                        Terms of Service
-                      </Link>{' '}
-                      and{' '}
-                      <Link href="#" variant="caption" sx={{ 
-                        color: 'text.disabled',
-                        fontSize: isMobile ? '0.7rem' : '0.75rem'
-                      }}>
-                        Privacy Policy
-                      </Link>
-                    </Typography>
-                  </Box>
-                </Box>
-              </Grid>
-            </Grid>
-          </Paper>
-        </Fade>
-      </Container>
-    </Box>
+                      disabled={loading}
+                      className={`ciis-login-input ${errors.twoFactor ? 'ciis-login-input-error' : ''}`}
+                      placeholder="Enter authentication code"
+                    />
+                  </div>
+                  {errors.twoFactor && <span className="ciis-login-error-text">{errors.twoFactor}</span>}
+                </div>
+
+                <div className="ciis-login-two-factor-buttons">
+                  <button
+                    className="ciis-login-secondary-button"
+                    onClick={() => setTwoFactorRequired(false)}
+                    disabled={loading}
+                  >
+                    Back
+                  </button>
+
+                  <button
+                    className="ciis-login-primary-button"
+                    onClick={handleTwoFactorSubmit}
+                    disabled={loading || twoFactorCode.length !== 6}
+                  >
+                    {loading ? 'Verifying...' : 'Verify'}
+                  </button>
+                </div>
+
+                <div style={{ marginTop: '16px', textAlign: 'center', color: '#666' }}>
+                  <small>
+                    Having trouble?{' '}
+                    <a href="#" style={{ color: '#667eea', fontWeight: 600, textDecoration: 'none' }}>
+                      Resend code
+                    </a>
+                  </small>
+                </div>
+              </div>
+            )}
+
+            {/* Terms & Privacy */}
+            <div className="ciis-login-terms">
+              By signing in, you agree to our{' '}
+              <a href="#" className="ciis-login-link">Terms of Service</a> and{' '}
+              <a href="#" className="ciis-login-link">Privacy Policy</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

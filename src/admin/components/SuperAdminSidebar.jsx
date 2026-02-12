@@ -119,13 +119,13 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
   }, []);
 
   const ciisUserMenuItems = [
-    { heading: 'Dashboard' },
-    { 
-      icon: <DashboardIcon />, 
-      name: 'Super Admin Dashboard', 
-      route: '/Ciis-network/SuperAdminDashboard',
-      showForRoles: ['Owner'] // केवल Owner के लिए
-    },
+    // { heading: 'Dashboard' },
+    // { 
+    //   icon: <DashboardIcon />, 
+    //   name: 'Super Admin Dashboard', 
+    //   route: '/Ciis-network/SuperAdminDashboard',
+    //   showForRoles: ['Owner'] // केवल Owner के लिए
+    // },
     
     { heading: 'Company Management' },
     { 

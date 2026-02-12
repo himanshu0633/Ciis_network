@@ -106,7 +106,7 @@ const handleLogout = () => {
   // This is more customizable and looks better than window.confirm
   if (window.confirm('Are you sure you want to logout?')) {
     localStorage.removeItem('token');
-    navigate('/login');
+    navigate('/');
     
     // Optional: Show success message
     alert('Logged out successfully!'); // or use toast notification
@@ -245,7 +245,7 @@ const handleLogout = () => {
             <Divider />
             <MenuItem disabled>
               <ListItemIcon><VersionIcon fontSize="small" /></ListItemIcon>
-              <ListItemText>Version 5.2.10</ListItemText>
+              <ListItemText>Version 5.2.11</ListItemText>
             </MenuItem>
             <MenuItem>
               <ListItemIcon><ViewLogsIcon fontSize="small" /></ListItemIcon>

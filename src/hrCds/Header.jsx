@@ -35,7 +35,7 @@ const Header = ({ toggleSidebar, isMobile }) => {
 
   // Logo click handler
   const handleLogoClick = () => {
-    navigate("/cds/user-dashboard");
+    navigate("/ciisUser/user-dashboard");
   };
 
   // Fetch notifications only on button click

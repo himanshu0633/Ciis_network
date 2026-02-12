@@ -18,7 +18,7 @@ import {
 
 const SuperAdminDashboard = () => {
   const navigate = useNavigate();
-  // const API_BASE = "http://localhost:3000/api";
+  
 
 
 
@@ -160,17 +160,17 @@ const SuperAdminDashboard = () => {
       console.log("📤 Request Headers:", headers);
 
       // ✅ Fetch stats
-      console.log("📊 Fetching stats from:", `${API_URL}/super-admin/stats`);
-      const statsRes = await axios.get(`${API_URL}/super-admin/stats`, {
+      console.log("📊 Fetching stats from:", `${API_URL}/superAdmin/stats`);
+      const statsRes = await axios.get(`${API_URL}/superAdmin/stats`, {
         headers,
       });
       console.log("✅ Stats API Response:", statsRes.data);
       setStats(statsRes.data);
 
       // ✅ Fetch companies
-      console.log("🏢 Fetching companies from:", `${API_URL}/super-admin/companies`);
+      console.log("🏢 Fetching companies from:", `${API_URL}/superAdmin/companies`);
       const companiesRes = await axios.get(
-        `${API_URL}/super-admin/companies`,
+        `${API_URL}/superAdmin/companies`,
         { headers }
       );
       console.log(`✅ Companies API Response: ${companiesRes.data.length} companies found`);
@@ -178,8 +178,8 @@ const SuperAdminDashboard = () => {
       setCompanies(companiesRes.data);
 
       // ✅ Fetch users
-      console.log("👥 Fetching users from:", `${API_URL}/super-admin/users`);
-      const usersRes = await axios.get(`${API_URL}/super-admin/users`, {
+      console.log("👥 Fetching users from:", `${API_URL}/superAdmin/users`);
+      const usersRes = await axios.get(`${API_URL}/superAdmin/users`, {
         headers,
       });
       console.log(`✅ Users API Response: ${usersRes.data.length} users found`);
@@ -269,7 +269,7 @@ const handleCreateUser = () => {
 
       if (action === "deactivate") {
         await axios.patch(
-          `${API_URL}/super-admin/company/${companyId}/deactivate`,
+          `${API_URL}/superAdmin/company/${companyId}/deactivate`,
           {},
           { headers }
         );
@@ -277,7 +277,7 @@ const handleCreateUser = () => {
         toast.success("Company deactivated");
       } else if (action === "activate") {
         await axios.patch(
-          `${API_URL}/super-admin/company/${companyId}/activate`,
+          `${API_URL}/superAdmin/company/${companyId}/activate`,
           {},
           { headers }
         );
@@ -293,7 +293,7 @@ const handleCreateUser = () => {
         }
 
         console.log(`🗑️ Deleting company ${companyId}...`);
-        await axios.delete(`${API_URL}/super-admin/company/${companyId}`, {
+        await axios.delete(`${API_URL}/superAdmin/company/${companyId}`, {
           headers,
         });
         console.log(`✅ Company ${companyId} deleted successfully`);

@@ -84,7 +84,7 @@ function App() {
             </ThemeContextProvider>
           }
         >
-<Route path="company-details" element={<CompanyDetails />} />
+          <Route path="company-details" element={<CompanyDetails />} />
           <Route path="department" element={<Department />} />
           <Route path="create-user" element={<CreateUser />} />
           <Route path="SuperAdminDashboard" element={<SuperAdminDashboard />} />

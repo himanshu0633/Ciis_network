@@ -141,7 +141,7 @@ const TaskDetailsModal = ({ task, open, onClose, projectManagers = [] }) => {
               <p>
                 {new Date(task.completedAt).toLocaleDateString()} at{' '}
                 {new Date(task.completedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </p>
+            </p>
             </div>
           )}
         </div>
@@ -624,13 +624,13 @@ const ServicesModal = ({ open, onClose, services, onAddService, onDeleteService,
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
     if (newService.trim()) {
       onAddService(newService.trim());
       setNewService('');
     }
   };
 
-  // Filter services by companyCode
   const filteredServices = companyCode 
     ? services.filter(service => service.companyCode === companyCode)
     : services;
@@ -763,12 +763,10 @@ const AddClientModal = ({
   const [teamOpen, setTeamOpen] = useState(false);
   const [servicesOpen, setServicesOpen] = useState(false);
 
-  // Filter services by companyCode
   const filteredServices = companyCode 
     ? services.filter(service => service.companyCode === companyCode)
     : services;
 
-  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (!event.target.closest('.dropdown-container')) {
@@ -785,7 +783,7 @@ const AddClientModal = ({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    
     if (
       newClient.client &&
       newClient.company &&
@@ -810,13 +808,11 @@ const AddClientModal = ({
           ...newClient,
           projectManagers: formattedProjectManagers,
           projectManager: selectedManagers.map(pm => pm.name),
-          companyCode: companyCode // Add companyCode to client data
+          companyCode: companyCode
         };
 
-        // ✅ Save client
         await onAddClient(clientData);
 
-        // ✅ Reset form
         setNewClient({
           client: '',
           company: '',
@@ -832,7 +828,6 @@ const AddClientModal = ({
           notes: ''
         });
 
-        // ✅ Save hone ke baad page refresh
         window.location.reload();
 
       } catch (error) {
@@ -920,7 +915,6 @@ const AddClientModal = ({
                 </select>
               </div>
 
-              {/* Team Dropdown */}
               <div className="form-group col-span-2">
                 <label className="form-label">Team *</label>
                 <div className="dropdown-wrapper">
@@ -985,9 +979,6 @@ const AddClientModal = ({
                                     <span>•</span>
                                     <span>{manager.email || 'No email'}</span>
                                   </div>
-                                  <div style={{ fontSize: '10px', color: '#888' }}>
-                                    ID: {manager._id?.slice(-6) || 'N/A'}
-                                  </div>
                                 </div>
                               </div>
                             </label>
@@ -995,9 +986,6 @@ const AddClientModal = ({
                         ) : (
                           <div className="dropdown-empty">
                             <p>No users found</p>
-                            <p style={{ fontSize: '12px', color: '#666' }}>
-                              Debug: projectManagers length = {projectManagers?.length || 0}
-                            </p>
                           </div>
                         )}
                       </div>
@@ -1005,7 +993,6 @@ const AddClientModal = ({
                   )}
                 </div>
                 
-                {/* Selected Managers Preview */}
                 {newClient.projectManagers.length > 0 && (
                   <div className="selected-items-preview">
                     {newClient.projectManagers.map(managerId => {
@@ -1033,7 +1020,6 @@ const AddClientModal = ({
                 )}
               </div>
 
-              {/* Services Dropdown */}
               <div className="form-group col-span-2">
                 <label className="form-label">Services</label>
                 {filteredServices.length === 0 && (
@@ -1099,7 +1085,6 @@ const AddClientModal = ({
                   )}
                 </div>
                 
-                {/* Selected Services Preview */}
                 {newClient.services.length > 0 && (
                   <div className="selected-items-preview">
                     {newClient.services.map((serviceName, index) => (
@@ -1224,7 +1209,6 @@ const ClientManagement = () => {
   const [addClientModal, setAddClientModal] = useState(false);
   const [taskCounts, setTaskCounts] = useState({});
   
-  // Add companyCode and companyIdentifier states
   const [companyCode, setCompanyCode] = useState('');
   const [companyIdentifier, setCompanyIdentifier] = useState('');
   
@@ -1266,30 +1250,19 @@ const ClientManagement = () => {
     timeout: 10000,
   });
 
-  // Fetch companyCode and companyIdentifier from localStorage
   useEffect(() => {
     const fetchCompanyInfo = () => {
       try {
-        let companyCode = '';
-        let companyIdentifier = '';
+        const localStorageCompany = localStorage.getItem('company') || '';
+        const localStorageCompanyDetails = localStorage.getItem('companyDetails') || '';
         
-        // 1. Fetch companyCode
-        companyCode = localStorage.getItem('companyCode') || '';
+        const companyCodeFromStorage = localStorage.getItem('companyCode') || localStorageCompany;
+        const companyIdentifierFromStorage = localStorage.getItem('companyIdentifier') || localStorageCompanyDetails;
         
-        // 2. Fetch companyIdentifier
-        companyIdentifier = localStorage.getItem('companyIdentifier') || '';
+        setCompanyCode(companyCodeFromStorage);
+        setCompanyIdentifier(companyIdentifierFromStorage);
         
-        console.log('Company Info from localStorage:', { 
-          companyCode, 
-          companyIdentifier,
-          localStorageKeys: Object.keys(localStorage) 
-        });
-        
-        setCompanyCode(companyCode);
-        setCompanyIdentifier(companyIdentifier);
-        
-        if (!companyCode && !companyIdentifier) {
-          console.warn('Neither companyCode nor companyIdentifier found in localStorage');
+        if (!companyCodeFromStorage && !companyIdentifierFromStorage) {
           setError('Company information not found. Please login again.');
         } else {
           setError('');
@@ -1303,18 +1276,12 @@ const ClientManagement = () => {
     fetchCompanyInfo();
   }, []);
 
-  // Project managers fetch function
   const fetchProjectManagers = async () => {
     try {
-      console.log('Fetching project managers...');
-      
       const response = await usersApi.get('/company-users');
-      console.log('Full Response:', response.data);
       
       if (response.data && response.data.success) {
         const messageData = response.data.message;
-        console.log('Message Data:', messageData);
-        
         const users = messageData?.users || [];
         const currentUser = messageData?.currentUser;
         
@@ -1348,10 +1315,8 @@ const ClientManagement = () => {
           isActive: user.isActive || true
         }));
         
-        console.log('Formatted Managers for dropdown:', formattedManagers);
         setProjectManagers(formattedManagers);
       } else {
-        console.log('API not successful or no data');
         setProjectManagers([{
           _id: "6980f49fc3721b782411d938",
           name: "ITmanger",
@@ -1363,12 +1328,6 @@ const ClientManagement = () => {
       }
     } catch (error) {
       console.error('Error fetching project managers:', error);
-      console.error('Error details:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status
-      });
-      
       setProjectManagers([{
         _id: "6980f49fc3721b782411d938",
         name: "ITmanger",
@@ -1390,6 +1349,7 @@ const ClientManagement = () => {
         return config;
       },
       (error) => {
+        console.error('API Request Error:', error);
         return Promise.reject(error);
       }
     );
@@ -1409,15 +1369,9 @@ const ClientManagement = () => {
 
     const usersRequestInterceptor = usersApi.interceptors.request.use(
       (config) => {
-        console.log('Users API Request:', {
-          url: config.url,
-          method: config.method,
-          headers: config.headers
-        });
         const token = localStorage.getItem('token') || localStorage.getItem('authToken');
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
-          console.log('Token attached:', token.slice(0, 20) + '...');
         }
         return config;
       },
@@ -1433,16 +1387,6 @@ const ClientManagement = () => {
       usersApi.interceptors.request.eject(usersRequestInterceptor);
     };
   }, []);
-
-  // Debug useEffect for projectManagers
-  useEffect(() => {
-    console.log('Project Managers State Updated:', {
-      count: projectManagers.length,
-      data: projectManagers,
-      type: typeof projectManagers,
-      isArray: Array.isArray(projectManagers)
-    });
-  }, [projectManagers]);
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({
@@ -1474,22 +1418,29 @@ const ClientManagement = () => {
     try {
       setLoading(true);
       
-      // Fetch project managers first
       await fetchProjectManagers();
       
-      // Prepare API parameters - don't send identifiers to backend
       const apiParams = {
-        ...filters
+        ...filters,
+        companyCode: companyCode || undefined,
+        companyIdentifier: companyIdentifier || undefined
       };
       
       const [clientsRes, servicesRes] = await Promise.all([
         api.get('/', { params: apiParams }),
-        api.get('/services')
+        api.get('/services', { 
+          params: { 
+            companyCode: companyCode || undefined,
+            companyIdentifier: companyIdentifier || undefined
+          } 
+        })
       ]);
       
       if (servicesRes.data?.success) {
         const allServices = servicesRes.data.data || [];
         setServices(allServices);
+      } else {
+        setServices([]);
       }
       
       if (clientsRes.data?.success) {
@@ -1506,7 +1457,6 @@ const ClientManagement = () => {
           };
         });
         
-        // Store all clients, we'll filter them in getFilteredClients
         setClients(enhancedClients);
         
         if (clientsRes.data.pagination) {
@@ -1538,42 +1488,22 @@ const ClientManagement = () => {
   };
 
   useEffect(() => {
-    fetchData();
-  }, [filters]);
+    if (companyCode || companyIdentifier) {
+      fetchData();
+    }
+  }, [filters, companyCode, companyIdentifier]);
 
-  // Function to filter clients based on companyCode OR companyIdentifier
   const getFilteredClients = () => {
     if (!companyCode && !companyIdentifier) {
-      console.log('No company info found, showing all clients');
       return clients;
     }
     
-    const filtered = clients.filter(client => {
+    return clients.filter(client => {
       const hasMatchingCompanyCode = client.companyCode === companyCode;
       const hasMatchingCompanyIdentifier = client.companyIdentifier === companyIdentifier;
       
-      // Debug logging for each client
-      console.log(`Client: ${client.client}`, {
-        clientCompanyCode: client.companyCode,
-        clientCompanyIdentifier: client.companyIdentifier,
-        localStorageCompanyCode: companyCode,
-        localStorageCompanyIdentifier: companyIdentifier,
-        matchesCode: hasMatchingCompanyCode,
-        matchesIdentifier: hasMatchingCompanyIdentifier,
-        shouldShow: hasMatchingCompanyCode || hasMatchingCompanyIdentifier
-      });
-      
       return hasMatchingCompanyCode || hasMatchingCompanyIdentifier;
     });
-    
-    console.log('Filtered Clients:', {
-      totalClients: clients.length,
-      filteredCount: filtered.length,
-      companyCode,
-      companyIdentifier
-    });
-    
-    return filtered;
   };
 
   const fetchClientTasks = async (clientId) => {
@@ -1660,10 +1590,8 @@ const ClientManagement = () => {
     try {
       const serviceData = { 
         servicename: serviceName.trim(),
-        companyCode: companyCode // Add companyCode here
+        companyCode: companyCode
       };
-      
-      console.log('Sending service data:', serviceData);
       
       const response = await api.post('/services', serviceData);
       
@@ -1671,17 +1599,20 @@ const ClientManagement = () => {
         setSuccess('Service added successfully!');
         setError('');
         fetchData();
+      } else {
+        setError(response.data.message || 'Service add failed');
       }
     } catch (err) {
+      console.error('Add service error:', err);
       const errorMsg = err.response?.data?.message || 'Service add failed';
       setError(errorMsg);
-      console.error('Add service error:', err);
     }
   };
 
   const handleAddClient = async (clientData) => {
     try {
       setAddLoading(true);
+      setError('');
       
       const backendClientData = {
         ...clientData,
@@ -1718,14 +1649,15 @@ const ClientManagement = () => {
         setError('');
         setAddClientModal(false);
         fetchData();
+      } else {
+        setError(response.data.message || 'Client add failed');
       }
     } catch (err) {
+      console.error('Add client error:', err);
       const errorMessage = err.response?.data?.message || 
                          err.response?.data?.errors?.join(', ') || 
                          'Client add failed';
       setError(errorMessage);
-      console.error('Add client error:', err);
-      console.error('Error response:', err.response?.data);
     } finally {
       setAddLoading(false);
     }
@@ -1825,10 +1757,9 @@ const ClientManagement = () => {
       address: client.address || '',
       description: client.description || '',
       notes: client.notes || '',
-      companyCode: companyCode // Include companyCode
+      companyCode: companyCode
     };
     
-    console.log('Updating client:', updateData);
     handleUpdateClient(client._id, updateData);
   };
 
@@ -1884,19 +1815,16 @@ const ClientManagement = () => {
     console.log(`Tasks updated for ${serviceName}:`, tasks);
   };
 
-  // Helper function to safely map over projectManagers
   const safeMapProjectManagers = (callback) => {
     return Array.isArray(projectManagers) 
       ? projectManagers.map(callback)
       : [];
   };
 
-  // Get filtered clients
   const filteredClients = getFilteredClients();
 
   return (
     <div className="client-management">
-      {/* Header */}
       <div className="client-management-header">
         <div className="card__content">
           <div className="client-header-container">
@@ -1937,7 +1865,6 @@ const ClientManagement = () => {
         </div>
       </div>
 
-      {/* Statistics Cards - Now using filteredClients */}
       <div className="stats-grid">
         {[
           { label: 'Total Clients', value: filteredClients.length, color: 'primary', icon: <FiUsers /> },
@@ -1962,7 +1889,6 @@ const ClientManagement = () => {
         ))}
       </div>
 
-      {/* Notifications */}
       {!companyCode && !companyIdentifier && (
         <div className="alert alert--warning">
           <FiAlertCircle /> Company information not found. Please refresh the page or login again.
@@ -1971,32 +1897,16 @@ const ClientManagement = () => {
 
       {error && (
         <div className="alert alert--error">
-          {error}
+          <FiAlertCircle /> {error}
         </div>
       )}
 
       {success && (
         <div className="alert alert--success">
-          {success}
+          <FiCheckCircle /> {success}
         </div>
       )}
 
-      {/* Debug Info */}
-      <div className="debug-info" style={{ 
-        background: '#f0f0f0', 
-        padding: '10px', 
-        margin: '10px 0', 
-        borderRadius: '4px',
-        fontSize: '12px'
-      }}>
-        <p><strong>Debug Info:</strong></p>
-        <p>companyCode from localStorage: <strong>{companyCode || 'Not found'}</strong></p>
-        <p>companyIdentifier from localStorage: <strong>{companyIdentifier || 'Not found'}</strong></p>
-        <p>Total clients from API: <strong>{clients.length}</strong></p>
-        <p>Filtered clients (showing): <strong>{filteredClients.length}</strong></p>
-      </div>
-
-      {/* Main Content Card */}
       <div className="card">
         <div className="card__header card-header-gradient">
           <div className="card-header-container">
@@ -2031,7 +1941,6 @@ const ClientManagement = () => {
           </div>
         </div>
         
-        {/* Filter Bar */}
         <div className="filter-bar">
           <div className="filter-grid">
             <div className="filter-search-container">
@@ -2125,7 +2034,6 @@ const ClientManagement = () => {
             </div>
           ) : filteredClients.length > 0 ? (
             <>
-              {/* Table Container */}
               <div className="table-container">
                 <table className="data-table">
                   <thead>
@@ -2246,7 +2154,6 @@ const ClientManagement = () => {
                 </table>
               </div>
               
-              {/* Pagination */}
               <div className="pagination-container">
                 <div className="pagination-left">
                   <select
@@ -2301,7 +2208,6 @@ const ClientManagement = () => {
         </div>
       </div>
 
-      {/* Add Client Modal */}
       <AddClientModal
         open={addClientModal}
         onClose={() => setAddClientModal(false)}
@@ -2312,7 +2218,6 @@ const ClientManagement = () => {
         companyCode={companyCode}
       />
 
-      {/* Services Management Modal */}
       <ServicesModal
         open={servicesModal}
         onClose={() => setServicesModal(false)}
@@ -2322,7 +2227,6 @@ const ClientManagement = () => {
         companyCode={companyCode}
       />
 
-      {/* Delete Confirmation Dialog */}
       {deleteDialog.open && (
         <div className="modal-overlay" onClick={handleDeleteCancel}>
           <div className="modal" onClick={e => e.stopPropagation()}>
@@ -2348,7 +2252,6 @@ const ClientManagement = () => {
         </div>
       )}
 
-      {/* View Client Dialog */}
       {viewDialog.open && viewDialog.client && (
         <div className="modal-overlay" onClick={() => setViewDialog({ open: false, client: null })}>
           <div className="modal modal-lg" onClick={e => e.stopPropagation()}>
@@ -2360,7 +2263,6 @@ const ClientManagement = () => {
             </div>
             <div className="modal__content">
               <div className="client-details-content">
-                {/* Basic Information */}
                 <div className="client-details-section">
                   <h4 className="section-header">
                     <FiBriefcase /> Basic Information
@@ -2396,7 +2298,6 @@ const ClientManagement = () => {
                   </div>
                 </div>
 
-                {/* Project Managers */}
                 <div className="client-details-section">
                   <h4 className="section-header">
                     <FiUsers /> Team
@@ -2422,7 +2323,6 @@ const ClientManagement = () => {
                   </div>
                 </div>
 
-                {/* Services Progress Section */}
                 {viewDialog.client.services && viewDialog.client.services.length > 0 && (
                   <div className="client-details-section">
                     <h4 className="section-header">
@@ -2448,7 +2348,6 @@ const ClientManagement = () => {
                   </div>
                 )}
 
-                {/* Additional Information */}
                 <div className="client-details-section">
                   <h4 className="section-header">
                     <FiMapPin /> Additional Information
@@ -2491,7 +2390,6 @@ const ClientManagement = () => {
         </div>
       )}
 
-      {/* Edit Client Dialog */}
       {editDialog.open && editDialog.client && (
         <div className="modal-overlay" onClick={() => setEditDialog({ open: false, client: null })}>
           <div className="modal" onClick={e => e.stopPropagation()}>
@@ -2557,7 +2455,6 @@ const ClientManagement = () => {
                   </select>
                 </div>
 
-                {/* Project Managers */}
                 <div className="form-group edit-managers-group">
                   <label className="form-label">Team *</label>
                   <div className="managers-list">
@@ -2599,7 +2496,6 @@ const ClientManagement = () => {
                   </div>
                 </div>
 
-                {/* Services */}
                 <div className="form-group edit-services-group">
                   <label className="form-label">Services</label>
                   <div className="services-list">

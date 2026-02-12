@@ -23,36 +23,20 @@ import {
   CalendarToday as CalendarIcon,
   EventNote as EventNoteIcon,
   Computer as ComputerIcon,
-  Task as TaskIcon,
-  Groups as GroupsIcon,
-  Notifications as NotificationsIcon,
-  VideoCall as VideoCallIcon,
-  Person as PersonIcon,
-  Business as BusinessIcon,
-  ListAlt as ListAltIcon,
-  MeetingRoom as MeetingRoomIcon,
-  Apartment as ApartmentIcon,
-  PersonAdd as PersonAddIcon,
-  Key as KeyIcon,
-  AccountCircle as ProfileIcon,
   LogoutOutlined,
   Settings as SettingsIcon,
+  Notifications as NotificationsIcon,
+  Person as PersonIcon,
+  Task as TaskIcon,
+  MeetingRoom as MeetingRoomIcon,
+  Groups as GroupsIcon,
+  VideoCall as VideoCallIcon,
+  ListAlt as ListAltIcon,
   ExpandMore,
   ExpandLess,
-  ChevronRight,
-  ChevronLeft,
-  Home,
-  Assignment,
-  BusinessCenter,
-  People,
-  Chat,
-  Description,
-  Assessment,
-  Security,
-  AdminPanelSettings
 } from '@mui/icons-material';
 import Swal from "sweetalert2";
-import axios from 'axios';
+import axiosInstance from '../utils/axiosConfig';
 
 const drawerWidthOpen = 260;
 const drawerWidthClosed = 70;
@@ -165,61 +149,118 @@ const CollapsedHeading = styled(Box)(({ theme }) => ({
   justifyContent: 'center',
 }));
 
-// Comprehensive icon mapping
+// ✅ COMPREHENSIVE ICON MAPPING - आपके डेटाबेस और आवश्यक आइकनों के अनुसार
 const iconMap = {
+  // Dashboard icons
   'Dashboard': DashboardIcon,
-  'Home': Home,
-  'CalendarToday': CalendarIcon,
+  'dashboard': DashboardIcon,
+  
+  // Calendar icons
   'Calendar': CalendarIcon,
-  'EventNote': EventNoteIcon,
+  'CalendarToday': CalendarIcon,
+  'calendar': CalendarIcon,
+  'calendartoday': CalendarIcon,
+  
+  // Event/Leaves icons
   'Event': EventNoteIcon,
+  'EventNote': EventNoteIcon,
+  'event': EventNoteIcon,
+  'eventnote': EventNoteIcon,
+  
+  // Computer/Assets icons
   'Computer': ComputerIcon,
-  'Laptop': ComputerIcon,
-  'Task': TaskIcon,
-  'Assignment': Assignment,
-  'Groups': GroupsIcon,
-  'People': People,
+  'computer': ComputerIcon,
+  
+  // Notification/Alerts icons
   'Notifications': NotificationsIcon,
-  'Notification': NotificationsIcon,
-  'VideoCall': VideoCallIcon,
-  'Video': VideoCallIcon,
+  'notifications': NotificationsIcon,
+  'Alert': NotificationsIcon,
+  'alert': NotificationsIcon,
+  
+  // Person/Employee icons
   'Person': PersonIcon,
-  'User': PersonIcon,
-  'Business': BusinessIcon,
-  'BusinessCenter': BusinessCenter,
+  'person': PersonIcon,
+  
+  // Task icons
+  'Task': TaskIcon,
+  'task': TaskIcon,
   'ListAlt': ListAltIcon,
-  'List': ListAltIcon,
+  'listalt': ListAltIcon,
+  
+  // Meeting icons
   'MeetingRoom': MeetingRoomIcon,
-  'Meeting': MeetingRoomIcon,
-  'Apartment': ApartmentIcon,
-  'Building': ApartmentIcon,
-  'PersonAdd': PersonAddIcon,
-  'AddUser': PersonAddIcon,
-  'Key': KeyIcon,
-  'Lock': KeyIcon,
-  'ProfileIcon': ProfileIcon,
-  'Profile': ProfileIcon,
+  'meetingroom': MeetingRoomIcon,
+  'VideoCall': VideoCallIcon,
+  'videocall': VideoCallIcon,
+  'Meeting': VideoCallIcon,
+  'meeting': VideoCallIcon,
+  
+  // Project icons
+  'Groups': GroupsIcon,
+  'groups': GroupsIcon,
+  'ProjectIcon': GroupsIcon,
+  'projecticon': GroupsIcon,
+  'Project': GroupsIcon,
+  'project': GroupsIcon,
+  
+  // Settings
   'Settings': SettingsIcon,
-  'Setting': SettingsIcon,
-  'Menu': SettingsIcon,
-  'ProjectIcon': ApartmentIcon,
-  'Project': ApartmentIcon,
-  'ClientIcon': BusinessIcon,
-  'Client': BusinessIcon,
-  'Chat': Chat,
-  'Message': Chat,
-  'Description': Description,
-  'Document': Description,
-  'Assessment': Assessment,
-  'Report': Assessment,
-  'Security': Security,
-  'AdminPanelSettings': AdminPanelSettings,
-  'Admin': AdminPanelSettings,
-  'Logout': LogoutOutlined
+  'settings': SettingsIcon,
+  
+  // Logout
+  'Logout': LogoutOutlined,
+  'logout': LogoutOutlined,
 };
 
-// Default fallback menu items (used when no config is found)
-const defaultFallbackMenuItems = [
+// ✅ Get icon component - case insensitive और fallback
+const getIconComponent = (iconName) => {
+  if (!iconName) {
+    return <DashboardIcon />;
+  }
+  
+  // Try exact match first
+  let IconComponent = iconMap[iconName];
+  
+  // If not found, try case-insensitive match
+  if (!IconComponent) {
+    const lowerIconName = iconName.toLowerCase();
+    IconComponent = Object.keys(iconMap).find(key => 
+      key.toLowerCase() === lowerIconName
+    ) ? iconMap[Object.keys(iconMap).find(key => 
+      key.toLowerCase() === lowerIconName
+    )] : null;
+  }
+  
+  // If still not found, use appropriate fallback based on icon name
+  if (!IconComponent) {
+    if (iconName.toLowerCase().includes('calendar') || iconName.toLowerCase().includes('attendance')) {
+      IconComponent = CalendarIcon;
+    } else if (iconName.toLowerCase().includes('event') || iconName.toLowerCase().includes('leave')) {
+      IconComponent = EventNoteIcon;
+    } else if (iconName.toLowerCase().includes('dashboard')) {
+      IconComponent = DashboardIcon;
+    } else if (iconName.toLowerCase().includes('computer') || iconName.toLowerCase().includes('asset')) {
+      IconComponent = ComputerIcon;
+    } else if (iconName.toLowerCase().includes('notification') || iconName.toLowerCase().includes('alert')) {
+      IconComponent = NotificationsIcon;
+    } else if (iconName.toLowerCase().includes('person') || iconName.toLowerCase().includes('employee')) {
+      IconComponent = PersonIcon;
+    } else if (iconName.toLowerCase().includes('task')) {
+      IconComponent = TaskIcon;
+    } else if (iconName.toLowerCase().includes('meeting')) {
+      IconComponent = VideoCallIcon;
+    } else if (iconName.toLowerCase().includes('project')) {
+      IconComponent = GroupsIcon;
+    } else {
+      IconComponent = DashboardIcon; // Default fallback
+    }
+  }
+  
+  return <IconComponent />;
+};
+
+// ✅ FIXED DEFAULT MENU ITEMS - DASHBOARD सबसे पहले (order: 1)
+const fixedDefaultItems = [
   {
     id: 'dashboard',
     name: 'Dashboard',
@@ -229,166 +270,57 @@ const defaultFallbackMenuItems = [
     order: 1
   },
   {
-    id: 'profile',
-    name: 'Profile',
-    icon: 'Profile',
-    path: '/ciisUser/profile',
-    category: 'settings',
-    order: 1
+    id: 'attendance',
+    name: 'Attendance',
+    icon: 'Calendar',
+    path: '/ciisUser/attendance',
+    category: 'main',
+    order: 2
   },
-
+  {
+    id: 'my-leaves',
+    name: 'My Leaves',
+    icon: 'Event',
+    path: '/ciisUser/my-leaves',
+    category: 'main',
+    order: 3
+  },
+  {
+    id: 'my-assets',
+    name: 'My Assets',
+    icon: 'Computer',
+    path: '/ciisUser/my-assets',
+    category: 'main',
+    order: 4
+  }
 ];
 
-// ✅ Helper function to get icon component
-const getIconComponent = (iconName) => {
-  const IconComponent = iconMap[iconName] || DashboardIcon;
-  return <IconComponent />;
-};
-
-// ✅ Path mapping helper
+// ✅ Path mapping helper (for custom config items)
 const getPathFromName = (name) => {
   const pathMap = {
     'Dashboard': '/ciisUser/user-dashboard',
+    'My Attendance': '/ciisUser/attendance',
     'Attendance': '/ciisUser/attendance',
     'My Leaves': '/ciisUser/my-leaves',
     'My Assets': '/ciisUser/my-assets',
-    'Profile': '/ciisUser/profile',
-    'Change Password': '/ciisUser/change-password',
-    'Task Management': '/ciisUser/task-management',
-    'My Tasks': '/ciisUser/my-task-management',
-    'Employee Project': '/ciisUser/project',
-    'Projects': '/ciisUser/project',
     'Alerts': '/ciisUser/alert',
+    'Projects': '/ciisUser/project',
+    'Employee Details': '/ciisUser/emp-details',
+    'Employee Leaves': '/ciisUser/emp-leaves',
+    'Employee Assets': '/ciisUser/emp-assets',
+    'Employee Attendance': '/ciisUser/emp-attendance',
+    'Create Task': '/ciisUser/task-management',
+    'Admin Create Task': '/ciisUser/admin-task-create',
     'Employee Meeting': '/ciisUser/employee-meeting',
     'Client Meeting': '/ciisUser/client-meeting',
-    'Employee Details': '/ciisUser/emp-details',
-    'Employees Attendance': '/ciisUser/emp-attendance',
-    'Employee Attendance': '/ciisUser/emp-attendance',
-    'Employees Leaves': '/ciisUser/emp-leaves',
-    'Employee Leaves': '/ciisUser/emp-leaves',
-    'Employees Assets': '/ciisUser/emp-assets',
-    'Employee Assets': '/ciisUser/emp-assets',
-    'Employee Task Management': '/ciisUser/emp-task-management',
-    'Admin Create Task': '/ciisUser/admin-task-create',
-    'Client Management': '/ciisUser/emp-client',
+    'Create Employee Meeting': '/ciisUser/admin-meeting',
+    'Admin Projects': '/ciisUser/adminproject',
     'Company All Tasks': '/ciisUser/company-all-task',
     'Department All Tasks': '/ciisUser/department-all-task',
-    'Admin Meeting': '/ciisUser/admin-meeting',
-    'Admin Projects': '/ciisUser/adminproject',
-    'Task Details': '/ciisUser/emp-task-details',
-    'Create User': '/ciisUser/create-user',
-    'Sidebar Management': '/ciisUser/sidebar-management',
-    'Settings': '/ciisUser/settings',
-    'Admin Dashboard': '/ciisUser/admin-dashboard'
+    'Client Management': '/ciisUser/emp-client'
   };
   
   return pathMap[name] || '/ciisUser/user-dashboard';
-};
-
-// ✅ Default menu items for different roles
-const getDefaultMenuItemsByRole = (role = '') => {
-  const roleLower = role.toLowerCase();
-  
-  const baseItems = [
-    {
-      id: 'dashboard',
-      name: 'Dashboard',
-      icon: 'Dashboard',
-      path: '/ciisUser/user-dashboard',
-      category: 'main',
-      order: 1
-    },
-    {
-      id: 'profile',
-      name: 'Profile',
-      icon: 'Profile',
-      path: '/ciisUser/profile',
-      category: 'settings',
-      order: 1
-    },
-    {
-      id: 'change-password',
-      name: 'Change Password',
-      icon: 'Key',
-      path: '/ciisUser/change-password',
-      category: 'settings',
-      order: 2
-    }
-  ];
-
-  if (['admin', 'superadmin', 'hr', 'manager'].includes(roleLower)) {
-    return [
-      ...baseItems,
-      {
-        id: 'employee-management',
-        name: 'Employee Management',
-        icon: 'People',
-        path: '/ciisUser/emp-details',
-        category: 'administration',
-        order: 1
-      },
-      {
-        id: 'attendance-management',
-        name: 'Attendance',
-        icon: 'Calendar',
-        path: '/ciisUser/emp-attendance',
-        category: 'administration',
-        order: 2
-      },
-      {
-        id: 'leave-management',
-        name: 'Leaves',
-        icon: 'Event',
-        path: '/ciisUser/emp-leaves',
-        category: 'administration',
-        order: 3
-      },
-      {
-        id: 'task-management',
-        name: 'Task Management',
-        icon: 'Task',
-        path: '/ciisUser/emp-task-management',
-        category: 'administration',
-        order: 4
-      },
-      {
-        id: 'sidebar-management',
-        name: 'Sidebar Management',
-        icon: 'Settings',
-        path: '/ciisUser/sidebar-management',
-        category: 'administration',
-        order: 5
-      }
-    ];
-  }
-
-  return [
-    ...baseItems,
-    {
-      id: 'my-attendance',
-      name: 'My Attendance',
-      icon: 'Calendar',
-      path: '/ciisUser/attendance',
-      category: 'main',
-      order: 2
-    },
-    {
-      id: 'my-leaves',
-      name: 'My Leaves',
-      icon: 'Event',
-      path: '/ciisUser/my-leaves',
-      category: 'main',
-      order: 3
-    },
-    {
-      id: 'my-tasks',
-      name: 'My Tasks',
-      icon: 'Task',
-      path: '/ciisUser/my-task-management',
-      category: 'main',
-      order: 4
-    }
-  ];
 };
 
 const Sidebar = ({ isMobile = false }) => {
@@ -396,7 +328,6 @@ const Sidebar = ({ isMobile = false }) => {
   const navigate = useNavigate();
   const theme = useTheme();
   const [isHovered, setIsHovered] = useState(false);
-  const [expandedSections, setExpandedSections] = useState({});
   const [userData, setUserData] = useState(null);
   const [companyData, setCompanyData] = useState(null);
   const [sidebarConfig, setSidebarConfig] = useState(null);
@@ -450,7 +381,7 @@ const Sidebar = ({ isMobile = false }) => {
         role: userData.jobRole
       });
 
-      const response = await axios.get(`/api/sidebar/config`, {
+      const response = await axiosInstance.get(`/sidebar/config`, {
         params: {
           companyId: userData.company,
           departmentId: userData.department,
@@ -469,10 +400,10 @@ const Sidebar = ({ isMobile = false }) => {
           // Use custom configuration from database
           setSidebarConfig(response.data.data);
         } else {
-          // No custom config found, use default based on role
+          // No custom config found, use fixed default items
           setSidebarConfig({ 
-            useDefault: true,
-            message: 'Using default configuration'
+            useFixedDefault: true,
+            message: 'No custom config found, using fixed default items'
           });
         }
       } else {
@@ -481,10 +412,10 @@ const Sidebar = ({ isMobile = false }) => {
     } catch (error) {
       console.error('Error fetching sidebar config:', error);
       setError(`Failed to load sidebar configuration: ${error.message}`);
-      // Use default configuration on error
+      // Use fixed default items on error
       setSidebarConfig({ 
-        useDefault: true,
-        message: 'Using default due to error'
+        useFixedDefault: true,
+        message: 'Using fixed default items due to error'
       });
     } finally {
       setLoading(false);
@@ -498,16 +429,6 @@ const Sidebar = ({ isMobile = false }) => {
       setLoading(false);
     }
   }, [userData, companyData, fetchSidebarConfig]);
-
-  useEffect(() => {
-    // Initialize expanded sections based on current path
-    const pathSections = location.pathname.split('/').filter(Boolean);
-    const currentSection = pathSections[1] || 'main';
-    setExpandedSections(prev => ({
-      ...prev,
-      [currentSection]: true
-    }));
-  }, [location.pathname]);
 
   useEffect(() => {
     // Cleanup timers on unmount
@@ -541,13 +462,6 @@ const Sidebar = ({ isMobile = false }) => {
     leaveTimer.current = setTimeout(() => {
       setIsHovered(false);
     }, 100);
-  };
-
-  const toggleSection = (sectionId) => {
-    setExpandedSections(prev => ({
-      ...prev,
-      [sectionId]: !prev[sectionId]
-    }));
   };
 
   const handleNavigate = (path) => {
@@ -599,10 +513,6 @@ const Sidebar = ({ isMobile = false }) => {
     }
   };
 
-  const handleManageSidebar = () => {
-    navigate('/ciisUser/sidebar-management');
-  };
-
   const handleRetry = () => {
     setError(null);
     if (userData && companyData) {
@@ -610,17 +520,19 @@ const Sidebar = ({ isMobile = false }) => {
     }
   };
 
-  // ✅ Get menu items based on configuration
+  // ✅ Get menu items based on configuration - SORT BY ORDER (lowest first)
   const menuItems = useMemo(() => {
     if (loading) return [];
 
     console.log('Current sidebar config:', sidebarConfig);
 
+    let items = [];
+
     // If we have a custom config from database
     if (sidebarConfig && sidebarConfig.menuItems && Array.isArray(sidebarConfig.menuItems)) {
-      console.log('Using custom config with', sidebarConfig.menuItems.length, 'items');
+      console.log('Using custom config from database with', sidebarConfig.menuItems.length, 'items');
       
-      return sidebarConfig.menuItems
+      items = sidebarConfig.menuItems
         .map(item => {
           // Ensure item has required properties
           const processedItem = {
@@ -631,175 +543,131 @@ const Sidebar = ({ isMobile = false }) => {
             order: item.order || 99,
             path: item.path || getPathFromName(item.name),
             disabled: item.disabled || false,
-            visible: item.visible !== false // Default to true if not specified
+            visible: item.visible !== false
           };
 
           return processedItem;
         })
-        .filter(item => item.visible && !item.disabled) // Filter out hidden/disabled items
-        .sort((a, b) => (a.order || 99) - (b.order || 99)); // Sort by order
+        .filter(item => item.visible && !item.disabled);
     } 
-    // If no custom config, use default based on role
-    else if (sidebarConfig && sidebarConfig.useDefault) {
-      console.log('Using default menu items for role:', userData?.jobRole);
-      return getDefaultMenuItemsByRole(userData?.jobRole);
+    // If no custom config found or error, use fixed default items
+    else if (sidebarConfig && (sidebarConfig.useFixedDefault || !sidebarConfig.menuItems)) {
+      console.log('Using fixed default menu items');
+      items = [...fixedDefaultItems];
     }
-    // Fallback to minimal items
+    // Initial state or unexpected case
     else {
-      console.log('Using fallback menu items');
-      return defaultFallbackMenuItems;
-    }
-  }, [sidebarConfig, loading, userData]);
-
-  // ✅ Organize items into sections
-  const menuSections = useMemo(() => {
-    if (!menuItems || menuItems.length === 0) {
-      return [];
+      console.log('Using fixed default menu items (fallback)');
+      items = [...fixedDefaultItems];
     }
 
-    // Define all possible sections
-    const sectionDefinitions = [
-      { id: 'main', name: 'Main Menu', icon: 'Home', defaultExpanded: true },
-      { id: 'tasks', name: 'Tasks', icon: 'Task', defaultExpanded: false },
-      { id: 'projects', name: 'Projects', icon: 'Project', defaultExpanded: false },
-      { id: 'meetings', name: 'Meetings', icon: 'Meeting', defaultExpanded: false },
-      { id: 'communication', name: 'Communication', icon: 'Chat', defaultExpanded: false },
-      { id: 'administration', name: 'Administration', icon: 'Admin', defaultExpanded: false },
-      { id: 'settings', name: 'Settings', icon: 'Settings', defaultExpanded: false },
-      { id: 'clients', name: 'Clients', icon: 'Client', defaultExpanded: false }
-    ];
-
-    // Group items by category
-    const groupedItems = {};
-    menuItems.forEach(item => {
-      const category = item.category || 'main';
-      if (!groupedItems[category]) {
-        groupedItems[category] = [];
+    // ✅ SORT ITEMS: First by category, then by order
+    const sortedItems = [...items].sort((a, b) => {
+      // First, sort by category to group similar items
+      const categoryOrder = ['main', 'administration', 'tasks', 'projects', 'meetings', 'communication', 'clients'];
+      const categoryA = categoryOrder.indexOf(a.category) || 99;
+      const categoryB = categoryOrder.indexOf(b.category) || 99;
+      
+      if (categoryA !== categoryB) {
+        return categoryA - categoryB;
       }
-      groupedItems[category].push(item);
+      
+      // Then sort by order within category
+      const orderA = a.order || 99;
+      const orderB = b.order || 99;
+      return orderA - orderB;
     });
 
-    // Create sections with items
-    const sections = sectionDefinitions
-      .filter(section => groupedItems[section.id] && groupedItems[section.id].length > 0)
-      .map(section => ({
-        ...section,
-        items: groupedItems[section.id],
-        isExpanded: expandedSections[section.id] !== undefined 
-          ? expandedSections[section.id] 
-          : section.defaultExpanded
-      }));
+    console.log('Sorted menu items:', sortedItems.map(item => ({ 
+      name: item.name, 
+      order: item.order,
+      category: item.category,
+      icon: item.icon
+    })));
 
-    return sections;
-  }, [menuItems, expandedSections]);
+    return sortedItems;
+  }, [sidebarConfig, loading]);
 
-  const renderMenuSection = (section) => {
-    const shouldShowFull = isMobile ? true : isSidebarOpen;
-    const isExpanded = section.isExpanded && shouldShowFull;
-
-    return (
-      <Box key={section.id} sx={{ mb: 1 }}>
-        {/* Section Heading */}
-        {shouldShowFull ? (
-          <SectionHeading>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              {getIconComponent(section.icon)}
-              <span>{section.name}</span>
+  const renderMenuItem = (item, showFull) => {
+    const selected = location.pathname === item.path;
+    
+    if (showFull) {
+      return (
+        <StyledListItemButton
+          selected={selected}
+          onClick={() => !item.disabled && handleNavigate(item.path)}
+          disabled={item.disabled}
+          sx={{
+            opacity: item.disabled ? 0.5 : 1,
+            cursor: item.disabled ? 'not-allowed' : 'pointer'
+          }}
+        >
+          <StyledListItemIcon>
+            {getIconComponent(item.icon)}
+          </StyledListItemIcon>
+          <ListItemText
+            primary={item.name}
+            primaryTypographyProps={{ 
+              variant: 'body2', 
+              fontWeight: selected ? 600 : 500,
+              fontSize: '0.9rem'
+            }}
+          />
+          {item.badge && (
+            <Box sx={{ 
+              ml: 1,
+              bgcolor: 'primary.main',
+              color: 'white',
+              borderRadius: '12px',
+              px: 1,
+              py: 0.25,
+              fontSize: '0.7rem',
+              fontWeight: 'bold'
+            }}>
+              {item.badge}
             </Box>
-            {section.items.length > 0 && (
-              <IconButton
-                size="small"
-                onClick={() => toggleSection(section.id)}
-                sx={{ p: 0 }}
-              >
-                {isExpanded ? <ExpandLess /> : <ExpandMore />}
-              </IconButton>
-            )}
-          </SectionHeading>
-        ) : (
-          <Tooltip title={section.name} placement="right">
-            <CollapsedHeading>
-              {getIconComponent(section.icon)}
-            </CollapsedHeading>
-          </Tooltip>
-        )}
-
-        {/* Section Items */}
-        <Collapse in={isExpanded} timeout="auto">
-          <List sx={{ py: 0 }}>
-            {section.items.map((item) => (
-              <StyledListItem key={item.id} disablePadding>
-                {shouldShowFull ? (
-                  <StyledListItemButton
-                    selected={location.pathname === item.path}
-                    onClick={() => !item.disabled && handleNavigate(item.path)}
-                    disabled={item.disabled}
-                    sx={{
-                      opacity: item.disabled ? 0.5 : 1,
-                      cursor: item.disabled ? 'not-allowed' : 'pointer'
-                    }}
-                  >
-                    <StyledListItemIcon>
-                      {getIconComponent(item.icon)}
-                    </StyledListItemIcon>
-                    <ListItemText
-                      primary={item.name}
-                      primaryTypographyProps={{ 
-                        variant: 'body2', 
-                        fontWeight: location.pathname === item.path ? 600 : 500,
-                        fontSize: '0.9rem'
-                      }}
-                    />
-                    {item.badge && (
-                      <Box sx={{ 
-                        ml: 1,
-                        bgcolor: 'primary.main',
-                        color: 'white',
-                        borderRadius: '12px',
-                        px: 1,
-                        py: 0.25,
-                        fontSize: '0.7rem',
-                        fontWeight: 'bold'
-                      }}>
-                        {item.badge}
-                      </Box>
-                    )}
-                  </StyledListItemButton>
-                ) : (
-                  <Tooltip title={item.name} placement="right">
-                    <StyledListItemButton
-                      selected={location.pathname === item.path}
-                      onClick={() => !item.disabled && handleNavigate(item.path)}
-                      disabled={item.disabled}
-                      sx={{ 
-                        justifyContent: 'center',
-                        opacity: item.disabled ? 0.5 : 1,
-                        cursor: item.disabled ? 'not-allowed' : 'pointer'
-                      }}
-                    >
-                      <StyledListItemIcon sx={{ marginRight: 0, fontSize: '1.2rem' }}>
-                        {getIconComponent(item.icon)}
-                      </StyledListItemIcon>
-                    </StyledListItemButton>
-                  </Tooltip>
-                )}
-              </StyledListItem>
-            ))}
-          </List>
-        </Collapse>
-      </Box>
-    );
+          )}
+        </StyledListItemButton>
+      );
+    } else {
+      return (
+        <Tooltip title={item.name} placement="right">
+          <StyledListItemButton
+            selected={selected}
+            onClick={() => !item.disabled && handleNavigate(item.path)}
+            disabled={item.disabled}
+            sx={{ 
+              justifyContent: 'center',
+              opacity: item.disabled ? 0.5 : 1,
+              cursor: item.disabled ? 'not-allowed' : 'pointer'
+            }}
+          >
+            <StyledListItemIcon sx={{ marginRight: 0, fontSize: '1.2rem' }}>
+              {getIconComponent(item.icon)}
+            </StyledListItemIcon>
+          </StyledListItemButton>
+        </Tooltip>
+      );
+    }
   };
+
+  // Group items by category for better organization
+  const groupedItems = useMemo(() => {
+    const groups = {};
+    
+    menuItems.forEach(item => {
+      const category = item.category || 'main';
+      if (!groups[category]) {
+        groups[category] = [];
+      }
+      groups[category].push(item);
+    });
+    
+    return groups;
+  }, [menuItems]);
 
   // Mobile और Desktop के लिए अलग containers
   const Container = isMobile ? MobileSidebarContainer : SidebarContainer;
-
-  // Check if user has permission to manage sidebar (admin users only)
-  const canManageSidebar = useMemo(() => {
-    if (!userData || !userData.jobRole) return false;
-    const adminRoles = ['admin', 'hr', 'manager', 'superadmin', 'SuperAdmin'];
-    return adminRoles.includes(userData.jobRole);
-  }, [userData]);
 
   // Loading state
   if (loading) {
@@ -848,12 +716,49 @@ const Sidebar = ({ isMobile = false }) => {
             {error}
           </Alert>
           <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
-            Using basic navigation
+            Using default navigation
           </Typography>
         </Box>
       </Container>
     );
   }
+
+  // Render category headings
+  const renderCategoryHeading = (category) => {
+    const categoryLabels = {
+      'main': 'Main Menu',
+      'administration': 'Administration',
+      'tasks': 'Tasks',
+      'projects': 'Projects',
+      'meetings': 'Meetings',
+      'communication': 'Communication',
+      'clients': 'Clients'
+    };
+    
+    const label = categoryLabels[category] || category;
+    
+    if (isSidebarOpen) {
+      return (
+        <SectionHeading key={`heading-${category}`}>
+          <span>{label}</span>
+        </SectionHeading>
+      );
+    } else {
+      return (
+        <Tooltip key={`heading-${category}`} title={label} placement="right">
+          <CollapsedHeading>
+            {getIconComponent(category === 'main' ? 'Dashboard' : 
+              category === 'administration' ? 'Person' :
+              category === 'tasks' ? 'Task' :
+              category === 'projects' ? 'Groups' :
+              category === 'meetings' ? 'VideoCall' :
+              category === 'communication' ? 'Notifications' :
+              category === 'clients' ? 'Person' : 'Dashboard')}
+          </CollapsedHeading>
+        </Tooltip>
+      );
+    }
+  };
 
   return (
     <Container
@@ -864,87 +769,27 @@ const Sidebar = ({ isMobile = false }) => {
         width: isSidebarOpen ? drawerWidthOpen : drawerWidthClosed,
       } : undefined}
     >
-      {/* User Info (only when sidebar is open) */}
-      {/* {isSidebarOpen && (
-        <Box sx={{ p: 2, borderBottom: `1px solid ${theme.palette.divider}` }}>
-          <Typography variant="subtitle2" fontWeight={600} noWrap>
-            {userData?.name || 'User'}
-          </Typography>
-          <Typography variant="caption" color="text.secondary" noWrap>
-            {userData?.jobRole || 'Role'} <br />
-             {userData?.department || 'Company'}
-          </Typography>
-          {sidebarConfig && sidebarConfig.useDefault ? (
-            <Typography variant="caption" color="warning.main" sx={{ display: 'block', mt: 0.5 }}>
-              Using default configuration
-            </Typography>
-          ) : sidebarConfig && sidebarConfig.menuItems ? (
-            <Typography variant="caption" color="success.main" sx={{ display: 'block', mt: 0.5 }}>
-              Custom menu ({sidebarConfig.menuItems.length} items)
-            </Typography>
-          ) : null}
-        </Box>
-      )} */}
-
-      {/* Menu Sections */}
+      {/* Menu Items */}
       <Box sx={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
-        {menuSections.length > 0 ? (
-          menuSections.map((section) => renderMenuSection(section))
-        ) : (
-          <Box sx={{ p: 2, textAlign: 'center' }}>
-            <Typography variant="body2" color="text.secondary">
-              No menu items available
-            </Typography>
+        {Object.keys(groupedItems).map(category => (
+          <Box key={category}>
+            {renderCategoryHeading(category)}
+            
+            {/* Menu Items List */}
+            <List sx={{ py: 0 }}>
+              {groupedItems[category].map((item) => (
+                <StyledListItem key={item.id} disablePadding>
+                  {renderMenuItem(item, isSidebarOpen)}
+                </StyledListItem>
+              ))}
+            </List>
           </Box>
-        )}
+        ))}
       </Box>
-
-      {/* Management Button (for admin users) */}
-      {canManageSidebar && (isMobile || isSidebarOpen) && (
-        <Box sx={{ px: 2, py: 1, borderTop: `1px solid ${theme.palette.divider}` }}>
-          <StyledListItemButton
-            onClick={handleManageSidebar}
-            sx={{
-              color: 'primary.main',
-              '&:hover': { 
-                backgroundColor: 'primary.light',
-                color: 'primary.dark'
-              }
-            }}
-          >
-            <StyledListItemIcon>
-              <SettingsIcon />
-            </StyledListItemIcon>
-            <ListItemText
-              primary="Manage Sidebar"
-              primaryTypographyProps={{ 
-                variant: 'body2', 
-                fontWeight: 500 
-              }}
-            />
-          </StyledListItemButton>
-        </Box>
-      )}
-
-      {/* Refresh Button */}
-      {/* {isSidebarOpen && (
-        <Box sx={{ px: 2, py: 1 }}>
-          <Button
-            fullWidth
-            variant="outlined"
-            size="small"
-            startIcon={<SettingsIcon />}
-            onClick={handleRetry}
-            disabled={loading}
-          >
-            Refresh Menu
-          </Button>
-        </Box>
-      )} */}
 
       {/* Logout Section */}
       <Box sx={{ px: 2, py: 2, borderTop: `1px solid ${theme.palette.divider}` }}>
-        {isMobile || isSidebarOpen ? (
+        {isSidebarOpen ? (
           <StyledListItemButton
             onClick={handleLogout}
             sx={{
