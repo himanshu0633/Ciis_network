@@ -44,6 +44,7 @@ import TaskManagement from "./hrCds/pages/TaskManagement";
 import EmployeeMeetingPage from "./hrCds/pages/EmployeeMeetingPage";
 import EmployeeProject from "./hrCds/pages/EmployeeProject";
 import ClientMeeting from "./hrCds/pages/ClientMeeting";
+import Text from "../src/Pages/text.jsx";
 
 
 // Website Pages
@@ -130,7 +131,7 @@ function App() {
           <Route path="task-management" element={<TaskManagement />} />
           <Route path="employee-meeting" element={<EmployeeMeetingPage />} />
           <Route path="client-meeting" element={<ClientMeeting />} />
-         
+           <Route path="test" element={<Text />} />
         </Route>
 
         {/* ✅ Catch-all */}
