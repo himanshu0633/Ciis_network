@@ -619,7 +619,7 @@ const ServiceProgressCard = ({ service, clientId, clientProjectManagers = [], on
   );
 };
 
-const ServicesModal = ({ open, onClose, services, onAddService, onDeleteService }) => {
+const ServicesModal = ({ open, onClose, services, onAddService, onDeleteService, companyCode }) => {
   const [newService, setNewService] = useState('');
 
   const handleSubmit = (e) => {
@@ -629,6 +629,11 @@ const ServicesModal = ({ open, onClose, services, onAddService, onDeleteService 
       setNewService('');
     }
   };
+
+  // Filter services by companyCode
+  const filteredServices = companyCode 
+    ? services.filter(service => service.companyCode === companyCode)
+    : services;
 
   if (!open) return null;
 
@@ -642,6 +647,12 @@ const ServicesModal = ({ open, onClose, services, onAddService, onDeleteService 
           </button>
         </div>
         <div className="modal__content">
+          {!companyCode && (
+            <div className="alert alert--warning mb-3">
+              <FiAlertCircle /> Company code not found. Services may not save properly.
+            </div>
+          )}
+          
           <form onSubmit={handleSubmit} className="mb-3">
             <div className="grid-2 gap-2">
               <div>
@@ -653,10 +664,19 @@ const ServicesModal = ({ open, onClose, services, onAddService, onDeleteService 
                   onChange={(e) => setNewService(e.target.value)}
                   required
                 />
+                {companyCode && (
+                  <small className="text-muted mt-1 block">
+                    This service will be added for company: {companyCode}
+                  </small>
+                )}
               </div>
               <div>
-                <button type="submit" className="btn btn--primary w-100">
-                  <FiPlus /> Add Service
+                <button 
+                  type="submit" 
+                  className="btn btn--primary w-100"
+                  disabled={!companyCode}
+                >
+                  <FiPlus /> {companyCode ? 'Add Service' : 'Company Code Required'}
                 </button>
               </div>
             </div>
@@ -664,11 +684,11 @@ const ServicesModal = ({ open, onClose, services, onAddService, onDeleteService 
 
           <hr className="my-2" />
 
-          <h4 className="mb-2">All Services ({services.length})</h4>
+          <h4 className="mb-2">All Services ({filteredServices.length})</h4>
           
-          {services.length > 0 ? (
+          {filteredServices.length > 0 ? (
             <div className="service-list">
-              {services.map((service) => (
+              {filteredServices.map((service) => (
                 <div key={service._id} className="service-item">
                   <div className="service-item__icon">
                     <FiBriefcase />
@@ -677,6 +697,9 @@ const ServicesModal = ({ open, onClose, services, onAddService, onDeleteService 
                     <p className="font-bold">{service.servicename}</p>
                     <small className="text-muted">
                       Created: {new Date(service.createdAt).toLocaleDateString()}
+                      {service.companyCode && (
+                        <> • Company: {service.companyCode}</>
+                      )}
                     </small>
                   </div>
                   <div className="service-item__actions">
@@ -696,7 +719,10 @@ const ServicesModal = ({ open, onClose, services, onAddService, onDeleteService 
               <FiBriefcase className="text-4xl text-muted mb-2" />
               <h5 className="text-muted">No Services Found</h5>
               <p className="text-muted">
-                Add your first service using the form above
+                {companyCode 
+                  ? 'Add your first service using the form above'
+                  : 'Company code not found. Please refresh the page.'
+                }
               </p>
             </div>
           )}
@@ -715,7 +741,8 @@ const AddClientModal = ({
   onAddClient, 
   services, 
   projectManagers,
-  loading = false 
+  loading = false,
+  companyCode 
 }) => {
   const [newClient, setNewClient] = useState({
     client: '',
@@ -735,6 +762,11 @@ const AddClientModal = ({
   const [managerSearch, setManagerSearch] = useState('');
   const [teamOpen, setTeamOpen] = useState(false);
   const [servicesOpen, setServicesOpen] = useState(false);
+
+  // Filter services by companyCode
+  const filteredServices = companyCode 
+    ? services.filter(service => service.companyCode === companyCode)
+    : services;
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -777,7 +809,8 @@ const AddClientModal = ({
         const clientData = {
           ...newClient,
           projectManagers: formattedProjectManagers,
-          projectManager: selectedManagers.map(pm => pm.name)
+          projectManager: selectedManagers.map(pm => pm.name),
+          companyCode: companyCode // Add companyCode to client data
         };
 
         // ✅ Save client
@@ -822,11 +855,20 @@ const AddClientModal = ({
       <div className="modal modal-lg" onClick={e => e.stopPropagation()}>
         <div className="modal__header">
           <h3>Add New Client</h3>
+          {companyCode && (
+            <small className="text-muted">Company: {companyCode}</small>
+          )}
           <button className="action-button" onClick={onClose} disabled={loading}>
             <FiX />
           </button>
         </div>
         <div className="modal__content">
+          {!companyCode && (
+            <div className="alert alert--warning mb-3">
+              <FiAlertCircle /> Company code not found. Client may not save properly.
+            </div>
+          )}
+          
           <form onSubmit={handleSubmit} className="dropdown-container">
             <div className="grid-2 gap-2">
               <div className="form-group">
@@ -910,17 +952,6 @@ const AddClientModal = ({
                       </div>
                       
                       <div className="dropdown-list">
-                        {/* Debug Info - Temporary */}
-                        <div className="debug-dropdown-info" style={{
-                          padding: '8px',
-                          background: '#f0f0f0',
-                          fontSize: '11px',
-                          color: '#666',
-                          borderBottom: '1px solid #ddd'
-                        }}>
-                          Debug: {filteredManagers.length} users available
-                        </div>
-                        
                         {filteredManagers.length > 0 ? (
                           filteredManagers.map((manager) => (
                             <label
@@ -1005,6 +1036,11 @@ const AddClientModal = ({
               {/* Services Dropdown */}
               <div className="form-group col-span-2">
                 <label className="form-label">Services</label>
+                {filteredServices.length === 0 && (
+                  <div className="alert alert--info mb-2">
+                    <FiInfo /> No services available for this company. Please add services first.
+                  </div>
+                )}
                 <div className="dropdown-wrapper">
                   <div 
                     className="form-input cursor-pointer flex justify-between items-center"
@@ -1023,8 +1059,8 @@ const AddClientModal = ({
                   {servicesOpen && (
                     <div className="dropdown-content">
                       <div className="dropdown-list">
-                        {services.length > 0 ? (
-                          services.map((service) => (
+                        {filteredServices.length > 0 ? (
+                          filteredServices.map((service) => (
                             <label
                               key={service._id}
                               className="dropdown-item"
@@ -1043,7 +1079,7 @@ const AddClientModal = ({
                                       : prev.services.filter(s => s !== service.servicename)
                                   }));
                                 }}
-                                disabled={loading || services.length === 0}
+                                disabled={loading || filteredServices.length === 0}
                               />
                               <label htmlFor={`service-${service._id}`} className="dropdown-item-content">
                                 <div className="font-medium">{service.servicename}</div>
@@ -1159,11 +1195,13 @@ const AddClientModal = ({
               !newClient.company || 
               !newClient.city || 
               newClient.projectManagers.length === 0 ||
-              services.length === 0
+              filteredServices.length === 0 ||
+              !companyCode
             }
           >
             {loading ? 'Adding Client...' : 
-             services.length === 0 ? 'Add Services First' : 'Add Client'}
+             !companyCode ? 'Company Code Missing' :
+             filteredServices.length === 0 ? 'Add Services First' : 'Add Client'}
           </button>
         </div>
       </div>
@@ -1185,6 +1223,10 @@ const ClientManagement = () => {
   const [servicesModal, setServicesModal] = useState(false);
   const [addClientModal, setAddClientModal] = useState(false);
   const [taskCounts, setTaskCounts] = useState({});
+  
+  // Add companyCode and companyIdentifier states
+  const [companyCode, setCompanyCode] = useState('');
+  const [companyIdentifier, setCompanyIdentifier] = useState('');
   
   const [filters, setFilters] = useState({
     page: 1,
@@ -1224,7 +1266,44 @@ const ClientManagement = () => {
     timeout: 10000,
   });
 
-  // Project managers fetch function - UPDATED
+  // Fetch companyCode and companyIdentifier from localStorage
+  useEffect(() => {
+    const fetchCompanyInfo = () => {
+      try {
+        let companyCode = '';
+        let companyIdentifier = '';
+        
+        // 1. Fetch companyCode
+        companyCode = localStorage.getItem('companyCode') || '';
+        
+        // 2. Fetch companyIdentifier
+        companyIdentifier = localStorage.getItem('companyIdentifier') || '';
+        
+        console.log('Company Info from localStorage:', { 
+          companyCode, 
+          companyIdentifier,
+          localStorageKeys: Object.keys(localStorage) 
+        });
+        
+        setCompanyCode(companyCode);
+        setCompanyIdentifier(companyIdentifier);
+        
+        if (!companyCode && !companyIdentifier) {
+          console.warn('Neither companyCode nor companyIdentifier found in localStorage');
+          setError('Company information not found. Please login again.');
+        } else {
+          setError('');
+        }
+      } catch (error) {
+        console.error('Error fetching company info:', error);
+        setError('Error loading company information');
+      }
+    };
+
+    fetchCompanyInfo();
+  }, []);
+
+  // Project managers fetch function
   const fetchProjectManagers = async () => {
     try {
       console.log('Fetching project managers...');
@@ -1233,28 +1312,18 @@ const ClientManagement = () => {
       console.log('Full Response:', response.data);
       
       if (response.data && response.data.success) {
-        // IMPORTANT: Data is in response.data.message.users NOT response.data.users
         const messageData = response.data.message;
         console.log('Message Data:', messageData);
         
-        // Get users from message.users array AND include currentUser
         const users = messageData?.users || [];
         const currentUser = messageData?.currentUser;
         
-        console.log('Users from message.users:', users);
-        console.log('Current User:', currentUser);
-        console.log('Users Count:', users.length);
-        
-        // Combine all users from both sources
         let allUsers = [...users];
         
-        // Add current user if not already in array
         if (currentUser) {
-          // Check if current user already exists in users array
           const userExists = users.some(u => u.id === currentUser.id || u._id === currentUser.id);
           
           if (!userExists) {
-            // Add current user with proper structure
             allUsers.push({
               id: currentUser.id,
               _id: currentUser.id,
@@ -1269,9 +1338,6 @@ const ClientManagement = () => {
           }
         }
         
-        console.log('All Users (combined):', allUsers);
-        
-        // Format users to match expected structure for dropdown
         const formattedManagers = allUsers.map(user => ({
           _id: user.id || user._id || `temp-${Date.now()}`,
           name: user.name || 'Unknown User',
@@ -1286,7 +1352,6 @@ const ClientManagement = () => {
         setProjectManagers(formattedManagers);
       } else {
         console.log('API not successful or no data');
-        // Fallback data
         setProjectManagers([{
           _id: "6980f49fc3721b782411d938",
           name: "ITmanger",
@@ -1304,7 +1369,6 @@ const ClientManagement = () => {
         status: error.response?.status
       });
       
-      // Fallback data on error
       setProjectManagers([{
         _id: "6980f49fc3721b782411d938",
         name: "ITmanger",
@@ -1413,19 +1477,25 @@ const ClientManagement = () => {
       // Fetch project managers first
       await fetchProjectManagers();
       
+      // Prepare API parameters - don't send identifiers to backend
+      const apiParams = {
+        ...filters
+      };
+      
       const [clientsRes, servicesRes] = await Promise.all([
-        api.get('/', { params: filters }),
+        api.get('/', { params: apiParams }),
         api.get('/services')
       ]);
       
       if (servicesRes.data?.success) {
-        setServices(servicesRes.data.data || []);
+        const allServices = servicesRes.data.data || [];
+        setServices(allServices);
       }
       
       if (clientsRes.data?.success) {
-        const clientsData = clientsRes.data.data || [];
+        const allClients = clientsRes.data.data || [];
         
-        const enhancedClients = clientsData.map(client => {
+        const enhancedClients = allClients.map(client => {
           const managerData = client.projectManagers || client.projectManager || [];
           const fullManagerObjects = getFullManagerObjects(managerData);
           
@@ -1436,6 +1506,7 @@ const ClientManagement = () => {
           };
         });
         
+        // Store all clients, we'll filter them in getFilteredClients
         setClients(enhancedClients);
         
         if (clientsRes.data.pagination) {
@@ -1469,6 +1540,41 @@ const ClientManagement = () => {
   useEffect(() => {
     fetchData();
   }, [filters]);
+
+  // Function to filter clients based on companyCode OR companyIdentifier
+  const getFilteredClients = () => {
+    if (!companyCode && !companyIdentifier) {
+      console.log('No company info found, showing all clients');
+      return clients;
+    }
+    
+    const filtered = clients.filter(client => {
+      const hasMatchingCompanyCode = client.companyCode === companyCode;
+      const hasMatchingCompanyIdentifier = client.companyIdentifier === companyIdentifier;
+      
+      // Debug logging for each client
+      console.log(`Client: ${client.client}`, {
+        clientCompanyCode: client.companyCode,
+        clientCompanyIdentifier: client.companyIdentifier,
+        localStorageCompanyCode: companyCode,
+        localStorageCompanyIdentifier: companyIdentifier,
+        matchesCode: hasMatchingCompanyCode,
+        matchesIdentifier: hasMatchingCompanyIdentifier,
+        shouldShow: hasMatchingCompanyCode || hasMatchingCompanyIdentifier
+      });
+      
+      return hasMatchingCompanyCode || hasMatchingCompanyIdentifier;
+    });
+    
+    console.log('Filtered Clients:', {
+      totalClients: clients.length,
+      filteredCount: filtered.length,
+      companyCode,
+      companyIdentifier
+    });
+    
+    return filtered;
+  };
 
   const fetchClientTasks = async (clientId) => {
     try {
@@ -1552,9 +1658,14 @@ const ClientManagement = () => {
     if (!serviceName.trim()) return;
 
     try {
-      const response = await api.post('/services', { 
-        servicename: serviceName.trim() 
-      });
+      const serviceData = { 
+        servicename: serviceName.trim(),
+        companyCode: companyCode // Add companyCode here
+      };
+      
+      console.log('Sending service data:', serviceData);
+      
+      const response = await api.post('/services', serviceData);
       
       if (response.data.success) {
         setSuccess('Service added successfully!');
@@ -1562,7 +1673,8 @@ const ClientManagement = () => {
         fetchData();
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Service add failed');
+      const errorMsg = err.response?.data?.message || 'Service add failed';
+      setError(errorMsg);
       console.error('Add service error:', err);
     }
   };
@@ -1590,7 +1702,8 @@ const ClientManagement = () => {
         phone: clientData.phone,
         address: clientData.address,
         description: clientData.description,
-        notes: clientData.notes
+        notes: clientData.notes,
+        companyCode: clientData.companyCode 
       };
       
       const response = await api.post('/', backendClientData);
@@ -1711,7 +1824,8 @@ const ClientManagement = () => {
       phone: client.phone || '',
       address: client.address || '',
       description: client.description || '',
-      notes: client.notes || ''
+      notes: client.notes || '',
+      companyCode: companyCode // Include companyCode
     };
     
     console.log('Updating client:', updateData);
@@ -1777,6 +1891,9 @@ const ClientManagement = () => {
       : [];
   };
 
+  // Get filtered clients
+  const filteredClients = getFilteredClients();
+
   return (
     <div className="client-management">
       {/* Header */}
@@ -1787,20 +1904,25 @@ const ClientManagement = () => {
               <FiUsers className="client-header-icon" />
               <div>
                 <h1 className="client-header-title">Client Management</h1>
-                <p className="client-header-subtitle">Manage clients and services</p>
+                <p className="client-header-subtitle">
+                  {companyCode || companyIdentifier 
+                    ? `Company: ${companyCode || companyIdentifier}` 
+                    : 'Manage clients and services'}
+                </p>
               </div>
             </div>
             <div className="client-header-actions">
               <button
                 className="btn btn--outlined"
                 onClick={() => setServicesModal(true)}
+                disabled={!companyCode && !companyIdentifier}
               >
                 <FiBriefcase /> Services ({services.length})
               </button>
               <button
                 className="btn btn--primary"
                 onClick={() => setAddClientModal(true)}
-                disabled={services.length === 0}
+                disabled={services.length === 0 || (!companyCode && !companyIdentifier)}
               >
                 <FiPlus /> Add Client
               </button>
@@ -1815,11 +1937,11 @@ const ClientManagement = () => {
         </div>
       </div>
 
-      {/* Statistics Cards */}
+      {/* Statistics Cards - Now using filteredClients */}
       <div className="stats-grid">
         {[
-          { label: 'Total Clients', value: pagination.totalItems || clients.length, color: 'primary', icon: <FiUsers /> },
-          { label: 'Active Clients', value: clients.filter(c => c.status === 'Active').length, color: 'success', icon: <FiCheckCircle /> },
+          { label: 'Total Clients', value: filteredClients.length, color: 'primary', icon: <FiUsers /> },
+          { label: 'Active Clients', value: filteredClients.filter(c => c.status === 'Active').length, color: 'success', icon: <FiCheckCircle /> },
           { label: 'Pending Tasks', value: tasksStats.pendingTasks, color: 'warning', icon: <FiClock /> },
           { label: 'Overdue Tasks', value: tasksStats.overdueTasks, color: 'error', icon: <FiAlertCircle /> },
           { label: 'Services', value: services.length, color: 'info', icon: <FiBriefcase /> },
@@ -1840,9 +1962,13 @@ const ClientManagement = () => {
         ))}
       </div>
 
-
-
       {/* Notifications */}
+      {!companyCode && !companyIdentifier && (
+        <div className="alert alert--warning">
+          <FiAlertCircle /> Company information not found. Please refresh the page or login again.
+        </div>
+      )}
+
       {error && (
         <div className="alert alert--error">
           {error}
@@ -1855,6 +1981,21 @@ const ClientManagement = () => {
         </div>
       )}
 
+      {/* Debug Info */}
+      <div className="debug-info" style={{ 
+        background: '#f0f0f0', 
+        padding: '10px', 
+        margin: '10px 0', 
+        borderRadius: '4px',
+        fontSize: '12px'
+      }}>
+        <p><strong>Debug Info:</strong></p>
+        <p>companyCode from localStorage: <strong>{companyCode || 'Not found'}</strong></p>
+        <p>companyIdentifier from localStorage: <strong>{companyIdentifier || 'Not found'}</strong></p>
+        <p>Total clients from API: <strong>{clients.length}</strong></p>
+        <p>Filtered clients (showing): <strong>{filteredClients.length}</strong></p>
+      </div>
+
       {/* Main Content Card */}
       <div className="card">
         <div className="card__header card-header-gradient">
@@ -1866,7 +2007,10 @@ const ClientManagement = () => {
               <div>
                 <h2 className="card-header-title">Client Portfolio</h2>
                 <p className="card-header-subtitle">
-                  Total {pagination.totalItems} clients • {clients.filter(c => c.status === 'Active').length} active
+                  Total {filteredClients.length} clients • {filteredClients.filter(c => c.status === 'Active').length} active
+                  {(companyCode || companyIdentifier) && 
+                    <span> • Company: {companyCode || companyIdentifier}</span>
+                  }
                 </p>
               </div>
             </div>
@@ -1874,7 +2018,7 @@ const ClientManagement = () => {
             <div className="card-header-right">
               <div className="active-indicator">
                 <FiActivity />
-                <span>{clients.filter(c => c.status === 'Active').length} Active</span>
+                <span>{filteredClients.filter(c => c.status === 'Active').length} Active</span>
               </div>
               
               <button 
@@ -1949,7 +2093,7 @@ const ClientManagement = () => {
               <button
                 className="btn btn--primary w-100"
                 onClick={() => setAddClientModal(true)}
-                disabled={services.length === 0}
+                disabled={services.length === 0 || (!companyCode && !companyIdentifier)}
               >
                 <FiPlus /> New Client
               </button>
@@ -1958,12 +2102,28 @@ const ClientManagement = () => {
         </div>
         
         <div className="card__content card-content-padded">
-          {loading ? (
+          {!companyCode && !companyIdentifier ? (
+            <div className="empty-state-container">
+              <div className="empty-state">
+                <FiAlertCircle className="empty-state-icon" />
+                <h3 className="empty-state-title">Company Information Required</h3>
+                <p className="empty-state-description">
+                  Company code or identifier not found. Please refresh the page or login again.
+                </p>
+                <button 
+                  className="btn btn--primary"
+                  onClick={() => window.location.reload()}
+                >
+                  Refresh Page
+                </button>
+              </div>
+            </div>
+          ) : loading ? (
             <div className="loading-container">
               <div className="spinner"></div>
               <p>Loading clients...</p>
             </div>
-          ) : clients.length > 0 ? (
+          ) : filteredClients.length > 0 ? (
             <>
               {/* Table Container */}
               <div className="table-container">
@@ -1980,7 +2140,7 @@ const ClientManagement = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {clients.map((client) => {
+                    {filteredClients.map((client) => {
                       const stats = taskCounts[client._id] || { total: 0, completed: 0, pending: 0 };
                       const pending = stats.pending || 0;
                       const progress = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
@@ -1993,6 +2153,8 @@ const ClientManagement = () => {
                                 <p className="font-bold">{client.client || 'N/A'}</p>
                                 <small className="text-muted client-cell-secondary">
                                   ID: {client.clientId || client._id?.slice(-6)}
+                                  {client.companyCode && ` • Code: ${client.companyCode}`}
+                                  {client.companyIdentifier && ` • ID: ${client.companyIdentifier}`}
                                 </small>
                                 <small className="text-muted client-cell-mobile">
                                   {client.company || 'N/A'}
@@ -2098,12 +2260,12 @@ const ClientManagement = () => {
                     <option value={50}>50 per page</option>
                   </select>
                   <p className="pagination-info">
-                    Showing <strong>{((filters.page - 1) * filters.limit) + 1}-{Math.min(filters.page * filters.limit, pagination.totalItems)}</strong> of <strong>{pagination.totalItems}</strong>
+                    Showing <strong>{((filters.page - 1) * filters.limit) + 1}-{Math.min(filters.page * filters.limit, filteredClients.length)}</strong> of <strong>{filteredClients.length}</strong>
                   </p>
                 </div>
                 
                 <div className="pagination">
-                  {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((page) => (
+                  {Array.from({ length: Math.ceil(filteredClients.length / filters.limit) }, (_, i) => i + 1).map((page) => (
                     <button
                       key={page}
                       className={`pagination__item ${page === filters.page ? 'pagination__item--active' : ''}`}
@@ -2123,12 +2285,13 @@ const ClientManagement = () => {
                 <p className="empty-state-description">
                   {services.length === 0 
                     ? 'Add services first to create clients' 
-                    : 'Add your first client to start managing your portfolio'
+                    : `No clients found for ${companyCode || companyIdentifier}. Add your first client.`
                   }
                 </p>
                 <button 
                   className="btn btn--primary"
                   onClick={() => services.length === 0 ? setServicesModal(true) : setAddClientModal(true)}
+                  disabled={!companyCode && !companyIdentifier}
                 >
                   {services.length === 0 ? 'Add Services First' : 'Create First Client'}
                 </button>
@@ -2146,6 +2309,7 @@ const ClientManagement = () => {
         services={services}
         projectManagers={projectManagers}
         loading={addLoading}
+        companyCode={companyCode}
       />
 
       {/* Services Management Modal */}
@@ -2155,6 +2319,7 @@ const ClientManagement = () => {
         services={services}
         onAddService={handleAddService}
         onDeleteService={(id, name) => handleDeleteClick('service', id, name)}
+        companyCode={companyCode}
       />
 
       {/* Delete Confirmation Dialog */}
@@ -2219,6 +2384,15 @@ const ClientManagement = () => {
                         {viewDialog.client.status}
                       </div>
                     </div>
+                    {(viewDialog.client.companyCode || viewDialog.client.companyIdentifier) && (
+                      <div className="detail-item">
+                        <p className="detail-label">Company Info</p>
+                        <p className="detail-value">
+                          {viewDialog.client.companyCode && `Code: ${viewDialog.client.companyCode}`}
+                          {viewDialog.client.companyIdentifier && ` • ID: ${viewDialog.client.companyIdentifier}`}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
 

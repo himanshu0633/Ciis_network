@@ -412,7 +412,7 @@ const SidebarManagement = () => {
       // Show success message
       setSnackbar({
         open: true,
-        message: `Loaded configuration for role`,
+        message: 'Loaded configuration for role',
         severity: 'success'
       });
       
