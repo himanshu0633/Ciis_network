@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import axios from "../../utils/axiosConfig";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -37,6 +37,11 @@ const Attendance = () => {
   const [showMobileFilter, setShowMobileFilter] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  
+  // User join date from createdAt
+  const [userJoinDate, setUserJoinDate] = useState(null);
+  const [formattedJoinDate, setFormattedJoinDate] = useState('');
+  
   const [stats, setStats] = useState({
     present: 0,
     late: 0,
@@ -45,6 +50,49 @@ const Attendance = () => {
     total: 0,
     percentage: 0,
   });
+
+  // Get user from localStorage
+  const user = useMemo(() => {
+    try {
+      const userData = localStorage.getItem('user');
+      return userData ? JSON.parse(userData) : null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const token = useMemo(() => localStorage.getItem('token'), []);
+
+  // Parse user's creation date
+  useEffect(() => {
+    if (user?.createdAt) {
+      const joinDate = new Date(user.createdAt);
+      setUserJoinDate(joinDate);
+      
+      const formatted = joinDate.toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        month: 'long', 
+        day: 'numeric', 
+        year: 'numeric' 
+      });
+      setFormattedJoinDate(formatted);
+      
+      console.log('User joined on:', joinDate.toISOString());
+    }
+  }, [user?.createdAt]);
+
+  // Check if date is before join date
+  const isBeforeJoinDate = useCallback((date) => {
+    if (!userJoinDate) return false;
+    
+    const compareDate = new Date(date);
+    compareDate.setHours(0, 0, 0, 0);
+    
+    const joinDate = new Date(userJoinDate);
+    joinDate.setHours(0, 0, 0, 0);
+    
+    return compareDate < joinDate;
+  }, [userJoinDate]);
 
   // Check mobile viewport
   useEffect(() => {
@@ -56,17 +104,13 @@ const Attendance = () => {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  useEffect(() => {
-    fetchAttendance();
-  }, []);
-
-  const fetchAttendance = async (showRefresh = false) => {
+  // Fetch attendance with join date filtering
+  const fetchAttendance = useCallback(async (showRefresh = false) => {
     if (showRefresh) setRefreshing(true);
     else setLoading(true);
 
     try {
       const token = localStorage.getItem("token");
-      console.log("Fetching attendance data from API...");
 
       const response = await axios.get("/attendance/list", {
         headers: {
@@ -75,30 +119,21 @@ const Attendance = () => {
         },
       });
 
-      console.log("API Response:", response.data);
-
       let attendanceData = [];
 
-      if (
-        response.data &&
-        response.data.data &&
-        Array.isArray(response.data.data)
-      ) {
+      if (response.data && response.data.data && Array.isArray(response.data.data)) {
         attendanceData = response.data.data;
       } else if (Array.isArray(response.data)) {
         attendanceData = response.data;
       } else if (response.data && Array.isArray(response.data.attendance)) {
         attendanceData = response.data.attendance;
       } else {
-        console.warn("Unexpected response structure, using empty array");
         attendanceData = [];
       }
 
-      console.log("Processed attendance data:", attendanceData);
-
-      if (attendanceData.length === 0) {
-        console.log("No attendance records found in response");
-        toast.info("No attendance records found");
+      // Filter out records before user's join date
+      if (userJoinDate) {
+        attendanceData = attendanceData.filter(record => !isBeforeJoinDate(record.date));
       }
 
       setAttendance(attendanceData);
@@ -109,53 +144,35 @@ const Attendance = () => {
       }
     } catch (error) {
       console.error("Error fetching attendance data:", error);
-
-      let errorMessage = "Failed to load attendance records";
-      if (error.response) {
-        errorMessage =
-          error.response.data?.message ||
-          `Server error: ${error.response.status}`;
-        console.error("Server error response:", error.response.data);
-      } else if (error.request) {
-        errorMessage = "Network error - Please check your connection";
-        console.error("Network error:", error.request);
-      } else {
-        errorMessage = error.message || "Unknown error occurred";
-      }
-
-      toast.error(`❌ ${errorMessage}`);
+      toast.error("❌ Failed to load attendance records");
       setAttendance([]);
       calculateStats([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [userJoinDate, isBeforeJoinDate]);
+
+  // Load data on mount - only once
+  const initialLoadRef = useRef(false);
+  
+  useEffect(() => {
+    if (initialLoadRef.current) return;
+    if (!userJoinDate) return;
+    
+    initialLoadRef.current = true;
+    fetchAttendance();
+  }, [userJoinDate, fetchAttendance]);
 
   const calculateStats = (data) => {
-    console.log("Calculating stats for data:", data);
-
     const present = data.filter((record) => record.status === "PRESENT").length;
     const late = data.filter((record) => record.status === "LATE").length;
     const absent = data.filter((record) => record.status === "ABSENT").length;
-    const halfDay = data.filter(
-      (record) => record.status === "HALF DAY"
-    ).length;
+    const halfDay = data.filter((record) => record.status === "HALF DAY").length;
     const total = data.length;
     
-    // Calculate percentage based on (PRESENT + LATE) / total
-    // Since LATE is considered a working day
     const workingDays = present + late;
     const percentage = total > 0 ? Math.round((workingDays / total) * 100) : 0;
-
-    console.log("Calculated stats:", {
-      present,
-      late,
-      absent,
-      halfDay,
-      total,
-      percentage,
-    });
 
     setStats({
       present,
@@ -178,7 +195,6 @@ const Attendance = () => {
         year: "numeric",
       });
     } catch (error) {
-      console.error("Error formatting date:", dateStr, error);
       return "Invalid Date";
     }
   };
@@ -193,7 +209,6 @@ const Attendance = () => {
         hour12: true,
       });
     } catch (error) {
-      console.error("Error formatting time:", timeStr, error);
       return "Invalid Time";
     }
   };
@@ -243,47 +258,48 @@ const Attendance = () => {
     }
   };
 
-  const filteredData = attendance.filter((record) => {
-    const matchesSearch =
-      formatDate(record.date).toLowerCase().includes(search.toLowerCase()) ||
-      (record.status &&
-        record.status.toLowerCase().includes(search.toLowerCase()));
-    
-    const matchesStatus =
-      statusFilter === "ALL" || 
-      (statusFilter === "LATE" ? record.status === "LATE" :
-       statusFilter === "PRESENT" ? record.status === "PRESENT" :
-       statusFilter === "ABSENT" ? record.status === "ABSENT" :
-       statusFilter === "HALF DAY" ? record.status === "HALF DAY" : true);
+  const filteredData = useMemo(() => {
+    return attendance.filter((record) => {
+      const matchesSearch =
+        formatDate(record.date).toLowerCase().includes(search.toLowerCase()) ||
+        (record.status && record.status.toLowerCase().includes(search.toLowerCase()));
+      
+      const matchesStatus =
+        statusFilter === "ALL" || 
+        (statusFilter === "LATE" ? record.status === "LATE" :
+         statusFilter === "PRESENT" ? record.status === "PRESENT" :
+         statusFilter === "ABSENT" ? record.status === "ABSENT" :
+         statusFilter === "HALF DAY" ? record.status === "HALF DAY" : true);
 
-    const recordDate = new Date(record.date);
-    const now = new Date();
-    let matchesTimeRange = true;
+      const recordDate = new Date(record.date);
+      const now = new Date();
+      let matchesTimeRange = true;
 
-    switch (timeRange) {
-      case "TODAY":
-        matchesTimeRange = recordDate.toDateString() === now.toDateString();
-        break;
-      case "WEEK": {
-        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        matchesTimeRange = recordDate >= weekAgo;
-        break;
+      switch (timeRange) {
+        case "TODAY":
+          matchesTimeRange = recordDate.toDateString() === now.toDateString();
+          break;
+        case "WEEK": {
+          const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          matchesTimeRange = recordDate >= weekAgo;
+          break;
+        }
+        case "MONTH": {
+          const monthAgo = new Date(
+            now.getFullYear(),
+            now.getMonth() - 1,
+            now.getDate()
+          );
+          matchesTimeRange = recordDate >= monthAgo;
+          break;
+        }
+        default:
+          matchesTimeRange = true;
       }
-      case "MONTH": {
-        const monthAgo = new Date(
-          now.getFullYear(),
-          now.getMonth() - 1,
-          now.getDate()
-        );
-        matchesTimeRange = recordDate >= monthAgo;
-        break;
-      }
-      default:
-        matchesTimeRange = true;
-    }
 
-    return matchesSearch && matchesStatus && matchesTimeRange;
-  });
+      return matchesSearch && matchesStatus && matchesTimeRange;
+    });
+  }, [attendance, search, statusFilter, timeRange]);
 
   const openDetailsModal = (record) => {
     setSelectedRecord(record);
@@ -342,7 +358,6 @@ const Attendance = () => {
 
       toast.success("📊 CSV exported successfully!");
     } catch (error) {
-      console.error("Error exporting CSV:", error);
       toast.error("Failed to export CSV");
     }
   };
@@ -353,10 +368,13 @@ const Attendance = () => {
     setShowCalendar(false);
   };
 
-  // Status options including LATE
+  const handleRefresh = () => {
+    fetchAttendance(true);
+  };
+
   const statusOptions = ["ALL", "PRESENT", "LATE", "HALF DAY", "ABSENT"];
 
-  if (loading) {
+  if (loading && !refreshing) {
     return (
       <div className="Attendance-loading">
         <div className="Attendance-loading-content">
@@ -364,6 +382,11 @@ const Attendance = () => {
             <div className="Attendance-loading-progress"></div>
           </div>
           <h2 className="Attendance-loading-text">Loading your attendance records...</h2>
+          {userJoinDate && (
+            <p className="Attendance-loading-subtext">
+              Showing records from {formattedJoinDate}
+            </p>
+          )}
         </div>
       </div>
     );
@@ -385,6 +408,12 @@ const Attendance = () => {
             <p className="Attendance-subtitle">
               Track your attendance history and insights
             </p>
+            {userJoinDate && (
+              <div className="Attendance-join-info">
+                <FiClock />
+                <span>Joined on: {formattedJoinDate}</span>
+              </div>
+            )}
           </div>
 
           <div className="Attendance-header-actions">
@@ -427,7 +456,7 @@ const Attendance = () => {
 
             <button
               className="Attendance-icon-button"
-              onClick={() => fetchAttendance(true)}
+              onClick={handleRefresh}
               disabled={refreshing}
             >
               <FiRefreshCw className={refreshing ? "Attendance-spin" : ""} />
@@ -452,7 +481,14 @@ const Attendance = () => {
               className="Attendance-date-picker"
               value={selectedDate || ""}
               onChange={(e) => handleDateSelect(e.target.value)}
+              min={userJoinDate ? userJoinDate.toISOString().split('T')[0] : undefined}
             />
+            {userJoinDate && (
+              <div className="Attendance-calendar-note">
+                <FiClock size={12} />
+                <span>Records available from {formattedJoinDate}</span>
+              </div>
+            )}
           </div>
         )}
 
@@ -520,11 +556,30 @@ const Attendance = () => {
                 </button>
               ))}
             </div>
+            {userJoinDate && (
+              <div className="Attendance-filter-join-info">
+                <FiClock size={14} />
+                <span>Records from {formattedJoinDate}</span>
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* Stats Cards - Now includes LATE */}
+      {/* Join Date Info Banner */}
+      {userJoinDate && attendance.length === 0 && !loading && (
+        <div className="Attendance-join-banner">
+          <div className="Attendance-join-banner-content">
+            <FiCalendar size={20} />
+            <div>
+              <h3>No attendance records found</h3>
+              <p>You joined on {formattedJoinDate}. Your attendance records will appear here once you clock in.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Stats Cards */}
       <div className="Attendance-stats-grid">
         {[
           {
@@ -564,14 +619,12 @@ const Attendance = () => {
             color: "info",
           },
         ]
-          .filter(stat => stat.value > 0 || stat.key === "total") // Show total even if 0
+          .filter(stat => stat.value > 0 || stat.key === "total")
           .map((stat) => (
             <div
               key={stat.key}
               className={`Attendance-stat-card ${
-                statusFilter === stat.key.toUpperCase()
-                  ? "Attendance-active"
-                  : ""
+                statusFilter === stat.key.toUpperCase() ? "Attendance-active" : ""
               }`}
               onClick={() => {
                 if (stat.key !== "total") {
@@ -585,18 +638,14 @@ const Attendance = () => {
             >
               <div className="Attendance-stat-card-content">
                 <div className="Attendance-stat-icon-container">
-                  <stat.icon
-                    className={`Attendance-stat-icon Attendance-${stat.color}`}
-                  />
+                  <stat.icon className={`Attendance-stat-icon Attendance-${stat.color}`} />
                 </div>
                 <div className="Attendance-stat-details">
                   <p className="Attendance-stat-label">{stat.label}</p>
                   <div className="Attendance-stat-value-container">
                     <h3 className="Attendance-stat-value">{stat.value}</h3>
                     {stat.extra && (
-                      <span className="Attendance-stat-extra">
-                        {stat.extra}
-                      </span>
+                      <span className="Attendance-stat-extra">{stat.extra}</span>
                     )}
                   </div>
                 </div>
@@ -635,6 +684,12 @@ const Attendance = () => {
           <div className="Attendance-late-info">
             <FiWatch className="Attendance-late-info-icon" />
             <span>{stats.late} late day(s) recorded</span>
+          </div>
+        )}
+        {userJoinDate && attendance.length > 0 && (
+          <div className="Attendance-range-info">
+            <FiCalendar />
+            <span>Since {formattedJoinDate}</span>
           </div>
         )}
       </div>
@@ -680,9 +735,7 @@ const Attendance = () => {
                         </div>
                       </td>
                       <td>
-                        <div
-                          className={`Attendance-status-chip Attendance-status-${statusClass}`}
-                        >
+                        <div className={`Attendance-status-chip Attendance-status-${statusClass}`}>
                           {getStatusIcon(record.status)}
                           <span>{getStatusDisplayText(record.status)}</span>
                         </div>
@@ -706,7 +759,10 @@ const Attendance = () => {
                       <td>
                         <button
                           className="Attendance-view-details-button"
-                          onClick={() => openDetailsModal(record)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openDetailsModal(record);
+                          }}
                         >
                           <FiEye />
                         </button>
@@ -719,7 +775,11 @@ const Attendance = () => {
                   <td colSpan="7" className="Attendance-no-data-cell">
                     <FiUser className="Attendance-no-data-icon" />
                     <h3>No attendance records found</h3>
-                    <p>Try adjusting your filters or search terms</p>
+                    <p>
+                      {userJoinDate 
+                        ? `You joined on ${formattedJoinDate}. No records before this date.`
+                        : 'Try adjusting your filters or search terms'}
+                    </p>
                   </td>
                 </tr>
               )}
@@ -756,9 +816,7 @@ const Attendance = () => {
                       </div>
                     </div>
                     <div className="Attendance-mobile-card-footer">
-                      <div
-                        className={`Attendance-mobile-status-chip Attendance-status-${statusClass}`}
-                      >
+                      <div className={`Attendance-mobile-status-chip Attendance-status-${statusClass}`}>
                         {getStatusIcon(record.status)}
                         <span>{getStatusDisplayText(record.status)}</span>
                       </div>
@@ -782,7 +840,11 @@ const Attendance = () => {
             <div className="Attendance-no-data-card">
               <FiUser className="Attendance-no-data-icon" />
               <h3>No records found</h3>
-              <p>Adjust your search or filters</p>
+              <p>
+                {userJoinDate 
+                  ? `You joined on ${formattedJoinDate}`
+                  : 'Adjust your search or filters'}
+              </p>
             </div>
           )}
         </div>
@@ -807,9 +869,7 @@ const Attendance = () => {
             <div className="Attendance-modal-body">
               <div className="Attendance-modal-section">
                 <h4>Status</h4>
-                <div
-                  className={`Attendance-modal-status-chip Attendance-status-${selectedRecord.status.toLowerCase().replace(" ", "-")}`}
-                >
+                <div className={`Attendance-modal-status-chip Attendance-status-${selectedRecord.status.toLowerCase().replace(" ", "-")}`}>
                   {getStatusIcon(selectedRecord.status)}
                   <span>{getStatusDisplayText(selectedRecord.status)}</span>
                 </div>
@@ -870,4 +930,5 @@ const Attendance = () => {
   );
 };
 
+// ✅ THIS IS CRITICAL - MUST BE DEFAULT EXPORT
 export default Attendance;

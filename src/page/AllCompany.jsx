@@ -6,7 +6,6 @@ import API_URL from "../config";
 import {
   Business,
   People,
-  ArrowBack,
   Search,
   FilterList,
   Download,
@@ -16,35 +15,33 @@ import {
   Close,
   Email,
   Phone,
-  Badge,
   Person,
   CheckCircle,
   Cancel,
   MoreVert,
   Edit,
   LocationOn,
-  Security,
   CalendarToday,
-  Domain,
-  Link,
-  Image,
-  Storage,
   Add,
   Refresh,
   Delete,
   Block,
-  Check,
-  Warning,
   Info,
-  AccountCircle,
   AssignmentInd,
-  Work,
-  Schedule,
   PersonAdd,
-  ViewList,
   Dashboard,
-  Cloud,
-  DataUsage
+  DataUsage,
+  Apartment,
+  Groups,
+  Verified,
+  Settings,
+  NotificationsNone,
+  ChevronRight,
+  CorporateFare,
+  AccountCircle,
+  Language,
+  Storage,
+  Schedule
 } from "@mui/icons-material";
 import {
   Dialog,
@@ -87,17 +84,165 @@ import {
   useMediaQuery,
   Fab,
   Zoom,
-  Fade,
-  Slide,
-  Grow,
-  Container
+  Collapse,
+  Container,
+  alpha,
+  styled,
+  Badge as MuiBadge,
+  Stack,
+  ToggleButton,
+  ToggleButtonGroup,
+  Popover,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemText as MuiListItemText,
+  SpeedDial,
+  SpeedDialAction,
+  SpeedDialIcon,
+  AvatarGroup,
+  Pagination
 } from "@mui/material";
+
+// Professional Styled Components
+const StatCard = styled(Card)(({ theme }) => ({
+  borderRadius: 16,
+  boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+  border: '1px solid #edf2f7',
+  height: '100%',
+  transition: 'all 0.2s ease',
+  '&:hover': {
+    boxShadow: '0 8px 24px rgba(0,0,0,0.06)',
+    borderColor: '#2563eb',
+  },
+}));
+
+const CompanyCard = styled(Card)(({ theme }) => ({
+  borderRadius: 20,
+  boxShadow: '0 2px 16px rgba(0,0,0,0.04)',
+  border: '1px solid #edf2f7',
+  transition: 'all 0.2s ease',
+  overflow: 'hidden',
+  '&:hover': {
+    boxShadow: '0 12px 32px rgba(0,0,0,0.06)',
+    borderColor: '#2563eb',
+  },
+}));
+
+const StatusBadge = styled(Box)(({ active }) => ({
+  display: 'inline-flex',
+  alignItems: 'center',
+  padding: '4px 10px',
+  borderRadius: 30,
+  fontSize: '0.75rem',
+  fontWeight: 600,
+  backgroundColor: active ? '#e6f7e6' : '#fee9e7',
+  color: active ? '#0a5e0a' : '#b71c1c',
+  border: `1px solid ${active ? '#a5d6a5' : '#ffcdd2'}`,
+  '& svg': {
+    fontSize: 14,
+    marginRight: 4,
+  },
+}));
+
+const InfoLabel = styled(Typography)({
+  fontSize: '0.7rem',
+  fontWeight: 600,
+  textTransform: 'uppercase',
+  letterSpacing: '0.5px',
+  color: '#64748b',
+  marginBottom: 4,
+});
+
+const InfoValue = styled(Typography)({
+  fontSize: '0.95rem',
+  fontWeight: 500,
+  color: '#1e293b',
+  wordBreak: 'break-word',
+});
+
+const ActionButton = styled(Button)(({ variant }) => ({
+  borderRadius: 12,
+  padding: '8px 20px',
+  fontWeight: 600,
+  fontSize: '0.85rem',
+  textTransform: 'none',
+  boxShadow: 'none',
+  ...(variant === 'contained' && {
+    background: '#2563eb',
+    color: 'white',
+    '&:hover': {
+      background: '#1d4ed8',
+    },
+  }),
+  ...(variant === 'outlined' && {
+    borderColor: '#e2e8f0',
+    color: '#1e293b',
+    '&:hover': {
+      borderColor: '#2563eb',
+      backgroundColor: '#f8fafc',
+    },
+  }),
+}));
+
+const ViewButton = styled(Button)({
+  borderRadius: 12,
+  padding: '8px 16px',
+  fontWeight: 600,
+  fontSize: '0.85rem',
+  textTransform: 'none',
+  backgroundColor: '#f8fafc',
+  color: '#1e293b',
+  border: '1px solid #e2e8f0',
+  '&:hover': {
+    backgroundColor: '#f1f5f9',
+    borderColor: '#2563eb',
+    color: '#2563eb',
+  },
+  '& svg': {
+    fontSize: 18,
+  },
+});
+
+const AddUserBtn = styled(Button)({
+  borderRadius: 12,
+  padding: '8px 16px',
+  fontWeight: 600,
+  fontSize: '0.85rem',
+  textTransform: 'none',
+  background: '#2563eb',
+  color: 'white',
+  boxShadow: '0 4px 12px rgba(37, 99, 235, 0.2)',
+  '&:hover': {
+    background: '#1d4ed8',
+    boxShadow: '0 6px 16px rgba(37, 99, 235, 0.3)',
+  },
+  '& svg': {
+    fontSize: 18,
+  },
+});
+
+const LogoBox = styled(Box)({
+  width: 80,
+  height: 80,
+  borderRadius: 16,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  backgroundColor: 'white',
+  border: '2px solid #edf2f7',
+  overflow: 'hidden',
+  '& img': {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+  },
+});
 
 const AllCompany = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
 
   // State variables
@@ -108,6 +253,14 @@ const AllCompany = () => {
   const [filter, setFilter] = useState("all");
   const [expandedCompany, setExpandedCompany] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
+  const [page, setPage] = useState(1);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notificationAnchor, setNotificationAnchor] = useState(null);
+  const [notifications] = useState([
+    { id: 1, message: 'New company registered', time: '5 min ago', read: false },
+    { id: 2, message: 'Subscription expiring soon', time: '1 hour ago', read: false },
+    { id: 3, message: 'User limit reached', time: '2 hours ago', read: true },
+  ]);
   
   // Popup states
   const [usersPopupOpen, setUsersPopupOpen] = useState(false);
@@ -281,7 +434,7 @@ const AllCompany = () => {
         return {
           ...company,
           userCount: companyUsers.length,
-          users: companyUsers.slice(0, 3)
+          users: companyUsers.slice(0, 4)
         };
       });
 
@@ -413,27 +566,11 @@ const AllCompany = () => {
       const date = new Date(dateString);
       return date.toLocaleDateString('en-US', {
         year: 'numeric',
-        month: 'long',
+        month: 'short',
         day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
       });
     } catch (error) {
       return "Invalid date";
-    }
-  };
-
-  // Calculate days remaining
-  const getDaysRemaining = (expiryDate) => {
-    if (!expiryDate) return 0;
-    try {
-      const expiry = new Date(expiryDate);
-      const today = new Date();
-      const diffTime = expiry - today;
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      return diffDays > 0 ? diffDays : 0;
-    } catch (error) {
-      return 0;
     }
   };
 
@@ -441,17 +578,7 @@ const AllCompany = () => {
   const handleExportCSV = () => {
     try {
       const csvRows = [];
-      
-      csvRows.push([
-        'Company Code',
-        'Company Name',
-        'Email',
-        'Phone',
-        'Owner',
-        'Total Users',
-        'Status',
-        'Created Date'
-      ].join(','));
+      csvRows.push(['Company Code', 'Company Name', 'Email', 'Phone', 'Owner', 'Users', 'Status', 'Created'].join(','));
       
       filteredCompanies.forEach(company => {
         csvRows.push([
@@ -472,27 +599,20 @@ const AllCompany = () => {
       const url = URL.createObjectURL(blob);
       
       link.setAttribute('href', url);
-      link.setAttribute('download', `companies_report_${new Date().toISOString().split('T')[0]}.csv`);
-      link.style.visibility = 'hidden';
-      
+      link.setAttribute('download', `companies_${new Date().toISOString().split('T')[0]}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       
       toast.success("Report exported successfully!");
     } catch (error) {
-      console.error("❌ Export error:", error);
       toast.error("Failed to export report");
     }
   };
 
   // Toggle company expansion
-  const toggleCompanyExpansion = async (companyId) => {
-    if (expandedCompany === companyId) {
-      setExpandedCompany(null);
-    } else {
-      setExpandedCompany(companyId);
-    }
+  const toggleCompanyExpansion = (companyId) => {
+    setExpandedCompany(expandedCompany === companyId ? null : companyId);
   };
 
   // Create user for specific company
@@ -500,31 +620,21 @@ const AllCompany = () => {
     window.open(`http://localhost:5173/create-user?company=${companyId}&companyCode=${companyCode}`, '_blank');
   };
 
-  // Get status badge color
-  const getStatusColor = (status) => {
-    switch (status?.toLowerCase()) {
-      case 'active': return 'success';
-      case 'inactive': return 'error';
-      case 'pending': return 'warning';
-      default: return 'default';
-    }
-  };
-
   // Get role badge color
   const getRoleColor = (role) => {
     switch (role?.toLowerCase()) {
-      case 'admin': return 'primary';
-      case 'manager': return 'secondary';
-      case 'supervisor': return 'info';
-      case 'employee': return 'success';
-      default: return 'default';
+      case 'admin': return '#2563eb';
+      case 'manager': return '#7e22ce';
+      case 'supervisor': return '#0891b2';
+      case 'employee': return '#0a5e0a';
+      default: return '#64748b';
     }
   };
 
   // Handle menu actions
-  const handleMenuOpen = (event, action, company) => {
+  const handleMenuOpen = (event, company) => {
     setAnchorEl(event.currentTarget);
-    setSelectedAction({ action, company });
+    setSelectedAction(company);
   };
 
   const handleMenuClose = () => {
@@ -533,10 +643,10 @@ const AllCompany = () => {
   };
 
   const handleAction = (action) => {
-    if (selectedAction && selectedAction.company) {
+    if (selectedAction) {
       switch (action) {
         case 'edit':
-          handleOpenCompanyDetails(selectedAction.company);
+          handleOpenCompanyDetails(selectedAction);
           break;
         case 'delete':
           toast.info('Delete functionality coming soon');
@@ -549,1017 +659,593 @@ const AllCompany = () => {
     handleMenuClose();
   };
 
-  // Loading state
-  if (loading) {
-    return (
-      <Box sx={styles.loadingContainer}>
-        <CircularProgress size={60} thickness={4} sx={{ color: '#6366f1' }} />
-        <Typography variant="h6" sx={{ mt: 3, color: 'text.secondary' }}>
-          Loading Companies Data...
-        </Typography>
-        <Typography variant="body2" sx={{ mt: 1, color: 'text.disabled' }}>
-          Please wait while we fetch the latest information
-        </Typography>
-      </Box>
-    );
-  }
+  const handleNotificationsOpen = (event) => {
+    setNotificationAnchor(event.currentTarget);
+    setNotificationsOpen(true);
+  };
+
+  const handleNotificationsClose = () => {
+    setNotificationsOpen(false);
+    setNotificationAnchor(null);
+  };
 
   // Calculate statistics
   const totalCompanies = companies.length;
   const activeCompanies = companies.filter(c => c.isActive).length;
   const totalUsers = companies.reduce((total, company) => total + (company.userCount || 0), 0);
+  const activePercentage = totalCompanies > 0 ? Math.round((activeCompanies / totalCompanies) * 100) : 0;
+
+  // Get company logo or fallback
+  const getCompanyLogo = (company) => {
+    return company?.logo || null;
+  };
+
+  // Get company color
+  const getCompanyColor = (company) => {
+    if (!company) return '#2563eb';
+    const colors = ['#2563eb', '#7c3aed', '#db2777', '#ea580c', '#16a34a', '#0891b2'];
+    const index = (company.companyName?.length || 0) % colors.length;
+    return colors[index];
+  };
+
+  // Loading state
+  if (loading) {
+    return (
+      <Box sx={{ minHeight: '100vh', bgcolor: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Paper sx={{ p: 5, borderRadius: 4, textAlign: 'center' }}>
+          <CircularProgress size={60} sx={{ color: '#2563eb', mb: 2 }} />
+          <Typography variant="h6" sx={{ color: '#1e293b', fontWeight: 600 }}>Loading Companies...</Typography>
+        </Paper>
+      </Box>
+    );
+  }
 
   return (
-    <Box sx={styles.container}>
-      {/* Header Section */}
-      <Box sx={styles.headerSection}>
-        <Box sx={styles.headerContent}>
-          <Box sx={styles.titleSection}>
-            <Business sx={styles.titleIcon} />
+    <Box sx={{ bgcolor: '#f8fafc', minHeight: '100vh', py: 4 }}>
+      <Container maxWidth="xl">
+        {/* Header */}
+        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 4 }}>
+          <Stack direction="row" alignItems="center" spacing={2}>
+            <Box sx={{ p: 1.5, bgcolor: '#2563eb', borderRadius: 3 }}>
+              <CorporateFare sx={{ fontSize: 28, color: 'white' }} />
+            </Box>
             <Box>
-              <Typography variant="h4" sx={styles.mainTitle}>
-                All Companies & Users
-              </Typography>
-              <Typography variant="body1" sx={styles.subtitle}>
-                Manage all companies and their users from one dashboard
-              </Typography>
+              <Typography variant="h4" sx={{ fontWeight: 700, color: '#0f172a' }}>Companies</Typography>
+              <Typography variant="body2" color="#64748b">Manage all organizations</Typography>
             </Box>
-          </Box>
+          </Stack>
           
-          {isDesktop && (
-            <Box sx={styles.headerActions}>
-              <Button
-                variant="contained"
-                startIcon={<Add />}
-                sx={styles.addButton}
-              >
-                Add Company
-              </Button>
-              <Button
-                variant="outlined"
-                startIcon={<Refresh />}
-                onClick={fetchCompaniesWithUsers}
-                sx={styles.refreshButton}
-              >
-                Refresh
-              </Button>
-            </Box>
-          )}
-        </Box>
+          <Stack direction="row" spacing={1.5}>
+            <IconButton onClick={handleNotificationsOpen} sx={{ bgcolor: 'white', border: '1px solid #e2e8f0' }}>
+              <MuiBadge badgeContent={notifications.filter(n => !n.read).length} color="error">
+                <NotificationsNone />
+              </MuiBadge>
+            </IconButton>
+            {isDesktop && (
+              <>
+                <ActionButton variant="contained" startIcon={<Add />} onClick={() => window.open('http://localhost:5173/create-company', '_blank')}>
+                  Add Company
+                </ActionButton>
+                <ActionButton variant="outlined" startIcon={<Refresh />} onClick={fetchCompaniesWithUsers}>
+                  Refresh
+                </ActionButton>
+              </>
+            )}
+          </Stack>
+        </Stack>
 
-        {/* Stats Cards */}
-        <Grid container spacing={3} sx={styles.statsGrid}>
-          <Grid item xs={6} sm={3}>
-            <Card sx={styles.statCard}>
+        {/* Stats Cards - Single Row */}
+        <Grid container spacing={3} sx={{ mb: 4 }}>
+          <Grid item xs={12} sm={6} md={3}>
+            <StatCard>
               <CardContent>
-                <Box sx={styles.statCardContent}>
-                  <Box sx={{ ...styles.statIcon, bgcolor: 'primary.light' }}>
-                    <Business sx={{ color: 'primary.main' }} />
-                  </Box>
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
                   <Box>
-                    <Typography variant="h3" sx={styles.statNumber}>
-                      {totalCompanies}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Total Companies
-                    </Typography>
+                    <Typography variant="body2" color="#64748b" sx={{ fontWeight: 600, mb: 1 }}>TOTAL COMPANIES</Typography>
+                    <Typography variant="h3" sx={{ fontWeight: 700, color: '#0f172a' }}>{totalCompanies}</Typography>
                   </Box>
-                </Box>
+                  <Box sx={{ p: 1.5, bgcolor: '#e0e7ff', borderRadius: 3, color: '#2563eb' }}>
+                    <Apartment sx={{ fontSize: 32 }} />
+                  </Box>
+                </Stack>
               </CardContent>
-            </Card>
+            </StatCard>
           </Grid>
-          
-          <Grid item xs={6} sm={3}>
-            <Card sx={styles.statCard}>
+          <Grid item xs={12} sm={6} md={3}>
+            <StatCard>
               <CardContent>
-                <Box sx={styles.statCardContent}>
-                  <Box sx={{ ...styles.statIcon, bgcolor: 'success.light' }}>
-                    <CheckCircle sx={{ color: 'success.main' }} />
-                  </Box>
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
                   <Box>
-                    <Typography variant="h3" sx={styles.statNumber}>
-                      {activeCompanies}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Active Companies
-                    </Typography>
+                    <Typography variant="body2" color="#64748b" sx={{ fontWeight: 600, mb: 1 }}>ACTIVE COMPANIES</Typography>
+                    <Typography variant="h3" sx={{ fontWeight: 700, color: '#0f172a' }}>{activeCompanies}</Typography>
                   </Box>
-                </Box>
+                  <Box sx={{ p: 1.5, bgcolor: '#e6f7e6', borderRadius: 3, color: '#0a5e0a' }}>
+                    <CheckCircle sx={{ fontSize: 32 }} />
+                  </Box>
+                </Stack>
               </CardContent>
-            </Card>
+            </StatCard>
           </Grid>
-          
-          <Grid item xs={6} sm={3}>
-            <Card sx={styles.statCard}>
+          <Grid item xs={12} sm={6} md={3}>
+            <StatCard>
               <CardContent>
-                <Box sx={styles.statCardContent}>
-                  <Box sx={{ ...styles.statIcon, bgcolor: 'info.light' }}>
-                    <People sx={{ color: 'info.main' }} />
-                  </Box>
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
                   <Box>
-                    <Typography variant="h3" sx={styles.statNumber}>
-                      {totalUsers}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Total Users
-                    </Typography>
+                    <Typography variant="body2" color="#64748b" sx={{ fontWeight: 600, mb: 1 }}>TOTAL USERS</Typography>
+                    <Typography variant="h3" sx={{ fontWeight: 700, color: '#0f172a' }}>{totalUsers}</Typography>
                   </Box>
-                </Box>
+                  <Box sx={{ p: 1.5, bgcolor: '#e0f2fe', borderRadius: 3, color: '#0284c7' }}>
+                    <Groups sx={{ fontSize: 32 }} />
+                  </Box>
+                </Stack>
               </CardContent>
-            </Card>
+            </StatCard>
           </Grid>
-          
-          <Grid item xs={6} sm={3}>
-            <Card sx={styles.statCard}>
+          <Grid item xs={12} sm={6} md={3}>
+            <StatCard>
               <CardContent>
-                <Box sx={styles.statCardContent}>
-                  <Box sx={{ ...styles.statIcon, bgcolor: 'warning.light' }}>
-                    <DataUsage sx={{ color: 'warning.main' }} />
-                  </Box>
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
                   <Box>
-                    <Typography variant="h3" sx={styles.statNumber}>
-                      {filteredCompanies.length}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Filtered Results
-                    </Typography>
+                    <Typography variant="body2" color="#64748b" sx={{ fontWeight: 600, mb: 1 }}>FILTERED</Typography>
+                    <Typography variant="h3" sx={{ fontWeight: 700, color: '#0f172a' }}>{filteredCompanies.length}</Typography>
                   </Box>
-                </Box>
+                  <Box sx={{ p: 1.5, bgcolor: '#fff3e0', borderRadius: 3, color: '#b45309' }}>
+                    <FilterList sx={{ fontSize: 32 }} />
+                  </Box>
+                </Stack>
               </CardContent>
-            </Card>
+            </StatCard>
           </Grid>
         </Grid>
-      </Box>
 
-      {/* Controls Section */}
-      <Card sx={styles.controlsCard}>
-        <CardContent>
+        {/* Search and Filter */}
+        <Paper sx={{ p: 3, mb: 4, borderRadius: 4 }}>
           <Grid container spacing={2} alignItems="center">
-            {/* Search Bar */}
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                placeholder="Search companies by name, email or code..."
+                placeholder="Search companies..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Search />
-                    </InputAdornment>
+                  startAdornment: <InputAdornment position="start"><Search sx={{ color: '#94a3b8' }} /></InputAdornment>,
+                  endAdornment: searchTerm && (
+                    <IconButton size="small" onClick={() => setSearchTerm("")}>
+                      <Close fontSize="small" />
+                    </IconButton>
                   ),
-                  sx: { borderRadius: 2 }
+                  sx: { borderRadius: 3, bgcolor: '#ffffff' }
                 }}
-                size={isMobile ? "small" : "medium"}
               />
             </Grid>
-
-            {/* Filter Controls */}
             <Grid item xs={12} md={6}>
-              <Box sx={styles.filterControls}>
-                <TextField
-                  select
+              <Stack direction="row" spacing={1.5} justifyContent="flex-end">
+                <ToggleButtonGroup
                   value={filter}
-                  onChange={(e) => setFilter(e.target.value)}
-                  SelectProps={{
-                    native: true,
-                  }}
-                  sx={styles.filterSelect}
-                  size={isMobile ? "small" : "medium"}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <FilterList />
-                      </InputAdornment>
-                    ),
-                  }}
+                  exclusive
+                  onChange={(e, value) => value && setFilter(value)}
+                  size="small"
+                  sx={{ bgcolor: '#ffffff' }}
                 >
-                  <option value="all">All Status</option>
-                  <option value="active">Active Only</option>
-                  <option value="inactive">Inactive Only</option>
-                </TextField>
-                
-                <Box sx={styles.actionButtons}>
-                  <Button
-                    variant="outlined"
-                    startIcon={<Download />}
-                    onClick={handleExportCSV}
-                    sx={styles.exportButton}
-                    size={isMobile ? "small" : "medium"}
-                  >
-                    {isMobile ? 'Export' : 'Export CSV'}
-                  </Button>
-                  
-                  {isMobile && (
-                    <IconButton
-                      onClick={fetchCompaniesWithUsers}
-                      sx={styles.mobileRefreshButton}
-                    >
-                      <Refresh />
-                    </IconButton>
-                  )}
-                </Box>
-              </Box>
+                  <ToggleButton value="all">All</ToggleButton>
+                  <ToggleButton value="active">Active</ToggleButton>
+                  <ToggleButton value="inactive">Inactive</ToggleButton>
+                </ToggleButtonGroup>
+                <Button variant="outlined" startIcon={<Download />} onClick={handleExportCSV} sx={{ borderRadius: 3 }}>
+                  Export
+                </Button>
+              </Stack>
             </Grid>
           </Grid>
-          
-          {/* Tabs for Mobile/Tablet */}
-          {!isDesktop && (
-            <Tabs
-              value={activeTab}
-              onChange={(e, newValue) => setActiveTab(newValue)}
-              variant="fullWidth"
-              sx={styles.mobileTabs}
-            >
-              <Tab icon={<Dashboard />} label="Companies" />
-              <Tab icon={<People />} label="Users" />
-              <Tab icon={<Cloud />} label="Analytics" />
-            </Tabs>
-          )}
-        </CardContent>
-      </Card>
+        </Paper>
 
-      {/* Companies List */}
-      <Box sx={styles.companiesList}>
+        {/* Companies List */}
         {filteredCompanies.length === 0 ? (
-          <Box sx={styles.emptyState}>
-            <Business sx={styles.emptyIcon} />
-            <Typography variant="h5" sx={styles.emptyTitle}>
-              No companies found
-            </Typography>
-            <Typography variant="body1" sx={styles.emptyText}>
-              Try changing your search or filter criteria
-            </Typography>
-            <Button
-              variant="contained"
-              startIcon={<Refresh />}
-              onClick={fetchCompaniesWithUsers}
-              sx={styles.emptyButton}
-            >
-              Retry Loading
-            </Button>
-          </Box>
+          <Paper sx={{ p: 8, textAlign: 'center', borderRadius: 4 }}>
+            <CorporateFare sx={{ fontSize: 60, color: '#cbd5e1', mb: 2 }} />
+            <Typography variant="h6" sx={{ color: '#64748b' }}>No companies found</Typography>
+          </Paper>
         ) : (
-          <Grid container spacing={3}>
+          <Stack spacing={3}>
             {filteredCompanies.map((company) => (
-              <Grid item xs={12} key={company._id}>
-                <Card sx={styles.companyCard}>
-                  {/* Company Header */}
-                  <CardContent>
-                    <Box sx={styles.companyHeader}>
-                      <Box sx={styles.companyLogoContainer}>
-                        <Avatar
-                          sx={{
-                            ...styles.companyLogo,
-                            bgcolor: company.isActive ? 'primary.main' : 'error.main'
-                          }}
-                        >
-                          {company.companyName?.charAt(0) || 'C'}
-                        </Avatar>
-                      </Box>
-                      
-                      <Box sx={styles.companyInfo}>
-                        <Box sx={styles.companyTitleRow}>
-                          <Typography variant="h6" sx={styles.companyName}>
-                            {company.companyName || "Unnamed Company"}
-                          </Typography>
-                          <Chip
-                            label={company.companyCode || "N/A"}
-                            size="small"
-                            sx={styles.companyCode}
-                          />
-                        </Box>
-                        
-                        <Box sx={styles.companyMeta}>
-                          <Chip
-                            label={company.isActive ? "Active" : "Inactive"}
-                            color={company.isActive ? "success" : "error"}
-                            size="small"
-                            icon={company.isActive ? <CheckCircle /> : <Cancel />}
-                            sx={styles.statusChip}
-                          />
-                          
-                          <Typography variant="body2" sx={styles.metaItem}>
-                            <CalendarToday sx={styles.metaIcon} />
-                            Created: {new Date(company.createdAt).toLocaleDateString()}
-                          </Typography>
-                          
-                          <Typography variant="body2" sx={styles.metaItem}>
-                            <People sx={styles.metaIcon} />
-                            {company.userCount || 0} Users
-                          </Typography>
-                        </Box>
-                      </Box>
-                      
-                      <Box sx={styles.companyActions}>
-                        <IconButton
-                          onClick={() => toggleCompanyExpansion(company._id)}
-                          sx={styles.expandButton}
-                        >
-                          {expandedCompany === company._id ? (
-                            <KeyboardArrowUp />
+              <CompanyCard key={company._id}>
+                <CardContent sx={{ p: 3 }}>
+                  {/* Main Row */}
+                  <Grid container spacing={3}>
+                    <Grid item xs={12} md={8}>
+                      <Stack direction="row" spacing={3}>
+                        {/* Logo */}
+                        <LogoBox>
+                          {company.logo ? (
+                            <img src={company.logo} alt={company.companyName} />
                           ) : (
-                            <KeyboardArrowDown />
+                            <Avatar sx={{ width: '100%', height: '100%', bgcolor: getCompanyColor(company), fontSize: 32 }}>
+                              {company.companyName?.charAt(0) || 'C'}
+                            </Avatar>
                           )}
+                        </LogoBox>
+
+                        {/* Company Info */}
+                        <Box sx={{ flex: 1 }}>
+                          <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 1, flexWrap: 'wrap' }}>
+                            <Typography variant="h6" sx={{ fontWeight: 700, color: '#0f172a' }}>
+                              {company.companyName || "Unnamed Company"}
+                            </Typography>
+                            <Chip label={company.companyCode || "N/A"} size="small" sx={{ bgcolor: '#e0e7ff', color: '#2563eb', fontWeight: 600 }} />
+                            <StatusBadge active={company.isActive ? 1 : 0}>
+                              {company.isActive ? <CheckCircle /> : <Cancel />}
+                              {company.isActive ? "Active" : "Inactive"}
+                            </StatusBadge>
+                          </Stack>
+
+                          <Grid container spacing={2} sx={{ mb: 2 }}>
+                            <Grid item xs={12} sm={6}>
+                              <Stack spacing={1}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  <Email sx={{ fontSize: 16, color: '#94a3b8' }} />
+                                  <Typography variant="body2" color="#64748b">{company.companyEmail || "No email"}</Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  <Phone sx={{ fontSize: 16, color: '#94a3b8' }} />
+                                  <Typography variant="body2" color="#64748b">{company.companyPhone || "No phone"}</Typography>
+                                </Box>
+                              </Stack>
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                              <Stack spacing={1}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  <Person sx={{ fontSize: 16, color: '#94a3b8' }} />
+                                  <Typography variant="body2" color="#64748b">Owner: {company.ownerName || "Not specified"}</Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  <CalendarToday sx={{ fontSize: 16, color: '#94a3b8' }} />
+                                  <Typography variant="body2" color="#64748b">Created: {formatDate(company.createdAt)}</Typography>
+                                </Box>
+                              </Stack>
+                            </Grid>
+                          </Grid>
+
+                          <Stack direction="row" spacing={3}>
+                            <Box>
+                              <InfoLabel>Total Users</InfoLabel>
+                              <Typography variant="h6" sx={{ fontWeight: 700, color: '#2563eb' }}>{company.userCount || 0}</Typography>
+                            </Box>
+                          </Stack>
+                        </Box>
+                      </Stack>
+                    </Grid>
+
+                    <Grid item xs={12} md={4}>
+                      <Stack direction="row" justifyContent="flex-end" spacing={1} sx={{ mb: 2 }}>
+                        <IconButton onClick={() => toggleCompanyExpansion(company._id)} sx={{ bgcolor: '#f8fafc' }}>
+                          {expandedCompany === company._id ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
                         </IconButton>
-                        
-                        <IconButton
-                          onClick={(e) => handleMenuOpen(e, 'actions', company)}
-                          sx={styles.moreButton}
-                        >
+                        <IconButton onClick={(e) => handleMenuOpen(e, company)} sx={{ bgcolor: '#f8fafc' }}>
                           <MoreVert />
                         </IconButton>
-                      </Box>
-                    </Box>
+                      </Stack>
 
-                    {/* Company Details - Expanded */}
-                    <Slide
-                      direction="up"
-                      in={expandedCompany === company._id}
-                      mountOnEnter
-                      unmountOnExit
-                    >
-                      <Box sx={styles.companyDetails}>
-                        <Grid container spacing={2}>
-                          <Grid item xs={12} sm={6} md={3}>
-                            <Box sx={styles.detailItem}>
-                              <Typography variant="caption" color="textSecondary">
-                                Email
-                              </Typography>
-                              <Typography variant="body2">
-                                {company.companyEmail || "N/A"}
-                              </Typography>
+                      <Paper sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: 3 }}>
+                        <InfoLabel>Address</InfoLabel>
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                          <LocationOn sx={{ fontSize: 18, color: '#64748b' }} />
+                          <Typography variant="body2" color="#1e293b">{company.companyAddress || "No address"}</Typography>
+                        </Box>
+                      </Paper>
+                    </Grid>
+                  </Grid>
+
+                  {/* Expanded Details */}
+                  <Collapse in={expandedCompany === company._id}>
+                    <Box sx={{ mt: 3, pt: 3, borderTop: '1px solid #e2e8f0' }}>
+                      <Grid container spacing={3}>
+                        <Grid item xs={12} md={4}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                            <Language sx={{ color: '#64748b' }} />
+                            <Box>
+                              <InfoLabel>Domain</InfoLabel>
+                              <InfoValue>{company.companyDomain || "Not provided"}</InfoValue>
                             </Box>
-                          </Grid>
-                          
-                          <Grid item xs={12} sm={6} md={3}>
-                            <Box sx={styles.detailItem}>
-                              <Typography variant="caption" color="textSecondary">
-                                Phone
-                              </Typography>
-                              <Typography variant="body2">
-                                {company.companyPhone || "N/A"}
-                              </Typography>
-                            </Box>
-                          </Grid>
-                          
-                          <Grid item xs={12} sm={6} md={3}>
-                            <Box sx={styles.detailItem}>
-                              <Typography variant="caption" color="textSecondary">
-                                Owner
-                              </Typography>
-                              <Typography variant="body2">
-                                {company.ownerName || "N/A"}
-                              </Typography>
-                            </Box>
-                          </Grid>
-                          
-                          <Grid item xs={12} sm={6} md={3}>
-                            <Box sx={styles.detailItem}>
-                              <Typography variant="caption" color="textSecondary">
-                                Address
-                              </Typography>
-                              <Typography variant="body2">
-                                {company.companyAddress || "N/A"}
-                              </Typography>
-                            </Box>
-                          </Grid>
+                          </Box>
                         </Grid>
-                      </Box>
-                    </Slide>
-
-                    {/* Users Preview */}
-                    <Box sx={styles.usersPreview}>
-                      <Box sx={styles.usersHeader}>
-                        <Box sx={styles.usersTitle}>
-                          <People sx={styles.usersIcon} />
-                          <Typography variant="subtitle1">
-                            Users ({company.userCount || 0})
-                          </Typography>
-                        </Box>
-                        
-                        {(company.userCount || 0) > 0 && (
-                          <Button
-                            size="small"
-                            onClick={() => handleOpenUsersPopup(company)}
-                            endIcon={<Visibility />}
-                            sx={styles.viewAllButton}
-                          >
-                            View All
-                          </Button>
-                        )}
-                      </Box>
-
-                      {(company.userCount || 0) > 0 ? (
-                        <Box sx={styles.usersList}>
-                          <Grid container spacing={2}>
-                            {(company.users || []).map((user, index) => (
-                              <Grid item xs={12} sm={6} md={4} key={index}>
-                                <Card variant="outlined" sx={styles.userCard}>
-                                  <CardContent sx={styles.userCardContent}>
-                                    <Box sx={styles.userCardHeader}>
-                                      <Avatar
-                                        sx={styles.userAvatar}
-                                        src={user.avatar}
-                                      >
-                                        {user.name?.charAt(0) || 'U'}
-                                      </Avatar>
-                                      <Box sx={styles.userInfo}>
-                                        <Typography variant="subtitle2" noWrap>
-                                          {user.name || "Unknown User"}
-                                        </Typography>
-                                        <Chip
-                                          label={user.role || "User"}
-                                          size="small"
-                                          color={getRoleColor(user.role)}
-                                          sx={styles.userRoleChip}
-                                        />
-                                      </Box>
-                                    </Box>
-                                    
-                                    <Typography variant="caption" color="textSecondary" noWrap>
-                                      <AssignmentInd sx={styles.userDetailIcon} />
-                                      {user.employeeId || "No ID"}
-                                    </Typography>
-                                  </CardContent>
-                                </Card>
-                              </Grid>
-                            ))}
-                          </Grid>
-                          
-                          {(company.userCount || 0) > 3 && (
-                            <Box sx={styles.moreUsers}>
-                              <Typography variant="body2" color="textSecondary">
-                                + {(company.userCount || 0) - 3} more users
-                              </Typography>
+                        <Grid item xs={12} md={4}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                            <Storage sx={{ color: '#64748b' }} />
+                            <Box>
+                              <InfoLabel>Database ID</InfoLabel>
+                              <InfoValue>{company.dbIdentifier || "N/A"}</InfoValue>
                             </Box>
-                          )}
-                        </Box>
-                      ) : (
-                        <Box sx={styles.noUsers}>
-                          <Typography variant="body2" color="textSecondary">
-                            No users in this company yet
-                          </Typography>
-                          <Button
-                            size="small"
-                            variant="contained"
-                            startIcon={<PersonAdd />}
-                            onClick={() => handleCreateUserForCompany(company._id, company.companyCode)}
-                            sx={styles.addFirstUserButton}
-                          >
-                            Add First User
-                          </Button>
-                        </Box>
-                      )}
+                          </Box>
+                        </Grid>
+                        <Grid item xs={12} md={4}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                            <Schedule sx={{ color: '#64748b' }} />
+                            <Box>
+                              <InfoLabel>Subscription</InfoLabel>
+                              <InfoValue>{formatDate(company.subscriptionExpiry)}</InfoValue>
+                            </Box>
+                          </Box>
+                        </Grid>
+                      </Grid>
                     </Box>
-                  </CardContent>
+                  </Collapse>
 
-                  {/* Action Buttons */}
-                  <CardActions sx={styles.cardActions}>
-                    <Button
-                      fullWidth={isMobile}
-                      variant="outlined"
-                      startIcon={<Visibility />}
-                      onClick={() => handleOpenCompanyDetails(company)}
-                      sx={styles.viewDetailsButton}
-                    >
+                  {/* Users Preview */}
+                  <Box sx={{ mt: 3 }}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Groups sx={{ color: '#2563eb' }} />
+                        <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Team Members</Typography>
+                        <Chip label={`${company.userCount || 0}`} size="small" sx={{ bgcolor: '#e0e7ff', color: '#2563eb' }} />
+                      </Stack>
+                      {(company.userCount || 0) > 0 && (
+                        <Button size="small" onClick={() => handleOpenUsersPopup(company)} endIcon={<ChevronRight />} sx={{ color: '#2563eb' }}>
+                          View All
+                        </Button>
+                      )}
+                    </Stack>
+
+                    {company.userCount > 0 ? (
+                      <Grid container spacing={2}>
+                        {(company.users || []).map((user, index) => (
+                          <Grid item xs={12} sm={6} md={3} key={index}>
+                            <Paper sx={{ p: 2, borderRadius: 3, border: '1px solid #e2e8f0' }}>
+                              <Stack direction="row" spacing={2} alignItems="center">
+                                <MuiBadge
+                                  overlap="circular"
+                                  anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                                  badgeContent={<Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: user.isActive ? '#0a5e0a' : '#b71c1c', border: '2px solid white' }} />}
+                                >
+                                  <Avatar sx={{ width: 40, height: 40, bgcolor: getRoleColor(user.role) }}>
+                                    {user.name?.charAt(0) || 'U'}
+                                  </Avatar>
+                                </MuiBadge>
+                                <Box>
+                                  <Typography variant="body2" sx={{ fontWeight: 700 }}>{user.name || "Unknown"}</Typography>
+                                  <Chip label={user.role || "User"} size="small" sx={{ height: 20, fontSize: '0.7rem', bgcolor: '#f1f5f9' }} />
+                                </Box>
+                              </Stack>
+                            </Paper>
+                          </Grid>
+                        ))}
+                      </Grid>
+                    ) : (
+                      <Box sx={{ p: 3, bgcolor: '#f8fafc', borderRadius: 3, textAlign: 'center' }}>
+                        <Typography color="#64748b" sx={{ mb: 1 }}>No team members yet</Typography>
+                        <AddUserBtn size="small" startIcon={<PersonAdd />} onClick={() => handleCreateUserForCompany(company._id, company.companyCode)}>
+                          Add First Member
+                        </AddUserBtn>
+                      </Box>
+                    )}
+                  </Box>
+                </CardContent>
+
+                <CardActions sx={{ p: 3, pt: 0 }}>
+                  <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ width: '100%' }}>
+                    <ViewButton startIcon={<Visibility />} onClick={() => handleOpenCompanyDetails(company)}>
                       View Details
-                    </Button>
-                    
-                    <Button
-                      fullWidth={isMobile}
-                      variant="contained"
-                      startIcon={<PersonAdd />}
-                      onClick={() => handleCreateUserForCompany(company._id, company.companyCode)}
-                      sx={styles.addUserButton}
-                    >
-                      Add User
-                    </Button>
-                  </CardActions>
-                </Card>
-              </Grid>
+                    </ViewButton>
+                    <AddUserBtn startIcon={<PersonAdd />} onClick={() => handleCreateUserForCompany(company._id, company.companyCode)}>
+                      Add Member
+                    </AddUserBtn>
+                  </Stack>
+                </CardActions>
+              </CompanyCard>
             ))}
-          </Grid>
+          </Stack>
         )}
-      </Box>
 
-      {/* Summary Footer */}
-      {!isMobile && (
-        <Card sx={styles.summaryCard}>
-          <CardContent>
-            <Grid container spacing={2} alignItems="center">
-              <Grid item xs={12} md={4}>
-                <Box sx={styles.summaryItem}>
-                  <Typography variant="body2" color="textSecondary">
-                    Showing:
-                  </Typography>
-                  <Typography variant="h6" sx={styles.summaryNumber}>
-                    {filteredCompanies.length}
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    of {totalCompanies} companies
-                  </Typography>
-                </Box>
-              </Grid>
-              
-              <Grid item xs={12} md={4}>
-                <Box sx={styles.summaryItem}>
-                  <Typography variant="body2" color="textSecondary">
-                    Total Users:
-                  </Typography>
-                  <Typography variant="h6" sx={styles.summaryNumber}>
-                    {totalUsers}
-                  </Typography>
-                </Box>
-              </Grid>
-              
-              <Grid item xs={12} md={4}>
-                <Box sx={styles.summaryItem}>
-                  <Typography variant="body2" color="textSecondary">
-                    Active Companies:
-                  </Typography>
-                  <Typography variant="h6" sx={styles.summaryNumber}>
-                    {activeCompanies}
-                  </Typography>
-                </Box>
-              </Grid>
-            </Grid>
-          </CardContent>
-        </Card>
-      )}
+        {/* Pagination */}
+        {!isMobile && filteredCompanies.length > 0 && (
+          <Paper sx={{ p: 2, mt: 3, borderRadius: 4 }}>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Typography color="#64748b">Showing {filteredCompanies.length} of {totalCompanies} companies</Typography>
+              <Pagination count={Math.ceil(filteredCompanies.length / 10)} page={page} onChange={(e, v) => setPage(v)} shape="rounded" />
+            </Stack>
+          </Paper>
+        )}
+      </Container>
 
-      {/* Mobile Floating Action Button */}
+      {/* Mobile FAB */}
       {isMobile && (
         <Zoom in={true}>
-          <Fab
-            color="primary"
-            sx={styles.fab}
-            onClick={() => window.open('http://localhost:5173/create-company', '_blank')}
-          >
-            <Add />
-          </Fab>
+          <SpeedDial ariaLabel="Actions" sx={{ position: 'fixed', bottom: 16, right: 16 }} icon={<SpeedDialIcon />} FabProps={{ sx: { bgcolor: '#2563eb' } }}>
+            <SpeedDialAction icon={<Add />} tooltipTitle="Add Company" onClick={() => window.open('http://localhost:5173/create-company', '_blank')} />
+            <SpeedDialAction icon={<Refresh />} tooltipTitle="Refresh" onClick={fetchCompaniesWithUsers} />
+            <SpeedDialAction icon={<Download />} tooltipTitle="Export" onClick={handleExportCSV} />
+          </SpeedDial>
         </Zoom>
       )}
 
       {/* Company Details Dialog */}
-      <Dialog
-        open={companyDetailsPopupOpen}
-        onClose={handleCloseCompanyDetails}
-        maxWidth="md"
-        fullWidth
-        PaperProps={{
-          sx: styles.dialogPaper
-        }}
-      >
-        <DialogTitle sx={styles.companyDialogTitle}>
-          <Box sx={styles.dialogHeader}>
-            <Box sx={styles.dialogTitleContent}>
-              <Business sx={styles.dialogTitleIcon} />
+      <Dialog open={companyDetailsPopupOpen} onClose={handleCloseCompanyDetails} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ p: 3, borderBottom: '1px solid #e2e8f0' }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Avatar src={selectedCompany?.logo} sx={{ bgcolor: getCompanyColor(selectedCompany) }}>
+                {selectedCompany?.companyName?.charAt(0) || 'C'}
+              </Avatar>
               <Box>
-                <Typography variant="h5" sx={styles.dialogTitleText}>
-                  {selectedCompany?.companyName || 'Company'} Details
-                </Typography>
-                <Typography variant="body2" color="textSecondary">
-                  {editMode ? 'Edit Mode' : 'View Mode'} | Company Code: {selectedCompany?.companyCode}
-                </Typography>
+                <Typography variant="h6" sx={{ fontWeight: 700 }}>{selectedCompany?.companyName} Details</Typography>
+                <Typography variant="body2" color="#64748b">Code: {selectedCompany?.companyCode}</Typography>
               </Box>
-            </Box>
-            
-            <Box sx={styles.dialogTitleActions}>
+            </Stack>
+            <Stack direction="row" spacing={1}>
               {!editMode ? (
-                <Button
-                  startIcon={<Edit />}
-                  onClick={() => setEditMode(true)}
-                  variant="outlined"
-                  size="small"
-                >
-                  Edit
-                </Button>
+                <Button startIcon={<Edit />} onClick={() => setEditMode(true)} variant="outlined">Edit</Button>
               ) : (
                 <>
-                  <Button
-                    onClick={() => {
-                      setEditMode(false);
-                      setEditedCompany(companyDetails);
-                    }}
-                    variant="outlined"
-                    size="small"
-                    sx={{ mr: 1 }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={handleUpdateCompany}
-                    variant="contained"
-                    size="small"
-                  >
-                    Save
-                  </Button>
+                  <Button onClick={() => { setEditMode(false); setEditedCompany(companyDetails); }}>Cancel</Button>
+                  <Button onClick={handleUpdateCompany} variant="contained">Save</Button>
                 </>
               )}
-              <IconButton onClick={handleCloseCompanyDetails} size="small">
-                <Close />
-              </IconButton>
-            </Box>
-          </Box>
+              <IconButton onClick={handleCloseCompanyDetails}><Close /></IconButton>
+            </Stack>
+          </Stack>
         </DialogTitle>
-        
-        <DialogContent dividers>
+        <DialogContent sx={{ p: 3 }}>
           {companyDetailsLoading ? (
-            <Box sx={styles.loadingState}>
-              <CircularProgress />
-              <Typography variant="body1" sx={{ mt: 2 }}>
-                Loading company details...
-              </Typography>
-            </Box>
+            <Box sx={{ textAlign: 'center', py: 4 }}><CircularProgress /></Box>
           ) : companyDetails ? (
             <Grid container spacing={3}>
-              {/* Company Logo and Status */}
               <Grid item xs={12}>
-                <Card sx={styles.companyDetailsCard}>
-                  <CardContent>
-                    <Box sx={styles.companyDetailsHeader}>
-                      <Avatar
-                        src={companyDetails.logo}
-                        sx={styles.companyDetailsLogo}
-                        alt={companyDetails.companyName}
-                      >
-                        {companyDetails.companyName?.charAt(0) || 'C'}
-                      </Avatar>
-                      
-                      <Box sx={styles.companyDetailsStatus}>
-                        {editMode ? (
-                          <FormControlLabel
-                            control={
-                              <Switch
-                                checked={editedCompany?.isActive || false}
-                                onChange={(e) => handleEditChange('isActive', e.target.checked)}
-                                color="primary"
-                              />
-                            }
-                            label={editedCompany?.isActive ? "Active" : "Inactive"}
-                          />
-                        ) : (
-                          <Chip
-                            icon={companyDetails.isActive ? <CheckCircle /> : <Cancel />}
-                            label={companyDetails.isActive ? "Active" : "Inactive"}
-                            color={companyDetails.isActive ? "success" : "error"}
-                            size="medium"
-                          />
-                        )}
-                      </Box>
+                <Paper sx={{ p: 3, bgcolor: '#f8fafc', borderRadius: 3 }}>
+                  <Stack direction="row" spacing={3} alignItems="center">
+                    <Avatar src={companyDetails.logo} sx={{ width: 80, height: 80, bgcolor: getCompanyColor(companyDetails) }} />
+                    <Box>
+                      <Typography variant="h5" sx={{ fontWeight: 700 }}>{companyDetails.companyName}</Typography>
+                      <Stack direction="row" spacing={2} sx={{ mt: 1 }}>
+                        <StatusBadge active={companyDetails.isActive ? 1 : 0}>
+                          {companyDetails.isActive ? <CheckCircle /> : <Cancel />}
+                          {companyDetails.isActive ? "Active" : "Inactive"}
+                        </StatusBadge>
+                        <Chip label={`ID: ${companyDetails.companyCode}`} />
+                      </Stack>
                     </Box>
-                  </CardContent>
-                </Card>
+                  </Stack>
+                </Paper>
               </Grid>
 
-              {/* Basic Information */}
               <Grid item xs={12} md={6}>
-                <Card>
-                  <CardHeader
-                    title={
-                      <Typography variant="subtitle1" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Business fontSize="small" /> Basic Information
-                      </Typography>
-                    }
-                  />
-                  <Divider />
-                  <CardContent>
-                    <Grid container spacing={2}>
-                      <Grid item xs={12}>
-                        <Box sx={styles.formField}>
-                          <Typography variant="caption" color="textSecondary">Company Name</Typography>
-                          {editMode ? (
-                            <TextField
-                              fullWidth
-                              size="small"
-                              value={editedCompany?.companyName || ''}
-                              onChange={(e) => handleEditChange('companyName', e.target.value)}
-                              variant="outlined"
-                            />
-                          ) : (
-                            <Typography variant="body1">{companyDetails.companyName}</Typography>
-                          )}
-                        </Box>
-                      </Grid>
-                      
-                      <Grid item xs={12}>
-                        <Box sx={styles.formField}>
-                          <Typography variant="caption" color="textSecondary">Company Code</Typography>
-                          {editMode ? (
-                            <TextField
-                              fullWidth
-                              size="small"
-                              value={editedCompany?.companyCode || ''}
-                              onChange={(e) => handleEditChange('companyCode', e.target.value)}
-                              variant="outlined"
-                            />
-                          ) : (
-                            <Typography variant="body1">{companyDetails.companyCode}</Typography>
-                          )}
-                        </Box>
-                      </Grid>
-                      
-                      <Grid item xs={12}>
-                        <Box sx={styles.formField}>
-                          <Typography variant="caption" color="textSecondary">Owner Name</Typography>
-                          {editMode ? (
-                            <TextField
-                              fullWidth
-                              size="small"
-                              value={editedCompany?.ownerName || ''}
-                              onChange={(e) => handleEditChange('ownerName', e.target.value)}
-                              variant="outlined"
-                            />
-                          ) : (
-                            <Typography variant="body1">{companyDetails.ownerName}</Typography>
-                          )}
-                        </Box>
-                      </Grid>
-                    </Grid>
-                  </CardContent>
-                </Card>
-              </Grid>
-
-              {/* Contact Information */}
-              <Grid item xs={12} md={6}>
-                <Card>
-                  <CardHeader
-                    title={
-                      <Typography variant="subtitle1" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Email fontSize="small" /> Contact Information
-                      </Typography>
-                    }
-                  />
-                  <Divider />
-                  <CardContent>
-                    <Grid container spacing={2}>
-                      <Grid item xs={12}>
-                        <Box sx={styles.formField}>
-                          <Typography variant="caption" color="textSecondary">Email</Typography>
-                          {editMode ? (
-                            <TextField
-                              fullWidth
-                              size="small"
-                              value={editedCompany?.companyEmail || ''}
-                              onChange={(e) => handleEditChange('companyEmail', e.target.value)}
-                              variant="outlined"
-                              type="email"
-                            />
-                          ) : (
-                            <Typography variant="body1">{companyDetails.companyEmail}</Typography>
-                          )}
-                        </Box>
-                      </Grid>
-                      
-                      <Grid item xs={12}>
-                        <Box sx={styles.formField}>
-                          <Typography variant="caption" color="textSecondary">Phone</Typography>
-                          {editMode ? (
-                            <TextField
-                              fullWidth
-                              size="small"
-                              value={editedCompany?.companyPhone || ''}
-                              onChange={(e) => handleEditChange('companyPhone', e.target.value)}
-                              variant="outlined"
-                            />
-                          ) : (
-                            <Typography variant="body1">{companyDetails.companyPhone}</Typography>
-                          )}
-                        </Box>
-                      </Grid>
-                      
-                      <Grid item xs={12}>
-                        <Box sx={styles.formField}>
-                          <Typography variant="caption" color="textSecondary">Domain</Typography>
-                          {editMode ? (
-                            <TextField
-                              fullWidth
-                              size="small"
-                              value={editedCompany?.companyDomain || ''}
-                              onChange={(e) => handleEditChange('companyDomain', e.target.value)}
-                              variant="outlined"
-                            />
-                          ) : (
-                            <Typography variant="body1">{companyDetails.companyDomain}</Typography>
-                          )}
-                        </Box>
-                      </Grid>
-                    </Grid>
-                  </CardContent>
-                </Card>
-              </Grid>
-
-              {/* Address */}
-              <Grid item xs={12}>
-                <Card>
-                  <CardHeader
-                    title={
-                      <Typography variant="subtitle1" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <LocationOn fontSize="small" /> Address
-                      </Typography>
-                    }
-                  />
-                  <Divider />
-                  <CardContent>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2 }}>Basic Information</Typography>
+                <Stack spacing={2}>
+                  <Box>
+                    <InfoLabel>Company Name</InfoLabel>
                     {editMode ? (
-                      <TextField
-                        fullWidth
-                        multiline
-                        rows={2}
-                        value={editedCompany?.companyAddress || ''}
-                        onChange={(e) => handleEditChange('companyAddress', e.target.value)}
-                        variant="outlined"
-                        size="small"
-                      />
+                      <TextField fullWidth size="small" value={editedCompany?.companyName || ''} onChange={(e) => handleEditChange('companyName', e.target.value)} />
                     ) : (
-                      <Typography variant="body1">{companyDetails.companyAddress}</Typography>
+                      <InfoValue>{companyDetails.companyName}</InfoValue>
                     )}
-                  </CardContent>
-                </Card>
+                  </Box>
+                  <Box>
+                    <InfoLabel>Company Code</InfoLabel>
+                    {editMode ? (
+                      <TextField fullWidth size="small" value={editedCompany?.companyCode || ''} onChange={(e) => handleEditChange('companyCode', e.target.value)} />
+                    ) : (
+                      <InfoValue>{companyDetails.companyCode}</InfoValue>
+                    )}
+                  </Box>
+                  <Box>
+                    <InfoLabel>Owner</InfoLabel>
+                    {editMode ? (
+                      <TextField fullWidth size="small" value={editedCompany?.ownerName || ''} onChange={(e) => handleEditChange('ownerName', e.target.value)} />
+                    ) : (
+                      <InfoValue>{companyDetails.ownerName || "Not specified"}</InfoValue>
+                    )}
+                  </Box>
+                </Stack>
               </Grid>
 
-              {/* Additional Information */}
+              <Grid item xs={12} md={6}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2 }}>Contact Information</Typography>
+                <Stack spacing={2}>
+                  <Box>
+                    <InfoLabel>Email</InfoLabel>
+                    {editMode ? (
+                      <TextField fullWidth size="small" value={editedCompany?.companyEmail || ''} onChange={(e) => handleEditChange('companyEmail', e.target.value)} />
+                    ) : (
+                      <InfoValue>{companyDetails.companyEmail || "Not provided"}</InfoValue>
+                    )}
+                  </Box>
+                  <Box>
+                    <InfoLabel>Phone</InfoLabel>
+                    {editMode ? (
+                      <TextField fullWidth size="small" value={editedCompany?.companyPhone || ''} onChange={(e) => handleEditChange('companyPhone', e.target.value)} />
+                    ) : (
+                      <InfoValue>{companyDetails.companyPhone || "Not provided"}</InfoValue>
+                    )}
+                  </Box>
+                  <Box>
+                    <InfoLabel>Domain</InfoLabel>
+                    {editMode ? (
+                      <TextField fullWidth size="small" value={editedCompany?.companyDomain || ''} onChange={(e) => handleEditChange('companyDomain', e.target.value)} />
+                    ) : (
+                      <InfoValue>{companyDetails.companyDomain || "Not specified"}</InfoValue>
+                    )}
+                  </Box>
+                </Stack>
+              </Grid>
+
               <Grid item xs={12}>
-                <Card>
-                  <CardHeader
-                    title={
-                      <Typography variant="subtitle1" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Info fontSize="small" /> Additional Information
-                      </Typography>
-                    }
-                  />
-                  <Divider />
-                  <CardContent>
-                    <Grid container spacing={2}>
-                      <Grid item xs={12} md={6}>
-                        <Box sx={styles.formField}>
-                          <Typography variant="caption" color="textSecondary">Database Identifier</Typography>
-                          <Typography variant="body1" fontFamily="monospace">
-                            {companyDetails.dbIdentifier}
-                          </Typography>
-                        </Box>
-                      </Grid>
-                      
-                      <Grid item xs={12} md={6}>
-                        <Box sx={styles.formField}>
-                          <Typography variant="caption" color="textSecondary">Subscription Expiry</Typography>
-                          <Typography variant="body1">
-                            {formatDate(companyDetails.subscriptionExpiry)}
-                          </Typography>
-                        </Box>
-                      </Grid>
-                      
-                      <Grid item xs={12} md={6}>
-                        <Box sx={styles.formField}>
-                          <Typography variant="caption" color="textSecondary">Created On</Typography>
-                          <Typography variant="body1">{formatDate(companyDetails.createdAt)}</Typography>
-                        </Box>
-                      </Grid>
-                      
-                      <Grid item xs={12} md={6}>
-                        <Box sx={styles.formField}>
-                          <Typography variant="caption" color="textSecondary">Last Updated</Typography>
-                          <Typography variant="body1">{formatDate(companyDetails.updatedAt)}</Typography>
-                        </Box>
-                      </Grid>
-                    </Grid>
-                  </CardContent>
-                </Card>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2 }}>Address</Typography>
+                {editMode ? (
+                  <TextField fullWidth multiline rows={2} value={editedCompany?.companyAddress || ''} onChange={(e) => handleEditChange('companyAddress', e.target.value)} />
+                ) : (
+                  <Paper sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: 2 }}>
+                    <InfoValue>{companyDetails.companyAddress || "No address provided"}</InfoValue>
+                  </Paper>
+                )}
+              </Grid>
+
+              <Grid item xs={12}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2 }}>Additional Information</Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={6}><InfoLabel>Database ID</InfoLabel><InfoValue>{companyDetails.dbIdentifier}</InfoValue></Grid>
+                  <Grid item xs={6}><InfoLabel>Subscription</InfoLabel><InfoValue>{formatDate(companyDetails.subscriptionExpiry)}</InfoValue></Grid>
+                  <Grid item xs={6}><InfoLabel>Created</InfoLabel><InfoValue>{formatDate(companyDetails.createdAt)}</InfoValue></Grid>
+                  <Grid item xs={6}><InfoLabel>Updated</InfoLabel><InfoValue>{formatDate(companyDetails.updatedAt)}</InfoValue></Grid>
+                </Grid>
               </Grid>
             </Grid>
           ) : (
-            <Box sx={styles.noData}>
-              <Business sx={styles.noDataIcon} />
-              <Typography variant="h6" color="textSecondary">
-                Company details not found
-              </Typography>
-            </Box>
+            <Typography>No details found</Typography>
           )}
         </DialogContent>
-        
         <DialogActions>
           <Button onClick={handleCloseCompanyDetails}>Close</Button>
           {selectedCompany && !editMode && (
-            <Button
-              variant="contained"
-              onClick={() => handleCreateUserForCompany(selectedCompany._id, selectedCompany.companyCode)}
-              startIcon={<PersonAdd />}
-            >
-              Add User
+            <Button variant="contained" onClick={() => handleCreateUserForCompany(selectedCompany._id, selectedCompany.companyCode)}>
+              Add Member
             </Button>
           )}
         </DialogActions>
       </Dialog>
 
-      {/* Users Popup Dialog */}
-      <Dialog
-        open={usersPopupOpen}
-        onClose={handleCloseUsersPopup}
-        maxWidth="lg"
-        fullWidth
-        PaperProps={{
-          sx: styles.dialogPaper
-        }}
-      >
-        <DialogTitle sx={styles.dialogTitle}>
-          <Box sx={styles.dialogHeader}>
-            <Box sx={styles.dialogTitleContent}>
-              <Business sx={styles.dialogTitleIcon} />
-              <Box>
-                <Typography variant="h5" sx={styles.dialogTitleText}>
-                  {selectedCompany?.companyName || 'Company'} Users
-                </Typography>
-                <Typography variant="body2" color="textSecondary">
-                  Total Users: {companyUsers.length} | Company Code: {selectedCompany?.companyCode}
-                </Typography>
-              </Box>
-            </Box>
-            <IconButton onClick={handleCloseUsersPopup} size="small">
-              <Close />
-            </IconButton>
-          </Box>
+      {/* Users Dialog */}
+      <Dialog open={usersPopupOpen} onClose={handleCloseUsersPopup} maxWidth="lg" fullWidth>
+        <DialogTitle>
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Typography variant="h6">{selectedCompany?.companyName} - Team Members</Typography>
+            <IconButton onClick={handleCloseUsersPopup}><Close /></IconButton>
+          </Stack>
         </DialogTitle>
-        
-        <DialogContent dividers>
+        <DialogContent>
           {usersLoading ? (
-            <Box sx={styles.loadingState}>
-              <CircularProgress />
-              <Typography variant="body1" sx={{ mt: 2 }}>
-                Loading users...
-              </Typography>
-            </Box>
+            <Box sx={{ textAlign: 'center', py: 4 }}><CircularProgress /></Box>
           ) : companyUsers.length > 0 ? (
-            <TableContainer component={Paper} sx={styles.tableContainer}>
-              <Table stickyHeader size={isMobile ? "small" : "medium"}>
+            <TableContainer>
+              <Table>
                 <TableHead>
                   <TableRow>
-                    <TableCell>User</TableCell>
-                    {!isMobile && <TableCell>Email</TableCell>}
+                    <TableCell>Member</TableCell>
+                    <TableCell>Email</TableCell>
                     <TableCell>Role</TableCell>
-                    {!isMobile && <TableCell>Department</TableCell>}
                     <TableCell>Status</TableCell>
-                    {!isMobile && <TableCell>Last Login</TableCell>}
                     <TableCell align="right">Actions</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {companyUsers.map((user) => (
-                    <TableRow key={user._id} hover>
+                    <TableRow key={user._id}>
                       <TableCell>
-                        <Box sx={styles.userTableCell}>
-                          <Avatar sx={styles.tableAvatar}>
-                            {user.name?.charAt(0) || 'U'}
-                          </Avatar>
+                        <Stack direction="row" spacing={2} alignItems="center">
+                          <Avatar src={user.avatar} sx={{ bgcolor: getRoleColor(user.role) }}>{user.name?.charAt(0)}</Avatar>
                           <Box>
-                            <Typography variant="body2" fontWeight="medium">
-                              {user.name}
-                            </Typography>
-                            <Typography variant="caption" color="textSecondary">
-                              {user.employeeId || 'No ID'}
-                            </Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 600 }}>{user.name}</Typography>
+                            <Typography variant="caption" color="#64748b">{user.employeeId || 'No ID'}</Typography>
                           </Box>
-                        </Box>
+                        </Stack>
                       </TableCell>
-                      {!isMobile && (
-                        <TableCell>
-                          <Box sx={styles.emailCell}>
-                            <Email sx={styles.tableIcon} />
-                            {user.email}
-                          </Box>
-                        </TableCell>
-                      )}
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell><Chip label={user.role || 'User'} size="small" /></TableCell>
                       <TableCell>
-                        <Chip
-                          label={user.role || 'User'}
-                          color={getRoleColor(user.role)}
-                          size="small"
-                        />
+                        <StatusBadge active={user.isActive ? 1 : 0}>
+                          {user.isActive ? <CheckCircle /> : <Cancel />}
+                          {user.isActive ? 'Active' : 'Inactive'}
+                        </StatusBadge>
                       </TableCell>
-                      {!isMobile && (
-                        <TableCell>{user.department || 'N/A'}</TableCell>
-                      )}
-                      <TableCell>
-                        <Chip
-                          label={user.isActive ? 'Active' : 'Inactive'}
-                          color={getStatusColor(user.isActive ? 'active' : 'inactive')}
-                          size="small"
-                          variant="outlined"
-                        />
-                      </TableCell>
-                      {!isMobile && (
-                        <TableCell>
-                          {user.lastLogin 
-                            ? new Date(user.lastLogin).toLocaleDateString()
-                            : 'Never'}
-                        </TableCell>
-                      )}
                       <TableCell align="right">
-                        <Tooltip title="View Profile">
-                          <IconButton size="small">
-                            <Person fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
+                        <IconButton size="small"><Person /></IconButton>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -1567,521 +1253,45 @@ const AllCompany = () => {
               </Table>
             </TableContainer>
           ) : (
-            <Box sx={styles.noData}>
-              <People sx={styles.noDataIcon} />
-              <Typography variant="h6" color="textSecondary" gutterBottom>
-                No Users Found
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                This company doesn't have any users yet.
-              </Typography>
-              {selectedCompany && (
-                <Button
-                  variant="contained"
-                  onClick={() => handleCreateUserForCompany(selectedCompany._id, selectedCompany.companyCode)}
-                  startIcon={<PersonAdd />}
-                  sx={{ mt: 2 }}
-                >
-                  Create First User
-                </Button>
-              )}
+            <Box sx={{ textAlign: 'center', py: 4 }}>
+              <Typography color="#64748b">No members found</Typography>
             </Box>
           )}
         </DialogContent>
-        
         <DialogActions>
           <Button onClick={handleCloseUsersPopup}>Close</Button>
           {selectedCompany && (
-            <Button
-              variant="contained"
-              onClick={() => handleCreateUserForCompany(selectedCompany._id, selectedCompany.companyCode)}
-              startIcon={<PersonAdd />}
-            >
-              Add New User
+            <Button variant="contained" onClick={() => handleCreateUserForCompany(selectedCompany._id, selectedCompany.companyCode)}>
+              Add Member
             </Button>
           )}
         </DialogActions>
       </Dialog>
 
+      {/* Notifications */}
+      <Popover open={notificationsOpen} anchorEl={notificationAnchor} onClose={handleNotificationsClose} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
+        <Box sx={{ width: 320, p: 2 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2 }}>Notifications</Typography>
+          <List>
+            {notifications.map((n) => (
+              <ListItem key={n.id} sx={{ bgcolor: n.read ? 'transparent' : '#f8fafc', borderRadius: 2, mb: 1 }}>
+                <ListItemAvatar><Avatar sx={{ bgcolor: '#e0e7ff' }}><Info /></Avatar></ListItemAvatar>
+                <MuiListItemText primary={n.message} secondary={n.time} />
+              </ListItem>
+            ))}
+          </List>
+        </Box>
+      </Popover>
+
       {/* Action Menu */}
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleMenuClose}
-        PaperProps={{
-          sx: styles.menuPaper
-        }}
-      >
-        <MenuItem onClick={() => handleAction('edit')}>
-          <ListItemIcon>
-            <Edit fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Edit Company</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={() => handleAction('deactivate')}>
-          <ListItemIcon>
-            <Block fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Deactivate</ListItemText>
-        </MenuItem>
+      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
+        <MenuItem onClick={() => handleAction('edit')}><ListItemIcon><Edit fontSize="small" /></ListItemIcon>Edit</MenuItem>
+        <MenuItem onClick={() => handleAction('deactivate')}><ListItemIcon><Block fontSize="small" /></ListItemIcon>Deactivate</MenuItem>
         <Divider />
-        <MenuItem onClick={() => handleAction('delete')}>
-          <ListItemIcon>
-            <Delete fontSize="small" />
-          </ListItemIcon>
-          <ListItemText sx={{ color: 'error.main' }}>Delete Company</ListItemText>
-        </MenuItem>
+        <MenuItem onClick={() => handleAction('delete')}><ListItemIcon><Delete fontSize="small" /></ListItemIcon>Delete</MenuItem>
       </Menu>
     </Box>
   );
 };
-
-// Styles
-const styles = {
-  container: {
-    minHeight: '100vh',
-    bgcolor: 'background.default',
-    p: { xs: 2, sm: 3, md: 4 }
-  },
-  loadingContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '100vh',
-    bgcolor: 'background.default'
-  },
-  headerSection: {
-    mb: 4
-  },
-  headerContent: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    mb: 3,
-    flexWrap: 'wrap',
-    gap: 2
-  },
-  titleSection: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 2
-  },
-  titleIcon: {
-    fontSize: { xs: 32, sm: 40, md: 48 },
-    color: 'primary.main'
-  },
-  mainTitle: {
-    fontWeight: 700,
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    fontSize: { xs: '1.5rem', sm: '2rem', md: '2.5rem' }
-  },
-  subtitle: {
-    color: 'text.secondary',
-    fontSize: { xs: '0.875rem', sm: '1rem' }
-  },
-  headerActions: {
-    display: 'flex',
-    gap: 2
-  },
-  addButton: {
-    borderRadius: 2,
-    px: 3
-  },
-  refreshButton: {
-    borderRadius: 2,
-    px: 3
-  },
-  statsGrid: {
-    mb: 3
-  },
-  statCard: {
-    height: '100%',
-    transition: 'all 0.3s',
-    '&:hover': {
-      transform: 'translateY(-4px)',
-      boxShadow: 8
-    }
-  },
-  statCardContent: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 2
-  },
-  statIcon: {
-    p: 1.5,
-    borderRadius: 2,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  statNumber: {
-    fontWeight: 700,
-    fontSize: { xs: '1.5rem', sm: '2rem' },
-    lineHeight: 1
-  },
-  controlsCard: {
-    mb: 3,
-    borderRadius: 2,
-    boxShadow: 2
-  },
-  filterControls: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 2,
-    flexWrap: 'wrap'
-  },
-  filterSelect: {
-    minWidth: 150,
-    '& .MuiSelect-select': {
-      py: { xs: 1.125, sm: 1.5 }
-    }
-  },
-  actionButtons: {
-    display: 'flex',
-    gap: 1,
-    alignItems: 'center'
-  },
-  exportButton: {
-    borderRadius: 2
-  },
-  mobileRefreshButton: {
-    border: '1px solid',
-    borderColor: 'divider'
-  },
-  mobileTabs: {
-    mt: 2
-  },
-  companiesList: {
-    mb: 4
-  },
-  companyCard: {
-    borderRadius: 2,
-    boxShadow: 3,
-    transition: 'all 0.3s',
-    '&:hover': {
-      boxShadow: 8
-    }
-  },
-  companyHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 2,
-    mb: 2
-  },
-  companyLogoContainer: {
-    flexShrink: 0
-  },
-  companyLogo: {
-    width: { xs: 56, sm: 64 },
-    height: { xs: 56, sm: 64 },
-    fontSize: { xs: 24, sm: 28 }
-  },
-  companyInfo: {
-    flex: 1,
-    minWidth: 0
-  },
-  companyTitleRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 1,
-    mb: 1,
-    flexWrap: 'wrap'
-  },
-  companyName: {
-    fontWeight: 600,
-    fontSize: { xs: '1rem', sm: '1.25rem' }
-  },
-  companyCode: {
-    fontSize: '0.75rem'
-  },
-  companyMeta: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 2,
-    flexWrap: 'wrap'
-  },
-  statusChip: {
-    fontSize: '0.75rem'
-  },
-  metaItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 0.5,
-    fontSize: '0.875rem'
-  },
-  metaIcon: {
-    fontSize: '1rem'
-  },
-  companyActions: {
-    display: 'flex',
-    gap: 0.5
-  },
-  expandButton: {
-    color: 'text.secondary'
-  },
-  moreButton: {
-    color: 'text.secondary'
-  },
-  companyDetails: {
-    mt: 2,
-    mb: 3,
-    p: 2,
-    bgcolor: 'grey.50',
-    borderRadius: 1
-  },
-  detailItem: {
-    p: 1
-  },
-  usersPreview: {
-    mt: 2
-  },
-  usersHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    mb: 2
-  },
-  usersTitle: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 1
-  },
-  usersIcon: {
-    color: 'primary.main'
-  },
-  viewAllButton: {
-    fontSize: '0.875rem'
-  },
-  usersList: {
-    mb: 2
-  },
-  userCard: {
-    height: '100%',
-    transition: 'all 0.2s',
-    '&:hover': {
-      bgcolor: 'action.hover'
-    }
-  },
-  userCardContent: {
-    p: 2
-  },
-  userCardHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 2,
-    mb: 1
-  },
-  userAvatar: {
-    width: 40,
-    height: 40,
-    bgcolor: 'primary.main'
-  },
-  userInfo: {
-    minWidth: 0
-  },
-  userRoleChip: {
-    height: 20,
-    fontSize: '0.625rem'
-  },
-  userDetailIcon: {
-    fontSize: '0.875rem',
-    mr: 0.5,
-    verticalAlign: 'middle'
-  },
-  moreUsers: {
-    textAlign: 'center',
-    py: 2
-  },
-  noUsers: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: 1,
-    py: 3
-  },
-  addFirstUserButton: {
-    fontSize: '0.75rem'
-  },
-  cardActions: {
-    display: 'flex',
-    gap: 2,
-    flexDirection: { xs: 'column', sm: 'row' }
-  },
-  viewDetailsButton: {
-    borderRadius: 2
-  },
-  addUserButton: {
-    borderRadius: 2
-  },
-  emptyState: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    py: 8,
-    textAlign: 'center'
-  },
-  emptyIcon: {
-    fontSize: 64,
-    color: 'grey.400',
-    mb: 2
-  },
-  emptyTitle: {
-    mb: 1,
-    color: 'text.secondary'
-  },
-  emptyText: {
-    color: 'text.secondary',
-    mb: 3
-  },
-  emptyButton: {
-    borderRadius: 2
-  },
-  summaryCard: {
-    borderRadius: 2,
-    boxShadow: 2
-  },
-  summaryItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 1
-  },
-  summaryNumber: {
-    fontWeight: 700,
-    color: 'primary.main'
-  },
-  fab: {
-    position: 'fixed',
-    bottom: 16,
-    right: 16,
-    zIndex: 1000
-  },
-  dialogPaper: {
-    borderRadius: 2,
-    maxHeight: '90vh'
-  },
-  dialogHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start'
-  },
-  dialogTitleContent: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 2
-  },
-  dialogTitleIcon: {
-    fontSize: 32,
-    color: 'primary.main'
-  },
-  dialogTitleText: {
-    fontWeight: 600
-  },
-  dialogTitleActions: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 1
-  },
-  companyDialogTitle: {
-    bgcolor: 'primary.main',
-    color: 'white'
-  },
-  loadingState: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    py: 8
-  },
-  companyDetailsCard: {
-    mb: 3
-  },
-  companyDetailsHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center'
-  },
-  companyDetailsLogo: {
-    width: 80,
-    height: 80,
-    fontSize: 32,
-    bgcolor: 'primary.main'
-  },
-  companyDetailsStatus: {
-    display: 'flex',
-    alignItems: 'center'
-  },
-  formField: {
-    mb: 2
-  },
-  noData: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    py: 8,
-    textAlign: 'center'
-  },
-  noDataIcon: {
-    fontSize: 64,
-    color: 'grey.400',
-    mb: 2
-  },
-  tableContainer: {
-    borderRadius: 1,
-    maxHeight: 400
-  },
-  userTableCell: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 2
-  },
-  tableAvatar: {
-    width: 32,
-    height: 32,
-    fontSize: 14
-  },
-  emailCell: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 1
-  },
-  tableIcon: {
-    fontSize: 16,
-    color: 'grey.500'
-  },
-  menuPaper: {
-    minWidth: 180,
-    borderRadius: 2,
-    boxShadow: 4
-  }
-};
-
-// Add animation keyframes
-const styleSheet = document.createElement("style");
-styleSheet.type = "text/css";
-styleSheet.innerText = `
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  
-  @keyframes slideIn {
-    from { transform: translateX(-20px); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-  }
-  
-  .fade-in {
-    animation: fadeIn 0.5s ease-out;
-  }
-  
-  .slide-in {
-    animation: slideIn 0.4s ease-out;
-  }
-`;
-document.head.appendChild(styleSheet);
 
 export default AllCompany;
