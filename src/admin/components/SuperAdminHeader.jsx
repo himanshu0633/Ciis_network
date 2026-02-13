@@ -200,6 +200,7 @@ const SuperAdminHeader = ({ toggleSidebar, isSidebarOpen }) => {
                             style={{
                                 height: isMobile ? '35px' : '45px',
                                 width: 'auto',
+                                marginLeft: '30px',
                                 objectFit: 'contain',
                                 display: 'block',
                             }}

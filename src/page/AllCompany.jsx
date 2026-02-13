@@ -235,7 +235,7 @@ const LogoBox = styled(Box)({
   '& img': {
     width: '100%',
     height: '100%',
-    objectFit: 'cover',
+    objectFit: 'contain',
   },
 });
 
@@ -723,8 +723,12 @@ const AllCompany = () => {
             </IconButton>
             {isDesktop && (
               <>
-                <ActionButton variant="contained" startIcon={<Add />} onClick={() => window.open('http://localhost:5173/create-company', '_blank')}>
-                  Add Company
+                <ActionButton 
+                  variant="contained" 
+                  startIcon={<Add />} 
+                  onClick={() => navigate('/RegisterCompany')}
+                >                  
+                Add Company
                 </ActionButton>
                 <ActionButton variant="outlined" startIcon={<Refresh />} onClick={fetchCompaniesWithUsers}>
                   Refresh
