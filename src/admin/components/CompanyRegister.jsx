@@ -948,7 +948,7 @@ const CompanyRegister = () => {
                     <FormField
                       label="Company Phone"
                       name="companyPhone"
-                      placeholder="Enter 10 digits (e.g., 9389111476)"
+                      placeholder="Enter 10 digits (e.g., 9876543210)"
                       required
                       value={form.companyPhone}
                       onChange={handleChange}
