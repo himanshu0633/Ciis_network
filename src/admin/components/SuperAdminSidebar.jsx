@@ -11,7 +11,8 @@ import {
   Box,
   Tooltip,
   useTheme,
-  useMediaQuery
+  useMediaQuery,
+  Divider
 } from '@mui/material';
 import {
   Dashboard as DashboardIcon,
@@ -19,9 +20,10 @@ import {
   CorporateFare as DepartmentIcon,
   WorkOutline as JobRoleIcon,
   PersonAdd as CreateUserIcon,
+  ExitToApp as LogoutIcon,
 } from '@mui/icons-material';
 
-// Styled components (same as before)
+// Styled components
 const SidebarContainer = styled(Box)(({ theme }) => ({
   width: 240,
   flexShrink: 0,
@@ -29,9 +31,9 @@ const SidebarContainer = styled(Box)(({ theme }) => ({
   boxSizing: 'border-box',
   backgroundColor: theme.palette.background.paper,
   borderRight: `1px solid ${theme.palette.divider}`,
-  height: 'calc(100vh - 64px)',
+  height: '100vh',
   position: 'fixed',
-  top: 64,
+  top: 0,
   left: 0,
   zIndex: theme.zIndex.drawer,
   transition: theme.transitions.create('width', {
@@ -40,6 +42,8 @@ const SidebarContainer = styled(Box)(({ theme }) => ({
   }),
   overflowY: 'auto',
   scrollbarWidth: 'none',
+  display: 'flex',
+  flexDirection: 'column',
   '&::-webkit-scrollbar': {
     display: 'none',
   },
@@ -50,8 +54,16 @@ const CollapsedSidebar = styled(SidebarContainer)(({ theme }) => ({
   overflowX: 'hidden',
 }));
 
+// Header space for AppBar
+const HeaderSpacer = styled(Box)(({ theme }) => ({
+  height: 64, // AppBar ki height
+  [theme.breakpoints.down('sm')]: {
+    height: 56, // Mobile par AppBar ki height
+  },
+}));
+
 const SectionHeading = styled(Typography)(({ theme }) => ({
-  padding: theme.spacing(1.5, 2, 1),
+  padding: theme.spacing(2, 2, 1), // Top padding increased
   fontSize: '0.75rem',
   textTransform: 'uppercase',
   color: theme.palette.text.secondary,
@@ -67,6 +79,8 @@ const StyledListItemButton = styled(ListItemButton)(({ theme, selected }) => ({
   minHeight: 48,
   justifyContent: 'initial',
   padding: theme.spacing(1, 2),
+  margin: theme.spacing(0.5, 1), // Added margin for better spacing
+  borderRadius: theme.spacing(1), // Rounded corners
   color: selected ? theme.palette.primary.main : theme.palette.text.secondary,
   backgroundColor: selected ? theme.palette.action.selected : 'transparent',
   '&:hover': {
@@ -83,6 +97,30 @@ const StyledListItemIcon = styled(ListItemIcon)(({ theme }) => ({
   color: 'inherit',
 }));
 
+// Logout button styled component
+const LogoutListItemButton = styled(ListItemButton)(({ theme }) => ({
+  minHeight: 48,
+  justifyContent: 'initial',
+  padding: theme.spacing(1, 2),
+  margin: theme.spacing(0.5, 1), // Same margin as other items
+  borderRadius: theme.spacing(1), // Rounded corners
+  color: theme.palette.error.main,
+  '&:hover': {
+    backgroundColor: theme.palette.error.light + '20',
+  },
+  '& .MuiListItemIcon-root': {
+    color: theme.palette.error.main,
+  },
+}));
+
+// Content wrapper for proper spacing
+const ContentWrapper = styled(Box)({
+  flex: 1,
+  display: 'flex',
+  flexDirection: 'column',
+  overflowY: 'auto',
+});
+
 const Sidebar = ({ isOpen, closeSidebar }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -92,7 +130,6 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
   const [companyRole, setCompanyRole] = useState('employee');
   
   useEffect(() => {
-    // localStorage से 'superAdmin' key में user object प्राप्त करें
     try {
       const userDataString = localStorage.getItem('superAdmin');
       console.log('superAdmin data from localStorage:', userDataString);
@@ -119,61 +156,39 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
   }, []);
 
   const ciisUserMenuItems = [
-    // { heading: 'Dashboard' },
-    // { 
-    //   icon: <DashboardIcon />, 
-    //   name: 'Super Admin Dashboard', 
-    //   route: '/Ciis-network/SuperAdminDashboard',
-    //   showForRoles: ['Owner'] // केवल Owner के लिए
-    // },
-    
-    { heading: 'Company Management' },
-    { 
-      icon: <CompanyIcon />, 
-      name: 'All Company', 
-      route: '/Ciis-network/all-company',
-      showForRoles: ['Owner'] // केवल Owner के लिए
-    },
-
+    { heading: 'MPA Management' }, // Changed heading text as per your image
     { 
       icon: <CompanyIcon />, 
       name: 'Company Details', 
       route: '/Ciis-network/company-details',
-      showForRoles: ['Owner','employee'] // केवल Owner के लिए
+      showForRoles: ['Owner','employee']
     },
     { 
       icon: <DepartmentIcon />, 
       name: 'Department', 
       route: '/Ciis-network/department',
-      showForRoles: ['Owner', 'employee'] // Owner और employee दोनों के लिए
+      showForRoles: ['Owner', 'employee']
     },
     { 
       icon: <JobRoleIcon />, 
       name: 'Job Roles', 
       route: '/Ciis-network/JobRoleManagement',
-      showForRoles: ['Owner', 'employee'] // Owner और employee दोनों के लिए
+      showForRoles: ['Owner', 'employee']
     },
     { 
       icon: <CreateUserIcon />, 
       name: 'Create User', 
       route: '/Ciis-network/create-user',
-      showForRoles: ['Owner', 'employee'] // Owner और employee दोनों के लिए
+      showForRoles: ['Owner', 'employee']
     },
     { 
-      icon: <DashboardIcon />, 
-      name: 'Company Management', 
-      route: '/Ciis-network/CompanyManagement',
-      showForRoles: ['Owner'] // केवल Owner के लिए
-    },
-       { 
       icon: <DepartmentIcon />, 
       name: 'Sidebar Management', 
       route: '/Ciis-network/SidebarManagement',
-      showForRoles: ['Owner', 'employee'] // Owner और employee दोनों के लिए
+      showForRoles: ['Owner', 'employee']
     },
   ];
 
-  // फ़िल्टर फ़ंक्शन जो रोल के आधार पर आइटम्स दिखाता है
   const getFilteredMenuItems = () => {
     const filteredItems = [];
     let skipNextHeading = false;
@@ -188,14 +203,12 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
         }
         filteredItems.push(item);
       } else {
-        // Check if item should be shown for current role
         const shouldShow = !item.showForRoles || item.showForRoles.includes(companyRole);
         
         if (shouldShow) {
           filteredItems.push(item);
           skipNextHeading = false;
         } else {
-          // If this item won't be shown and last item was a heading, mark to skip it
           if (filteredItems.length > 0 && filteredItems[filteredItems.length - 1].heading) {
             skipNextHeading = true;
           }
@@ -203,7 +216,6 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
       }
     }
     
-    // Remove any heading that doesn't have items after it
     return filteredItems.filter((item, index, array) => {
       if (item.heading) {
         const hasMenuItemAfter = array
@@ -222,57 +234,113 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
     }
   };
 
+  // Logout function
+  const handleLogout = () => {
+    if (window.confirm('Are you sure you want to logout?')) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('superAdmin');
+      localStorage.removeItem('company');
+      localStorage.removeItem('user');
+      navigate('/');
+      
+      if (isMobile) {
+        closeSidebar?.();
+      }
+    }
+  };
+
   const SidebarComponent = isOpen ? SidebarContainer : CollapsedSidebar;
   const filteredMenuItems = getFilteredMenuItems();
 
-  // Debug information
   console.log('Current companyRole:', companyRole);
   console.log('Filtered menu items count:', filteredMenuItems.length);
-  console.log('Filtered items:', filteredMenuItems);
 
   return (
     <SidebarComponent>
-      <List>
-        {filteredMenuItems.map((item, idx) =>
-          item.heading ? (
-            isOpen && (
-              <SectionHeading key={`heading-${idx}`}>
-                {item.heading}
-              </SectionHeading>
-            )
-          ) : (
-            <StyledListItem key={`item-${idx}`} disablePadding>
-              {isOpen ? (
-                <StyledListItemButton
-                  selected={location.pathname.startsWith(item.route)}
-                  onClick={() => handleClick(item.route)}
-                >
-                  <StyledListItemIcon>{item.icon}</StyledListItemIcon>
-                  <ListItemText
-                    primary={item.name}
-                    primaryTypographyProps={{
-                      variant: 'body2',
-                      fontWeight: 500,
-                    }}
-                  />
-                </StyledListItemButton>
-              ) : (
-                <Tooltip title={item.name} placement="right">
+      {/* Header Spacer - Yeh AppBar ke neeche space dega */}
+      <HeaderSpacer />
+      
+      <ContentWrapper>
+        {/* Main Menu Items */}
+        <List sx={{ pt: 1 }}> {/* Reduced top padding */}
+          {filteredMenuItems.map((item, idx) =>
+            item.heading ? (
+              isOpen && (
+                <SectionHeading key={`heading-${idx}`}>
+                  {item.heading}
+                </SectionHeading>
+              )
+            ) : (
+              <StyledListItem key={`item-${idx}`} disablePadding>
+                {isOpen ? (
                   <StyledListItemButton
                     selected={location.pathname.startsWith(item.route)}
                     onClick={() => handleClick(item.route)}
-                    sx={{ justifyContent: 'center' }}
                   >
-                    <StyledListItemIcon sx={{ marginRight: 0 }}>
-                      {item.icon}
-                    </StyledListItemIcon>
+                    <StyledListItemIcon>{item.icon}</StyledListItemIcon>
+                    <ListItemText
+                      primary={item.name}
+                      primaryTypographyProps={{
+                        variant: 'body2',
+                        fontWeight: 500,
+                      }}
+                    />
                   </StyledListItemButton>
-                </Tooltip>
-              )}
-            </StyledListItem>
-          )
-        )}
-      </List>
+                ) : (
+                  <Tooltip title={item.name} placement="right">
+                    <StyledListItemButton
+                      selected={location.pathname.startsWith(item.route)}
+                      onClick={() => handleClick(item.route)}
+                      sx={{ justifyContent: 'center' }}
+                    >
+                      <StyledListItemIcon sx={{ marginRight: 0 }}>
+                        {item.icon}
+                      </StyledListItemIcon>
+                    </StyledListItemButton>
+                  </Tooltip>
+                )}
+              </StyledListItem>
+            )
+          )}
+        </List>
+
+        {/* Spacer to push logout to bottom */}
+        <Box sx={{ flex: 1 }} />
+
+        {/* Divider before logout */}
+        <Divider sx={{ my: 1, mx: 2 }} />
+
+        {/* Logout Button */}
+        <List sx={{ pb: 2 }}> {/* Bottom padding */}
+          <StyledListItem disablePadding>
+            {isOpen ? (
+              <LogoutListItemButton onClick={handleLogout}>
+                <StyledListItemIcon>
+                  <LogoutIcon />
+                </StyledListItemIcon>
+                <ListItemText
+                  primary="Logout"
+                  primaryTypographyProps={{
+                    variant: 'body2',
+                    fontWeight: 500,
+                  }}
+                />
+              </LogoutListItemButton>
+            ) : (
+              <Tooltip title="Logout" placement="right">
+                <LogoutListItemButton
+                  onClick={handleLogout}
+                  sx={{ justifyContent: 'center' }}
+                >
+                  <StyledListItemIcon sx={{ marginRight: 0 }}>
+                    <LogoutIcon />
+                  </StyledListItemIcon>
+                </LogoutListItemButton>
+              </Tooltip>
+            )}
+          </StyledListItem>
+        </List>
+      </ContentWrapper>
     </SidebarComponent>
   );
 };

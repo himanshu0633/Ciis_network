@@ -53,18 +53,6 @@ const StyledAppBar = styled(AppBar)(({ theme }) => ({
     zIndex: theme.zIndex.drawer + 1,
 }));
 
-const ProcessName = styled(Typography)(({ theme }) => ({
-    fontSize: '0.75rem',
-    color: theme.palette.text.secondary,
-    fontWeight: 500,
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    [theme.breakpoints.up('md')]: {
-        fontSize: '0.875rem',
-    },
-}));
-
 const UserProfile = styled(Box)(({ theme }) => ({
     display: 'flex',
     alignItems: 'center',
@@ -72,9 +60,9 @@ const UserProfile = styled(Box)(({ theme }) => ({
     marginLeft: theme.spacing(0.5),
     padding: theme.spacing(0.5, 1),
     borderRadius: '30px',
-    cursor: 'pointer',
+    cursor: 'default', // Changed from 'pointer' to 'default' since no click action
     '&:hover': {
-        backgroundColor: theme.palette.action.hover,
+        backgroundColor: 'transparent', // Remove hover effect since no click
     },
     [theme.breakpoints.down('sm')]: {
         padding: theme.spacing(0.5),
@@ -83,7 +71,6 @@ const UserProfile = styled(Box)(({ theme }) => ({
 }));
 
 const SuperAdminHeader = ({ toggleSidebar, isSidebarOpen }) => {
-    const [anchorEl, setAnchorEl] = useState(null);
     const [isScrolled, setIsScrolled] = useState(false);
     const [userData, setUserData] = useState({
         name: 'Admin',
@@ -93,12 +80,9 @@ const SuperAdminHeader = ({ toggleSidebar, isSidebarOpen }) => {
     
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-    const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
 
     const navigate = useNavigate();
     const { user } = useAuth();
-
-    const open = Boolean(anchorEl);
 
     // Function to get data from localStorage
     const getLocalStorageData = () => {
@@ -149,10 +133,8 @@ const SuperAdminHeader = ({ toggleSidebar, isSidebarOpen }) => {
             setUserData(data);
         };
 
-        // Initial update
         updateUserData();
 
-        // Listen for storage changes (if other tabs update localStorage)
         const handleStorageChange = (e) => {
             if (e.key === 'superAdmin' || e.key === 'company') {
                 updateUserData();
@@ -160,8 +142,6 @@ const SuperAdminHeader = ({ toggleSidebar, isSidebarOpen }) => {
         };
 
         window.addEventListener('storage', handleStorageChange);
-
-        // Optional: Check localStorage periodically (every 2 seconds)
         const interval = setInterval(updateUserData, 2000);
 
         return () => {
@@ -169,26 +149,6 @@ const SuperAdminHeader = ({ toggleSidebar, isSidebarOpen }) => {
             clearInterval(interval);
         };
     }, []);
-
-    const handleProfileClick = (event) => {
-        setAnchorEl(event.currentTarget);
-    };
-
-    const handleMenuClose = () => {
-        setAnchorEl(null);
-    };
-
-    const handleLogout = () => {
-        // Using your UI library's confirmation dialog (example)
-        // This is more customizable and looks better than window.confirm
-        if (window.confirm('Are you sure you want to logout?')) {
-            localStorage.removeItem('token');
-            navigate('/');
-
-            // Optional: Show success message
-            alert('Logged out successfully!'); // or use toast notification
-        }
-    };
 
     useEffect(() => {
         const handleScroll = () => setIsScrolled(window.scrollY > 10);
@@ -246,8 +206,10 @@ const SuperAdminHeader = ({ toggleSidebar, isSidebarOpen }) => {
                         />
                     </Typography>
                 </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: isMobile ? 0.5 : 1, flex: 1, justifyContent: 'flex-end' }}>
-                    <UserProfile onClick={handleProfileClick}>
+                
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: isMobile ? 0.5 : 1, flex: 1, justifyContent: 'flex-end', }}>
+                    {/* User Profile - No click action, just display */}
+                    <UserProfile>
                         <Avatar sx={{ bgcolor: 'primary.main' }}>
                             <PersonIcon />
                         </Avatar>
@@ -262,16 +224,6 @@ const SuperAdminHeader = ({ toggleSidebar, isSidebarOpen }) => {
                             </Box>
                         )}
                     </UserProfile>
-
-                    <Menu anchorEl={anchorEl} open={open} onClose={handleMenuClose}>
-                   
-                    
-                        <MenuItem onClick={handleLogout}>
-                            <ListItemIcon><LogoutIcon fontSize="small" /></ListItemIcon>
-                            <ListItemText>Log out</ListItemText>
-                        </MenuItem>
-                
-                    </Menu>
                 </Box>
             </Toolbar>
         </StyledAppBar>
