@@ -21,7 +21,11 @@ import {
   FiMail,
   FiPhone,
   FiLock,
-  FiBriefcase
+  FiBriefcase,
+  FiUser,
+  FiShield,
+  FiEye,
+  FiEyeOff
 } from "react-icons/fi";
 
 // Status Filter Component
@@ -73,11 +77,30 @@ const LeaveTypeFilter = ({ selected, onChange }) => {
   );
 };
 
+// ✅ Department Filter Component - NEW
+const DepartmentFilter = ({ selected, onChange, departments = [] }) => {
+  return (
+    <select
+      className="filter-select"
+      value={selected}
+      onChange={(e) => onChange(e.target.value)}
+    >
+      <option value="all">All Departments</option>
+      {departments.map((dept) => (
+        <option key={dept} value={dept}>
+          {dept}
+        </option>
+      ))}
+    </select>
+  );
+};
+
 const EmployeeLeaves = () => {
   const [leaves, setLeaves] = useState([]);
   const [filterDate, setFilterDate] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [leaveTypeFilter, setLeaveTypeFilter] = useState("all");
+  const [departmentFilter, setDepartmentFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [snackbar, setSnackbar] = useState({
@@ -102,143 +125,238 @@ const EmployeeLeaves = () => {
     userName: "",
     userPhone: "",
     userId: null,
+    currentStatus: ""
   });
   const [historyDialog, setHistoryDialog] = useState({
     open: false,
     title: "",
     items: [],
   });
+  
+  // 🔥 User Role Related States
+  const [currentUser, setCurrentUser] = useState(null);
+  const [currentUserRole, setCurrentUserRole] = useState("");
   const [currentUserDepartment, setCurrentUserDepartment] = useState("");
   const [currentUserId, setCurrentUserId] = useState("");
   const [currentUserCompanyId, setCurrentUserCompanyId] = useState("");
+  const [currentUserName, setCurrentUserName] = useState("");
   const [allUsers, setAllUsers] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  
+  // 🔥 Permission States
+  const [isOwner, setIsOwner] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isHR, setIsHR] = useState(false);
+  const [isManager, setIsManager] = useState(false);
+  const [permissions, setPermissions] = useState({
+    canViewAllLeaves: false,
+    canApproveLeaves: false,
+    canDeleteLeaves: false,
+    canExportData: false,
+    canViewHistory: true
+  });
 
+  // ============================================
+  // INITIALIZATION
+  // ============================================
   useEffect(() => {
-    fetchCompanyUsers();
+    fetchCurrentUserAndCompany();
   }, []);
 
   useEffect(() => {
     if (currentUserCompanyId) {
+      fetchCompanyUsers();
       fetchLeaves();
+      fetchDepartments();
     }
-  }, [filterDate, statusFilter, leaveTypeFilter, currentUserCompanyId]);
+  }, [
+    filterDate, 
+    statusFilter, 
+    leaveTypeFilter, 
+    departmentFilter,
+    currentUserCompanyId,
+    isOwner
+  ]);
+
+  // ============================================
+  // USER & PERMISSION FUNCTIONS
+  // ============================================
+  const fetchCurrentUserAndCompany = async () => {
+    try {
+      const userStr = localStorage.getItem('user');
+      if (!userStr) {
+        console.log("⚠️ No user found in localStorage");
+        return;
+      }
+
+      const user = JSON.parse(userStr);
+      console.log("👤 Current user from localStorage:", user);
+      
+      const userId = user._id || user.id || '';
+      const companyId = user.company || user.companyId || '';
+      const department = user.department || '';
+      const name = user.name || user.username || 'User';
+      let role = '';
+      
+      // Check for companyRole
+      if (user.companyRole) {
+        role = user.companyRole;
+      } else if (user.role) {
+        role = user.role;
+      }
+      
+      setCurrentUser(user);
+      setCurrentUserId(userId);
+      setCurrentUserCompanyId(companyId);
+      setCurrentUserDepartment(department);
+      setCurrentUserName(name);
+      setCurrentUserRole(role);
+      
+      // Set role flags
+      const isOwnerRole = role === 'Owner' || role === 'owner' || role === 'OWNER';
+      const isAdminRole = role === 'Admin' || role === 'admin' || role === 'ADMIN';
+      const isHRRole = role === 'HR' || role === 'hr' || role === 'Hr';
+      const isManagerRole = role === 'Manager' || role === 'manager' || role === 'MANAGER';
+      
+      setIsOwner(isOwnerRole);
+      setIsAdmin(isAdminRole);
+      setIsHR(isHRRole);
+      setIsManager(isManagerRole);
+      
+      // Set permissions based on role
+      setPermissions({
+        canViewAllLeaves: isOwnerRole || isAdminRole || isHRRole,
+        canApproveLeaves: isOwnerRole || isAdminRole || isHRRole || isManagerRole,
+        canDeleteLeaves: isOwnerRole || isAdminRole || isHRRole,
+        canExportData: isOwnerRole || isAdminRole || isHRRole,
+        canViewHistory: true
+      });
+      
+      console.log("👤 User details:", {
+        userId,
+        companyId,
+        department,
+        role,
+        isOwner: isOwnerRole,
+        isAdmin: isAdminRole,
+        isHR: isHRRole,
+        isManager: isManagerRole,
+        permissions: {
+          canViewAllLeaves: isOwnerRole || isAdminRole || isHRRole,
+          canApproveLeaves: isOwnerRole || isAdminRole || isHRRole || isManagerRole,
+          canDeleteLeaves: isOwnerRole || isAdminRole || isHRRole
+        }
+      });
+      
+      // If role is not found in localStorage, fetch from API
+      if (!role && userId) {
+        await fetchUserRole(userId);
+      }
+      
+    } catch (error) {
+      console.error("Error parsing user data:", error);
+      showSnackbar("Error loading user data", "error");
+    }
+  };
+
+  const fetchUserRole = async (userId) => {
+    try {
+      const res = await axios.get(`/users/${userId}`);
+      if (res.data && res.data.success && res.data.user) {
+        const user = res.data.user;
+        const userRole = user.companyRole || user.role;
+        
+        setCurrentUserRole(userRole);
+        
+        const isOwnerRole = userRole === 'Owner' || userRole === 'owner' || userRole === 'OWNER';
+        const isAdminRole = userRole === 'Admin' || userRole === 'admin' || userRole === 'ADMIN';
+        const isHRRole = userRole === 'HR' || userRole === 'hr' || userRole === 'Hr';
+        const isManagerRole = userRole === 'Manager' || userRole === 'manager' || userRole === 'MANAGER';
+        
+        setIsOwner(isOwnerRole);
+        setIsAdmin(isAdminRole);
+        setIsHR(isHRRole);
+        setIsManager(isManagerRole);
+        
+        setPermissions({
+          canViewAllLeaves: isOwnerRole || isAdminRole || isHRRole,
+          canApproveLeaves: isOwnerRole || isAdminRole || isHRRole || isManagerRole,
+          canDeleteLeaves: isOwnerRole || isAdminRole || isHRRole,
+          canExportData: isOwnerRole || isAdminRole || isHRRole,
+          canViewHistory: true
+        });
+        
+        console.log("👑 Fetched role from API:", userRole);
+      }
+    } catch (err) {
+      console.error("Failed to fetch user role:", err);
+    }
+  };
+
+  const fetchDepartments = async () => {
+    try {
+      // Get unique departments from allUsers
+      const depts = [...new Set(allUsers
+        .map(user => user.department)
+        .filter(dept => dept && dept.trim() !== '')
+      )];
+      setDepartments(depts);
+    } catch (err) {
+      console.error("Failed to fetch departments:", err);
+    }
+  };
 
   const fetchCompanyUsers = async () => {
     try {
-      console.log("🔄 Fetching department users...");
-      const res = await axios.get('/users/department-users');
+      console.log("🔄 Fetching users...");
+      console.log("👑 Is Owner:", isOwner);
+      
+      let endpoint = '';
+      if (isOwner || isAdmin || isHR) {
+        endpoint = '/users/company-users';
+        console.log("🏢 Using company-users endpoint");
+      } else {
+        endpoint = '/users/department-users';
+        console.log("🏢 Using department-users endpoint");
+      }
+      
+      const res = await axios.get(endpoint);
       
       let usersData = [];
       
       if (res.data && res.data.success) {
         if (res.data.message && res.data.message.users && Array.isArray(res.data.message.users)) {
           usersData = res.data.message.users;
-          console.log(`✅ Found ${usersData.length} users in data.message.users`);
-        }
-        else if (res.data.users && Array.isArray(res.data.users)) {
+        } else if (res.data.users && Array.isArray(res.data.users)) {
           usersData = res.data.users;
-          console.log(`✅ Found ${usersData.length} users in data.users`);
-        }
-        else if (res.data.message && Array.isArray(res.data.message)) {
+        } else if (res.data.message && Array.isArray(res.data.message)) {
           usersData = res.data.message;
-          console.log(`✅ Found ${usersData.length} users in message array`);
-        }
-        else if (res.data.data && Array.isArray(res.data.data)) {
+        } else if (res.data.data && Array.isArray(res.data.data)) {
           usersData = res.data.data;
-          console.log(`✅ Found ${usersData.length} users in data.data`);
-        }
-        else if (Array.isArray(res.data)) {
+        } else if (Array.isArray(res.data)) {
           usersData = res.data;
-          console.log(`✅ Found ${usersData.length} users in data array`);
-        }
-        else {
-          console.log("⚠️ No users array found. Full response:", res.data);
         }
       }
       
-      console.log("👥 Processed users data:", usersData.map(u => ({
-        id: u.id || u._id,
-        name: u.name,
-        email: u.email,
-        employeeType: u.employeeType || 'full-time',
-        department: u.department,
-        jobRole: u.jobRole
-      })));
-      
+      console.log(`✅ Found ${usersData.length} users`);
       setAllUsers(usersData);
       
-      // Get current user info
-      try {
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
-        console.log("👤 Current user from localStorage:", user);
-        
-        const userId = user._id || user.id || '';
-        const companyId = user.company || user.companyId || '';
-        const department = user.department || '';
-        
-        setCurrentUserId(userId);
-        setCurrentUserCompanyId(companyId);
-        setCurrentUserDepartment(department);
-        
-        // Add test users if no users found
-        if (usersData.length === 0 && companyId) {
-          console.log("⚠️ No users found, adding test data");
-          const testUsers = [
-            {
-              id: 'test1',
-              _id: 'test1',
-              name: 'IT Manager',
-              email: 'manager@gmail.com',
-              employeeType: 'full-time',
-              department: 'IT',
-              jobRole: { _id: '6980f3cac3721b782411d904', name: 'Manager' }
-            },
-            {
-              id: 'test2',
-              _id: 'test2',
-              name: 'Sales Executive',
-              email: 'sales@ciisnetwork.com',
-              employeeType: 'full-time',
-              department: 'SALES',
-              jobRole: { _id: 'user123', name: 'Employee' }
-            }
-          ];
-          setAllUsers(testUsers);
-        }
-        
-      } catch (error) {
-        console.error("Error parsing user data:", error);
-      }
+      // Extract unique departments
+      const depts = [...new Set(usersData
+        .map(user => user.department)
+        .filter(dept => dept && dept.trim() !== '')
+      )];
+      setDepartments(depts);
       
     } catch (err) {
       console.error("❌ Failed to load users", err);
       showSnackbar("Error loading users data", "error");
-      
-      // Add test data on error
-      const testUsers = [
-        {
-          id: 'test1',
-          _id: 'test1',
-          name: 'IT Manager',
-          email: 'manager@gmail.com',
-          employeeType: 'full-time',
-          department: 'IT',
-          jobRole: { _id: '6980f3cac3721b782411d904', name: 'Manager' }
-        },
-        {
-          id: 'test2',
-          _id: 'test2',
-          name: 'Sales Executive',
-          email: 'sales@ciisnetwork.com',
-          employeeType: 'full-time',
-          department: 'SALES',
-          jobRole: { _id: 'user123', name: 'Employee' }
-        }
-      ];
-      setAllUsers(testUsers);
     }
   };
 
+  // ============================================
+  // LEAVE MANAGEMENT FUNCTIONS
+  // ============================================
   const fetchLeaves = async () => {
     if (!currentUserCompanyId) {
       console.log("⚠️ No company ID, waiting for company data...");
@@ -250,29 +368,29 @@ const EmployeeLeaves = () => {
       let url = '/leaves/all';
       const params = new URLSearchParams();
       
-      // 🔧 Updated: Use company parameter instead of companyId
       params.append('company', currentUserCompanyId);
       
       if (filterDate) params.append('date', filterDate);
       if (statusFilter !== 'All') params.append('status', statusFilter);
       if (leaveTypeFilter !== 'all') params.append('type', leaveTypeFilter);
       
-      // 🔧 Remove department filter - show all departments
-      if (currentUserDepartment) {
+      // 🔥 Department filter - only for managers/non-admins
+      if (!isOwner && !isAdmin && !isHR && currentUserDepartment) {
         params.append('department', currentUserDepartment);
+        console.log("🏢 Filtering by department:", currentUserDepartment);
+      } else if (departmentFilter && departmentFilter !== 'all') {
+        params.append('department', departmentFilter);
+        console.log("🏢 Filtering by selected department:", departmentFilter);
       }
       
       if (params.toString()) url += `?${params}`;
       
       console.log("🌐 Fetching leaves from:", url);
-      console.log("🏢 User department:", currentUserDepartment);
-      console.log("👤 User ID:", currentUserId);
-      console.log("🏢 Company ID:", currentUserCompanyId);
+      console.log("👑 Role:", currentUserRole);
       
       const res = await axios.get(url);
       console.log("✅ Leaves API response:", res.data);
       
-      // Process the response
       let data = [];
       if (res.data && res.data.data && res.data.data.leaves) {
         data = res.data.data.leaves;
@@ -303,23 +421,67 @@ const EmployeeLeaves = () => {
       if (err.response?.status === 403) {
         showSnackbar("Access denied - Please contact administrator", "error");
       } else if (err.response?.status === 404) {
-        showSnackbar("No leaves found for your company", "info");
+        showSnackbar("No leaves found", "info");
       } else {
         showSnackbar("Error loading leave data", "error");
       }
       
       setLeaves([]);
-      setStats({
-        total: 0,
-        pending: 0,
-        approved: 0,
-        rejected: 0,
-      });
+      setStats({ total: 0, pending: 0, approved: 0, rejected: 0 });
     } finally {
       setLoading(false);
     }
   };
 
+  // ============================================
+  // PERMISSION CHECK FUNCTIONS
+  // ============================================
+ // ============================================
+// PERMISSION CHECK FUNCTIONS - ONLY OWNER CAN UPDATE/DELETE
+// ============================================
+
+/**
+ * Check if user can modify leave status (Approve/Reject)
+ * RULE: ONLY OWNER can update any leave status
+ */
+const canModifyLeave = (leaveUserId, leaveStatus) => {
+  // ✅ ONLY OWNER can update status
+  return isOwner === true;
+};
+
+/**
+ * Check if user can delete a leave
+ * RULE: ONLY OWNER can delete any leave
+ */
+const canDeleteLeave = (leaveUserId, leaveStatus) => {
+  // ✅ ONLY OWNER can delete leaves
+  return isOwner === true;
+};
+
+/**
+ * Check if user can approve/reject a leave
+ * RULE: ONLY OWNER can approve/reject leaves
+ */
+const canApproveLeave = (leaveUserId) => {
+  // ✅ ONLY OWNER can approve/reject leaves
+  return isOwner === true;
+};
+
+/**
+ * Get permission message for non-owners
+ */
+const getPermissionMessage = () => {
+  if (!isOwner) {
+    return "Only Company Owner can update or delete leave requests";
+  }
+  return null;
+};
+
+
+
+  // ============================================
+  // UI HELPER FUNCTIONS
+  // ============================================
   const showSnackbar = (message, type = "success") => {
     console.log(`🍿 Snackbar: ${type} - ${message}`);
     setSnackbar({ open: true, message, type });
@@ -332,12 +494,39 @@ const EmployeeLeaves = () => {
     setFilterDate("");
     setStatusFilter("All");
     setLeaveTypeFilter("all");
+    setDepartmentFilter("all");
     setSearchTerm("");
     setSelectedStat("All");
   };
 
-  const exportData = () => {
-    showSnackbar("Export feature coming soon!", "info");
+  const exportData = async () => {
+    try {
+      showSnackbar("Preparing export...", "info");
+      
+      const params = new URLSearchParams();
+      params.append('company', currentUserCompanyId);
+      if (filterDate) params.append('date', filterDate);
+      if (statusFilter !== 'All') params.append('status', statusFilter);
+      if (departmentFilter !== 'all') params.append('department', departmentFilter);
+      
+      const response = await axios.get(`/leaves/export?${params}`, {
+        responseType: 'blob'
+      });
+      
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `leaves_export_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      
+      showSnackbar("Export completed successfully", "success");
+    } catch (err) {
+      console.error("Export failed:", err);
+      showSnackbar("Export feature is being implemented", "info");
+    }
   };
 
   const handleStatFilter = (type) => {
@@ -345,9 +534,9 @@ const EmployeeLeaves = () => {
     setStatusFilter(type === 'All' ? 'All' : type);
   };
 
-  // 🔧 Everyone can modify now
-  const canModify = true;
-
+  // ============================================
+  // FILTERED LEAVES
+  // ============================================
   const filteredLeaves = useMemo(() => {
     let filtered = leaves;
 
@@ -379,6 +568,9 @@ const EmployeeLeaves = () => {
     [filteredLeaves]
   );
 
+  // ============================================
+  // HELPER FUNCTIONS
+  // ============================================
   const getInitials = (name) => {
     if (!name) return 'U';
     return name
@@ -443,24 +635,34 @@ const EmployeeLeaves = () => {
     return `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
   };
 
-  const openStatusDialog = (leaveId, newStatus, userEmail, userName, userPhone, userId) => {
-    if (userId === currentUserId) {
-      showSnackbar("You cannot update the status of your own leave", "error");
-      return;
-    }
-    
-    // 🔧 Everyone can modify now
-    setStatusDialog({
-      open: true,
-      leaveId,
-      newStatus,
-      remarks: "",
-      userEmail,
-      userName,
-      userPhone,
-      userId,
-    });
-  };
+  // ============================================
+  // DIALOG FUNCTIONS
+  // ============================================
+// ============================================
+// OPEN STATUS DIALOG - WITH OWNER CHECK
+// ============================================
+const openStatusDialog = (leaveId, newStatus, userEmail, userName, userPhone, userId, currentStatus) => {
+  // 🔥 CRITICAL: Only Owner can update status
+  if (!isOwner) {
+    showSnackbar(
+      "⛔ Access Denied: Only Company Owner can update leave status", 
+      "error"
+    );
+    return;
+  }
+  
+  setStatusDialog({
+    open: true,
+    leaveId,
+    newStatus,
+    remarks: "",
+    userEmail,
+    userName,
+    userPhone,
+    userId,
+    currentStatus
+  });
+};
 
   const closeStatusDialog = () => {
     setStatusDialog({
@@ -472,20 +674,15 @@ const EmployeeLeaves = () => {
       userName: "",
       userPhone: "",
       userId: null,
+      currentStatus: ""
     });
   };
 
   const confirmStatusChange = async () => {
-    const { leaveId, newStatus, remarks, userEmail, userName, userPhone, userId } = statusDialog;
+    const { leaveId, newStatus, remarks, userName, userPhone } = statusDialog;
     
     if (!leaveId || !newStatus) {
       showSnackbar("Invalid leave data", "error");
-      return;
-    }
-
-    if (userId === currentUserId) {
-      showSnackbar("You cannot update the status of your own leave", "error");
-      closeStatusDialog();
       return;
     }
 
@@ -497,7 +694,7 @@ const EmployeeLeaves = () => {
         remarks
       });
       
-      if (res.data.message) {
+      if (res.data.success || res.data.message) {
         showSnackbar(`Leave ${newStatus.toLowerCase()} successfully`, "success");
         
         fetchLeaves();
@@ -506,27 +703,14 @@ const EmployeeLeaves = () => {
         if (userPhone) {
           setTimeout(() => {
             const whatsappLink = getWhatsAppLink(userPhone, userName, newStatus, remarks);
-            showSnackbar(
-              <span>
-                <FiPhone style={{ marginRight: '8px', verticalAlign: 'middle' }} />
-                <a 
-                  href={whatsappLink} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  style={{ color: 'white', textDecoration: 'underline' }}
-                >
-                  Click to send WhatsApp notification
-                </a>
-              </span>,
-              "info"
-            );
+            window.open(whatsappLink, '_blank');
           }, 1000);
         }
       }
     } catch (err) {
       console.error("Failed to update status", err);
       if (err.response?.status === 403) {
-        showSnackbar("You don't have permission to update leave status", "error");
+        showSnackbar(err.response.data.error || "You don't have permission", "error");
       } else if (err.response?.status === 400) {
         showSnackbar(err.response.data.error || "Invalid status value", "error");
       } else if (err.response?.status === 404) {
@@ -537,24 +721,40 @@ const EmployeeLeaves = () => {
     }
   };
 
-  const handleDeleteLeave = async () => {
-    try {
-      const res = await axios.delete(`/leaves/${deleteDialog}`);
-      
-      if (res.data.message) {
-        showSnackbar("Leave deleted successfully", "success");
-        fetchLeaves();
-        setDeleteDialog(null);
-      }
-    } catch (err) {
-      console.error("Failed to delete leave", err);
-      if (err.response?.status === 403) {
-        showSnackbar("You don't have permission to delete this leave", "error");
-      } else {
-        showSnackbar("Failed to delete leave", "error");
-      }
+// ============================================
+// DELETE LEAVE HANDLER - WITH OWNER CHECK
+// ============================================
+const handleDeleteLeave = async (leaveId) => {
+  try {
+    const leave = leaves.find(l => l._id === leaveId);
+    if (!leave) return;
+    
+    // 🔥 CRITICAL: Only Owner can delete leaves
+    if (!isOwner) {
+      showSnackbar(
+        "⛔ Access Denied: Only Company Owner can delete leave requests", 
+        "error"
+      );
+      setDeleteDialog(null);
+      return;
     }
-  };
+    
+    const res = await axios.delete(`/leaves/${leaveId}`);
+    
+    if (res.data.success || res.data.message) {
+      showSnackbar("Leave deleted successfully", "success");
+      fetchLeaves();
+      setDeleteDialog(null);
+    }
+  } catch (err) {
+    console.error("Failed to delete leave", err);
+    if (err.response?.status === 403) {
+      showSnackbar(err.response.data.error || "Permission denied - Only Owner can delete leaves", "error");
+    } else {
+      showSnackbar("Failed to delete leave", "error");
+    }
+  }
+};
 
   const openHistoryDialog = (leave) => {
     const history = leave.history || [];
@@ -564,8 +764,11 @@ const EmployeeLeaves = () => {
       items: history.length > 0 ? history : [
         {
           action: leave.status || 'Pending',
+          from: 'N/A',
+          to: leave.status || 'Pending',
           by: leave.approvedBy || 'System',
-          role: 'System',
+          byName: leave.approvedByName || 'System',
+          byRole: 'System',
           at: leave.updatedAt || leave.createdAt,
           remarks: leave.remarks || '',
         }
@@ -588,8 +791,24 @@ const EmployeeLeaves = () => {
     if (r === 'admin') return 'Administrator';
     if (r === 'superadmin') return 'Super Admin';
     if (r === 'manager') return 'Team Manager';
+    if (r === 'owner') return 'Company Owner';
     return role.charAt(0).toUpperCase() + role.slice(1);
   };
+const getUserNameById = (userId) => {
+  if (!userId) return "System";
+  
+  // Agar already object me name hai
+  if (typeof userId === "object" && userId.name) {
+    return userId.name;
+  }
+
+  // allUsers se find karo
+  const user = allUsers.find(
+    (u) => u._id === userId || u.id === userId
+  );
+
+  return user ? user.name : userId; // fallback me ID dikha dega
+};
 
   const formatHistoryDate = (dateStr) => {
     if (!dateStr) return "";
@@ -602,13 +821,66 @@ const EmployeeLeaves = () => {
     });
   };
 
+  // ============================================
+  // COMPONENTS
+  // ============================================
+  const RoleBadge = () => {
+    if (!currentUserRole) return null;
+    
+    let badgeClass = 'role-badge';
+    let icon = <FiUser size={12} />;
+    
+    if (isOwner) {
+      badgeClass += ' role-badge-owner';
+      icon = <FiShield size={12} />;
+    } else if (isAdmin) {
+      badgeClass += ' role-badge-admin';
+      icon = <FiShield size={12} />;
+    } else if (isHR) {
+      badgeClass += ' role-badge-hr';
+    } else if (isManager) {
+      badgeClass += ' role-badge-manager';
+    }
+    
+    return (
+      <span className={badgeClass}>
+        {icon}
+        {normalizeRole(currentUserRole)}
+      </span>
+    );
+  };
+
+  const PermissionBadge = () => {
+    if (isOwner) {
+      return <span className="permission-badge owner">👑 Full Access (Owner)</span>;
+    }
+    if (isAdmin) {
+      return <span className="permission-badge admin">🛡️ Admin Access</span>;
+    }
+    if (isHR) {
+      return <span className="permission-badge hr">👥 HR Access</span>;
+    }
+    if (isManager) {
+      return <span className="permission-badge manager">📋 Manager Access</span>;
+    }
+    return null;
+  };
+
+  // ============================================
+  // RENDER TABLE
+  // ============================================
   const renderLeaveTable = (title, leavesData, showStatusColumn = true) => (
     <div className="leaves-table-container">
       <div className="table-header">
-        <h3 className="table-title">{title} ({leavesData.length})</h3>
+        <h3 className="table-title">
+          {title} ({leavesData.length})
+          {title === 'Pending Leaves' && permissions.canApproveLeaves && (
+            <span className="action-required-badge">Action Required</span>
+          )}
+        </h3>
         <div className="company-badge">
-          <FiBriefcase size={14} style={{ marginRight: '4px' }} />
-          Company: {currentUserCompanyId ? currentUserCompanyId.substring(0, 8) + '...' : 'Loading...'}
+          <FiBriefcase size={14} />
+          {currentUserCompanyId ? currentUserCompanyId.substring(0, 8) + '...' : 'Loading...'}
         </div>
       </div>
       
@@ -631,25 +903,29 @@ const EmployeeLeaves = () => {
               leavesData.map((leave) => {
                 const days = calculateDays(leave.startDate, leave.endDate);
                 const userId = leave.user?._id || leave.user;
+                const canUserApprove = canApproveLeave(userId);
+                const canUserDelete = canDeleteLeave(userId, leave.status);
+                const isOwnLeave = userId === currentUserId;
                 
                 return (
-                  <tr key={leave._id} className={getRowClass(leave.status)}>
+                  <tr key={leave._id} className={`${getRowClass(leave.status)} ${isOwnLeave ? 'own-leave-row' : ''}`}>
                     <td>
                       <div className="employee-info">
                         <div className="employee-avatar">
                           {getInitials(leave.user?.name)}
+                          {isOwnLeave && <span className="self-badge">You</span>}
                         </div>
                         <div className="employee-details">
                           <div className="employee-name">
                             {leave.user?.name || "N/A"}
                           </div>
                           <div className="employee-email">
-                            <FiMail size={12} style={{ marginRight: '4px' }} />
+                            <FiMail size={12} />
                             {leave.user?.email || "N/A"}
                           </div>
                           {leave.user?.phone && (
                             <div className="employee-phone">
-                              <FiPhone size={12} style={{ marginRight: '4px' }} />
+                              <FiPhone size={12} />
                               <a 
                                 href={getWhatsAppLink(
                                   leave.user.phone, 
@@ -659,7 +935,6 @@ const EmployeeLeaves = () => {
                                 )}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                style={{ color: '#666', textDecoration: 'none' }}
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 {leave.user.phone}
@@ -691,12 +966,12 @@ const EmployeeLeaves = () => {
                         <div className="date-range">
                           {formatDate(leave.startDate)}
                         </div>
-                        <div className="date-separator">to</div>
+                        <div className="date-separator">→</div>
                         <div className="date-range">
                           {formatDate(leave.endDate)}
                         </div>
                         <div className="days-badge">
-                          {days} day{days > 1 ? 's' : ''}
+                          {days} {days > 1 ? 'days' : 'day'}
                         </div>
                       </div>
                     </td>
@@ -709,51 +984,89 @@ const EmployeeLeaves = () => {
                     )}
                     <td>
                       <div className="approved-by">
-                        {leave.approvedBy || "-"}
+                        {leave.approvedBy?.name || leave.approvedBy || "-"}
+                        {leave.approvedBy?.role && (
+                          <span className="approver-role">
+                            {normalizeRole(leave.approvedBy.role)}
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td>
                       <button 
                         className="view-history-button"
                         onClick={() => openHistoryDialog(leave)}
+                        title="View History"
                       >
-                        <FiList size={14} /> View History
+                        <FiList size={14} />
+                        <span>History</span>
                       </button>
                     </td>
-                    <td>
-                      <div className="actions-container">
-                        {leave.status === 'Pending' ? (
-                          <select
-                            className="action-dropdown"
-                            value={leave.status || "Pending"}
-                            onChange={(e) => openStatusDialog(
-                              leave._id, 
-                              e.target.value, 
-                              leave.user?.email,
-                              leave.user?.name,
-                              leave.user?.phone,
-                              userId
-                            )}
-                            disabled={userId === currentUserId} // Only disable for own leaves
-                          >
-                            <option value="Pending">Pending</option>
-                            <option value="Approved">Approve</option>
-                            <option value="Rejected">Reject</option>
-                          </select>
-                        ) : (
-                          <div className="status-info">
-                            {leave.status}
-                          </div>
-                        )}
-                        <button 
-                          className="delete-button"
-                          onClick={() => setDeleteDialog(leave._id)}
-                          title="Delete Leave"
-                        >
-                          <FiTrash2 size={16} />
-                        </button>
-                      </div>
-                    </td>
+                  
+<td>
+  <div className="actions-container">
+    {/* STATUS UPDATE BUTTONS - ONLY OWNER */}
+    {leave.status === 'Pending' && canApproveLeave(userId) ? (
+      <div className="approval-actions">
+        <button
+          className={`action-approve ${!isOwner ? 'action-disabled' : ''}`}
+          onClick={() => isOwner ? openStatusDialog(
+            leave._id, 
+            'Approved', 
+            leave.user?.email,
+            leave.user?.name,
+            leave.user?.phone,
+            userId,
+            leave.status
+          ) : null}
+          title={isOwner ? "Approve Leave" : "Only Owner can approve"}
+          disabled={!isOwner}
+        >
+          <FiCheckCircle size={16} />
+          <span>Approve</span>
+        </button>
+        <button
+          className={`action-reject ${!isOwner ? 'action-disabled' : ''}`}
+          onClick={() => isOwner ? openStatusDialog(
+            leave._id, 
+            'Rejected', 
+            leave.user?.email,
+            leave.user?.name,
+            leave.user?.phone,
+            userId,
+            leave.status
+          ) : null}
+          title={isOwner ? "Reject Leave" : "Only Owner can reject"}
+          disabled={!isOwner}
+        >
+          <FiXCircle size={16} />
+          <span>Reject</span>
+        </button>
+      </div>
+    ) : leave.status === 'Pending' ? (
+      <span className="no-permission">
+        <FiLock size={14} />
+        {isOwner ? 'Action required' : 'Owner only'}
+      </span>
+    ) : (
+      <span className={`status-text status-${leave.status?.toLowerCase()}`}>
+        {leave.status}
+      </span>
+    )}
+    
+    {/* DELETE BUTTON - ONLY OWNER */}
+    {canDeleteLeave(userId, leave.status) && (
+      <button 
+        className={`delete-button ${!isOwner ? 'action-disabled' : ''}`}
+        onClick={() => isOwner ? setDeleteDialog(leave._id) : null}
+        title={isOwner ? "Delete Leave" : "Only Owner can delete"}
+        disabled={!isOwner}
+      >
+        <FiTrash2 size={16} />
+      </button>
+    )}
+  </div>
+</td>
                   </tr>
                 );
               })
@@ -767,14 +1080,13 @@ const EmployeeLeaves = () => {
                     <h4 className="empty-state-title">No Leave Requests Found</h4>
                     <p className="empty-state-text">
                       {title === 'Pending Leaves' 
-                        ? 'No pending leave requests'
+                        ? 'No pending leave requests requiring action'
                         : 'Try adjusting your filters or search criteria'
                       }
                     </p>
                     <button 
                       className="btn btn-contained"
                       onClick={fetchLeaves}
-                      style={{ marginTop: '8px' }}
                     >
                       Refresh Data
                     </button>
@@ -788,75 +1100,118 @@ const EmployeeLeaves = () => {
     </div>
   );
 
+  // ============================================
+  // LOADING STATE
+  // ============================================
   if (loading && leaves.length === 0) {
     return (
       <div className="loading-container">
         <div className="loading-spinner"></div>
         <p>Loading leave data...</p>
+        {currentUserRole && (
+          <span className="loading-role">Role: {normalizeRole(currentUserRole)}</span>
+        )}
       </div>
     );
   }
 
+  // ============================================
+  // MAIN RENDER
+  // ============================================
   return (
     <div className="employee-leaves">
-      {/* Header */}
-      <div className="leaves-header">
-        <div>
-          <h1 className="leaves-title">Leave Management</h1>
-          <p className="leaves-subtitle">
-            Review and manage employee leave requests
-            {currentUserDepartment && (
-              <span className="department-badge">
-                Department: {currentUserDepartment}
-              </span>
-            )}
-            <span className="company-badge">
-              Company: {currentUserCompanyId ? currentUserCompanyId.substring(0, 12) + '...' : 'Loading...'}
-            </span>
-          </p>
-        </div>
+      {/* Header with Role Badge */}
+    {/* Header with Role Badge */}
+<div className="leaves-header">
+  <div>
+    <h1 className="leaves-title">
+      Leave Management
+      
+    </h1>
+    <p className="leaves-subtitle">
+      {isOwner 
+        ? "Review and manage employee leave requests with full access"
+        : "View all leave requests (Read-only mode)"
+      }
+      <RoleBadge />
+      
+      {!isOwner && (
+        <span className="view-only-badge">
+          <FiEyeOff size={14} />
+          View Only
+        </span>
+      )}
+      
+      <span className="company-badge">
+        <FiBriefcase size={14} />
+        {currentUserCompanyId ? currentUserCompanyId.substring(0, 12) + '...' : 'Loading...'}
+      </span>
+    </p>
+  </div>
 
-        {/* Action Bar */}
-        <div className="header-actions">
-          <button 
-            className="action-button"
-            onClick={fetchLeaves}
-            title="Refresh Data"
-            disabled={loading}
-          >
-            <FiRefreshCw size={20} className={loading ? 'spinning' : ''} />
-          </button>
-          <button 
-            className="action-button"
-            onClick={exportData}
-            title="Export Report"
-          >
-            <FiDownload size={20} />
-          </button>
-          <div className="stats-summary">
-            <span className="stat-item">
-              <FiClock color="#ff9800" /> {stats.pending} Pending
-            </span>
-            <span className="stat-item">
-              <FiCheckCircle color="#4caf50" /> {stats.approved} Approved
-            </span>
-            <span className="stat-item">
-              <FiXCircle color="#f44336" /> {stats.rejected} Rejected
-            </span>
-          </div>
-        </div>
+  {/* Action Bar */}
+  <div className="header-actions">
+    <button 
+      className="action-button"
+      onClick={fetchLeaves}
+      title="Refresh Data"
+      disabled={loading}
+    >
+      <FiRefreshCw size={20} className={loading ? 'spinning' : ''} />
+    </button>
+    
+    {/* Export - Available to all (read-only) */}
+    <button 
+      className="action-button"
+      onClick={exportData}
+      title="Export Report"
+    >
+      <FiDownload size={20} />
+    </button>
+    
+    <div className="stats-summary">
+      <span className="stat-item">
+        <FiClock color="#ff9800" /> {stats.pending} Pending
+      </span>
+      <span className="stat-item">
+        <FiCheckCircle color="#4caf50" /> {stats.approved} Approved
+      </span>
+      <span className="stat-item">
+        <FiXCircle color="#f44336" /> {stats.rejected} Rejected
+      </span>
+    </div>
+  </div>
+</div>
+
+{/* Owner Warning Banner - Show for non-owners */}
+{!isOwner && (
+  <div className="owner-warning-banner">
+    <div className="warning-content">
+      <FiLock size={20} />
+      <div className="warning-text">
+        <strong>🔒 View Only Mode</strong>
+        <p>You are viewing leave requests. Only the Company Owner can approve, reject, or delete leaves.</p>
       </div>
+    </div>
+  </div>
+)}
 
       {/* Filter Section */}
       <div className="filter-section">
         <div className="filter-header">
           <FiFilter size={20} color="#1976d2" />
           <h3>Filters & Search</h3>
+          {(isOwner || isAdmin || isHR) && (
+            <span className="owner-filter-badge">
+              <FiEye size={14} />
+              Viewing: {departmentFilter === 'all' ? 'All Departments' : departmentFilter}
+            </span>
+          )}
         </div>
         
         <div className="filter-grid">
           <div className="filter-group">
-            <label className="filter-label">Filter by Date (Optional)</label>
+            <label className="filter-label">Date</label>
             <input
               type="date"
               className="filter-input"
@@ -881,6 +1236,17 @@ const EmployeeLeaves = () => {
             />
           </div>
           
+          {(isOwner || isAdmin || isHR) && (
+            <div className="filter-group">
+              <label className="filter-label">Department</label>
+              <DepartmentFilter
+                selected={departmentFilter}
+                onChange={setDepartmentFilter}
+                departments={departments}
+              />
+            </div>
+          )}
+          
           <div className="filter-group">
             <label className="filter-label">Search</label>
             <div style={{ position: 'relative' }}>
@@ -891,13 +1257,14 @@ const EmployeeLeaves = () => {
                   left: '12px',
                   top: '50%',
                   transform: 'translateY(-50%)',
-                  color: '#666'
+                  color: '#666',
+                  zIndex: 1
                 }}
               />
               <input
                 type="text"
                 className="filter-input"
-                placeholder="Search by name, email, department, reason..."
+                placeholder="Search by name, email, department..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 style={{ paddingLeft: '40px' }}
@@ -964,7 +1331,6 @@ const EmployeeLeaves = () => {
             key={stat.type}
             className={`stat-card ${stat.statClass} ${selectedStat === stat.type ? 'stat-card-active' : ''}`}
             onClick={() => handleStatFilter(stat.type)}
-            style={{ cursor: 'pointer' }}
           >
             <div className="stat-content">
               <div className={`stat-icon ${stat.iconClass}`}>
@@ -986,8 +1352,11 @@ const EmployeeLeaves = () => {
           <div className="leaves-section">
             <div className="section-header">
               <h2 className="section-title">
-                <FiAlertCircle size={20} style={{ marginRight: '8px' }} />
+                <FiAlertCircle size={20} />
                 Pending Leaves Requiring Action
+                {permissions.canApproveLeaves && (
+                  <span className="action-badge">Needs Approval</span>
+                )}
               </h2>
               <span className="section-badge">{pendingLeaves.length} pending</span>
             </div>
@@ -999,7 +1368,7 @@ const EmployeeLeaves = () => {
         <div className="leaves-section">
           <div className="section-header">
             <h2 className="section-title">
-              <FiList size={20} style={{ marginRight: '8px' }} />
+              <FiList size={20} />
               All Other Leaves
             </h2>
             <span className="section-badge">{otherLeaves.length} total</span>
@@ -1008,12 +1377,16 @@ const EmployeeLeaves = () => {
         </div>
       </div>
 
-      {/* Status Update Dialog */}
+      {/* ======================================== */}
+      {/* STATUS UPDATE DIALOG */}
+      {/* ======================================== */}
       {statusDialog.open && (
         <div className="dialog-overlay" onClick={closeStatusDialog}>
           <div className="dialog-content" onClick={(e) => e.stopPropagation()}>
             <div className="dialog-header">
-              <h3>Update Leave Status</h3>
+              <h3>
+                {statusDialog.newStatus === 'Approved' ? '✅ Approve' : '❌ Reject'} Leave
+              </h3>
               <button className="dialog-close" onClick={closeStatusDialog}>
                 <FiX size={20} />
               </button>
@@ -1021,7 +1394,7 @@ const EmployeeLeaves = () => {
             
             <div className="dialog-body">
               <div className="user-info">
-                <div className="user-avatar">
+                <div className="user-avatar large">
                   {getInitials(statusDialog.userName)}
                 </div>
                 <div className="user-details">
@@ -1033,22 +1406,15 @@ const EmployeeLeaves = () => {
                 </div>
               </div>
               
-              <div className="status-selection">
-                <h4>Change Status to:</h4>
-                <div className="status-options">
-                  <button 
-                    className={`status-option ${statusDialog.newStatus === 'Approved' ? 'selected' : ''}`}
-                    onClick={() => setStatusDialog(prev => ({ ...prev, newStatus: 'Approved' }))}
-                  >
-                    <FiCheckCircle /> Approved
-                  </button>
-                  <button 
-                    className={`status-option ${statusDialog.newStatus === 'Rejected' ? 'selected' : ''}`}
-                    onClick={() => setStatusDialog(prev => ({ ...prev, newStatus: 'Rejected' }))}
-                  >
-                    <FiXCircle /> Rejected
-                  </button>
-                </div>
+              <div className="status-info-box">
+                <span className="current-status">
+                  Current: <strong>{statusDialog.currentStatus || 'Pending'}</strong>
+                </span>
+                <span className="new-status">
+                  New: <strong style={{ color: statusDialog.newStatus === 'Approved' ? '#4caf50' : '#f44336' }}>
+                    {statusDialog.newStatus}
+                  </strong>
+                </span>
               </div>
               
               <div className="remarks-section">
@@ -1057,15 +1423,19 @@ const EmployeeLeaves = () => {
                   className="remarks-input"
                   value={statusDialog.remarks}
                   onChange={(e) => setStatusDialog(prev => ({ ...prev, remarks: e.target.value }))}
-                  placeholder="Add any remarks or notes..."
+                  placeholder={`Add remarks for ${statusDialog.newStatus?.toLowerCase()}...`}
                   rows="3"
+                  autoFocus
                 />
               </div>
               
               <div className="notification-info">
                 <FiPhone size={16} />
                 <span>
-                  WhatsApp notification will be sent to {statusDialog.userName} if phone number is available.
+                  {statusDialog.userPhone 
+                    ? `WhatsApp notification will be sent to ${statusDialog.userName}`
+                    : `No phone number available for WhatsApp notification`
+                  }
                 </span>
               </div>
             </div>
@@ -1077,9 +1447,8 @@ const EmployeeLeaves = () => {
               <button 
                 className={`btn btn-contained ${statusDialog.newStatus === 'Approved' ? 'btn-success' : 'btn-error'}`}
                 onClick={confirmStatusChange}
-                disabled={!statusDialog.newStatus}
               >
-                <FiSave size={16} style={{ marginRight: '8px' }} />
+                <FiSave size={16} />
                 Confirm {statusDialog.newStatus}
               </button>
             </div>
@@ -1087,7 +1456,9 @@ const EmployeeLeaves = () => {
         </div>
       )}
 
-      {/* Delete Confirmation Dialog */}
+      {/* ======================================== */}
+      {/* DELETE CONFIRMATION DIALOG */}
+      {/* ======================================== */}
       {deleteDialog && (
         <div className="dialog-overlay" onClick={() => setDeleteDialog(null)}>
           <div className="dialog-content delete-dialog" onClick={(e) => e.stopPropagation()}>
@@ -1104,7 +1475,8 @@ const EmployeeLeaves = () => {
               </div>
               <h4>Are you sure?</h4>
               <p>
-                This will permanently delete the leave request. This action cannot be undone.
+                This will permanently delete the leave request. 
+                This action cannot be undone.
               </p>
             </div>
             
@@ -1112,8 +1484,11 @@ const EmployeeLeaves = () => {
               <button className="btn btn-outlined" onClick={() => setDeleteDialog(null)}>
                 Cancel
               </button>
-              <button className="btn btn-error" onClick={handleDeleteLeave}>
-                <FiTrash2 size={16} style={{ marginRight: '8px' }} />
+              <button 
+                className="btn btn-error" 
+                onClick={() => handleDeleteLeave(deleteDialog)}
+              >
+                <FiTrash2 size={16} />
                 Delete
               </button>
             </div>
@@ -1121,7 +1496,9 @@ const EmployeeLeaves = () => {
         </div>
       )}
 
-      {/* History Dialog */}
+      {/* ======================================== */}
+      {/* HISTORY DIALOG */}
+      {/* ======================================== */}
       {historyDialog.open && (
         <div className="dialog-overlay" onClick={closeHistoryDialog}>
           <div className="dialog-content history-dialog" onClick={(e) => e.stopPropagation()}>
@@ -1142,18 +1519,27 @@ const EmployeeLeaves = () => {
                   historyDialog.items.map((item, index) => (
                     <div key={index} className="history-item">
                       <div className="history-item-header">
-                        <span className="history-action">{item.action}</span>
-                        <span className="history-date">{formatHistoryDate(item.at)}</span>
+                        <span className={`history-action status-${item.action?.toLowerCase() || 'pending'}`}>
+                          {item.action || 'Updated'}
+                        </span>
+                        <span className="history-date">
+                          {formatHistoryDate(item.at)}
+                        </span>
                       </div>
                       <div className="history-item-body">
-                        <div className="history-by">
-                          <strong>By:</strong> {item.by || 'System'}
-                        </div>
-                        {item.role && (
-                          <div className="history-role">
-                            <strong>Role:</strong> {normalizeRole(item.role)}
+                        {item.from && item.to && item.from !== item.to && (
+                          <div className="history-status-change">
+                            <span className="status-badge from">{item.from}</span>
+                            <span className="arrow">→</span>
+                            <span className="status-badge to">{item.to}</span>
                           </div>
                         )}
+                        <div className="history-by">
+                          <strong>By:</strong> {item.byName || getUserNameById(item.by)}
+                          {item.byRole && (
+                            <span className="history-role">({normalizeRole(item.byRole)})</span>
+                          )}
+                        </div>
                         {item.remarks && (
                           <div className="history-remarks">
                             <strong>Remarks:</strong> {item.remarks}
@@ -1180,7 +1566,9 @@ const EmployeeLeaves = () => {
         </div>
       )}
 
-      {/* Snackbar */}
+      {/* ======================================== */}
+      {/* SNACKBAR */}
+      {/* ======================================== */}
       {snackbar.open && (
         <div className="snackbar">
           <div className={`snackbar-content snackbar-${snackbar.type}`}>
