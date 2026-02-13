@@ -158,6 +158,7 @@ const CompanyRegister = () => {
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [logoLoading, setLogoLoading] = useState(false);
   const [logoPreview, setLogoPreview] = useState("");
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const navigate = useNavigate();
 
@@ -206,6 +207,12 @@ const CompanyRegister = () => {
           setLogoPreview(e.target.result);
         };
         reader.readAsDataURL(file);
+        
+        // Clear any previous errors for this field
+        setFormErrors((prev) => ({
+          ...prev,
+          [name]: "",
+        }));
       }
     } else {
       setForm((prev) => ({
@@ -281,6 +288,7 @@ const CompanyRegister = () => {
     setLogoPreview("");
     setFormErrors({});
     setApiErrors({});
+    setUploadProgress(0);
   };
 
   const mapFieldName = (backendField) => {
@@ -300,16 +308,56 @@ const CompanyRegister = () => {
     formData.append('logo', file);
     
     try {
-      const uploadRes = await axios.post(`${API_URL}/upload-logo`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      setLogoLoading(true);
+      
+      // Try multiple endpoints for better reliability
+      let uploadRes;
+      let endpoints = [
+        `${API_URL}/upload-logo`,
+        `${API_URL}/api/upload-logo`,
+        `${API_URL}/company/upload-logo`
+      ];
+      
+      let lastError;
+      
+      for (const endpoint of endpoints) {
+        try {
+          console.log(`Trying logo upload to: ${endpoint}`);
+          uploadRes = await axios.post(endpoint, formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+            onUploadProgress: (progressEvent) => {
+              const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+              setUploadProgress(percentCompleted);
+            },
+            timeout: 30000 // 30 second timeout
+          });
+          
+          if (uploadRes.data && uploadRes.data.success) {
+            console.log(`✅ Logo uploaded successfully to ${endpoint}`);
+            break;
+          }
+        } catch (err) {
+          console.log(`❌ Failed to upload to ${endpoint}:`, err.message);
+          lastError = err;
+          continue;
+        }
+      }
+      
+      if (!uploadRes || !uploadRes.data || !uploadRes.data.success) {
+        throw lastError || new Error("All upload endpoints failed");
+      }
+      
+      setUploadProgress(100);
+      setTimeout(() => setUploadProgress(0), 1000);
       
       return uploadRes.data.logoUrl;
     } catch (err) {
       console.error("Logo upload failed:", err);
-      throw new Error("Failed to upload logo");
+      throw new Error("Failed to upload logo. Please try again or skip logo for now.");
+    } finally {
+      setLogoLoading(false);
     }
   };
 
@@ -326,7 +374,6 @@ const CompanyRegister = () => {
     }
 
     setIsSubmitting(true);
-    setLogoLoading(true);
 
     try {
       let logoUrl = "";
@@ -336,35 +383,38 @@ const CompanyRegister = () => {
         try {
           logoUrl = await uploadLogoToServer(form.logoFile);
         } catch (uploadError) {
-          setError("Logo upload failed. Please try again or skip logo for now.");
+          setError(uploadError.message);
           setIsSubmitting(false);
-          setLogoLoading(false);
           return;
         }
       }
 
       const formData = { 
         ...form,
-        logo: logoUrl, // Send the uploaded logo URL
+        logo: logoUrl,
         companyPhone: form.companyPhone.replace(/\D/g, '')
       };
 
       // Remove the file object before sending
       delete formData.logoFile;
 
+      console.log("Submitting company registration with data:", {
+        ...formData,
+        ownerPassword: "[HIDDEN]"
+      });
+
       const res = await axios.post(`${API_URL}/company`, formData);
       
       setMsg(res.data?.message || "Company registered successfully! 🎉");
       setRegistrationSuccess(true);
+      
+      // Show success message and redirect
       setTimeout(() => {
         navigate("/SuperAdminLogin"); 
-      }, 2000);
+      }, 3000);
+      
       resetForm();
       
-      setTimeout(() => {
-        setMsg("");
-      }, 5000);
-
     } catch (err) {
       console.error("Registration error:", err.response?.data || err.message);
 
@@ -407,7 +457,7 @@ const CompanyRegister = () => {
       setRegistrationSuccess(false);
     } finally {
       setIsSubmitting(false);
-      setLogoLoading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -823,6 +873,7 @@ const CompanyRegister = () => {
 
                     <button
                       onClick={handleBackToHome}
+                      type="button"
                       style={{
                         display: "flex",
                         alignItems: "center",
@@ -930,27 +981,50 @@ const CompanyRegister = () => {
                         gap: 12,
                         alignItems: isMobile ? "stretch" : "center",
                       }}>
-                        <div style={{ flex: 1 }}>
+                        <div style={{ flex: 1, position: "relative" }}>
                           <input
                             type="file"
                             name="logoFile"
                             onChange={handleChange}
                             accept="image/*"
+                            disabled={logoLoading}
                             style={{
                               width: "100%",
                               padding: "10px 12px",
                               borderRadius: 6,
                               border: getFieldError("logoFile") ? "1.5px solid #ef4444" : "1px solid #e5e7eb",
                               fontSize: "13px",
-                              backgroundColor: getFieldError("logoFile") ? "#fef2f2" : "#f9fafb",
+                              backgroundColor: logoLoading ? "#f3f4f6" : (getFieldError("logoFile") ? "#fef2f2" : "#f9fafb"),
                               outline: "none",
                               transition: "all 0.2s ease",
                               fontWeight: "500",
                               color: "#111827",
                               boxShadow: getFieldError("logoFile") ? "0 1px 2px rgba(239, 68, 68, 0.1)" : "0 1px 1px rgba(0, 0, 0, 0.05)",
                               WebkitAppearance: "none",
+                              opacity: logoLoading ? 0.7 : 1,
+                              cursor: logoLoading ? "not-allowed" : "pointer",
                             }}
                           />
+                          
+                          {uploadProgress > 0 && uploadProgress < 100 && (
+                            <div style={{
+                              position: "absolute",
+                              bottom: -2,
+                              left: 0,
+                              width: "100%",
+                              height: "2px",
+                              background: "#e5e7eb",
+                              borderRadius: "2px",
+                              overflow: "hidden"
+                            }}>
+                              <div style={{
+                                width: `${uploadProgress}%`,
+                                height: "100%",
+                                background: "#3b82f6",
+                                transition: "width 0.3s ease"
+                              }} />
+                            </div>
+                          )}
                         </div>
                         
                         {logoPreview && (
@@ -964,6 +1038,7 @@ const CompanyRegister = () => {
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
+                            position: "relative"
                           }}>
                             <img 
                               src={logoPreview} 
@@ -975,9 +1050,52 @@ const CompanyRegister = () => {
                                 padding: "4px",
                               }}
                             />
+                            {logoLoading && (
+                              <div style={{
+                                position: "absolute",
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                background: "rgba(255,255,255,0.7)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center"
+                              }}>
+                                <div style={{
+                                  width: 24,
+                                  height: 24,
+                                  border: "2px solid #e5e7eb",
+                                  borderTop: "2px solid #3b82f6",
+                                  borderRadius: "50%",
+                                  animation: "spin 1s linear infinite"
+                                }} />
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
+
+                      {logoLoading && (
+                        <div style={{
+                          marginTop: 8,
+                          fontSize: "11px",
+                          color: "#6b7280",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6
+                        }}>
+                          <div style={{
+                            width: 14,
+                            height: 14,
+                            border: "2px solid #e5e7eb",
+                            borderTop: "2px solid #3b82f6",
+                            borderRadius: "50%",
+                            animation: "spin 1s linear infinite"
+                          }} />
+                          <span>Uploading logo... {uploadProgress}%</span>
+                        </div>
+                      )}
 
                       {getFieldError("logoFile") && (
                         <div
@@ -1087,7 +1205,7 @@ const CompanyRegister = () => {
                     label="Owner Password"
                     name="ownerPassword"
                     type="password"
-                    placeholder="Enter strong password (min 8 characters)"
+                    placeholder="Enter strong password (min 6 characters)"
                     required
                     value={form.ownerPassword}
                     onChange={handleChange}
@@ -1153,21 +1271,21 @@ const CompanyRegister = () => {
                 }}>
                   <button
                     type="submit"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || logoLoading}
                     style={{
                       padding: isMobile ? "12px 20px" : "14px 30px",
                       background: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
                       color: "#fff",
                       border: "none",
                       borderRadius: isMobile ? 8 : 10,
-                      cursor: isSubmitting ? "not-allowed" : "pointer",
+                      cursor: (isSubmitting || logoLoading) ? "not-allowed" : "pointer",
                       fontWeight: "700",
                       fontSize: isMobile ? "13px" : "14px",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       gap: 8,
-                      opacity: isSubmitting ? 0.8 : 1,
+                      opacity: (isSubmitting || logoLoading) ? 0.8 : 1,
                       transition: "all 0.3s ease",
                       minWidth: isMobile ? "100%" : "180px",
                       boxShadow: "0 4px 12px rgba(37, 99, 235, 0.2)",
@@ -1196,18 +1314,20 @@ const CompanyRegister = () => {
                   <button
                     type="button"
                     onClick={resetForm}
+                    disabled={isSubmitting}
                     style={{
                       padding: isMobile ? "12px 20px" : "14px 24px",
                       background: "linear-gradient(135deg, #6b7280 0%, #4b5563 100%)",
                       color: "#fff",
                       border: "none",
                       borderRadius: isMobile ? 8 : 10,
-                      cursor: "pointer",
+                      cursor: isSubmitting ? "not-allowed" : "pointer",
                       fontWeight: "700",
                       fontSize: isMobile ? "13px" : "14px",
                       minWidth: isMobile ? "100%" : "140px",
                       transition: "all 0.2s",
                       boxShadow: "0 4px 10px rgba(0, 0, 0, 0.08)",
+                      opacity: isSubmitting ? 0.6 : 1,
                     }}
                   >
                     Clear Form

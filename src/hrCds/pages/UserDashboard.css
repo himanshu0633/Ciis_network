@@ -2,10 +2,12 @@
 
 /* Base Styles */
 .dashboard-container {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-  padding: 20px;
-  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    min-height: 55vh;
+    max-width: 1500px !important;
+    margin: 0 auto;
+    /* padding: 2rem 2rem; */
+    width: 100%;
+    border-radius: 10px;
 }
 
 /* Header */

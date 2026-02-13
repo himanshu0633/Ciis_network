@@ -96,60 +96,20 @@ export default function AdminMeetingPage() {
     }));
   };
 
-  // 🟢 Format date from YYYY-MM-DD to DD-MM-YYYY
-  const formatDateToDDMMYYYY = (dateStr) => {
-    if (!dateStr) return "";
-    const [year, month, day] = dateStr.split('-');
-    return `${day}-${month}-${year}`;
-  };
-
-  // 🟢 Create meeting - FIXED VERSION
+  // 🟢 Create meeting
   const createMeeting = async (e) => {
     e.preventDefault();
-    
-    // Validation
-    if (!form.title || !form.date || !form.time) {
-      toast.warning("⚠️ Please fill all required fields");
-      return;
-    }
-
-    if (form.attendees.length === 0) {
-      toast.warning("⚠️ Please select at least one attendee");
-      return;
-    }
-
-    const adminId = localStorage.getItem("userId");
-    if (!adminId) {
-      toast.error("❌ Admin not authenticated. Please login again.");
+    if (!form.title || !form.date || !form.time || form.attendees.length === 0) {
+      toast.warning("⚠️ Please fill all fields and select attendees");
       return;
     }
 
     setLoading(true);
-    
     try {
-      // Format date to DD-MM-YYYY as shown in UI mockup
-      const formattedDate = formatDateToDDMMYYYY(form.date);
-      
-      // Create payload matching the UI mockup exactly
-      const payload = {
-        import: form.title,                    // Changed from 'title' to 'import' to match UI
-        description: form.description || "",
-        date: formattedDate,                  // Format: DD-MM-YYYY (e.g., 19-02-2026)
-        time: form.time,
-        recurring: form.recurring === "No" ? "No Recurrence" : form.recurring, // Exact string from UI
-        attendees: form.attendees,
-        createdBy: adminId
-      };
-
-      // Debug log to see what's being sent
-      console.log("🚀 Sending meeting payload:", JSON.stringify(payload, null, 2));
-
+      const payload = { ...form, createdBy: adminId };
       const res = await axios.post(`${API_URL}/meetings/create`, payload);
-      
-      if (res.data?.success) {
+      if (res.data.success) {
         toast.success("✅ Meeting created successfully!");
-        
-        // Reset form
         setForm({
           title: "",
           description: "",
@@ -158,49 +118,14 @@ export default function AdminMeetingPage() {
           recurring: "No",
           attendees: [],
         });
-        
-        // Refresh meetings and switch to manage tab
-        await fetchMeetings();
+        fetchMeetings();
         setActiveTab("manage");
       } else {
-        toast.error(res.data?.message || "❌ Failed to create meeting");
+        toast.error(res.data.message || "❌ Failed to create meeting");
       }
     } catch (err) {
-      console.error("❌ Create meeting error:", err);
-      
-      // Detailed error handling
-      if (err.response) {
-        // Server responded with error
-        const status = err.response.status;
-        const serverMessage = err.response.data?.message || err.response.data?.error || err.response.statusText;
-        const errorDetails = err.response.data?.details || "";
-        
-        console.error("Error response data:", err.response.data);
-        
-        if (status === 400) {
-          toast.error(`❌ Invalid data: ${serverMessage}`);
-          if (errorDetails) console.error("Details:", errorDetails);
-        } else if (status === 401) {
-          toast.error("❌ Unauthorized. Please login again.");
-        } else if (status === 403) {
-          toast.error("❌ You don't have permission to create meetings.");
-        } else if (status === 409) {
-          toast.error("❌ Meeting conflict. Please check the date/time.");
-        } else if (status === 500) {
-          toast.error(`❌ Server error (500). Please check: 
-            • Date format should be DD-MM-YYYY
-            • Field name should be 'import' not 'title'
-            • Recurrence should be 'No Recurrence' not 'No'`);
-        } else {
-          toast.error(`❌ Error ${status}: ${serverMessage}`);
-        }
-      } else if (err.request) {
-        // No response received
-        toast.error("❌ Cannot connect to server. Please check your internet connection.");
-      } else {
-        // Other errors
-        toast.error(`❌ Failed to create meeting: ${err.message}`);
-      }
+      console.error(err);
+      toast.error("❌ Failed to create meeting");
     } finally {
       setLoading(false);
     }
@@ -240,31 +165,11 @@ export default function AdminMeetingPage() {
     }
   };
 
-  // 🟢 Format date and time for display
+  // 🟢 Format date and time
   const formatDateTime = (date, time) => {
     if (!date) return { date: "N/A", time: "N/A", isPast: false, isToday: false };
     
-    // Handle DD-MM-YYYY format from backend
-    let meetingDate;
-    if (typeof date === 'string' && date.includes('-')) {
-      const parts = date.split('-');
-      if (parts.length === 3) {
-        // Check if it's DD-MM-YYYY or YYYY-MM-DD
-        if (parts[0].length === 4) {
-          // YYYY-MM-DD format
-          meetingDate = new Date(date);
-        } else {
-          // DD-MM-YYYY format
-          const [day, month, year] = parts;
-          meetingDate = new Date(`${year}-${month}-${day}`);
-        }
-      } else {
-        meetingDate = new Date(date);
-      }
-    } else {
-      meetingDate = new Date(date);
-    }
-    
+    const meetingDate = new Date(date);
     const now = new Date();
     const isToday = meetingDate.toDateString() === now.toDateString();
     const isPast = meetingDate < now;
@@ -362,9 +267,6 @@ export default function AdminMeetingPage() {
                       className="amp-input"
                       required
                     />
-                    <small style={{ color: '#666', marginTop: '4px', display: 'block' }}>
-                      Note: This will be sent as 'import' field to backend
-                    </small>
                   </div>
 
                   <div className="amp-form-group">
@@ -394,9 +296,6 @@ export default function AdminMeetingPage() {
                           required
                         />
                       </div>
-                      <small style={{ color: '#666', marginTop: '4px', display: 'block' }}>
-                        Will be converted to DD-MM-YYYY format
-                      </small>
                     </div>
 
                     <div className="amp-form-group">
@@ -430,9 +329,6 @@ export default function AdminMeetingPage() {
                         <option value="Monthly">Monthly</option>
                       </select>
                     </div>
-                    <small style={{ color: '#666', marginTop: '4px', display: 'block' }}>
-                      'No' will be sent as 'No Recurrence'
-                    </small>
                   </div>
                 </div>
 
@@ -587,10 +483,10 @@ export default function AdminMeetingPage() {
                       <div className="amp-meeting-header">
                         <div className="amp-meeting-title-wrapper">
                           <span className="amp-meeting-icon">📅</span>
-                          <h3 className="amp-meeting-title">{meeting.import || meeting.title || "Untitled Meeting"}</h3>
+                          <h3 className="amp-meeting-title">{meeting.title || "Untitled Meeting"}</h3>
                         </div>
                         <div className="amp-meeting-badges">
-                          {meeting.recurring && meeting.recurring !== "No Recurrence" && meeting.recurring !== "No" && (
+                          {meeting.recurring && meeting.recurring !== "No" && (
                             <span className="amp-badge amp-badge-recurring">
                               🔁 {meeting.recurring}
                             </span>
@@ -640,7 +536,7 @@ export default function AdminMeetingPage() {
                         
                         <div className="amp-meeting-actions">
                           <button 
-                            onClick={() => showStatus(meeting._id || meeting.id, meeting.import || meeting.title)}
+                            onClick={() => showStatus(meeting._id || meeting.id, meeting.title)}
                             className="amp-action-btn amp-action-view"
                             title="View Attendance"
                           >
@@ -650,7 +546,7 @@ export default function AdminMeetingPage() {
                             onClick={() => setDeleteConfirm({
                               open: true,
                               meetingId: meeting._id || meeting.id,
-                              meetingTitle: meeting.import || meeting.title
+                              meetingTitle: meeting.title
                             })}
                             className="amp-action-btn amp-action-delete"
                             title="Delete Meeting"
