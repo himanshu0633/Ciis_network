@@ -522,9 +522,10 @@ const CompanyRegister = () => {
       padding: isMobile ? "12px 8px" : isTablet ? "16px 12px" : "24px 16px",
       position: "relative",
       overflow: "auto",
+      width: "100%",
     }}>
       <div style={{
-        maxWidth: "700px",
+        maxWidth: "1000px",
         margin: "0 auto",
         position: "relative",
         animation: "fadeIn 0.8s ease-out",
