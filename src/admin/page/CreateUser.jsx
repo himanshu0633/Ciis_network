@@ -672,6 +672,7 @@ const CreateUser = () => {
                 <InputLabel>Gender</InputLabel>
                 <Select
                   label="Gender"
+                  required
                   name="gender"
                   value={form.gender}
                   onChange={handleTextChange}
@@ -690,6 +691,7 @@ const CreateUser = () => {
                 <Select
                   label="Marital Status"
                   name="maritalStatus"
+                  required
                   value={form.maritalStatus}
                   onChange={handleTextChange}
                 >
@@ -709,6 +711,7 @@ const CreateUser = () => {
                 label="Date of Birth"
                 name="dob"
                 type="date"
+                required
                 fullWidth
                 InputLabelProps={{ shrink: true }}
                 value={form.dob}
@@ -730,6 +733,7 @@ const CreateUser = () => {
               <TextField
                 label="Phone Number"
                 name="phone"
+                required
                 fullWidth
                 value={form.phone}
                 onChange={handleTextChange}
@@ -761,6 +765,7 @@ const CreateUser = () => {
             <TextField
               label="Address"
               name="address"
+              required
               fullWidth
               value={form.address}
               onChange={handleTextChange}

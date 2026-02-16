@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { toast } from "react-toastify";
 import API_URL from "../../config";
+
 import {
   Business,
   LocationOn,
@@ -93,6 +95,7 @@ import {
   MilitaryTech,
   EmojiEvents
 } from "@mui/icons-material";
+
 import {
   Card,
   CardContent,
@@ -249,6 +252,9 @@ const CompanyDetails = () => {
   const [loadingDepartments, setLoadingDepartments] = useState(false);
   const [loadingJobRoles, setLoadingJobRoles] = useState(false);
 
+  // Copy URL state
+  const [copied, setCopied] = useState(false);
+
   // Gender options
   const genderOptions = ["male", "female", "other"];
   
@@ -257,6 +263,15 @@ const CompanyDetails = () => {
   
   // Employee type options
   const employeeTypeOptions = ["permanent", "contract", "intern", "trainee", "consultant", "part-time", "freelance"];
+
+  // Handle copy URL
+  const handleCopy = () => {
+    const url = `${window.location.origin}${company?.loginUrl || ''}`;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+    toast.success("Login URL copied to clipboard!");
+  };
 
   // Fetch departments API
   const fetchDepartments = async (companyId) => {
@@ -1808,333 +1823,366 @@ const CompanyDetails = () => {
           {/* Left Column - Company Overview */}
           <Grid item xs={12} lg={8}>
             {/* Stats Cards - All 4 in one row */}
-    <div style={{ width: '100%', marginBottom: '24px' }}>
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: '1fr 1fr', 
-        gap: '12px',
-        width: '100%'
-      }}>
-        {/* Total Users */}
-        <div style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '12px',
-          padding: '14px 8px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-          border: '1px solid #f0f0f0',
-          textAlign: 'center'
-        }}>
-          <div style={{
-            width: '36px',
-            height: '36px',
-            borderRadius: '10px',
-            backgroundColor: '#e3f2fd',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 8px auto'
-          }}>
-            <People style={{ fontSize: '20px', color: '#2196f3' }} />
-          </div>
-          <div style={{ fontWeight: 700, color: '#2196f3', fontSize: '20px', lineHeight: 1.2 }}>
-            {stats.totalUsers}
-          </div>
-          <div style={{ fontSize: '11px', color: '#757575', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            TOTAL USERS
-          </div>
-        </div>
+            <Box sx={{ width: '100%', marginBottom: '24px' }}>
+              <Box sx={{ 
+                display: 'grid', 
+                gridTemplateColumns: { xs: '1fr 1fr', md: '1fr 1fr 1fr 1fr' },
+                gap: '12px',
+                width: '100%'
+              }}>
+                {/* Total Users */}
+                <Box sx={{
+                  backgroundColor: '#ffffff',
+                  borderRadius: '12px',
+                  padding: '14px 8px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                  border: '1px solid #f0f0f0',
+                  textAlign: 'center'
+                }}>
+                  <Box sx={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '10px',
+                    backgroundColor: '#e3f2fd',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 8px auto'
+                  }}>
+                    <People sx={{ fontSize: '20px', color: '#2196f3' }} />
+                  </Box>
+                  <Typography sx={{ fontWeight: 700, color: '#2196f3', fontSize: '20px', lineHeight: 1.2 }}>
+                    {stats.totalUsers}
+                  </Typography>
+                  <Typography sx={{ fontSize: '11px', color: '#757575', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    TOTAL USERS
+                  </Typography>
+                </Box>
 
-        {/* Active Users */}
-        <div style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '12px',
-          padding: '14px 8px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-          border: '1px solid #f0f0f0',
-          textAlign: 'center'
-        }}>
-          <div style={{
-            width: '36px',
-            height: '36px',
-            borderRadius: '10px',
-            backgroundColor: '#e8f5e9',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 8px auto'
-          }}>
-            <CheckCircle style={{ fontSize: '20px', color: '#4caf50' }} />
-          </div>
-          <div style={{ fontWeight: 700, color: '#4caf50', fontSize: '20px', lineHeight: 1.2 }}>
-            {stats.activeUsers}
-          </div>
-          <div style={{ fontSize: '11px', color: '#757575', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            ACTIVE USERS
-          </div>
-        </div>
+                {/* Active Users */}
+                <Box sx={{
+                  backgroundColor: '#ffffff',
+                  borderRadius: '12px',
+                  padding: '14px 8px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                  border: '1px solid #f0f0f0',
+                  textAlign: 'center'
+                }}>
+                  <Box sx={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '10px',
+                    backgroundColor: '#e8f5e9',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 8px auto'
+                  }}>
+                    <CheckCircle sx={{ fontSize: '20px', color: '#4caf50' }} />
+                  </Box>
+                  <Typography sx={{ fontWeight: 700, color: '#4caf50', fontSize: '20px', lineHeight: 1.2 }}>
+                    {stats.activeUsers}
+                  </Typography>
+                  <Typography sx={{ fontSize: '11px', color: '#757575', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    ACTIVE USERS
+                  </Typography>
+                </Box>
 
-        {/* Departments */}
-        <div style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '12px',
-          padding: '14px 8px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-          border: '1px solid #f0f0f0',
-          textAlign: 'center'
-        }}>
-          <div style={{
-            width: '36px',
-            height: '36px',
-            borderRadius: '10px',
-            backgroundColor: '#fff3e0',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 8px auto'
-          }}>
-            <CorporateFare style={{ fontSize: '20px', color: '#ff9800' }} />
-          </div>
-          <div style={{ fontWeight: 700, color: '#ff9800', fontSize: '20px', lineHeight: 1.2 }}>
-            {stats.departments}
-          </div>
-          <div style={{ fontSize: '11px', color: '#757575', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            DEPARTMENTS
-          </div>
-        </div>
+                {/* Departments */}
+                <Box sx={{
+                  backgroundColor: '#ffffff',
+                  borderRadius: '12px',
+                  padding: '14px 8px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                  border: '1px solid #f0f0f0',
+                  textAlign: 'center'
+                }}>
+                  <Box sx={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '10px',
+                    backgroundColor: '#fff3e0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 8px auto'
+                  }}>
+                    <CorporateFare sx={{ fontSize: '20px', color: '#ff9800' }} />
+                  </Box>
+                  <Typography sx={{ fontWeight: 700, color: '#ff9800', fontSize: '20px', lineHeight: 1.2 }}>
+                    {stats.departments}
+                  </Typography>
+                  <Typography sx={{ fontSize: '11px', color: '#757575', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    DEPARTMENTS
+                  </Typography>
+                </Box>
 
-        {/* Today's Logins */}
-        <div style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '12px',
-          padding: '14px 8px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-          border: '1px solid #f0f0f0',
-          textAlign: 'center'
-        }}>
-          <div style={{
-            width: '36px',
-            height: '36px',
-            borderRadius: '10px',
-            backgroundColor: '#f3e5f5',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 8px auto'
-          }}>
-            <Today style={{ fontSize: '20px', color: '#9c27b0' }} />
-          </div>
-          <div style={{ fontWeight: 700, color: '#9c27b0', fontSize: '20px', lineHeight: 1.2 }}>
-            {stats.todayLogins}
-          </div>
-          <div style={{ fontSize: '11px', color: '#757575', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            TODAY'S LOGINS
-          </div>
-        </div>
-      </div>
-
-      {/* Desktop View - 4 in row */}
-      <style>{`
-        @media (min-width: 900px) {
-          div[style*="display: grid"] {
-            grid-template-columns: 1fr 1fr 1fr 1fr !important;
-          }
-        }
-      `}</style>
-    </div>
+                {/* Today's Logins */}
+                <Box sx={{
+                  backgroundColor: '#ffffff',
+                  borderRadius: '12px',
+                  padding: '14px 8px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                  border: '1px solid #f0f0f0',
+                  textAlign: 'center'
+                }}>
+                  <Box sx={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '10px',
+                    backgroundColor: '#f3e5f5',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 8px auto'
+                  }}>
+                    <Today sx={{ fontSize: '20px', color: '#9c27b0' }} />
+                  </Box>
+                  <Typography sx={{ fontWeight: 700, color: '#9c27b0', fontSize: '20px', lineHeight: 1.2 }}>
+                    {stats.todayLogins}
+                  </Typography>
+                  <Typography sx={{ fontSize: '11px', color: '#757575', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    TODAY'S LOGINS
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
 
             {/* Company Details Card - Enhanced with Edit Button */}
             <Card sx={{ 
-              borderRadius: { xs: 2, sm: 3 },
-              bgcolor: 'white',
-              boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
-              mb: { xs: 2, sm: 3 },
-              overflow: 'hidden'
+  borderRadius: { xs: 2, sm: 3 },
+  bgcolor: 'white',
+  boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+  mb: { xs: 2, sm: 3 },
+  overflow: 'hidden'
+}}>
+  <CardHeader
+    title={
+      <Stack direction="row" alignItems="center" spacing={1}>
+        <Business sx={{ color: 'primary.main', fontSize: { xs: 20, sm: 24 } }} />
+        <Typography variant={isMobile ? "body1" : "h6"} fontWeight={700}>
+          Company Information
+        </Typography>
+      </Stack>
+    }
+    sx={{ 
+      borderBottom: '1px solid', 
+      borderColor: 'grey.100', 
+      py: { xs: 1.5, sm: 2.5 },
+      px: { xs: 2, sm: 3 },
+      bgcolor: 'grey.50'
+    }}
+    action={
+      <Stack direction="row" spacing={1}>
+        <Chip 
+          icon={<VerifiedUser />} 
+          label="Verified" 
+          color="primary" 
+          size="small"
+          sx={{ 
+            fontWeight: 600,
+            fontSize: { xs: '0.65rem', sm: '0.75rem' }
+          }}
+        />
+        <Tooltip title="Edit Company">
+          <IconButton 
+            onClick={handleEditCompany}
+            size="small"
+            sx={{
+              bgcolor: 'primary.50',
+              color: 'primary.main',
+              '&:hover': { bgcolor: 'primary.100' }
+            }}
+          >
+            <Edit fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      </Stack>
+    }
+  />
+  
+  <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+    <Stack spacing={{ xs: 2, sm: 2.5 }}>
+      {/* Company Code */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, sm: 2 } }}>
+        <Box sx={{ 
+          width: { xs: 35, sm: 45 },
+          height: { xs: 35, sm: 45 },
+          borderRadius: 2,
+          bgcolor: 'primary.50',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0
+        }}>
+          <Fingerprint sx={{ fontSize: { xs: 20, sm: 24 }, color: 'primary.main' }} />
+        </Box>
+        <Box sx={{ minWidth: 0, flex: 1 }}>
+          <Typography variant="caption" color="text.secondary" fontWeight={500} sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
+            Company Code
+          </Typography>
+          <Typography variant="body1" fontWeight={700} sx={{ fontSize: { xs: '0.85rem', sm: '1rem' }, wordBreak: 'break-word' }}>
+            {company.companyCode || "N/A"}
+          </Typography>
+        </Box>
+      </Box>
+
+      {/* Created On */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, sm: 2 } }}>
+        <Box sx={{ 
+          width: { xs: 35, sm: 45 },
+          height: { xs: 35, sm: 45 },
+          borderRadius: 2,
+          bgcolor: 'info.50',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0
+        }}>
+          <Event sx={{ fontSize: { xs: 20, sm: 24 }, color: 'info.main' }} />
+        </Box>
+        <Box sx={{ minWidth: 0, flex: 1 }}>
+          <Typography variant="caption" color="text.secondary" fontWeight={500} sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
+            Created On
+          </Typography>
+          <Typography variant="body1" fontWeight={600} sx={{ fontSize: { xs: '0.85rem', sm: '1rem' }, wordBreak: 'break-word' }}>
+            {formatDate(company.createdAt)}
+          </Typography>
+        </Box>
+      </Box>
+
+      {/* Login URL */}
+      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: { xs: 1.5, sm: 2 } }}>
+        <Box sx={{ 
+          width: { xs: 35, sm: 45 },
+          height: { xs: 35, sm: 45 },
+          borderRadius: 2,
+          bgcolor: 'secondary.50',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+          mt: { xs: 0.5, sm: 0 }
+        }}>
+          <Link sx={{ fontSize: { xs: 20, sm: 24 }, color: 'secondary.main' }} />
+        </Box>
+        
+        <Box sx={{ 
+          minWidth: 0, 
+          flex: 1,
+          width: '100%'
+        }}>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            fontWeight={500}
+            sx={{ 
+              fontSize: { xs: '0.65rem', sm: '0.75rem' },
+              mb: 0.5,
+              display: 'block'
+            }}
+          >
+            Login URL
+          </Typography>
+
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 1,
+            width: '100%'
+          }}>
+            {/* URL Display - Full width with scroll on mobile */}
+            <Box sx={{
+              flex: 1,
+              minWidth: 0,
+              bgcolor: 'grey.50',
+              border: '1px solid',
+              borderColor: 'grey.200',
+              borderRadius: 2,
+              overflowX: 'auto',
+              overflowY: 'hidden',
+              maxWidth: '100%',
+              '&::-webkit-scrollbar': {
+                height: '4px',
+              },
+              '&::-webkit-scrollbar-track': {
+                background: 'transparent',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                background: 'grey.400',
+                borderRadius: '4px',
+              },
+              '&::-webkit-scrollbar-thumb:hover': {
+                background: 'grey.600',
+              },
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#9e9e9e transparent',
             }}>
-              <CardHeader
-                title={
-                  <Stack direction="row" alignItems="center" spacing={1}>
-                    <Business sx={{ color: 'primary.main', fontSize: { xs: 20, sm: 24 } }} />
-                    <Typography variant={isMobile ? "body1" : "h6"} fontWeight={700}>
-                      Company Information
-                    </Typography>
-                  </Stack>
-                }
-                sx={{ 
-                  borderBottom: '1px solid', 
-                  borderColor: 'grey.100', 
-                  py: { xs: 1.5, sm: 2.5 },
-                  px: { xs: 2, sm: 3 },
-                  bgcolor: 'grey.50'
+              <Typography
+                component="div"
+                sx={{
+                  fontFamily: 'monospace',
+                  fontSize: { xs: '0.75rem', sm: '0.85rem', md: '0.9rem' },
+                  fontWeight: 500,
+                  color: 'text.primary',
+                  py: { xs: 1, sm: 1.2 },
+                  px: { xs: 1.5, sm: 2 },
+                  whiteSpace: 'nowrap',
+                  width: 'max-content',
+                  minWidth: '100%',
                 }}
-                action={
-                  <Stack direction="row" spacing={1}>
-                    <Chip 
-                      icon={<VerifiedUser />} 
-                      label="Verified" 
-                      color="primary" 
-                      size="small"
-                      sx={{ 
-                        fontWeight: 600,
-                        fontSize: { xs: '0.65rem', sm: '0.75rem' }
-                      }}
-                    />
-                    <Tooltip title="Edit Company">
-                      <IconButton 
-                        onClick={handleEditCompany}
-                        size="small"
-                        sx={{
-                          bgcolor: 'primary.50',
-                          color: 'primary.main',
-                          '&:hover': { bgcolor: 'primary.100' }
-                        }}
-                      >
-                        <Edit fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </Stack>
-                }
-              />
-              <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-                <Grid container spacing={{ xs: 2, sm: 3 }}>
-                  <Grid item xs={12} md={6}>
-                    <Stack spacing={{ xs: 1.5, sm: 2.5 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, sm: 2 } }}>
-                        <Box sx={{ 
-                          width: { xs: 35, sm: 45 },
-                          height: { xs: 35, sm: 45 },
-                          borderRadius: 2,
-                          bgcolor: 'primary.50',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0
-                        }}>
-                          <Fingerprint sx={{ fontSize: { xs: 20, sm: 24 }, color: 'primary.main' }} />
-                        </Box>
-                        <Box sx={{ minWidth: 0 }}>
-                          <Typography variant="caption" color="text.secondary" fontWeight={500} sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
-                            Company Code
-                          </Typography>
-                          <Typography variant="body1" fontWeight={700} sx={{ fontSize: { xs: '0.85rem', sm: '1rem' }, wordBreak: 'break-word' }}>
-                            {company.companyCode || "N/A"}
-                          </Typography>
-                        </Box>
-                      </Box>
+              >
+                {window.location.origin}{company.loginUrl}
+              </Typography>
+            </Box>
 
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, sm: 2 } }}>
-                        <Box sx={{ 
-                          width: { xs: 35, sm: 45 },
-                          height: { xs: 35, sm: 45 },
-                          borderRadius: 2,
-                          bgcolor: 'secondary.50',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0
-                        }}>
-                          <AccountCircle sx={{ fontSize: { xs: 20, sm: 24 }, color: 'secondary.main' }} />
-                        </Box>
-                        <Box sx={{ minWidth: 0 }}>
-                          <Typography variant="caption" color="text.secondary" fontWeight={500} sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
-                            Owner
-                          </Typography>
-                          <Typography variant="body1" fontWeight={600} sx={{ fontSize: { xs: '0.85rem', sm: '1rem' }, wordBreak: 'break-word' }}>
-                            {company.ownerName}
-                          </Typography>
-                        </Box>
-                      </Box>
-
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, sm: 2 } }}>
-                        <Box sx={{ 
-                          width: { xs: 35, sm: 45 },
-                          height: { xs: 35, sm: 45 },
-                          borderRadius: 2,
-                          bgcolor: 'info.50',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0
-                        }}>
-                          <Public sx={{ fontSize: { xs: 20, sm: 24 }, color: 'info.main' }} />
-                        </Box>
-                        <Box sx={{ minWidth: 0 }}>
-                          <Typography variant="caption" color="text.secondary" fontWeight={500} sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
-                            Domain
-                          </Typography>
-                          <Typography variant="body1" fontWeight={600} sx={{ fontSize: { xs: '0.85rem', sm: '1rem' }, wordBreak: 'break-word' }}>
-                            {company.companyDomain}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    </Stack>
-                  </Grid>
-
-                  <Grid item xs={12} md={6}>
-                    <Stack spacing={{ xs: 1.5, sm: 2.5 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, sm: 2 } }}>
-                        <Box sx={{ 
-                          width: { xs: 35, sm: 45 },
-                          height: { xs: 35, sm: 45 },
-                          borderRadius: 2,
-                          bgcolor: 'primary.50',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0
-                        }}>
-                          <Event sx={{ fontSize: { xs: 20, sm: 24 }, color: 'primary.main' }} />
-                        </Box>
-                        <Box sx={{ minWidth: 0 }}>
-                          <Typography variant="caption" color="text.secondary" fontWeight={500} sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
-                            Created On
-                          </Typography>
-                          <Typography variant="body1" fontWeight={600} sx={{ fontSize: { xs: '0.85rem', sm: '1rem' }, wordBreak: 'break-word' }}>
-                            {formatDate(company.createdAt)}
-                          </Typography>
-                        </Box>
-                      </Box>
-
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, sm: 2 } }}>
-                        <Box sx={{ 
-                          width: { xs: 35, sm: 45 },
-                          height: { xs: 35, sm: 45 },
-                          borderRadius: 2,
-                          bgcolor: 'secondary.50',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0
-                        }}>
-                          <Link sx={{ fontSize: { xs: 20, sm: 24 }, color: 'secondary.main' }} />
-                        </Box>
-                        <Box sx={{ minWidth: 0, maxWidth: '100%' }}>
-                          <Typography variant="caption" color="text.secondary" fontWeight={500} sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
-                            Login URL
-                          </Typography>
-                          <Typography 
-                            variant="body2" 
-                            fontWeight={600}
-                            sx={{ 
-                              fontFamily: 'monospace',
-                              bgcolor: 'grey.50',
-                              p: { xs: 0.75, sm: 1 },
-                              borderRadius: 1,
-                              border: '1px solid',
-                              borderColor: 'grey.200',
-                              wordBreak: 'break-all',
-                              fontSize: { xs: '0.7rem', sm: '0.8rem' }
-                            }}
-                          >
-                            {window.location.origin}{company.loginUrl}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    </Stack>
-                  </Grid>
-                </Grid>
-              </CardContent>
-            </Card>
-
+            {/* Copy Button - Always at the end */}
+            <Tooltip title="Copy URL" arrow placement="top">
+              <IconButton
+                size="small"
+                onClick={handleCopy}
+                sx={{
+                  bgcolor: copied ? 'success.50' : 'primary.50',
+                  color: copied ? 'success.main' : 'primary.main',
+                  width: { xs: 36, sm: 40 },
+                  height: { xs: 36, sm: 40 },
+                  borderRadius: 2,
+                  border: '1px solid',
+                  borderColor: copied ? 'success.200' : 'primary.200',
+                  flexShrink: 0,
+                  '&:hover': { 
+                    bgcolor: copied ? 'success.100' : 'primary.100',
+                    transform: 'scale(1.05)'
+                  },
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <ContentCopyIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Box>
+          
+          {/* Copied Feedback */}
+          {copied && (
+            <Typography 
+              variant="caption" 
+              color="success.main" 
+              sx={{ 
+                mt: 0.5, 
+                display: 'block',
+                fontSize: '0.7rem',
+                fontWeight: 500,
+                textAlign: 'right'
+              }}
+            >
+              ✓ Copied to clipboard!
+            </Typography>
+          )}
+        </Box>
+      </Box>
+    </Stack>
+  </CardContent>
+</Card>
             {/* Subscription Status Card */}
             <Card sx={{ 
               borderRadius: { xs: 2, sm: 3 },
@@ -2347,7 +2395,7 @@ const CompanyDetails = () => {
                         }}
                       >
                         <ListItemAvatar>
-                          <Badge
+                          <MuiBadge
                             overlap="circular"
                             anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                             badgeContent={
@@ -2374,7 +2422,7 @@ const CompanyDetails = () => {
                             >
                               {user.name?.charAt(0) || 'U'}
                             </Avatar>
-                          </Badge>
+                          </MuiBadge>
                         </ListItemAvatar>
                         <ListItemText
                           primary={
@@ -2490,371 +2538,397 @@ const CompanyDetails = () => {
         </Grid>
 
         {/* Company Edit Modal */}
-        <Dialog 
-          open={companyEditModalOpen} 
-          onClose={() => !companyEditLoading && setCompanyEditModalOpen(false)}
-          maxWidth="md"
-          fullWidth
-          fullScreen={isMobile}
-          TransitionComponent={Transition}
-          keepMounted
-          PaperProps={{
-            sx: { 
-              borderRadius: isMobile ? 0 : 4,
-              overflow: 'hidden',
-              background: 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
-              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)'
+       <Dialog 
+  open={companyEditModalOpen} 
+  onClose={() => !companyEditLoading && setCompanyEditModalOpen(false)}
+  maxWidth="sm"
+  fullWidth
+  fullScreen={isMobile}
+  TransitionComponent={Transition}
+  keepMounted
+  PaperProps={{
+    sx: { 
+      borderRadius: isMobile ? 0 : 4,
+      overflow: 'hidden',
+      background: 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
+      boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)'
+    }
+  }}
+>
+  <DialogTitle sx={{ 
+    bgcolor: 'primary.main',
+    color: 'white',
+    py: { xs: 2, sm: 3 },
+    px: { xs: 2.5, sm: 4 },
+    position: 'relative',
+    overflow: 'hidden'
+  }}>
+    <Box sx={{
+      position: 'absolute',
+      top: -50,
+      right: -50,
+      width: 150,
+      height: 150,
+      borderRadius: '50%',
+      background: 'rgba(255,255,255,0.1)',
+      animation: 'float 8s ease-in-out infinite'
+    }} />
+    <Box sx={{
+      position: 'absolute',
+      bottom: -50,
+      left: -50,
+      width: 150,
+      height: 150,
+      borderRadius: '50%',
+      background: 'rgba(255,255,255,0.1)',
+      animation: 'float 10s ease-in-out infinite reverse'
+    }} />
+    
+    <Stack direction="row" alignItems="center" justifyContent="space-between" position="relative">
+      <Stack direction="row" alignItems="center" spacing={2}>
+        <Box sx={{
+          width: { xs: 40, sm: 50 },
+          height: { xs: 40, sm: 50 },
+          borderRadius: '50%',
+          bgcolor: 'white',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 8px 16px rgba(0,0,0,0.2)'
+        }}>
+          <Business sx={{ color: 'primary.main', fontSize: { xs: 22, sm: 28 } }} />
+        </Box>
+        <Box>
+          <Typography variant={isMobile ? "h6" : "h5"} fontWeight={700}>
+            Edit Company Details
+          </Typography>
+          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)', fontSize: { xs: '0.7rem', sm: '0.875rem' } }}>
+            Update company information
+          </Typography>
+        </Box>
+      </Stack>
+      <IconButton
+        onClick={() => setCompanyEditModalOpen(false)}
+        disabled={companyEditLoading}
+        sx={{ 
+          color: 'white',
+          bgcolor: 'rgba(255,255,255,0.2)',
+          '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' },
+          transition: 'all 0.2s ease'
+        }}
+      >
+        <Close />
+      </IconButton>
+    </Stack>
+  </DialogTitle>
+  
+  <DialogContent sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
+    <Fade in={!companyEditSuccess} timeout={600}>
+      <Box>
+        {!companyEditSuccess ? (
+          <Stack spacing={3}>
+            <Alert 
+              severity="info" 
+              sx={{ 
+                borderRadius: 2,
+                bgcolor: 'info.50',
+                border: '1px solid',
+                borderColor: 'info.100',
+                '& .MuiAlert-icon': {
+                  color: 'info.main'
+                },
+                '& .MuiAlert-message': {
+                  fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                }
+              }}
+            >
+              <Typography variant="body2" fontWeight={500} sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                Editing: <strong>{company.companyName}</strong>
+              </Typography>
+            </Alert>
+            
+            <Grid container spacing={2}>
+              {/* Company Name - Required */}
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Company Name"
+                  name="companyName"
+                  value={companyEditFormData.companyName}
+                  onChange={handleCompanyInputChange}
+                  variant="outlined"
+                  size={isMobile ? "small" : "medium"}
+                  required
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Business sx={{ color: 'primary.main' }} />
+                      </InputAdornment>
+                    )
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                      '&:hover fieldset': {
+                        borderColor: 'primary.main',
+                      }
+                    }
+                  }}
+                />
+              </Grid>
+              
+              {/* Email Address */}
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Email Address"
+                  name="companyEmail"
+                  type="email"
+                  value={companyEditFormData.companyEmail}
+                  onChange={handleCompanyInputChange}
+                  variant="outlined"
+                  size={isMobile ? "small" : "medium"}
+                  placeholder="Enter company email"
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Email sx={{ color: 'primary.main' }} />
+                      </InputAdornment>
+                    )
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                    }
+                  }}
+                />
+              </Grid>
+              
+              {/* Phone Number */}
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Phone Number"
+                  name="companyPhone"
+                  value={companyEditFormData.companyPhone}
+                  onChange={handleCompanyInputChange}
+                  variant="outlined"
+                  size={isMobile ? "small" : "medium"}
+                  placeholder="Enter company phone"
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Phone sx={{ color: 'primary.main' }} />
+                      </InputAdornment>
+                    )
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                    }
+                  }}
+                />
+              </Grid>
+              
+              {/* Logo URL */}
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Logo URL"
+                  name="logo"
+                  value={companyEditFormData.logo}
+                  onChange={handleCompanyInputChange}
+                  variant="outlined"
+                  size={isMobile ? "small" : "medium"}
+                  placeholder="https://example.com/logo.png"
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Image sx={{ color: 'primary.main' }} />
+                      </InputAdornment>
+                    )
+                  }}
+                  helperText="Leave empty for default logo"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                    }
+                  }}
+                />
+              </Grid>
+              
+              {/* Address */}
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Address"
+                  name="companyAddress"
+                  value={companyEditFormData.companyAddress}
+                  onChange={handleCompanyInputChange}
+                  variant="outlined"
+                  size={isMobile ? "small" : "medium"}
+                  placeholder="Enter company address"
+                  multiline
+                  rows={isMobile ? 2 : 3}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <LocationOn sx={{ color: 'primary.main' }} />
+                      </InputAdornment>
+                    )
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                    }
+                  }}
+                />
+              </Grid>
+            </Grid>
+
+            {/* Preview of current logo */}
+            {companyEditFormData.logo && (
+              <Paper 
+                variant="outlined" 
+                sx={{ 
+                  p: 2, 
+                  borderRadius: 2,
+                  bgcolor: 'grey.50',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2
+                }}
+              >
+                <Avatar
+                  src={companyEditFormData.logo}
+                  sx={{ 
+                    width: 60, 
+                    height: 60, 
+                    border: '2px solid',
+                    borderColor: 'primary.main'
+                  }}
+                >
+                  {companyEditFormData.companyName?.charAt(0)}
+                </Avatar>
+                <Box>
+                  <Typography variant="body2" fontWeight={600}>
+                    Logo Preview
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {companyEditFormData.logo.substring(0, 50)}...
+                  </Typography>
+                </Box>
+              </Paper>
+            )}
+          </Stack>
+        ) : (
+          <Zoom in={companyEditSuccess}>
+            <Box sx={{ 
+              py: { xs: 6, sm: 8 }, 
+              px: { xs: 2, sm: 4 }, 
+              textAlign: 'center'
+            }}>
+              <Box sx={{
+                width: { xs: 80, sm: 100, md: 120 },
+                height: { xs: 80, sm: 100, md: 120 },
+                borderRadius: '50%',
+                background: 'linear-gradient(145deg, #e8f5e9 0%, #c8e6c9 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mx: 'auto',
+                mb: 4,
+                animation: 'pulse 2s infinite',
+                boxShadow: '0 12px 24px rgba(76, 175, 80, 0.3)'
+              }}>
+                <CheckCircle sx={{ fontSize: { xs: 50, sm: 60, md: 70 }, color: 'success.main' }} />
+              </Box>
+              <Typography variant={isMobile ? "h5" : "h4"} fontWeight={800} gutterBottom>
+                Company Updated!
+              </Typography>
+              <Typography variant="body1" color="text.secondary" sx={{ mb: 3, fontSize: { xs: '0.9rem', sm: '1.1rem' } }}>
+                <strong>{companyEditFormData.companyName}</strong> has been updated successfully.
+              </Typography>
+              <CircularProgress 
+                size={isMobile ? 24 : 30} 
+                sx={{ 
+                  color: 'success.main',
+                  mt: 2
+                }} 
+              />
+            </Box>
+          </Zoom>
+        )}
+      </Box>
+    </Fade>
+  </DialogContent>
+  
+  {!companyEditSuccess && (
+    <DialogActions sx={{ 
+      p: { xs: 2, sm: 3, md: 4 }, 
+      pt: { xs: 1, sm: 0 },
+      borderTop: '1px solid',
+      borderColor: 'grey.200',
+      bgcolor: 'grey.50'
+    }}>
+      <Stack 
+        direction="row" 
+        spacing={2} 
+        justifyContent="flex-end" 
+        width="100%"
+        sx={{ flexWrap: 'wrap' }}
+      >
+        <Button
+          onClick={() => setCompanyEditModalOpen(false)}
+          color="inherit"
+          disabled={companyEditLoading}
+          variant="outlined"
+          size={isMobile ? "small" : "medium"}
+          sx={{ 
+            borderRadius: 2,
+            px: { xs: 3, sm: 4 },
+            py: { xs: 0.75, sm: 1.2 },
+            fontWeight: 600,
+            fontSize: { xs: '0.75rem', sm: '0.875rem' },
+            borderColor: 'grey.400',
+            color: 'text.primary',
+            '&:hover': {
+              borderColor: 'grey.600',
+              bgcolor: 'grey.100'
             }
           }}
         >
-          <DialogTitle sx={{ 
-            bgcolor: 'primary.main',
-            color: 'white',
-            py: { xs: 2, sm: 3 },
-            px: { xs: 2.5, sm: 4 },
-            position: 'relative',
-            overflow: 'hidden'
-          }}>
-            <Box sx={{
-              position: 'absolute',
-              top: -50,
-              right: -50,
-              width: 150,
-              height: 150,
-              borderRadius: '50%',
-              background: 'rgba(255,255,255,0.1)',
-              animation: 'float 8s ease-in-out infinite'
-            }} />
-            <Box sx={{
-              position: 'absolute',
-              bottom: -50,
-              left: -50,
-              width: 150,
-              height: 150,
-              borderRadius: '50%',
-              background: 'rgba(255,255,255,0.1)',
-              animation: 'float 10s ease-in-out infinite reverse'
-            }} />
-            
-            <Stack direction="row" alignItems="center" justifyContent="space-between" position="relative">
-              <Stack direction="row" alignItems="center" spacing={2}>
-                <Box sx={{
-                  width: { xs: 40, sm: 50 },
-                  height: { xs: 40, sm: 50 },
-                  borderRadius: '50%',
-                  bgcolor: 'white',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 8px 16px rgba(0,0,0,0.2)'
-                }}>
-                  <Business sx={{ color: 'primary.main', fontSize: { xs: 22, sm: 28 } }} />
-                </Box>
-                <Box>
-                  <Typography variant={isMobile ? "h6" : "h5"} fontWeight={700}>
-                    Edit Company Details
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)', fontSize: { xs: '0.7rem', sm: '0.875rem' } }}>
-                    Update company information
-                  </Typography>
-                </Box>
-              </Stack>
-              <IconButton
-                onClick={() => setCompanyEditModalOpen(false)}
-                disabled={companyEditLoading}
-                sx={{ 
-                  color: 'white',
-                  bgcolor: 'rgba(255,255,255,0.2)',
-                  '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' },
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                <Close />
-              </IconButton>
-            </Stack>
-          </DialogTitle>
-          
-          <DialogContent sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
-            <Fade in={!companyEditSuccess} timeout={600}>
-              <Box>
-                {!companyEditSuccess ? (
-                  <Stack spacing={3}>
-                    <Alert 
-                      severity="info" 
-                      sx={{ 
-                        borderRadius: 2,
-                        bgcolor: 'info.50',
-                        border: '1px solid',
-                        borderColor: 'info.100',
-                        '& .MuiAlert-icon': {
-                          color: 'info.main'
-                        },
-                        '& .MuiAlert-message': {
-                          fontSize: { xs: '0.75rem', sm: '0.875rem' }
-                        }
-                      }}
-                    >
-                      <Typography variant="body2" fontWeight={500} sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                        Editing: <strong>{company.companyName}</strong>
-                      </Typography>
-                    </Alert>
-                    
-                    <Grid container spacing={2}>
-                      <Grid item xs={12} md={6}>
-                        <TextField
-                          fullWidth
-                          label="Company Name"
-                          name="companyName"
-                          value={companyEditFormData.companyName}
-                          onChange={handleCompanyInputChange}
-                          variant="outlined"
-                          size={isMobile ? "small" : "medium"}
-                          required
-                          InputProps={{
-                            startAdornment: (
-                              <Business sx={{ mr: 1, color: 'action.active', fontSize: { xs: 18, sm: 22 } }} />
-                            )
-                          }}
-                        />
-                      </Grid>
-                      
-                      <Grid item xs={12} md={6}>
-                        <TextField
-                          fullWidth
-                          label="Company Code"
-                          name="companyCode"
-                          value={companyEditFormData.companyCode}
-                          onChange={handleCompanyInputChange}
-                          variant="outlined"
-                          size={isMobile ? "small" : "medium"}
-                          InputProps={{
-                            startAdornment: (
-                              <Code sx={{ mr: 1, color: 'action.active', fontSize: { xs: 18, sm: 22 } }} />
-                            )
-                          }}
-                        />
-                      </Grid>
-                      
-                      <Grid item xs={12} md={6}>
-                        <TextField
-                          fullWidth
-                          label="Email Address"
-                          name="companyEmail"
-                          type="email"
-                          value={companyEditFormData.companyEmail}
-                          onChange={handleCompanyInputChange}
-                          variant="outlined"
-                          size={isMobile ? "small" : "medium"}
-                          placeholder="Enter company email"
-                          InputProps={{
-                            startAdornment: (
-                              <Email sx={{ mr: 1, color: 'action.active', fontSize: { xs: 18, sm: 22 } }} />
-                            )
-                          }}
-                        />
-                      </Grid>
-                      
-                      <Grid item xs={12} md={6}>
-                        <TextField
-                          fullWidth
-                          label="Phone Number"
-                          name="companyPhone"
-                          value={companyEditFormData.companyPhone}
-                          onChange={handleCompanyInputChange}
-                          variant="outlined"
-                          size={isMobile ? "small" : "medium"}
-                          placeholder="Enter company phone"
-                          InputProps={{
-                            startAdornment: (
-                              <Phone sx={{ mr: 1, color: 'action.active', fontSize: { xs: 18, sm: 22 } }} />
-                            )
-                          }}
-                        />
-                      </Grid>
-                      
-                      <Grid item xs={12} md={6}>
-                        <TextField
-                          fullWidth
-                          label="Address"
-                          name="companyAddress"
-                          value={companyEditFormData.companyAddress}
-                          onChange={handleCompanyInputChange}
-                          variant="outlined"
-                          size={isMobile ? "small" : "medium"}
-                          placeholder="Enter company address"
-                          multiline
-                          rows={isMobile ? 1 : 2}
-                          InputProps={{
-                            startAdornment: (
-                              <LocationOn sx={{ mr: 1, color: 'action.active', fontSize: { xs: 18, sm: 22 } }} />
-                            )
-                          }}
-                        />
-                      </Grid>
-                      
-                      <Grid item xs={12} md={6}>
-                        <TextField
-                          fullWidth
-                          label="Domain"
-                          name="companyDomain"
-                          value={companyEditFormData.companyDomain}
-                          onChange={handleCompanyInputChange}
-                          variant="outlined"
-                          size={isMobile ? "small" : "medium"}
-                          placeholder="e.g., company.com"
-                          InputProps={{
-                            startAdornment: (
-                              <Public sx={{ mr: 1, color: 'action.active', fontSize: { xs: 18, sm: 22 } }} />
-                            )
-                          }}
-                        />
-                      </Grid>
-                      
-                      <Grid item xs={12} md={6}>
-                        <TextField
-                          fullWidth
-                          label="Owner Name"
-                          name="ownerName"
-                          value={companyEditFormData.ownerName}
-                          onChange={handleCompanyInputChange}
-                          variant="outlined"
-                          size={isMobile ? "small" : "medium"}
-                          InputProps={{
-                            startAdornment: (
-                              <AccountCircle sx={{ mr: 1, color: 'action.active', fontSize: { xs: 18, sm: 22 } }} />
-                            )
-                          }}
-                        />
-                      </Grid>
-                      
-                      <Grid item xs={12} md={6}>
-                        <TextField
-                          fullWidth
-                          label="Logo URL"
-                          name="logo"
-                          value={companyEditFormData.logo}
-                          onChange={handleCompanyInputChange}
-                          variant="outlined"
-                          size={isMobile ? "small" : "medium"}
-                          placeholder="https://example.com/logo.png"
-                          InputProps={{
-                            startAdornment: (
-                              <Image sx={{ mr: 1, color: 'action.active', fontSize: { xs: 18, sm: 22 } }} />
-                            )
-                          }}
-                          helperText={!isMobile && "Leave empty for default logo"}
-                        />
-                      </Grid>
-                    </Grid>
-                  </Stack>
-                ) : (
-                  <Zoom in={companyEditSuccess}>
-                    <Box sx={{ 
-                      py: { xs: 6, sm: 8 }, 
-                      px: { xs: 2, sm: 4 }, 
-                      textAlign: 'center'
-                    }}>
-                      <Box sx={{
-                        width: { xs: 80, sm: 100, md: 120 },
-                        height: { xs: 80, sm: 100, md: 120 },
-                        borderRadius: '50%',
-                        background: 'linear-gradient(145deg, #e8f5e9 0%, #c8e6c9 100%)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        mx: 'auto',
-                        mb: 4,
-                        animation: 'pulse 2s infinite',
-                        boxShadow: '0 12px 24px rgba(76, 175, 80, 0.3)'
-                      }}>
-                        <CheckCircle sx={{ fontSize: { xs: 50, sm: 60, md: 70 }, color: 'success.main' }} />
-                      </Box>
-                      <Typography variant={isMobile ? "h5" : "h4"} fontWeight={800} gutterBottom>
-                        Company Updated!
-                      </Typography>
-                      <Typography variant="body1" color="text.secondary" sx={{ mb: 3, fontSize: { xs: '0.9rem', sm: '1.1rem' } }}>
-                        <strong>{companyEditFormData.companyName}</strong> has been updated successfully.
-                      </Typography>
-                      <CircularProgress 
-                        size={isMobile ? 24 : 30} 
-                        sx={{ 
-                          color: 'success.main',
-                          mt: 2
-                        }} 
-                      />
-                    </Box>
-                  </Zoom>
-                )}
-              </Box>
-            </Fade>
-          </DialogContent>
-          
-          {!companyEditSuccess && (
-            <DialogActions sx={{ 
-              p: { xs: 2, sm: 3, md: 4 }, 
-              pt: { xs: 1, sm: 0 },
-              borderTop: '1px solid',
-              borderColor: 'grey.200',
-              bgcolor: 'grey.50'
-            }}>
-              <Stack 
-                direction="row" 
-                spacing={2} 
-                justifyContent="flex-end" 
-                width="100%"
-                sx={{ flexWrap: 'wrap' }}
-              >
-                <Button
-                  onClick={() => setCompanyEditModalOpen(false)}
-                  color="inherit"
-                  disabled={companyEditLoading}
-                  variant="outlined"
-                  size={isMobile ? "small" : "medium"}
-                  sx={{ 
-                    borderRadius: 2,
-                    px: { xs: 2, sm: 4 },
-                    py: { xs: 0.75, sm: 1.2 },
-                    fontWeight: 600,
-                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                    borderColor: 'grey.400',
-                    color: 'text.primary',
-                    '&:hover': {
-                      borderColor: 'grey.600',
-                      bgcolor: 'grey.100'
-                    }
-                  }}
-                >
-                  Cancel
-                </Button>
-                
-                <Button
-                  onClick={handleSaveCompany}
-                  variant="contained"
-                  startIcon={companyEditLoading ? <CircularProgress size={16} color="inherit" /> : <Save />}
-                  disabled={companyEditLoading}
-                  size={isMobile ? "small" : "medium"}
-                  sx={{ 
-                    px: { xs: 3, sm: 5 },
-                    py: { xs: 0.75, sm: 1.2 },
-                    fontWeight: 700,
-                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                    borderRadius: 2,
-                    background: 'linear-gradient(145deg, #2196f3 0%, #1976d2 100%)',
-                    boxShadow: '0 8px 16px rgba(33, 150, 243, 0.3)',
-                    '&:hover': {
-                      background: 'linear-gradient(145deg, #1976d2 0%, #1565c0 100%)',
-                      boxShadow: '0 12px 24px rgba(33, 150, 243, 0.4)',
-                      transform: 'translateY(-2px)'
-                    },
-                    transition: 'all 0.3s ease'
-                  }}
-                >
-                  {companyEditLoading ? 'Saving...' : 'Save Changes'}
-                </Button>
-              </Stack>
-            </DialogActions>
-          )}
-        </Dialog>
+          Cancel
+        </Button>
+        
+        <Button
+          onClick={handleSaveCompany}
+          variant="contained"
+          startIcon={companyEditLoading ? <CircularProgress size={16} color="inherit" /> : <Save />}
+          disabled={companyEditLoading}
+          size={isMobile ? "small" : "medium"}
+          sx={{ 
+            px: { xs: 4, sm: 5 },
+            py: { xs: 0.75, sm: 1.2 },
+            fontWeight: 700,
+            fontSize: { xs: '0.75rem', sm: '0.875rem' },
+            borderRadius: 2,
+            background: 'linear-gradient(145deg, #2196f3 0%, #1976d2 100%)',
+            boxShadow: '0 8px 16px rgba(33, 150, 243, 0.3)',
+            '&:hover': {
+              background: 'linear-gradient(145deg, #1976d2 0%, #1565c0 100%)',
+              boxShadow: '0 12px 24px rgba(33, 150, 243, 0.4)',
+              transform: 'translateY(-2px)'
+            },
+            transition: 'all 0.3s ease'
+          }}
+        >
+          {companyEditLoading ? 'Saving...' : 'Save Changes'}
+        </Button>
+      </Stack>
+    </DialogActions>
+  )}
+</Dialog>
 
         {/* Edit User Modal - COMPLETE WITH ALL FIELDS */}
         <Dialog 
