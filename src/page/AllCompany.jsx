@@ -640,8 +640,12 @@ const AllCompany = () => {
   };
 
   // Navigate to create user page
-  const handleNavigateToCreateUser = (companyId, companyCode) => {
-    navigate(`/create-user?company=${companyId}&companyCode=${companyCode}`);
+  const handleNavigateToCreateUser = (companyId, companyCode, companyName) => {
+    if (companyId && companyCode) {
+      navigate(`/create-user?company=${companyId}&companyCode=${companyCode}&companyName=${encodeURIComponent(companyName || '')}`);
+    } else {
+      toast.error("Company information is missing");
+    }
   };
 
   // Navigate to create company page
@@ -710,6 +714,15 @@ const AllCompany = () => {
   const handleNotificationsClose = () => {
     setNotificationsOpen(false);
     setNotificationAnchor(null);
+  };
+
+  // Fixed: Add new user function that uses the company from the card
+  const handleAddNewUser = (company) => {
+    if (company && company._id && company.companyCode) {
+      navigate(`/create-user?company=${company._id}&companyCode=${company.companyCode}&companyName=${encodeURIComponent(company.companyName || '')}`);
+    } else {
+      toast.error("Company information is incomplete");
+    }
   };
 
   const markNotificationAsRead = (notificationId) => {
@@ -1272,8 +1285,8 @@ const AllCompany = () => {
                           <GradientButton
                             size="small"
                             variant="contained"
-                            startIcon={<PersonAdd />}
-                            onClick={() => handleNavigateToCreateUser(company._id, company.companyCode)}
+                            onClick={() => handleAddNewUser(company)} // Fixed: Pass company parameter
+                            startIcon={<Add />}
                             sx={{ py: 0.5 }}
                           >
                             Add
@@ -1354,7 +1367,7 @@ const AllCompany = () => {
                             size="small"
                             variant="contained"
                             startIcon={<PersonAdd />}
-                            onClick={() => handleNavigateToCreateUser(company._id, company.companyCode)}
+                            onClick={() => handleAddNewUser(company)} // Fixed: Pass company parameter
                           >
                             Add First Member
                           </GradientButton>
@@ -1405,7 +1418,14 @@ const AllCompany = () => {
             <SpeedDialAction
               icon={<PersonAdd />}
               tooltipTitle="Add User"
-              onClick={() => navigate('/create-user')}
+              onClick={() => {
+                // If there are companies, navigate to create user with first company
+                if (companies.length > 0) {
+                  handleAddNewUser(companies[0]);
+                } else {
+                  toast.info('Please create a company first');
+                }
+              }}
             />
             <SpeedDialAction
               icon={<Refresh />}
@@ -1693,7 +1713,7 @@ const AllCompany = () => {
               startIcon={<PersonAdd />}
               onClick={() => {
                 handleCloseCompanyDetails();
-                handleNavigateToCreateUser(selectedCompany._id, selectedCompany.companyCode);
+                handleAddNewUser(selectedCompany); // Fixed: Use handleAddNewUser instead of handleNavigateToCreateUser
               }}
             >
               Add Team Member
@@ -1796,7 +1816,7 @@ const AllCompany = () => {
                 startIcon={<PersonAdd />}
                 onClick={() => {
                   handleCloseUsersPopup();
-                  handleNavigateToCreateUser(selectedCompany?._id, selectedCompany?.companyCode);
+                  handleAddNewUser(selectedCompany); // Fixed: Use handleAddNewUser
                 }}
               >
                 Add Team Member
@@ -1813,7 +1833,7 @@ const AllCompany = () => {
               startIcon={<PersonAdd />}
               onClick={() => {
                 handleCloseUsersPopup();
-                handleNavigateToCreateUser(selectedCompany?._id, selectedCompany?.companyCode);
+                handleAddNewUser(selectedCompany); // Fixed: Use handleAddNewUser
               }}
             >
               Add Member

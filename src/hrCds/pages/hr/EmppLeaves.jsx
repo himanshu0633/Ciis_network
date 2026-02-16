@@ -36,7 +36,9 @@ import {
   FiCheckSquare,
   FiClock as FiClockIcon,
   FiArrowRight,
-  FiHome
+  FiHome,
+  FiUsers as FiUsersIcon,
+  FiBriefcase as FiBriefcaseIcon
 } from "react-icons/fi";
 
 // Status Filter Component
@@ -153,10 +155,13 @@ const EmployeeLeaves = () => {
   const [currentUserName, setCurrentUserName] = useState("");
   const [allUsers, setAllUsers] = useState([]);
   
-  // ✅ Department Related States - API se fetch honge
+  // ✅ Department Related States
   const [departments, setDepartments] = useState([]);
   const [departmentMap, setDepartmentMap] = useState({});
   const [loadingDepartments, setLoadingDepartments] = useState(false);
+  
+  // ✅ Company Name State (for header)
+  const [companyName, setCompanyName] = useState("");
   
   // Permission States
   const [isOwner, setIsOwner] = useState(false);
@@ -183,6 +188,7 @@ const EmployeeLeaves = () => {
       fetchCompanyUsers();
       fetchLeaves();
       fetchDepartments(); // ✅ Department API call
+      fetchCompanyDetails(); // ✅ Company details for name
     }
   }, [
     filterDate, 
@@ -192,6 +198,24 @@ const EmployeeLeaves = () => {
     currentUserCompanyId,
     isOwner
   ]);
+
+  // ============================================
+  // ✅ FETCH COMPANY DETAILS (for name)
+  // ============================================
+  const fetchCompanyDetails = async () => {
+    if (!currentUserCompanyId) return;
+    
+    try {
+      const response = await axios.get(`/companies/${currentUserCompanyId}`);
+      if (response.data && response.data.success && response.data.data) {
+        setCompanyName(response.data.data.name || response.data.data.companyName || 'Company');
+      } else if (response.data && response.data.name) {
+        setCompanyName(response.data.name);
+      }
+    } catch (error) {
+      console.error("❌ Failed to fetch company details:", error);
+    }
+  };
 
   // ============================================
   // ✅ FETCH DEPARTMENTS FROM API
@@ -239,48 +263,80 @@ const EmployeeLeaves = () => {
   };
 
   // ============================================
-  // ✅ GET DEPARTMENT NAME FROM ID (USING API DATA)
+  // ✅ ENHANCED GET DEPARTMENT NAME FUNCTION
   // ============================================
   const getDepartmentName = (dept) => {
-    if (!dept) return 'N/A';
+    if (!dept) return null; // Return null instead of 'N/A' to hide
     
-    // Case 1: If it's already an object with name
+    // CASE 1: If it's an object with name property
     if (typeof dept === 'object') {
-      if (dept.name) return dept.name;
-      if (dept._id && departmentMap[dept._id]) return departmentMap[dept._id];
+      if (dept.name) {
+        return dept.name;
+      }
+      if (dept._id && departmentMap[dept._id]) {
+        return departmentMap[dept._id];
+      }
     }
     
-    // Case 2: If it's a string ID
+    // CASE 2: If it's a string ID
     if (typeof dept === 'string') {
       // First check in department map (from API)
       if (departmentMap[dept]) {
         return departmentMap[dept];
       }
       
-      // If not in map, try to find in users data as fallback
+      // Second check: Look for department in departments array directly
+      const foundDept = departments.find(d => (d._id || d.id) === dept);
+      if (foundDept) {
+        const name = foundDept.name || foundDept.departmentName || foundDept.title;
+        if (name) {
+          // Update map for future use
+          setDepartmentMap(prev => ({ ...prev, [dept]: name }));
+          return name;
+        }
+      }
+      
+      // Third check: Try to find in users data as fallback
       const userWithDept = allUsers.find(u => {
         if (u.department && typeof u.department === 'object') {
-          return u.department._id === dept;
+          return u.department._id === dept || u.department === dept;
         }
         if (u.departmentId) {
           return u.departmentId === dept;
         }
-        return u.department === dept;
+        if (u.department) {
+          return u.department === dept || (typeof u.department === 'object' && u.department._id === dept);
+        }
+        return false;
       });
       
       if (userWithDept) {
-        if (userWithDept.department?.name) return userWithDept.department.name;
-        if (userWithDept.departmentName) return userWithDept.departmentName;
+        // Extract department name from found user
+        if (userWithDept.department && typeof userWithDept.department === 'object') {
+          const deptName = userWithDept.department.name || userWithDept.department.departmentName;
+          if (deptName) {
+            // Update map for future use
+            setDepartmentMap(prev => ({ ...prev, [dept]: deptName }));
+            return deptName;
+          }
+        }
+        if (userWithDept.departmentName) {
+          setDepartmentMap(prev => ({ ...prev, [dept]: userWithDept.departmentName }));
+          return userWithDept.departmentName;
+        }
       }
       
-      // If it doesn't look like a MongoDB ID (24 hex chars), return as is
-      if (!dept.match(/^[0-9a-f]{24}$/i)) {
-        return dept;
+      // If it's a MongoDB ID but not found, return null to hide
+      if (dept.match(/^[0-9a-f]{24}$/i)) {
+        return null; // Hide unfound IDs
       }
+      
+      // If it doesn't look like a MongoDB ID, return as is (might be a name)
+      return dept;
     }
     
-    // Fallback
-    return 'N/A';
+    // Fallback - return null to hide
+    return null;
   };
 
   // ============================================
@@ -403,6 +459,22 @@ const EmployeeLeaves = () => {
       }
       
       setAllUsers(usersData);
+      
+      // Extract department info from users to help with mapping
+      const deptFromUsers = {};
+      
+      usersData.forEach(user => {
+        if (user.department && typeof user.department === 'object') {
+          if (user.department._id && user.department.name) {
+            deptFromUsers[user.department._id] = user.department.name;
+          }
+        } else if (user.departmentId && user.departmentName) {
+          deptFromUsers[user.departmentId] = user.departmentName;
+        }
+      });
+      
+      // Merge with existing maps
+      setDepartmentMap(prev => ({ ...prev, ...deptFromUsers }));
       
     } catch (err) {
       console.error("❌ Failed to load users", err);
@@ -560,7 +632,7 @@ const EmployeeLeaves = () => {
           leave.user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           leave.type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           leave.reason?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          getDepartmentName(leave.user?.department).toLowerCase().includes(searchTerm.toLowerCase())
+          (getDepartmentName(leave.user?.department) || '').toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -864,7 +936,7 @@ const EmployeeLeaves = () => {
   };
 
   // ============================================
-  // LEAVE DETAILS MODAL - ENHANCED PROFESSIONAL
+  // LEAVE DETAILS MODAL
   // ============================================
   const [detailsModal, setDetailsModal] = useState({
     open: false,
@@ -960,16 +1032,17 @@ const EmployeeLeaves = () => {
                           </span>
                         </div>
                       )}
-                      <div className="info-row">
-                        <FiBriefcase size={14} className="info-icon" />
-                        <span className="info-label">Department:</span>
-                        <span className="info-value">
-                          <span className="department-tag">
-                            <FiHome size={12} />
-                            {departmentName}
+                      {departmentName && (
+                        <div className="info-row">
+                          <FiHome size={14} className="info-icon" />
+                          <span className="info-label">Department:</span>
+                          <span className="info-value">
+                            <span className="department-tag">
+                              {departmentName}
+                            </span>
                           </span>
-                        </span>
-                      </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1164,10 +1237,10 @@ const EmployeeLeaves = () => {
             <span className="action-required-badge">Action Required</span>
           )}
         </h3>
-        <div className="company-badge">
+        {/* <div className="company-badge">
           <FiBriefcase size={14} />
-          {currentUserCompanyId ? currentUserCompanyId.substring(0, 8) + '...' : 'Loading...'}
-        </div>
+          {companyName || currentUserCompanyId?.substring(0, 8) + '...' || 'Company'}
+        </div> */}
       </div>
       
       <div className="table-responsive">
@@ -1236,10 +1309,14 @@ const EmployeeLeaves = () => {
                       </div>
                     </td>
                     <td>
-                      <div className="department-info">
-                        <FiHome size={14} />
-                        {departmentName}
-                      </div>
+                      {departmentName ? (
+                        <div className="department-info">
+                          <FiHome size={14} />
+                          {departmentName}
+                        </div>
+                      ) : (
+                        <span className="text-muted">—</span>
+                      )}
                     </td>
                     <td>
                       <div className="leave-details">
@@ -1568,7 +1645,7 @@ const EmployeeLeaves = () => {
             label: "Total Leaves", 
             count: stats.total, 
             type: "All", 
-            icon: <FiUsers />,
+            icon: <FiUsersIcon />,
             color: "primary"
           },
           { 
