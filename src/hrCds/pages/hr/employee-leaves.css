@@ -1,5 +1,586 @@
 /* employee-leaves.css - CLEAN PROFESSIONAL UI */
+/* Add these styles to your employee-leaves.css file */
 
+/* Details Dialog */
+.details-dialog {
+  max-width: 900px !important;
+  width: 95%;
+}
+
+.dialog-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dialog-header-left h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+/* Details Status Banner */
+.details-status-banner {
+  padding: 16px 20px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 15px;
+}
+
+.details-status-banner.status-pending {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #c05621;
+}
+
+.details-status-banner.status-approved {
+  background: #f0fff4;
+  border: 1px solid #c6f6d5;
+  color: #2f855a;
+}
+
+.details-status-banner.status-rejected {
+  background: #fff5f5;
+  border: 1px solid #fed7d7;
+  color: #c53030;
+}
+
+/* Details Grid Container */
+.details-grid-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+/* Details Column */
+.details-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Details Card */
+.details-card {
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e8ecef;
+  overflow: hidden;
+}
+
+.card-header {
+  padding: 16px 20px;
+  background: white;
+  border-bottom: 1px solid #e8ecef;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.card-header h4 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.card-content {
+  padding: 20px;
+}
+
+/* Employee Profile */
+.employee-profile {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.profile-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #4299e1 0%, #667eea 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(66, 153, 225, 0.3);
+}
+
+.profile-info {
+  flex: 1;
+}
+
+.profile-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 4px;
+}
+
+.profile-email {
+  font-size: 13px;
+  color: #718096;
+}
+
+/* Info Rows */
+.info-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.info-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  padding: 8px 0;
+  border-bottom: 1px dashed #e2e8f0;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-icon {
+  color: #718096;
+  width: 18px;
+}
+
+.info-label {
+  color: #718096;
+  min-width: 100px;
+  font-weight: 500;
+}
+
+.info-value {
+  color: #2d3748;
+  font-weight: 500;
+  flex: 1;
+}
+
+/* Department Tag */
+.department-tag {
+  background: #ebf8ff;
+  color: #2c5282;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid #bee3f8;
+}
+
+/* Info Grid */
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.grid-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.grid-item.full-width {
+  grid-column: 1 / -1;
+}
+
+.grid-label {
+  font-size: 12px;
+  color: #718096;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.grid-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+/* Leave Type Badge */
+.leave-type-badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-block;
+  text-align: center;
+  width: fit-content;
+}
+
+/* Duration Badge */
+.duration-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: #ebf8ff;
+  color: #2c5282;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid #bee3f8;
+}
+
+/* Reason Box */
+.reason-box {
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #2d3748;
+  min-height: 100px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+/* Remarks Box */
+.remarks-box {
+  background: #fff7ed;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #fed7aa;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #c05621;
+}
+
+/* Footer Actions */
+.footer-actions {
+  display: flex;
+  gap: 12px;
+}
+
+/* Status Dialog */
+.status-dialog {
+  max-width: 500px !important;
+}
+
+.user-info-compact {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e8ecef;
+}
+
+.user-avatar.medium {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  font-size: 16px;
+}
+
+.user-details h4 {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.user-details p {
+  margin: 2px 0;
+  font-size: 13px;
+  color: #718096;
+}
+
+.user-details .user-phone {
+  color: #4299e1;
+  font-weight: 500;
+}
+
+/* Status Change Info */
+.status-change-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.status-badge.current {
+  background: #edf2f7;
+  color: #4a5568;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.status-badge.new {
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.status-badge.new.status-approved {
+  background: #f0fff4;
+  color: #2f855a;
+  border: 1px solid #c6f6d5;
+}
+
+.status-badge.new.status-rejected {
+  background: #fff5f5;
+  color: #c53030;
+  border: 1px solid #fed7d7;
+}
+
+.status-change-info svg {
+  color: #a0aec0;
+}
+
+/* Optional Label */
+.optional {
+  color: #a0aec0;
+  font-size: 12px;
+  font-weight: normal;
+  margin-left: 4px;
+}
+
+/* Action Icon Buttons */
+.actions-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.action-icon-button {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  color: #4a5568;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.action-icon-button:hover:not(.disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.action-icon-button.approve:hover:not(.disabled) {
+  background: #f0fff4;
+  border-color: #48bb78;
+  color: #38a169;
+}
+
+.action-icon-button.reject:hover:not(.disabled) {
+  background: #fff5f5;
+  border-color: #f56565;
+  color: #e53e3e;
+}
+
+.action-icon-button.delete:hover:not(.disabled) {
+  background: #fff5f5;
+  border-color: #f56565;
+  color: #e53e3e;
+}
+
+.action-icon-button.view-history:hover:not(.disabled) {
+  background: #f7fafc;
+  border-color: #4299e1;
+  color: #4299e1;
+}
+
+.action-icon-button.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* No Permission */
+.no-permission {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: #ffebee;
+  color: #e53e3e;
+  border-radius: 6px;
+  cursor: help;
+}
+
+/* Table Responsive */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* View Details Button */
+.view-details-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  color: #4299e1;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 8px;
+}
+
+.view-details-button:hover {
+  background: #ebf8ff;
+  border-color: #4299e1;
+  transform: translateY(-1px);
+}
+
+/* Leave Reason Preview */
+.leave-reason-preview {
+  font-size: 13px;
+  color: #718096;
+  line-height: 1.5;
+  margin: 8px 0;
+  max-width: 250px;
+}
+
+/* Department Info with Icon */
+.department-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: #edf2f7;
+  border-radius: 20px;
+  font-size: 12px;
+  color: #4a5568;
+  font-weight: 500;
+  border: 1px solid #e2e8f0;
+}
+
+/* Stat Items */
+.stat-item.pending {
+  background: #fff7ed;
+  color: #c05621;
+  border-color: #fed7aa;
+}
+
+.stat-item.approved {
+  background: #f0fff4;
+  color: #2f855a;
+  border-color: #c6f6d5;
+}
+
+.stat-item.rejected {
+  background: #fff5f5;
+  color: #c53030;
+  border-color: #fed7d7;
+}
+
+/* Search Input */
+.search-group {
+  grid-column: span 2;
+}
+
+.search-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #a0aec0;
+  z-index: 1;
+}
+
+.search-input {
+  padding-left: 40px !important;
+  width: 100%;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+  .details-grid-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .search-group {
+    grid-column: span 1;
+  }
+  
+  .info-row {
+    flex-wrap: wrap;
+  }
+  
+  .info-label {
+    min-width: 80px;
+  }
+}
+
+@media (max-width: 768px) {
+  .actions-container {
+    justify-content: flex-start;
+  }
+  
+  .filter-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .stats-summary {
+    flex-wrap: wrap;
+  }
+  
+  .employee-profile {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .status-change-info {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+/* Animation */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.details-dialog {
+  animation: slideIn 0.3s ease-out;
+}
 /* Base Styles */
 .employee-leaves {
   background-color: #f8f9fa;
@@ -606,7 +1187,7 @@
   padding: 6px 12px;
   background: #edf2f7;
   border-radius: 6px;
-  display: inline-block;
+  display: inline-flex;
   color: #4a5568;
   font-weight: 500;
   border: 1px solid #e2e8f0;
@@ -679,15 +1260,16 @@
 }
 
 .days-badge {
-  font-size: 12px;
-  padding: 4px 10px;
-  background: #ebf8ff;
-  color: #4299e1;
-  border-radius: 20px;
-  display: inline-block;
-  margin-top: 6px;
-  font-weight: 600;
-  border: 1px solid #bee3f8;
+font-size: 12px;
+    padding: 4px 10px;
+    background: #ebf8ff;
+    color: #4299e1;
+    border-radius: 20px;
+    display: flex;
+    gap: 10px;
+    margin-top: 6px;
+    font-weight: 600;
+    border: 1px solid #bee3f8;
 }
 
 /* Status Chip */

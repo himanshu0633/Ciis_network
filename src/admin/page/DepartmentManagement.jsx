@@ -8,7 +8,8 @@ import {
   Switch, Card, CardContent, Stack, Avatar, 
   InputAdornment, Divider, Fade, Zoom, Slide,
   useTheme, useMediaQuery, Badge, Grid, Fab,
-  Menu, MenuItem, ListItemIcon, ListItemText
+  Menu, MenuItem, ListItemIcon, ListItemText,
+  LinearProgress, CircularProgress
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { 
@@ -16,7 +17,8 @@ import {
   Description, Person, Code, Refresh,
   MoreVert, FilterList, Clear, CheckCircle,
   Cancel, CorporateFare, AdminPanelSettings,
-  VerifiedUser, FolderSpecial
+  VerifiedUser, FolderSpecial, Today,
+  Schedule, Apartment, ArrowForward
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import axios from '../../utils/axiosConfig';
@@ -50,6 +52,11 @@ const DepartmentManagement = () => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedDeptMenu, setSelectedDeptMenu] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [stats, setStats] = useState({
+    total: 0,
+    active: 0,
+    inactive: 0
+  });
 
   // Function to get user from localStorage
   const getUserFromStorage = () => {
@@ -104,6 +111,7 @@ const DepartmentManagement = () => {
 
   const fetchDepartments = async (user = null, isSuper = false) => {
     try {
+      setLoading(true);
       if (!user) {
         user = getUserFromStorage();
         if (!user) {
@@ -125,12 +133,22 @@ const DepartmentManagement = () => {
       console.log('Fetching departments with params:', params);
       
       const response = await axios.get('/departments', { params });
-      setDepartments(response.data.departments || []);
+      const depts = response.data.departments || [];
+      setDepartments(depts);
       
-      console.log('Departments fetched:', response.data.departments?.length);
+      // Calculate stats
+      setStats({
+        total: depts.length,
+        active: depts.filter(d => d.isActive !== false).length,
+        inactive: depts.filter(d => d.isActive === false).length
+      });
+      
+      console.log('Departments fetched:', depts.length);
     } catch (err) {
       console.error('Fetch departments error:', err);
       toast.error(err.response?.data?.message || 'Failed to load departments');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -172,7 +190,7 @@ const DepartmentManagement = () => {
                 Department Updated!
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                {formData.name} has been updated
+                {formData.name} has been updated successfully
               </Typography>
             </Box>
           </Box>,
@@ -188,7 +206,7 @@ const DepartmentManagement = () => {
                 Department Created!
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                {formData.name} has been added
+                {formData.name} has been added to your organization
               </Typography>
             </Box>
           </Box>,
@@ -219,6 +237,7 @@ const DepartmentManagement = () => {
     if (!window.confirm(`Are you sure you want to delete "${dept?.name}"?`)) return;
 
     try {
+      setLoading(true);
       await axios.delete(`/departments/${id}`);
       toast.success(
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -238,6 +257,8 @@ const DepartmentManagement = () => {
     } catch (err) {
       const msg = err.response?.data?.message || 'Deletion failed';
       toast.error(msg);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -302,6 +323,21 @@ const DepartmentManagement = () => {
 
   const filteredDepartments = getFilteredDepartments();
 
+  // Format date
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch {
+      return 'N/A';
+    }
+  };
+
   // Mobile card view
   const MobileDepartmentCard = ({ dept }) => (
     <Card 
@@ -311,67 +347,120 @@ const DepartmentManagement = () => {
         border: '1px solid',
         borderColor: 'grey.200',
         transition: 'all 0.3s ease',
+        position: 'relative',
+        overflow: 'visible',
         '&:hover': {
-          boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
-          transform: 'translateY(-2px)'
+          boxShadow: '0 12px 24px rgba(0,0,0,0.12)',
+          transform: 'translateY(-4px)',
+          borderColor: 'primary.200'
         }
       }}
     >
-      <CardContent sx={{ p: 2 }}>
-        <Stack spacing={2}>
-          <Stack direction="row" justifyContent="space-between" alignItems="center">
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <Avatar 
-                sx={{ 
-                  bgcolor: 'primary.100',
-                  color: 'primary.main',
-                  width: 40,
-                  height: 40
-                }}
-              >
-                <Business sx={{ fontSize: 22 }} />
-              </Avatar>
-              <Box>
-                <Typography variant="h6" fontWeight={700} sx={{ fontSize: '1rem' }}>
-                  {dept.name}
-                </Typography>
+      {/* Status Indicator */}
+      <Box sx={{
+        position: 'absolute',
+        top: 12,
+        right: 12,
+        width: 8,
+        height: 8,
+        borderRadius: '50%',
+        bgcolor: dept.isActive !== false ? '#4caf50' : '#f44336',
+        boxShadow: `0 0 0 2px ${dept.isActive !== false ? 'rgba(76, 175, 80, 0.2)' : 'rgba(244, 67, 54, 0.2)'}`,
+        animation: dept.isActive !== false ? 'pulse 2s infinite' : 'none'
+      }} />
+      
+      <CardContent sx={{ p: 2.5 }}>
+        <Stack spacing={2.5}>
+          {/* Header with Icon and Name */}
+          <Stack direction="row" alignItems="center" spacing={2}>
+            <Avatar 
+              sx={{ 
+                bgcolor: 'primary.50',
+                color: 'primary.main',
+                width: 48,
+                height: 48,
+                borderRadius: 2,
+                boxShadow: '0 4px 8px rgba(33, 150, 243, 0.2)'
+              }}
+            >
+              <Business sx={{ fontSize: 26 }} />
+            </Avatar>
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="h6" fontWeight={700} sx={{ fontSize: '1.1rem', mb: 0.5 }}>
+                {dept.name}
+              </Typography>
+              <Stack direction="row" spacing={1} alignItems="center">
                 {dept.companyCode && (
                   <Chip 
                     label={dept.companyCode} 
                     size="small" 
                     sx={{ 
-                      height: 20, 
-                      fontSize: '0.6rem',
+                      height: 22, 
+                      fontSize: '0.65rem',
                       bgcolor: 'primary.50',
-                      color: 'primary.main'
+                      color: 'primary.main',
+                      fontWeight: 600,
+                      '& .MuiChip-label': { px: 1 }
                     }}
                   />
                 )}
-              </Box>
+                <Chip
+                  label={dept.isActive !== false ? 'Active' : 'Inactive'}
+                  size="small"
+                  sx={{
+                    height: 22,
+                    fontSize: '0.65rem',
+                    bgcolor: dept.isActive !== false ? 'success.50' : 'error.50',
+                    color: dept.isActive !== false ? 'success.main' : 'error.main',
+                    fontWeight: 600,
+                    '& .MuiChip-label': { px: 1 }
+                  }}
+                />
+              </Stack>
             </Box>
-            <IconButton onClick={(e) => handleMenuOpen(e, dept)} size="small">
-              <MoreVert fontSize="small" />
-            </IconButton>
           </Stack>
 
+          {/* Description */}
           {dept.description && (
-            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
-              <Description sx={{ fontSize: 18, color: 'grey.500', mt: 0.3 }} />
-              <Typography variant="body2" color="text.secondary">
-                {dept.description}
-              </Typography>
+            <Box sx={{ 
+              bgcolor: 'grey.50', 
+              p: 1.5, 
+              borderRadius: 2,
+              border: '1px solid',
+              borderColor: 'grey.200'
+            }}>
+              <Stack direction="row" spacing={1} alignItems="flex-start">
+                <Description sx={{ fontSize: 18, color: 'grey.500', mt: 0.2 }} />
+                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5 }}>
+                  {dept.description}
+                </Typography>
+              </Stack>
             </Box>
           )}
 
-          <Divider />
-
+          {/* Footer with Meta Info and Actions */}
           <Stack direction="row" justifyContent="space-between" alignItems="center">
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Person sx={{ fontSize: 16, color: 'grey.500' }} />
-              <Typography variant="caption" color="text.secondary">
-                {dept.createdBy?.name || 'System'}
-              </Typography>
-            </Box>
+            <Stack direction="row" spacing={1.5}>
+              <Tooltip title="Created">
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Today sx={{ fontSize: 14, color: 'grey.500' }} />
+                  <Typography variant="caption" color="text.secondary">
+                    {formatDate(dept.createdAt)}
+                  </Typography>
+                </Box>
+              </Tooltip>
+              {dept.createdBy?.name && (
+                <Tooltip title="Created By">
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Person sx={{ fontSize: 14, color: 'grey.500' }} />
+                    <Typography variant="caption" color="text.secondary">
+                      {dept.createdBy.name}
+                    </Typography>
+                  </Box>
+                </Tooltip>
+              )}
+            </Stack>
+            
             <Box sx={{ display: 'flex', gap: 1 }}>
               <Tooltip title="Edit">
                 <IconButton 
@@ -379,10 +468,17 @@ const DepartmentManagement = () => {
                   onClick={() => handleEdit(dept)}
                   sx={{ 
                     bgcolor: 'primary.50',
-                    '&:hover': { bgcolor: 'primary.100' }
+                    color: 'primary.main',
+                    width: 32,
+                    height: 32,
+                    '&:hover': { 
+                      bgcolor: 'primary.100',
+                      transform: 'scale(1.1)'
+                    },
+                    transition: 'all 0.2s ease'
                   }}
                 >
-                  <Edit sx={{ fontSize: 18, color: 'primary.main' }} />
+                  <Edit sx={{ fontSize: 18 }} />
                 </IconButton>
               </Tooltip>
               <Tooltip title="Delete">
@@ -391,11 +487,19 @@ const DepartmentManagement = () => {
                   onClick={() => handleDelete(dept._id)}
                   sx={{ 
                     bgcolor: 'error.50',
-                    '&:hover': { bgcolor: 'error.100' }
+                    color: 'error.main',
+                    width: 32,
+                    height: 32,
+                    '&:hover': { 
+                      bgcolor: 'error.100',
+                      transform: 'scale(1.1)'
+                    },
+                    transition: 'all 0.2s ease',
+                    opacity: dept.isActive === false ? 0.5 : 1
                   }}
-                  disabled={!dept.isActive}
+                  disabled={dept.isActive === false}
                 >
-                  <Delete sx={{ fontSize: 18, color: 'error.main' }} />
+                  <Delete sx={{ fontSize: 18 }} />
                 </IconButton>
               </Tooltip>
             </Box>
@@ -411,12 +515,328 @@ const DepartmentManagement = () => {
       minHeight: '100vh',
       bgcolor: '#f8fafc'
     }}>
+      {/* Loading Overlay */}
+      {loading && (
+        <Box sx={{ width: '100%', mb: 2 }}>
+          <LinearProgress sx={{ borderRadius: 1, height: 4 }} />
+        </Box>
+      )}
+
+      {/* Stats Cards - Always visible, in a single line with consistent blue theme */}
+     {departments.length > 0 && (
+  <Box sx={{ 
+    display: 'grid', 
+    gridTemplateColumns: { xs: '1fr 1fr', sm: '1fr 1fr 1fr' },
+    gap: { xs: 1.5, sm: 2.5 },
+    mb: 4,
+    width: '100%'
+  }}>
+    {/* Total Departments Card */}
+    <Paper 
+      elevation={0}
+      sx={{ 
+        p: { xs: 2, sm: 2.5 },
+        borderRadius: 3,
+        background: 'linear-gradient(135deg, #ffffff 0%, #f5f9ff 100%)',
+        border: '1px solid',
+        borderColor: '#e3f2fd',
+        boxShadow: '0 4px 12px rgba(33, 150, 243, 0.12)',
+        transition: 'all 0.3s ease',
+        position: 'relative',
+        overflow: 'hidden',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '4px',
+          background: 'linear-gradient(90deg, #2196f3, #64b5f6)',
+        },
+        '&:hover': { 
+          transform: 'translateY(-4px)',
+          boxShadow: '0 12px 24px rgba(33, 150, 243, 0.25)',
+          borderColor: '#90caf9',
+          '& .icon-box': {
+            transform: 'scale(1.1) rotate(5deg)',
+            bgcolor: '#e3f2fd'
+          }
+        }
+      }}
+    >
+      <Stack direction="row" alignItems="center" spacing={2}>
+        <Box 
+          className="icon-box"
+          sx={{
+            width: { xs: 44, sm: 52 },
+            height: { xs: 44, sm: 52 },
+            borderRadius: 2.5,
+            background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.3s ease',
+            boxShadow: '0 4px 8px rgba(33, 150, 243, 0.2)'
+          }}
+        >
+          <CorporateFare sx={{ 
+            fontSize: { xs: 24, sm: 28 }, 
+            color: '#1976d2',
+            filter: 'drop-shadow(0 2px 4px rgba(33, 150, 243, 0.3))'
+          }} />
+        </Box>
+        
+        <Box sx={{ flex: 1 }}>
+          <Typography 
+            variant="body2" 
+            color="#546e7a"
+            fontWeight={600}
+            sx={{ 
+              fontSize: { xs: '0.75rem', sm: '0.8rem' },
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              mb: 0.5
+            }}
+          >
+            Total Departments
+          </Typography>
+          <Stack direction="row" alignItems="baseline" justifyContent="space-between">
+            <Typography 
+              variant="h4" 
+              fontWeight={800}
+              sx={{ 
+                fontSize: { xs: '1.5rem', sm: '1.8rem', md: '2rem' },
+                lineHeight: 1,
+                color: '#0d47a1',
+                textShadow: '0 2px 4px rgba(33, 150, 243, 0.2)'
+              }}
+            >
+              {stats.total}
+            </Typography>
+            <Chip 
+              label="All departments"
+              size="small"
+              sx={{
+                height: 22,
+                fontSize: '0.65rem',
+                fontWeight: 600,
+                bgcolor: '#e3f2fd',
+                color: '#1976d2',
+                border: '1px solid #bbdefb'
+              }}
+            />
+          </Stack>
+        </Box>
+      </Stack>
+    </Paper>
+
+    {/* Active Departments Card */}
+    <Paper 
+      elevation={0}
+      sx={{ 
+        p: { xs: 2, sm: 2.5 },
+        borderRadius: 3,
+        background: 'linear-gradient(135deg, #ffffff 0%, #f1f8e9 100%)',
+        border: '1px solid',
+        borderColor: '#c8e6c9',
+        boxShadow: '0 4px 12px rgba(76, 175, 80, 0.12)',
+        transition: 'all 0.3s ease',
+        position: 'relative',
+        overflow: 'hidden',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '4px',
+          background: 'linear-gradient(90deg, #4caf50, #81c784)',
+        },
+        '&:hover': { 
+          transform: 'translateY(-4px)',
+          boxShadow: '0 12px 24px rgba(76, 175, 80, 0.25)',
+          borderColor: '#a5d6a7',
+          '& .icon-box': {
+            transform: 'scale(1.1) rotate(5deg)',
+            bgcolor: '#c8e6c9'
+          }
+        }
+      }}
+    >
+      <Stack direction="row" alignItems="center" spacing={2}>
+        <Box 
+          className="icon-box"
+          sx={{
+            width: { xs: 44, sm: 52 },
+            height: { xs: 44, sm: 52 },
+            borderRadius: 2.5,
+            background: 'linear-gradient(135deg, #c8e6c9 0%, #a5d6a7 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.3s ease',
+            boxShadow: '0 4px 8px rgba(76, 175, 80, 0.2)'
+          }}
+        >
+          <CheckCircle sx={{ 
+            fontSize: { xs: 24, sm: 28 }, 
+            color: '#2e7d32',
+            filter: 'drop-shadow(0 2px 4px rgba(76, 175, 80, 0.3))'
+          }} />
+        </Box>
+        
+        <Box sx={{ flex: 1 }}>
+          <Typography 
+            variant="body2" 
+            color="#546e7a"
+            fontWeight={600}
+            sx={{ 
+              fontSize: { xs: '0.75rem', sm: '0.8rem' },
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              mb: 0.5
+            }}
+          >
+            Active Departments
+          </Typography>
+          <Stack direction="row" alignItems="baseline" justifyContent="space-between">
+            <Typography 
+              variant="h4" 
+              fontWeight={800}
+              sx={{ 
+                fontSize: { xs: '1.5rem', sm: '1.8rem', md: '2rem' },
+                lineHeight: 1,
+                color: '#1b5e20',
+                textShadow: '0 2px 4px rgba(76, 175, 80, 0.2)'
+              }}
+            >
+              {stats.active}
+            </Typography>
+            <Chip 
+              label={`${stats.total > 0 ? Math.round((stats.active / stats.total) * 100) : 0}%`}
+              size="small"
+              sx={{
+                height: 22,
+                fontSize: '0.65rem',
+                fontWeight: 600,
+                bgcolor: '#c8e6c9',
+                color: '#2e7d32',
+                border: '1px solid #a5d6a7'
+              }}
+            />
+          </Stack>
+        </Box>
+      </Stack>
+    </Paper>
+
+    {/* Inactive Departments Card */}
+    <Paper 
+      elevation={0}
+      sx={{ 
+        p: { xs: 2, sm: 2.5 },
+        borderRadius: 3,
+        background: 'linear-gradient(135deg, #ffffff 0%, #ffebee 100%)',
+        border: '1px solid',
+        borderColor: '#ffcdd2',
+        boxShadow: '0 4px 12px rgba(244, 67, 54, 0.12)',
+        transition: 'all 0.3s ease',
+        position: 'relative',
+        overflow: 'hidden',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '4px',
+          background: 'linear-gradient(90deg, #f44336, #ef5350)',
+        },
+        '&:hover': { 
+          transform: 'translateY(-4px)',
+          boxShadow: '0 12px 24px rgba(244, 67, 54, 0.25)',
+          borderColor: '#ef9a9a',
+          '& .icon-box': {
+            transform: 'scale(1.1) rotate(5deg)',
+            bgcolor: '#ffcdd2'
+          }
+        }
+      }}
+    >
+      <Stack direction="row" alignItems="center" spacing={2}>
+        <Box 
+          className="icon-box"
+          sx={{
+            width: { xs: 44, sm: 52 },
+            height: { xs: 44, sm: 52 },
+            borderRadius: 2.5,
+            background: 'linear-gradient(135deg, #ffcdd2 0%, #ef9a9a 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.3s ease',
+            boxShadow: '0 4px 8px rgba(244, 67, 54, 0.2)'
+          }}
+        >
+          <Cancel sx={{ 
+            fontSize: { xs: 24, sm: 28 }, 
+            color: '#c62828',
+            filter: 'drop-shadow(0 2px 4px rgba(244, 67, 54, 0.3))'
+          }} />
+        </Box>
+        
+        <Box sx={{ flex: 1 }}>
+          <Typography 
+            variant="body2" 
+            color="#546e7a"
+            fontWeight={600}
+            sx={{ 
+              fontSize: { xs: '0.75rem', sm: '0.8rem' },
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              mb: 0.5
+            }}
+          >
+            Inactive Departments
+          </Typography>
+          <Stack direction="row" alignItems="baseline" justifyContent="space-between">
+            <Typography 
+              variant="h4" 
+              fontWeight={800}
+              sx={{ 
+                fontSize: { xs: '1.5rem', sm: '1.8rem', md: '2rem' },
+                lineHeight: 1,
+                color: '#b71c1c',
+                textShadow: '0 2px 4px rgba(244, 67, 54, 0.2)'
+              }}
+            >
+              {stats.inactive}
+            </Typography>
+            <Chip 
+              label={`${stats.total > 0 ? Math.round((stats.inactive / stats.total) * 100) : 0}%`}
+              size="small"
+              sx={{
+                height: 22,
+                fontSize: '0.65rem',
+                fontWeight: 600,
+                bgcolor: '#ffcdd2',
+                color: '#c62828',
+                border: '1px solid #ef9a9a'
+              }}
+            />
+          </Stack>
+        </Box>
+      </Stack>
+    </Paper>
+  </Box>
+)}
+
       <Paper 
         sx={{ 
           p: { xs: 2, sm: 3 }, 
           borderRadius: { xs: 2, sm: 3 }, 
           boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          position: 'relative'
         }} 
         elevation={6}
       >
@@ -434,14 +854,15 @@ const DepartmentManagement = () => {
                 width: { xs: 40, sm: 48 },
                 height: { xs: 40, sm: 48 },
                 borderRadius: 2,
-                bgcolor: 'primary.50',
+                background: 'linear-gradient(145deg, #2196f3 0%, #1976d2 100%)',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                boxShadow: '0 4px 12px rgba(33, 150, 243, 0.3)'
               }}>
                 <CorporateFare sx={{ 
                   fontSize: { xs: 24, sm: 28 }, 
-                  color: 'primary.main' 
+                  color: 'white' 
                 }} />
               </Box>
               <Box>
@@ -449,32 +870,47 @@ const DepartmentManagement = () => {
                   Department Management
                 </Typography>
                 {userInfo && (
-                  <Typography 
-                    variant="caption" 
-                    color="text.secondary"
-                    sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}
+                  <Stack 
+                    direction="row" 
+                    spacing={1} 
+                    alignItems="center"
+                    sx={{ mt: 0.5, flexWrap: 'wrap', gap: 0.5 }}
                   >
-                    <Person sx={{ fontSize: 14 }} />
-                    {userInfo.name} • 
                     <Chip 
-                      label={userInfo.role} 
-                      size="small" 
+                      avatar={<Person sx={{ fontSize: 14 }} />}
+                      label={userInfo.name}
+                      size="small"
                       sx={{ 
-                        height: 18, 
-                        fontSize: '0.6rem',
+                        height: 24, 
+                        fontSize: '0.7rem',
+                        bgcolor: 'grey.100'
+                      }}
+                    />
+                    <Chip 
+                      label={userInfo.role}
+                      size="small"
+                      sx={{ 
+                        height: 24, 
+                        fontSize: '0.7rem',
                         bgcolor: isSuperAdmin ? 'secondary.50' : 'primary.50',
-                        color: isSuperAdmin ? 'secondary.main' : 'primary.main'
+                        color: isSuperAdmin ? 'secondary.main' : 'primary.main',
+                        fontWeight: 600
                       }}
                     />
                     {userInfo.companyCode && (
                       <Chip 
                         icon={<Code sx={{ fontSize: 12 }} />}
-                        label={userInfo.companyCode} 
-                        size="small" 
-                        sx={{ height: 18, fontSize: '0.6rem' }}
+                        label={userInfo.companyCode}
+                        size="small"
+                        sx={{ 
+                          height: 24, 
+                          fontSize: '0.7rem',
+                          bgcolor: 'info.50',
+                          color: 'info.main'
+                        }}
                       />
                     )}
-                  </Typography>
+                  </Stack>
                 )}
               </Box>
             </Stack>
@@ -492,10 +928,14 @@ const DepartmentManagement = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               sx={{ 
-                width: { xs: '100%', sm: 250 },
+                width: { xs: '100%', sm: 280 },
                 '& .MuiOutlinedInput-root': {
                   borderRadius: 3,
-                  bgcolor: 'grey.50'
+                  bgcolor: 'white',
+                  transition: 'all 0.2s ease',
+                  '&:hover, &:focus-within': {
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                  }
                 }
               }}
               InputProps={{
@@ -538,55 +978,76 @@ const DepartmentManagement = () => {
                 borderRadius: 3,
                 py: 1,
                 px: 3,
-                bgcolor: 'primary.main',
+                background: 'linear-gradient(145deg, #2196f3 0%, #1976d2 100%)',
                 boxShadow: '0 4px 12px rgba(33, 150, 243, 0.3)',
                 '&:hover': {
-                  bgcolor: 'primary.dark',
+                  background: 'linear-gradient(145deg, #1976d2 0%, #1565c0 100%)',
                   boxShadow: '0 6px 16px rgba(33, 150, 243, 0.4)',
                   transform: 'translateY(-2px)'
                 },
                 transition: 'all 0.3s ease'
               }}
             >
-              {isMobile ? 'Add' : 'Add Department'}
+              {isMobile ? 'Add Department' : 'Add Department'}
             </Button>
           </Stack>
         </Stack>
 
         {/* Super Admin Toggle (if applicable) */}
-        {isSuperAdmin && (
-          <Fade in={isSuperAdmin}>
-            <Paper 
-              variant="outlined" 
-              sx={{ 
-                p: 2, 
-                mb: 3, 
-                borderRadius: 3,
-                bgcolor: 'secondary.50',
-                borderColor: 'secondary.200'
-              }}
-            >
-              <Stack 
-                direction={{ xs: 'column', sm: 'row' }} 
-                alignItems="center" 
-                justifyContent="space-between"
-                spacing={2}
-              >
-                <Stack direction="row" alignItems="center" spacing={1.5}>
-                  <AdminPanelSettings sx={{ color: 'secondary.main' }} />
-                  <Box>
-                    <Typography variant="body2" fontWeight={600}>
-                      Super Admin Mode
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      You have access to all departments
-                    </Typography>
-                  </Box>
-                </Stack>
-              </Stack>
-            </Paper>
-          </Fade>
-        )}
+         {isSuperAdmin && (
+                 <Fade in={isSuperAdmin}>
+                   <Paper 
+                     variant="outlined" 
+                     sx={{ 
+                       p: 2, 
+                       mb: 3, 
+                       borderRadius: 3,
+                       bgcolor: 'primary.50',
+                       borderColor: 'primary.200',
+                       background: 'linear-gradient(145deg, #e3f2fd 0%, #bbdefb 100%)'
+                     }}
+                   >
+                     <Stack 
+                       direction={{ xs: 'column', sm: 'row' }} 
+                       alignItems="center" 
+                       justifyContent="space-between"
+                       spacing={2}
+                     >
+                       <Stack direction="row" alignItems="center" spacing={1.5}>
+                         <Avatar sx={{ 
+                           bgcolor: 'primary.main',
+                           width: 40,
+                           height: 40
+                         }}>
+                           <AdminPanelSettings sx={{ fontSize: 24 }} />
+                         </Avatar>
+                         <Box>
+                           <Typography variant="body1" fontWeight={600} color="primary.dark">
+                             Super Admin Mode
+                           </Typography>
+                           <Typography variant="caption" color="text.secondary">
+                             You have access to view all job roles
+                           </Typography>
+                         </Box>
+                       </Stack>
+                       <FormControlLabel
+                         control={
+                           <Switch
+                             checked={showAllCompanies}
+                             onChange={(e) => setShowAllCompanies(e.target.checked)}
+                             color="primary"
+                           />
+                         }
+                         label={
+                           <Typography variant="body2" fontWeight={500}>
+                             {showAllCompanies ? 'Showing All Companies' : 'Showing My Company Only'}
+                           </Typography>
+                         }
+                       />
+                     </Stack>
+                   </Paper>
+                 </Fade>
+               )}
 
         {!userInfo && (
           <Alert 
@@ -610,35 +1071,38 @@ const DepartmentManagement = () => {
                 py: 8, 
                 px: 2, 
                 textAlign: 'center',
-                bgcolor: 'grey.50',
-                borderRadius: 3
+                bgcolor: 'white',
+                borderRadius: 3,
+                border: '2px dashed',
+                borderColor: 'grey.200'
               }}>
                 <Box sx={{
-                  width: 80,
-                  height: 80,
+                  width: 100,
+                  height: 100,
                   borderRadius: '50%',
                   bgcolor: 'grey.100',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   mx: 'auto',
-                  mb: 2
+                  mb: 3
                 }}>
-                  <CorporateFare sx={{ fontSize: 40, color: 'grey.400' }} />
+                  <CorporateFare sx={{ fontSize: 50, color: 'grey.400' }} />
                 </Box>
-                <Typography variant="h6" fontWeight={600} gutterBottom>
+                <Typography variant="h6" fontWeight={700} gutterBottom>
                   No Departments Found
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 4, maxWidth: 300, mx: 'auto' }}>
                   {searchTerm 
-                    ? 'No departments match your search criteria'
-                    : 'Get started by creating your first department'}
+                    ? 'No departments match your search criteria. Try different keywords.'
+                    : 'Get started by creating your first department to organize your teams.'}
                 </Typography>
                 {searchTerm ? (
                   <Button 
                     variant="outlined" 
                     onClick={handleClearSearch}
                     startIcon={<Clear />}
+                    sx={{ borderRadius: 3, px: 4 }}
                   >
                     Clear Search
                   </Button>
@@ -649,6 +1113,12 @@ const DepartmentManagement = () => {
                     onClick={() => {
                       setEditingDept(null);
                       setOpenDialog(true);
+                    }}
+                    sx={{ 
+                      borderRadius: 3, 
+                      px: 4,
+                      py: 1.2,
+                      background: 'linear-gradient(145deg, #2196f3 0%, #1976d2 100%)'
                     }}
                   >
                     Add Department
@@ -668,29 +1138,38 @@ const DepartmentManagement = () => {
           </Box>
         ) : (
           // Desktop Table View
-          <TableContainer sx={{ borderRadius: 2 }}>
+          <TableContainer 
+            sx={{ 
+              borderRadius: 2,
+              border: '1px solid',
+              borderColor: 'grey.200',
+              overflow: 'auto'
+            }}
+          >
             <Table>
               <TableHead>
-                <TableRow sx={{ bgcolor: 'grey.50' }}>
-                  <TableCell sx={{ fontWeight: 700 }}>Department Name</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Description</TableCell>
+                <TableRow sx={{ bgcolor: 'grey.100' }}>
+                  <TableCell sx={{ fontWeight: 700, fontSize: '0.9rem' }}>Department Name</TableCell>
+                  <TableCell sx={{ fontWeight: 700, fontSize: '0.9rem' }}>Description</TableCell>
                   {isSuperAdmin && showAllCompanies && (
-                    <TableCell sx={{ fontWeight: 700 }}>Company Code</TableCell>
+                    <TableCell sx={{ fontWeight: 700, fontSize: '0.9rem' }}>Company Code</TableCell>
                   )}
-                  <TableCell sx={{ fontWeight: 700 }}>Created By</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Actions</TableCell>
+                  <TableCell sx={{ fontWeight: 700, fontSize: '0.9rem' }}>Created By</TableCell>
+                  <TableCell sx={{ fontWeight: 700, fontSize: '0.9rem' }}>Created On</TableCell>
+                  <TableCell sx={{ fontWeight: 700, fontSize: '0.9rem' }}>Status</TableCell>
+                  <TableCell sx={{ fontWeight: 700, fontSize: '0.9rem' }}>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {filteredDepartments.length === 0 ? (
                   <TableRow>
                     <TableCell 
-                      colSpan={isSuperAdmin && showAllCompanies ? 5 : 4} 
+                      colSpan={isSuperAdmin && showAllCompanies ? 7 : 6} 
                       align="center"
                       sx={{ py: 8 }}
                     >
                       <Box sx={{ textAlign: 'center' }}>
-                        <CorporateFare sx={{ fontSize: 48, color: 'grey.400', mb: 2 }} />
+                        <CorporateFare sx={{ fontSize: 60, color: 'grey.300', mb: 2 }} />
                         <Typography variant="h6" fontWeight={600} gutterBottom>
                           No Departments Found
                         </Typography>
@@ -703,30 +1182,37 @@ const DepartmentManagement = () => {
                 ) : (
                   filteredDepartments
                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                    .map(dept => (
+                    .map((dept, index) => (
                       <TableRow 
                         key={dept._id} 
                         hover
                         sx={{ 
                           transition: 'all 0.2s ease',
-                          '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.04) }
+                          '&:hover': { 
+                            bgcolor: alpha(theme.palette.primary.main, 0.04),
+                            '& .action-buttons': {
+                              opacity: 1
+                            }
+                          },
+                          animation: `fadeIn 0.3s ease ${index * 0.05}s`
                         }}
                       >
                         <TableCell>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                             <Avatar sx={{ 
-                              width: 32, 
-                              height: 32, 
+                              width: 36, 
+                              height: 36, 
                               bgcolor: 'primary.50',
-                              color: 'primary.main'
+                              color: 'primary.main',
+                              borderRadius: 2
                             }}>
-                              <Business sx={{ fontSize: 18 }} />
+                              <Business sx={{ fontSize: 20 }} />
                             </Avatar>
                             <Typography fontWeight={600}>{dept.name}</Typography>
                           </Box>
                         </TableCell>
                         <TableCell>
-                          <Typography variant="body2" color="text.secondary">
+                          <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 250 }}>
                             {dept.description || '—'}
                           </Typography>
                         </TableCell>
@@ -736,9 +1222,12 @@ const DepartmentManagement = () => {
                               <Chip 
                                 label={dept.companyCode} 
                                 size="small" 
-                                color="primary" 
-                                variant="outlined"
-                                sx={{ fontWeight: 500 }}
+                                sx={{ 
+                                  bgcolor: 'primary.50',
+                                  color: 'primary.main',
+                                  fontWeight: 600,
+                                  fontSize: '0.7rem'
+                                }}
                               />
                             ) : (
                               <Typography variant="body2" color="text.disabled">
@@ -756,28 +1245,70 @@ const DepartmentManagement = () => {
                           </Box>
                         </TableCell>
                         <TableCell>
-                          <Box display="flex" gap={1}>
-                            <Tooltip title="Edit">
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <Today sx={{ fontSize: 16, color: 'grey.500' }} />
+                            <Typography variant="body2">
+                              {formatDate(dept.createdAt)}
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={dept.isActive !== false ? 'Active' : 'Inactive'}
+                            size="small"
+                            sx={{
+                              bgcolor: dept.isActive !== false ? 'success.50' : 'error.50',
+                              color: dept.isActive !== false ? 'success.main' : 'error.main',
+                              fontWeight: 600,
+                              fontSize: '0.7rem',
+                              height: 24
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Box 
+                            className="action-buttons"
+                            sx={{ 
+                              display: 'flex', 
+                              gap: 1,
+                              opacity: { xs: 1, sm: 0.7 },
+                              transition: 'opacity 0.2s ease'
+                            }}
+                          >
+                            <Tooltip title="Edit Department" arrow>
                               <IconButton 
                                 size="small" 
                                 onClick={() => handleEdit(dept)}
                                 sx={{ 
                                   color: 'primary.main',
-                                  '&:hover': { bgcolor: 'primary.50' }
+                                  bgcolor: 'primary.50',
+                                  width: 32,
+                                  height: 32,
+                                  '&:hover': { 
+                                    bgcolor: 'primary.100',
+                                    transform: 'scale(1.1)'
+                                  }
                                 }}
                               >
                                 <Edit fontSize="small" />
                               </IconButton>
                             </Tooltip>
-                            <Tooltip title="Delete">
+                            <Tooltip title="Delete Department" arrow>
                               <IconButton 
                                 size="small"
                                 onClick={() => handleDelete(dept._id)}
                                 sx={{ 
                                   color: 'error.main',
-                                  '&:hover': { bgcolor: 'error.50' }
+                                  bgcolor: 'error.50',
+                                  width: 32,
+                                  height: 32,
+                                  '&:hover': { 
+                                    bgcolor: 'error.100',
+                                    transform: 'scale(1.1)'
+                                  },
+                                  opacity: dept.isActive === false ? 0.5 : 1
                                 }}
-                                disabled={!dept.isActive}
+                                disabled={dept.isActive === false}
                               >
                                 <Delete fontSize="small" />
                               </IconButton>
@@ -806,6 +1337,7 @@ const DepartmentManagement = () => {
             }}
             rowsPerPageOptions={isMobile ? [5, 10, 25] : [5, 10, 25, 50]}
             sx={{
+              mt: 2,
               '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
                 fontSize: { xs: '0.75rem', sm: '0.875rem' }
               }
@@ -822,7 +1354,14 @@ const DepartmentManagement = () => {
                 position: 'fixed',
                 bottom: 24,
                 right: 24,
-                boxShadow: '0 8px 16px rgba(33, 150, 243, 0.4)'
+                boxShadow: '0 8px 16px rgba(33, 150, 243, 0.4)',
+                width: 56,
+                height: 56,
+                '&:hover': {
+                  transform: 'scale(1.1)',
+                  boxShadow: '0 12px 24px rgba(33, 150, 243, 0.5)'
+                },
+                transition: 'all 0.3s ease'
               }}
               onClick={() => {
                 const user = getUserFromStorage();
@@ -835,7 +1374,7 @@ const DepartmentManagement = () => {
                 setOpenDialog(true);
               }}
             >
-              <Add />
+              <Add sx={{ fontSize: 28 }} />
             </Fab>
           </Zoom>
         )}
@@ -849,8 +1388,13 @@ const DepartmentManagement = () => {
           PaperProps={{
             sx: {
               borderRadius: 3,
-              boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
-              minWidth: 180
+              boxShadow: '0 12px 32px rgba(0,0,0,0.2)',
+              minWidth: 200,
+              overflow: 'hidden',
+              '& .MuiMenuItem-root': {
+                py: 1.5,
+                px: 2
+              }
             }
           }}
         >
@@ -861,18 +1405,62 @@ const DepartmentManagement = () => {
             <ListItemIcon>
               <Edit fontSize="small" color="primary" />
             </ListItemIcon>
-            <ListItemText primary="Edit" />
+            <ListItemText 
+              primary="Edit Department"
+              secondary="Modify department details"
+              secondaryTypographyProps={{ fontSize: '0.7rem' }}
+            />
           </MenuItem>
-          <MenuItem onClick={() => {
-            handleDelete(selectedDeptMenu?._id);
-            handleMenuClose();
-          }} disabled={!selectedDeptMenu?.isActive}>
+          <Divider />
+          <MenuItem 
+            onClick={() => {
+              handleDelete(selectedDeptMenu?._id);
+              handleMenuClose();
+            }} 
+            disabled={!selectedDeptMenu?.isActive}
+            sx={{ 
+              color: 'error.main',
+              '&.Mui-disabled': { opacity: 0.5 }
+            }}
+          >
             <ListItemIcon>
               <Delete fontSize="small" color="error" />
             </ListItemIcon>
-            <ListItemText primary="Delete" />
+            <ListItemText 
+              primary="Delete Department"
+              secondary={!selectedDeptMenu?.isActive ? 'Already inactive' : 'Remove permanently'}
+              secondaryTypographyProps={{ fontSize: '0.7rem' }}
+            />
           </MenuItem>
         </Menu>
+
+        {/* CSS Animations */}
+        <style>
+          {`
+            @keyframes fadeIn {
+              from {
+                opacity: 0;
+                transform: translateY(10px);
+              }
+              to {
+                opacity: 1;
+                transform: translateY(0);
+              }
+            }
+            
+            @keyframes pulse {
+              0% {
+                box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.4);
+              }
+              70% {
+                box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
+              }
+              100% {
+                box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
+              }
+            }
+          `}
+        </style>
       </Paper>
 
       {/* Add/Edit Dialog */}
@@ -885,61 +1473,98 @@ const DepartmentManagement = () => {
         TransitionComponent={Transition}
         PaperProps={{
           sx: {
-            borderRadius: isMobile ? 0 : 3,
-            overflow: 'hidden'
+            borderRadius: isMobile ? 0 : 4,
+            overflow: 'hidden',
+            background: 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)'
           }
         }}
       >
         <DialogTitle sx={{ 
-          bgcolor: 'primary.main',
+          background: 'linear-gradient(145deg, #2196f3 0%, #1976d2 100%)',
           color: 'white',
-          py: 2.5,
-          px: 3
+          py: 3,
+          px: 3,
+          position: 'relative',
+          overflow: 'hidden'
         }}>
-          <Stack direction="row" alignItems="center" spacing={1.5}>
+          {/* Decorative elements */}
+          <Box sx={{
+            position: 'absolute',
+            top: -50,
+            right: -50,
+            width: 150,
+            height: 150,
+            borderRadius: '50%',
+            background: 'rgba(255,255,255,0.1)',
+            animation: 'float 8s ease-in-out infinite'
+          }} />
+          <Box sx={{
+            position: 'absolute',
+            bottom: -50,
+            left: -50,
+            width: 150,
+            height: 150,
+            borderRadius: '50%',
+            background: 'rgba(255,255,255,0.1)',
+            animation: 'float 10s ease-in-out infinite reverse'
+          }} />
+          
+          <Stack direction="row" alignItems="center" spacing={2} position="relative">
             <Box sx={{
-              width: 40,
-              height: 40,
+              width: 48,
+              height: 48,
               borderRadius: '50%',
               bgcolor: 'white',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              boxShadow: '0 8px 16px rgba(0,0,0,0.2)'
             }}>
               {editingDept ? (
-                <Edit sx={{ color: 'primary.main' }} />
+                <Edit sx={{ color: 'primary.main', fontSize: 26 }} />
               ) : (
-                <Add sx={{ color: 'primary.main' }} />
+                <Add sx={{ color: 'primary.main', fontSize: 26 }} />
               )}
             </Box>
             <Box>
               <Typography variant="h6" fontWeight={700}>
-                {editingDept ? 'Edit Department' : 'Add New Department'}
+                {editingDept ? 'Edit Department' : 'Create New Department'}
               </Typography>
-              {userInfo?.companyCode && !isSuperAdmin && (
-                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.9)' }}>
-                  Company: {userInfo.companyCode}
-                </Typography>
-              )}
+              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.9)' }}>
+                {editingDept 
+                  ? 'Update department information' 
+                  : 'Add a new department to organize your teams'}
+              </Typography>
             </Box>
           </Stack>
         </DialogTitle>
         
-        <DialogContent sx={{ p: { xs: 2, sm: 3 } }}>
+        <DialogContent sx={{ p: { xs: 2.5, sm: 3.5 } }}>
           <Box pt={1}>
-            {isSuperAdmin && (
-              <Alert 
-                severity="info" 
+            {/* User Info Banner */}
+            {userInfo?.companyCode && !isSuperAdmin && (
+              <Paper 
+                variant="outlined" 
                 sx={{ 
+                  p: 1.5, 
                   mb: 3, 
                   borderRadius: 2,
-                  '& .MuiAlert-message': { fontSize: '0.875rem' }
+                  bgcolor: 'primary.50',
+                  borderColor: 'primary.200'
                 }}
               >
-                {editingDept?.companyCode 
-                  ? `Editing department from ${editingDept.companyCode}`
-                  : 'Create departments for any company or leave company fields empty for global departments'}
-              </Alert>
+                <Stack direction="row" alignItems="center" spacing={1.5}>
+                  <Apartment sx={{ color: 'primary.main', fontSize: 22 }} />
+                  <Box>
+                    <Typography variant="body2" fontWeight={600} color="primary.dark">
+                      Creating department for {userInfo.companyCode}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      This department will be associated with your company
+                    </Typography>
+                  </Box>
+                </Stack>
+              </Paper>
             )}
             
             <TextField
@@ -953,11 +1578,19 @@ const DepartmentManagement = () => {
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <Business sx={{ fontSize: 20, color: 'action.active' }} />
+                    <Business sx={{ fontSize: 20, color: 'primary.main' }} />
                   </InputAdornment>
                 )
               }}
-              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+              sx={{ 
+                '& .MuiOutlinedInput-root': { 
+                  borderRadius: 2,
+                  '&:hover fieldset': {
+                    borderColor: 'primary.main',
+                  }
+                },
+                mb: 2
+              }}
             />
             
             <TextField
@@ -965,68 +1598,34 @@ const DepartmentManagement = () => {
               fullWidth
               margin="normal"
               multiline
-              rows={isMobile ? 2 : 3}
+              rows={isMobile ? 3 : 4}
               value={formData.description}
               onChange={(e) => setFormData({...formData, description: e.target.value})}
               size={isMobile ? "small" : "medium"}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <Description sx={{ fontSize: 20, color: 'action.active' }} />
+                    <Description sx={{ fontSize: 20, color: 'grey.500' }} />
                   </InputAdornment>
                 )
               }}
-              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+              placeholder="Describe the purpose of this department (optional)"
+              sx={{ 
+                '& .MuiOutlinedInput-root': { 
+                  borderRadius: 2,
+                  alignItems: 'flex-start'
+                },
+                mb: 1
+              }}
             />
-            
-            {isSuperAdmin && !editingDept && (
-              <Box mt={2}>
-                <Divider sx={{ my: 2 }}>
-                  <Chip label="Optional Company Assignment" size="small" />
-                </Divider>
-                
-                <TextField
-                  label="Company ID"
-                  fullWidth
-                  margin="normal"
-                  value={formData.company}
-                  onChange={(e) => setFormData({...formData, company: e.target.value})}
-                  placeholder="Leave empty for global"
-                  size={isMobile ? "small" : "medium"}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <CorporateFare sx={{ fontSize: 20, color: 'action.active' }} />
-                      </InputAdornment>
-                    )
-                  }}
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-                />
-                <TextField
-                  label="Company Code"
-                  fullWidth
-                  margin="normal"
-                  value={formData.companyCode}
-                  onChange={(e) => setFormData({...formData, companyCode: e.target.value})}
-                  placeholder="e.g., CIIS"
-                  size={isMobile ? "small" : "medium"}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Code sx={{ fontSize: 20, color: 'action.active' }} />
-                      </InputAdornment>
-                    )
-                  }}
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-                />
-              </Box>
-            )}
+
+            {/* Removed Optional Company Assignment section */}
           </Box>
         </DialogContent>
         
         <DialogActions sx={{ 
           p: 3, 
-          pt: 0,
+          pt: 2,
           borderTop: '1px solid',
           borderColor: 'grey.200',
           bgcolor: 'grey.50'
@@ -1038,10 +1637,16 @@ const DepartmentManagement = () => {
               disabled={loading}
               sx={{ 
                 borderRadius: 2,
-                px: 3,
+                px: 4,
                 py: 1,
                 fontSize: '0.875rem',
-                fontWeight: 600
+                fontWeight: 600,
+                borderColor: 'grey.400',
+                color: 'text.primary',
+                '&:hover': {
+                  borderColor: 'grey.600',
+                  bgcolor: 'grey.100'
+                }
               }}
             >
               Cancel
@@ -1052,19 +1657,43 @@ const DepartmentManagement = () => {
               disabled={loading || !formData.name.trim()}
               sx={{ 
                 borderRadius: 2,
-                px: 4,
+                px: 5,
                 py: 1,
                 fontSize: '0.875rem',
                 fontWeight: 700,
                 background: 'linear-gradient(145deg, #2196f3 0%, #1976d2 100%)',
+                boxShadow: '0 4px 12px rgba(33, 150, 243, 0.3)',
                 '&:hover': {
                   background: 'linear-gradient(145deg, #1976d2 0%, #1565c0 100%)',
+                  boxShadow: '0 6px 16px rgba(33, 150, 243, 0.4)',
                   transform: 'translateY(-2px)'
                 },
-                transition: 'all 0.3s ease'
+                transition: 'all 0.3s ease',
+                position: 'relative',
+                overflow: 'hidden',
+                '&::after': {
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  left: '-100%',
+                  width: '100%',
+                  height: '100%',
+                  background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
+                  transition: 'left 0.5s ease',
+                },
+                '&:hover::after': {
+                  left: '100%'
+                }
               }}
             >
-              {loading ? 'Saving...' : editingDept ? 'Update' : 'Create'}
+              {loading ? (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <CircularProgress size={16} color="inherit" />
+                  <span>Saving...</span>
+                </Box>
+              ) : (
+                editingDept ? 'Update Department' : 'Create Department'
+              )}
             </Button>
           </Stack>
         </DialogActions>

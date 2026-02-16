@@ -32,8 +32,21 @@ import {
   List,
   ListItem,
   ListItemIcon,
-  ListItemText
+  ListItemText,
+  Badge,
+  Avatar,
+  Fab,
+  Zoom,
+  useTheme,
+  useMediaQuery,
+  Stepper,
+  Step,
+  StepLabel,
+  StepContent,
+  LinearProgress,
+  Stack 
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import {
   Add as AddIcon,
   Edit as EditIcon,
@@ -63,7 +76,22 @@ import {
   Key as KeyIcon,
   Visibility as VisibilityIcon,
   CheckCircle as CheckCircleIcon,
-  Refresh as RefreshIcon
+  Refresh as RefreshIcon,
+  ArrowBack as ArrowBackIcon,
+  ArrowForward as ArrowForwardIcon,
+  CheckCircleOutline as CheckCircleOutlineIcon,
+  CancelOutlined as CancelOutlinedIcon,
+  InfoOutlined as InfoOutlinedIcon,
+  Settings as SettingsIcon,
+  MenuBook as MenuBookIcon,
+  FolderSpecial as FolderSpecialIcon,
+  Assignment as AssignmentIcon,
+  Work as WorkIcon,
+  People as PeopleIcon,
+  Forum as ForumIcon,
+  Analytics as AnalyticsIcon,
+  Receipt as ReceiptIcon,
+  Assessment as AssessmentIcon
 } from '@mui/icons-material';
 import axios from "../../utils/axiosConfig";
 import axiosInstance from "../../utils/axiosConfig";
@@ -90,10 +118,46 @@ const APP_ROUTES = [
   { path: 'task-management', name: 'Create Task', icon: 'Task', category: 'tasks' },
   { path: 'employee-meeting', name: 'Employee Meeting', icon: 'VideoCall', category: 'meetings' },
   { path: 'client-meeting', name: 'Client Meeting', icon: 'VideoCall', category: 'meetings' },
-    
 ];
 
+// Helper function to get icon component
+const getIconComponent = (iconName) => {
+  const icons = {
+    Dashboard: <DashboardIcon />,
+    CalendarToday: <CalendarIcon />,
+    EventNote: <EventNoteIcon />,
+    Computer: <ComputerIcon />,
+    Task: <TaskIcon />,
+    Groups: <GroupsIcon />,
+    Notifications: <NotificationsIcon />,
+    VideoCall: <VideoCallIcon />,
+    Person: <PersonIcon />,
+    ClientIcon: <ClientIcon />,
+    ListAlt: <ListAltIcon />,
+    MeetingRoom: <MeetingRoomIcon />,
+    ProjectIcon: <ProjectIcon />,
+    PersonAdd: <PersonAddIcon />,
+    Key: <KeyIcon />,
+    Menu: <MenuIcon />,
+    Settings: <SettingsIcon />,
+    MenuBook: <MenuBookIcon />,
+    FolderSpecial: <FolderSpecialIcon />,
+    Assignment: <AssignmentIcon />,
+    Work: <WorkIcon />,
+    People: <PeopleIcon />,
+    Forum: <ForumIcon />,
+    Analytics: <AnalyticsIcon />,
+    Receipt: <ReceiptIcon />,
+    Assessment: <AssessmentIcon />
+  };
+  return icons[iconName] || <DashboardIcon />;
+};
+
 const SidebarManagement = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
+
   // Get company from localStorage - MULTIPLE FORMAT SUPPORT
   const getCompanyFromLocalStorage = () => {
     try {
@@ -166,6 +230,7 @@ const SidebarManagement = () => {
   const [previewConfig, setPreviewConfig] = useState(null);
   const [openPreview, setOpenPreview] = useState(false);
   const [customRoles, setCustomRoles] = useState([]);
+  const [activeStep, setActiveStep] = useState(0);
 
   // Initialize with your routes and get company from localStorage
   useEffect(() => {
@@ -483,6 +548,7 @@ const SidebarManagement = () => {
     setSelectedRole('');
     setSelectedItems([]);
     setJobRoles([]);
+    setActiveStep(1);
   };
 
   // Handle role selection
@@ -493,6 +559,7 @@ const SidebarManagement = () => {
       return;
     }
     setSelectedRole(roleId);
+    setActiveStep(2);
     
     // Load existing config for this combination
     if (company && company._id && selectedDepartment && roleId) {
@@ -542,6 +609,7 @@ const SidebarManagement = () => {
       setSelectedRole(roleId);
       setSelectedItems(config.menuItems.map(item => item.id));
       setActiveTab(0);
+      setActiveStep(2);
       
       // Show success message
       setSnackbar({
@@ -817,6 +885,7 @@ const SidebarManagement = () => {
         
         // Auto-select the new role
         setSelectedRole(newRole._id);
+        setActiveStep(2);
         
         setSnackbar({
           open: true,
@@ -847,30 +916,6 @@ const SidebarManagement = () => {
     if (config && config.roleName) return config.roleName;
     
     return roleId; // Return ID if name not found
-  };
-
-  // Render icon component
-  const renderIcon = (iconName) => {
-    const iconComponents = {
-      Dashboard: <DashboardIcon />,
-      CalendarToday: <CalendarIcon />,
-      EventNote: <EventNoteIcon />,
-      Computer: <ComputerIcon />,
-      Task: <TaskIcon />,
-      Groups: <GroupsIcon />,
-      Notifications: <NotificationsIcon />,
-      VideoCall: <VideoCallIcon />,
-      Person: <PersonIcon />,
-      ClientIcon: <ClientIcon />,
-      ListAlt: <ListAltIcon />,
-      MeetingRoom: <MeetingRoomIcon />,
-      ProjectIcon: <ProjectIcon />,
-      PersonAdd: <PersonAddIcon />,
-      Key: <KeyIcon />,
-      Menu: <MenuIcon />
-    };
-    
-    return iconComponents[iconName] || <DashboardIcon />;
   };
 
   // Get category display name
@@ -914,78 +959,146 @@ const SidebarManagement = () => {
     });
   };
 
-  return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom sx={{ mb: 4, color: 'primary.main', fontWeight: 600 }}>
-        <MenuIcon sx={{ mr: 2, verticalAlign: 'middle' }} />
-        Sidebar Menu Configuration
-      </Typography>
+  // Get progress percentage
+  const getProgressPercentage = () => {
+    let steps = 0;
+    if (company) steps++;
+    if (selectedDepartment) steps++;
+    if (selectedRole) steps++;
+    if (selectedItems.length > 0) steps++;
+    return (steps / 4) * 100;
+  };
 
-      {/* Current Company Display or Error */}
-      {/* {company ? (
+  // Handle next step
+  const handleNext = () => {
+    setActiveStep((prevActiveStep) => prevActiveStep + 1);
+  };
+
+  // Handle back step
+  const handleBack = () => {
+    setActiveStep((prevActiveStep) => prevActiveStep - 1);
+  };
+
+  return (
+    <Box sx={{ 
+      p: { xs: 1.5, sm: 2, md: 3 },
+      minHeight: '100vh',
+      bgcolor: '#f8fafc'
+    }}>
+      {/* Header */}
+      <Paper 
+        elevation={0}
+        sx={{
+          p: { xs: 2, sm: 3 },
+          mb: 3,
+          borderRadius: { xs: 2, sm: 3 },
+          background: 'linear-gradient(145deg, #1a237e 0%, #0d47a1 50%, #01579b 100%)',
+          color: 'white',
+          position: 'relative',
+          overflow: 'hidden'
+        }}
+      >
+        <Box sx={{
+          position: 'absolute',
+          top: -50,
+          right: -50,
+          width: 200,
+          height: 200,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)',
+        }} />
+        <Box sx={{
+          position: 'absolute',
+          bottom: -50,
+          left: -50,
+          width: 250,
+          height: 250,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)',
+        }} />
+        
+        <Stack direction="row" alignItems="center" spacing={2} position="relative">
+          <Avatar sx={{ 
+            bgcolor: 'white', 
+            width: { xs: 48, sm: 56 }, 
+            height: { xs: 48, sm: 56 },
+            boxShadow: '0 8px 16px rgba(0,0,0,0.2)'
+          }}>
+            <MenuBookIcon sx={{ color: '#0d47a1', fontSize: { xs: 28, sm: 32 } }} />
+          </Avatar>
+          <Box>
+            <Typography variant={isMobile ? "h5" : "h4"} fontWeight={700}>
+              Sidebar Menu Configuration
+            </Typography>
+            <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5 }}>
+              Configure custom sidebar menus for different departments and roles
+            </Typography>
+          </Box>
+        </Stack>
+      </Paper>
+
+      {/* Current Company Display */}
+      {company ? (
         <Paper sx={{ 
           p: 2, 
           mb: 3, 
-          bgcolor: 'primary.light', 
           borderRadius: 2,
+          bgcolor: 'white',
           border: '1px solid',
-          borderColor: 'primary.main'
+          borderColor: 'primary.200',
+          boxShadow: '0 4px 12px rgba(33, 150, 243, 0.1)'
         }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', flex: 1 }}>
-              <BusinessIcon sx={{ mr: 2, fontSize: 'large', color: 'primary.main' }} />
-              <Box sx={{ flex: 1 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <Typography variant="h6" sx={{ color: 'primary.dark' }}>
-                    {company.companyName}
-                  </Typography>
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={12} sm={6} md={4}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Avatar sx={{ bgcolor: 'primary.50', color: 'primary.main' }}>
+                  <BusinessIcon />
+                </Avatar>
+                <Box>
+                  <Typography variant="body2" color="text.secondary">Company</Typography>
+                  <Typography variant="h6" fontWeight={600}>{company.companyName}</Typography>
+                </Box>
+              </Box>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Avatar sx={{ bgcolor: 'secondary.50', color: 'secondary.main' }}>
+                  <CodeIcon />
+                </Avatar>
+                <Box>
+                  <Typography variant="body2" color="text.secondary">Company Code</Typography>
+                  <Typography variant="h6" fontWeight={600}>{company.companyCode}</Typography>
+                </Box>
+              </Box>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Avatar sx={{ bgcolor: 'success.50', color: 'success.main' }}>
+                  <CheckCircleIcon />
+                </Avatar>
+                <Box>
+                  <Typography variant="body2" color="text.secondary">Status</Typography>
                   <Chip 
-                    label={company.companyCode}
-                    size="small"
-                    color="secondary"
-                    sx={{ fontWeight: 'bold' }}
-                  />
-                  <Chip 
-                    label={company.isActive ? 'Active' : 'Inactive'}
+                    label={company.isActive ? 'Active' : 'Inactive'} 
                     size="small"
                     color={company.isActive ? 'success' : 'error'}
-                    variant="outlined"
+                    sx={{ fontWeight: 600 }}
                   />
                 </Box>
-                <Grid container spacing={2} sx={{ mt: 1 }}>
-                  <Grid item xs={12} md={6}>
-                    <Typography variant="body2" color="text.secondary">
-                      <strong>Company ID:</strong> {company._id}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      <strong>Domain:</strong> {company.companyDomain}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      <strong>Owner:</strong> {company.ownerName}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <Typography variant="body2" color="text.secondary">
-                      <strong>Created:</strong> {formatDate(company.createdAt)}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      <strong>Subscription Expiry:</strong> {formatDate(company.subscriptionExpiry)}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      <strong>Login URL:</strong> {company.loginUrl}
-                    </Typography>
-                  </Grid>
-                </Grid>
               </Box>
-            </Box>
-            <Chip 
-              label="Current Company"
-              color="primary"
-              variant="outlined"
-              icon={<BusinessIcon />}
-              sx={{ ml: 2 }}
-            />
-          </Box>
+            </Grid>
+            <Grid item xs={12} sm={6} md={2}>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<RefreshIcon />}
+                onClick={() => fetchExistingConfigs(company._id)}
+                disabled={loading.fetching}
+              >
+                {loading.fetching ? 'Loading...' : 'Refresh'}
+              </Button>
+            </Grid>
+          </Grid>
         </Paper>
       ) : (
         <Alert 
@@ -1003,44 +1116,115 @@ const SidebarManagement = () => {
         >
           Company information not found. Please login again or enter company ID manually.
         </Alert>
-      )} */}
+      )}
+
+      {/* Progress Bar */}
+      {company && (
+        <Box sx={{ mb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+            <Typography variant="body2" fontWeight={600} color="text.secondary">
+              Configuration Progress
+            </Typography>
+            <Typography variant="body2" fontWeight={600} color="primary.main">
+              {Math.round(getProgressPercentage())}%
+            </Typography>
+          </Box>
+          <LinearProgress 
+            variant="determinate" 
+            value={getProgressPercentage()} 
+            sx={{ 
+              height: 8, 
+              borderRadius: 4,
+              bgcolor: 'grey.200',
+              '& .MuiLinearProgress-bar': {
+                borderRadius: 4,
+                background: 'linear-gradient(90deg, #2196f3, #64b5f6)'
+              }
+            }}
+          />
+        </Box>
+      )}
 
       {/* Tabs */}
       {company ? (
         <>
-          <Paper sx={{ mb: 3, borderRadius: 2 }}>
+          <Paper sx={{ mb: 3, borderRadius: 2, overflow: 'hidden' }}>
             <Tabs
               value={activeTab}
               onChange={(e, newValue) => setActiveTab(newValue)}
               variant="fullWidth"
+              sx={{
+                '& .MuiTab-root': {
+                  py: 2,
+                  fontWeight: 600
+                }
+              }}
             >
-              <Tab label="Configure Menu" />
-              <Tab label="Existing Configurations" />
+              <Tab 
+                label="Configure Menu" 
+                icon={<SettingsIcon />} 
+                iconPosition="start"
+              />
+              <Tab 
+                label={`Existing Configurations (${existingConfigs.length})`} 
+                icon={<FolderSpecialIcon />} 
+                iconPosition="start"
+              />
             </Tabs>
           </Paper>
 
           {/* Tab 1: Configuration */}
           {activeTab === 0 && (
             <>
-              {/* Selection Card */}
-              <Card sx={{ mb: 4, boxShadow: 3, borderRadius: 2 }}>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom sx={{ color: 'text.secondary', mb: 3 }}>
-                    Step 1: Select Department & Role
-                  </Typography>
-                  
-                  <Grid container spacing={3}>
-                    {/* Department Selection */}
-                    <Grid item xs={12} md={6}>
-                      <FormControl fullWidth variant="outlined" size="small" disabled={!company || loading.departments}>
-                        <InputLabel>Department</InputLabel>
+              {/* Selection Stepper */}
+              <Paper sx={{ p: 3, mb: 3, borderRadius: 2 }}>
+                <Stepper activeStep={activeStep} orientation={isMobile ? "vertical" : "horizontal"}>
+                  <Step>
+                    <StepLabel>Select Department</StepLabel>
+                  </Step>
+                  <Step>
+                    <StepLabel>Select Role</StepLabel>
+                  </Step>
+                  <Step>
+                    <StepLabel>Configure Menu Items</StepLabel>
+                  </Step>
+                </Stepper>
+              </Paper>
+
+              {/* Selection Cards */}
+              <Grid container spacing={3} sx={{ mb: 3 }}>
+                {/* Department Selection */}
+                <Grid item xs={12} md={6}>
+                  <Card sx={{ 
+                    height: '100%',
+                    borderRadius: 2,
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                    border: '1px solid',
+                    borderColor: selectedDepartment ? 'primary.200' : 'grey.200',
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      boxShadow: '0 8px 24px rgba(33, 150, 243, 0.15)',
+                      borderColor: 'primary.200'
+                    }
+                  }}>
+                    <CardContent>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                        <Avatar sx={{ bgcolor: 'primary.50', mr: 1.5 }}>
+                          <ApartmentIcon color="primary" />
+                        </Avatar>
+                        <Typography variant="h6" fontWeight={600}>
+                          Department
+                        </Typography>
+                      </Box>
+                      <FormControl fullWidth variant="outlined" size="medium" disabled={!company || loading.departments}>
+                        <InputLabel>Select Department</InputLabel>
                         <Select
                           value={selectedDepartment}
                           onChange={handleDepartmentChange}
-                          label="Department"
+                          label="Select Department"
                         >
                           <MenuItem value="">
-                            <em>Select Department</em>
+                            <em>Choose Department</em>
                           </MenuItem>
                           {loading.departments ? (
                             <MenuItem disabled>
@@ -1064,29 +1248,62 @@ const SidebarManagement = () => {
                               </MenuItem>
                             ))
                           )}
-                          {departments.length === 0 && !loading.departments && company && (
-                            <MenuItem disabled>No departments found</MenuItem>
-                          )}
                         </Select>
                       </FormControl>
-                      {company && !loading.departments && departments.length > 0 && (
-                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                          {departments.length} department{departments.length !== 1 ? 's' : ''} found
-                        </Typography>
+                      {departments.length > 0 && (
+                        <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Chip 
+                            label={`${departments.length} departments available`} 
+                            size="small"
+                            color="primary"
+                            variant="outlined"
+                          />
+                          {selectedDepartment && (
+                            <Chip 
+                              icon={<CheckCircleIcon />}
+                              label="Selected"
+                              size="small"
+                              color="success"
+                            />
+                          )}
+                        </Box>
                       )}
-                    </Grid>
+                    </CardContent>
+                  </Card>
+                </Grid>
 
-                    {/* Role Selection */}
-                    <Grid item xs={12} md={6}>
-                      <FormControl fullWidth variant="outlined" size="small" disabled={!selectedDepartment}>
-                        <InputLabel>Role</InputLabel>
+                {/* Role Selection */}
+                <Grid item xs={12} md={6}>
+                  <Card sx={{ 
+                    height: '100%',
+                    borderRadius: 2,
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                    border: '1px solid',
+                    borderColor: selectedRole ? 'primary.200' : 'grey.200',
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      boxShadow: '0 8px 24px rgba(33, 150, 243, 0.15)',
+                      borderColor: 'primary.200'
+                    }
+                  }}>
+                    <CardContent>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                        <Avatar sx={{ bgcolor: 'secondary.50', mr: 1.5 }}>
+                          <SecurityIcon color="secondary" />
+                        </Avatar>
+                        <Typography variant="h6" fontWeight={600}>
+                          Role
+                        </Typography>
+                      </Box>
+                      <FormControl fullWidth variant="outlined" size="medium" disabled={!selectedDepartment}>
+                        <InputLabel>Select Role</InputLabel>
                         <Select
                           value={selectedRole}
                           onChange={handleRoleChange}
-                          label="Role"
+                          label="Select Role"
                         >
                           <MenuItem value="">
-                            <em>Select Role</em>
+                            <em>Choose Role</em>
                           </MenuItem>
                           {loading.roles ? (
                             <MenuItem disabled>
@@ -1097,7 +1314,7 @@ const SidebarManagement = () => {
                             getAllAvailableRoles().map((role) => (
                               <MenuItem key={role._id} value={role._id}>
                                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                  <SecurityIcon sx={{ mr: 1.5, fontSize: 'small', color: 'primary.main' }} />
+                                  <SecurityIcon sx={{ mr: 1.5, fontSize: 'small', color: 'secondary.main' }} />
                                   <Box>
                                     <Typography variant="body2">
                                       {role.name}
@@ -1119,9 +1336,6 @@ const SidebarManagement = () => {
                               </MenuItem>
                             ))
                           )}
-                          {getAllAvailableRoles().length === 0 && !loading.roles && selectedDepartment && (
-                            <MenuItem disabled>No roles found</MenuItem>
-                          )}
                           <Divider />
                           <MenuItem value="custom">
                             <Box sx={{ display: 'flex', alignItems: 'center', color: 'primary.main' }}>
@@ -1130,107 +1344,101 @@ const SidebarManagement = () => {
                             </Box>
                           </MenuItem>
                         </Select>
-                        <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                      </FormControl>
+                      {selectedDepartment && (
+                        <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Chip 
+                            label={`${getAllAvailableRoles().length} roles available`} 
+                            size="small"
+                            color="secondary"
+                            variant="outlined"
+                          />
                           <Button
                             size="small"
                             startIcon={<RefreshIcon />}
                             onClick={handleRefreshRoles}
-                            disabled={!selectedDepartment || loading.roles}
-                            variant="outlined"
+                            disabled={loading.roles}
+                            variant="text"
                           >
-                            Refresh Roles
+                            Refresh
                           </Button>
-                        </Box>
-                      </FormControl>
-                      {selectedDepartment && !loading.roles && (
-                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                          {getAllAvailableRoles().length} role{getAllAvailableRoles().length !== 1 ? 's' : ''} available
-                        </Typography>
-                      )}
-                    </Grid>
-
-                    {/* Selected Combination Display */}
-                    {company && selectedDepartment && selectedRole && (
-                      <Grid item xs={12}>
-                        <Paper sx={{ 
-                          p: 2, 
-                          bgcolor: 'primary.light', 
-                          borderRadius: 1,
-                          border: '1px solid',
-                          borderColor: 'primary.main'
-                        }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <Box>
-                              <Typography variant="subtitle2" color="primary.dark">
-                                Configuring for:
-                              </Typography>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 0.5 }}>
-                                <Chip 
-                                  icon={<ApartmentIcon />}
-                                  label={getDepartmentName(selectedDepartment)} 
-                                  size="small"
-                                  color="primary"
-                                />
-                                <Chip 
-                                  icon={<SecurityIcon />}
-                                  label={getRoleNameById(selectedRole)} 
-                                  size="small"
-                                  color="primary"
-                                />
-                              </Box>
-                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                                Company: {company.companyName} ({company.companyCode}) • Role ID: {selectedRole} • {selectedItems.length} menu items selected
-                              </Typography>
-                            </Box>
-                            <Button
-                              variant="contained"
-                              startIcon={<SaveIcon />}
-                              onClick={handleSave}
-                              disabled={loading.saving || selectedItems.length === 0}
+                          {selectedRole && (
+                            <Chip 
+                              icon={<CheckCircleIcon />}
+                              label="Selected"
                               size="small"
-                            >
-                              {loading.saving ? <CircularProgress size={20} /> : 'Save Configuration'}
-                            </Button>
-                          </Box>
-                        </Paper>
-                      </Grid>
-                    )}
-                  </Grid>
-                </CardContent>
-              </Card>
+                              color="success"
+                            />
+                          )}
+                        </Box>
+                      )}
+                    </CardContent>
+                  </Card>
+                </Grid>
+              </Grid>
 
               {/* Menu Items Selection */}
               {company && selectedDepartment && selectedRole && (
-                <Card sx={{ mb: 4, boxShadow: 3, borderRadius: 2 }}>
-                  <CardContent>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                      <Typography variant="h6">
-                        Step 2: Select Menu Items
-                        <Chip 
-                          label={`${selectedItems.length} selected`} 
-                          color="primary" 
-                          size="small"
-                          sx={{ ml: 2 }}
-                        />
-                      </Typography>
+                <Card sx={{ 
+                  mb: 4, 
+                  borderRadius: 2,
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+                  overflow: 'hidden'
+                }}>
+                  <CardContent sx={{ p: 3 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+                      <Box>
+                        <Typography variant="h6" fontWeight={600}>
+                          Menu Items Configuration
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                          Select the menu items you want to display for this role
+                        </Typography>
+                      </Box>
                       
-                      <TextField
-                        size="small"
-                        placeholder="Search pages..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        sx={{ width: 300 }}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <SearchIcon />
-                            </InputAdornment>
-                          ),
-                        }}
-                      />
+                      <Badge 
+                        badgeContent={selectedItems.length} 
+                        color="primary"
+                        sx={{ '& .MuiBadge-badge': { fontWeight: 600 } }}
+                      >
+                        <Chip 
+                          icon={<CheckCircleOutlineIcon />}
+                          label="Selected Items"
+                          variant="outlined"
+                          color="primary"
+                        />
+                      </Badge>
                     </Box>
 
-                    <Divider sx={{ mb: 3 }} />
+                    {/* Search Bar */}
+                    <TextField
+                      fullWidth
+                      size="small"
+                      placeholder="Search menu items..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      sx={{ 
+                        mb: 3,
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 3,
+                          bgcolor: 'white'
+                        }
+                      }}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <SearchIcon color="action" />
+                          </InputAdornment>
+                        ),
+                        endAdornment: searchTerm && (
+                          <InputAdornment position="end">
+                            <IconButton size="small" onClick={() => setSearchTerm('')}>
+                              <CancelOutlinedIcon fontSize="small" />
+                            </IconButton>
+                          </InputAdornment>
+                        )
+                      }}
+                    />
 
                     {/* Menu Items by Category */}
                     {Object.entries(groupedPages).map(([category, pages]) => {
@@ -1253,16 +1461,16 @@ const SidebarManagement = () => {
                         <Box key={category} sx={{ mb: 3 }}>
                           {/* Category Header */}
                           <Paper 
-                            elevation={1}
+                            elevation={0}
                             sx={{
                               p: 1.5,
                               mb: 2,
                               cursor: 'pointer',
-                              bgcolor: 'background.default',
+                              bgcolor: alpha(theme.palette.primary.main, 0.04),
                               border: '1px solid',
                               borderColor: 'divider',
-                              borderRadius: 1,
-                              '&:hover': { bgcolor: 'action.hover' }
+                              borderRadius: 2,
+                              '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.08) }
                             }}
                             onClick={() => toggleCategory(category)}
                           >
@@ -1281,7 +1489,7 @@ const SidebarManagement = () => {
                                   label={`${categorySelectedCount}/${filteredCategoryPages.length}`}
                                   size="small"
                                   color={isAllSelected ? "success" : "default"}
-                                  sx={{ ml: 2 }}
+                                  sx={{ ml: 2, fontWeight: 600 }}
                                 />
                               </Box>
                               <Button
@@ -1291,6 +1499,7 @@ const SidebarManagement = () => {
                                   e.stopPropagation();
                                   handleSelectAllCategory(category);
                                 }}
+                                sx={{ borderRadius: 2 }}
                               >
                                 {isAllSelected ? 'Deselect All' : 'Select All'}
                               </Button>
@@ -1305,32 +1514,34 @@ const SidebarManagement = () => {
                                 return (
                                   <Grid item xs={12} sm={6} md={4} lg={3} key={page.id}>
                                     <Paper
-                                      elevation={isSelected ? 3 : 1}
+                                      elevation={isSelected ? 2 : 1}
                                       sx={{
                                         p: 2,
                                         cursor: 'pointer',
-                                        border: '1px solid',
-                                        borderColor: isSelected ? 'primary.main' : 'divider',
-                                        bgcolor: isSelected ? 'primary.light' : 'background.paper',
+                                        border: '2px solid',
+                                        borderColor: isSelected ? 'primary.main' : 'transparent',
+                                        bgcolor: isSelected ? alpha(theme.palette.primary.main, 0.04) : 'background.paper',
                                         transition: 'all 0.2s',
+                                        borderRadius: 2,
+                                        position: 'relative',
+                                        overflow: 'hidden',
                                         '&:hover': {
                                           transform: 'translateY(-2px)',
-                                          boxShadow: 3
-                                        },
-                                        position: 'relative'
+                                          boxShadow: 3,
+                                          borderColor: isSelected ? 'primary.main' : 'primary.light'
+                                        }
                                       }}
                                       onClick={() => handleMenuItemToggle(page.id)}
                                     >
                                       {isSelected && (
-                                        <CheckCircleIcon 
-                                          sx={{ 
-                                            position: 'absolute', 
-                                            top: 8, 
-                                            right: 8, 
-                                            color: 'success.main',
-                                            fontSize: '1rem'
-                                          }} 
-                                        />
+                                        <Box sx={{
+                                          position: 'absolute',
+                                          top: 8,
+                                          right: 8,
+                                          color: 'success.main'
+                                        }}>
+                                          <CheckCircleIcon fontSize="small" />
+                                        </Box>
                                       )}
                                       <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                                         <Checkbox
@@ -1344,7 +1555,7 @@ const SidebarManagement = () => {
                                           alignItems: 'center',
                                           color: isSelected ? 'primary.main' : 'text.primary'
                                         }}>
-                                          {renderIcon(page.icon)}
+                                          {getIconComponent(page.icon)}
                                           <Typography variant="body2" sx={{ fontWeight: 500, ml: 1 }}>
                                             {page.name}
                                           </Typography>
@@ -1368,6 +1579,42 @@ const SidebarManagement = () => {
                       );
                     })}
                   </CardContent>
+                  
+                  {/* Save Button at Bottom */}
+                  <CardActions sx={{ 
+                    p: 3, 
+                    pt: 0,
+                    borderTop: '1px solid',
+                    borderColor: 'grey.200',
+                    bgcolor: 'grey.50',
+                    display: 'flex',
+                    justifyContent: 'flex-end'
+                  }}>
+                    <Button
+                      variant="contained"
+                      size="large"
+                      onClick={handleSave}
+                      disabled={loading.saving || selectedItems.length === 0}
+                      startIcon={loading.saving ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
+                      sx={{ 
+                        px: 6,
+                        py: 1.5,
+                        fontSize: '1rem',
+                        fontWeight: 600,
+                        borderRadius: 3,
+                        background: 'linear-gradient(145deg, #2196f3 0%, #1976d2 100%)',
+                        boxShadow: '0 8px 16px rgba(33, 150, 243, 0.3)',
+                        '&:hover': {
+                          background: 'linear-gradient(145deg, #1976d2 0%, #1565c0 100%)',
+                          boxShadow: '0 12px 24px rgba(33, 150, 243, 0.4)',
+                          transform: 'translateY(-2px)'
+                        },
+                        transition: 'all 0.3s ease'
+                      }}
+                    >
+                      {loading.saving ? 'Saving Configuration...' : 'Save Configuration'}
+                    </Button>
+                  </CardActions>
                 </Card>
               )}
             </>
@@ -1375,31 +1622,29 @@ const SidebarManagement = () => {
 
           {/* Tab 2: Existing Configurations */}
           {activeTab === 1 && (
-            <Card sx={{ boxShadow: 3, borderRadius: 2 }}>
-              <CardContent>
+            <Card sx={{ 
+              borderRadius: 2,
+              boxShadow: '0 8px 24px rgba(0,0,0,0.08)'
+            }}>
+              <CardContent sx={{ p: 3 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                  <Typography variant="h6">
-                    Existing Menu Configurations
-                    {existingConfigs.length > 0 && (
-                      <Chip 
-                        label={`${existingConfigs.length} configs`} 
-                        size="small" 
-                        color="primary"
-                        sx={{ ml: 2 }}
-                      />
-                    )}
-                  </Typography>
-                  <Box sx={{ display: 'flex', gap: 2 }}>
-                    <Button
-                      variant="outlined"
-                      startIcon={<RefreshIcon />}
-                      onClick={() => company && company._id && fetchExistingConfigs(company._id)}
-                      disabled={loading.fetching}
-                      size="small"
-                    >
-                      {loading.fetching ? <CircularProgress size={20} /> : 'Refresh'}
-                    </Button>
+                  <Box>
+                    <Typography variant="h6" fontWeight={600}>
+                      Existing Configurations
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Manage and edit existing sidebar configurations
+                    </Typography>
                   </Box>
+                  <Button
+                    variant="outlined"
+                    startIcon={<RefreshIcon />}
+                    onClick={() => company && company._id && fetchExistingConfigs(company._id)}
+                    disabled={loading.fetching}
+                    sx={{ borderRadius: 2 }}
+                  >
+                    {loading.fetching ? 'Refreshing...' : 'Refresh'}
+                  </Button>
                 </Box>
 
                 {loading.fetching ? (
@@ -1420,32 +1665,31 @@ const SidebarManagement = () => {
                           borderColor: 'primary.main',
                           borderRadius: 2,
                           height: '100%',
+                          transition: 'all 0.2s',
                           '&:hover': {
                             boxShadow: 4,
-                            transform: 'translateY(-2px)',
-                            transition: 'all 0.2s'
+                            transform: 'translateY(-2px)'
                           }
                         }}>
                           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 2 }}>
                             <Box>
-                              <Typography variant="subtitle1" fontWeight={600}>
-                                {getDepartmentName(config.departmentId)}
-                              </Typography>
-                              <Typography variant="body2" color="text.secondary">
-                                <BusinessIcon sx={{ fontSize: '0.8rem', mr: 0.5, verticalAlign: 'middle' }} />
-                                {company.companyName} ({company.companyCode})
-                              </Typography>
-                              <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
-                                <SecurityIcon sx={{ fontSize: '0.8rem', mr: 0.5, color: 'text.secondary' }} />
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                                <ApartmentIcon sx={{ fontSize: '1rem', color: 'primary.main' }} />
+                                <Typography variant="subtitle1" fontWeight={600}>
+                                  {getDepartmentName(config.departmentId)}
+                                </Typography>
+                              </Box>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                                <SecurityIcon sx={{ fontSize: '1rem', color: 'secondary.main' }} />
                                 <Chip 
                                   label={getRoleNameById(config.role)} 
                                   size="small" 
                                   sx={{ height: 20, fontSize: '0.7rem' }}
-                                  color="primary"
+                                  color="secondary"
                                 />
                               </Box>
                               <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                                Role ID: {config.role} • {config.menuItems.length} menu items • Updated: {new Date(config.updatedAt || config.createdAt).toLocaleDateString()}
+                                {config.menuItems.length} menu items • Updated: {formatDate(config.updatedAt || config.createdAt)}
                               </Typography>
                             </Box>
                             <Box>
@@ -1453,7 +1697,7 @@ const SidebarManagement = () => {
                                 <IconButton
                                   size="small"
                                   onClick={() => handlePreview(config)}
-                                  sx={{ mr: 0.5 }}
+                                  sx={{ color: 'info.main' }}
                                 >
                                   <VisibilityIcon fontSize="small" />
                                 </IconButton>
@@ -1462,7 +1706,7 @@ const SidebarManagement = () => {
                                 <IconButton
                                   size="small"
                                   onClick={() => handleEdit(config)}
-                                  sx={{ mr: 0.5 }}
+                                  sx={{ color: 'primary.main' }}
                                 >
                                   <EditIcon fontSize="small" />
                                 </IconButton>
@@ -1487,7 +1731,7 @@ const SidebarManagement = () => {
                                     label={item.name}
                                     size="small"
                                     sx={{ mr: 0.5, mb: 0.5 }}
-                                    icon={renderIcon(item.icon)}
+                                    icon={getIconComponent(item.icon)}
                                     variant="outlined"
                                   />
                                 </Grid>
@@ -1526,10 +1770,24 @@ const SidebarManagement = () => {
         onClose={() => setOpenPreview(false)}
         maxWidth="md"
         fullWidth
+        TransitionComponent={Zoom}
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            overflow: 'hidden'
+          }
+        }}
       >
-        <DialogTitle>
-          Menu Preview
-          <Typography variant="caption" display="block" color="text.secondary">
+        <DialogTitle sx={{ 
+          bgcolor: 'primary.main',
+          color: 'white',
+          py: 2
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <VisibilityIcon />
+            <Typography variant="h6">Menu Preview</Typography>
+          </Box>
+          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.9)', display: 'block', mt: 0.5 }}>
             {previewConfig && 
               `${company?.companyName} (${company?.companyCode}) - 
                ${getDepartmentName(previewConfig.departmentId)} - 
@@ -1537,25 +1795,43 @@ const SidebarManagement = () => {
             }
           </Typography>
         </DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ p: 3, maxHeight: 400 }}>
           {previewConfig && (
             <List>
-              {previewConfig.menuItems.map((item) => (
-                <ListItem key={item.id} divider>
+              {previewConfig.menuItems.map((item, index) => (
+                <ListItem 
+                  key={item.id} 
+                  divider={index < previewConfig.menuItems.length - 1}
+                  sx={{ 
+                    borderRadius: 1,
+                    '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.04) }
+                  }}
+                >
                   <ListItemIcon>
-                    {renderIcon(item.icon)}
+                    <Avatar sx={{ 
+                      bgcolor: 'primary.50', 
+                      color: 'primary.main',
+                      width: 32,
+                      height: 32
+                    }}>
+                      {getIconComponent(item.icon)}
+                    </Avatar>
                   </ListItemIcon>
                   <ListItemText 
-                    primary={item.name}
+                    primary={
+                      <Typography variant="body1" fontWeight={600}>
+                        {item.name}
+                      </Typography>
+                    }
                     secondary={
-                      <Box>
-                        <Typography variant="body2" component="span">
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                        <Typography variant="body2" color="text.secondary" component="span">
                           {item.path}
                         </Typography>
                         <Chip 
                           label={getCategoryDisplayName(item.category)}
                           size="small"
-                          sx={{ ml: 1 }}
+                          sx={{ height: 20, fontSize: '0.6rem' }}
                           variant="outlined"
                         />
                       </Box>
@@ -1566,8 +1842,14 @@ const SidebarManagement = () => {
             </List>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenPreview(false)}>Close</Button>
+        <DialogActions sx={{ p: 2, bgcolor: 'grey.50' }}>
+          <Button 
+            onClick={() => setOpenPreview(false)}
+            variant="contained"
+            sx={{ borderRadius: 2 }}
+          >
+            Close
+          </Button>
         </DialogActions>
       </Dialog>
 
@@ -1577,18 +1859,50 @@ const SidebarManagement = () => {
         autoHideDuration={4000}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        TransitionComponent={Zoom}
       >
         <Alert 
           severity={snackbar.severity}
           variant="filled"
           onClose={() => setSnackbar({ ...snackbar, open: false })}
-          sx={{ borderRadius: 2 }}
+          sx={{ 
+            borderRadius: 2,
+            boxShadow: '0 8px 16px rgba(0,0,0,0.2)'
+          }}
         >
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      {/* Floating Action Button for Mobile */}
+      {isMobile && selectedDepartment && selectedRole && selectedItems.length > 0 && (
+        <Zoom in={true}>
+          <Fab
+            color="primary"
+            sx={{
+              position: 'fixed',
+              bottom: 24,
+              right: 24,
+              boxShadow: '0 8px 16px rgba(33, 150, 243, 0.4)',
+              width: 56,
+              height: 56
+            }}
+            onClick={handleSave}
+            disabled={loading.saving}
+          >
+            {loading.saving ? <CircularProgress size={24} color="inherit" /> : <SaveIcon />}
+          </Fab>
+        </Zoom>
+      )}
     </Box>
   );
 };
+
+// Add missing import for CodeIcon
+const CodeIcon = (props) => (
+  <svg {...props} width="1em" height="1em" viewBox="0 0 24 24">
+    <path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z" fill="currentColor"/>
+  </svg>
+);
 
 export default SidebarManagement;
