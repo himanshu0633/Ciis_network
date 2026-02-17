@@ -501,7 +501,7 @@ const CompanyDetails = () => {
           
           const users = data.users || [];
           console.log("Users fetched:", users);
-          setRecentUsers(users.slice(0, 5));
+          setRecentUsers(users);
           
           const activeUsers = users.filter(user => user.isActive).length;
           
@@ -2336,205 +2336,253 @@ const CompanyDetails = () => {
             </Card>
           </Grid>
 
+          
           {/* Right Column - Recent Users */}
-          <Grid item xs={12} lg={4}>
-            <Card sx={{ 
-              borderRadius: { xs: 2, sm: 3 },
-              bgcolor: 'white',
-              boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
-              height: '100%',
-              display: 'flex',
-              flexDirection: 'column'
-            }}>
-              <CardHeader
-                title={
-                  <Stack direction="row" alignItems="center" justifyContent="space-between">
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                      <People sx={{ color: 'primary.main', fontSize: { xs: 20, sm: 24 } }} />
-                      <Typography variant={isMobile ? "body1" : "h6"} fontWeight={700}>
-                        Recent Users
-                      </Typography>
-                    </Stack>
-                    <MuiBadge 
-                      badgeContent={recentUsers.length} 
-                      color="primary"
-                      sx={{ 
-                        '& .MuiBadge-badge': { 
+<Grid item xs={12} lg={4}>
+  <Card sx={{ 
+    borderRadius: { xs: 2, sm: 3 },
+    bgcolor: 'white',
+    boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    maxHeight: { lg: '600px' } // Fixed height for desktop
+  }}>
+    <CardHeader
+      title={
+        <Stack direction="row" alignItems="center" justifyContent="space-between">
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <People sx={{ color: 'primary.main', fontSize: { xs: 20, sm: 24 } }} />
+            <Typography variant={isMobile ? "body1" : "h6"} fontWeight={700}>
+              Recent Users
+            </Typography>
+          </Stack>
+          <MuiBadge 
+            badgeContent={recentUsers.length} 
+            color="primary"
+            sx={{ 
+              '& .MuiBadge-badge': { 
+                fontWeight: 600,
+                fontSize: { xs: '0.65rem', sm: '0.75rem' },
+                height: { xs: 18, sm: 20, md: 22 },
+                minWidth: { xs: 18, sm: 20, md: 22 }
+              } 
+            }}
+          />
+        </Stack>
+      }
+      sx={{ 
+        borderBottom: '1px solid', 
+        borderColor: 'grey.100', 
+        py: { xs: 1.5, sm: 2 },
+        px: { xs: 2, sm: 3 },
+        flexShrink: 0 // Prevents header from shrinking
+      }}
+    />
+    
+    {/* Scrollable Content Area */}
+    <CardContent 
+      sx={{ 
+        p: 0, 
+        flexGrow: 1,
+        overflowY: 'auto', // Enable vertical scrolling
+        maxHeight: { lg: '500px' }, // Fixed height for scrollable area
+        '&::-webkit-scrollbar': {
+          width: '8px',
+        },
+        '&::-webkit-scrollbar-track': {
+          background: '#f1f1f1',
+          borderRadius: '4px',
+        },
+        '&::-webkit-scrollbar-thumb': {
+          background: '#888',
+          borderRadius: '4px',
+          '&:hover': {
+            background: '#666',
+          },
+        },
+        scrollbarWidth: 'thin',
+        scrollbarColor: '#888 #f1f1f1',
+      }}
+    >
+      {recentUsers.length > 0 ? (
+        <List sx={{ p: 0 }}>
+          {recentUsers.map((user, index) => (
+            <ListItem
+              key={user.id || user._id || index}
+              sx={{
+                px: { xs: 2, sm: 3 },
+                py: { xs: 1.5, sm: 2 },
+                borderBottom: index < recentUsers.length - 1 ? '1px solid' : 'none',
+                borderColor: 'grey.100',
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  bgcolor: alpha(theme.palette.primary.main, 0.04),
+                }
+              }}
+            >
+              <ListItemAvatar>
+                <MuiBadge
+                  overlap="circular"
+                  anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                  badgeContent={
+                    <Box
+                      sx={{
+                        width: { xs: 10, sm: 12 },
+                        height: { xs: 10, sm: 12 },
+                        borderRadius: '50%',
+                        bgcolor: user.isActive ? 'success.main' : 'error.main',
+                        border: '2px solid white',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                      }}
+                    />
+                  }
+                >
+                  <Avatar
+                    sx={{
+                      width: { xs: 40, sm: 44, md: 48 },
+                      height: { xs: 40, sm: 44, md: 48 },
+                      bgcolor: user.isActive ? 'primary.main' : 'grey.400',
+                      boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                      fontSize: { xs: '1rem', sm: '1.1rem' }
+                    }}
+                  >
+                    {user.name?.charAt(0) || 'U'}
+                  </Avatar>
+                </MuiBadge>
+              </ListItemAvatar>
+              <ListItemText
+                primary={
+                  <Typography 
+                    variant="body1" 
+                    fontWeight={600} 
+                    noWrap
+                    sx={{ 
+                      fontSize: { xs: '0.85rem', sm: '0.95rem', md: '1rem' } 
+                    }}
+                  >
+                    {user.name || 'Unknown User'}
+                  </Typography>
+                }
+                secondary={
+                  <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 0.5, flexWrap: 'wrap' }}>
+                    {user.employeeType && (
+                      <Chip
+                        label={user.employeeType}
+                        size="small"
+                        sx={{ 
+                          height: { xs: 18, sm: 20 }, 
+                          fontSize: { xs: '0.55rem', sm: '0.65rem' },
                           fontWeight: 600,
-                          fontSize: { xs: '0.65rem', sm: '0.75rem' },
-                          height: { xs: 18, sm: 20, md: 22 },
-                          minWidth: { xs: 18, sm: 20, md: 22 }
-                        } 
+                          bgcolor: 'info.50',
+                          color: 'info.main'
+                        }}
+                      />
+                    )}
+                    <Chip
+                      label={user.department || 'No Dept'}
+                      size="small"
+                      sx={{ 
+                        height: { xs: 18, sm: 20 }, 
+                        fontSize: { xs: '0.55rem', sm: '0.65rem' },
+                        fontWeight: 500,
+                        bgcolor: 'grey.100',
+                        color: 'text.secondary'
                       }}
                     />
                   </Stack>
                 }
-                sx={{ 
-                  borderBottom: '1px solid', 
-                  borderColor: 'grey.100', 
-                  py: { xs: 1.5, sm: 2 },
-                  px: { xs: 2, sm: 3 }
-                }}
               />
-              
-              <CardContent sx={{ p: 0, flexGrow: 1 }}>
-                {recentUsers.length > 0 ? (
-                  <List sx={{ p: 0 }}>
-                    {recentUsers.map((user, index) => (
-                      <ListItem
-                        key={user.id || user._id || index}
-                        sx={{
-                          px: { xs: 2, sm: 3 },
-                          py: { xs: 1.5, sm: 2 },
-                          borderBottom: index < recentUsers.length - 1 ? '1px solid' : 'none',
-                          borderColor: 'grey.100',
-                          transition: 'all 0.2s ease',
-                          '&:hover': {
-                            bgcolor: alpha(theme.palette.primary.main, 0.04),
-                          }
-                        }}
-                      >
-                        <ListItemAvatar>
-                          <MuiBadge
-                            overlap="circular"
-                            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                            badgeContent={
-                              <Box
-                                sx={{
-                                  width: { xs: 10, sm: 12 },
-                                  height: { xs: 10, sm: 12 },
-                                  borderRadius: '50%',
-                                  bgcolor: user.isActive ? 'success.main' : 'error.main',
-                                  border: '2px solid white',
-                                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                                }}
-                              />
-                            }
-                          >
-                            <Avatar
-                              sx={{
-                                width: { xs: 40, sm: 44, md: 48 },
-                                height: { xs: 40, sm: 44, md: 48 },
-                                bgcolor: user.isActive ? 'primary.main' : 'grey.400',
-                                boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-                                fontSize: { xs: '1rem', sm: '1.1rem' }
-                              }}
-                            >
-                              {user.name?.charAt(0) || 'U'}
-                            </Avatar>
-                          </MuiBadge>
-                        </ListItemAvatar>
-                        <ListItemText
-                          primary={
-                            <Typography 
-                              variant="body1" 
-                              fontWeight={600} 
-                              noWrap
-                              sx={{ 
-                                fontSize: { xs: '0.85rem', sm: '0.95rem', md: '1rem' } 
-                              }}
-                            >
-                              {user.name || 'Unknown User'}
-                            </Typography>
-                          }
-                          secondary={
-                            <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 0.5, flexWrap: 'wrap' }}>
-                              {user.employeeType && (
-                                <Chip
-                                  label={user.employeeType}
-                                  size="small"
-                                  sx={{ 
-                                    height: { xs: 18, sm: 20 }, 
-                                    fontSize: { xs: '0.55rem', sm: '0.65rem' },
-                                    fontWeight: 600,
-                                    bgcolor: 'info.50',
-                                    color: 'info.main'
-                                  }}
-                                />
-                              )}
-                              <Chip
-                                label={user.department || 'No Dept'}
-                                size="small"
-                                sx={{ 
-                                  height: { xs: 18, sm: 20 }, 
-                                  fontSize: { xs: '0.55rem', sm: '0.65rem' },
-                                  fontWeight: 500,
-                                  bgcolor: 'grey.100',
-                                  color: 'text.secondary'
-                                }}
-                              />
-                            </Stack>
-                          }
-                        />
-                        <Tooltip title="Edit User" arrow>
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            startIcon={<Edit fontSize="small" />}
-                            onClick={() => handleEditUser(user)}
-                            sx={{
-                              ml: 1,
-                              borderRadius: 2,
-                              borderColor: 'primary.main',
-                              color: 'primary.main',
-                              minWidth: { xs: 50, sm: 60 },
-                              fontSize: { xs: '0.65rem', sm: '0.75rem' },
-                              py: { xs: 0.5, sm: 0.75 },
-                              '&:hover': {
-                                bgcolor: 'primary.main',
-                                color: 'white',
-                                borderColor: 'primary.main'
-                              },
-                              transition: 'all 0.2s ease'
-                            }}
-                          >
-                            {isMobile ? '' : 'Edit'}
-                          </Button>
-                        </Tooltip>
-                      </ListItem>
-                    ))}
-                  </List>
-                ) : (
-                  <Box sx={{ 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    alignItems: 'center', 
-                    justifyContent: 'center',
-                    py: { xs: 6, sm: 8 },
-                    px: { xs: 2, sm: 3 }
-                  }}>
-                    <Box sx={{
-                      width: { xs: 60, sm: 70, md: 80 },
-                      height: { xs: 60, sm: 70, md: 80 },
-                      borderRadius: '50%',
-                      bgcolor: 'grey.100',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      mb: 2
-                    }}>
-                      <People sx={{ fontSize: { xs: 30, sm: 35, md: 40 }, color: 'grey.400' }} />
-                    </Box>
-                    <Typography variant="body1" fontWeight={600} gutterBottom sx={{ fontSize: { xs: '0.95rem', sm: '1rem' } }}>
-                      No Users Found
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" align="center" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
-                      Get started by adding users to your company
-                    </Typography>
-                    <Button
-                      variant="contained"
-                      onClick={handleAddNewUser}
-                      startIcon={<Add />}
-                      size={isMobile ? "small" : "medium"}
-                      sx={{ mt: 3, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                    >
-                      Add First User
-                    </Button>
-                  </Box>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
+              <Tooltip title="Edit User" arrow>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<Edit fontSize="small" />}
+                  onClick={() => handleEditUser(user)}
+                  sx={{
+                    ml: 1,
+                    borderRadius: 2,
+                    borderColor: 'primary.main',
+                    color: 'primary.main',
+                    minWidth: { xs: 50, sm: 60 },
+                    fontSize: { xs: '0.65rem', sm: '0.75rem' },
+                    py: { xs: 0.5, sm: 0.75 },
+                    '&:hover': {
+                      bgcolor: 'primary.main',
+                      color: 'white',
+                      borderColor: 'primary.main'
+                    },
+                    transition: 'all 0.2s ease',
+                    flexShrink: 0 // Prevents button from shrinking
+                  }}
+                >
+                  {isMobile ? '' : 'Edit'}
+                </Button>
+              </Tooltip>
+            </ListItem>
+          ))}
+        </List>
+      ) : (
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          py: { xs: 6, sm: 8 },
+          px: { xs: 2, sm: 3 },
+          height: '100%',
+          minHeight: '300px'
+        }}>
+          <Box sx={{
+            width: { xs: 60, sm: 70, md: 80 },
+            height: { xs: 60, sm: 70, md: 80 },
+            borderRadius: '50%',
+            bgcolor: 'grey.100',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            mb: 2
+          }}>
+            <People sx={{ fontSize: { xs: 30, sm: 35, md: 40 }, color: 'grey.400' }} />
+          </Box>
+          <Typography variant="body1" fontWeight={600} gutterBottom sx={{ fontSize: { xs: '0.95rem', sm: '1rem' } }}>
+            No Users Found
+          </Typography>
+          <Typography variant="body2" color="text.secondary" align="center" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
+            Get started by adding users to your company
+          </Typography>
+          <Button
+            variant="contained"
+            onClick={handleAddNewUser}
+            startIcon={<Add />}
+            size={isMobile ? "small" : "medium"}
+            sx={{ mt: 3, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+          >
+            Add First User
+          </Button>
+        </Box>
+      )}
+    </CardContent>
+    
+    {/* Optional: Add a footer with total count */}
+    {recentUsers.length > 5 && (
+      <Box 
+        sx={{ 
+          p: 2, 
+          borderTop: '1px solid', 
+          borderColor: 'grey.200',
+          bgcolor: 'grey.50',
+          textAlign: 'center',
+          flexShrink: 0
+        }}
+      >
+        <Typography variant="caption" color="text.secondary">
+          Showing {recentUsers.length} users
+        </Typography>
+      </Box>
+    )}
+  </Card>
+</Grid>
         </Grid>
 
         {/* Company Edit Modal */}
