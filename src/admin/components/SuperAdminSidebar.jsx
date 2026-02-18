@@ -21,6 +21,7 @@ import {
   WorkOutline as JobRoleIcon,
   PersonAdd as CreateUserIcon,
   ExitToApp as LogoutIcon,
+  Inventory as AssetsIcon, // Import Assets Icon
 } from '@mui/icons-material';
 
 // Styled components
@@ -179,6 +180,12 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
       icon: <CreateUserIcon />, 
       name: 'Create User', 
       route: '/Ciis-network/create-user',
+      showForRoles: ['Owner', 'employee']
+    },
+    { 
+      icon: <AssetsIcon />, // Add Assets Management with Inventory icon
+      name: 'Assets Management', 
+      route: '/Ciis-network/assets',
       showForRoles: ['Owner', 'employee']
     },
     { 
