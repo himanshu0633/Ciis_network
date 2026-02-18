@@ -13,7 +13,7 @@ import {
   FiEye, FiClock, FiCheckCircle, FiXCircle, FiAlertTriangle,
   FiMoreVertical, FiRefreshCw, FiUserCheck, FiUserX,
   FiLogOut, FiEdit3, FiTrash, FiMessageCircle,
-  FiZoomIn, FiImage, FiCamera,  FiBriefcase
+  FiZoomIn, FiImage, FiCamera, FiBriefcase
 } from 'react-icons/fi';
 
 const AdminTaskManagement = () => {
@@ -21,13 +21,14 @@ const AdminTaskManagement = () => {
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState([]);
   const [groups, setGroups] = useState([]);
+  const [departments, setDepartments] = useState([]);
   const [userRole, setUserRole] = useState('');
   const [jobRole, setJobRole] = useState('');
   const [userId, setUserId] = useState('');
   const [authError, setAuthError] = useState(false);
   const [initialAuthCheck, setInitialAuthCheck] = useState(false);
   
-  // NEW: Current user details for filtering
+  // Current user details for filtering
   const [currentUser, setCurrentUser] = useState({
     id: '',
     name: '',
@@ -141,7 +142,7 @@ const AdminTaskManagement = () => {
 
   const navigate = useNavigate();
 
-  // 🆕 NEW FUNCTION: Check if user belongs to same company and department
+  // 🆕 FUNCTION: Check if user belongs to same company and department
   const checkSameCompanyDepartment = (targetUser) => {
     if (!currentUser || !targetUser) return false;
     
@@ -149,7 +150,7 @@ const AdminTaskManagement = () => {
     const currentCompany = currentUser.company?._id || currentUser.company;
     const targetCompany = targetUser.company?._id || targetUser.company;
     
-    if (currentCompany.toString() !== targetCompany.toString()) {
+    if (currentCompany?.toString() !== targetCompany?.toString()) {
       console.log('❌ Different company:', {
         current: currentCompany,
         target: targetCompany
@@ -161,7 +162,7 @@ const AdminTaskManagement = () => {
     const currentDept = currentUser.department?._id || currentUser.department;
     const targetDept = targetUser.department?._id || targetUser.department;
     
-    if (currentDept.toString() !== targetDept.toString()) {
+    if (currentDept?.toString() !== targetDept?.toString()) {
       console.log('❌ Different department:', {
         current: currentDept,
         target: targetDept
@@ -173,13 +174,23 @@ const AdminTaskManagement = () => {
     return true;
   };
 
-  // 🆕 Filter users based on search AND same company/department
+  // 🆕 FUNCTION: Check if user is from same company (for cross-department visibility)
+  const checkSameCompany = (targetUser) => {
+    if (!currentUser || !targetUser) return false;
+    
+    const currentCompany = currentUser.company?._id || currentUser.company;
+    const targetCompany = targetUser.company?._id || targetUser.company;
+    
+    return currentCompany?.toString() === targetCompany?.toString();
+  };
+
+  // 🆕 Filter users based on search AND same company
   const filteredUsers = users.filter(user => {
-    // First check if user is from same company and department (excluding self)
-    const isSameCompanyDept = checkSameCompanyDepartment(user);
+    // First check if user is from same company
+    const isSameCompany = checkSameCompany(user);
     const isSelf = (user.id || user._id) === currentUser.id;
     
-    if (!isSameCompanyDept || isSelf) return false;
+    if (!isSameCompany || isSelf) return false;
     
     // Then apply search filter
     return user.name?.toLowerCase().includes(userSearch.toLowerCase()) ||
@@ -193,7 +204,7 @@ const AdminTaskManagement = () => {
     group.description?.toLowerCase().includes(groupSearch.toLowerCase())
   );
 
-  // Fetch user data - UPDATED to get full user details including company and department
+  // Fetch user data
   const fetchUserData = () => {
     try {
       const userStr = localStorage.getItem('user');
@@ -231,10 +242,7 @@ const AdminTaskManagement = () => {
         return;
       }
       
-      // 🔍 Debug: Log all fields in user object
-      console.log('🔍 Available fields in user object:', Object.keys(user || {}));
-      
-      // Based on your API response, check for user ID in different formats
+      // Find user ID
       let foundUserId = null;
       let userRole = 'user';
       let userName = '';
@@ -242,30 +250,24 @@ const AdminTaskManagement = () => {
       let userCompany = '';
       let userDepartment = '';
       
-      // Check if it's the full user object from department-users API
       if (user.id && typeof user.id === 'string') {
         foundUserId = user.id;
-        console.log('✅ Found user ID in "id" field:', foundUserId);
         userRole = user.role || 'user';
         userName = user.name || 'Unknown User';
-        userJobRole = currentUser.id || '';
+        userJobRole = user.jobRole || '';
         userCompany = user.company || '';
         userDepartment = user.department || '';
       }
-      // Check if it's the nested user object from login response
       else if (user.user && user.user.id) {
         foundUserId = user.user.id;
-        console.log('✅ Found user ID in nested "user.id" field:', foundUserId);
         userRole = user.user.role || 'user';
         userName = user.user.name || 'Unknown User';
         userJobRole = user.user.jobRole || '';
         userCompany = user.user.company || '';
         userDepartment = user.user.department || '';
       }
-      // Check for other common ID fields
       else if (user._id) {
         foundUserId = user._id;
-        console.log('✅ Found user ID in "_id" field:', foundUserId);
         userRole = user.role || 'user';
         userName = user.name || 'Unknown User';
         userJobRole = user.jobRole || '';
@@ -274,25 +276,19 @@ const AdminTaskManagement = () => {
       }
       else if (user.userId) {
         foundUserId = user.userId;
-        console.log('✅ Found user ID in "userId" field:', foundUserId);
-        userRole = user.role || 'userrr';
+        userRole = user.role || 'user';
         userName = user.name || 'Unknown User';
-        userJobRole = user.id || '';
+        userJobRole = user.jobRole || '';
         userCompany = user.company || '';
         userDepartment = user.department || '';
       }
-      // Check if it's a direct ID string
       else if (typeof user === 'string') {
         foundUserId = user;
-        console.log('✅ User data is a string, using as ID:', foundUserId);
         userRole = 'user';
       }
       
-      // Final validation
       if (!foundUserId) {
         console.warn('❌ Invalid user data: no ID field found');
-        console.warn('🔍 Full user object:', user);
-        
         setAuthError(true);
         setInitialAuthCheck(true);
         setSnackbar({ 
@@ -312,12 +308,11 @@ const AdminTaskManagement = () => {
         department: userDepartment
       });
 
-      // Set user data
       setUserRole(userRole);
       setJobRole(userJobRole);
       setUserId(foundUserId);
       
-      // 🆕 Set current user details for filtering
+      // Set current user details for filtering
       setCurrentUser({
         id: foundUserId,
         name: userName,
@@ -387,7 +382,6 @@ const AdminTaskManagement = () => {
     } catch (error) {
       console.error(`❌ API Error (${method} ${url}):`, error);
       
-      // Handle authentication errors
       if (error.response?.status === 401) {
         console.error('🔐 Authentication failed (401)');
         setAuthError(true);
@@ -420,7 +414,6 @@ const AdminTaskManagement = () => {
           severity: 'error' 
         });
       } else {
-        // Other errors
         const errorMessage = error.response?.data?.message || error.response?.data?.error || 'An error occurred';
         setSnackbar({ 
           open: true, 
@@ -454,7 +447,6 @@ const AdminTaskManagement = () => {
     if (!dateTimeString) return null;
     
     if (dateTimeString.includes('T')) {
-      // Add seconds if missing
       const dateStr = dateTimeString.includes(':') && dateTimeString.split(':').length === 2 
         ? `${dateTimeString}:00` 
         : dateTimeString;
@@ -475,23 +467,19 @@ const AdminTaskManagement = () => {
     setLoading(true);
     try {
       console.log('📋 Fetching tasks for user:', userId);
-      console.log('📋 Filters:', filters);
       
-      // Build query parameters - Only show tasks created by current user
       const params = {
         page: page + 1,
         limit: limit,
-        createdBy: userId // Only show tasks created by current user
+        createdBy: userId
       };
 
-      // Add filters to params
       if (searchTerm) params.search = searchTerm;
       if (statusFilter) params.status = statusFilter;
       if (priorityFilter) params.priority = priorityFilter;
       if (assignedToFilter) params.assignedTo = assignedToFilter;
       if (overdueFilter) params.overdue = overdueFilter;
       
-      // Add date range filters
       if (dateRange.startDate) {
         params.startDate = new Date(dateRange.startDate).toISOString();
       }
@@ -501,7 +489,6 @@ const AdminTaskManagement = () => {
 
       console.log('🌐 Fetching tasks from API with params:', params);
       
-      // Build query string
       const queryString = Object.keys(params)
         .filter(key => params[key] !== undefined && params[key] !== null && params[key] !== '')
         .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
@@ -512,10 +499,8 @@ const AdminTaskManagement = () => {
       
       console.log('✅ Tasks API response:', tasksResult);
       
-      // Handle tasks response
       let tasksArray = [];
       if (tasksResult.groupedTasks) {
-        // Flatten grouped tasks
         tasksArray = Object.values(tasksResult.groupedTasks).flat();
       } else if (tasksResult.tasks) {
         tasksArray = tasksResult.tasks;
@@ -527,11 +512,7 @@ const AdminTaskManagement = () => {
       
       console.log('📊 Processed tasks array:', tasksArray);
       setTasks(tasksArray);
-      
-      // Set total count for pagination
       setTotalTasks(tasksResult.total || tasksResult.totalCount || tasksArray.length);
-
-      // Calculate filtered stats
       calculateFilteredStats(tasksArray);
 
     } catch (error) {
@@ -546,7 +527,6 @@ const AdminTaskManagement = () => {
         rejected: 0,
         overdue: 0
       });
-      // Don't show snackbar for auth errors (handled in apiCall)
       if (error.response?.status !== 401 && error.response?.status !== 403) {
         setSnackbar({ open: true, message: 'Failed to load tasks', severity: 'error' });
       }
@@ -568,56 +548,66 @@ const AdminTaskManagement = () => {
     setFilteredStats(stats);
   };
 
-  // Fetch all supporting data (users, groups, notifications)
+  // Fetch all supporting data (users, groups, notifications, departments)
   const fetchSupportingData = async () => {
     try {
       console.log('📡 Fetching supporting data...');
       
-      // First, fetch department-users to get users from same department
-      const usersResult = await apiCall('get', '/users/department-users');
+      // First fetch departments
+      try {
+        const deptRes = await apiCall('get', '/departments');
+        console.log('✅ Departments API response:', deptRes.data);
+        
+        let departmentsData = [];
+        if (deptRes.data && deptRes.data.success) {
+          if (deptRes.data.data && Array.isArray(deptRes.data.data)) {
+            departmentsData = deptRes.data.data;
+          } else if (deptRes.data.departments && Array.isArray(deptRes.data.departments)) {
+            departmentsData = deptRes.data.departments;
+          } else if (Array.isArray(deptRes.data)) {
+            departmentsData = deptRes.data;
+          }
+        }
+        setDepartments(departmentsData);
+      } catch (deptErr) {
+        console.error('❌ Failed to load departments', deptErr);
+      }
+      
+      // Fetch company users (all users from same company)
+      const usersResult = await apiCall('get', '/users/company-users');
       
       console.log('👥 Raw users API response:', usersResult);
       
-      // ✅ Extract users array from API response
       let usersArray = [];
       
-      // Your API response has users in message.users
       if (usersResult.message && usersResult.message.users && Array.isArray(usersResult.message.users)) {
         usersArray = usersResult.message.users;
-        console.log('✅ Found users in usersResult.message.users');
       }
       else if (usersResult.users && Array.isArray(usersResult.users)) {
         usersArray = usersResult.users;
-        console.log('✅ Found users in usersResult.users');
       }
       else if (usersResult.data && Array.isArray(usersResult.data)) {
         usersArray = usersResult.data;
-        console.log('✅ Found users in usersResult.data');
       }
       else if (Array.isArray(usersResult)) {
         usersArray = usersResult;
-        console.log('✅ Found users as direct array');
       }
       
       console.log('👥 Total users found:', usersArray.length);
       
-      // 🆕 FILTER: Only show users from same company and department as current user
-      if (currentUser.company && currentUser.department) {
+      // Filter users to only show same company users
+      if (currentUser.company) {
         usersArray = usersArray.filter(user => {
           const userCompany = user.company?._id || user.company;
-          const userDepartment = user.department?._id || user.department;
-          
-          const sameCompany = userCompany && userCompany.toString() === currentUser.company.toString();
-          const sameDepartment = userDepartment && userDepartment.toString() === currentUser.department.toString();
-          
-          return sameCompany && sameDepartment;
+          const sameCompany = userCompany?.toString() === currentUser.company?.toString();
+          return sameCompany;
         });
-        console.log('👥 Filtered users (same company & department):', usersArray.length);
+        console.log('👥 Filtered users (same company):', usersArray.length);
       }
       
       setUsers(usersArray);
 
-      // Fetch groups - only groups created by current user
+      // Fetch groups
       const groupsResult = await apiCall('get', '/groups');
       console.log('👥 Groups data:', groupsResult);
       setGroups(groupsResult.groups || groupsResult.data || []);
@@ -630,7 +620,6 @@ const AdminTaskManagement = () => {
 
     } catch (error) {
       console.error('❌ Error fetching supporting data:', error);
-      // Don't show snackbar here to avoid multiple error messages
     }
   };
 
@@ -657,7 +646,6 @@ const AdminTaskManagement = () => {
 
     setIsCreatingTask(true);
     try {
-      // Parse the datetime-local input
       const parsedDueDateTime = parseDateTimeInput(newTask.dueDateTime);
       
       if (!parsedDueDateTime || isNaN(parsedDueDateTime.getTime())) {
@@ -666,9 +654,8 @@ const AdminTaskManagement = () => {
         return;
       }
 
-      // Check if due date is in the past (with 5 minute buffer)
       const now = new Date();
-      const buffer = 5 * 60 * 1000; // 5 minutes buffer
+      const buffer = 5 * 60 * 1000;
       if (parsedDueDateTime < new Date(now.getTime() - buffer)) {
         setSnackbar({ open: true, message: 'Due date cannot be in the past. Please select a future date and time.', severity: 'error' });
         setIsCreatingTask(false);
@@ -677,10 +664,9 @@ const AdminTaskManagement = () => {
 
       const formData = new FormData();
       
-      // Append basic fields
       formData.append('title', newTask.title);
       formData.append('description', newTask.description);
-      formData.append('dueDateTime', parsedDueDateTime.toISOString()); // Send as ISO string
+      formData.append('dueDateTime', parsedDueDateTime.toISOString());
       formData.append('priorityDays', newTask.priorityDays || '1');
       formData.append('priority', newTask.priority);
       formData.append('assignedUsers', JSON.stringify(newTask.assignedUsers));
@@ -694,7 +680,6 @@ const AdminTaskManagement = () => {
         assignedUsers: newTask.assignedUsers
       });
 
-      // Handle file uploads
       if (newTask.files) {
         for (let i = 0; i < newTask.files.length; i++) {
           formData.append('files', newTask.files[i]);
@@ -713,7 +698,6 @@ const AdminTaskManagement = () => {
       fetchAllData(page, rowsPerPage);
     } catch (error) {
       console.error('❌ Error creating task:', error);
-      // Error message already shown by apiCall
     } finally {
       setIsCreatingTask(false);
     }
@@ -728,7 +712,6 @@ const AdminTaskManagement = () => {
 
     setIsUpdatingTask(true);
     try {
-      // Parse the datetime-local input
       const parsedDueDateTime = parseDateTimeInput(editTask.dueDateTime);
       
       if (!parsedDueDateTime || isNaN(parsedDueDateTime.getTime())) {
@@ -739,10 +722,9 @@ const AdminTaskManagement = () => {
 
       const formData = new FormData();
       
-      // Append basic fields
       formData.append('title', editTask.title);
       formData.append('description', editTask.description);
-      formData.append('dueDateTime', parsedDueDateTime.toISOString()); // Send as ISO string
+      formData.append('dueDateTime', parsedDueDateTime.toISOString());
       formData.append('priorityDays', editTask.priorityDays || '1');
       formData.append('priority', editTask.priority);
       formData.append('assignedUsers', JSON.stringify(editTask.assignedUsers));
@@ -761,7 +743,6 @@ const AdminTaskManagement = () => {
       fetchAllData(page, rowsPerPage);
     } catch (error) {
       console.error('❌ Error updating task:', error);
-      // Error message already shown by apiCall
     } finally {
       setIsUpdatingTask(false);
     }
@@ -776,11 +757,10 @@ const AdminTaskManagement = () => {
       fetchAllData(page, rowsPerPage);
     } catch (error) {
       console.error('❌ Error deleting task:', error);
-      // Error message already shown by apiCall
     }
   };
 
-  // Enhanced Group Management - 🆕 Only show users from same company/department
+  // Enhanced Group Management
   const handleCreateGroup = async () => {
     if (!newGroup.name || !newGroup.description) {
       setSnackbar({ open: true, message: 'Please fill group name and description', severity: 'error' });
@@ -792,16 +772,16 @@ const AdminTaskManagement = () => {
       return;
     }
 
-    // 🆕 Check if all selected members are from same company/department
+    // Check if all selected members are from same company
     const invalidMembers = newGroup.members.filter(memberId => {
       const user = users.find(u => (u.id || u._id) === memberId);
-      return !checkSameCompanyDepartment(user);
+      return !checkSameCompany(user);
     });
 
     if (invalidMembers.length > 0) {
       setSnackbar({ 
         open: true, 
-        message: 'Cannot add users from different company/department to group', 
+        message: 'Cannot add users from different company to group', 
         severity: 'error' 
       });
       return;
@@ -821,7 +801,6 @@ const AdminTaskManagement = () => {
       fetchSupportingData();
     } catch (error) {
       console.error('❌ Error in group operation:', error);
-      // Error message already shown by apiCall
     } finally {
       setIsCreatingGroup(false);
     }
@@ -836,7 +815,6 @@ const AdminTaskManagement = () => {
       fetchSupportingData();
     } catch (error) {
       console.error('❌ Error deleting group:', error);
-      // Error message already shown by apiCall
     }
   };
 
@@ -860,7 +838,6 @@ const AdminTaskManagement = () => {
       fetchAllData(page, rowsPerPage);
     } catch (error) {
       console.error('❌ Error updating status:', error);
-      // Error message already shown by apiCall
     }
   };
 
@@ -992,7 +969,6 @@ const AdminTaskManagement = () => {
 
     } catch (error) {
       console.error('❌ Error adding remark:', error);
-      // Error message already shown by apiCall
     } finally {
       setIsUploadingRemark(false);
     }
@@ -1118,15 +1094,12 @@ const AdminTaskManagement = () => {
     console.log('Opening edit dialog for task:', task);
     setSelectedTask(task);
     
-    // Format dueDateTime for datetime-local input
     const formattedDueDateTime = formatDateForInput(task.dueDateTime);
     
-    // Extract assigned user IDs from task
     const assignedUserIds = task.assignedUsers?.map(user => 
       user.id || user._id || user
     ) || [];
     
-    // Extract assigned group IDs from task
     const assignedGroupIds = task.assignedGroups?.map(group => 
       group._id || group.id || group
     ) || [];
@@ -1164,7 +1137,7 @@ const AdminTaskManagement = () => {
     setOpenGroupDialog(true);
   };
 
-  // Data Helpers based on your API response
+  // Data Helpers
   const getUserName = (userId) => {
     if (typeof userId === 'object') {
       return userId.name || userId.Name || 'Unknown User';
@@ -1220,7 +1193,6 @@ const AdminTaskManagement = () => {
   const getAllAssignedUsersWithStatus = (task) => {
     const assignedUsers = [];
     
-    // Add direct assigned users
     if (task.assignedUsers && Array.isArray(task.assignedUsers)) {
       task.assignedUsers.forEach(user => {
         const userId = user.id || user._id || user;
@@ -1235,7 +1207,6 @@ const AdminTaskManagement = () => {
       });
     }
     
-    // Add group members
     if (task.assignedGroups && Array.isArray(task.assignedGroups)) {
       task.assignedGroups.forEach(groupId => {
         const group = groups.find(g => g._id === groupId || g.id === groupId);
@@ -1310,58 +1281,51 @@ const AdminTaskManagement = () => {
     );
   };
 
-  // 🆕 User Info Chip Component
-// 🆕 User Info Chip Component - FIXED VERSION
-const AdminTaskManagementUserInfoChip = ({ user }) => {
-  // Extract company name safely
-  const getCompanyName = () => {
-    if (!user?.company) return 'No Company';
-    
-    // If company is an object with companyName property
-    if (typeof user.company === 'object' && user.company.companyName) {
-      return user.company.companyName;
-    }
-    
-    // If company is a string
-    if (typeof user.company === 'string') {
-      return user.company;
-    }
-    
-    return 'No Company';
-  };
+  // User Info Chip Component
+  const AdminTaskManagementUserInfoChip = ({ user }) => {
+    const getCompanyName = () => {
+      if (!user?.company) return 'No Company';
+      
+      if (typeof user.company === 'object' && user.company.companyName) {
+        return user.company.companyName;
+      }
+      
+      if (typeof user.company === 'string') {
+        return user.company;
+      }
+      
+      return 'No Company';
+    };
 
-  // Extract department name safely
-  const getDepartmentName = () => {
-    if (!user?.department) return 'No Department';
-    
-    // If department is an object with name property
-    if (typeof user.department === 'object' && user.department.name) {
-      return user.department.name;
-    }
-    
-    // If department is a string
-    if (typeof user.department === 'string') {
-      return user.department;
-    }
-    
-    return 'No Department';
-  };
+    const getDepartmentName = () => {
+      if (!user?.department) return 'No Department';
+      
+      if (typeof user.department === 'object' && user.department.name) {
+        return user.department.name;
+      }
+      
+      if (typeof user.department === 'string') {
+        return user.department;
+      }
+      
+      return 'No Department';
+    };
 
-  return (
-    <div className="AdminTaskManagement-user-info-chip">
-      <div className="AdminTaskManagement-user-info-avatar">
-        {user?.name?.charAt(0)?.toUpperCase() || 'U'}
-      </div>
-      <div className="AdminTaskManagement-user-info-details">
-        <div className="AdminTaskManagement-user-info-name">{user?.name || 'Unknown'}</div>
-        <div className="AdminTaskManagement-user-info-meta">
-          <span>Company: {getCompanyName()}</span>
-          <span>Dept: {getDepartmentName()}</span>
+    return (
+      <div className="AdminTaskManagement-user-info-chip">
+        <div className="AdminTaskManagement-user-info-avatar">
+          {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+        </div>
+        <div className="AdminTaskManagement-user-info-details">
+          <div className="AdminTaskManagement-user-info-name">{user?.name || 'Unknown'}</div>
+          <div className="AdminTaskManagement-user-info-meta">
+            <span>Company: {getCompanyName()}</span>
+            <span>Dept: {getDepartmentName()}</span>
+          </div>
         </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
   // Stats Cards Component
   const AdminTaskManagementStatCard = ({ label, value, color, icon: Icon }) => {
@@ -1555,7 +1519,7 @@ const AdminTaskManagementUserInfoChip = ({ user }) => {
               <option value="">All Users</option>
               {filteredUsers.map(user => (
                 <option key={user.id || user._id} value={user.id || user._id}>
-                  {user.name}
+                  {user.name} - {user.department?.name || 'No Dept'}
                 </option>
               ))}
             </select>
@@ -1981,7 +1945,6 @@ const AdminTaskManagementUserInfoChip = ({ user }) => {
           <div className="AdminTaskManagement-user-statuses">
             {taskUserStatuses.length > 0 ? (
               taskUserStatuses.map((userStatus, index) => {
-                // Find user info from users array
                 const user = users.find(u => 
                   u.id === userStatus.userId || 
                   u._id === userStatus.userId ||
@@ -2042,7 +2005,6 @@ const AdminTaskManagementUserInfoChip = ({ user }) => {
   // Set default date when create dialog opens
   useEffect(() => {
     if (openCreateDialog) {
-      // Set default to current time + 1 hour
       const now = new Date();
       now.setHours(now.getHours() + 1);
       const defaultDateTime = formatDateForInput(now);
@@ -2051,7 +2013,7 @@ const AdminTaskManagementUserInfoChip = ({ user }) => {
     }
   }, [openCreateDialog]);
 
-  // Create Task Dialog - 🆕 Updated to show only same company/department users
+  // Create Task Dialog - Shows all company users
   const renderCreateTaskDialog = () => (
     <div className={`AdminTaskManagement-modal ${openCreateDialog ? 'AdminTaskManagement-modal-open' : ''}`}>
       <div className="AdminTaskManagement-modal-content AdminTaskManagement-modal-large">
@@ -2134,9 +2096,9 @@ const AdminTaskManagementUserInfoChip = ({ user }) => {
               </div>
             </div>
 
-            {/* 🆕 Assign to Users with Search - Only shows same company/department users */}
+            {/* Assign to Users - Shows all company users */}
             <div className="AdminTaskManagement-form-group">
-              <label>Assign to Users (Same Company & Department only)</label>
+              <label>Assign to Users (All Company Users)</label>
               <div className="AdminTaskManagement-multi-select-container">
                 <div className="AdminTaskManagement-select-search-bar">
                   <FiSearch className="AdminTaskManagement-select-search-icon" />
@@ -2185,7 +2147,7 @@ const AdminTaskManagementUserInfoChip = ({ user }) => {
                       <div className="AdminTaskManagement-empty-state">
                         <FiUsers size={32} className="AdminTaskManagement-empty-icon" />
                         <h5>No users available</h5>
-                        <p>Only users from same company and department are shown</p>
+                        <p>No other users found in your company</p>
                       </div>
                     </div>
                   )}
@@ -2327,7 +2289,7 @@ const AdminTaskManagementUserInfoChip = ({ user }) => {
     </div>
   );
 
-  // Edit Task Dialog - 🆕 Updated to show only same company/department users
+  // Edit Task Dialog - Shows all company users
   const renderEditTaskDialog = () => (
     <div className={`AdminTaskManagement-modal ${openEditDialog ? 'AdminTaskManagement-modal-open' : ''}`}>
       <div className="AdminTaskManagement-modal-content AdminTaskManagement-modal-large">
@@ -2406,9 +2368,9 @@ const AdminTaskManagementUserInfoChip = ({ user }) => {
               </div>
             </div>
 
-            {/* 🆕 Assign to Users (Edit mode) - Only shows same company/department users */}
+            {/* Assign to Users (Edit mode) - Shows all company users */}
             <div className="AdminTaskManagement-form-group">
-              <label>Assign to Users (Same Company & Department only)</label>
+              <label>Assign to Users (All Company Users)</label>
               <div className="AdminTaskManagement-multi-select-container">
                 {filteredUsers.length > 0 ? (
                   filteredUsers.map((user) => (
@@ -2440,7 +2402,7 @@ const AdminTaskManagementUserInfoChip = ({ user }) => {
                   <div className="AdminTaskManagement-empty-state">
                     <FiUsers size={32} className="AdminTaskManagement-empty-icon" />
                     <h5>No users available</h5>
-                    <p>Only users from same company and department are shown</p>
+                    <p>No other users found in your company</p>
                   </div>
                 )}
               </div>
@@ -2499,7 +2461,7 @@ const AdminTaskManagementUserInfoChip = ({ user }) => {
     </div>
   );
 
-  // Group Management Dialog - 🆕 Updated to show only same company/department users
+  // Group Management Dialog - Shows all company users
   const renderGroupDialog = () => (
     <div className={`AdminTaskManagement-modal ${openGroupDialog ? 'AdminTaskManagement-modal-open' : ''}`}>
       <div className="AdminTaskManagement-modal-content AdminTaskManagement-modal-medium">
@@ -2542,7 +2504,7 @@ const AdminTaskManagementUserInfoChip = ({ user }) => {
             </div>
 
             <div className="AdminTaskManagement-form-group">
-              <label>Select Members (Same Company & Department only) *</label>
+              <label>Select Members (All Company Users) *</label>
               <div className="AdminTaskManagement-multi-select-container">
                 {filteredUsers.length > 0 ? (
                   filteredUsers.map((user) => (
@@ -2574,7 +2536,7 @@ const AdminTaskManagementUserInfoChip = ({ user }) => {
                   <div className="AdminTaskManagement-empty-state">
                     <FiUsers size={32} className="AdminTaskManagement-empty-icon" />
                     <h5>No users available</h5>
-                    <p>Only users from same company and department are shown</p>
+                    <p>No other users found in your company</p>
                   </div>
                 )}
               </div>
@@ -2611,44 +2573,10 @@ const AdminTaskManagementUserInfoChip = ({ user }) => {
 
   // Main useEffect for data fetching
   useEffect(() => {
-    // Debug localStorage
-    const debugLocalStorage = () => {
-      console.log('=== LOCALSTORAGE DEBUG ===');
-      const userStr = localStorage.getItem('user');
-      const token = localStorage.getItem('token');
-      
-      console.log('Token exists:', !!token);
-      console.log('User string:', userStr);
-      
-      try {
-        const parsed = JSON.parse(userStr || '{}');
-        console.log('Parsed user object:', parsed);
-        console.log('Parsed user keys:', Object.keys(parsed));
-        
-        // Check specific fields
-        if (parsed.user) {
-          console.log('Nested user object:', parsed.user);
-          console.log('Nested user keys:', Object.keys(parsed.user));
-        }
-      } catch (e) {
-        console.log('Cannot parse as JSON:', e.message);
-      }
-      
-      console.log('=== END DEBUG ===');
-    };
-    
-    debugLocalStorage();
     fetchUserData();
   }, []);
 
   useEffect(() => {
-    console.log('🔄 Auth check completed:', {
-      authError,
-      initialAuthCheck,
-      userId,
-      currentUser
-    });
-
     if (initialAuthCheck) {
       if (authError) {
         console.log('❌ Skipping data fetch due to auth error');
@@ -2658,14 +2586,6 @@ const AdminTaskManagementUserInfoChip = ({ user }) => {
       }
     }
   }, [authError, initialAuthCheck, userId, page, rowsPerPage]);
-
-  // Log debug info for date inputs
-  useEffect(() => {
-    if (openCreateDialog || openEditDialog) {
-      console.log('🔍 Debug newTask.dueDateTime:', newTask.dueDateTime);
-      console.log('🔍 Debug editTask.dueDateTime:', editTask.dueDateTime);
-    }
-  }, [openCreateDialog, openEditDialog, newTask.dueDateTime, editTask.dueDateTime]);
 
   // Handle auth error redirect
   useEffect(() => {
@@ -2884,10 +2804,12 @@ const AdminTaskManagementUserInfoChip = ({ user }) => {
             <h2>Admin Task Management</h2>
             <div className="AdminTaskManagement-header-subtitle">
               Manage and assign tasks to users and groups
-              {currentUser.company && currentUser.department && (
+              {currentUser.company && (
                 <div className="AdminTaskManagement-header-info">
                   <span><FiBriefcase /> Company: {currentUser.company?.companyName || currentUser.company}</span>
-                  <span><FiBriefcase /> Department: {currentUser.department?.name || currentUser.department}</span>
+                  {currentUser.department && (
+                    <span><FiBriefcase /> Department: {currentUser.department?.name || currentUser.department}</span>
+                  )}
                 </div>
               )}
             </div>
