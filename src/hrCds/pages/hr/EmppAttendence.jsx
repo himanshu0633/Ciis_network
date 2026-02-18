@@ -56,6 +56,31 @@ const EmployeeTypeFilter = ({ selected, onChange }) => {
   );
 };
 
+// Department Filter Component
+const DepartmentFilter = ({ selected, onChange, departments }) => {
+  const options = [
+    { value: 'all', label: 'All Departments' },
+    ...departments.map(dept => ({
+      value: dept.name || dept,
+      label: dept.name || dept
+    }))
+  ];
+
+  return (
+    <select
+      className="filter-input"
+      value={selected}
+      onChange={(e) => onChange(e.target.value)}
+    >
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
+  );
+};
+
 // Status Filter Component - UPDATED to include LATE
 const StatusFilter = ({ selected, onChange }) => {
   const options = [
@@ -141,7 +166,7 @@ const AddAttendanceModal = ({ onClose, onSave, users, selectedDate }) => {
     const totalMinutes = (hours * 60) + minutes;
     
     if (totalMinutes >= 600) return "halfday";
-    if (totalMinutes >= 550) return "late"; // Changed from 570 to 550 for 9:10 AM
+    if (totalMinutes >= 550) return "late";
     return "present";
   };
 
@@ -179,7 +204,7 @@ const AddAttendanceModal = ({ onClose, onSave, users, selectedDate }) => {
                   <option value="">Select an employee...</option>
                   {users.map(user => (
                     <option key={user.id || user._id} value={user.id || user._id}>
-                      {user.name} - {user.email} ({user.employeeType || 'N/A'})
+                      {user.name} - {user.email} ({user.department || 'N/A'}) - {user.employeeType || 'N/A'}
                     </option>
                   ))}
                 </select>
@@ -197,7 +222,7 @@ const AddAttendanceModal = ({ onClose, onSave, users, selectedDate }) => {
                           </div>
                           <div className="user-details">
                             <strong>{selectedUser.name || 'Unknown'}</strong>
-                            <small>{selectedUser.email || 'N/A'} • {selectedUser.employeeType || 'N/A'}</small>
+                            <small>{selectedUser.email || 'N/A'} • {selectedUser.department || 'N/A'} • {selectedUser.employeeType || 'N/A'}</small>
                           </div>
                         </div>
                       );
@@ -412,7 +437,7 @@ const EditAttendanceModal = ({ record, onClose, onSave, onDelete, users }) => {
     const totalMinutes = (hours * 60) + minutes;
     
     if (totalMinutes >= 600) return "halfday";
-    if (totalMinutes >= 550) return "late"; // Changed from 570 to 550 for 9:10 AM
+    if (totalMinutes >= 550) return "late";
     return "present";
   };
 
@@ -455,7 +480,7 @@ const EditAttendanceModal = ({ record, onClose, onSave, onDelete, users }) => {
               <h4>{getEmployeeName()}</h4>
               <p className="text-muted">{record.user?.email || "N/A"}</p>
               <p className="text-muted">
-                {record.user?.employeeType?.toUpperCase() || "N/A"} • 
+                {record.user?.department || "N/A"} • {record.user?.employeeType?.toUpperCase() || "N/A"} • 
                 {record.date ? new Date(record.date).toLocaleDateString() : "N/A"}
               </p>
             </div>
@@ -703,7 +728,7 @@ const QuickEditModal = ({ records, onClose, onSave }) => {
                   <div className="employee-avatar small">
                     {getInitials(record.user?.name)}
                   </div>
-                  <span>{record.user?.name || 'Unknown'}</span>
+                  <span>{record.user?.name || 'Unknown'} - {record.user?.department || 'N/A'}</span>
                 </div>
               ))}
               {records.length > 5 && (
@@ -798,8 +823,10 @@ const calculateHoursWorked = (inTime, outTime) => {
 const EmployeeAttendance = () => {
   const [records, setRecords] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
+  const [departments, setDepartments] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedEmployeeType, setSelectedEmployeeType] = useState("all");
+  const [selectedDepartment, setSelectedDepartment] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
@@ -850,37 +877,61 @@ const EmployeeAttendance = () => {
     };
   }, []);
 
-  // UPDATED: Fixed user fetching function
+  // Updated fetchAllUsers function to get all company users and resolve department names
   const fetchAllUsers = async () => {
     try {
-      console.log("🔄 Fetching company users...");
-      const res = await axios.get('/users/department-users');
+      console.log("🔄 Fetching all company users...");
       
-      // FIXED: Handle different response structures
+      // First fetch departments to get the mapping
+      let departmentsMap = {};
+      try {
+        const deptRes = await axios.get('/api/departments');
+        console.log("✅ Departments API response:", deptRes.data);
+        
+        // Handle different response structures
+        let departmentsData = [];
+        if (deptRes.data && deptRes.data.success) {
+          if (deptRes.data.data && Array.isArray(deptRes.data.data)) {
+            departmentsData = deptRes.data.data;
+          } else if (deptRes.data.departments && Array.isArray(deptRes.data.departments)) {
+            departmentsData = deptRes.data.departments;
+          } else if (Array.isArray(deptRes.data)) {
+            departmentsData = deptRes.data;
+          }
+        }
+        
+        departmentsMap = departmentsData.reduce((acc, dept) => {
+          acc[dept._id] = dept.name;
+          return acc;
+        }, {});
+        
+        setDepartments(departmentsData);
+        console.log("✅ Departments loaded:", departmentsMap);
+      } catch (deptErr) {
+        console.error("❌ Failed to load departments", deptErr);
+      }
+      
+      const res = await axios.get('/users/company-users');
+      
       let usersData = [];
       
       if (res.data && res.data.success) {
-        // Structure 1: data.message.users (most likely based on your response)
         if (res.data.message && res.data.message.users && Array.isArray(res.data.message.users)) {
           usersData = res.data.message.users;
           console.log(`✅ Found ${usersData.length} users in message.users`);
         }
-        // Structure 2: data.users
         else if (res.data.users && Array.isArray(res.data.users)) {
           usersData = res.data.users;
           console.log(`✅ Found ${usersData.length} users in data.users`);
         }
-        // Structure 3: data.message is the array itself
         else if (res.data.message && Array.isArray(res.data.message)) {
           usersData = res.data.message;
           console.log(`✅ Found ${usersData.length} users in message array`);
         }
-        // Structure 4: data.data
         else if (res.data.data && Array.isArray(res.data.data)) {
           usersData = res.data.data;
           console.log(`✅ Found ${usersData.length} users in data.data`);
         }
-        // Structure 5: data is the array
         else if (Array.isArray(res.data)) {
           usersData = res.data;
           console.log(`✅ Found ${usersData.length} users in data array`);
@@ -890,17 +941,50 @@ const EmployeeAttendance = () => {
         }
       }
       
-      console.log("👥 Processed users data:", usersData.map(u => ({
-        id: u.id || u._id,
-        name: u.name,
-        email: u.email,
-        employeeType: u.employeeType || 'full-time'
-      })));
+      // Process users with department information - resolve department name from ID
+      const usersWithDepartment = usersData.map(user => {
+        // Get department ID from user object
+        let deptId = null;
+        let deptName = "Unassigned";
+        
+        if (user.department) {
+          if (typeof user.department === "object") {
+            deptId = user.department._id;
+            deptName = user.department.name || "Unassigned";
+          } else {
+            deptId = user.department;
+            // Try to get department name from the map
+            deptName = departmentsMap[user.department] || user.departmentName || "Unassigned";
+          }
+        } else if (user.departmentId) {
+          deptId = user.departmentId;
+          deptName = departmentsMap[user.departmentId] || "Unassigned";
+        }
+        
+        return {
+          id: user.id || user._id,
+          _id: user.id || user._id,
+          name: user.name,
+          email: user.email,
+          employeeType: user.employeeType || 'full-time',
+          departmentId: deptId,
+          department: deptName, // This will now show the name instead of ID
+          jobRole: user.jobRole
+        };
+      });
       
-      setAllUsers(usersData);
+      console.log("👥 Users by department:", 
+        usersWithDepartment.reduce((acc, user) => {
+          const dept = user.department;
+          if (!acc[dept]) acc[dept] = [];
+          acc[dept].push(user.name);
+          return acc;
+        }, {})
+      );
+      
+      setAllUsers(usersWithDepartment);
       
       if (usersData.length === 0) {
-        // Add test data if no users found
         console.log("⚠️ No users found, adding test data");
         const testUsers = [
           {
@@ -920,6 +1004,24 @@ const EmployeeAttendance = () => {
             employeeType: 'full-time',
             department: 'SALES',
             jobRole: 'user'
+          },
+          {
+            id: 'test3',
+            _id: 'test3',
+            name: 'HR Specialist',
+            email: 'hr@company.com',
+            employeeType: 'full-time',
+            department: 'HR',
+            jobRole: 'user'
+          },
+          {
+            id: 'test4',
+            _id: 'test4',
+            name: 'Marketing Lead',
+            email: 'marketing@company.com',
+            employeeType: 'full-time',
+            department: 'MARKETING',
+            jobRole: 'manager'
           }
         ];
         setAllUsers(testUsers);
@@ -929,7 +1031,6 @@ const EmployeeAttendance = () => {
       console.error("❌ Failed to load users", err);
       showSnackbar("Error loading users data", "error");
       
-      // Add test data on error
       const testUsers = [
         {
           id: 'test1',
@@ -948,13 +1049,43 @@ const EmployeeAttendance = () => {
           employeeType: 'full-time',
           department: 'SALES',
           jobRole: 'user'
+        },
+        {
+          id: 'test3',
+          _id: 'test3',
+          name: 'HR Specialist',
+          email: 'hr@company.com',
+          employeeType: 'full-time',
+          department: 'HR',
+          jobRole: 'user'
         }
       ];
       setAllUsers(testUsers);
     }
   };
 
-  // UPDATED: Calculate status based on new LATE rules (9:10 AM to 9:30 AM)
+  // Helper function to get department name
+  const getDepartmentName = (user) => {
+    if (!user) return 'Unassigned';
+    
+    // If department is already a string name, return it
+    if (typeof user.department === 'string') return user.department;
+    
+    // If department is an object with name property
+    if (user.department && typeof user.department === 'object' && user.department.name) {
+      return user.department.name;
+    }
+    
+    // If we have departments state and user has departmentId
+    if (user.departmentId && departments.length > 0) {
+      const dept = departments.find(d => d._id === user.departmentId);
+      if (dept) return dept.name;
+    }
+    
+    return 'Unassigned';
+  };
+
+  // Calculate status based on LATE rules (9:10 AM to 9:30 AM)
   const calculateStatusFromTime = (inTime) => {
     if (!inTime) return "absent";
     
@@ -965,9 +1096,9 @@ const EmployeeAttendance = () => {
     
     // 9:10 AM = 550 minutes, 9:30 AM = 570 minutes, 10:00 AM = 600 minutes
     if (totalMinutes >= 600) return "halfday";
-    if (totalMinutes >= 550 && totalMinutes < 570) return "late"; // 9:10 AM to 9:30 AM
-    if (totalMinutes >= 570) return "halfday"; // 9:30 AM to 10:00 AM
-    return "present"; // Before 9:10 AM
+    if (totalMinutes >= 550 && totalMinutes < 570) return "late";
+    if (totalMinutes >= 570) return "halfday";
+    return "present";
   };
 
   const fetchAttendanceData = async (date) => {
@@ -1015,7 +1146,7 @@ const EmployeeAttendance = () => {
               name: user.name,
               email: user.email,
               employeeType: user.employeeType || 'full-time',
-              department: user.department,
+              department: user.department, // This will now be the name, not ID
               jobRole: user.jobRole
             },
             status: finalStatus,
@@ -1024,7 +1155,6 @@ const EmployeeAttendance = () => {
             totalHours: hoursWorked.hours
           };
         } else {
-          // Create absent record for users without attendance
           return {
             _id: `absent_${userId}_${date}`,
             user: {
@@ -1033,7 +1163,7 @@ const EmployeeAttendance = () => {
               name: user.name,
               email: user.email,
               employeeType: user.employeeType || 'full-time',
-              department: user.department,
+              department: user.department, // This will now be the name, not ID
               jobRole: user.jobRole
             },
             date: new Date(date),
@@ -1053,11 +1183,14 @@ const EmployeeAttendance = () => {
         }
       });
 
-      console.log("📋 Combined records:", combinedRecords.map(r => ({
-        name: r.user.name,
-        status: r.status,
-        hours: r.hoursWorked
-      })));
+      console.log("📋 Combined records by department:", 
+        combinedRecords.reduce((acc, rec) => {
+          const dept = rec.user.department;
+          if (!acc[dept]) acc[dept] = [];
+          acc[dept].push({ name: rec.user.name, status: rec.status });
+          return acc;
+        }, {})
+      );
       
       setRecords(combinedRecords);
       calculateStats(combinedRecords);
@@ -1065,7 +1198,6 @@ const EmployeeAttendance = () => {
       console.error("❌ Failed to load attendance", err);
       showSnackbar("Error loading attendance data", "error");
       
-      // Create mock records on error
       const mockRecords = allUsers.map(user => ({
         _id: `mock_${user.id || user._id}_${date}`,
         user: {
@@ -1128,6 +1260,7 @@ const EmployeeAttendance = () => {
   const clearFilters = () => {
     setStatusFilter("all");
     setSelectedEmployeeType("all");
+    setSelectedDepartment("all");
     setSearchTerm("");
   };
 
@@ -1150,6 +1283,12 @@ const EmployeeAttendance = () => {
       );
     }
 
+    if (selectedDepartment !== "all") {
+      filtered = filtered.filter(
+        (rec) => rec.user?.department === selectedDepartment
+      );
+    }
+
     if (statusFilter !== "all") {
       filtered = filtered.filter((rec) => rec.status === statusFilter);
     }
@@ -1159,13 +1298,26 @@ const EmployeeAttendance = () => {
         (rec) =>
           rec.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           rec.user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          rec.user?.department?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           rec.status?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
+    // Sort by department then by name
+    filtered.sort((a, b) => {
+      const deptA = a.user?.department || 'Unassigned';
+      const deptB = b.user?.department || 'Unassigned';
+      if (deptA < deptB) return -1;
+      if (deptA > deptB) return 1;
+      
+      const nameA = a.user?.name || '';
+      const nameB = b.user?.name || '';
+      return nameA.localeCompare(nameB);
+    });
+
     console.log("🔍 Filtered records:", filtered.length);
     return filtered;
-  }, [records, selectedEmployeeType, searchTerm, statusFilter]);
+  }, [records, selectedEmployeeType, selectedDepartment, searchTerm, statusFilter]);
 
   const formatTime = (timeStr) => {
     if (!timeStr) return "-";
@@ -1175,7 +1327,6 @@ const EmployeeAttendance = () => {
     });
   };
 
-  // UPDATED: Get login time category for LATE (9:10 AM to 9:30 AM)
   const getLoginTimeCategory = (inTime) => {
     if (!inTime) return "No Login";
     
@@ -1214,26 +1365,22 @@ const EmployeeAttendance = () => {
       
       let response;
       
-      // Check if it's a frontend-generated absent record
       if (recordId.startsWith('absent_')) {
-        // Extract user ID and date from the recordId
         const parts = recordId.split('_');
         const userId = parts[1];
         const date = parts[2];
         
-        // Create new attendance record
         response = await axios.post('/attendance/manual', {
           ...updatedData,
           user: userId,
           date: date
         });
       } else {
-        // Update existing record
         response = await axios.put(`/attendance/${recordId}`, updatedData);
       }
       
       showSnackbar("Attendance record saved successfully!", "success");
-      fetchAttendanceData(selectedDate); // Refresh data
+      fetchAttendanceData(selectedDate);
     } catch (error) {
       console.error("Error saving attendance:", error);
       showSnackbar("Failed to save attendance record", "error");
@@ -1261,7 +1408,6 @@ const EmployeeAttendance = () => {
     try {
       setLoading(true);
       
-      // Check if it's a frontend-generated absent record
       if (recordId.startsWith('absent_')) {
         showSnackbar("Cannot delete absent record - it doesn't exist in database", "warning");
         setEditModalOpen(false);
@@ -1271,7 +1417,7 @@ const EmployeeAttendance = () => {
       await axios.delete(`/attendance/${recordId}`);
       
       showSnackbar("Attendance record deleted successfully!", "success");
-      fetchAttendanceData(selectedDate); // Refresh data
+      fetchAttendanceData(selectedDate);
       setEditModalOpen(false);
     } catch (error) {
       console.error("Error deleting attendance:", error);
@@ -1483,6 +1629,7 @@ const EmployeeAttendance = () => {
     setExportMenuOpen(false);
     
     const excelData = filteredRecords.map(record => ({
+      'Department': record.user?.department || 'Unassigned',
       'Employee ID': record.user?.id || record.user?._id || 'N/A',
       'Name': record.user?.name || 'N/A',
       'Email': record.user?.email || 'N/A',
@@ -1500,20 +1647,20 @@ const EmployeeAttendance = () => {
 
     const summaryRows = [
       {},
-      { 'Employee ID': 'SUMMARY REPORT' },
-      { 'Employee ID': 'Total Employees', 'Name': stats.total },
-      { 'Employee ID': 'Present', 'Name': stats.present },
-      { 'Employee ID': 'Late', 'Name': stats.late },
-      { 'Employee ID': 'Half Day', 'Name': stats.halfDay },
-      { 'Employee ID': 'Absent', 'Name': stats.absent },
-      { 'Employee ID': 'On Time', 'Name': stats.onTime },
-      { 'Employee ID': 'Report Date', 'Name': formatExportDate(selectedDate) }
+      { 'Department': 'SUMMARY REPORT' },
+      { 'Department': 'Total Employees', 'Name': stats.total },
+      { 'Department': 'Present', 'Name': stats.present },
+      { 'Department': 'Late', 'Name': stats.late },
+      { 'Department': 'Half Day', 'Name': stats.halfDay },
+      { 'Department': 'Absent', 'Name': stats.absent },
+      { 'Department': 'On Time', 'Name': stats.onTime },
+      { 'Department': 'Report Date', 'Name': formatExportDate(selectedDate) }
     ];
 
     const allData = [...excelData, ...summaryRows];
     
     const worksheet = XLSX.utils.json_to_sheet(allData, {
-      header: ['Employee ID', 'Name', 'Email', 'Employee Type', 'Date', 'Check In', 'Check Out', 
+      header: ['Department', 'Employee ID', 'Name', 'Email', 'Employee Type', 'Date', 'Check In', 'Check Out', 
                'Hours Worked', 'Status', 'Late By', 'Early Leave', 'Overtime', 'Total Hours']
     });
     
@@ -1527,10 +1674,11 @@ const EmployeeAttendance = () => {
   const exportToCSV = () => {
     setExportMenuOpen(false);
     
-    const headers = ['Employee Name', 'Email', 'Employee Type', 'Date', 'Check In', 'Check Out', 
+    const headers = ['Department', 'Employee Name', 'Email', 'Employee Type', 'Date', 'Check In', 'Check Out', 
                      'Hours Worked', 'Status', 'Late By', 'Early Leave', 'Overtime'];
     
     const csvData = filteredRecords.map(record => [
+      record.user?.department || 'Unassigned',
       record.user?.name || 'N/A',
       record.user?.email || 'N/A',
       record.user?.employeeType?.toUpperCase() || 'N/A',
@@ -1589,9 +1737,8 @@ const EmployeeAttendance = () => {
         <div>
           <h1 className="attendance-title">Attendance Management</h1>
           <p className="attendance-subtitle">
-            Monitor and manage employee attendance with full edit capabilities
+            Monitor and manage employee attendance by department
           </p>
-          {/* UPDATED: Timing rules with LATE (9:10 AM to 9:30 AM) */}
           <div className="timing-rules">
             <span className="rule-item"><FiCheckCircle /> Before 9:10 AM → PRESENT</span>
             <span className="rule-item"><FiAlertTriangle /> 9:10 AM - 9:30 AM → LATE</span>
@@ -1652,25 +1799,6 @@ const EmployeeAttendance = () => {
 
         {/* Action Bar */}
         <div className="header-actions">
-          {/* Add New Button */}
-          {/* <button 
-            className="btn btn-contained"
-            onClick={handleAddRecord}
-            disabled={loading}
-          >
-            <FiPlus size={16} />
-            Add Attendance
-          </button>
-
-          {/* Bulk Edit Button */}
-          {/* <button 
-            className={`btn ${bulkEditMode ? 'btn-contained' : 'btn-outlined'}`}
-            onClick={() => setBulkEditMode(!bulkEditMode)}
-            disabled={loading}
-          >
-            {bulkEditMode ? 'Exit Bulk Edit' : 'Bulk Edit'}
-          </button> */} 
-
           {/* Export Button */}
           <div className="export-container" ref={exportMenuRef}>
             <button
@@ -1746,6 +1874,15 @@ const EmployeeAttendance = () => {
           </div>
 
           <div className="filter-group">
+            <label className="filter-label">Department</label>
+            <DepartmentFilter
+              selected={selectedDepartment}
+              onChange={setSelectedDepartment}
+              departments={departments}
+            />
+          </div>
+
+          <div className="filter-group">
             <label className="filter-label">Status</label>
             <StatusFilter
               selected={statusFilter}
@@ -1769,7 +1906,7 @@ const EmployeeAttendance = () => {
               <input
                 type="text"
                 className="filter-input"
-                placeholder="Search by name, email or status..."
+                placeholder="Search by name, email, department or status..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 style={{ paddingLeft: '40px' }}
@@ -1796,7 +1933,7 @@ const EmployeeAttendance = () => {
         </div>
       </div>
 
-      {/* Stat Cards - UPDATED with LATE */}
+      {/* Stat Cards */}
       <div className="stats-container">
         {[
           { 
@@ -1872,11 +2009,11 @@ const EmployeeAttendance = () => {
         ))}
       </div>
 
-      {/* Attendance Table */}
+      {/* Attendance Table with Department Grouping */}
       <div className="attendance-table-container" ref={tableRef}>
         <div className="table-header">
           <div>
-            <h3 className="table-title">Attendance Records</h3>
+            <h3 className="table-title">Attendance Records by Department</h3>
             <div className="table-count">
               {filteredRecords.length} records found • 
               <span style={{ marginLeft: '8px', fontWeight: 'bold' }}>
@@ -1906,6 +2043,7 @@ const EmployeeAttendance = () => {
               <tr>
                 {bulkEditMode && <th style={{ width: '50px' }}></th>}
                 <th>Employee</th>
+                <th>Department</th>
                 <th>Type</th>
                 <th>Date</th>
                 <th>Check In</th>
@@ -1919,97 +2057,127 @@ const EmployeeAttendance = () => {
             </thead>
             <tbody>
               {filteredRecords.length ? (
-                filteredRecords.map((rec) => (
-                  <tr key={rec._id} className={getRowClass(rec.status)}>
-                    {bulkEditMode && (
-                      <td>
-                        <input
-                          type="checkbox"
-                          checked={selectedRecords.includes(rec._id)}
-                          onChange={() => toggleRecordSelection(rec._id)}
-                        />
-                      </td>
-                    )}
-                    <td>
-                      <div className="employee-info">
-                        <div className="employee-avatar">
-                          {getInitials(rec.user?.name)}
-                        </div>
-                        <div className="employee-details">
-                          <div className="employee-name">
-                            {rec.user?.name || "N/A"}
-                          </div>
-                          <div className="employee-email">
-                            {rec.user?.email || "N/A"}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <span className={`type-chip ${getEmployeeTypeClass(rec.user?.employeeType)}`}>
-                        {rec.user?.employeeType?.toUpperCase() || "N/A"}
-                      </span>
-                    </td>
-                    <td>
-                      <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>
-                        {formatDate(rec.date)}
-                      </div>
-                    </td>
-                    <td>
-                      <div style={{ fontWeight: 500 }}>
-                        {formatTime(rec.inTime)}
-                      </div>
-                    </td>
-                    <td>
-                      <div style={{ fontWeight: 500 }}>
-                        {formatTime(rec.outTime)}
-                      </div>
-                    </td>
-                    <td>
-                      <span className={`time-chip ${rec.totalHours >= 9 ? 'time-full' : rec.totalHours >= 5 ? 'time-half' : 'time-low'}`}>
-                        {rec.hoursWorked || "00:00:00"}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="login-time-info">
-                        {getLoginTimeCategory(rec.inTime)}
-                      </div>
-                    </td>
-                    <td>
-                      <span className={`status-chip ${getStatusClass(rec.status)}`}>
-                        {rec.status.toUpperCase()}
-                      </span>
-                      {/* UPDATED: Status explanation with new LATE rules */}
-                      <div className="status-explanation">
-                        {rec.status === 'present' && 'Arrived before 9:10 AM'}
-                        {rec.status === 'late' && 'Arrived between 9:10-9:30 AM'}
-                        {rec.status === 'halfday' && 'Arrived after 9:30 AM'}
-                        {rec.status === 'absent' && 'No attendance recorded'}
-                      </div>
-                    </td>
-                    <td>
-                      <span className="late-chip">
-                        {rec.lateBy || "00:00:00"}
-                      </span>
-                    </td>
-                    {!bulkEditMode && (
-                      <td>
-                        <div className="action-buttons">
-                          <button
-                            className="btn-icon edit-btn"
-                            onClick={() => handleEditRecord(rec)}
-                            title="Edit Attendance"
-                          >
-                            <FiEdit size={16} />
-                          </button>
+                // Group records by department
+                Object.entries(
+                  filteredRecords.reduce((acc, rec) => {
+                    const dept = rec.user?.department || 'Unassigned';
+                    if (!acc[dept]) acc[dept] = [];
+                    acc[dept].push(rec);
+                    return acc;
+                  }, {})
+                ).map(([department, deptRecords]) => (
+                  <React.Fragment key={department}>
+                    {/* Department Header Row */}
+                    <tr className="department-header">
+                      <td colSpan={bulkEditMode ? 12 : 11}>
+                        <div className="department-title">
+                          <FiUsers size={18} />
+                          <strong>{department} Department</strong>
+                          <span className="department-count">
+                            ({deptRecords.length} employees)
+                          </span>
                         </div>
                       </td>
-                    )}
-                  </tr>
+                    </tr>
+                    
+                    {/* Department Records */}
+                    {deptRecords.map((rec) => (
+                      <tr key={rec._id} className={getRowClass(rec.status)}>
+                        {bulkEditMode && (
+                          <td>
+                            <input
+                              type="checkbox"
+                              checked={selectedRecords.includes(rec._id)}
+                              onChange={() => toggleRecordSelection(rec._id)}
+                            />
+                          </td>
+                        )}
+                        <td>
+                          <div className="employee-info">
+                            <div className="employee-avatar">
+                              {getInitials(rec.user?.name)}
+                            </div>
+                            <div className="employee-details">
+                              <div className="employee-name">
+                                {rec.user?.name || "N/A"}
+                              </div>
+                              <div className="employee-email">
+                                {rec.user?.email || "N/A"}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <span className="department-chip">
+                            {rec.user?.department || 'Unassigned'}
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`type-chip ${getEmployeeTypeClass(rec.user?.employeeType)}`}>
+                            {rec.user?.employeeType?.toUpperCase() || "N/A"}
+                          </span>
+                        </td>
+                        <td>
+                          <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>
+                            {formatDate(rec.date)}
+                          </div>
+                        </td>
+                        <td>
+                          <div style={{ fontWeight: 500 }}>
+                            {formatTime(rec.inTime)}
+                          </div>
+                        </td>
+                        <td>
+                          <div style={{ fontWeight: 500 }}>
+                            {formatTime(rec.outTime)}
+                          </div>
+                        </td>
+                        <td>
+                          <span className={`time-chip ${rec.totalHours >= 9 ? 'time-full' : rec.totalHours >= 5 ? 'time-half' : 'time-low'}`}>
+                            {rec.hoursWorked || "00:00:00"}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="login-time-info">
+                            {getLoginTimeCategory(rec.inTime)}
+                          </div>
+                        </td>
+                        <td>
+                          <span className={`status-chip ${getStatusClass(rec.status)}`}>
+                            {rec.status.toUpperCase()}
+                          </span>
+                          <div className="status-explanation">
+                            {rec.status === 'present' && 'Arrived before 9:10 AM'}
+                            {rec.status === 'late' && 'Arrived between 9:10-9:30 AM'}
+                            {rec.status === 'halfday' && 'Arrived after 9:30 AM'}
+                            {rec.status === 'absent' && 'No attendance recorded'}
+                          </div>
+                        </td>
+                        <td>
+                          <span className="late-chip">
+                            {rec.lateBy || "00:00:00"}
+                          </span>
+                        </td>
+                        {!bulkEditMode && (
+                          <td>
+                            <div className="action-buttons">
+                              <button
+                                className="btn-icon edit-btn"
+                                onClick={() => handleEditRecord(rec)}
+                                title="Edit Attendance"
+                              >
+                                <FiEdit size={16} />
+                              </button>
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </React.Fragment>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={bulkEditMode ? 11 : 10}>
+                  <td colSpan={bulkEditMode ? 12 : 11}>
                     <div className="empty-state">
                       <div className="empty-state-icon">
                         <FiCalendar size={48} />
