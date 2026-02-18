@@ -128,7 +128,7 @@ export const AdminProject = () => {
 
   const fetchUsers = async () => {
     try {
-      const res = await axios.get("/users/department-users");
+      const res = await axios.get("/users/company-users");
       if (res.data?.success && res.data.message?.users) setUsers(res.data.message.users);
       else if (Array.isArray(res.data)) setUsers(res.data);
       else if (res.data?.data) setUsers(res.data.data);
