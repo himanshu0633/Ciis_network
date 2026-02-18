@@ -1133,10 +1133,18 @@ const EmployeeAttendance = () => {
           const calculatedStatus = calculateStatusFromTime(attendanceRecord.inTime);
           const hoursWorked = calculateHoursWorked(attendanceRecord.inTime, attendanceRecord.outTime);
           
-          let finalStatus = calculatedStatus;
-          if (calculatedStatus === 'present' && hoursWorked.hours > 0 && hoursWorked.hours < 9) {
+         let finalStatus = attendanceRecord.status 
+            ? attendanceRecord.status.toLowerCase() 
+            : calculatedStatus;
+
+                    if (
+            finalStatus === 'present' &&
+            hoursWorked.hours > 0 &&
+            hoursWorked.hours < 9
+          ) {
             finalStatus = hoursWorked.hours >= 5 ? 'halfday' : 'absent';
           }
+
           
           return {
             ...attendanceRecord,
@@ -1440,6 +1448,8 @@ const EmployeeAttendance = () => {
       );
       
       await Promise.all(promises);
+      fetchAttendanceData(selectedDate);
+
       
       setRecords(prev => prev.map(record =>
         selectedRecords.includes(record._id)
