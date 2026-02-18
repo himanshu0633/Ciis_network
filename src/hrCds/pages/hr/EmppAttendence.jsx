@@ -885,7 +885,7 @@ const EmployeeAttendance = () => {
       // First fetch departments to get the mapping
       let departmentsMap = {};
       try {
-        const deptRes = await axios.get('/api/departments');
+        const deptRes = await axios.get('/departments');
         console.log("✅ Departments API response:", deptRes.data);
         
         // Handle different response structures
