@@ -26,6 +26,17 @@ const Login = () => {
   const [companyIdentifier, setCompanyIdentifier] = useState('');
   const [twoFactorRequired, setTwoFactorRequired] = useState(false);
   const [twoFactorCode, setTwoFactorCode] = useState('');
+  
+  // Forget password states
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
+  const [forgotPasswordStep, setForgotPasswordStep] = useState('email'); // email, otp, reset
+  const [otpCode, setOtpCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [countdown, setCountdown] = useState(0);
 
   const navigate = useNavigate();
   const { setUser, setIsAuthenticated } = useAuth();
@@ -61,6 +72,15 @@ const Login = () => {
       setCompanyLoading(false);
     }
   }, []);
+
+  // Countdown timer for OTP resend
+  useEffect(() => {
+    let timer;
+    if (countdown > 0) {
+      timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [countdown]);
 
   const fetchCompanyDetails = async (identifier) => {
     try {
@@ -299,6 +319,82 @@ const Login = () => {
     }
   };
 
+  // Forget Password Handlers
+  const handleForgotPassword = async () => {
+  if (!forgotPasswordEmail.trim()) {
+    setErrors({ forgotPassword: 'Email is required' });
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const response = await axios.post('/auth/forgot-password', {
+      email: forgotPasswordEmail
+    });
+
+    if (response.data.success) {
+      toast.success('OTP sent to your email!');
+      setForgotPasswordStep('reset'); // direct reset step
+    }
+
+  } catch (error) {
+    toast.error(error.response?.data?.message || 'Failed to send OTP');
+  } finally {
+    setLoading(false);
+  }
+};
+
+  const handleResetPassword = async () => {
+
+  if (!otpCode || otpCode.length !== 6) {
+    setErrors({ otp: 'Enter valid 6-digit OTP' });
+    return;
+  }
+
+  if (!newPassword || newPassword.length < 6) {
+    setErrors({ newPassword: 'Password must be at least 6 characters' });
+    return;
+  }
+
+  if (newPassword !== confirmPassword) {
+    setErrors({ confirmPassword: 'Passwords do not match' });
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const response = await axios.post('/auth/reset-password', {
+      email: forgotPasswordEmail,
+      otp: otpCode,
+      newPassword: newPassword
+    });
+
+    toast.success("Password reset successful!");
+
+    setShowForgotPassword(false);
+    setForgotPasswordStep('email');
+
+  } catch (error) {
+    toast.error(error.response?.data?.message || "Invalid OTP");
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+  // Back to login
+  const handleBackToLogin = () => {
+    setShowForgotPassword(false);
+    setForgotPasswordStep('email');
+    setForgotPasswordEmail('');
+    setOtpCode('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setErrors({});
+  };
+
   // Icons as inline SVG components
   const VisibilityIcon = () => (
     <svg className="ciis-login-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -335,6 +431,186 @@ const Login = () => {
       <path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/>
     </svg>
   );
+
+  const ArrowBackIcon = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+    </svg>
+  );
+
+  const renderForgotPasswordForm = () => {
+    switch (forgotPasswordStep) {
+      case 'email':
+        return (
+          <div className="ciis-login-forgot-password">
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '24px' }}>
+              <button
+                onClick={handleBackToLogin}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#667eea',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '4px 8px',
+                  borderRadius: '4px'
+                }}
+              >
+                <ArrowBackIcon />
+                Back to Login
+              </button>
+            </div>
+
+            <h3 style={{ fontSize: '1.5rem', marginBottom: '8px', color: '#333' }}>Forgot Password?</h3>
+            <p style={{ color: '#666', marginBottom: '24px', fontSize: '0.9rem' }}>
+              Enter your email address and we'll send you an OTP to reset your password.
+            </p>
+
+            <div className="ciis-login-input-group">
+              <label className="ciis-login-input-label">Email Address</label>
+              <div className="ciis-login-input-container">
+                <div className="ciis-login-input-icon">
+                  <EmailIcon />
+                </div>
+                <input
+                  type="email"
+                  value={forgotPasswordEmail}
+                  onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                  disabled={loading}
+                  className={`ciis-login-input ${errors.forgotPassword ? 'ciis-login-input-error' : ''}`}
+                  placeholder="Enter your registered email"
+                />
+              </div>
+              {errors.forgotPassword && <span className="ciis-login-error-text">{errors.forgotPassword}</span>}
+            </div>
+
+            <button
+              onClick={handleForgotPassword}
+              className="ciis-login-primary-button"
+              disabled={loading}
+              style={{ marginTop: '16px', width: '100%', padding: '14px' }}
+            >
+              {loading ? 'Sending OTP...' : 'Send OTP'}
+            </button>
+          </div>
+        );
+
+      case 'reset':
+        return (
+          <div className="ciis-login-forgot-password">
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '24px' }}>
+              <button
+                onClick={() => setForgotPasswordStep('email')}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#667eea',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '4px 8px',
+                  borderRadius: '4px'
+                }}
+              >
+                <ArrowBackIcon />
+                Back
+              </button>
+            </div>
+
+            <h3 style={{ fontSize: '1.5rem', marginBottom: '8px', color: '#333' }}>Reset Password</h3>
+            <p style={{ color: '#666', marginBottom: '24px', fontSize: '0.9rem' }}>
+              Create a new password for your account
+            </p>
+
+            <div className="ciis-login-input-group">
+                <label className="ciis-login-input-label">6-Digit OTP</label>
+                <div className="ciis-login-input-container">
+                  <div className="ciis-login-input-icon">
+                    <LockIcon />
+                  </div>
+                  <input
+                    type="text"
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    disabled={loading}
+                    className={`ciis-login-input ${errors.otp ? 'ciis-login-input-error' : ''}`}
+                    placeholder="Enter 6-digit OTP"
+                  />
+                </div>
+                {errors.otp && <span className="ciis-login-error-text">{errors.otp}</span>}
+            </div>
+            <div className="ciis-login-input-group">
+              <label className="ciis-login-input-label">New Password</label>
+              <div className="ciis-login-input-container">
+                <div className="ciis-login-input-icon">
+                  <LockIcon />
+                </div>
+                <input
+                  type={showNewPassword ? 'text' : 'password'}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  disabled={loading}
+                  className={`ciis-login-input ${errors.newPassword ? 'ciis-login-input-error' : ''}`}
+                  placeholder="Enter new password"
+                />
+                <div 
+                  className="ciis-login-input-adornment"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                >
+                  {showNewPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                </div>
+              </div>
+              {errors.newPassword && <span className="ciis-login-error-text">{errors.newPassword}</span>}
+            </div>
+
+            <div className="ciis-login-input-group">
+              <label className="ciis-login-input-label">Confirm Password</label>
+              <div className="ciis-login-input-container">
+                <div className="ciis-login-input-icon">
+                  <LockIcon />
+                </div>
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  disabled={loading}
+                  className={`ciis-login-input ${errors.confirmPassword ? 'ciis-login-input-error' : ''}`}
+                  placeholder="Confirm new password"
+                />
+                <div 
+                  className="ciis-login-input-adornment"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  {showConfirmPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                </div>
+              </div>
+              {errors.confirmPassword && <span className="ciis-login-error-text">{errors.confirmPassword}</span>}
+            </div>
+
+            {errors.reset && (
+              <div style={{ color: '#f44336', fontSize: '0.875rem', marginBottom: '12px' }}>
+                {errors.reset}
+              </div>
+            )}
+
+            <button
+              onClick={handleResetPassword}
+              className="ciis-login-primary-button"
+              disabled={loading || !newPassword || !confirmPassword}
+              style={{ marginTop: '16px', width: '100%', padding: '14px' }}
+            >
+              {loading ? 'Resetting Password...' : 'Reset Password'}
+            </button>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="ciis-login-container">
@@ -391,8 +667,6 @@ const Login = () => {
         }
 
         .ciis-login-logo-container {
-          // width: 220px;
-          // height: 120px;
           border-radius: 12px;
           background-color: rgba(255, 255, 255, 0.1);
           backdrop-filter: blur(10px);
@@ -405,9 +679,7 @@ const Login = () => {
         }
 
         .ciis-login-logo {
-        padding: 8px;
-          // width: 180px;
-          // height: 80px;
+          padding: 8px;
           object-fit: cover;
         }
 
@@ -720,9 +992,7 @@ const Login = () => {
           
           <div className="ciis-login-left-content">
             {/* Company Logo */}
-            <div className="ciis-login-logo-container"  onClick={() => navigate('/dashboard')}
-  style={{ cursor: 'pointer' }}
-  title="Go to Dashboard">
+            <div className="ciis-login-logo-container" onClick={() => navigate('/dashboard')} style={{ cursor: 'pointer' }} title="Go to Dashboard">
               {companyLoading ? (
                 <div style={{ color: 'white', display: 'flex', alignItems: 'center' }}>
                   <div className="ciis-login-spinner" style={{ width: '40px', height: '40px', border: '3px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%' }}></div>
@@ -749,169 +1019,194 @@ const Login = () => {
           </div>
         </div>
 
-        {/* RIGHT SECTION - Login Form */}
+        {/* RIGHT SECTION - Login/Forget Password Form */}
         <div className="ciis-login-right">
           <div className="ciis-login-form-container">
-            {/* Form Header */}
-            <div className="ciis-login-form-header">
-              <h2 className="ciis-login-form-title">
-                {twoFactorRequired ? 'Two-Factor Authentication' : 'Welcome Back'}
-              </h2>
-              <p className="ciis-login-form-subtitle">
-                {twoFactorRequired
-                  ? 'Enter the code from your authenticator app'
-                  : `Sign in to ${companyDetails?.companyName || 'CIIS NETWORK'}`}
-              </p>
-            </div>
-
-            {/* Error Alert */}
-            {errors.general && (
-              <div className="ciis-login-error-alert">
-                <div className="ciis-login-error-icon">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="#5f2120">
-                    <path d="M11 15h2v2h-2zm0-8h2v6h-2zm.99-5C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/>
-                  </svg>
-                </div>
-                {errors.general}
-              </div>
-            )}
-
-            {/* Login Form */}
-            {!twoFactorRequired ? (
-              <form onSubmit={handleSubmit}>
-                {/* Email Input */}
-                <div className="ciis-login-input-group">
-                  <label className="ciis-login-input-label">Email Address</label>
-                  <div className="ciis-login-input-container">
-                    <div className="ciis-login-input-icon">
-                      <EmailIcon />
-                    </div>
-                    <input
-                      type="email"
-                      name="email"
-                      value={form.email}
-                      onChange={handleChange}
-                      disabled={loading}
-                      autoComplete="email"
-                      className={`ciis-login-input ${errors.email ? 'ciis-login-input-error' : ''}`}
-                      placeholder="Enter your email"
-                    />
-                  </div>
-                  {errors.email && <span className="ciis-login-error-text">{errors.email}</span>}
-                </div>
-
-                {/* Password Input */}
-                <div className="ciis-login-input-group">
-                  <label className="ciis-login-input-label">Password</label>
-                  <div className="ciis-login-input-container">
-                    <div className="ciis-login-input-icon">
-                      <LockIcon />
-                    </div>
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      name="password"
-                      value={form.password}
-                      onChange={handleChange}
-                      disabled={loading}
-                      autoComplete="current-password"
-                      className={`ciis-login-input ${errors.password ? 'ciis-login-input-error' : ''}`}
-                      placeholder="Enter your password"
-                    />
-                    <div 
-                      className="ciis-login-input-adornment"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                    </div>
-                  </div>
-                  {errors.password && <span className="ciis-login-error-text">{errors.password}</span>}
-                </div>
-
-                {/* Sign In Button */}
-                <button
-                  type="submit"
-                  className="ciis-login-button"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <>
-                      <div className="ciis-login-button-icon">
-                        <div className="ciis-login-spinner" style={{ width: '20px', height: '20px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%' }}></div>
-                      </div>
-                      Signing in...
-                    </>
-                  ) : (
-                    <>
-                      <div className="ciis-login-button-icon">
-                        <LoginIcon />
-                      </div>
-                      Sign In
-                    </>
-                  )}
-                </button>
-              </form>
+            {showForgotPassword ? (
+              // Forget Password Forms
+              renderForgotPasswordForm()
             ) : (
-              /* Two-Factor Authentication Form */
-              <div>
-                <div className="ciis-login-input-group">
-                  <label className="ciis-login-input-label">Enter 6-digit code</label>
-                  <div className="ciis-login-input-container">
-                    <div className="ciis-login-input-icon">
-                      <LockIcon />
+              // Login or 2FA Form
+              <>
+                {/* Form Header */}
+                <div className="ciis-login-form-header">
+                  <h2 className="ciis-login-form-title">
+                    {twoFactorRequired ? 'Two-Factor Authentication' : 'Welcome Back'}
+                  </h2>
+                  <p className="ciis-login-form-subtitle">
+                    {twoFactorRequired
+                      ? 'Enter the code from your authenticator app'
+                      : `Sign in to ${companyDetails?.companyName || 'CIIS NETWORK'}`}
+                  </p>
+                </div>
+
+                {/* Error Alert */}
+                {errors.general && (
+                  <div className="ciis-login-error-alert">
+                    <div className="ciis-login-error-icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="#5f2120">
+                        <path d="M11 15h2v2h-2zm0-8h2v6h-2zm.99-5C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/>
+                      </svg>
                     </div>
-                    <input
-                      type="text"
-                      value={twoFactorCode}
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/\D/g, '').slice(0, 6);
-                        setTwoFactorCode(value);
-                        if (errors.twoFactor) {
-                          setErrors((prev) => ({ ...prev, twoFactor: '' }));
-                        }
-                      }}
-                      disabled={loading}
-                      className={`ciis-login-input ${errors.twoFactor ? 'ciis-login-input-error' : ''}`}
-                      placeholder="Enter authentication code"
-                    />
+                    {errors.general}
                   </div>
-                  {errors.twoFactor && <span className="ciis-login-error-text">{errors.twoFactor}</span>}
-                </div>
+                )}
 
-                <div className="ciis-login-two-factor-buttons">
-                  <button
-                    className="ciis-login-secondary-button"
-                    onClick={() => setTwoFactorRequired(false)}
-                    disabled={loading}
-                  >
-                    Back
-                  </button>
+                {/* Login Form */}
+                {!twoFactorRequired ? (
+                  <form onSubmit={handleSubmit}>
+                    {/* Email Input */}
+                    <div className="ciis-login-input-group">
+                      <label className="ciis-login-input-label">Email Address</label>
+                      <div className="ciis-login-input-container">
+                        <div className="ciis-login-input-icon">
+                          <EmailIcon />
+                        </div>
+                        <input
+                          type="email"
+                          name="email"
+                          value={form.email}
+                          onChange={handleChange}
+                          disabled={loading}
+                          autoComplete="email"
+                          className={`ciis-login-input ${errors.email ? 'ciis-login-input-error' : ''}`}
+                          placeholder="Enter your email"
+                        />
+                      </div>
+                      {errors.email && <span className="ciis-login-error-text">{errors.email}</span>}
+                    </div>
 
-                  <button
-                    className="ciis-login-primary-button"
-                    onClick={handleTwoFactorSubmit}
-                    disabled={loading || twoFactorCode.length !== 6}
-                  >
-                    {loading ? 'Verifying...' : 'Verify'}
-                  </button>
-                </div>
+                    {/* Password Input */}
+                    <div className="ciis-login-input-group">
+                      <label className="ciis-login-input-label">Password</label>
+                      <div className="ciis-login-input-container">
+                        <div className="ciis-login-input-icon">
+                          <LockIcon />
+                        </div>
+                        <input
+                          type={showPassword ? 'text' : 'password'}
+                          name="password"
+                          value={form.password}
+                          onChange={handleChange}
+                          disabled={loading}
+                          autoComplete="current-password"
+                          className={`ciis-login-input ${errors.password ? 'ciis-login-input-error' : ''}`}
+                          placeholder="Enter your password"
+                        />
+                        <div 
+                          className="ciis-login-input-adornment"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                        </div>
+                      </div>
+                      {errors.password && <span className="ciis-login-error-text">{errors.password}</span>}
+                    </div>
 
-                <div style={{ marginTop: '16px', textAlign: 'center', color: '#666' }}>
-                  <small>
-                    Having trouble?{' '}
-                    <a href="#" style={{ color: '#667eea', fontWeight: 600, textDecoration: 'none' }}>
-                      Resend code
-                    </a>
-                  </small>
-                </div>
-              </div>
+                    {/* Forgot Password Link */}
+                    <div style={{ textAlign: 'right', marginTop: '6px' }}>
+                      <span
+                        style={{
+                          fontSize: '0.85rem',
+                          color: '#667eea',
+                          cursor: 'pointer',
+                          fontWeight: 500
+                        }}
+                        onClick={() => setShowForgotPassword(true)}
+                      >
+                        Forgot Password?
+                      </span>
+                    </div>
+
+                    {/* Sign In Button */}
+                    <button
+                      type="submit"
+                      className="ciis-login-button"
+                      disabled={loading}
+                    >
+                      {loading ? (
+                        <>
+                          <div className="ciis-login-button-icon">
+                            <div className="ciis-login-spinner" style={{ width: '20px', height: '20px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%' }}></div>
+                          </div>
+                          Signing in...
+                        </>
+                      ) : (
+                        <>
+                          <div className="ciis-login-button-icon">
+                            <LoginIcon />
+                          </div>
+                          Sign In
+                        </>
+                      )}
+                    </button>
+                  </form>
+                ) : (
+                  /* Two-Factor Authentication Form */
+                  <div>
+                    <div className="ciis-login-input-group">
+                      <label className="ciis-login-input-label">Enter 6-digit code</label>
+                      <div className="ciis-login-input-container">
+                        <div className="ciis-login-input-icon">
+                          <LockIcon />
+                        </div>
+                        <input
+                          type="text"
+                          value={twoFactorCode}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                            setTwoFactorCode(value);
+                            if (errors.twoFactor) {
+                              setErrors((prev) => ({ ...prev, twoFactor: '' }));
+                            }
+                          }}
+                          disabled={loading}
+                          className={`ciis-login-input ${errors.twoFactor ? 'ciis-login-input-error' : ''}`}
+                          placeholder="Enter authentication code"
+                        />
+                      </div>
+                      {errors.twoFactor && <span className="ciis-login-error-text">{errors.twoFactor}</span>}
+                    </div>
+
+                    <div className="ciis-login-two-factor-buttons">
+                      <button
+                        className="ciis-login-secondary-button"
+                        onClick={() => setTwoFactorRequired(false)}
+                        disabled={loading}
+                      >
+                        Back
+                      </button>
+
+                      <button
+                        className="ciis-login-primary-button"
+                        onClick={handleTwoFactorSubmit}
+                        disabled={loading || twoFactorCode.length !== 6}
+                      >
+                        {loading ? 'Verifying...' : 'Verify'}
+                      </button>
+                    </div>
+
+                    <div style={{ marginTop: '16px', textAlign: 'center', color: '#666' }}>
+                      <small>
+                        Having trouble?{' '}
+                        <a href="#" style={{ color: '#667eea', fontWeight: 600, textDecoration: 'none' }}>
+                          Resend code
+                        </a>
+                      </small>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
 
-            {/* Terms & Privacy */}
-            <div className="ciis-login-terms">
-              By signing in, you agree to our{' '}
-              <a href="#" className="ciis-login-link">Terms of Service</a> and{' '}
-              <a href="#" className="ciis-login-link">Privacy Policy</a>
-            </div>
+            {/* Terms & Privacy - Only show for login, not for forget password */}
+            {!showForgotPassword && (
+              <div className="ciis-login-terms">
+                By signing in, you agree to our{' '}
+                <a href="#" className="ciis-login-link">Terms of Service</a> and{' '}
+                <a href="#" className="ciis-login-link">Privacy Policy</a>
+              </div>
+            )}
           </div>
         </div>
       </div>

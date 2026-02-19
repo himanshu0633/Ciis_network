@@ -149,79 +149,56 @@ const CollapsedHeading = styled(Box)(({ theme }) => ({
   justifyContent: 'center',
 }));
 
-// ✅ COMPREHENSIVE ICON MAPPING - आपके डेटाबेस और आवश्यक आइकनों के अनुसार
+// ✅ COMPREHENSIVE ICON MAPPING
 const iconMap = {
-  // Dashboard icons
   'Dashboard': DashboardIcon,
   'dashboard': DashboardIcon,
-  
-  // Calendar icons
   'Calendar': CalendarIcon,
   'CalendarToday': CalendarIcon,
   'calendar': CalendarIcon,
   'calendartoday': CalendarIcon,
-  
-  // Event/Leaves icons
   'Event': EventNoteIcon,
   'EventNote': EventNoteIcon,
   'event': EventNoteIcon,
   'eventnote': EventNoteIcon,
-  
-  // Computer/Assets icons
   'Computer': ComputerIcon,
   'computer': ComputerIcon,
-  
-  // Notification/Alerts icons
   'Notifications': NotificationsIcon,
   'notifications': NotificationsIcon,
   'Alert': NotificationsIcon,
   'alert': NotificationsIcon,
-  
-  // Person/Employee icons
   'Person': PersonIcon,
   'person': PersonIcon,
-  
-  // Task icons
   'Task': TaskIcon,
   'task': TaskIcon,
   'ListAlt': ListAltIcon,
   'listalt': ListAltIcon,
-  
-  // Meeting icons
   'MeetingRoom': MeetingRoomIcon,
   'meetingroom': MeetingRoomIcon,
   'VideoCall': VideoCallIcon,
   'videocall': VideoCallIcon,
   'Meeting': VideoCallIcon,
   'meeting': VideoCallIcon,
-  
-  // Project icons
   'Groups': GroupsIcon,
   'groups': GroupsIcon,
   'ProjectIcon': GroupsIcon,
   'projecticon': GroupsIcon,
   'Project': GroupsIcon,
   'project': GroupsIcon,
-  
-  // Settings
   'Settings': SettingsIcon,
   'settings': SettingsIcon,
-  
-  // Logout
   'Logout': LogoutOutlined,
   'logout': LogoutOutlined,
 };
 
-// ✅ Get icon component - case insensitive और fallback
+// ✅ Get icon component - case insensitive aur fallback
 const getIconComponent = (iconName) => {
   if (!iconName) {
     return <DashboardIcon />;
   }
   
-  // Try exact match first
   let IconComponent = iconMap[iconName];
   
-  // If not found, try case-insensitive match
   if (!IconComponent) {
     const lowerIconName = iconName.toLowerCase();
     IconComponent = Object.keys(iconMap).find(key => 
@@ -231,7 +208,6 @@ const getIconComponent = (iconName) => {
     )] : null;
   }
   
-  // If still not found, use appropriate fallback based on icon name
   if (!IconComponent) {
     if (iconName.toLowerCase().includes('calendar') || iconName.toLowerCase().includes('attendance')) {
       IconComponent = CalendarIcon;
@@ -251,15 +227,17 @@ const getIconComponent = (iconName) => {
       IconComponent = VideoCallIcon;
     } else if (iconName.toLowerCase().includes('project')) {
       IconComponent = GroupsIcon;
+    } else if (iconName.toLowerCase().includes('settings') || iconName.toLowerCase().includes('password')) {
+      IconComponent = SettingsIcon;
     } else {
-      IconComponent = DashboardIcon; // Default fallback
+      IconComponent = DashboardIcon;
     }
   }
   
   return <IconComponent />;
 };
 
-// ✅ FIXED DEFAULT MENU ITEMS - DASHBOARD सबसे पहले (order: 1)
+// ✅ FIXED DEFAULT MENU ITEMS
 const fixedDefaultItems = [
   {
     id: 'dashboard',
@@ -292,10 +270,19 @@ const fixedDefaultItems = [
     path: '/ciisUser/my-assets',
     category: 'main',
     order: 4
+  },
+  {
+    id: 'change-password',
+    name: 'Change Password',
+    icon: 'Settings',
+    path: '/ciisUser/change-password',
+    category: 'main',
+    order: 5
   }
+  
 ];
 
-// ✅ Path mapping helper (for custom config items)
+// ✅ Path mapping helper
 const getPathFromName = (name) => {
   const pathMap = {
     'Dashboard': '/ciisUser/user-dashboard',
@@ -317,7 +304,8 @@ const getPathFromName = (name) => {
     'Admin Projects': '/ciisUser/adminproject',
     'Company All Tasks': '/ciisUser/company-all-task',
     'Department All Tasks': '/ciisUser/department-all-task',
-    'Client Management': '/ciisUser/emp-client'
+    'Client Management': '/ciisUser/emp-client',
+    'Change Password': '/ciisUser/change-password'
   };
   
   return pathMap[name] || '/ciisUser/user-dashboard';
@@ -337,10 +325,10 @@ const Sidebar = ({ isMobile = false }) => {
   const hoverTimer = useRef(null);
   const leaveTimer = useRef(null);
 
-  // Mobile पर always open रहेगा, Desktop पर hover-based
+  // Mobile par always open, Desktop par hover-based
   const isSidebarOpen = isMobile ? true : isHovered;
 
-  // LocalStorage से user data और company details fetch करें
+  // LocalStorage se user data aur company details fetch karo
   useEffect(() => {
     const fetchLocalData = () => {
       try {
@@ -365,7 +353,7 @@ const Sidebar = ({ isMobile = false }) => {
     fetchLocalData();
   }, []);
 
-  // Fetch sidebar configuration when user and company data are loaded
+  // Fetch sidebar configuration
   const fetchSidebarConfig = useCallback(async () => {
     if (!userData || !companyData) return;
 
@@ -397,10 +385,8 @@ const Sidebar = ({ isMobile = false }) => {
 
       if (response.data && response.data.success) {
         if (response.data.data) {
-          // Use custom configuration from database
           setSidebarConfig(response.data.data);
         } else {
-          // No custom config found, use fixed default items
           setSidebarConfig({ 
             useFixedDefault: true,
             message: 'No custom config found, using fixed default items'
@@ -412,7 +398,6 @@ const Sidebar = ({ isMobile = false }) => {
     } catch (error) {
       console.error('Error fetching sidebar config:', error);
       setError(`Failed to load sidebar configuration: ${error.message}`);
-      // Use fixed default items on error
       setSidebarConfig({ 
         useFixedDefault: true,
         message: 'Using fixed default items due to error'
@@ -431,7 +416,6 @@ const Sidebar = ({ isMobile = false }) => {
   }, [userData, companyData, fetchSidebarConfig]);
 
   useEffect(() => {
-    // Cleanup timers on unmount
     return () => {
       if (hoverTimer.current) clearTimeout(hoverTimer.current);
       if (leaveTimer.current) clearTimeout(leaveTimer.current);
@@ -520,7 +504,7 @@ const Sidebar = ({ isMobile = false }) => {
     }
   };
 
-  // ✅ Get menu items based on configuration - SORT BY ORDER (lowest first)
+  // ✅ Get menu items based on configuration
   const menuItems = useMemo(() => {
     if (loading) return [];
 
@@ -528,13 +512,11 @@ const Sidebar = ({ isMobile = false }) => {
 
     let items = [];
 
-    // If we have a custom config from database
     if (sidebarConfig && sidebarConfig.menuItems && Array.isArray(sidebarConfig.menuItems)) {
       console.log('Using custom config from database with', sidebarConfig.menuItems.length, 'items');
       
       items = sidebarConfig.menuItems
         .map(item => {
-          // Ensure item has required properties
           const processedItem = {
             id: item.id || item._id || Math.random().toString(36).substr(2, 9),
             name: item.name || 'Unnamed Item',
@@ -550,20 +532,16 @@ const Sidebar = ({ isMobile = false }) => {
         })
         .filter(item => item.visible && !item.disabled);
     } 
-    // If no custom config found or error, use fixed default items
     else if (sidebarConfig && (sidebarConfig.useFixedDefault || !sidebarConfig.menuItems)) {
       console.log('Using fixed default menu items');
       items = [...fixedDefaultItems];
     }
-    // Initial state or unexpected case
     else {
       console.log('Using fixed default menu items (fallback)');
       items = [...fixedDefaultItems];
     }
 
-    // ✅ SORT ITEMS: First by category, then by order
     const sortedItems = [...items].sort((a, b) => {
-      // First, sort by category to group similar items
       const categoryOrder = ['main', 'administration', 'tasks', 'projects', 'meetings', 'communication', 'clients'];
       const categoryA = categoryOrder.indexOf(a.category) || 99;
       const categoryB = categoryOrder.indexOf(b.category) || 99;
@@ -572,7 +550,6 @@ const Sidebar = ({ isMobile = false }) => {
         return categoryA - categoryB;
       }
       
-      // Then sort by order within category
       const orderA = a.order || 99;
       const orderB = b.order || 99;
       return orderA - orderB;
@@ -651,7 +628,7 @@ const Sidebar = ({ isMobile = false }) => {
     }
   };
 
-  // Group items by category for better organization
+  // Group items by category
   const groupedItems = useMemo(() => {
     const groups = {};
     
@@ -666,7 +643,7 @@ const Sidebar = ({ isMobile = false }) => {
     return groups;
   }, [menuItems]);
 
-  // Mobile और Desktop के लिए अलग containers
+  // Mobile aur Desktop ke liye alag containers
   const Container = isMobile ? MobileSidebarContainer : SidebarContainer;
 
   // Loading state
@@ -787,8 +764,66 @@ const Sidebar = ({ isMobile = false }) => {
         ))}
       </Box>
 
-      {/* Logout Section */}
-      <Box sx={{ px: 2, py: 2, borderTop: `1px solid ${theme.palette.divider}` }}>
+      {/* ===== 🔥 YAHAN SE CHANGE PASSWORD SECTION START 🔥 ===== */}
+      {/* Sirf USER role wale ko dikhega */}
+      {userData && userData.jobRole === 'User' && (
+        <Box sx={{ 
+          px: 2, 
+          py: 1, 
+          borderTop: `1px solid ${theme.palette.divider}`,
+          borderBottom: `1px solid ${theme.palette.divider}`,
+          backgroundColor: theme.palette.action.hover + '20'
+        }}>
+          {isSidebarOpen ? (
+            <StyledListItemButton
+              onClick={() => handleNavigate('/ciisUser/change-password')}
+              sx={{
+                color: 'info.main',
+                '&:hover': { 
+                  backgroundColor: 'info.light',
+                  color: 'info.dark',
+                  transform: 'translateX(2px)',
+                  transition: 'all 0.2s ease'
+                }
+              }}
+            >
+              <StyledListItemIcon>
+                <SettingsIcon />
+              </StyledListItemIcon>
+              <ListItemText
+                primary="Change Password"
+                primaryTypographyProps={{ 
+                  variant: 'body2', 
+                  fontWeight: 600 
+                }}
+              />
+            </StyledListItemButton>
+          ) : (
+            <Tooltip title="Change Password" placement="right">
+              <IconButton
+                onClick={() => handleNavigate('/ciisUser/change-password')}
+                sx={{
+                  width: '100%',
+                  justifyContent: 'center',
+                  color: 'info.main',
+                  padding: '8px',
+                  borderRadius: 2,
+                  '&:hover': { 
+                    color: 'info.dark',
+                    backgroundColor: 'info.light'
+                  }
+                }}
+              >
+                <SettingsIcon />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Box>
+      )}
+      {/* ===== 🔚 CHANGE PASSWORD SECTION END 🔚 ===== */}
+
+      {/* Logout Section - ab borderTop nahi hai kyunki upar laga diya */}
+      <Box sx={{ px: 2, py: 2 }}>
         {isSidebarOpen ? (
           <StyledListItemButton
             onClick={handleLogout}
