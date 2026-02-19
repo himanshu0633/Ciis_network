@@ -164,6 +164,13 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
       route: '/Ciis-network/company-details',
       showForRoles: ['Owner','employee']
     },
+     { 
+      icon: <CompanyIcon />, 
+      name: 'All Company', 
+      route: '/Ciis-network/all-company',
+      showForRoles: ['Owner']
+    },
+    
     { 
       icon: <DepartmentIcon />, 
       name: 'Department', 

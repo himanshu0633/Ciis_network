@@ -93,7 +93,27 @@ import {
   MedicalServices,
   School as SchoolIcon,
   MilitaryTech,
-  EmojiEvents
+  EmojiEvents,
+  Star,
+  StarBorder,
+  Verified,
+  Warning,
+  Analytics,
+  BusinessCenter,
+  WorkspacePremium,
+  PrecisionManufacturing,
+  AutoGraph,
+  BarChart,
+  FileDownload,
+  Print,
+  Share,
+  Bookmark,
+  BookmarkBorder,
+  PushPin,
+  PushPinOutlined,
+  Grade,
+  GradeOutlined,
+  ArrowForward
 } from "@mui/icons-material";
 
 import {
@@ -157,8 +177,80 @@ import {
   FormControl,
   InputLabel,
   Select,
-  FormHelperText
+  FormHelperText,
+  styled
 } from "@mui/material";
+
+// Enhanced Styled Components
+const GlassCard = styled(Card)(({ theme }) => ({
+  background: 'rgba(255, 255, 255, 0.9)',
+  backdropFilter: 'blur(10px)',
+  border: '1px solid rgba(255, 255, 255, 0.3)',
+  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
+}));
+
+const GradientCard = styled(Card)(({ theme, gradient }) => ({
+  background: gradient || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+  color: 'white',
+  borderRadius: 24,
+  position: 'relative',
+  overflow: 'hidden',
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.2) 0%, transparent 60%)',
+  },
+  [theme.breakpoints.down('sm')]: {
+    borderRadius: 20,
+  },
+}));
+
+const StatBox = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(2),
+  borderRadius: 16,
+  background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+  border: '1px solid rgba(226, 232, 240, 0.6)',
+  transition: 'all 0.3s ease',
+  '&:hover': {
+    transform: 'translateY(-4px)',
+    borderColor: theme.palette.primary.main,
+    boxShadow: `0 12px 30px ${alpha(theme.palette.primary.main, 0.15)}`,
+  },
+  [theme.breakpoints.down('sm')]: {
+    padding: theme.spacing(1.5),
+  },
+}));
+
+const InfoChip = styled(Chip)(({ theme }) => ({
+  borderRadius: 8,
+  fontWeight: 600,
+  '& .MuiChip-icon': {
+    color: 'inherit',
+  },
+}));
+
+const AnimatedNumber = styled(Typography)(({ theme }) => ({
+  fontWeight: 800,
+  background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+  WebkitBackgroundClip: 'text',
+  WebkitTextFillColor: 'transparent',
+  backgroundClip: 'text',
+  animation: 'countUp 2s ease-out',
+  '@keyframes countUp': {
+    '0%': {
+      opacity: 0,
+      transform: 'translateY(20px)',
+    },
+    '100%': {
+      opacity: 1,
+      transform: 'translateY(0)',
+    },
+  },
+}));
 
 // Transition for dialog
 const Transition = React.forwardRef(function Transition(props, ref) {
@@ -727,10 +819,10 @@ const CompanyDetails = () => {
 
   // Get subscription status color
   const getSubscriptionStatus = (daysRemaining) => {
-    if (daysRemaining > 15) return { color: 'success', text: 'Active' };
-    if (daysRemaining > 7) return { color: 'warning', text: 'Expiring Soon' };
-    if (daysRemaining > 0) return { color: 'error', text: 'Critical' };
-    return { color: 'error', text: 'Expired' };
+    if (daysRemaining > 15) return { color: 'success', text: 'Active', bg: 'linear-gradient(135deg, #4caf50 0%, #388e3c 100%)' };
+    if (daysRemaining > 7) return { color: 'warning', text: 'Expiring Soon', bg: 'linear-gradient(135deg, #ff9800 0%, #ed6c02 100%)' };
+    if (daysRemaining > 0) return { color: 'error', text: 'Critical', bg: 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)' };
+    return { color: 'error', text: 'Expired', bg: 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)' };
   };
 
   // Handle manual refresh - FIXED: Now preserves data
@@ -1514,73 +1606,65 @@ const CompanyDetails = () => {
   return (
     <Box sx={{ 
       minHeight: '100vh',
-      bgcolor: '#f8fafc',
-      pb: 6
+      background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+      pb: 6,
+      position: 'relative'
     }}>
-      {/* Custom CSS for animations */}
-      <style>
-        {`
-          @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-            100% { transform: translateY(0px); }
-          }
-          
-          @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.4); }
-            70% { box-shadow: 0 0 0 20px rgba(76, 175, 80, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
-          }
-          
-          .hover-lift {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-          }
-          
-          .hover-lift:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.12) !important;
-          }
-        `}
-      </style>
+      {/* Animated Background */}
+      <Box sx={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        overflow: 'hidden',
+        zIndex: 0,
+        pointerEvents: 'none',
+      }}>
+        <Box sx={{
+          position: 'absolute',
+          top: '10%',
+          left: '5%',
+          width: 300,
+          height: 300,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(37, 99, 235, 0.03) 0%, transparent 70%)',
+          animation: 'float 20s infinite',
+        }} />
+        <Box sx={{
+          position: 'absolute',
+          bottom: '20%',
+          right: '10%',
+          width: 400,
+          height: 400,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(124, 58, 237, 0.03) 0%, transparent 70%)',
+          animation: 'float 25s infinite reverse',
+        }} />
+        <style>
+          {`
+            @keyframes float {
+              0%, 100% { transform: translate(0, 0) scale(1); }
+              25% { transform: translate(-20px, 20px) scale(1.05); }
+              50% { transform: translate(20px, -20px) scale(0.95); }
+              75% { transform: translate(-10px, -10px) scale(1.02); }
+            }
+          `}
+        </style>
+      </Box>
 
-      <Container maxWidth="xl" sx={{ px: { xs: 1.5, sm: 2, md: 3, lg: 4 } }}>
-        {/* Hero Header Section with Centered Logo on Mobile */}
-        <Paper 
-          elevation={0}
+      <Container maxWidth="xl" sx={{ position: 'relative', zIndex: 1, px: { xs: 1.5, sm: 2, md: 3, lg: 4 } }}>
+        {/* Hero Header Section with Enhanced Design */}
+        <GradientCard 
+          gradient="linear-gradient(145deg, #1a237e 0%, #0d47a1 50%, #01579b 100%)"
           sx={{
             mt: { xs: 2, sm: 3, md: 4 },
             mb: { xs: 3, sm: 4 },
             p: { xs: 2, sm: 3, md: 4 },
-            borderRadius: { xs: 2, sm: 3, md: 4 },
-            background: 'linear-gradient(145deg, #1a237e 0%, #0d47a1 50%, #01579b 100%)',
-            color: 'white',
-            position: 'relative',
-            overflow: 'hidden',
+            borderRadius: { xs: 3, sm: 4, md: 5 },
             boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
           }}
         >
-          {/* Animated background circles */}
-          <Box sx={{ 
-            position: 'absolute',
-            top: -100,
-            right: -100,
-            width: 300,
-            height: 300,
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 70%)',
-            animation: 'float 8s ease-in-out infinite'
-          }} />
-          <Box sx={{ 
-            position: 'absolute',
-            bottom: -100,
-            left: -100,
-            width: 350,
-            height: 350,
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 70%)',
-            animation: 'float 10s ease-in-out infinite reverse'
-          }} />
-          
           <Stack 
             direction={{ xs: 'column', md: 'row' }} 
             alignItems="center" 
@@ -1594,26 +1678,27 @@ const CompanyDetails = () => {
               spacing={{ xs: 2, sm: 3 }}
               sx={{ width: { xs: '100%', sm: 'auto' } }}
             >
-              <IconButton
-                onClick={() => navigate(-1)}
-                sx={{ 
-                  color: 'white',
-                  bgcolor: 'rgba(255,255,255,0.15)',
-                  backdropFilter: 'blur(10px)',
-                  width: { xs: 40, sm: 48 },
-                  height: { xs: 40, sm: 48 },
-                  '&:hover': { 
-                    bgcolor: 'rgba(255,255,255,0.25)',
-                    transform: 'scale(1.1)'
-                  },
-                  transition: 'all 0.3s ease',
-                  display: { xs: isMobile ? 'flex' : 'flex', sm: 'flex' }
-                }}
-              >
-                <ArrowBack fontSize={isMobile ? "medium" : "small"} />
-              </IconButton>
+              {/* <Tooltip title="Go Back" arrow placement="top">
+                <IconButton
+                  onClick={() => navigate(-1)}
+                  sx={{ 
+                    color: 'white',
+                    bgcolor: 'rgba(255,255,255,0.15)',
+                    backdropFilter: 'blur(10px)',
+                    width: { xs: 40, sm: 48 },
+                    height: { xs: 40, sm: 48 },
+                    '&:hover': { 
+                      bgcolor: 'rgba(255,255,255,0.25)',
+                      transform: 'scale(1.1) rotate(-10deg)'
+                    },
+                    transition: 'all 0.3s ease',
+                  }}
+                >
+                  <ArrowBack fontSize={isMobile ? "medium" : "small"} />
+                </IconButton>
+              </Tooltip> */}
               
-              {/* Logo Section - Centered on Mobile */}
+              {/* Logo Section with Animation */}
               <Box sx={{ 
                 position: 'relative',
                 display: 'flex',
@@ -1623,11 +1708,11 @@ const CompanyDetails = () => {
                 <Avatar
                   src={company.logo || defaultLogo}
                   sx={{
-                    width: { xs: 80, sm: 90, md: 110 },
-                    height: { xs: 80, sm: 90, md: 110 },
+                    width: { xs: 90, sm: 100, md: 120 },
+                    height: { xs: 90, sm: 100, md: 120 },
                     border: '4px solid white',
                     boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
-                    animation: 'float 6s ease-in-out infinite',
+                    // animation: 'float 6s ease-in-out infinite',
                     bgcolor: 'white',
                     mx: { xs: 'auto', sm: 0 },
                     '& img': {
@@ -1642,22 +1727,23 @@ const CompanyDetails = () => {
                     position: 'absolute',
                     bottom: { xs: 0, sm: 5 },
                     right: { xs: 'calc(50% - 45px)', sm: 5 },
-                    width: { xs: 24, sm: 28 },
-                    height: { xs: 24, sm: 28 },
+                    width: { xs: 28, sm: 32 },
+                    height: { xs: 28, sm: 32 },
                     borderRadius: '50%',
-                    bgcolor: 'success.main',
+                    background: 'linear-gradient(135deg, #4caf50 0%, #388e3c 100%)',
                     border: '3px solid white',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
+                    boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+                    animation: 'pulse 2s infinite'
                   }}>
-                    <CheckCircle sx={{ fontSize: { xs: 14, sm: 18 }, color: 'white' }} />
+                    <CheckCircle sx={{ fontSize: { xs: 16, sm: 20 }, color: 'white' }} />
                   </Box>
                 )}
               </Box>
               
-              {/* Company Name Section - Centered on Mobile */}
+              {/* Company Name Section */}
               <Box sx={{ 
                 textAlign: { xs: 'center', sm: 'left' },
                 width: { xs: '100%', sm: 'auto' }
@@ -1668,20 +1754,24 @@ const CompanyDetails = () => {
                   spacing={1} 
                   sx={{ 
                     mb: 1,
-                    justifyContent: { xs: 'center', sm: 'flex-start' }
+                    justifyContent: { xs: 'center', sm: 'flex-start' },
+                    flexWrap: 'wrap'
                   }}
                 >
                   <Typography 
                     variant={isMobile ? "h4" : isTablet ? "h4" : "h3"} 
                     sx={{ 
                       fontWeight: 800, 
-                      fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem', lg: '2.5rem' },
-                      textShadow: '2px 2px 4px rgba(0,0,0,0.2)'
+                      fontSize: { xs: '1.6rem', sm: '1.9rem', md: '2.2rem', lg: '2.8rem' },
+                      textShadow: '2px 2px 4px rgba(0,0,0,0.2)',
+                      background: 'linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
                     }}
                   >
                     {company.companyName}
                   </Typography>
-                  <Tooltip title="Edit Company">
+                  <Tooltip title="Edit Company" arrow placement="top">
                     <IconButton 
                       onClick={handleEditCompany}
                       sx={{ 
@@ -1692,7 +1782,7 @@ const CompanyDetails = () => {
                         height: { xs: 36, sm: 40 },
                         '&:hover': { 
                           bgcolor: 'rgba(255,255,255,0.25)',
-                          transform: 'scale(1.1)'
+                          transform: 'scale(1.1) rotate(15deg)'
                         },
                         transition: 'all 0.3s ease'
                       }}
@@ -1715,13 +1805,17 @@ const CompanyDetails = () => {
                     label={company.isActive ? "Active" : "Inactive"}
                     size="small"
                     sx={{
-                      bgcolor: company.isActive ? 'rgba(76, 175, 80, 0.2)' : 'rgba(244, 67, 54, 0.2)',
+                      background: company.isActive 
+                        ? 'linear-gradient(135deg, #4caf50 0%, #388e3c 100%)' 
+                        : 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)',
                       color: 'white',
-                      fontWeight: 600,
-                      backdropFilter: 'blur(10px)',
-                      border: '1px solid rgba(255,255,255,0.3)',
+                      fontWeight: 700,
+                      boxShadow: company.isActive 
+                        ? '0 4px 10px rgba(76, 175, 80, 0.3)' 
+                        : '0 4px 10px rgba(244, 67, 54, 0.3)',
                       '& .MuiChip-icon': { color: 'white' },
-                      fontSize: { xs: '0.7rem', sm: '0.75rem' }
+                      fontSize: { xs: '0.7rem', sm: '0.8rem' },
+                      px: 0.5
                     }}
                   />
                   {company.companyCode && (
@@ -1736,7 +1830,12 @@ const CompanyDetails = () => {
                         backdropFilter: 'blur(10px)',
                         border: '1px solid rgba(255,255,255,0.3)',
                         '& .MuiChip-icon': { color: 'white' },
-                        fontSize: { xs: '0.7rem', sm: '0.75rem' }
+                        fontSize: { xs: '0.7rem', sm: '0.8rem' },
+                        '&:hover': {
+                          bgcolor: 'rgba(255,255,255,0.25)',
+                          transform: 'scale(1.05)'
+                        },
+                        transition: 'all 0.2s ease'
                       }}
                     />
                   )}
@@ -1751,7 +1850,12 @@ const CompanyDetails = () => {
                       backdropFilter: 'blur(10px)',
                       border: '1px solid rgba(255,255,255,0.3)',
                       '& .MuiChip-icon': { color: 'white' },
-                      fontSize: { xs: '0.7rem', sm: '0.75rem' }
+                      fontSize: { xs: '0.7rem', sm: '0.8rem' },
+                      '&:hover': {
+                        bgcolor: 'rgba(255,255,255,0.25)',
+                        transform: 'scale(1.05)'
+                      },
+                      transition: 'all 0.2s ease'
                     }}
                   />
                 </Stack>
@@ -1766,15 +1870,15 @@ const CompanyDetails = () => {
                 justifyContent: { xs: 'center', sm: 'flex-end' }
               }}
             >
-              <Tooltip title="Refresh Data" arrow>
+              <Tooltip title="Refresh Data" arrow placement="bottom">
                 <IconButton
                   onClick={handleRefresh}
                   sx={{
                     color: 'white',
                     bgcolor: 'rgba(255,255,255,0.15)',
                     backdropFilter: 'blur(10px)',
-                    width: { xs: 42, sm: 48 },
-                    height: { xs: 42, sm: 48 },
+                    width: { xs: 44, sm: 50 },
+                    height: { xs: 44, sm: 50 },
                     '&:hover': { 
                       bgcolor: 'rgba(255,255,255,0.25)',
                       transform: 'rotate(180deg)'
@@ -1786,8 +1890,7 @@ const CompanyDetails = () => {
                 </IconButton>
               </Tooltip>
               
-              {/* ADD NEW USER BUTTON - AT TOP */}
-              <Tooltip title="Add New User" arrow>
+              <Tooltip title="Add New User" arrow placement="bottom">
                 <Button
                   variant="contained"
                   onClick={handleAddNewUser}
@@ -1795,412 +1898,526 @@ const CompanyDetails = () => {
                   disabled={!company?._id}
                   size={isMobile ? "small" : "medium"}
                   sx={{
-                    bgcolor: 'white',
+                    background: 'linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%)',
                     color: '#0d47a1',
                     fontWeight: 700,
-                    px: { xs: 2, sm: 3 },
-                    py: { xs: 1, sm: 1.2 },
+                    px: { xs: 3, sm: 4 },
+                    py: { xs: 1.2, sm: 1.5 },
                     borderRadius: 3,
-                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                    fontSize: { xs: '0.8rem', sm: '0.9rem' },
                     boxShadow: '0 8px 16px rgba(0,0,0,0.2)',
                     '&:hover': {
-                      bgcolor: 'rgba(255,255,255,0.95)',
+                      background: 'white',
                       boxShadow: '0 12px 24px rgba(0,0,0,0.3)',
                       transform: 'translateY(-2px)'
                     },
                     transition: 'all 0.3s ease'
                   }}
                 >
-                  {isMobile ? 'Add' : 'Add New User'}
+                  {isMobile ? 'Add User' : 'Add New User'}
                 </Button>
               </Tooltip>
             </Stack>
           </Stack>
-        </Paper>
+        </GradientCard>
 
         {/* Main Content */}
         <Grid container spacing={{ xs: 2, sm: 3 }}>
           {/* Left Column - Company Overview */}
           <Grid item xs={12} lg={8}>
-            {/* Stats Cards - All 4 in one row */}
+            {/* Stats Cards - Enhanced Design */}
             <Box sx={{ width: '100%', marginBottom: '24px' }}>
               <Box sx={{ 
                 display: 'grid', 
                 gridTemplateColumns: { xs: '1fr 1fr', md: '1fr 1fr 1fr 1fr' },
-                gap: '12px',
+                gap: '16px',
                 width: '100%'
               }}>
                 {/* Total Users */}
-                <Box sx={{
-                  backgroundColor: '#ffffff',
-                  borderRadius: '12px',
-                  padding: '14px 8px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                  border: '1px solid #f0f0f0',
-                  textAlign: 'center'
-                }}>
+                <StatBox>
                   <Box sx={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '10px',
-                    backgroundColor: '#e3f2fd',
                     display: 'flex',
+                    flexDirection: 'column',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    margin: '0 auto 8px auto'
+                    textAlign: 'center'
                   }}>
-                    <People sx={{ fontSize: '20px', color: '#2196f3' }} />
+                    <Box sx={{
+                      width: '48px',
+                      height: '48px',
+                      borderRadius: '16px',
+                      background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      margin: '0 auto 12px auto',
+                      boxShadow: '0 8px 16px rgba(33, 150, 243, 0.3)'
+                    }}>
+                      <People sx={{ fontSize: '28px', color: 'white' }} />
+                    </Box>
+                    <AnimatedNumber sx={{ 
+                      fontWeight: 800, 
+                      color: '#2196f3', 
+                      fontSize: { xs: '24px', sm: '28px', md: '32px' },
+                      lineHeight: 1.2,
+                      mb: 0.5
+                    }}>
+                      {stats.totalUsers}
+                    </AnimatedNumber>
+                    <Typography sx={{ 
+                      fontSize: '12px', 
+                      color: '#64748b', 
+                      fontWeight: 600, 
+                      textTransform: 'uppercase', 
+                      letterSpacing: '0.5px' 
+                    }}>
+                      TOTAL USERS
+                    </Typography>
                   </Box>
-                  <Typography sx={{ fontWeight: 700, color: '#2196f3', fontSize: '20px', lineHeight: 1.2 }}>
-                    {stats.totalUsers}
-                  </Typography>
-                  <Typography sx={{ fontSize: '11px', color: '#757575', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    TOTAL USERS
-                  </Typography>
-                </Box>
+                </StatBox>
 
                 {/* Active Users */}
-                <Box sx={{
-                  backgroundColor: '#ffffff',
-                  borderRadius: '12px',
-                  padding: '14px 8px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                  border: '1px solid #f0f0f0',
-                  textAlign: 'center'
-                }}>
+                <StatBox>
                   <Box sx={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '10px',
-                    backgroundColor: '#e8f5e9',
                     display: 'flex',
+                    flexDirection: 'column',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    margin: '0 auto 8px auto'
+                    textAlign: 'center'
                   }}>
-                    <CheckCircle sx={{ fontSize: '20px', color: '#4caf50' }} />
+                    <Box sx={{
+                      width: '48px',
+                      height: '48px',
+                      borderRadius: '16px',
+                      background: 'linear-gradient(135deg, #4caf50 0%, #388e3c 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      margin: '0 auto 12px auto',
+                      boxShadow: '0 8px 16px rgba(76, 175, 80, 0.3)'
+                    }}>
+                      <CheckCircle sx={{ fontSize: '28px', color: 'white' }} />
+                    </Box>
+                    <AnimatedNumber sx={{ 
+                      fontWeight: 800, 
+                      color: '#4caf50', 
+                      fontSize: { xs: '24px', sm: '28px', md: '32px' },
+                      lineHeight: 1.2,
+                      mb: 0.5
+                    }}>
+                      {stats.activeUsers}
+                    </AnimatedNumber>
+                    <Typography sx={{ 
+                      fontSize: '12px', 
+                      color: '#64748b', 
+                      fontWeight: 600, 
+                      textTransform: 'uppercase', 
+                      letterSpacing: '0.5px' 
+                    }}>
+                      ACTIVE USERS
+                    </Typography>
+                    <Chip 
+                      size="small"
+                      label={`${stats.totalUsers > 0 ? Math.round((stats.activeUsers / stats.totalUsers) * 100) : 0}% active`}
+                      sx={{ 
+                        mt: 1,
+                        height: 20,
+                        fontSize: '0.6rem',
+                        bgcolor: alpha('#4caf50', 0.1),
+                        color: '#388e3c',
+                        fontWeight: 600
+                      }}
+                    />
                   </Box>
-                  <Typography sx={{ fontWeight: 700, color: '#4caf50', fontSize: '20px', lineHeight: 1.2 }}>
-                    {stats.activeUsers}
-                  </Typography>
-                  <Typography sx={{ fontSize: '11px', color: '#757575', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    ACTIVE USERS
-                  </Typography>
-                </Box>
+                </StatBox>
 
                 {/* Departments */}
-                <Box sx={{
-                  backgroundColor: '#ffffff',
-                  borderRadius: '12px',
-                  padding: '14px 8px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                  border: '1px solid #f0f0f0',
-                  textAlign: 'center'
-                }}>
+                <StatBox>
                   <Box sx={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '10px',
-                    backgroundColor: '#fff3e0',
                     display: 'flex',
+                    flexDirection: 'column',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    margin: '0 auto 8px auto'
+                    textAlign: 'center'
                   }}>
-                    <CorporateFare sx={{ fontSize: '20px', color: '#ff9800' }} />
+                    <Box sx={{
+                      width: '48px',
+                      height: '48px',
+                      borderRadius: '16px',
+                      background: 'linear-gradient(135deg, #ff9800 0%, #ed6c02 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      margin: '0 auto 12px auto',
+                      boxShadow: '0 8px 16px rgba(255, 152, 0, 0.3)'
+                    }}>
+                      <CorporateFare sx={{ fontSize: '28px', color: 'white' }} />
+                    </Box>
+                    <AnimatedNumber sx={{ 
+                      fontWeight: 800, 
+                      color: '#ff9800', 
+                      fontSize: { xs: '24px', sm: '28px', md: '32px' },
+                      lineHeight: 1.2,
+                      mb: 0.5
+                    }}>
+                      {stats.departments}
+                    </AnimatedNumber>
+                    <Typography sx={{ 
+                      fontSize: '12px', 
+                      color: '#64748b', 
+                      fontWeight: 600, 
+                      textTransform: 'uppercase', 
+                      letterSpacing: '0.5px' 
+                    }}>
+                      DEPARTMENTS
+                    </Typography>
+                    {/* <Button 
+                      size="small" 
+                      onClick={handleAddNewDepartment}
+                      sx={{ 
+                        mt: 1,
+                        fontSize: '0.6rem',
+                        color: '#ff9800',
+                        textTransform: 'none',
+                        '&:hover': {
+                          bgcolor: alpha('#ff9800', 0.1)
+                        }
+                      }}
+                    >
+                      + Add Department
+                    </Button> */}
                   </Box>
-                  <Typography sx={{ fontWeight: 700, color: '#ff9800', fontSize: '20px', lineHeight: 1.2 }}>
-                    {stats.departments}
-                  </Typography>
-                  <Typography sx={{ fontSize: '11px', color: '#757575', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    DEPARTMENTS
-                  </Typography>
-                </Box>
+                </StatBox>
 
                 {/* Today's Logins */}
-                <Box sx={{
-                  backgroundColor: '#ffffff',
-                  borderRadius: '12px',
-                  padding: '14px 8px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                  border: '1px solid #f0f0f0',
-                  textAlign: 'center'
-                }}>
+                <StatBox>
                   <Box sx={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '10px',
-                    backgroundColor: '#f3e5f5',
                     display: 'flex',
+                    flexDirection: 'column',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    margin: '0 auto 8px auto'
+                    textAlign: 'center'
                   }}>
-                    <Today sx={{ fontSize: '20px', color: '#9c27b0' }} />
+                    <Box sx={{
+                      width: '48px',
+                      height: '48px',
+                      borderRadius: '16px',
+                      background: 'linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      margin: '0 auto 12px auto',
+                      boxShadow: '0 8px 16px rgba(156, 39, 176, 0.3)'
+                    }}>
+                      <Today sx={{ fontSize: '28px', color: 'white' }} />
+                    </Box>
+                    <AnimatedNumber sx={{ 
+                      fontWeight: 800, 
+                      color: '#9c27b0', 
+                      fontSize: { xs: '24px', sm: '28px', md: '32px' },
+                      lineHeight: 1.2,
+                      mb: 0.5
+                    }}>
+                      {stats.todayLogins}
+                    </AnimatedNumber>
+                    <Typography sx={{ 
+                      fontSize: '12px', 
+                      color: '#64748b', 
+                      fontWeight: 600, 
+                      textTransform: 'uppercase', 
+                      letterSpacing: '0.5px' 
+                    }}>
+                      TODAY'S LOGINS
+                    </Typography>
                   </Box>
-                  <Typography sx={{ fontWeight: 700, color: '#9c27b0', fontSize: '20px', lineHeight: 1.2 }}>
-                    {stats.todayLogins}
-                  </Typography>
-                  <Typography sx={{ fontSize: '11px', color: '#757575', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    TODAY'S LOGINS
-                  </Typography>
-                </Box>
+                </StatBox>
               </Box>
             </Box>
 
-            {/* Company Details Card - Enhanced with Edit Button */}
+            {/* Company Details Card - Enhanced */}
             <Card sx={{ 
-  borderRadius: { xs: 2, sm: 3 },
-  bgcolor: 'white',
-  boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
-  mb: { xs: 2, sm: 3 },
-  overflow: 'hidden'
-}}>
-  <CardHeader
-    title={
-      <Stack direction="row" alignItems="center" spacing={1}>
-        <Business sx={{ color: 'primary.main', fontSize: { xs: 20, sm: 24 } }} />
-        <Typography variant={isMobile ? "body1" : "h6"} fontWeight={700}>
-          Company Information
-        </Typography>
-      </Stack>
-    }
-    sx={{ 
-      borderBottom: '1px solid', 
-      borderColor: 'grey.100', 
-      py: { xs: 1.5, sm: 2.5 },
-      px: { xs: 2, sm: 3 },
-      bgcolor: 'grey.50'
-    }}
-    action={
-      <Stack direction="row" spacing={1}>
-        <Chip 
-          icon={<VerifiedUser />} 
-          label="Verified" 
-          color="primary" 
-          size="small"
-          sx={{ 
-            fontWeight: 600,
-            fontSize: { xs: '0.65rem', sm: '0.75rem' }
-          }}
-        />
-        <Tooltip title="Edit Company">
-          <IconButton 
-            onClick={handleEditCompany}
-            size="small"
-            sx={{
-              bgcolor: 'primary.50',
-              color: 'primary.main',
-              '&:hover': { bgcolor: 'primary.100' }
-            }}
-          >
-            <Edit fontSize="small" />
-          </IconButton>
-        </Tooltip>
-      </Stack>
-    }
-  />
-  
-  <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-    <Stack spacing={{ xs: 2, sm: 2.5 }}>
-      {/* Company Code */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, sm: 2 } }}>
-        <Box sx={{ 
-          width: { xs: 35, sm: 45 },
-          height: { xs: 35, sm: 45 },
-          borderRadius: 2,
-          bgcolor: 'primary.50',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0
-        }}>
-          <Fingerprint sx={{ fontSize: { xs: 20, sm: 24 }, color: 'primary.main' }} />
-        </Box>
-        <Box sx={{ minWidth: 0, flex: 1 }}>
-          <Typography variant="caption" color="text.secondary" fontWeight={500} sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
-            Company Code
-          </Typography>
-          <Typography variant="body1" fontWeight={700} sx={{ fontSize: { xs: '0.85rem', sm: '1rem' }, wordBreak: 'break-word' }}>
-            {company.companyCode || "N/A"}
-          </Typography>
-        </Box>
-      </Box>
-
-      {/* Created On */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, sm: 2 } }}>
-        <Box sx={{ 
-          width: { xs: 35, sm: 45 },
-          height: { xs: 35, sm: 45 },
-          borderRadius: 2,
-          bgcolor: 'info.50',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0
-        }}>
-          <Event sx={{ fontSize: { xs: 20, sm: 24 }, color: 'info.main' }} />
-        </Box>
-        <Box sx={{ minWidth: 0, flex: 1 }}>
-          <Typography variant="caption" color="text.secondary" fontWeight={500} sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
-            Created On
-          </Typography>
-          <Typography variant="body1" fontWeight={600} sx={{ fontSize: { xs: '0.85rem', sm: '1rem' }, wordBreak: 'break-word' }}>
-            {formatDate(company.createdAt)}
-          </Typography>
-        </Box>
-      </Box>
-
-      {/* Login URL */}
-      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: { xs: 1.5, sm: 2 } }}>
-        <Box sx={{ 
-          width: { xs: 35, sm: 45 },
-          height: { xs: 35, sm: 45 },
-          borderRadius: 2,
-          bgcolor: 'secondary.50',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-          mt: { xs: 0.5, sm: 0 }
-        }}>
-          <Link sx={{ fontSize: { xs: 20, sm: 24 }, color: 'secondary.main' }} />
-        </Box>
-        
-        <Box sx={{ 
-          minWidth: 0, 
-          flex: 1,
-          width: '100%'
-        }}>
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            fontWeight={500}
-            sx={{ 
-              fontSize: { xs: '0.65rem', sm: '0.75rem' },
-              mb: 0.5,
-              display: 'block'
-            }}
-          >
-            Login URL
-          </Typography>
-
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: 1,
-            width: '100%'
-          }}>
-            {/* URL Display - Full width with scroll on mobile */}
-            <Box sx={{
-              flex: 1,
-              minWidth: 0,
-              bgcolor: 'grey.50',
-              border: '1px solid',
-              borderColor: 'grey.200',
-              borderRadius: 2,
-              overflowX: 'auto',
-              overflowY: 'hidden',
-              maxWidth: '100%',
-              '&::-webkit-scrollbar': {
-                height: '4px',
-              },
-              '&::-webkit-scrollbar-track': {
-                background: 'transparent',
-              },
-              '&::-webkit-scrollbar-thumb': {
-                background: 'grey.400',
-                borderRadius: '4px',
-              },
-              '&::-webkit-scrollbar-thumb:hover': {
-                background: 'grey.600',
-              },
-              scrollbarWidth: 'thin',
-              scrollbarColor: '#9e9e9e transparent',
-            }}>
-              <Typography
-                component="div"
-                sx={{
-                  fontFamily: 'monospace',
-                  fontSize: { xs: '0.75rem', sm: '0.85rem', md: '0.9rem' },
-                  fontWeight: 500,
-                  color: 'text.primary',
-                  py: { xs: 1, sm: 1.2 },
-                  px: { xs: 1.5, sm: 2 },
-                  whiteSpace: 'nowrap',
-                  width: 'max-content',
-                  minWidth: '100%',
-                }}
-              >
-                {window.location.origin}{company.loginUrl}
-              </Typography>
-            </Box>
-
-            {/* Copy Button - Always at the end */}
-            <Tooltip title="Copy URL" arrow placement="top">
-              <IconButton
-                size="small"
-                onClick={handleCopy}
-                sx={{
-                  bgcolor: copied ? 'success.50' : 'primary.50',
-                  color: copied ? 'success.main' : 'primary.main',
-                  width: { xs: 36, sm: 40 },
-                  height: { xs: 36, sm: 40 },
-                  borderRadius: 2,
-                  border: '1px solid',
-                  borderColor: copied ? 'success.200' : 'primary.200',
-                  flexShrink: 0,
-                  '&:hover': { 
-                    bgcolor: copied ? 'success.100' : 'primary.100',
-                    transform: 'scale(1.05)'
-                  },
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                <ContentCopyIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          </Box>
-          
-          {/* Copied Feedback */}
-          {copied && (
-            <Typography 
-              variant="caption" 
-              color="success.main" 
-              sx={{ 
-                mt: 0.5, 
-                display: 'block',
-                fontSize: '0.7rem',
-                fontWeight: 500,
-                textAlign: 'right'
-              }}
-            >
-              ✓ Copied to clipboard!
-            </Typography>
-          )}
-        </Box>
-      </Box>
-    </Stack>
-  </CardContent>
-</Card>
-            {/* Subscription Status Card */}
-            <Card sx={{ 
-              borderRadius: { xs: 2, sm: 3 },
-              boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
-              background: `linear-gradient(145deg, ${
-                subscriptionStatus.color === 'success' ? '#e8f5e9, #c8e6c9' :
-                subscriptionStatus.color === 'warning' ? '#fff3e0, #ffe0b2' :
-                '#ffebee, #ffcdd2'
-              })`,
+              borderRadius: { xs: 3, sm: 4 },
+              bgcolor: 'white',
+              boxShadow: '0 12px 32px rgba(0,0,0,0.08)',
+              mb: { xs: 2, sm: 3 },
               overflow: 'hidden',
+              border: '1px solid rgba(226, 232, 240, 0.6)',
               position: 'relative'
             }}>
               <Box sx={{
                 position: 'absolute',
-                top: -20,
-                right: -20,
-                width: 150,
-                height: 150,
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 4,
+                background: 'linear-gradient(90deg, #2196f3, #9c27b0, #ff9800)'
+              }} />
+              
+              <CardHeader
+                title={
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <Box sx={{
+                      p: 1,
+                      borderRadius: 2,
+                      bgcolor: alpha(theme.palette.primary.main, 0.1),
+                      display: 'flex'
+                    }}>
+                      <Business sx={{ color: 'primary.main', fontSize: { xs: 20, sm: 24 } }} />
+                    </Box>
+                    <Typography variant={isMobile ? "body1" : "h6"} fontWeight={700}>
+                      Company Information
+                    </Typography>
+                  </Stack>
+                }
+                sx={{ 
+                  borderBottom: '1px solid', 
+                  borderColor: 'grey.100', 
+                  py: { xs: 1.5, sm: 2.5 },
+                  px: { xs: 2, sm: 3 },
+                  bgcolor: 'grey.50'
+                }}
+                action={
+                  <Stack direction="row" spacing={1}>
+                    <Chip 
+                      icon={<VerifiedUser />} 
+                      label="Verified" 
+                      size="small"
+                      sx={{ 
+                        background: 'linear-gradient(135deg, #4caf50 0%, #388e3c 100%)',
+                        color: 'white',
+                        fontWeight: 600,
+                        fontSize: { xs: '0.65rem', sm: '0.75rem' },
+                        boxShadow: '0 4px 8px rgba(76, 175, 80, 0.3)',
+                        '& .MuiChip-icon': { color: 'white' }
+                      }}
+                    />
+                    <Tooltip title="Edit Company" arrow>
+                      <IconButton 
+                        onClick={handleEditCompany}
+                        size="small"
+                        sx={{
+                          bgcolor: alpha(theme.palette.primary.main, 0.1),
+                          color: 'primary.main',
+                          '&:hover': { 
+                            bgcolor: alpha(theme.palette.primary.main, 0.2),
+                            transform: 'scale(1.1)'
+                          },
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        <Edit fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </Stack>
+                }
+              />
+              
+              <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+                <Stack spacing={{ xs: 2, sm: 2.5 }}>
+                  {/* Company Code */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, sm: 2 } }}>
+                    <Box sx={{ 
+                      width: { xs: 40, sm: 50 },
+                      height: { xs: 40, sm: 50 },
+                      borderRadius: 2,
+                      background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      boxShadow: '0 4px 8px rgba(33, 150, 243, 0.3)'
+                    }}>
+                      <Fingerprint sx={{ fontSize: { xs: 22, sm: 26 }, color: 'white' }} />
+                    </Box>
+                    <Box sx={{ minWidth: 0, flex: 1 }}>
+                      <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ fontSize: { xs: '0.7rem', sm: '0.8rem' }, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        Company Code
+                      </Typography>
+                      <Typography variant="body1" fontWeight={700} sx={{ fontSize: { xs: '0.9rem', sm: '1.1rem' }, wordBreak: 'break-word', color: '#0f172a' }}>
+                        {company.companyCode || "N/A"}
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  {/* Created On */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, sm: 2 } }}>
+                    <Box sx={{ 
+                      width: { xs: 40, sm: 50 },
+                      height: { xs: 40, sm: 50 },
+                      borderRadius: 2,
+                      background: 'linear-gradient(135deg, #ff9800 0%, #ed6c02 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      boxShadow: '0 4px 8px rgba(255, 152, 0, 0.3)'
+                    }}>
+                      <Event sx={{ fontSize: { xs: 22, sm: 26 }, color: 'white' }} />
+                    </Box>
+                    <Box sx={{ minWidth: 0, flex: 1 }}>
+                      <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ fontSize: { xs: '0.7rem', sm: '0.8rem' }, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        Created On
+                      </Typography>
+                      <Typography variant="body1" fontWeight={600} sx={{ fontSize: { xs: '0.9rem', sm: '1.1rem' }, wordBreak: 'break-word', color: '#0f172a' }}>
+                        {formatDate(company.createdAt)}
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  {/* Login URL with Copy */}
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: { xs: 1.5, sm: 2 } }}>
+                    <Box sx={{ 
+                      width: { xs: 40, sm: 50 },
+                      height: { xs: 40, sm: 50 },
+                      borderRadius: 2,
+                      background: 'linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      mt: { xs: 0.5, sm: 0 },
+                      boxShadow: '0 4px 8px rgba(156, 39, 176, 0.3)'
+                    }}>
+                      <Link sx={{ fontSize: { xs: 22, sm: 26 }, color: 'white' }} />
+                    </Box>
+                    
+                    <Box sx={{ 
+                      minWidth: 0, 
+                      flex: 1,
+                      width: '100%'
+                    }}>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        fontWeight={600}
+                        sx={{ 
+                          fontSize: { xs: '0.7rem', sm: '0.8rem' },
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px',
+                          mb: 0.5,
+                          display: 'block'
+                        }}
+                      >
+                        Login URL
+                      </Typography>
+
+                      <Box sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: 1,
+                        width: '100%'
+                      }}>
+                        <Box sx={{
+                          flex: 1,
+                          minWidth: 0,
+                          bgcolor: alpha(theme.palette.primary.main, 0.04),
+                          border: '1px solid',
+                          borderColor: alpha(theme.palette.primary.main, 0.2),
+                          borderRadius: 2,
+                          overflowX: 'auto',
+                          overflowY: 'hidden',
+                          maxWidth: '100%',
+                          '&::-webkit-scrollbar': {
+                            height: '4px',
+                          },
+                          '&::-webkit-scrollbar-track': {
+                            background: 'transparent',
+                          },
+                          '&::-webkit-scrollbar-thumb': {
+                            background: '#9e9e9e',
+                            borderRadius: '4px',
+                          },
+                        }}>
+                          <Typography
+                            component="div"
+                            sx={{
+                              fontFamily: 'monospace',
+                              fontSize: { xs: '0.8rem', sm: '0.9rem', md: '1rem' },
+                              fontWeight: 500,
+                              color: 'primary.main',
+                              py: { xs: 1, sm: 1.2 },
+                              px: { xs: 1.5, sm: 2 },
+                              whiteSpace: 'nowrap',
+                              width: 'max-content',
+                              minWidth: '100%',
+                            }}
+                          >
+                            {window.location.origin}{company.loginUrl}
+                          </Typography>
+                        </Box>
+
+                        <Tooltip title={copied ? "Copied!" : "Copy URL"} arrow placement="top">
+                          <IconButton
+                            size="small"
+                            onClick={handleCopy}
+                            sx={{
+                              background: copied 
+                                ? 'linear-gradient(135deg, #4caf50 0%, #388e3c 100%)'
+                                : 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
+                              color: 'white',
+                              width: { xs: 40, sm: 44 },
+                              height: { xs: 40, sm: 44 },
+                              borderRadius: 2,
+                              boxShadow: copied 
+                                ? '0 4px 12px rgba(76, 175, 80, 0.4)'
+                                : '0 4px 12px rgba(33, 150, 243, 0.4)',
+                              flexShrink: 0,
+                              '&:hover': { 
+                                transform: 'scale(1.1)',
+                                boxShadow: copied 
+                                  ? '0 6px 16px rgba(76, 175, 80, 0.5)'
+                                  : '0 6px 16px rgba(33, 150, 243, 0.5)',
+                              },
+                              transition: 'all 0.2s ease'
+                            }}
+                          >
+                            {copied ? <CheckCircle fontSize="small" /> : <ContentCopyIcon fontSize="small" />}
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
+                      
+                      {copied && (
+                        <Fade in={copied}>
+                          <Typography 
+                            variant="caption" 
+                            color="success.main" 
+                            sx={{ 
+                              mt: 0.5, 
+                              display: 'block',
+                              fontSize: '0.7rem',
+                              fontWeight: 600,
+                              textAlign: 'right'
+                            }}
+                          >
+                            ✓ Copied to clipboard!
+                          </Typography>
+                        </Fade>
+                      )}
+                    </Box>
+                  </Box>
+                </Stack>
+              </CardContent>
+            </Card>
+
+            {/* Subscription Status Card - Enhanced */}
+            <Card sx={{ 
+              borderRadius: { xs: 3, sm: 4 },
+              boxShadow: '0 12px 32px rgba(0,0,0,0.08)',
+              background: `linear-gradient(145deg, ${
+                subscriptionStatus.color === 'success' ? '#e8f5e9' :
+                subscriptionStatus.color === 'warning' ? '#fff3e0' :
+                '#ffebee'
+              } 0%, ${
+                subscriptionStatus.color === 'success' ? '#c8e6c9' :
+                subscriptionStatus.color === 'warning' ? '#ffe0b2' :
+                '#ffcdd2'
+              } 100%)`,
+              overflow: 'hidden',
+              position: 'relative',
+              border: '1px solid rgba(226, 232, 240, 0.6)'
+            }}>
+              <Box sx={{
+                position: 'absolute',
+                top: -30,
+                right: -30,
+                width: 200,
+                height: 200,
                 borderRadius: '50%',
                 background: `radial-gradient(circle, ${
                   subscriptionStatus.color === 'success' ? 'rgba(76, 175, 80, 0.2)' :
@@ -2214,45 +2431,67 @@ const CompanyDetails = () => {
                   direction={{ xs: 'column', sm: 'row' }} 
                   alignItems="center" 
                   justifyContent="space-between" 
-                  spacing={{ xs: 2, sm: 3 }}
+                  spacing={{ xs: 3, sm: 4 }}
                 >
                   <Box sx={{ width: '100%' }}>
                     <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2, flexWrap: 'wrap' }}>
-                      <CardMembership sx={{ 
-                        color: `${subscriptionStatus.color}.main`,
-                        fontSize: { xs: 24, sm: 32 }
-                      }} />
+                      <Box sx={{
+                        p: 1,
+                        borderRadius: 2,
+                        background: subscriptionStatus.bg,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: `0 4px 12px ${alpha(
+                          subscriptionStatus.color === 'success' ? '#4caf50' :
+                          subscriptionStatus.color === 'warning' ? '#ff9800' :
+                          '#f44336', 0.3
+                        )}`
+                      }}>
+                        <CardMembership sx={{ 
+                          color: 'white',
+                          fontSize: { xs: 24, sm: 28 }
+                        }} />
+                      </Box>
                       <Typography variant={isMobile ? "body1" : "h6"} fontWeight={700} color={`${subscriptionStatus.color}.dark`}>
                         Subscription Status
                       </Typography>
                       <Chip
                         label={subscriptionStatus.text}
                         size="small"
-                        color={subscriptionStatus.color}
-                        sx={{ 
-                          fontWeight: 600,
+                        sx={{
+                          background: subscriptionStatus.bg,
+                          color: 'white',
+                          fontWeight: 700,
+                          boxShadow: `0 4px 8px ${alpha(
+                            subscriptionStatus.color === 'success' ? '#4caf50' :
+                            subscriptionStatus.color === 'warning' ? '#ff9800' :
+                            '#f44336', 0.3
+                          )}`,
                           ml: { xs: 0, sm: 'auto' },
-                          fontSize: { xs: '0.65rem', sm: '0.75rem' }
+                          fontSize: { xs: '0.7rem', sm: '0.8rem' },
+                          px: 1
                         }}
                       />
                     </Stack>
                     
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontSize: { xs: '0.8rem', sm: '0.9rem' } }}>
                       <strong>Expires on:</strong> {formatDate(company.subscriptionExpiry)}
                     </Typography>
                     
                     <Box sx={{ mb: 2 }}>
                       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
-                        <Typography variant="body2" fontWeight={600} color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                        <Typography variant="body2" fontWeight={600} color="text.secondary" sx={{ fontSize: { xs: '0.8rem', sm: '0.9rem' } }}>
                           Days Remaining
                         </Typography>
                         <Typography 
-                          variant={isMobile ? "h6" : "h5"} 
+                          variant={isMobile ? "h5" : "h4"} 
                           fontWeight={800} 
-                          color={`${subscriptionStatus.color}.main`}
-                          sx={{ 
-                            textShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                            fontSize: { xs: '1.25rem', sm: '1.5rem', md: '1.75rem' }
+                          sx={{
+                            background: subscriptionStatus.bg,
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            fontSize: { xs: '1.5rem', sm: '1.8rem', md: '2.2rem' }
                           }}
                         >
                           {daysRemaining} days
@@ -2262,17 +2501,17 @@ const CompanyDetails = () => {
                         variant="determinate" 
                         value={subscriptionProgress}
                         sx={{ 
-                          height: { xs: 8, sm: 10, md: 12 },
-                          borderRadius: 6,
+                          height: { xs: 10, sm: 12, md: 14 },
+                          borderRadius: 7,
                           bgcolor: 'rgba(0,0,0,0.08)',
                           '& .MuiLinearProgress-bar': {
-                            borderRadius: 6,
-                            background: `linear-gradient(90deg, ${
-                              subscriptionStatus.color === 'success' ? '#4caf50, #388e3c' :
-                              subscriptionStatus.color === 'warning' ? '#ff9800, #ed6c02' :
-                              '#f44336, #d32f2f'
-                            })`,
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                            borderRadius: 7,
+                            background: subscriptionStatus.bg,
+                            boxShadow: `0 2px 8px ${alpha(
+                              subscriptionStatus.color === 'success' ? '#4caf50' :
+                              subscriptionStatus.color === 'warning' ? '#ff9800' :
+                              '#f44336', 0.4
+                            )}`
                           }
                         }}
                       />
@@ -2280,18 +2519,25 @@ const CompanyDetails = () => {
                     
                     <Alert 
                       severity={subscriptionStatus.color}
+                      iconMapping={{
+                        success: <CheckCircle fontSize="inherit" />,
+                        warning: <WarningAmber fontSize="inherit" />,
+                        error: <ErrorOutline fontSize="inherit" />
+                      }}
                       sx={{ 
                         mt: 2, 
                         borderRadius: 2,
+                        border: '1px solid',
+                        borderColor: `${subscriptionStatus.color}.main`,
                         '& .MuiAlert-icon': {
                           color: `${subscriptionStatus.color}.main`
                         },
                         '& .MuiAlert-message': {
-                          fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                          fontSize: { xs: '0.8rem', sm: '0.9rem' }
                         }
                       }}
                     >
-                      <Typography variant="body2" fontWeight={500} sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' } }}>
+                      <Typography variant="body2" fontWeight={500} sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                         {daysRemaining > 0 
                           ? `Your subscription will expire in ${daysRemaining} days. Renew now to continue enjoying our services.`
                           : 'Your subscription has expired. Please renew to access all features.'}
@@ -2300,33 +2546,57 @@ const CompanyDetails = () => {
                   </Box>
                   
                   <Box sx={{ 
-                    width: { xs: 80, sm: 100, md: 120, lg: 150 },
-                    height: { xs: 80, sm: 100, md: 120, lg: 150 },
+                    width: { xs: 100, sm: 120, md: 140, lg: 160 },
+                    height: { xs: 100, sm: 120, md: 140, lg: 160 },
                     borderRadius: '50%',
-                    bgcolor: 'white',
+                    background: 'white',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
                     flexShrink: 0,
-                    boxShadow: '0 12px 24px rgba(0,0,0,0.15)',
+                    boxShadow: '0 16px 32px rgba(0,0,0,0.15)',
                     border: '4px solid',
                     borderColor: `${subscriptionStatus.color}.main`,
                     animation: 'pulse 2s infinite',
-                    mt: { xs: 2, sm: 0 }
+                    mt: { xs: 2, sm: 0 },
+                    position: 'relative',
+                    '&::after': {
+                      content: '""',
+                      position: 'absolute',
+                      top: -4,
+                      left: -4,
+                      right: -4,
+                      bottom: -4,
+                      borderRadius: '50%',
+                      background: `linear-gradient(135deg, ${subscriptionStatus.color}.main 0%, transparent 70%)`,
+                      opacity: 0.2,
+                      zIndex: -1,
+                    }
                   }}>
                     <Typography 
                       fontWeight={800}
-                      color={`${subscriptionStatus.color}.main`}
-                      sx={{ fontSize: { xs: '1.75rem', sm: '2rem', md: '2.5rem', lg: '3rem' } }}
+                      sx={{
+                        background: subscriptionStatus.bg,
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        fontSize: { xs: '2.2rem', sm: '2.5rem', md: '3rem', lg: '3.5rem' },
+                        lineHeight: 1
+                      }}
                     >
                       {daysRemaining}
                     </Typography>
                     <Typography 
                       variant="body2" 
-                      fontWeight={600}
-                      color="text.secondary"
-                      sx={{ fontSize: { xs: '0.6rem', sm: '0.7rem', md: '0.875rem' } }}
+                      fontWeight={700}
+                      sx={{
+                        background: subscriptionStatus.bg,
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        fontSize: { xs: '0.7rem', sm: '0.8rem', md: '0.9rem' },
+                        textTransform: 'uppercase',
+                        letterSpacing: '1px'
+                      }}
                     >
                       Days Left
                     </Typography>
@@ -2336,653 +2606,324 @@ const CompanyDetails = () => {
             </Card>
           </Grid>
 
-          
           {/* Right Column - Recent Users */}
-<Grid item xs={12} lg={4}>
-  <Card sx={{ 
-    borderRadius: { xs: 2, sm: 3 },
-    bgcolor: 'white',
-    boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
-    height: '100%',
-    display: 'flex',
-    flexDirection: 'column',
-    maxHeight: { lg: '600px' } // Fixed height for desktop
-  }}>
-    <CardHeader
-      title={
-        <Stack direction="row" alignItems="center" justifyContent="space-between">
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <People sx={{ color: 'primary.main', fontSize: { xs: 20, sm: 24 } }} />
-            <Typography variant={isMobile ? "body1" : "h6"} fontWeight={700}>
-              Recent Users
-            </Typography>
-          </Stack>
-          <MuiBadge 
-            badgeContent={recentUsers.length} 
-            color="primary"
-            sx={{ 
-              '& .MuiBadge-badge': { 
-                fontWeight: 600,
-                fontSize: { xs: '0.65rem', sm: '0.75rem' },
-                height: { xs: 18, sm: 20, md: 22 },
-                minWidth: { xs: 18, sm: 20, md: 22 }
-              } 
-            }}
-          />
-        </Stack>
-      }
-      sx={{ 
-        borderBottom: '1px solid', 
-        borderColor: 'grey.100', 
-        py: { xs: 1.5, sm: 2 },
-        px: { xs: 2, sm: 3 },
-        flexShrink: 0 // Prevents header from shrinking
-      }}
-    />
-    
-    {/* Scrollable Content Area */}
-    <CardContent 
-      sx={{ 
-        p: 0, 
-        flexGrow: 1,
-        overflowY: 'auto', // Enable vertical scrolling
-        maxHeight: { lg: '500px' }, // Fixed height for scrollable area
-        '&::-webkit-scrollbar': {
-          width: '8px',
-        },
-        '&::-webkit-scrollbar-track': {
-          background: '#f1f1f1',
-          borderRadius: '4px',
-        },
-        '&::-webkit-scrollbar-thumb': {
-          background: '#888',
-          borderRadius: '4px',
-          '&:hover': {
-            background: '#666',
-          },
-        },
-        scrollbarWidth: 'thin',
-        scrollbarColor: '#888 #f1f1f1',
-      }}
-    >
-      {recentUsers.length > 0 ? (
-        <List sx={{ p: 0 }}>
-          {recentUsers.map((user, index) => (
-            <ListItem
-              key={user.id || user._id || index}
-              sx={{
-                px: { xs: 2, sm: 3 },
-                py: { xs: 1.5, sm: 2 },
-                borderBottom: index < recentUsers.length - 1 ? '1px solid' : 'none',
-                borderColor: 'grey.100',
-                transition: 'all 0.2s ease',
-                '&:hover': {
-                  bgcolor: alpha(theme.palette.primary.main, 0.04),
-                }
-              }}
-            >
-              <ListItemAvatar>
-                <MuiBadge
-                  overlap="circular"
-                  anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                  badgeContent={
-                    <Box
-                      sx={{
-                        width: { xs: 10, sm: 12 },
-                        height: { xs: 10, sm: 12 },
-                        borderRadius: '50%',
-                        bgcolor: user.isActive ? 'success.main' : 'error.main',
-                        border: '2px solid white',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                      }}
-                    />
-                  }
-                >
-                  <Avatar
-                    sx={{
-                      width: { xs: 40, sm: 44, md: 48 },
-                      height: { xs: 40, sm: 44, md: 48 },
-                      bgcolor: user.isActive ? 'primary.main' : 'grey.400',
-                      boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-                      fontSize: { xs: '1rem', sm: '1.1rem' }
-                    }}
-                  >
-                    {user.name?.charAt(0) || 'U'}
-                  </Avatar>
-                </MuiBadge>
-              </ListItemAvatar>
-              <ListItemText
-                primary={
-                  <Typography 
-                    variant="body1" 
-                    fontWeight={600} 
-                    noWrap
-                    sx={{ 
-                      fontSize: { xs: '0.85rem', sm: '0.95rem', md: '1rem' } 
-                    }}
-                  >
-                    {user.name || 'Unknown User'}
-                  </Typography>
-                }
-                secondary={
-                  <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 0.5, flexWrap: 'wrap' }}>
-                    {user.employeeType && (
-                      <Chip
-                        label={user.employeeType}
-                        size="small"
-                        sx={{ 
-                          height: { xs: 18, sm: 20 }, 
-                          fontSize: { xs: '0.55rem', sm: '0.65rem' },
-                          fontWeight: 600,
-                          bgcolor: 'info.50',
-                          color: 'info.main'
-                        }}
-                      />
-                    )}
-                    <Chip
-                      label={user.department || 'No Dept'}
-                      size="small"
+          <Grid item xs={12} lg={4}>
+            <Card sx={{ 
+              borderRadius: { xs: 3, sm: 4 },
+              bgcolor: 'white',
+              boxShadow: '0 12px 32px rgba(0,0,0,0.08)',
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              maxHeight: { lg: '700px' },
+              border: '1px solid rgba(226, 232, 240, 0.6)',
+              position: 'relative',
+              overflow: 'hidden'
+            }}>
+              <Box sx={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 4,
+                background: 'linear-gradient(90deg, #4caf50, #2196f3, #9c27b0)'
+              }} />
+              
+              <CardHeader
+                title={
+                  <Stack direction="row" alignItems="center" justifyContent="space-between">
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <Box sx={{
+                        p: 1,
+                        borderRadius: 2,
+                        bgcolor: alpha(theme.palette.primary.main, 0.1),
+                        display: 'flex'
+                      }}>
+                        <People sx={{ color: 'primary.main', fontSize: { xs: 20, sm: 24 } }} />
+                      </Box>
+                      <Typography variant={isMobile ? "body1" : "h6"} fontWeight={700}>
+                        Recent Users
+                      </Typography>
+                    </Stack>
+                    <MuiBadge 
+                      badgeContent={recentUsers.length} 
+                      color="primary"
                       sx={{ 
-                        height: { xs: 18, sm: 20 }, 
-                        fontSize: { xs: '0.55rem', sm: '0.65rem' },
-                        fontWeight: 500,
-                        bgcolor: 'grey.100',
-                        color: 'text.secondary'
+                        '& .MuiBadge-badge': { 
+                          fontWeight: 700,
+                          fontSize: { xs: '0.7rem', sm: '0.8rem' },
+                          height: { xs: 20, sm: 22, md: 24 },
+                          minWidth: { xs: 20, sm: 22, md: 24 },
+                          background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
+                          boxShadow: '0 2px 4px rgba(33, 150, 243, 0.3)'
+                        } 
                       }}
                     />
                   </Stack>
                 }
-              />
-              <Tooltip title="Edit User" arrow>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  startIcon={<Edit fontSize="small" />}
-                  onClick={() => handleEditUser(user)}
-                  sx={{
-                    ml: 1,
-                    borderRadius: 2,
-                    borderColor: 'primary.main',
-                    color: 'primary.main',
-                    minWidth: { xs: 50, sm: 60 },
-                    fontSize: { xs: '0.65rem', sm: '0.75rem' },
-                    py: { xs: 0.5, sm: 0.75 },
-                    '&:hover': {
-                      bgcolor: 'primary.main',
-                      color: 'white',
-                      borderColor: 'primary.main'
-                    },
-                    transition: 'all 0.2s ease',
-                    flexShrink: 0 // Prevents button from shrinking
-                  }}
-                >
-                  {isMobile ? '' : 'Edit'}
-                </Button>
-              </Tooltip>
-            </ListItem>
-          ))}
-        </List>
-      ) : (
-        <Box sx={{ 
-          display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: 'center', 
-          justifyContent: 'center',
-          py: { xs: 6, sm: 8 },
-          px: { xs: 2, sm: 3 },
-          height: '100%',
-          minHeight: '300px'
-        }}>
-          <Box sx={{
-            width: { xs: 60, sm: 70, md: 80 },
-            height: { xs: 60, sm: 70, md: 80 },
-            borderRadius: '50%',
-            bgcolor: 'grey.100',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            mb: 2
-          }}>
-            <People sx={{ fontSize: { xs: 30, sm: 35, md: 40 }, color: 'grey.400' }} />
-          </Box>
-          <Typography variant="body1" fontWeight={600} gutterBottom sx={{ fontSize: { xs: '0.95rem', sm: '1rem' } }}>
-            No Users Found
-          </Typography>
-          <Typography variant="body2" color="text.secondary" align="center" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
-            Get started by adding users to your company
-          </Typography>
-          <Button
-            variant="contained"
-            onClick={handleAddNewUser}
-            startIcon={<Add />}
-            size={isMobile ? "small" : "medium"}
-            sx={{ mt: 3, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-          >
-            Add First User
-          </Button>
-        </Box>
-      )}
-    </CardContent>
-    
-    {/* Optional: Add a footer with total count */}
-    {recentUsers.length > 5 && (
-      <Box 
-        sx={{ 
-          p: 2, 
-          borderTop: '1px solid', 
-          borderColor: 'grey.200',
-          bgcolor: 'grey.50',
-          textAlign: 'center',
-          flexShrink: 0
-        }}
-      >
-        <Typography variant="caption" color="text.secondary">
-          Showing {recentUsers.length} users
-        </Typography>
-      </Box>
-    )}
-  </Card>
-</Grid>
-        </Grid>
-
-        {/* Company Edit Modal */}
-       <Dialog 
-  open={companyEditModalOpen} 
-  onClose={() => !companyEditLoading && setCompanyEditModalOpen(false)}
-  maxWidth="sm"
-  fullWidth
-  fullScreen={isMobile}
-  TransitionComponent={Transition}
-  keepMounted
-  PaperProps={{
-    sx: { 
-      borderRadius: isMobile ? 0 : 4,
-      overflow: 'hidden',
-      background: 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
-      boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)'
-    }
-  }}
->
-  <DialogTitle sx={{ 
-    bgcolor: 'primary.main',
-    color: 'white',
-    py: { xs: 2, sm: 3 },
-    px: { xs: 2.5, sm: 4 },
-    position: 'relative',
-    overflow: 'hidden'
-  }}>
-    <Box sx={{
-      position: 'absolute',
-      top: -50,
-      right: -50,
-      width: 150,
-      height: 150,
-      borderRadius: '50%',
-      background: 'rgba(255,255,255,0.1)',
-      animation: 'float 8s ease-in-out infinite'
-    }} />
-    <Box sx={{
-      position: 'absolute',
-      bottom: -50,
-      left: -50,
-      width: 150,
-      height: 150,
-      borderRadius: '50%',
-      background: 'rgba(255,255,255,0.1)',
-      animation: 'float 10s ease-in-out infinite reverse'
-    }} />
-    
-    <Stack direction="row" alignItems="center" justifyContent="space-between" position="relative">
-      <Stack direction="row" alignItems="center" spacing={2}>
-        <Box sx={{
-          width: { xs: 40, sm: 50 },
-          height: { xs: 40, sm: 50 },
-          borderRadius: '50%',
-          bgcolor: 'white',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxShadow: '0 8px 16px rgba(0,0,0,0.2)'
-        }}>
-          <Business sx={{ color: 'primary.main', fontSize: { xs: 22, sm: 28 } }} />
-        </Box>
-        <Box>
-          <Typography variant={isMobile ? "h6" : "h5"} fontWeight={700}>
-            Edit Company Details
-          </Typography>
-          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)', fontSize: { xs: '0.7rem', sm: '0.875rem' } }}>
-            Update company information
-          </Typography>
-        </Box>
-      </Stack>
-      <IconButton
-        onClick={() => setCompanyEditModalOpen(false)}
-        disabled={companyEditLoading}
-        sx={{ 
-          color: 'white',
-          bgcolor: 'rgba(255,255,255,0.2)',
-          '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' },
-          transition: 'all 0.2s ease'
-        }}
-      >
-        <Close />
-      </IconButton>
-    </Stack>
-  </DialogTitle>
-  
-  <DialogContent sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
-    <Fade in={!companyEditSuccess} timeout={600}>
-      <Box>
-        {!companyEditSuccess ? (
-          <Stack spacing={3}>
-            <Alert 
-              severity="info" 
-              sx={{ 
-                borderRadius: 2,
-                bgcolor: 'info.50',
-                border: '1px solid',
-                borderColor: 'info.100',
-                '& .MuiAlert-icon': {
-                  color: 'info.main'
-                },
-                '& .MuiAlert-message': {
-                  fontSize: { xs: '0.75rem', sm: '0.875rem' }
-                }
-              }}
-            >
-              <Typography variant="body2" fontWeight={500} sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                Editing: <strong>{company.companyName}</strong>
-              </Typography>
-            </Alert>
-            
-            <Grid container spacing={2}>
-              {/* Company Name - Required */}
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Company Name"
-                  name="companyName"
-                  value={companyEditFormData.companyName}
-                  onChange={handleCompanyInputChange}
-                  variant="outlined"
-                  size={isMobile ? "small" : "medium"}
-                  required
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Business sx={{ color: 'primary.main' }} />
-                      </InputAdornment>
-                    )
-                  }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                      '&:hover fieldset': {
-                        borderColor: 'primary.main',
-                      }
-                    }
-                  }}
-                />
-              </Grid>
-              
-              {/* Email Address */}
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Email Address"
-                  name="companyEmail"
-                  type="email"
-                  value={companyEditFormData.companyEmail}
-                  onChange={handleCompanyInputChange}
-                  variant="outlined"
-                  size={isMobile ? "small" : "medium"}
-                  placeholder="Enter company email"
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Email sx={{ color: 'primary.main' }} />
-                      </InputAdornment>
-                    )
-                  }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                    }
-                  }}
-                />
-              </Grid>
-              
-              {/* Phone Number */}
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Phone Number"
-                  name="companyPhone"
-                  value={companyEditFormData.companyPhone}
-                  onChange={handleCompanyInputChange}
-                  variant="outlined"
-                  size={isMobile ? "small" : "medium"}
-                  placeholder="Enter company phone"
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Phone sx={{ color: 'primary.main' }} />
-                      </InputAdornment>
-                    )
-                  }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                    }
-                  }}
-                />
-              </Grid>
-              
-              {/* Logo URL */}
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Logo URL"
-                  name="logo"
-                  value={companyEditFormData.logo}
-                  onChange={handleCompanyInputChange}
-                  variant="outlined"
-                  size={isMobile ? "small" : "medium"}
-                  placeholder="https://example.com/logo.png"
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Image sx={{ color: 'primary.main' }} />
-                      </InputAdornment>
-                    )
-                  }}
-                  helperText="Leave empty for default logo"
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                    }
-                  }}
-                />
-              </Grid>
-              
-              {/* Address */}
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Address"
-                  name="companyAddress"
-                  value={companyEditFormData.companyAddress}
-                  onChange={handleCompanyInputChange}
-                  variant="outlined"
-                  size={isMobile ? "small" : "medium"}
-                  placeholder="Enter company address"
-                  multiline
-                  rows={isMobile ? 2 : 3}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <LocationOn sx={{ color: 'primary.main' }} />
-                      </InputAdornment>
-                    )
-                  }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                    }
-                  }}
-                />
-              </Grid>
-            </Grid>
-
-            {/* Preview of current logo */}
-            {companyEditFormData.logo && (
-              <Paper 
-                variant="outlined" 
                 sx={{ 
-                  p: 2, 
-                  borderRadius: 2,
-                  bgcolor: 'grey.50',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 2
+                  borderBottom: '1px solid', 
+                  borderColor: 'grey.100', 
+                  py: { xs: 1.5, sm: 2 },
+                  px: { xs: 2, sm: 3 },
+                  bgcolor: 'grey.50'
+                }}
+              />
+              
+              {/* Scrollable Content Area */}
+              <CardContent 
+                sx={{ 
+                  p: 0, 
+                  flexGrow: 1,
+                  overflowY: 'auto',
+                  maxHeight: { lg: '600px' },
+                  '&::-webkit-scrollbar': {
+                    width: '8px',
+                  },
+                  '&::-webkit-scrollbar-track': {
+                    background: '#f1f1f1',
+                    borderRadius: '4px',
+                  },
+                  '&::-webkit-scrollbar-thumb': {
+                    background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
+                    borderRadius: '4px',
+                    '&:hover': {
+                      background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+                    },
+                  },
                 }}
               >
-                <Avatar
-                  src={companyEditFormData.logo}
+                {recentUsers.length > 0 ? (
+                  <List sx={{ p: 0 }}>
+                    {recentUsers.map((user, index) => (
+                      <ListItem
+                        key={user.id || user._id || index}
+                        sx={{
+                          px: { xs: 2, sm: 3 },
+                          py: { xs: 1.5, sm: 2 },
+                          borderBottom: index < recentUsers.length - 1 ? '1px solid' : 'none',
+                          borderColor: 'grey.100',
+                          transition: 'all 0.3s ease',
+                          '&:hover': {
+                            bgcolor: alpha(theme.palette.primary.main, 0.04),
+                            transform: 'translateX(4px)',
+                            '& .MuiListItemAvatar-root': {
+                              transform: 'scale(1.05)'
+                            }
+                          },
+                        }}
+                      >
+                        <ListItemAvatar>
+                          <MuiBadge
+                            overlap="circular"
+                            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                            badgeContent={
+                              <Box
+                                sx={{
+                                  width: { xs: 12, sm: 14 },
+                                  height: { xs: 12, sm: 14 },
+                                  borderRadius: '50%',
+                                  background: user.isActive 
+                                    ? 'linear-gradient(135deg, #4caf50 0%, #388e3c 100%)'
+                                    : 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)',
+                                  border: '2px solid white',
+                                  boxShadow: user.isActive 
+                                    ? '0 0 8px #4caf50'
+                                    : '0 0 8px #f44336',
+                                  animation: user.isActive ? 'pulse 2s infinite' : 'none'
+                                }}
+                              />
+                            }
+                          >
+                            <Avatar
+                              sx={{
+                                width: { xs: 44, sm: 48, md: 52 },
+                                height: { xs: 44, sm: 48, md: 52 },
+                                background: user.isActive 
+                                  ? 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)'
+                                  : 'linear-gradient(135deg, #9e9e9e 0%, #757575 100%)',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                                fontSize: { xs: '1rem', sm: '1.2rem' },
+                                transition: 'transform 0.3s ease'
+                              }}
+                            >
+                              {user.name?.charAt(0) || 'U'}
+                            </Avatar>
+                          </MuiBadge>
+                        </ListItemAvatar>
+                        <ListItemText
+                          primary={
+                            <Typography 
+                              variant="body1" 
+                              fontWeight={700} 
+                              noWrap
+                              sx={{ 
+                                fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' },
+                                color: '#0f172a',
+                                mb: 0.5
+                              }}
+                            >
+                              {user.name || 'Unknown User'}
+                            </Typography>
+                          }
+                          secondary={
+                            <Stack direction="row" alignItems="center" spacing={0.5} sx={{ flexWrap: 'wrap', gap: 0.5 }}>
+                              {user.employeeType && (
+                                <Chip
+                                  label={user.employeeType}
+                                  size="small"
+                                  sx={{ 
+                                    height: { xs: 20, sm: 22 }, 
+                                    fontSize: { xs: '0.6rem', sm: '0.65rem' },
+                                    fontWeight: 600,
+                                    background: 'linear-gradient(135deg, #ff9800 0%, #ed6c02 100%)',
+                                    color: 'white',
+                                    boxShadow: '0 2px 4px rgba(255, 152, 0, 0.3)',
+                                    '& .MuiChip-label': { px: 1 }
+                                  }}
+                                />
+                              )}
+                              <Chip
+                                label={user.department || 'No Dept'}
+                                size="small"
+                                sx={{ 
+                                  height: { xs: 20, sm: 22 }, 
+                                  fontSize: { xs: '0.6rem', sm: '0.65rem' },
+                                  fontWeight: 600,
+                                  bgcolor: alpha(theme.palette.primary.main, 0.1),
+                                  color: 'primary.main',
+                                  '& .MuiChip-label': { px: 1 }
+                                }}
+                              />
+                            </Stack>
+                          }
+                        />
+                        <Tooltip title="Edit User" arrow placement="left">
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<Edit fontSize="small" />}
+                            onClick={() => handleEditUser(user)}
+                            sx={{
+                              ml: 1,
+                              borderRadius: 2,
+                              borderColor: 'primary.main',
+                              color: 'primary.main',
+                              minWidth: { xs: 50, sm: 60 },
+                              fontSize: { xs: '0.65rem', sm: '0.75rem' },
+                              py: { xs: 0.5, sm: 0.75 },
+                              '&:hover': {
+                                background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
+                                color: 'white',
+                                borderColor: 'transparent',
+                                transform: 'scale(1.05)',
+                                boxShadow: '0 4px 12px rgba(33, 150, 243, 0.4)'
+                              },
+                              transition: 'all 0.3s ease',
+                              flexShrink: 0
+                            }}
+                          >
+                            {isMobile ? '' : 'Edit'}
+                          </Button>
+                        </Tooltip>
+                      </ListItem>
+                    ))}
+                  </List>
+                ) : (
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    py: { xs: 8, sm: 10 },
+                    px: { xs: 2, sm: 3 },
+                    height: '100%',
+                    minHeight: '400px'
+                  }}>
+                    <Box sx={{
+                      width: { xs: 80, sm: 90, md: 100 },
+                      height: { xs: 80, sm: 90, md: 100 },
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      mb: 3,
+                      boxShadow: '0 8px 16px rgba(33, 150, 243, 0.2)',
+                      animation: 'pulse 2s infinite'
+                    }}>
+                      <People sx={{ fontSize: { xs: 40, sm: 45, md: 50 }, color: '#1976d2' }} />
+                    </Box>
+                    <Typography variant="h6" fontWeight={700} gutterBottom sx={{ color: '#0f172a', fontSize: { xs: '1rem', sm: '1.1rem' } }}>
+                      No Users Found
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" align="center" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' }, mb: 3 }}>
+                      Get started by adding users to your company
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      onClick={handleAddNewUser}
+                      startIcon={<Add />}
+                      size={isMobile ? "small" : "medium"}
+                      sx={{
+                        background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
+                        color: 'white',
+                        fontWeight: 700,
+                        px: { xs: 3, sm: 4 },
+                        py: { xs: 1, sm: 1.2 },
+                        borderRadius: 3,
+                        boxShadow: '0 8px 16px rgba(33, 150, 243, 0.3)',
+                        fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                        '&:hover': {
+                          background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+                          boxShadow: '0 12px 24px rgba(33, 150, 243, 0.4)',
+                          transform: 'translateY(-2px)'
+                        },
+                        transition: 'all 0.3s ease'
+                      }}
+                    >
+                      Add First User
+                    </Button>
+                  </Box>
+                )}
+              </CardContent>
+              
+              {recentUsers.length > 0 && (
+                <Box 
                   sx={{ 
-                    width: 60, 
-                    height: 60, 
-                    border: '2px solid',
-                    borderColor: 'primary.main'
+                    p: 2, 
+                    borderTop: '1px solid', 
+                    borderColor: 'grey.200',
+                    bgcolor: 'grey.50',
+                    textAlign: 'center'
                   }}
                 >
-                  {companyEditFormData.companyName?.charAt(0)}
-                </Avatar>
-                <Box>
-                  <Typography variant="body2" fontWeight={600}>
-                    Logo Preview
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {companyEditFormData.logo.substring(0, 50)}...
-                  </Typography>
+                  {/* <Button
+                    onClick={handleViewAllUsers}
+                    endIcon={<ArrowForward />}
+                    sx={{
+                      color: 'primary.main',
+                      fontWeight: 600,
+                      fontSize: '0.85rem',
+                      textTransform: 'none',
+                      '&:hover': {
+                        bgcolor: alpha(theme.palette.primary.main, 0.05)
+                      }
+                    }}
+                  >
+                    View All Users
+                  </Button> */}
                 </Box>
-              </Paper>
-            )}
-          </Stack>
-        ) : (
-          <Zoom in={companyEditSuccess}>
-            <Box sx={{ 
-              py: { xs: 6, sm: 8 }, 
-              px: { xs: 2, sm: 4 }, 
-              textAlign: 'center'
-            }}>
-              <Box sx={{
-                width: { xs: 80, sm: 100, md: 120 },
-                height: { xs: 80, sm: 100, md: 120 },
-                borderRadius: '50%',
-                background: 'linear-gradient(145deg, #e8f5e9 0%, #c8e6c9 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                mx: 'auto',
-                mb: 4,
-                animation: 'pulse 2s infinite',
-                boxShadow: '0 12px 24px rgba(76, 175, 80, 0.3)'
-              }}>
-                <CheckCircle sx={{ fontSize: { xs: 50, sm: 60, md: 70 }, color: 'success.main' }} />
-              </Box>
-              <Typography variant={isMobile ? "h5" : "h4"} fontWeight={800} gutterBottom>
-                Company Updated!
-              </Typography>
-              <Typography variant="body1" color="text.secondary" sx={{ mb: 3, fontSize: { xs: '0.9rem', sm: '1.1rem' } }}>
-                <strong>{companyEditFormData.companyName}</strong> has been updated successfully.
-              </Typography>
-              <CircularProgress 
-                size={isMobile ? 24 : 30} 
-                sx={{ 
-                  color: 'success.main',
-                  mt: 2
-                }} 
-              />
-            </Box>
-          </Zoom>
-        )}
-      </Box>
-    </Fade>
-  </DialogContent>
-  
-  {!companyEditSuccess && (
-    <DialogActions sx={{ 
-      p: { xs: 2, sm: 3, md: 4 }, 
-      pt: { xs: 1, sm: 0 },
-      borderTop: '1px solid',
-      borderColor: 'grey.200',
-      bgcolor: 'grey.50'
-    }}>
-      <Stack 
-        direction="row" 
-        spacing={2} 
-        justifyContent="flex-end" 
-        width="100%"
-        sx={{ flexWrap: 'wrap' }}
-      >
-        <Button
-          onClick={() => setCompanyEditModalOpen(false)}
-          color="inherit"
-          disabled={companyEditLoading}
-          variant="outlined"
-          size={isMobile ? "small" : "medium"}
-          sx={{ 
-            borderRadius: 2,
-            px: { xs: 3, sm: 4 },
-            py: { xs: 0.75, sm: 1.2 },
-            fontWeight: 600,
-            fontSize: { xs: '0.75rem', sm: '0.875rem' },
-            borderColor: 'grey.400',
-            color: 'text.primary',
-            '&:hover': {
-              borderColor: 'grey.600',
-              bgcolor: 'grey.100'
-            }
-          }}
-        >
-          Cancel
-        </Button>
-        
-        <Button
-          onClick={handleSaveCompany}
-          variant="contained"
-          startIcon={companyEditLoading ? <CircularProgress size={16} color="inherit" /> : <Save />}
-          disabled={companyEditLoading}
-          size={isMobile ? "small" : "medium"}
-          sx={{ 
-            px: { xs: 4, sm: 5 },
-            py: { xs: 0.75, sm: 1.2 },
-            fontWeight: 700,
-            fontSize: { xs: '0.75rem', sm: '0.875rem' },
-            borderRadius: 2,
-            background: 'linear-gradient(145deg, #2196f3 0%, #1976d2 100%)',
-            boxShadow: '0 8px 16px rgba(33, 150, 243, 0.3)',
-            '&:hover': {
-              background: 'linear-gradient(145deg, #1976d2 0%, #1565c0 100%)',
-              boxShadow: '0 12px 24px rgba(33, 150, 243, 0.4)',
-              transform: 'translateY(-2px)'
-            },
-            transition: 'all 0.3s ease'
-          }}
-        >
-          {companyEditLoading ? 'Saving...' : 'Save Changes'}
-        </Button>
-      </Stack>
-    </DialogActions>
-  )}
-</Dialog>
+              )}
+            </Card>
+          </Grid>
+        </Grid>
 
-        {/* Edit User Modal - COMPLETE WITH ALL FIELDS */}
+        {/* Company Edit Modal - Enhanced */}
         <Dialog 
-          open={editModalOpen} 
-          onClose={() => !saveLoading && setEditModalOpen(false)}
-          maxWidth="lg"
+          open={companyEditModalOpen} 
+          onClose={() => !companyEditLoading && setCompanyEditModalOpen(false)}
+          maxWidth="sm"
           fullWidth
           fullScreen={isMobile}
           TransitionComponent={Transition}
@@ -2991,13 +2932,14 @@ const CompanyDetails = () => {
             sx: { 
               borderRadius: isMobile ? 0 : 4,
               overflow: 'hidden',
-              background: 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
-              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)'
+              background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+              border: '1px solid rgba(226, 232, 240, 0.6)'
             }
           }}
         >
           <DialogTitle sx={{ 
-            bgcolor: 'primary.main',
+            background: 'linear-gradient(135deg, #1a237e 0%, #0d47a1 100%)',
             color: 'white',
             py: { xs: 2, sm: 3 },
             px: { xs: 2.5, sm: 4 },
@@ -3028,8 +2970,8 @@ const CompanyDetails = () => {
             <Stack direction="row" alignItems="center" justifyContent="space-between" position="relative">
               <Stack direction="row" alignItems="center" spacing={2}>
                 <Box sx={{
-                  width: { xs: 40, sm: 50 },
-                  height: { xs: 40, sm: 50 },
+                  width: { xs: 45, sm: 55 },
+                  height: { xs: 45, sm: 55 },
                   borderRadius: '50%',
                   bgcolor: 'white',
                   display: 'flex',
@@ -3037,7 +2979,413 @@ const CompanyDetails = () => {
                   justifyContent: 'center',
                   boxShadow: '0 8px 16px rgba(0,0,0,0.2)'
                 }}>
-                  <Edit sx={{ color: 'primary.main', fontSize: { xs: 22, sm: 28 } }} />
+                  <Business sx={{ color: '#0d47a1', fontSize: { xs: 24, sm: 30 } }} />
+                </Box>
+                <Box>
+                  <Typography variant={isMobile ? "h6" : "h5"} fontWeight={700}>
+                    Edit Company Details
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)', fontSize: { xs: '0.7rem', sm: '0.875rem' } }}>
+                    Update company information
+                  </Typography>
+                </Box>
+              </Stack>
+              <IconButton
+                onClick={() => setCompanyEditModalOpen(false)}
+                disabled={companyEditLoading}
+                sx={{ 
+                  color: 'white',
+                  bgcolor: 'rgba(255,255,255,0.2)',
+                  '&:hover': { 
+                    bgcolor: 'rgba(255,255,255,0.3)',
+                    transform: 'rotate(90deg)'
+                  },
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                <Close />
+              </IconButton>
+            </Stack>
+          </DialogTitle>
+          
+          <DialogContent sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
+            <Fade in={!companyEditSuccess} timeout={600}>
+              <Box>
+                {!companyEditSuccess ? (
+                  <Stack spacing={3}>
+                    <Alert 
+                      severity="info" 
+                      icon={<InfoOutlined />}
+                      sx={{ 
+                        borderRadius: 2,
+                        bgcolor: alpha(theme.palette.info.main, 0.1),
+                        border: '1px solid',
+                        borderColor: 'info.100',
+                        '& .MuiAlert-icon': {
+                          color: 'info.main'
+                        },
+                        '& .MuiAlert-message': {
+                          fontSize: { xs: '0.8rem', sm: '0.9rem' }
+                        }
+                      }}
+                    >
+                      <Typography variant="body2" fontWeight={500} sx={{ fontSize: { xs: '0.8rem', sm: '0.9rem' } }}>
+                        Editing: <strong>{company.companyName}</strong>
+                      </Typography>
+                    </Alert>
+                    
+                    <Grid container spacing={2}>
+                      {/* Company Name - Required */}
+                      <Grid item xs={12}>
+                        <TextField
+                          fullWidth
+                          label="Company Name"
+                          name="companyName"
+                          value={companyEditFormData.companyName}
+                          onChange={handleCompanyInputChange}
+                          variant="outlined"
+                          size={isMobile ? "small" : "medium"}
+                          required
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <Business sx={{ color: 'primary.main' }} />
+                              </InputAdornment>
+                            )
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: 2,
+                              '&:hover fieldset': {
+                                borderColor: 'primary.main',
+                              },
+                              '&.Mui-focused fieldset': {
+                                borderColor: 'primary.main',
+                                borderWidth: 2
+                              }
+                            }
+                          }}
+                        />
+                      </Grid>
+                      
+                      {/* Email Address */}
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          fullWidth
+                          label="Email Address"
+                          name="companyEmail"
+                          type="email"
+                          value={companyEditFormData.companyEmail}
+                          onChange={handleCompanyInputChange}
+                          variant="outlined"
+                          size={isMobile ? "small" : "medium"}
+                          placeholder="Enter company email"
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <Email sx={{ color: 'primary.main' }} />
+                              </InputAdornment>
+                            )
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: 2,
+                            }
+                          }}
+                        />
+                      </Grid>
+                      
+                      {/* Phone Number */}
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          fullWidth
+                          label="Phone Number"
+                          name="companyPhone"
+                          value={companyEditFormData.companyPhone}
+                          onChange={handleCompanyInputChange}
+                          variant="outlined"
+                          size={isMobile ? "small" : "medium"}
+                          placeholder="Enter company phone"
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <Phone sx={{ color: 'primary.main' }} />
+                              </InputAdornment>
+                            )
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: 2,
+                            }
+                          }}
+                        />
+                      </Grid>
+                      
+                      {/* Logo URL */}
+                      <Grid item xs={12}>
+                        <TextField
+                          fullWidth
+                          label="Logo URL"
+                          name="logo"
+                          value={companyEditFormData.logo}
+                          onChange={handleCompanyInputChange}
+                          variant="outlined"
+                          size={isMobile ? "small" : "medium"}
+                          placeholder="https://example.com/logo.png"
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <Image sx={{ color: 'primary.main' }} />
+                              </InputAdornment>
+                            )
+                          }}
+                          helperText="Leave empty for default logo"
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: 2,
+                            }
+                          }}
+                        />
+                      </Grid>
+                      
+                      {/* Address */}
+                      <Grid item xs={12}>
+                        <TextField
+                          fullWidth
+                          label="Address"
+                          name="companyAddress"
+                          value={companyEditFormData.companyAddress}
+                          onChange={handleCompanyInputChange}
+                          variant="outlined"
+                          size={isMobile ? "small" : "medium"}
+                          placeholder="Enter company address"
+                          multiline
+                          rows={isMobile ? 2 : 3}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <LocationOn sx={{ color: 'primary.main' }} />
+                              </InputAdornment>
+                            )
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: 2,
+                            }
+                          }}
+                        />
+                      </Grid>
+                    </Grid>
+
+                    {/* Preview of current logo */}
+                    {companyEditFormData.logo && (
+                      <Paper 
+                        variant="outlined" 
+                        sx={{ 
+                          p: 2, 
+                          borderRadius: 2,
+                          bgcolor: 'grey.50',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 2,
+                          border: '1px solid',
+                          borderColor: 'grey.200'
+                        }}
+                      >
+                        <Avatar
+                          src={companyEditFormData.logo}
+                          sx={{ 
+                            width: 60, 
+                            height: 60, 
+                            border: '2px solid',
+                            borderColor: 'primary.main',
+                            boxShadow: '0 4px 8px rgba(33, 150, 243, 0.3)'
+                          }}
+                        >
+                          {companyEditFormData.companyName?.charAt(0)}
+                        </Avatar>
+                        <Box sx={{ overflow: 'hidden' }}>
+                          <Typography variant="body2" fontWeight={600}>
+                            Logo Preview
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', wordBreak: 'break-all' }}>
+                            {companyEditFormData.logo.substring(0, 50)}...
+                          </Typography>
+                        </Box>
+                      </Paper>
+                    )}
+                  </Stack>
+                ) : (
+                  <Zoom in={companyEditSuccess}>
+                    <Box sx={{ 
+                      py: { xs: 6, sm: 8 }, 
+                      px: { xs: 2, sm: 4 }, 
+                      textAlign: 'center'
+                    }}>
+                      <Box sx={{
+                        width: { xs: 100, sm: 120, md: 140 },
+                        height: { xs: 100, sm: 120, md: 140 },
+                        borderRadius: '50%',
+                        background: 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        mx: 'auto',
+                        mb: 4,
+                        animation: 'pulse 2s infinite',
+                        boxShadow: '0 12px 24px rgba(76, 175, 80, 0.3)',
+                        border: '4px solid white'
+                      }}>
+                        <CheckCircle sx={{ fontSize: { xs: 60, sm: 70, md: 80 }, color: 'success.main' }} />
+                      </Box>
+                      <Typography variant={isMobile ? "h4" : "h3"} fontWeight={800} gutterBottom sx={{ color: '#0f172a' }}>
+                        Company Updated!
+                      </Typography>
+                      <Typography variant="body1" color="text.secondary" sx={{ mb: 3, fontSize: { xs: '0.95rem', sm: '1.1rem' } }}>
+                        <strong style={{ color: theme.palette.primary.main }}>{companyEditFormData.companyName}</strong> has been updated successfully.
+                      </Typography>
+                      <CircularProgress 
+                        size={isMobile ? 30 : 40} 
+                        sx={{ 
+                          color: 'success.main',
+                          mt: 2
+                        }} 
+                      />
+                    </Box>
+                  </Zoom>
+                )}
+              </Box>
+            </Fade>
+          </DialogContent>
+          
+          {!companyEditSuccess && (
+            <DialogActions sx={{ 
+              p: { xs: 2, sm: 3, md: 4 }, 
+              pt: { xs: 1, sm: 0 },
+              borderTop: '1px solid',
+              borderColor: 'grey.200',
+              bgcolor: 'grey.50'
+            }}>
+              <Stack 
+                direction="row" 
+                spacing={2} 
+                justifyContent="flex-end" 
+                width="100%"
+                sx={{ flexWrap: 'wrap' }}
+              >
+                <Button
+                  onClick={() => setCompanyEditModalOpen(false)}
+                  color="inherit"
+                  disabled={companyEditLoading}
+                  variant="outlined"
+                  size={isMobile ? "small" : "medium"}
+                  sx={{ 
+                    borderRadius: 2,
+                    px: { xs: 3, sm: 4 },
+                    py: { xs: 0.75, sm: 1.2 },
+                    fontWeight: 600,
+                    fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                    borderColor: 'grey.400',
+                    color: 'text.primary',
+                    '&:hover': {
+                      borderColor: 'grey.600',
+                      bgcolor: 'grey.100'
+                    }
+                  }}
+                >
+                  Cancel
+                </Button>
+                
+                <Button
+                  onClick={handleSaveCompany}
+                  variant="contained"
+                  startIcon={companyEditLoading ? <CircularProgress size={16} color="inherit" /> : <Save />}
+                  disabled={companyEditLoading}
+                  size={isMobile ? "small" : "medium"}
+                  sx={{ 
+                    px: { xs: 4, sm: 5 },
+                    py: { xs: 0.75, sm: 1.2 },
+                    fontWeight: 700,
+                    fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                    borderRadius: 2,
+                    background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
+                    boxShadow: '0 8px 16px rgba(33, 150, 243, 0.3)',
+                    '&:hover': {
+                      background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+                      boxShadow: '0 12px 24px rgba(33, 150, 243, 0.4)',
+                      transform: 'translateY(-2px)'
+                    },
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  {companyEditLoading ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </Stack>
+            </DialogActions>
+          )}
+        </Dialog>
+
+        {/* Edit User Modal - Enhanced with All Fields */}
+        <Dialog 
+          open={editModalOpen} 
+          onClose={() => !saveLoading && setEditModalOpen(false)}
+          maxWidth="lg"
+          fullWidth
+          fullScreen={isMobile}
+          TransitionComponent={Transition}
+          keepMounted
+          PaperProps={{
+            sx: { 
+              borderRadius: isMobile ? 0 : 4,
+              overflow: 'hidden',
+              background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+              border: '1px solid rgba(226, 232, 240, 0.6)'
+            }
+          }}
+        >
+          <DialogTitle sx={{ 
+            background: 'linear-gradient(135deg, #1a237e 0%, #0d47a1 100%)',
+            color: 'white',
+            py: { xs: 2, sm: 3 },
+            px: { xs: 2.5, sm: 4 },
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            <Box sx={{
+              position: 'absolute',
+              top: -50,
+              right: -50,
+              width: 150,
+              height: 150,
+              borderRadius: '50%',
+              background: 'rgba(255,255,255,0.1)',
+              animation: 'float 8s ease-in-out infinite'
+            }} />
+            <Box sx={{
+              position: 'absolute',
+              bottom: -50,
+              left: -50,
+              width: 150,
+              height: 150,
+              borderRadius: '50%',
+              background: 'rgba(255,255,255,0.1)',
+              animation: 'float 10s ease-in-out infinite reverse'
+            }} />
+            
+            <Stack direction="row" alignItems="center" justifyContent="space-between" position="relative">
+              <Stack direction="row" alignItems="center" spacing={2}>
+                <Box sx={{
+                  width: { xs: 45, sm: 55 },
+                  height: { xs: 45, sm: 55 },
+                  borderRadius: '50%',
+                  bgcolor: 'white',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 8px 16px rgba(0,0,0,0.2)'
+                }}>
+                  <Person sx={{ color: '#0d47a1', fontSize: { xs: 24, sm: 30 } }} />
                 </Box>
                 <Box>
                   <Typography variant={isMobile ? "h6" : "h5"} fontWeight={700}>
@@ -3054,8 +3402,11 @@ const CompanyDetails = () => {
                 sx={{ 
                   color: 'white',
                   bgcolor: 'rgba(255,255,255,0.2)',
-                  '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' },
-                  transition: 'all 0.2s ease'
+                  '&:hover': { 
+                    bgcolor: 'rgba(255,255,255,0.3)',
+                    transform: 'rotate(90deg)'
+                  },
+                  transition: 'all 0.3s ease'
                 }}
               >
                 <Close />
@@ -3071,29 +3422,44 @@ const CompanyDetails = () => {
                     <Stack spacing={4}>
                       <Alert 
                         severity="info" 
+                        icon={<InfoOutlined />}
                         sx={{ 
                           borderRadius: 2,
-                          bgcolor: 'info.50',
+                          bgcolor: alpha(theme.palette.info.main, 0.1),
                           border: '1px solid',
                           borderColor: 'info.100',
                           '& .MuiAlert-icon': {
                             color: 'info.main'
                           },
                           '& .MuiAlert-message': {
-                            fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                            fontSize: { xs: '0.8rem', sm: '0.9rem' }
                           }
                         }}
                       >
-                        <Typography variant="body2" fontWeight={500} sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                        <Typography variant="body2" fontWeight={500} sx={{ fontSize: { xs: '0.8rem', sm: '0.9rem' } }}>
                           Editing: <strong>{selectedUser.name}</strong> ({selectedUser.email})
                         </Typography>
                       </Alert>
                       
                       {/* SECTION 1: BASIC INFORMATION */}
-                      <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, bgcolor: 'grey.50', borderRadius: 2 }}>
+                      <Paper elevation={0} sx={{ 
+                        p: { xs: 2, sm: 3 }, 
+                        bgcolor: 'grey.50', 
+                        borderRadius: 2,
+                        border: '1px solid',
+                        borderColor: 'grey.200'
+                      }}>
                         <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3 }}>
-                          <AccountCircle color="primary" sx={{ fontSize: { xs: 20, sm: 24 } }} />
-                          <Typography variant={isMobile ? "subtitle1" : "h6"} fontWeight={700}>
+                          <Box sx={{
+                            p: 1,
+                            borderRadius: 2,
+                            background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
+                            color: 'white',
+                            display: 'flex'
+                          }}>
+                            <AccountCircle sx={{ fontSize: { xs: 20, sm: 24 } }} />
+                          </Box>
+                          <Typography variant={isMobile ? "subtitle1" : "h6"} fontWeight={700} sx={{ color: '#0f172a' }}>
                             Basic Information
                           </Typography>
                         </Stack>
@@ -3113,8 +3479,15 @@ const CompanyDetails = () => {
                               helperText={formErrors.name}
                               InputProps={{
                                 startAdornment: (
-                                  <Person sx={{ mr: 1, color: 'action.active', fontSize: { xs: 18, sm: 22 } }} />
+                                  <InputAdornment position="start">
+                                    <Person sx={{ color: 'action.active' }} />
+                                  </InputAdornment>
                                 )
+                              }}
+                              sx={{
+                                '& .MuiOutlinedInput-root': {
+                                  borderRadius: 2,
+                                }
                               }}
                             />
                           </Grid>
@@ -3133,8 +3506,15 @@ const CompanyDetails = () => {
                               helperText={formErrors.email}
                               InputProps={{
                                 startAdornment: (
-                                  <Email sx={{ mr: 1, color: 'action.active', fontSize: { xs: 18, sm: 22 } }} />
+                                  <InputAdornment position="start">
+                                    <Email sx={{ color: 'action.active' }} />
+                                  </InputAdornment>
                                 )
+                              }}
+                              sx={{
+                                '& .MuiOutlinedInput-root': {
+                                  borderRadius: 2,
+                                }
                               }}
                             />
                           </Grid>
@@ -3150,8 +3530,15 @@ const CompanyDetails = () => {
                               size={isMobile ? "small" : "medium"}
                               InputProps={{
                                 startAdornment: (
-                                  <Phone sx={{ mr: 1, color: 'action.active', fontSize: { xs: 18, sm: 22 } }} />
+                                  <InputAdornment position="start">
+                                    <Phone sx={{ color: 'action.active' }} />
+                                  </InputAdornment>
                                 )
+                              }}
+                              sx={{
+                                '& .MuiOutlinedInput-root': {
+                                  borderRadius: 2,
+                                }
                               }}
                             />
                           </Grid>
@@ -3169,8 +3556,15 @@ const CompanyDetails = () => {
                               InputLabelProps={{ shrink: true }}
                               InputProps={{
                                 startAdornment: (
-                                  <CalendarToday sx={{ mr: 1, color: 'action.active', fontSize: { xs: 18, sm: 22 } }} />
+                                  <InputAdornment position="start">
+                                    <CalendarToday sx={{ color: 'action.active' }} />
+                                  </InputAdornment>
                                 )
+                              }}
+                              sx={{
+                                '& .MuiOutlinedInput-root': {
+                                  borderRadius: 2,
+                                }
                               }}
                             />
                           </Grid>
@@ -3185,9 +3579,10 @@ const CompanyDetails = () => {
                                 label="Gender"
                                 startAdornment={
                                   <InputAdornment position="start">
-                                    <Wc sx={{ color: 'action.active', fontSize: { xs: 18, sm: 22 } }} />
+                                    <Wc sx={{ color: 'action.active' }} />
                                   </InputAdornment>
                                 }
+                                sx={{ borderRadius: 2 }}
                               >
                                 <SelectMenuItem value="">
                                   <em>None</em>
@@ -3211,9 +3606,10 @@ const CompanyDetails = () => {
                                 label="Marital Status"
                                 startAdornment={
                                   <InputAdornment position="start">
-                                    <Favorite sx={{ color: 'action.active', fontSize: { xs: 18, sm: 22 } }} />
+                                    <Favorite sx={{ color: 'action.active' }} />
                                   </InputAdornment>
                                 }
+                                sx={{ borderRadius: 2 }}
                               >
                                 <SelectMenuItem value="">
                                   <em>None</em>
@@ -3240,8 +3636,15 @@ const CompanyDetails = () => {
                               rows={isMobile ? 1 : 2}
                               InputProps={{
                                 startAdornment: (
-                                  <LocationOn sx={{ mr: 1, color: 'action.active', fontSize: { xs: 18, sm: 22 } }} />
+                                  <InputAdornment position="start">
+                                    <LocationOn sx={{ color: 'action.active' }} />
+                                  </InputAdornment>
                                 )
+                              }}
+                              sx={{
+                                '& .MuiOutlinedInput-root': {
+                                  borderRadius: 2,
+                                }
                               }}
                             />
                           </Grid>
@@ -3249,10 +3652,24 @@ const CompanyDetails = () => {
                       </Paper>
                       
                       {/* SECTION 2: EMPLOYMENT INFORMATION */}
-                      <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, bgcolor: 'grey.50', borderRadius: 2 }}>
+                      <Paper elevation={0} sx={{ 
+                        p: { xs: 2, sm: 3 }, 
+                        bgcolor: 'grey.50', 
+                        borderRadius: 2,
+                        border: '1px solid',
+                        borderColor: 'grey.200'
+                      }}>
                         <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3 }}>
-                          <Work color="primary" sx={{ fontSize: { xs: 20, sm: 24 } }} />
-                          <Typography variant={isMobile ? "subtitle1" : "h6"} fontWeight={700}>
+                          <Box sx={{
+                            p: 1,
+                            borderRadius: 2,
+                            background: 'linear-gradient(135deg, #ff9800 0%, #ed6c02 100%)',
+                            color: 'white',
+                            display: 'flex'
+                          }}>
+                            <Work sx={{ fontSize: { xs: 20, sm: 24 } }} />
+                          </Box>
+                          <Typography variant={isMobile ? "subtitle1" : "h6"} fontWeight={700} sx={{ color: '#0f172a' }}>
                             Employment Information
                           </Typography>
                         </Stack>
@@ -3279,10 +3696,17 @@ const CompanyDetails = () => {
                                     ...params.InputProps,
                                     startAdornment: (
                                       <>
-                                        <Badge sx={{ mr: 1, color: 'action.active', fontSize: { xs: 18, sm: 22 } }} />
+                                        <InputAdornment position="start">
+                                          <Badge sx={{ color: 'action.active' }} />
+                                        </InputAdornment>
                                         {params.InputProps.startAdornment}
                                       </>
                                     )
+                                  }}
+                                  sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                      borderRadius: 2,
+                                    }
                                   }}
                                 />
                               )}
@@ -3297,7 +3721,13 @@ const CompanyDetails = () => {
                                       <Chip 
                                         label={option.departmentName} 
                                         size="small" 
-                                        sx={{ ml: 1, height: 20, fontSize: '0.7rem' }}
+                                        sx={{ 
+                                          ml: 1, 
+                                          height: 20, 
+                                          fontSize: '0.6rem',
+                                          bgcolor: alpha(theme.palette.primary.main, 0.1),
+                                          color: 'primary.main'
+                                        }}
                                       />
                                     )}
                                   </Stack>
@@ -3329,10 +3759,17 @@ const CompanyDetails = () => {
                                     ...params.InputProps,
                                     startAdornment: (
                                       <>
-                                        <Business sx={{ mr: 1, color: 'action.active', fontSize: { xs: 18, sm: 22 } }} />
+                                        <InputAdornment position="start">
+                                          <Business sx={{ color: 'action.active' }} />
+                                        </InputAdornment>
                                         {params.InputProps.startAdornment}
                                       </>
                                     )
+                                  }}
+                                  sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                      borderRadius: 2,
+                                    }
                                   }}
                                 />
                               )}
@@ -3361,9 +3798,10 @@ const CompanyDetails = () => {
                                 label="Employee Type"
                                 startAdornment={
                                   <InputAdornment position="start">
-                                    <WorkHistory sx={{ color: 'action.active', fontSize: { xs: 18, sm: 22 } }} />
+                                    <WorkHistory sx={{ color: 'action.active' }} />
                                   </InputAdornment>
                                 }
+                                sx={{ borderRadius: 2 }}
                               >
                                 <SelectMenuItem value="">
                                   <em>None</em>
@@ -3388,8 +3826,15 @@ const CompanyDetails = () => {
                               size={isMobile ? "small" : "medium"}
                               InputProps={{
                                 startAdornment: (
-                                  <Badge sx={{ mr: 1, color: 'action.active', fontSize: { xs: 18, sm: 22 } }} />
+                                  <InputAdornment position="start">
+                                    <Badge sx={{ color: 'action.active' }} />
+                                  </InputAdornment>
                                 )
+                              }}
+                              sx={{
+                                '& .MuiOutlinedInput-root': {
+                                  borderRadius: 2,
+                                }
                               }}
                             />
                           </Grid>
@@ -3399,33 +3844,34 @@ const CompanyDetails = () => {
                   ) : (
                     <Zoom in={editSuccess}>
                       <Box sx={{ 
-                        py: { xs: 6, sm: 8 }, 
+                        py: { xs: 8, sm: 10 }, 
                         px: { xs: 2, sm: 4 }, 
                         textAlign: 'center'
                       }}>
                         <Box sx={{
-                          width: { xs: 80, sm: 100, md: 120 },
-                          height: { xs: 80, sm: 100, md: 120 },
+                          width: { xs: 120, sm: 140, md: 160 },
+                          height: { xs: 120, sm: 140, md: 160 },
                           borderRadius: '50%',
-                          background: 'linear-gradient(145deg, #e8f5e9 0%, #c8e6c9 100%)',
+                          background: 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           mx: 'auto',
                           mb: 4,
                           animation: 'pulse 2s infinite',
-                          boxShadow: '0 12px 24px rgba(76, 175, 80, 0.3)'
+                          boxShadow: '0 16px 32px rgba(76, 175, 80, 0.3)',
+                          border: '4px solid white'
                         }}>
-                          <CheckCircle sx={{ fontSize: { xs: 50, sm: 60, md: 70 }, color: 'success.main' }} />
+                          <CheckCircle sx={{ fontSize: { xs: 70, sm: 80, md: 90 }, color: 'success.main' }} />
                         </Box>
-                        <Typography variant={isMobile ? "h5" : "h4"} fontWeight={800} gutterBottom>
+                        <Typography variant={isMobile ? "h3" : "h2"} fontWeight={800} gutterBottom sx={{ color: '#0f172a' }}>
                           Update Successful!
                         </Typography>
-                        <Typography variant="body1" color="text.secondary" sx={{ mb: 3, fontSize: { xs: '0.9rem', sm: '1.1rem' } }}>
+                        <Typography variant="h6" color="text.secondary" sx={{ mb: 3, fontSize: { xs: '1rem', sm: '1.2rem' } }}>
                           User <strong style={{ color: theme.palette.primary.main }}>{editFormData.name}</strong> has been updated successfully.
                         </Typography>
                         <CircularProgress 
-                          size={isMobile ? 24 : 30} 
+                          size={isMobile ? 40 : 50} 
                           sx={{ 
                             color: 'success.main',
                             mt: 2
@@ -3465,7 +3911,7 @@ const CompanyDetails = () => {
                     px: { xs: 2, sm: 4 },
                     py: { xs: 0.75, sm: 1.2 },
                     fontWeight: 600,
-                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                    fontSize: { xs: '0.8rem', sm: '0.9rem' },
                     borderColor: 'grey.400',
                     color: 'text.primary',
                     '&:hover': {
@@ -3489,7 +3935,7 @@ const CompanyDetails = () => {
                     px: { xs: 2, sm: 4 },
                     py: { xs: 0.75, sm: 1.2 },
                     fontWeight: 600,
-                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                    fontSize: { xs: '0.8rem', sm: '0.9rem' },
                     borderColor: 'error.main',
                     color: 'error.main',
                     '&:hover': {
@@ -3511,12 +3957,12 @@ const CompanyDetails = () => {
                     px: { xs: 3, sm: 5 },
                     py: { xs: 0.75, sm: 1.2 },
                     fontWeight: 700,
-                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                    fontSize: { xs: '0.8rem', sm: '0.9rem' },
                     borderRadius: 2,
-                    background: 'linear-gradient(145deg, #2196f3 0%, #1976d2 100%)',
+                    background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
                     boxShadow: '0 8px 16px rgba(33, 150, 243, 0.3)',
                     '&:hover': {
-                      background: 'linear-gradient(145deg, #1976d2 0%, #1565c0 100%)',
+                      background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
                       boxShadow: '0 12px 24px rgba(33, 150, 243, 0.4)',
                       transform: 'translateY(-2px)'
                     },
