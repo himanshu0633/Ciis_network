@@ -1378,7 +1378,7 @@ const EmployeeAttendance = () => {
         const userId = parts[1];
         const date = parts[2];
         
-        response = await axios.post('/attendance/manual', {
+        response = await axios.put(`/attendance/${userId}`, {
           ...updatedData,
           user: userId,
           date: date
