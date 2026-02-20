@@ -1015,6 +1015,7 @@
 
 .AllCompany-status-badge.AllCompany-active {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  display: none;
 }
 
 .AllCompany-status-badge.AllCompany-inactive {
@@ -1169,6 +1170,13 @@
   .AllCompany-company-name {
     font-size: 1.1rem;
   }
+
+  .AllCompany-company-tags {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
 }
 
 .AllCompany-company-tags {
@@ -1209,7 +1217,7 @@
 }
 
 .AllCompany-company-metrics {
-  display: flex;
+  display: none;
   gap: 24px;
   align-items: center;
 }
@@ -1367,7 +1375,7 @@
 }
 
 .AllCompany-mobile-metric {
-  display: flex;
+  display: none;
   align-items: center;
   gap: 4px;
 }
@@ -1477,7 +1485,7 @@
   cursor: pointer;
   padding: 4px;
   border-radius: 50%;
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: center;
 }
@@ -1845,6 +1853,7 @@
   justify-content: center;
   box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4);
   transition: all 0.3s ease;
+  display: none;
 }
 
 .AllCompany-fab-main:hover {
@@ -1866,7 +1875,7 @@
   position: absolute;
   bottom: 70px;
   right: 0;
-  display: flex;
+  display: none;
   flex-direction: column;
   gap: 8px;
   animation: AllCompany-slideUp 0.3s ease;
@@ -1971,10 +1980,10 @@
 
 .AllCompany-modal-fullscreen {
   width: 100%;
-  height: 100%;
+  height: 80%;
   max-width: none;
   max-height: none;
-  border-radius: 0;
+  border-radius: 5px;
   margin: 0;
 }
 
@@ -2103,7 +2112,7 @@
 }
 
 .AllCompany-modal-body {
-  padding: 24px;
+  padding: -4px;
 }
 
 .AllCompany-modal-footer {
@@ -2574,6 +2583,7 @@
 }
 
 /* Menu */
+/* Menu Styles - Mobile Optimized */
 .AllCompany-menu-overlay {
   position: fixed;
   top: 0;
@@ -2581,31 +2591,126 @@
   right: 0;
   bottom: 0;
   z-index: 1600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(4px);
+  animation: AllCompany-fadeIn 0.2s ease;
 }
 
 .AllCompany-menu-content {
-  position: absolute;
+  position: relative;
   min-width: 200px;
+  max-width: 90vw;
+  width: auto;
   background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
   border: 1px solid rgba(226, 232, 240, 0.6);
   border-radius: 32px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   padding: 8px;
-  animation: AllCompany-growIn 0.2s ease;
+  animation: AllCompany-scaleIn 0.2s ease;
 }
 
-.AllCompany-menu-section {
-  padding: 8px 16px;
+/* Desktop Styles */
+@media (min-width: 1025px) {
+  .AllCompany-menu-overlay {
+    background-color: transparent;
+    backdrop-filter: none;
+  }
+  
+  .AllCompany-menu-content {
+    position: absolute;
+    min-width: 220px;
+    left: auto;
+    transform: none;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+  }
 }
 
-.AllCompany-menu-section-title {
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: #64748b;
+/* Tablet Styles */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .AllCompany-menu-overlay {
+    background-color: transparent;
+    backdrop-filter: none;
+  }
+  
+  .AllCompany-menu-content {
+    position: absolute;
+    min-width: 210px;
+    left: auto;
+    transform: none;
+  }
 }
 
+/* Mobile Styles */
+@media (max-width: 768px) {
+  .AllCompany-menu-overlay {
+    background-color: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .AllCompany-menu-content {
+    position: relative !important; /* Override inline styles */
+    top: auto !important;
+    left: auto !important;
+    transform: scale(1) !important;
+    min-width: 280px;
+    max-width: 320px;
+    width: 90%;
+    margin: 0 auto;
+    border-radius: 28px;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
+  }
+
+  .AllCompany-menu-item {
+    padding: 16px 20px;
+    font-size: 1rem;
+    gap: 16px;
+    border-radius: 20px;
+  }
+
+  .AllCompany-menu-section {
+    padding: 8px 20px;
+  }
+
+  .AllCompany-menu-section-title {
+    font-size: 0.75rem;
+    padding-left: 0;
+  }
+
+  .AllCompany-menu-icon {
+    font-size: 20px;
+  }
+
+  .AllCompany-check-icon {
+    font-size: 20px;
+  }
+
+  .AllCompany-menu-divider {
+    margin: 12px 0;
+  }
+}
+
+/* Small Mobile Styles */
+@media (max-width: 480px) {
+  .AllCompany-menu-content {
+    min-width: 260px;
+    max-width: 280px;
+    border-radius: 24px;
+  }
+
+  .AllCompany-menu-item {
+    padding: 14px 18px;
+    font-size: 0.95rem;
+    gap: 14px;
+  }
+}
+
+/* Keep your existing menu item styles */
 .AllCompany-menu-item {
   display: flex;
   align-items: center;
@@ -2640,6 +2745,27 @@
   border: none;
   border-top: 1px dashed rgba(226, 232, 240, 0.6);
   margin: 8px 0;
+}
+
+/* Animations */
+@keyframes AllCompany-fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes AllCompany-scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* Material Icons - if using Google Icons */

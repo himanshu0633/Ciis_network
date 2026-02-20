@@ -319,19 +319,19 @@
     width: 40px;
     height: 40px;
   }
+  
 }
 
 .CompanyDetails-icon-btn:hover {
   background: rgba(255, 255, 255, 0.25);
 }
 
-.CompanyDetails-refresh-btn:hover {
-  transform: rotate(180deg);
-}
+
 
 .CompanyDetails-edit-btn {
   background: rgba(255, 255, 255, 0.15);
   color: white;
+  
 }
 
 .CompanyDetails-edit-btn:hover {
@@ -626,9 +626,9 @@
   border-top-right-radius: 20px;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
   z-index: 1000;
-  max-height: 60vh;
+  max-height: 100vh;
   overflow-y: auto;
-  padding: 16px;
+  padding: 56px;
   animation: CompanyDetails-slideUp 0.3s ease;
 }
 
@@ -1473,7 +1473,7 @@
   font-size: 0.7rem;
   cursor: pointer;
   transition: all 0.2s ease;
-  min-width: 64px;
+  min-width: 50px;
 }
 
 .CompanyDetails-nav-item.CompanyDetails-active {
@@ -1483,7 +1483,7 @@
 .CompanyDetails-nav-item.CompanyDetails-add {
   background: #2196f3;
   color: white;
-  width: 48px;
+  width: 28px;
   height: 48px;
   border-radius: 50%;
   display: flex;
@@ -1516,13 +1516,13 @@
 
 .CompanyDetails-modal-content {
   background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-  border-radius: 32px;
+  border-radius: 8px;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   border: 1px solid #e2e8f0;
   max-width: 600px;
   width: 100%;
   max-height: 80vh;
-  overflow-y: auto;
+  overflow: auto;
   animation: CompanyDetails-slideUp 0.3s ease;
 }
 
@@ -1532,7 +1532,7 @@
 
 .CompanyDetails-modal-content.CompanyDetails-fullscreen {
   border-radius: 0;
-  max-height: 100vh;
+  max-height: 79vh;
   height: 100%;
 }
 

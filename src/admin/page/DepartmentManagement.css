@@ -1798,7 +1798,7 @@ tr:hover .DepartmentManagement-action-buttons {
 
 .DepartmentManagement-modal-fullscreen {
   border-radius: 0;
-  max-height: 100vh;
+  max-height: 70vh;
   height: 100%;
 }
 

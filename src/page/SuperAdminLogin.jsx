@@ -3,6 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import API_URL from '../config';
 import { toast } from 'react-toastify';
+import './SuperAdminLogin.css';
+
+// Import your company logo
+import companyLogo from '../../public/logoo.png'; 
 
 const SuperAdminLogin = () => {
   const navigate = useNavigate();
@@ -111,12 +115,6 @@ const SuperAdminLogin = () => {
     </svg>
   );
 
-  const AdminPanelIcon = () => (
-    <svg className="ciis-login-icon" width="48" height="48" viewBox="0 0 24 24" fill="white">
-      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
-    </svg>
-  );
-
   const DashboardIcon = () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
       <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
@@ -149,472 +147,22 @@ const SuperAdminLogin = () => {
 
   return (
     <div className="ciis-login-container">
-      <style>{`
-        .ciis-login-container {
-          min-height: 100vh;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 16px;
-        }
-
-        .ciis-login-paper {
-          border-radius: 16px;
-          overflow: hidden;
-          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-          background: white;
-          max-width: 1000px;
-          width: 100%;
-          min-height: 600px;
-          display: flex;
-        }
-
-        .ciis-login-left {
-          background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 100%);
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          padding: 32px;
-          position: relative;
-          overflow: hidden;
-          flex: 0 0 45%;
-        }
-
-        .ciis-login-left-pattern {
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background-image: radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 1px, transparent 1px);
-          background-size: 40px 40px;
-          opacity: 0.3;
-        }
-
-        .ciis-login-left-content {
-          position: relative;
-          z-index: 1;
-          text-align: center;
-          color: white;
-          width: 100%;
-        }
-
-        .ciis-login-logo-container {
-          width: 120px;
-          height: 120px;
-          border-radius: 12px;
-          background-color: rgba(255, 255, 255, 0.1);
-          backdrop-filter: blur(10px);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin: 0 auto 32px;
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-        }
-
-        .ciis-login-company-name {
-          font-family: 'Oswald', sans-serif;
-          font-size: 2.125rem;
-          font-weight: 600;
-          margin-bottom: 8px;
-          letter-spacing: -0.5px;
-          text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-          color: white;
-        }
-
-        .ciis-login-company-subtitle {
-          opacity: 0.9;
-          letter-spacing: 0.5px;
-          font-size: 0.875rem;
-          color: white;
-          margin-bottom: 24px;
-        }
-
-        .ciis-login-features-card {
-          background: rgba(255, 255, 255, 0.1);
-          backdrop-filter: blur(10px);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          border-radius: 12px;
-          padding: 16px;
-          width: 100%;
-          text-align: left;
-          margin-top: 16px;
-        }
-
-        .ciis-login-features-title {
-          color: white;
-          font-size: 1.25rem;
-          font-weight: 600;
-          margin-bottom: 16px;
-        }
-
-        .ciis-login-feature-item {
-          display: flex;
-          align-items: center;
-          padding: 4px 0;
-        }
-
-        .ciis-login-feature-icon {
-          width: 36px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .ciis-login-feature-text {
-          color: white;
-          font-size: 0.9rem;
-        }
-
-        .ciis-login-right {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          padding: 40px 48px;
-        }
-
-        .ciis-login-form-container {
-          max-width: 400px;
-          margin: 0 auto;
-          width: 100%;
-        }
-
-        .ciis-login-form-header {
-          text-align: center;
-          margin-bottom: 32px;
-        }
-
-        .ciis-login-form-logo {
-          display: none;
-        }
-
-        .ciis-login-form-title {
-          font-size: 2.125rem;
-          font-weight: 700;
-          margin-bottom: 8px;
-          color: #333;
-          letter-spacing: -0.5px;
-        }
-
-        .ciis-login-form-subtitle {
-          color: #666;
-          margin-bottom: 24px;
-          font-size: 1rem;
-        }
-
-        .ciis-login-error-alert {
-          background-color: #fdeded;
-          color: #5f2120;
-          padding: 12px 16px;
-          border-radius: 8px;
-          margin-bottom: 24px;
-          border: 1px solid #f5c6cb;
-          display: flex;
-          align-items: center;
-        }
-
-        .ciis-login-error-icon {
-          margin-right: 12px;
-          display: flex;
-          align-items: center;
-        }
-
-        .ciis-login-input-group {
-          margin-bottom: 16px;
-        }
-
-        .ciis-login-input-label {
-          display: block;
-          margin-bottom: 6px;
-          color: #333;
-          font-weight: 500;
-          font-size: 0.875rem;
-        }
-
-        .ciis-login-input-container {
-          position: relative;
-          display: flex;
-          align-items: center;
-        }
-
-        .ciis-login-input {
-          width: 100%;
-          padding: 12px 16px;
-          padding-left: 40px;
-          border: 1px solid #ddd;
-          border-radius: 8px;
-          font-size: 1rem;
-          transition: border-color 0.3s ease;
-        }
-
-        .ciis-login-input:focus {
-          outline: none;
-          border-color: #667eea;
-          box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
-        }
-
-        .ciis-login-input-error {
-          border-color: #f44336;
-        }
-
-        .ciis-login-input-error:focus {
-          border-color: #f44336;
-          box-shadow: 0 0 0 2px rgba(244, 67, 54, 0.2);
-        }
-
-        .ciis-login-input-icon {
-          position: absolute;
-          left: 12px;
-          color: #777;
-        }
-
-        .ciis-login-input-adornment {
-          position: absolute;
-          right: 12px;
-          cursor: pointer;
-          color: #777;
-        }
-
-        .ciis-login-error-text {
-          color: #f44336;
-          font-size: 0.75rem;
-          margin-top: 4px;
-          display: block;
-        }
-
-        .ciis-login-button {
-          width: 100%;
-          padding: 14px;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
-          border: none;
-          border-radius: 8px;
-          font-size: 1rem;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          margin-top: 24px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 4px 14px 0 rgba(102, 126, 234, 0.4);
-        }
-
-        .ciis-login-button:hover {
-          background: linear-gradient(135deg, #5a6fd8 0%, #6a3a9a 100%);
-          box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
-        }
-
-        .ciis-login-button:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .ciis-login-button-icon {
-          margin-right: 8px;
-          display: flex;
-          align-items: center;
-        }
-
-        .ciis-login-spinner {
-          animation: ciis-spin 1s linear infinite;
-        }
-
-        @keyframes ciis-spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-
-        .ciis-login-link-text {
-          margin-top: 24px;
-          text-align: center;
-          color: #666;
-          font-size: 0.875rem;
-        }
-
-        .ciis-login-link {
-          color: #667eea;
-          font-weight: 600;
-          text-decoration: none;
-        }
-
-        .ciis-login-link:hover {
-          text-decoration: underline;
-        }
-
-        .ciis-login-terms {
-          margin-top: 32px;
-          text-align: center;
-          color: #999;
-          font-size: 0.75rem;
-          line-height: 1.5;
-        }
-
-        .ciis-login-terms-link {
-          color: #999;
-          text-decoration: none;
-        }
-
-        .ciis-login-terms-link:hover {
-          text-decoration: underline;
-        }
-
-        .ciis-login-fade-in {
-          animation: ciis-fade-in 0.5s ease-in-out;
-        }
-
-        @keyframes ciis-fade-in {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Desktop styles */
-        @media (min-width: 901px) {
-          .ciis-login-right-mobile-logo {
-            display: none;
-          }
-        }
-
-        /* Responsive styles */
-        @media (max-width: 900px) {
-          .ciis-login-paper {
-            flex-direction: column;
-            min-height: auto;
-            max-width: 500px;
-          }
-
-          .ciis-login-left {
-            padding: 32px 24px;
-            flex: none;
-            min-height: auto;
-            display: none; /* Hide left section on mobile */
-          }
-
-          .ciis-login-right {
-            padding: 32px 24px;
-          }
-
-          .ciis-login-form-header {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-bottom: 32px;
-          }
-
-          .ciis-login-form-logo {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 16px;
-          }
-
-          .ciis-login-mobile-logo {
-            width: 100px;
-            height: 100px;
-            border-radius: 12px;
-            background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-          }
-
-          .ciis-login-mobile-logo svg {
-            width: 48px;
-            height: 48px;
-          }
-
-          .ciis-login-form-title {
-            font-size: 1.75rem;
-            margin-bottom: 4px;
-          }
-
-          .ciis-login-form-subtitle {
-            font-size: 0.95rem;
-            margin-bottom: 16px;
-          }
-        }
-
-        @media (max-width: 480px) {
-          .ciis-login-container {
-            padding: 8px;
-          }
-
-          .ciis-login-right {
-            padding: 24px 20px;
-          }
-
-          .ciis-login-mobile-logo {
-            width: 80px;
-            height: 80px;
-          }
-
-          .ciis-login-mobile-logo svg {
-            width: 40px;
-            height: 40px;
-          }
-
-          .ciis-login-form-title {
-            font-size: 1.5rem;
-          }
-
-          .ciis-login-form-subtitle {
-            font-size: 0.875rem;
-          }
-
-          .ciis-login-input {
-            padding: 10px 16px;
-            padding-left: 40px;
-            font-size: 0.95rem;
-          }
-
-          .ciis-login-button {
-            padding: 12px;
-            font-size: 0.95rem;
-          }
-
-          .ciis-login-terms {
-            margin-top: 24px;
-          }
-        }
-
-        @media (max-width: 360px) {
-          .ciis-login-right {
-            padding: 20px 16px;
-          }
-
-          .ciis-login-mobile-logo {
-            width: 70px;
-            height: 70px;
-          }
-
-          .ciis-login-mobile-logo svg {
-            width: 35px;
-            height: 35px;
-          }
-
-          .ciis-login-form-title {
-            font-size: 1.35rem;
-          }
-        }
-      `}</style>
-
       <div className="ciis-login-paper ciis-login-fade-in">
         {/* LEFT SECTION - Super Admin Features (Hidden on mobile) */}
         <div className="ciis-login-left">
           <div className="ciis-login-left-pattern"></div>
           
           <div className="ciis-login-left-content">
-            {/* Super Admin Icon */}
+            {/* Company Logo - Updated */}
             <div className="ciis-login-logo-container">
-              <AdminPanelIcon />
+              <img 
+                src={companyLogo} 
+                alt="Company Logo" 
+                className="ciis-login-company-logo"
+              />
             </div>
 
-            {/* Super Admin Title */}
+            {/* Company Name */}
             <h1 className="ciis-login-company-name">
               CIIS NETWORK
             </h1>
@@ -675,7 +223,11 @@ const SuperAdminLogin = () => {
               {/* Mobile Logo - Only visible on mobile */}
               <div className="ciis-login-form-logo">
                 <div className="ciis-login-mobile-logo">
-                  <AdminPanelIcon />
+                  <img 
+                    src={companyLogo} 
+                    alt="Company Logo" 
+                    className="ciis-login-mobile-logo-img"
+                  />
                 </div>
               </div>
               
@@ -758,7 +310,7 @@ const SuperAdminLogin = () => {
                 {loading ? (
                   <>
                     <div className="ciis-login-button-icon">
-                      <div className="ciis-login-spinner" style={{ width: '20px', height: '20px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%' }}></div>
+                      <div className="ciis-login-spinner"></div>
                     </div>
                     Logging in...
                   </>

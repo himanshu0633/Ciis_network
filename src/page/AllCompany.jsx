@@ -1013,11 +1013,11 @@ const AllCompany = () => {
                       </div>
                       
                       <div className="AllCompany-company-actions">
-                        <button className="AllCompany-action-icon-btn" onClick={() => toggleCompanyExpansion(company._id)}>
+                        {/* <button className="AllCompany-action-icon-btn" onClick={() => toggleCompanyExpansion(company._id)}>
                           <span className="material-icons">
                             {expandedCompany === company._id ? 'keyboard_arrow_up' : 'keyboard_arrow_down'}
                           </span>
-                        </button>
+                        </button> */}
                         <button className="AllCompany-action-icon-btn" onClick={(e) => handleMenuOpen(e, company)}>
                           <span className="material-icons">more_vert</span>
                         </button>

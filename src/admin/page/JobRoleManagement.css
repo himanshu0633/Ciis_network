@@ -1102,7 +1102,7 @@ input:checked + .JobRoleManagement-slider:before {
   border: none;
   color: white;
   cursor: pointer;
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: center;
   box-shadow: 0 8px 16px rgba(33, 150, 243, 0.4);
