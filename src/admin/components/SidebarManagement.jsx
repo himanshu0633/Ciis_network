@@ -1,101 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Paper,
-  Typography,
-  Grid,
-  Card,
-  CardContent,
-  CardActions,
-  Button,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Checkbox,
-  Divider,
-  TextField,
-  IconButton,
-  Alert,
-  Snackbar,
-  Chip,
-  Tooltip,
-  CircularProgress,
-  Tab,
-  Tabs,
-  InputAdornment,
-  Collapse,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Badge,
-  Avatar,
-  Fab,
-  Zoom,
-  useTheme,
-  useMediaQuery,
-  Stepper,
-  Step,
-  StepLabel,
-  StepContent,
-  LinearProgress,
-  Stack 
-} from '@mui/material';
-import { alpha } from '@mui/material/styles';
-import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Save as SaveIcon,
-  Business as BusinessIcon,
-  Apartment as ApartmentIcon,
-  Security as SecurityIcon,
-  Menu as MenuIcon,
-  Search as SearchIcon,
-  ExpandMore as ExpandMoreIcon,
-  ExpandLess as ExpandLessIcon,
-  Dashboard as DashboardIcon,
-  CalendarToday as CalendarIcon,
-  EventNote as EventNoteIcon,
-  Computer as ComputerIcon,
-  Task as TaskIcon,
-  Groups as GroupsIcon,
-  Notifications as NotificationsIcon,
-  VideoCall as VideoCallIcon,
-  Person as PersonIcon,
-  Business as ClientIcon,
-  ListAlt as ListAltIcon,
-  MeetingRoom as MeetingRoomIcon,
-  Apartment as ProjectIcon,
-  PersonAdd as PersonAddIcon,
-  Key as KeyIcon,
-  Visibility as VisibilityIcon,
-  CheckCircle as CheckCircleIcon,
-  Refresh as RefreshIcon,
-  ArrowBack as ArrowBackIcon,
-  ArrowForward as ArrowForwardIcon,
-  CheckCircleOutline as CheckCircleOutlineIcon,
-  CancelOutlined as CancelOutlinedIcon,
-  InfoOutlined as InfoOutlinedIcon,
-  Settings as SettingsIcon,
-  MenuBook as MenuBookIcon,
-  FolderSpecial as FolderSpecialIcon,
-  Assignment as AssignmentIcon,
-  Work as WorkIcon,
-  People as PeopleIcon,
-  Forum as ForumIcon,
-  Analytics as AnalyticsIcon,
-  Receipt as ReceiptIcon,
-  Assessment as AssessmentIcon
-} from '@mui/icons-material';
 import axios from "../../utils/axiosConfig";
 import axiosInstance from "../../utils/axiosConfig";
 import Swal from 'sweetalert2';
+import './SidebarManagement.css';
 
 // Your routes configuration
 const APP_ROUTES = [
@@ -120,43 +27,70 @@ const APP_ROUTES = [
   { path: 'client-meeting', name: 'Client Meeting', icon: 'VideoCall', category: 'meetings' },
 ];
 
-// Helper function to get icon component
-const getIconComponent = (iconName) => {
+// Helper function to get icon component as HTML string
+const getIconHtml = (iconName) => {
   const icons = {
-    Dashboard: <DashboardIcon />,
-    CalendarToday: <CalendarIcon />,
-    EventNote: <EventNoteIcon />,
-    Computer: <ComputerIcon />,
-    Task: <TaskIcon />,
-    Groups: <GroupsIcon />,
-    Notifications: <NotificationsIcon />,
-    VideoCall: <VideoCallIcon />,
-    Person: <PersonIcon />,
-    ClientIcon: <ClientIcon />,
-    ListAlt: <ListAltIcon />,
-    MeetingRoom: <MeetingRoomIcon />,
-    ProjectIcon: <ProjectIcon />,
-    PersonAdd: <PersonAddIcon />,
-    Key: <KeyIcon />,
-    Menu: <MenuIcon />,
-    Settings: <SettingsIcon />,
-    MenuBook: <MenuBookIcon />,
-    FolderSpecial: <FolderSpecialIcon />,
-    Assignment: <AssignmentIcon />,
-    Work: <WorkIcon />,
-    People: <PeopleIcon />,
-    Forum: <ForumIcon />,
-    Analytics: <AnalyticsIcon />,
-    Receipt: <ReceiptIcon />,
-    Assessment: <AssessmentIcon />
+    Dashboard: '📊',
+    CalendarToday: '📅',
+    EventNote: '📝',
+    Computer: '💻',
+    Task: '✅',
+    Groups: '👥',
+    Notifications: '🔔',
+    VideoCall: '📹',
+    Person: '👤',
+    ClientIcon: '🤝',
+    ListAlt: '📋',
+    MeetingRoom: '🚪',
+    ProjectIcon: '📁',
+    PersonAdd: '➕👤',
+    Key: '🔑',
+    Menu: '☰',
+    Settings: '⚙️',
+    MenuBook: '📚',
+    FolderSpecial: '📂',
+    Assignment: '📄',
+    Work: '💼',
+    People: '👥',
+    Forum: '💬',
+    Analytics: '📊',
+    Receipt: '🧾',
+    Assessment: '📈',
+    Business: '🏢',
+    Apartment: '🏛️',
+    Security: '🔒',
+    Search: '🔍',
+    ExpandMore: '▼',
+    ExpandLess: '▲',
+    Add: '+',
+    Edit: '✏️',
+    Delete: '🗑️',
+    Save: '💾',
+    Refresh: '🔄',
+    CheckCircle: '✓',
+    Cancel: '✗',
+    Info: 'ℹ️',
+    ArrowBack: '←',
+    ArrowForward: '→',
+    Code: '</>'
   };
-  return icons[iconName] || <DashboardIcon />;
+  return icons[iconName] || '📌';
 };
 
 const SidebarManagement = () => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
+  // State for responsive design
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 600);
+  const [isTablet, setIsTablet] = useState(window.innerWidth < 960);
+
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 600);
+      setIsTablet(window.innerWidth < 960);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Get company from localStorage - MULTIPLE FORMAT SUPPORT
   const getCompanyFromLocalStorage = () => {
@@ -231,6 +165,10 @@ const SidebarManagement = () => {
   const [openPreview, setOpenPreview] = useState(false);
   const [customRoles, setCustomRoles] = useState([]);
   const [activeStep, setActiveStep] = useState(0);
+  const [showDepartmentDropdown, setShowDepartmentDropdown] = useState(false);
+  const [showRoleDropdown, setShowRoleDropdown] = useState(false);
+  const [departmentSearch, setDepartmentSearch] = useState('');
+  const [roleSearch, setRoleSearch] = useState('');
 
   // Initialize with your routes and get company from localStorage
   useEffect(() => {
@@ -542,24 +480,37 @@ const SidebarManagement = () => {
   };
 
   // Handle department selection
-  const handleDepartmentChange = (event) => {
-    const departmentId = event.target.value;
+  const handleDepartmentChange = (departmentId) => {
     setSelectedDepartment(departmentId);
     setSelectedRole('');
     setSelectedItems([]);
     setJobRoles([]);
     setActiveStep(1);
+    setShowDepartmentDropdown(false);
+    
+    // Find department name for search
+    const dept = departments.find(d => d._id === departmentId);
+    if (dept) {
+      setDepartmentSearch(dept.name);
+    }
   };
 
   // Handle role selection
-  const handleRoleChange = (event) => {
-    const roleId = event.target.value;
+  const handleRoleChange = (roleId) => {
     if (roleId === 'custom') {
       handleAddRole();
       return;
     }
     setSelectedRole(roleId);
     setActiveStep(2);
+    setShowRoleDropdown(false);
+    
+    // Find role name for search
+    const allRoles = getAllAvailableRoles();
+    const role = allRoles.find(r => r._id === roleId);
+    if (role) {
+      setRoleSearch(role.name);
+    }
     
     // Load existing config for this combination
     if (company && company._id && selectedDepartment && roleId) {
@@ -979,930 +930,671 @@ const SidebarManagement = () => {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
 
+  // Filter departments based on search
+  const filteredDepartments = departments.filter(dept => {
+    const searchLower = departmentSearch.toLowerCase();
+    return dept.name.toLowerCase().includes(searchLower) ||
+           (dept.description && dept.description.toLowerCase().includes(searchLower));
+  });
+
+  // Filter roles based on search
+  const filteredRoles = getAllAvailableRoles().filter(role => {
+    const searchLower = roleSearch.toLowerCase();
+    return role.name.toLowerCase().includes(searchLower) ||
+           (role.description && role.description.toLowerCase().includes(searchLower));
+  });
+
   return (
-    <Box sx={{ 
-      p: { xs: 1.5, sm: 2, md: 3 },
-      minHeight: '100vh',
-      bgcolor: '#f8fafc'
-    }}>
+    <div className={`SidebarManagement-container ${isMobile ? 'SidebarManagement-mobile' : ''}`}>
       {/* Header */}
-      <Paper 
-        elevation={0}
-        sx={{
-          p: { xs: 2, sm: 3 },
-          mb: 3,
-          borderRadius: { xs: 2, sm: 3 },
-          background: 'linear-gradient(145deg, #1a237e 0%, #0d47a1 50%, #01579b 100%)',
-          color: 'white',
-          position: 'relative',
-          overflow: 'hidden'
-        }}
-      >
-        <Box sx={{
-          position: 'absolute',
-          top: -50,
-          right: -50,
-          width: 200,
-          height: 200,
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)',
-        }} />
-        <Box sx={{
-          position: 'absolute',
-          bottom: -50,
-          left: -50,
-          width: 250,
-          height: 250,
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)',
-        }} />
+      <div className="SidebarManagement-header-paper">
+        <div className="SidebarManagement-header-bg-effect SidebarManagement-header-bg-effect-1"></div>
+        <div className="SidebarManagement-header-bg-effect SidebarManagement-header-bg-effect-2"></div>
         
-        <Stack direction="row" alignItems="center" spacing={2} position="relative">
-          <Avatar sx={{ 
-            bgcolor: 'white', 
-            width: { xs: 48, sm: 56 }, 
-            height: { xs: 48, sm: 56 },
-            boxShadow: '0 8px 16px rgba(0,0,0,0.2)'
-          }}>
-            <MenuBookIcon sx={{ color: '#0d47a1', fontSize: { xs: 28, sm: 32 } }} />
-          </Avatar>
-          <Box>
-            <Typography variant={isMobile ? "h5" : "h4"} fontWeight={700}>
+        <div className="SidebarManagement-header-content">
+          <div className="SidebarManagement-header-avatar">
+            <span className="SidebarManagement-header-avatar-icon">📚</span>
+          </div>
+          <div className="SidebarManagement-header-text">
+            <h1 className={`SidebarManagement-header-title ${isMobile ? 'SidebarManagement-header-title-mobile' : ''}`}>
               Sidebar Menu Configuration
-            </Typography>
-            <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5 }}>
+            </h1>
+            <p className="SidebarManagement-header-subtitle">
               Configure custom sidebar menus for different departments and roles
-            </Typography>
-          </Box>
-        </Stack>
-      </Paper>
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* Current Company Display */}
       {company ? (
-        <Paper sx={{ 
-          p: 2, 
-          mb: 3, 
-          borderRadius: 2,
-          bgcolor: 'white',
-          border: '1px solid',
-          borderColor: 'primary.200',
-          boxShadow: '0 4px 12px rgba(33, 150, 243, 0.1)'
-        }}>
-          <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} sm={6} md={4}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <Avatar sx={{ bgcolor: 'primary.50', color: 'primary.main' }}>
-                  <BusinessIcon />
-                </Avatar>
-                <Box>
-                  <Typography variant="body2" color="text.secondary">Company</Typography>
-                  <Typography variant="h6" fontWeight={600}>{company.companyName}</Typography>
-                </Box>
-              </Box>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <Avatar sx={{ bgcolor: 'secondary.50', color: 'secondary.main' }}>
-                  <CodeIcon />
-                </Avatar>
-                <Box>
-                  <Typography variant="body2" color="text.secondary">Company Code</Typography>
-                  <Typography variant="h6" fontWeight={600}>{company.companyCode}</Typography>
-                </Box>
-              </Box>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <Avatar sx={{ bgcolor: 'success.50', color: 'success.main' }}>
-                  <CheckCircleIcon />
-                </Avatar>
-                <Box>
-                  <Typography variant="body2" color="text.secondary">Status</Typography>
-                  <Chip 
-                    label={company.isActive ? 'Active' : 'Inactive'} 
-                    size="small"
-                    color={company.isActive ? 'success' : 'error'}
-                    sx={{ fontWeight: 600 }}
-                  />
-                </Box>
-              </Box>
-            </Grid>
-            <Grid item xs={12} sm={6} md={2}>
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<RefreshIcon />}
+        <div className="SidebarManagement-company-paper">
+          <div className="SidebarManagement-company-grid">
+            <div className="SidebarManagement-company-item">
+              <div className="SidebarManagement-company-icon-bg SidebarManagement-company-icon-bg-primary">
+                <span className="SidebarManagement-company-icon">🏢</span>
+              </div>
+              <div className="SidebarManagement-company-info">
+                <span className="SidebarManagement-company-label">Company</span>
+                <span className="SidebarManagement-company-value">{company.companyName}</span>
+              </div>
+            </div>
+            
+            <div className="SidebarManagement-company-item">
+              <div className="SidebarManagement-company-icon-bg SidebarManagement-company-icon-bg-secondary">
+                <span className="SidebarManagement-company-icon">{getIconHtml('Code')}</span>
+              </div>
+              <div className="SidebarManagement-company-info">
+                <span className="SidebarManagement-company-label">Company Code</span>
+                <span className="SidebarManagement-company-value">{company.companyCode}</span>
+              </div>
+            </div>
+            
+            <div className="SidebarManagement-company-item">
+              <div className="SidebarManagement-company-icon-bg SidebarManagement-company-icon-bg-success">
+                <span className="SidebarManagement-company-icon">✓</span>
+              </div>
+              <div className="SidebarManagement-company-info">
+                <span className="SidebarManagement-company-label">Status</span>
+                <span className={`SidebarManagement-status-chip SidebarManagement-status-chip-${company.isActive ? 'active' : 'inactive'}`}>
+                  {company.isActive ? 'Active' : 'Inactive'}
+                </span>
+              </div>
+            </div>
+            
+            <div className="SidebarManagement-company-item SidebarManagement-company-item-button">
+              <button 
+                className="SidebarManagement-refresh-button"
                 onClick={() => fetchExistingConfigs(company._id)}
                 disabled={loading.fetching}
               >
+                <span className="SidebarManagement-refresh-icon">🔄</span>
                 {loading.fetching ? 'Loading...' : 'Refresh'}
-              </Button>
-            </Grid>
-          </Grid>
-        </Paper>
+              </button>
+            </div>
+          </div>
+        </div>
       ) : (
-        <Alert 
-          severity="warning" 
-          sx={{ mb: 3, borderRadius: 2 }}
-          action={
-            <Button 
-              color="inherit" 
-              size="small" 
-              onClick={handleManualCompanyInput}
-            >
-              Enter Manually
-            </Button>
-          }
-        >
-          Company information not found. Please login again or enter company ID manually.
-        </Alert>
+        <div className="SidebarManagement-alert SidebarManagement-alert-warning">
+          <span className="SidebarManagement-alert-icon">⚠️</span>
+          <span className="SidebarManagement-alert-message">
+            Company information not found. Please login again or enter company ID manually.
+          </span>
+          <button 
+            className="SidebarManagement-alert-button"
+            onClick={handleManualCompanyInput}
+          >
+            Enter Manually
+          </button>
+        </div>
       )}
 
       {/* Progress Bar */}
       {company && (
-        <Box sx={{ mb: 3 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-            <Typography variant="body2" fontWeight={600} color="text.secondary">
-              Configuration Progress
-            </Typography>
-            <Typography variant="body2" fontWeight={600} color="primary.main">
-              {Math.round(getProgressPercentage())}%
-            </Typography>
-          </Box>
-          <LinearProgress 
-            variant="determinate" 
-            value={getProgressPercentage()} 
-            sx={{ 
-              height: 8, 
-              borderRadius: 4,
-              bgcolor: 'grey.200',
-              '& .MuiLinearProgress-bar': {
-                borderRadius: 4,
-                background: 'linear-gradient(90deg, #2196f3, #64b5f6)'
-              }
-            }}
-          />
-        </Box>
+        <div className="SidebarManagement-progress-container">
+          <div className="SidebarManagement-progress-header">
+            <span className="SidebarManagement-progress-label">Configuration Progress</span>
+            <span className="SidebarManagement-progress-percentage">{Math.round(getProgressPercentage())}%</span>
+          </div>
+          <div className="SidebarManagement-progress-bar">
+            <div 
+              className="SidebarManagement-progress-fill"
+              style={{ width: `${getProgressPercentage()}%` }}
+            ></div>
+          </div>
+        </div>
       )}
 
       {/* Tabs */}
       {company ? (
         <>
-          <Paper sx={{ mb: 3, borderRadius: 2, overflow: 'hidden' }}>
-            <Tabs
-              value={activeTab}
-              onChange={(e, newValue) => setActiveTab(newValue)}
-              variant="fullWidth"
-              sx={{
-                '& .MuiTab-root': {
-                  py: 2,
-                  fontWeight: 600
-                }
-              }}
+          <div className="SidebarManagement-tabs-container">
+            <button 
+              className={`SidebarManagement-tab ${activeTab === 0 ? 'SidebarManagement-tab-active' : ''}`}
+              onClick={() => setActiveTab(0)}
             >
-              <Tab 
-                label="Configure Menu" 
-                icon={<SettingsIcon />} 
-                iconPosition="start"
-              />
-              <Tab 
-                label={`Existing Configurations (${existingConfigs.length})`} 
-                icon={<FolderSpecialIcon />} 
-                iconPosition="start"
-              />
-            </Tabs>
-          </Paper>
+              <span className="SidebarManagement-tab-icon">⚙️</span>
+              <span>Configure Menu</span>
+            </button>
+            <button 
+              className={`SidebarManagement-tab ${activeTab === 1 ? 'SidebarManagement-tab-active' : ''}`}
+              onClick={() => setActiveTab(1)}
+            >
+              <span className="SidebarManagement-tab-icon">📂</span>
+              <span>Existing Configurations ({existingConfigs.length})</span>
+            </button>
+          </div>
 
           {/* Tab 1: Configuration */}
           {activeTab === 0 && (
             <>
               {/* Selection Stepper */}
-              <Paper sx={{ p: 3, mb: 3, borderRadius: 2 }}>
-                <Stepper activeStep={activeStep} orientation={isMobile ? "vertical" : "horizontal"}>
-                  <Step>
-                    <StepLabel>Select Department</StepLabel>
-                  </Step>
-                  <Step>
-                    <StepLabel>Select Role</StepLabel>
-                  </Step>
-                  <Step>
-                    <StepLabel>Configure Menu Items</StepLabel>
-                  </Step>
-                </Stepper>
-              </Paper>
+              <div className="SidebarManagement-stepper-paper">
+                <div className={`SidebarManagement-stepper ${isMobile ? 'SidebarManagement-stepper-vertical' : ''}`}>
+                  <div className={`SidebarManagement-step ${activeStep >= 0 ? 'SidebarManagement-step-active' : ''}`}>
+                    <div className="SidebarManagement-step-indicator">
+                      {activeStep > 0 ? '✓' : '1'}
+                    </div>
+                    <div className="SidebarManagement-step-label">Select Department</div>
+                  </div>
+                  <div className={`SidebarManagement-step-connector ${activeStep >= 1 ? 'SidebarManagement-step-connector-active' : ''}`}></div>
+                  
+                  <div className={`SidebarManagement-step ${activeStep >= 1 ? 'SidebarManagement-step-active' : ''}`}>
+                    <div className="SidebarManagement-step-indicator">
+                      {activeStep > 1 ? '✓' : '2'}
+                    </div>
+                    <div className="SidebarManagement-step-label">Select Role</div>
+                  </div>
+                  <div className={`SidebarManagement-step-connector ${activeStep >= 2 ? 'SidebarManagement-step-connector-active' : ''}`}></div>
+                  
+                  <div className={`SidebarManagement-step ${activeStep >= 2 ? 'SidebarManagement-step-active' : ''}`}>
+                    <div className="SidebarManagement-step-indicator">3</div>
+                    <div className="SidebarManagement-step-label">Configure Menu Items</div>
+                  </div>
+                </div>
+              </div>
 
               {/* Selection Cards */}
-              <Grid container spacing={3} sx={{ mb: 3 }}>
+              <div className="SidebarManagement-cards-grid">
                 {/* Department Selection */}
-                <Grid item xs={12} md={6}>
-                  <Card sx={{ 
-                    height: '100%',
-                    borderRadius: 2,
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
-                    border: '1px solid',
-                    borderColor: selectedDepartment ? 'primary.200' : 'grey.200',
-                    transition: 'all 0.3s ease',
-                    '&:hover': {
-                      boxShadow: '0 8px 24px rgba(33, 150, 243, 0.15)',
-                      borderColor: 'primary.200'
-                    }
-                  }}>
-                    <CardContent>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                        <Avatar sx={{ bgcolor: 'primary.50', mr: 1.5 }}>
-                          <ApartmentIcon color="primary" />
-                        </Avatar>
-                        <Typography variant="h6" fontWeight={600}>
-                          Department
-                        </Typography>
-                      </Box>
-                      <FormControl fullWidth variant="outlined" size="medium" disabled={!company || loading.departments}>
-                        <InputLabel>Select Department</InputLabel>
-                        <Select
-                          value={selectedDepartment}
-                          onChange={handleDepartmentChange}
-                          label="Select Department"
-                        >
-                          <MenuItem value="">
-                            <em>Choose Department</em>
-                          </MenuItem>
+                <div className={`SidebarManagement-card ${selectedDepartment ? 'SidebarManagement-card-selected' : ''}`}>
+                  <div className="SidebarManagement-card-content">
+                    <div className="SidebarManagement-card-header">
+                      <div className="SidebarManagement-card-icon-bg SidebarManagement-card-icon-bg-primary">
+                        <span className="SidebarManagement-card-icon">🏛️</span>
+                      </div>
+                      <h3 className="SidebarManagement-card-title">Department</h3>
+                    </div>
+                    
+                    <div className="SidebarManagement-dropdown-container">
+                      <div className="SidebarManagement-input-wrapper">
+                        <span className="SidebarManagement-input-icon">🏛️</span>
+                        <input
+                          type="text"
+                          className="SidebarManagement-input"
+                          placeholder={loading.departments ? "Loading departments..." : "Select Department"}
+                          value={departmentSearch}
+                          onChange={(e) => {
+                            setDepartmentSearch(e.target.value);
+                            setShowDepartmentDropdown(true);
+                          }}
+                          onClick={() => setShowDepartmentDropdown(!showDepartmentDropdown)}
+                          onFocus={() => setShowDepartmentDropdown(true)}
+                          disabled={!company || loading.departments}
+                        />
+                        <span className="SidebarManagement-dropdown-arrow">▼</span>
+                      </div>
+                      
+                      {showDepartmentDropdown && (
+                        <div className="SidebarManagement-dropdown-menu">
                           {loading.departments ? (
-                            <MenuItem disabled>
-                              <CircularProgress size={20} sx={{ mr: 1 }} />
+                            <div className="SidebarManagement-dropdown-item SidebarManagement-dropdown-loading">
+                              <div className="SidebarManagement-spinner-small"></div>
                               Loading departments...
-                            </MenuItem>
+                            </div>
+                          ) : filteredDepartments.length === 0 ? (
+                            <div className="SidebarManagement-dropdown-item SidebarManagement-dropdown-empty">
+                              {departments.length === 0 ? 'No departments found' : 'No matching departments'}
+                            </div>
                           ) : (
-                            departments.map((dept) => (
-                              <MenuItem key={dept._id} value={dept._id}>
-                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                  <ApartmentIcon sx={{ mr: 1.5, fontSize: 'small', color: 'primary.main' }} />
-                                  <Box>
-                                    <Typography variant="body2">{dept.name}</Typography>
+                            filteredDepartments.map((dept) => (
+                              <div
+                                key={dept._id}
+                                className={`SidebarManagement-dropdown-item ${selectedDepartment === dept._id ? 'SidebarManagement-dropdown-item-selected' : ''}`}
+                                onClick={() => handleDepartmentChange(dept._id)}
+                              >
+                                <div className="SidebarManagement-dropdown-item-content">
+                                  <span className="SidebarManagement-dropdown-item-icon">🏛️</span>
+                                  <div className="SidebarManagement-dropdown-item-text">
+                                    <span className="SidebarManagement-dropdown-item-name">{dept.name}</span>
                                     {dept.description && (
-                                      <Typography variant="caption" color="text.secondary">
-                                        {dept.description}
-                                      </Typography>
+                                      <span className="SidebarManagement-dropdown-item-desc">{dept.description}</span>
                                     )}
-                                  </Box>
-                                </Box>
-                              </MenuItem>
+                                  </div>
+                                </div>
+                              </div>
                             ))
                           )}
-                        </Select>
-                      </FormControl>
-                      {departments.length > 0 && (
-                        <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Chip 
-                            label={`${departments.length} departments available`} 
-                            size="small"
-                            color="primary"
-                            variant="outlined"
-                          />
-                          {selectedDepartment && (
-                            <Chip 
-                              icon={<CheckCircleIcon />}
-                              label="Selected"
-                              size="small"
-                              color="success"
-                            />
-                          )}
-                        </Box>
+                        </div>
                       )}
-                    </CardContent>
-                  </Card>
-                </Grid>
+                    </div>
+                    
+                    {departments.length > 0 && (
+                      <div className="SidebarManagement-card-footer">
+                        <span className="SidebarManagement-chip SidebarManagement-chip-outlined">
+                          {departments.length} departments available
+                        </span>
+                        {selectedDepartment && (
+                          <span className="SidebarManagement-chip SidebarManagement-chip-success">
+                            <span className="SidebarManagement-chip-icon">✓</span>
+                            Selected
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
 
                 {/* Role Selection */}
-                <Grid item xs={12} md={6}>
-                  <Card sx={{ 
-                    height: '100%',
-                    borderRadius: 2,
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
-                    border: '1px solid',
-                    borderColor: selectedRole ? 'primary.200' : 'grey.200',
-                    transition: 'all 0.3s ease',
-                    '&:hover': {
-                      boxShadow: '0 8px 24px rgba(33, 150, 243, 0.15)',
-                      borderColor: 'primary.200'
-                    }
-                  }}>
-                    <CardContent>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                        <Avatar sx={{ bgcolor: 'secondary.50', mr: 1.5 }}>
-                          <SecurityIcon color="secondary" />
-                        </Avatar>
-                        <Typography variant="h6" fontWeight={600}>
-                          Role
-                        </Typography>
-                      </Box>
-                      <FormControl fullWidth variant="outlined" size="medium" disabled={!selectedDepartment}>
-                        <InputLabel>Select Role</InputLabel>
-                        <Select
-                          value={selectedRole}
-                          onChange={handleRoleChange}
-                          label="Select Role"
-                        >
-                          <MenuItem value="">
-                            <em>Choose Role</em>
-                          </MenuItem>
+                <div className={`SidebarManagement-card ${selectedRole ? 'SidebarManagement-card-selected' : ''}`}>
+                  <div className="SidebarManagement-card-content">
+                    <div className="SidebarManagement-card-header">
+                      <div className="SidebarManagement-card-icon-bg SidebarManagement-card-icon-bg-secondary">
+                        <span className="SidebarManagement-card-icon">🔒</span>
+                      </div>
+                      <h3 className="SidebarManagement-card-title">Role</h3>
+                    </div>
+                    
+                    <div className="SidebarManagement-dropdown-container">
+                      <div className="SidebarManagement-input-wrapper">
+                        <span className="SidebarManagement-input-icon">🔒</span>
+                        <input
+                          type="text"
+                          className="SidebarManagement-input"
+                          placeholder={!selectedDepartment ? "Select a department first" : loading.roles ? "Loading roles..." : "Select Role"}
+                          value={roleSearch}
+                          onChange={(e) => {
+                            setRoleSearch(e.target.value);
+                            if (selectedDepartment) setShowRoleDropdown(true);
+                          }}
+                          onClick={() => selectedDepartment && setShowRoleDropdown(!showRoleDropdown)}
+                          onFocus={() => selectedDepartment && setShowRoleDropdown(true)}
+                          disabled={!selectedDepartment || loading.roles}
+                        />
+                        {selectedDepartment && !loading.roles && getAllAvailableRoles().length > 0 && (
+                          <span className="SidebarManagement-dropdown-arrow">▼</span>
+                        )}
+                      </div>
+                      
+                      {showRoleDropdown && selectedDepartment && (
+                        <div className="SidebarManagement-dropdown-menu">
                           {loading.roles ? (
-                            <MenuItem disabled>
-                              <CircularProgress size={20} sx={{ mr: 1 }} />
+                            <div className="SidebarManagement-dropdown-item SidebarManagement-dropdown-loading">
+                              <div className="SidebarManagement-spinner-small"></div>
                               Loading roles...
-                            </MenuItem>
+                            </div>
+                          ) : filteredRoles.length === 0 ? (
+                            <div className="SidebarManagement-dropdown-item SidebarManagement-dropdown-empty">
+                              {getAllAvailableRoles().length === 0 ? 'No roles found' : 'No matching roles'}
+                            </div>
                           ) : (
-                            getAllAvailableRoles().map((role) => (
-                              <MenuItem key={role._id} value={role._id}>
-                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                  <SecurityIcon sx={{ mr: 1.5, fontSize: 'small', color: 'secondary.main' }} />
-                                  <Box>
-                                    <Typography variant="body2">
-                                      {role.name}
-                                    </Typography>
-                                    {role.description && (
-                                      <Typography variant="caption" color="text.secondary" display="block">
-                                        {role.description}
-                                      </Typography>
+                            <>
+                              {filteredRoles.map((role) => (
+                                <div
+                                  key={role._id}
+                                  className={`SidebarManagement-dropdown-item ${selectedRole === role._id ? 'SidebarManagement-dropdown-item-selected' : ''}`}
+                                  onClick={() => handleRoleChange(role._id)}
+                                >
+                                  <div className="SidebarManagement-dropdown-item-content">
+                                    <span className="SidebarManagement-dropdown-item-icon">🔒</span>
+                                    <div className="SidebarManagement-dropdown-item-text">
+                                      <span className="SidebarManagement-dropdown-item-name">{role.name}</span>
+                                      {role.description && (
+                                        <span className="SidebarManagement-dropdown-item-desc">{role.description}</span>
+                                      )}
+                                    </div>
+                                    {role.isCustom && (
+                                      <span className="SidebarManagement-chip SidebarManagement-chip-custom">Custom</span>
                                     )}
-                                  </Box>
-                                  {role.isCustom && (
-                                    <Chip 
-                                      label="Custom" 
-                                      size="small" 
-                                      sx={{ ml: 1, height: 18, fontSize: '0.6rem' }} 
-                                    />
-                                  )}
-                                </Box>
-                              </MenuItem>
-                            ))
+                                  </div>
+                                </div>
+                              ))}
+                              <div className="SidebarManagement-dropdown-divider"></div>
+                              <div
+                                className="SidebarManagement-dropdown-item SidebarManagement-dropdown-item-custom"
+                                onClick={() => handleRoleChange('custom')}
+                              >
+                                <div className="SidebarManagement-dropdown-item-content">
+                                  <span className="SidebarManagement-dropdown-item-icon SidebarManagement-dropdown-item-icon-add">+</span>
+                                  <span className="SidebarManagement-dropdown-item-name">Add Custom Role</span>
+                                </div>
+                              </div>
+                            </>
                           )}
-                          <Divider />
-                          <MenuItem value="custom">
-                            <Box sx={{ display: 'flex', alignItems: 'center', color: 'primary.main' }}>
-                              <AddIcon sx={{ mr: 1.5, fontSize: 'small' }} />
-                              <Typography variant="body2">Add Custom Role</Typography>
-                            </Box>
-                          </MenuItem>
-                        </Select>
-                      </FormControl>
-                      {selectedDepartment && (
-                        <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Chip 
-                            label={`${getAllAvailableRoles().length} roles available`} 
-                            size="small"
-                            color="secondary"
-                            variant="outlined"
-                          />
-                          <Button
-                            size="small"
-                            startIcon={<RefreshIcon />}
-                            onClick={handleRefreshRoles}
-                            disabled={loading.roles}
-                            variant="text"
-                          >
-                            Refresh
-                          </Button>
-                          {selectedRole && (
-                            <Chip 
-                              icon={<CheckCircleIcon />}
-                              label="Selected"
-                              size="small"
-                              color="success"
-                            />
-                          )}
-                        </Box>
+                        </div>
                       )}
-                    </CardContent>
-                  </Card>
-                </Grid>
-              </Grid>
+                    </div>
+                    
+                    {selectedDepartment && (
+                      <div className="SidebarManagement-card-footer">
+                        <span className="SidebarManagement-chip SidebarManagement-chip-outlined">
+                          {getAllAvailableRoles().length} roles available
+                        </span>
+                        <button 
+                          className="SidebarManagement-icon-button"
+                          onClick={handleRefreshRoles}
+                          disabled={loading.roles}
+                        >
+                          <span className="SidebarManagement-icon-button-icon">🔄</span>
+                        </button>
+                        {selectedRole && (
+                          <span className="SidebarManagement-chip SidebarManagement-chip-success">
+                            <span className="SidebarManagement-chip-icon">✓</span>
+                            Selected
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
 
               {/* Menu Items Selection */}
               {company && selectedDepartment && selectedRole && (
-                <Card sx={{ 
-                  mb: 4, 
-                  borderRadius: 2,
-                  boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
-                  overflow: 'hidden'
-                }}>
-                  <CardContent sx={{ p: 3 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
-                      <Box>
-                        <Typography variant="h6" fontWeight={600}>
-                          Menu Items Configuration
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                          Select the menu items you want to display for this role
-                        </Typography>
-                      </Box>
-                      
-                      <Badge 
-                        badgeContent={selectedItems.length} 
-                        color="primary"
-                        sx={{ '& .MuiBadge-badge': { fontWeight: 600 } }}
-                      >
-                        <Chip 
-                          icon={<CheckCircleOutlineIcon />}
-                          label="Selected Items"
-                          variant="outlined"
-                          color="primary"
-                        />
-                      </Badge>
-                    </Box>
+                <div className="SidebarManagement-menu-card">
+                  <div className="SidebarManagement-menu-header">
+                    <div className="SidebarManagement-menu-title">
+                      <h3 className="SidebarManagement-menu-heading">Menu Items Configuration</h3>
+                      <p className="SidebarManagement-menu-subheading">
+                        Select the menu items you want to display for this role
+                      </p>
+                    </div>
+                    
+                    <div className="SidebarManagement-menu-badge">
+                      <span className="SidebarManagement-badge">{selectedItems.length}</span>
+                      <span className="SidebarManagement-badge-label">Selected Items</span>
+                    </div>
+                  </div>
 
-                    {/* Search Bar */}
-                    <TextField
-                      fullWidth
-                      size="small"
+                  {/* Search Bar */}
+                  <div className="SidebarManagement-search-wrapper">
+                    <span className="SidebarManagement-search-icon">🔍</span>
+                    <input
+                      type="text"
+                      className="SidebarManagement-search-input"
                       placeholder="Search menu items..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      sx={{ 
-                        mb: 3,
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: 3,
-                          bgcolor: 'white'
-                        }
-                      }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <SearchIcon color="action" />
-                          </InputAdornment>
-                        ),
-                        endAdornment: searchTerm && (
-                          <InputAdornment position="end">
-                            <IconButton size="small" onClick={() => setSearchTerm('')}>
-                              <CancelOutlinedIcon fontSize="small" />
-                            </IconButton>
-                          </InputAdornment>
-                        )
-                      }}
                     />
+                    {searchTerm && (
+                      <button 
+                        className="SidebarManagement-search-clear"
+                        onClick={() => setSearchTerm('')}
+                      >
+                        ✗
+                      </button>
+                    )}
+                  </div>
 
-                    {/* Menu Items by Category */}
-                    {Object.entries(groupedPages).map(([category, pages]) => {
-                      const filteredCategoryPages = searchTerm 
-                        ? pages.filter(page =>
-                            page.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            page.path.toLowerCase().includes(searchTerm.toLowerCase())
-                          )
-                        : pages;
+                  {/* Menu Items by Category */}
+                  {Object.entries(groupedPages).map(([category, pages]) => {
+                    const filteredCategoryPages = searchTerm 
+                      ? pages.filter(page =>
+                          page.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          page.path.toLowerCase().includes(searchTerm.toLowerCase())
+                        )
+                      : pages;
 
-                      if (filteredCategoryPages.length === 0) return null;
+                    if (filteredCategoryPages.length === 0) return null;
 
-                      const isExpanded = expandedCategories[category] !== false;
-                      const categorySelectedCount = filteredCategoryPages.filter(page => 
-                        selectedItems.includes(page.id)
-                      ).length;
-                      const isAllSelected = categorySelectedCount === filteredCategoryPages.length;
+                    const isExpanded = expandedCategories[category] !== false;
+                    const categorySelectedCount = filteredCategoryPages.filter(page => 
+                      selectedItems.includes(page.id)
+                    ).length;
+                    const isAllSelected = categorySelectedCount === filteredCategoryPages.length;
 
-                      return (
-                        <Box key={category} sx={{ mb: 3 }}>
-                          {/* Category Header */}
-                          <Paper 
-                            elevation={0}
-                            sx={{
-                              p: 1.5,
-                              mb: 2,
-                              cursor: 'pointer',
-                              bgcolor: alpha(theme.palette.primary.main, 0.04),
-                              border: '1px solid',
-                              borderColor: 'divider',
-                              borderRadius: 2,
-                              '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.08) }
+                    return (
+                      <div key={category} className="SidebarManagement-category-section">
+                        {/* Category Header */}
+                        <div 
+                          className="SidebarManagement-category-header"
+                          onClick={() => toggleCategory(category)}
+                        >
+                          <div className="SidebarManagement-category-header-left">
+                            <button className="SidebarManagement-category-expand">
+                              {isExpanded ? '▲' : '▼'}
+                            </button>
+                            <h4 className="SidebarManagement-category-title">
+                              {getCategoryDisplayName(category)}
+                            </h4>
+                            <span className={`SidebarManagement-category-count ${isAllSelected ? 'SidebarManagement-category-count-all' : ''}`}>
+                              {categorySelectedCount}/{filteredCategoryPages.length}
+                            </span>
+                          </div>
+                          <button 
+                            className="SidebarManagement-category-select-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSelectAllCategory(category);
                             }}
-                            onClick={() => toggleCategory(category)}
                           >
-                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                <IconButton size="small" sx={{ mr: 1 }}>
-                                  {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                                </IconButton>
-                                <Typography variant="subtitle1" sx={{ 
-                                  fontWeight: 600,
-                                  color: 'primary.dark'
-                                }}>
-                                  {getCategoryDisplayName(category)}
-                                </Typography>
-                                <Chip 
-                                  label={`${categorySelectedCount}/${filteredCategoryPages.length}`}
-                                  size="small"
-                                  color={isAllSelected ? "success" : "default"}
-                                  sx={{ ml: 2, fontWeight: 600 }}
-                                />
-                              </Box>
-                              <Button
-                                size="small"
-                                variant="outlined"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleSelectAllCategory(category);
-                                }}
-                                sx={{ borderRadius: 2 }}
-                              >
-                                {isAllSelected ? 'Deselect All' : 'Select All'}
-                              </Button>
-                            </Box>
-                          </Paper>
+                            {isAllSelected ? 'Deselect All' : 'Select All'}
+                          </button>
+                        </div>
 
-                          {/* Category Items */}
-                          <Collapse in={isExpanded}>
-                            <Grid container spacing={2}>
-                              {filteredCategoryPages.map((page) => {
-                                const isSelected = selectedItems.includes(page.id);
-                                return (
-                                  <Grid item xs={12} sm={6} md={4} lg={3} key={page.id}>
-                                    <Paper
-                                      elevation={isSelected ? 2 : 1}
-                                      sx={{
-                                        p: 2,
-                                        cursor: 'pointer',
-                                        border: '2px solid',
-                                        borderColor: isSelected ? 'primary.main' : 'transparent',
-                                        bgcolor: isSelected ? alpha(theme.palette.primary.main, 0.04) : 'background.paper',
-                                        transition: 'all 0.2s',
-                                        borderRadius: 2,
-                                        position: 'relative',
-                                        overflow: 'hidden',
-                                        '&:hover': {
-                                          transform: 'translateY(-2px)',
-                                          boxShadow: 3,
-                                          borderColor: isSelected ? 'primary.main' : 'primary.light'
-                                        }
-                                      }}
-                                      onClick={() => handleMenuItemToggle(page.id)}
-                                    >
-                                      {isSelected && (
-                                        <Box sx={{
-                                          position: 'absolute',
-                                          top: 8,
-                                          right: 8,
-                                          color: 'success.main'
-                                        }}>
-                                          <CheckCircleIcon fontSize="small" />
-                                        </Box>
-                                      )}
-                                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                        <Checkbox
-                                          checked={isSelected}
-                                          color="primary"
-                                          size="small"
-                                          sx={{ mr: 1 }}
-                                        />
-                                        <Box sx={{ 
-                                          display: 'flex', 
-                                          alignItems: 'center',
-                                          color: isSelected ? 'primary.main' : 'text.primary'
-                                        }}>
-                                          {getIconComponent(page.icon)}
-                                          <Typography variant="body2" sx={{ fontWeight: 500, ml: 1 }}>
-                                            {page.name}
-                                          </Typography>
-                                        </Box>
-                                      </Box>
-                                      <Typography variant="caption" color="text.secondary" sx={{ 
-                                        ml: 4, 
-                                        display: 'block',
-                                        fontFamily: 'monospace',
-                                        fontSize: '0.7rem'
-                                      }}>
-                                        {page.path}
-                                      </Typography>
-                                    </Paper>
-                                  </Grid>
-                                );
-                              })}
-                            </Grid>
-                          </Collapse>
-                        </Box>
-                      );
-                    })}
-                  </CardContent>
+                        {/* Category Items */}
+                        {isExpanded && (
+                          <div className="SidebarManagement-category-items-grid">
+                            {filteredCategoryPages.map((page) => {
+                              const isSelected = selectedItems.includes(page.id);
+                              return (
+                                <div
+                                  key={page.id}
+                                  className={`SidebarManagement-menu-item ${isSelected ? 'SidebarManagement-menu-item-selected' : ''}`}
+                                  onClick={() => handleMenuItemToggle(page.id)}
+                                >
+                                  {isSelected && (
+                                    <div className="SidebarManagement-menu-item-check">✓</div>
+                                  )}
+                                  <div className="SidebarManagement-menu-item-content">
+                                    <div className="SidebarManagement-menu-item-checkbox">
+                                      <input 
+                                        type="checkbox"
+                                        checked={isSelected}
+                                        onChange={() => {}}
+                                        className="SidebarManagement-menu-item-checkbox-input"
+                                      />
+                                    </div>
+                                    <div className="SidebarManagement-menu-item-icon">
+                                      {getIconHtml(page.icon)}
+                                    </div>
+                                    <div className="SidebarManagement-menu-item-details">
+                                      <span className="SidebarManagement-menu-item-name">{page.name}</span>
+                                      <span className="SidebarManagement-menu-item-path">{page.path}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                   
                   {/* Save Button at Bottom */}
-                  <CardActions sx={{ 
-                    p: 3, 
-                    pt: 0,
-                    borderTop: '1px solid',
-                    borderColor: 'grey.200',
-                    bgcolor: 'grey.50',
-                    display: 'flex',
-                    justifyContent: 'flex-end'
-                  }}>
-                    <Button
-                      variant="contained"
-                      size="large"
+                  <div className="SidebarManagement-save-footer">
+                    <button
+                      className="SidebarManagement-save-button"
                       onClick={handleSave}
                       disabled={loading.saving || selectedItems.length === 0}
-                      startIcon={loading.saving ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
-                      sx={{ 
-                        px: 6,
-                        py: 1.5,
-                        fontSize: '1rem',
-                        fontWeight: 600,
-                        borderRadius: 3,
-                        background: 'linear-gradient(145deg, #2196f3 0%, #1976d2 100%)',
-                        boxShadow: '0 8px 16px rgba(33, 150, 243, 0.3)',
-                        '&:hover': {
-                          background: 'linear-gradient(145deg, #1976d2 0%, #1565c0 100%)',
-                          boxShadow: '0 12px 24px rgba(33, 150, 243, 0.4)',
-                          transform: 'translateY(-2px)'
-                        },
-                        transition: 'all 0.3s ease'
-                      }}
                     >
-                      {loading.saving ? 'Saving Configuration...' : 'Save Configuration'}
-                    </Button>
-                  </CardActions>
-                </Card>
+                      {loading.saving ? (
+                        <>
+                          <div className="SidebarManagement-spinner-small SidebarManagement-spinner-white"></div>
+                          Saving Configuration...
+                        </>
+                      ) : (
+                        <>
+                          <span className="SidebarManagement-save-icon">💾</span>
+                          Save Configuration
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
               )}
             </>
           )}
 
           {/* Tab 2: Existing Configurations */}
           {activeTab === 1 && (
-            <Card sx={{ 
-              borderRadius: 2,
-              boxShadow: '0 8px 24px rgba(0,0,0,0.08)'
-            }}>
-              <CardContent sx={{ p: 3 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                  <Box>
-                    <Typography variant="h6" fontWeight={600}>
-                      Existing Configurations
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Manage and edit existing sidebar configurations
-                    </Typography>
-                  </Box>
-                  <Button
-                    variant="outlined"
-                    startIcon={<RefreshIcon />}
-                    onClick={() => company && company._id && fetchExistingConfigs(company._id)}
-                    disabled={loading.fetching}
-                    sx={{ borderRadius: 2 }}
-                  >
-                    {loading.fetching ? 'Refreshing...' : 'Refresh'}
-                  </Button>
-                </Box>
+            <div className="SidebarManagement-configs-card">
+              <div className="SidebarManagement-configs-header">
+                <div className="SidebarManagement-configs-title">
+                  <h3 className="SidebarManagement-configs-heading">Existing Configurations</h3>
+                  <p className="SidebarManagement-configs-subheading">
+                    Manage and edit existing sidebar configurations
+                  </p>
+                </div>
+                <button 
+                  className="SidebarManagement-refresh-btn"
+                  onClick={() => company && company._id && fetchExistingConfigs(company._id)}
+                  disabled={loading.fetching}
+                >
+                  <span className="SidebarManagement-refresh-btn-icon">🔄</span>
+                  {loading.fetching ? 'Refreshing...' : 'Refresh'}
+                </button>
+              </div>
 
-                {loading.fetching ? (
-                  <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-                    <CircularProgress />
-                  </Box>
-                ) : existingConfigs.length === 0 ? (
-                  <Alert severity="info" sx={{ borderRadius: 2 }}>
-                    No configurations found. Create a new configuration in the "Configure Menu" tab.
-                  </Alert>
-                ) : (
-                  <Grid container spacing={2}>
-                    {existingConfigs.map((config) => (
-                      <Grid item xs={12} md={6} lg={4} key={config._id}>
-                        <Paper sx={{ 
-                          p: 2, 
-                          borderLeft: '4px solid', 
-                          borderColor: 'primary.main',
-                          borderRadius: 2,
-                          height: '100%',
-                          transition: 'all 0.2s',
-                          '&:hover': {
-                            boxShadow: 4,
-                            transform: 'translateY(-2px)'
-                          }
-                        }}>
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 2 }}>
-                            <Box>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                                <ApartmentIcon sx={{ fontSize: '1rem', color: 'primary.main' }} />
-                                <Typography variant="subtitle1" fontWeight={600}>
-                                  {getDepartmentName(config.departmentId)}
-                                </Typography>
-                              </Box>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                                <SecurityIcon sx={{ fontSize: '1rem', color: 'secondary.main' }} />
-                                <Chip 
-                                  label={getRoleNameById(config.role)} 
-                                  size="small" 
-                                  sx={{ height: 20, fontSize: '0.7rem' }}
-                                  color="secondary"
-                                />
-                              </Box>
-                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                                {config.menuItems.length} menu items • Updated: {formatDate(config.updatedAt || config.createdAt)}
-                              </Typography>
-                            </Box>
-                            <Box>
-                              <Tooltip title="Preview">
-                                <IconButton
-                                  size="small"
-                                  onClick={() => handlePreview(config)}
-                                  sx={{ color: 'info.main' }}
-                                >
-                                  <VisibilityIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                              <Tooltip title="Edit">
-                                <IconButton
-                                  size="small"
-                                  onClick={() => handleEdit(config)}
-                                  sx={{ color: 'primary.main' }}
-                                >
-                                  <EditIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                              <Tooltip title="Delete">
-                                <IconButton
-                                  size="small"
-                                  onClick={() => handleDelete(config._id)}
-                                  color="error"
-                                >
-                                  <DeleteIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                            </Box>
-                          </Box>
-                          
-                          <Box sx={{ maxHeight: 120, overflow: 'auto', mb: 1 }}>
-                            <Grid container spacing={0.5}>
-                              {config.menuItems.slice(0, 5).map((item) => (
-                                <Grid item key={item.id}>
-                                  <Chip
-                                    label={item.name}
-                                    size="small"
-                                    sx={{ mr: 0.5, mb: 0.5 }}
-                                    icon={getIconComponent(item.icon)}
-                                    variant="outlined"
-                                  />
-                                </Grid>
-                              ))}
-                              {config.menuItems.length > 5 && (
-                                <Grid item>
-                                  <Chip
-                                    label={`+${config.menuItems.length - 5} more`}
-                                    size="small"
-                                    sx={{ mr: 0.5, mb: 0.5 }}
-                                    variant="outlined"
-                                  />
-                                </Grid>
-                              )}
-                            </Grid>
-                          </Box>
-                        </Paper>
-                      </Grid>
-                    ))}
-                  </Grid>
-                )}
-              </CardContent>
-            </Card>
+              {loading.fetching ? (
+                <div className="SidebarManagement-loading-center">
+                  <div className="SidebarManagement-spinner"></div>
+                </div>
+              ) : existingConfigs.length === 0 ? (
+                <div className="SidebarManagement-alert SidebarManagement-alert-info">
+                  <span className="SidebarManagement-alert-icon">ℹ️</span>
+                  No configurations found. Create a new configuration in the "Configure Menu" tab.
+                </div>
+              ) : (
+                <div className="SidebarManagement-configs-grid">
+                  {existingConfigs.map((config) => (
+                    <div key={config._id} className="SidebarManagement-config-item">
+                      <div className="SidebarManagement-config-item-header">
+                        <div className="SidebarManagement-config-item-info">
+                          <div className="SidebarManagement-config-item-dept">
+                            <span className="SidebarManagement-config-item-icon">🏛️</span>
+                            <span className="SidebarManagement-config-item-dept-name">{getDepartmentName(config.departmentId)}</span>
+                          </div>
+                          <div className="SidebarManagement-config-item-role">
+                            <span className="SidebarManagement-config-item-icon">🔒</span>
+                            <span className="SidebarManagement-config-item-role-chip">{getRoleNameById(config.role)}</span>
+                          </div>
+                          <span className="SidebarManagement-config-item-meta">
+                            {config.menuItems.length} menu items • Updated: {formatDate(config.updatedAt || config.createdAt)}
+                          </span>
+                        </div>
+                        <div className="SidebarManagement-config-item-actions">
+                          <button 
+                            className="SidebarManagement-config-item-btn" 
+                            onClick={() => handlePreview(config)}
+                            title="Preview"
+                          >
+                            👁️
+                          </button>
+                          <button 
+                            className="SidebarManagement-config-item-btn" 
+                            onClick={() => handleEdit(config)}
+                            title="Edit"
+                          >
+                            ✏️
+                          </button>
+                          <button 
+                            className="SidebarManagement-config-item-btn SidebarManagement-config-item-btn-delete" 
+                            onClick={() => handleDelete(config._id)}
+                            title="Delete"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div className="SidebarManagement-config-item-menu-list">
+                        {config.menuItems.slice(0, 5).map((item) => (
+                          <span key={item.id} className="SidebarManagement-config-item-chip">
+                            <span className="SidebarManagement-config-item-chip-icon">{getIconHtml(item.icon)}</span>
+                            {item.name}
+                          </span>
+                        ))}
+                        {config.menuItems.length > 5 && (
+                          <span className="SidebarManagement-config-item-chip">
+                            +{config.menuItems.length - 5} more
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
         </>
       ) : (
         // Show message when no company
-        <Alert severity="info" sx={{ borderRadius: 2 }}>
+        <div className="SidebarManagement-alert SidebarManagement-alert-info">
+          <span className="SidebarManagement-alert-icon">ℹ️</span>
           Please login or enter company information to configure sidebar menus.
-        </Alert>
+        </div>
       )}
 
-      {/* Preview Dialog */}
-      <Dialog 
-        open={openPreview} 
-        onClose={() => setOpenPreview(false)}
-        maxWidth="md"
-        fullWidth
-        TransitionComponent={Zoom}
-        PaperProps={{
-          sx: {
-            borderRadius: 3,
-            overflow: 'hidden'
-          }
-        }}
-      >
-        <DialogTitle sx={{ 
-          bgcolor: 'primary.main',
-          color: 'white',
-          py: 2
-        }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <VisibilityIcon />
-            <Typography variant="h6">Menu Preview</Typography>
-          </Box>
-          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.9)', display: 'block', mt: 0.5 }}>
-            {previewConfig && 
-              `${company?.companyName} (${company?.companyCode}) - 
-               ${getDepartmentName(previewConfig.departmentId)} - 
-               ${getRoleNameById(previewConfig.role)}`
-            }
-          </Typography>
-        </DialogTitle>
-        <DialogContent sx={{ p: 3, maxHeight: 400 }}>
-          {previewConfig && (
-            <List>
-              {previewConfig.menuItems.map((item, index) => (
-                <ListItem 
-                  key={item.id} 
-                  divider={index < previewConfig.menuItems.length - 1}
-                  sx={{ 
-                    borderRadius: 1,
-                    '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.04) }
-                  }}
-                >
-                  <ListItemIcon>
-                    <Avatar sx={{ 
-                      bgcolor: 'primary.50', 
-                      color: 'primary.main',
-                      width: 32,
-                      height: 32
-                    }}>
-                      {getIconComponent(item.icon)}
-                    </Avatar>
-                  </ListItemIcon>
-                  <ListItemText 
-                    primary={
-                      <Typography variant="body1" fontWeight={600}>
-                        {item.name}
-                      </Typography>
-                    }
-                    secondary={
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-                        <Typography variant="body2" color="text.secondary" component="span">
-                          {item.path}
-                        </Typography>
-                        <Chip 
-                          label={getCategoryDisplayName(item.category)}
-                          size="small"
-                          sx={{ height: 20, fontSize: '0.6rem' }}
-                          variant="outlined"
-                        />
-                      </Box>
-                    }
-                  />
-                </ListItem>
-              ))}
-            </List>
-          )}
-        </DialogContent>
-        <DialogActions sx={{ p: 2, bgcolor: 'grey.50' }}>
-          <Button 
-            onClick={() => setOpenPreview(false)}
-            variant="contained"
-            sx={{ borderRadius: 2 }}
-          >
-            Close
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {/* Preview Modal */}
+      {openPreview && previewConfig && (
+        <div className="SidebarManagement-modal-overlay" onClick={() => setOpenPreview(false)}>
+          <div className="SidebarManagement-modal" onClick={e => e.stopPropagation()}>
+            <div className="SidebarManagement-modal-header">
+              <div className="SidebarManagement-modal-header-content">
+                <span className="SidebarManagement-modal-header-icon">👁️</span>
+                <h3 className="SidebarManagement-modal-header-title">Menu Preview</h3>
+              </div>
+              <span className="SidebarManagement-modal-subtitle">
+                {company?.companyName} ({company?.companyCode}) - 
+                {getDepartmentName(previewConfig.departmentId)} - 
+                {getRoleNameById(previewConfig.role)}
+              </span>
+              <button className="SidebarManagement-modal-close" onClick={() => setOpenPreview(false)}>✗</button>
+            </div>
+            <div className="SidebarManagement-modal-content">
+              <div className="SidebarManagement-preview-list">
+                {previewConfig.menuItems.map((item, index) => (
+                  <div key={item.id} className="SidebarManagement-preview-item">
+                    <div className="SidebarManagement-preview-item-icon">
+                      {getIconHtml(item.icon)}
+                    </div>
+                    <div className="SidebarManagement-preview-item-details">
+                      <span className="SidebarManagement-preview-item-name">{item.name}</span>
+                      <div className="SidebarManagement-preview-item-meta">
+                        <span className="SidebarManagement-preview-item-path">{item.path}</span>
+                        <span className="SidebarManagement-preview-item-category">{getCategoryDisplayName(item.category)}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="SidebarManagement-modal-footer">
+              <button className="SidebarManagement-modal-close-btn" onClick={() => setOpenPreview(false)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-      {/* Snackbar */}
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={4000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-        TransitionComponent={Zoom}
-      >
-        <Alert 
-          severity={snackbar.severity}
-          variant="filled"
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-          sx={{ 
-            borderRadius: 2,
-            boxShadow: '0 8px 16px rgba(0,0,0,0.2)'
-          }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+      {/* Snackbar/Toast */}
+      {snackbar.open && (
+        <div className={`SidebarManagement-snackbar SidebarManagement-snackbar-${snackbar.severity}`}>
+          <span className="SidebarManagement-snackbar-icon">
+            {snackbar.severity === 'success' ? '✓' : 
+             snackbar.severity === 'error' ? '✗' : 
+             snackbar.severity === 'warning' ? '⚠️' : 'ℹ️'}
+          </span>
+          <span className="SidebarManagement-snackbar-message">{snackbar.message}</span>
+          <button className="SidebarManagement-snackbar-close" onClick={() => setSnackbar({ ...snackbar, open: false })}>✗</button>
+        </div>
+      )}
 
       {/* Floating Action Button for Mobile */}
       {isMobile && selectedDepartment && selectedRole && selectedItems.length > 0 && (
-        <Zoom in={true}>
-          <Fab
-            color="primary"
-            sx={{
-              position: 'fixed',
-              bottom: 24,
-              right: 24,
-              boxShadow: '0 8px 16px rgba(33, 150, 243, 0.4)',
-              width: 56,
-              height: 56
-            }}
-            onClick={handleSave}
-            disabled={loading.saving}
-          >
-            {loading.saving ? <CircularProgress size={24} color="inherit" /> : <SaveIcon />}
-          </Fab>
-        </Zoom>
+        <button 
+          className="SidebarManagement-fab"
+          onClick={handleSave}
+          disabled={loading.saving}
+        >
+          {loading.saving ? <div className="SidebarManagement-spinner-small SidebarManagement-spinner-white"></div> : '💾'}
+        </button>
       )}
-    </Box>
+    </div>
   );
 };
-
-// Add missing import for CodeIcon
-const CodeIcon = (props) => (
-  <svg {...props} width="1em" height="1em" viewBox="0 0 24 24">
-    <path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z" fill="currentColor"/>
-  </svg>
-);
 
 export default SidebarManagement;

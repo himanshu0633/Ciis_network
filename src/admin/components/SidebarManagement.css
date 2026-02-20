@@ -1,0 +1,1588 @@
+/* SidebarManagement.css - Complete CSS without MUI */
+
+/* Base Container */
+.SidebarManagement-container {
+  padding: 24px;
+  min-height: 100vh;
+  background-color: #f8fafc;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+}
+
+.SidebarManagement-mobile {
+  padding: 12px;
+}
+
+/* Header Styles */
+.SidebarManagement-header-paper {
+  padding: 24px;
+  margin-bottom: 24px;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #1a237e 0%, #0d47a1 50%, #01579b 100%);
+  color: white;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.SidebarManagement-header-bg-effect {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+}
+
+.SidebarManagement-header-bg-effect-1 {
+  top: -50px;
+  right: -50px;
+  width: 200px;
+  height: 200px;
+}
+
+.SidebarManagement-header-bg-effect-2 {
+  bottom: -50px;
+  left: -50px;
+  width: 250px;
+  height: 250px;
+}
+
+.SidebarManagement-header-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: relative;
+  z-index: 1;
+}
+
+.SidebarManagement-header-avatar {
+  width: 56px;
+  height: 56px;
+  background-color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+}
+
+.SidebarManagement-header-avatar-icon {
+  font-size: 32px;
+  color: #0d47a1;
+}
+
+.SidebarManagement-header-text {
+  flex: 1;
+}
+
+.SidebarManagement-header-title {
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+}
+
+.SidebarManagement-header-title-mobile {
+  font-size: 24px;
+}
+
+.SidebarManagement-header-subtitle {
+  font-size: 14px;
+  opacity: 0.9;
+  margin: 0;
+}
+
+/* Company Info Card */
+.SidebarManagement-company-paper {
+  padding: 16px;
+  margin-bottom: 24px;
+  border-radius: 16px;
+  background-color: white;
+  border: 1px solid #bbdefb;
+  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.1);
+}
+
+.SidebarManagement-company-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .SidebarManagement-company-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .SidebarManagement-company-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.SidebarManagement-company-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.SidebarManagement-company-item-button {
+  justify-content: flex-end;
+}
+
+.SidebarManagement-company-icon-bg {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.SidebarManagement-company-icon-bg-primary {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.SidebarManagement-company-icon-bg-secondary {
+  background-color: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.SidebarManagement-company-icon-bg-success {
+  background-color: #e8f5e8;
+  color: #2e7d32;
+}
+
+.SidebarManagement-company-icon {
+  font-size: 20px;
+}
+
+.SidebarManagement-company-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.SidebarManagement-company-label {
+  font-size: 12px;
+  color: #666;
+}
+
+.SidebarManagement-company-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.SidebarManagement-status-chip {
+  padding: 4px 8px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.SidebarManagement-status-chip-active {
+  background-color: #e8f5e8;
+  color: #2e7d32;
+}
+
+.SidebarManagement-status-chip-inactive {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+.SidebarManagement-refresh-button {
+  padding: 8px 16px;
+  border: 1px solid #1976d2;
+  border-radius: 8px;
+  background: white;
+  color: #1976d2;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.SidebarManagement-refresh-button:hover:not(:disabled) {
+  background-color: #1976d2;
+  color: white;
+}
+
+.SidebarManagement-refresh-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.SidebarManagement-refresh-icon {
+  font-size: 16px;
+}
+
+/* Alert Styles */
+.SidebarManagement-alert {
+  padding: 16px;
+  margin-bottom: 24px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.SidebarManagement-alert-warning {
+  background-color: #fff3e0;
+  color: #e65100;
+  border-left: 4px solid #ff9800;
+}
+
+.SidebarManagement-alert-info {
+  background-color: #e3f2fd;
+  color: #01579b;
+  border-left: 4px solid #2196f3;
+}
+
+.SidebarManagement-alert-icon {
+  font-size: 20px;
+}
+
+.SidebarManagement-alert-message {
+  flex: 1;
+}
+
+.SidebarManagement-alert-button {
+  padding: 6px 12px;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+/* Progress Bar */
+.SidebarManagement-progress-container {
+  margin-bottom: 24px;
+}
+
+.SidebarManagement-progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.SidebarManagement-progress-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #666;
+}
+
+.SidebarManagement-progress-percentage {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1976d2;
+}
+
+.SidebarManagement-progress-bar {
+  height: 8px;
+  background-color: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.SidebarManagement-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #2196f3, #64b5f6);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+/* Tabs */
+.SidebarManagement-tabs-container {
+  display: flex;
+  margin-bottom: 24px;
+  background-color: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.SidebarManagement-tab {
+  flex: 1;
+  padding: 16px;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+  color: #666;
+}
+
+.SidebarManagement-tab:hover {
+  background-color: #f5f5f5;
+}
+
+.SidebarManagement-tab-active {
+  color: #1976d2;
+  border-bottom: 2px solid #1976d2;
+}
+
+.SidebarManagement-tab-icon {
+  font-size: 18px;
+}
+
+/* Stepper */
+.SidebarManagement-stepper-paper {
+  padding: 24px;
+  margin-bottom: 24px;
+  border-radius: 16px;
+  background-color: white;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.SidebarManagement-stepper {
+  display: flex;
+  align-items: center;
+}
+
+.SidebarManagement-stepper-vertical {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.SidebarManagement-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.SidebarManagement-step-active .SidebarManagement-step-indicator {
+  background-color: #1976d2;
+  color: white;
+}
+
+.SidebarManagement-step-indicator {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #e0e0e0;
+  color: #666;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.SidebarManagement-step-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+.SidebarManagement-step-connector {
+  flex: 1;
+  height: 2px;
+  background-color: #e0e0e0;
+  margin: 0 8px;
+}
+
+.SidebarManagement-step-connector-active {
+  background-color: #1976d2;
+}
+
+/* Cards Grid */
+.SidebarManagement-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 768px) {
+  .SidebarManagement-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.SidebarManagement-card {
+  border-radius: 16px;
+  background-color: white;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  border: 1px solid #e0e0e0;
+  transition: all 0.3s ease;
+}
+
+.SidebarManagement-card:hover {
+  box-shadow: 0 8px 24px rgba(33, 150, 243, 0.15);
+  border-color: #90caf9;
+}
+
+.SidebarManagement-card-selected {
+  border-color: #1976d2;
+  border-width: 2px;
+}
+
+.SidebarManagement-card-content {
+  padding: 20px;
+}
+
+.SidebarManagement-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.SidebarManagement-card-icon-bg {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.SidebarManagement-card-icon-bg-primary {
+  background-color: #e3f2fd;
+}
+
+.SidebarManagement-card-icon-bg-secondary {
+  background-color: #f3e5f5;
+}
+
+.SidebarManagement-card-icon {
+  font-size: 24px;
+}
+
+.SidebarManagement-card-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  color: #333;
+}
+
+.SidebarManagement-card-footer {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Dropdown Styles */
+.SidebarManagement-dropdown-container {
+  position: relative;
+  width: 100%;
+}
+
+.SidebarManagement-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.SidebarManagement-input-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #1976d2;
+  font-size: 16px;
+  z-index: 1;
+}
+
+.SidebarManagement-input {
+  width: 100%;
+  padding: 14px 14px 14px 40px;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  font-size: 14px;
+  transition: all 0.2s;
+  background-color: white;
+  box-sizing: border-box;
+}
+
+.SidebarManagement-input:hover {
+  border-color: #1976d2;
+}
+
+.SidebarManagement-input:focus {
+  outline: none;
+  border-color: #1976d2;
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+}
+
+.SidebarManagement-input:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.SidebarManagement-dropdown-arrow {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #757575;
+  font-size: 12px;
+  pointer-events: none;
+}
+
+.SidebarManagement-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 300px;
+  overflow-y: auto;
+  background-color: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  z-index: 1000;
+}
+
+.SidebarManagement-dropdown-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s;
+}
+
+.SidebarManagement-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.SidebarManagement-dropdown-item:hover {
+  background-color: #f5f5f5;
+}
+
+.SidebarManagement-dropdown-item-selected {
+  background-color: #e3f2fd;
+}
+
+.SidebarManagement-dropdown-item-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.SidebarManagement-dropdown-item-icon {
+  font-size: 16px;
+  color: #1976d2;
+}
+
+.SidebarManagement-dropdown-item-icon-add {
+  color: #4caf50;
+  font-weight: bold;
+}
+
+.SidebarManagement-dropdown-item-text {
+  flex: 1;
+}
+
+.SidebarManagement-dropdown-item-name {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+.SidebarManagement-dropdown-item-desc {
+  display: block;
+  font-size: 12px;
+  color: #666;
+  margin-top: 2px;
+}
+
+.SidebarManagement-dropdown-loading,
+.SidebarManagement-dropdown-empty {
+  padding: 16px;
+  text-align: center;
+  color: #666;
+}
+
+.SidebarManagement-dropdown-divider {
+  height: 1px;
+  background-color: #e0e0e0;
+  margin: 8px 0;
+}
+
+.SidebarManagement-dropdown-item-custom {
+  color: #1976d2;
+  font-weight: 500;
+}
+
+/* Chips */
+.SidebarManagement-chip {
+  padding: 4px 8px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.SidebarManagement-chip-outlined {
+  border: 1px solid #1976d2;
+  color: #1976d2;
+}
+
+.SidebarManagement-chip-success {
+  background-color: #e8f5e8;
+  color: #2e7d32;
+}
+
+.SidebarManagement-chip-custom {
+  background-color: #fff3e0;
+  color: #e65100;
+  font-size: 10px;
+  padding: 2px 4px;
+}
+
+.SidebarManagement-chip-icon {
+  font-size: 12px;
+}
+
+.SidebarManagement-icon-button {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.SidebarManagement-icon-button:hover:not(:disabled) {
+  background-color: #f5f5f5;
+  border-color: #1976d2;
+}
+
+.SidebarManagement-icon-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.SidebarManagement-icon-button-icon {
+  font-size: 16px;
+}
+
+/* Menu Card */
+.SidebarManagement-menu-card {
+  margin-bottom: 32px;
+  border-radius: 16px;
+  background-color: white;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  overflow: hidden;
+}
+
+.SidebarManagement-menu-header {
+  padding: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.SidebarManagement-menu-heading {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+  color: #333;
+}
+
+.SidebarManagement-menu-subheading {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+
+.SidebarManagement-menu-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 1px solid #1976d2;
+  border-radius: 30px;
+}
+
+.SidebarManagement-badge {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: #1976d2;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.SidebarManagement-badge-label {
+  font-size: 14px;
+  color: #1976d2;
+  font-weight: 500;
+}
+
+/* Search Bar */
+.SidebarManagement-search-wrapper {
+  position: relative;
+  padding: 0 24px 16px 24px;
+}
+
+.SidebarManagement-search-icon {
+  position: absolute;
+  left: 36px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #757575;
+  font-size: 16px;
+}
+
+.SidebarManagement-search-input {
+  width: 100%;
+  padding: 12px 12px 12px 44px;
+  border: 1px solid #e0e0e0;
+  border-radius: 24px;
+  font-size: 14px;
+  transition: all 0.2s;
+  box-sizing: border-box;
+}
+
+.SidebarManagement-search-input:focus {
+  outline: none;
+  border-color: #1976d2;
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+}
+
+.SidebarManagement-search-clear {
+  position: absolute;
+  right: 36px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #757575;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.SidebarManagement-search-clear:hover {
+  color: #333;
+}
+
+/* Category Sections */
+.SidebarManagement-category-section {
+  margin-bottom: 24px;
+}
+
+.SidebarManagement-category-header {
+  padding: 12px 24px;
+  cursor: pointer;
+  background-color: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background-color 0.2s;
+}
+
+.SidebarManagement-category-header:hover {
+  background-color: #eeeeee;
+}
+
+.SidebarManagement-category-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.SidebarManagement-category-expand {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: #666;
+}
+
+.SidebarManagement-category-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1976d2;
+  margin: 0;
+}
+
+.SidebarManagement-category-count {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background-color: #e0e0e0;
+  color: #666;
+}
+
+.SidebarManagement-category-count-all {
+  background-color: #e8f5e8;
+  color: #2e7d32;
+}
+
+.SidebarManagement-category-select-btn {
+  padding: 6px 12px;
+  border: 1px solid #1976d2;
+  border-radius: 6px;
+  background: transparent;
+  color: #1976d2;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.SidebarManagement-category-select-btn:hover {
+  background-color: #1976d2;
+  color: white;
+}
+
+.SidebarManagement-category-items-grid {
+  padding: 16px 24px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 1200px) {
+  .SidebarManagement-category-items-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .SidebarManagement-category-items-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .SidebarManagement-category-items-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Menu Items */
+.SidebarManagement-menu-item {
+  padding: 12px;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  background-color: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.SidebarManagement-menu-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border-color: #90caf9;
+}
+
+.SidebarManagement-menu-item-selected {
+  border-color: #1976d2;
+  background-color: #e3f2fd;
+}
+
+.SidebarManagement-menu-item-check {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  color: #4caf50;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.SidebarManagement-menu-item-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.SidebarManagement-menu-item-checkbox {
+  margin-right: 4px;
+}
+
+.SidebarManagement-menu-item-checkbox-input {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.SidebarManagement-menu-item-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: #1976d2;
+}
+
+.SidebarManagement-menu-item-details {
+  flex: 1;
+}
+
+.SidebarManagement-menu-item-name {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 2px;
+}
+
+.SidebarManagement-menu-item-path {
+  display: block;
+  font-size: 11px;
+  color: #999;
+  font-family: monospace;
+}
+
+/* Save Footer */
+.SidebarManagement-save-footer {
+  padding: 24px;
+  border-top: 1px solid #e0e0e0;
+  background-color: #fafafa;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.SidebarManagement-save-button {
+  padding: 14px 48px;
+  border: none;
+  border-radius: 24px;
+  background: linear-gradient(145deg, #2196f3 0%, #1976d2 100%);
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 8px 16px rgba(33, 150, 243, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+}
+
+.SidebarManagement-save-button:hover:not(:disabled) {
+  background: linear-gradient(145deg, #1976d2 0%, #1565c0 100%);
+  box-shadow: 0 12px 24px rgba(33, 150, 243, 0.4);
+  transform: translateY(-2px);
+}
+
+.SidebarManagement-save-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.SidebarManagement-save-icon {
+  font-size: 18px;
+}
+
+/* Configurations Card */
+.SidebarManagement-configs-card {
+  border-radius: 16px;
+  background-color: white;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+}
+
+.SidebarManagement-configs-header {
+  padding: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.SidebarManagement-configs-heading {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+  color: #333;
+}
+
+.SidebarManagement-configs-subheading {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+
+.SidebarManagement-refresh-btn {
+  padding: 8px 16px;
+  border: 1px solid #1976d2;
+  border-radius: 8px;
+  background: transparent;
+  color: #1976d2;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.SidebarManagement-refresh-btn:hover:not(:disabled) {
+  background-color: #1976d2;
+  color: white;
+}
+
+.SidebarManagement-refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.SidebarManagement-refresh-btn-icon {
+  font-size: 16px;
+}
+
+/* Loading States */
+.SidebarManagement-loading-center {
+  display: flex;
+  justify-content: center;
+  padding: 32px;
+}
+
+.SidebarManagement-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #1976d2;
+  border-radius: 50%;
+  animation: SidebarManagement-spin 1s linear infinite;
+}
+
+.SidebarManagement-spinner-small {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #1976d2;
+  border-radius: 50%;
+  animation: SidebarManagement-spin 1s linear infinite;
+  display: inline-block;
+  margin-right: 8px;
+}
+
+.SidebarManagement-spinner-white {
+  border-top-color: white;
+}
+
+@keyframes SidebarManagement-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Config Items Grid */
+.SidebarManagement-configs-grid {
+  padding: 0 24px 24px 24px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 1024px) {
+  .SidebarManagement-configs-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .SidebarManagement-configs-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.SidebarManagement-config-item {
+  padding: 16px;
+  border-left: 4px solid #1976d2;
+  border-radius: 12px;
+  background-color: white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  transition: all 0.2s;
+}
+
+.SidebarManagement-config-item:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  transform: translateY(-2px);
+}
+
+.SidebarManagement-config-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.SidebarManagement-config-item-info {
+  flex: 1;
+}
+
+.SidebarManagement-config-item-dept,
+.SidebarManagement-config-item-role {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.SidebarManagement-config-item-icon {
+  font-size: 14px;
+  color: #666;
+}
+
+.SidebarManagement-config-item-dept-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.SidebarManagement-config-item-role-chip {
+  padding: 2px 8px;
+  background-color: #f3e5f5;
+  color: #7b1fa2;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.SidebarManagement-config-item-meta {
+  display: block;
+  font-size: 11px;
+  color: #999;
+  margin-top: 4px;
+}
+
+.SidebarManagement-config-item-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.SidebarManagement-config-item-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.SidebarManagement-config-item-btn:hover {
+  background-color: #f5f5f5;
+}
+
+.SidebarManagement-config-item-btn-delete:hover {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+.SidebarManagement-config-item-menu-list {
+  max-height: 100px;
+  overflow-y: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.SidebarManagement-config-item-chip {
+  padding: 4px 8px;
+  border: 1px solid #e0e0e0;
+  border-radius: 16px;
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background-color: white;
+}
+
+.SidebarManagement-config-item-chip-icon {
+  font-size: 10px;
+}
+
+/* Modal Styles */
+.SidebarManagement-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: SidebarManagement-fadeIn 0.2s;
+}
+
+.SidebarManagement-modal {
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  background-color: white;
+  border-radius: 24px;
+  overflow: hidden;
+  animation: SidebarManagement-slideIn 0.3s;
+}
+
+@keyframes SidebarManagement-fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes SidebarManagement-slideIn {
+  from { transform: translateY(-20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.SidebarManagement-modal-header {
+  padding: 20px 24px;
+  background-color: #1976d2;
+  color: white;
+  position: relative;
+}
+
+.SidebarManagement-modal-header-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.SidebarManagement-modal-header-icon {
+  font-size: 20px;
+}
+
+.SidebarManagement-modal-header-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.SidebarManagement-modal-subtitle {
+  font-size: 12px;
+  opacity: 0.9;
+  display: block;
+}
+
+.SidebarManagement-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.SidebarManagement-modal-close:hover {
+  background: rgba(255,255,255,0.3);
+}
+
+.SidebarManagement-modal-content {
+  padding: 24px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.SidebarManagement-preview-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.SidebarManagement-preview-item {
+  padding: 12px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: background-color 0.2s;
+}
+
+.SidebarManagement-preview-item:hover {
+  background-color: #f5f5f5;
+}
+
+.SidebarManagement-preview-item-icon {
+  width: 32px;
+  height: 32px;
+  background-color: #e3f2fd;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1976d2;
+  font-size: 16px;
+}
+
+.SidebarManagement-preview-item-details {
+  flex: 1;
+}
+
+.SidebarManagement-preview-item-name {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.SidebarManagement-preview-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.SidebarManagement-preview-item-path {
+  font-size: 11px;
+  color: #999;
+  font-family: monospace;
+}
+
+.SidebarManagement-preview-item-category {
+  font-size: 10px;
+  padding: 2px 6px;
+  background-color: #f5f5f5;
+  border-radius: 12px;
+  color: #666;
+}
+
+.SidebarManagement-modal-footer {
+  padding: 16px 24px;
+  background-color: #f5f5f5;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.SidebarManagement-modal-close-btn {
+  padding: 8px 24px;
+  border: none;
+  border-radius: 8px;
+  background-color: #1976d2;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.SidebarManagement-modal-close-btn:hover {
+  background-color: #1565c0;
+}
+
+/* Snackbar */
+.SidebarManagement-snackbar {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 300px;
+  max-width: 400px;
+  animation: SidebarManagement-slideIn 0.3s;
+  z-index: 2000;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+}
+
+.SidebarManagement-snackbar-success {
+  background-color: #4caf50;
+}
+
+.SidebarManagement-snackbar-error {
+  background-color: #f44336;
+}
+
+.SidebarManagement-snackbar-warning {
+  background-color: #ff9800;
+}
+
+.SidebarManagement-snackbar-info {
+  background-color: #2196f3;
+}
+
+.SidebarManagement-snackbar-icon {
+  font-size: 20px;
+}
+
+.SidebarManagement-snackbar-message {
+  flex: 1;
+  font-size: 14px;
+}
+
+.SidebarManagement-snackbar-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  opacity: 0.8;
+  padding: 4px;
+}
+
+.SidebarManagement-snackbar-close:hover {
+  opacity: 1;
+}
+
+/* Floating Action Button */
+.SidebarManagement-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #2196f3, #1976d2);
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  box-shadow: 0 8px 16px rgba(33, 150, 243, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+  z-index: 100;
+}
+
+.SidebarManagement-fab:hover:not(:disabled) {
+  transform: scale(1.1);
+  box-shadow: 0 12px 24px rgba(33, 150, 243, 0.5);
+}
+
+.SidebarManagement-fab:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Scrollbar Styling */
+.SidebarManagement-dropdown-menu::-webkit-scrollbar,
+.SidebarManagement-config-item-menu-list::-webkit-scrollbar,
+.SidebarManagement-modal-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.SidebarManagement-dropdown-menu::-webkit-scrollbar-track,
+.SidebarManagement-config-item-menu-list::-webkit-scrollbar-track,
+.SidebarManagement-modal-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.SidebarManagement-dropdown-menu::-webkit-scrollbar-thumb,
+.SidebarManagement-config-item-menu-list::-webkit-scrollbar-thumb,
+.SidebarManagement-modal-content::-webkit-scrollbar-thumb {
+  background: #b0b0b0;
+  border-radius: 4px;
+}
+
+.SidebarManagement-dropdown-menu::-webkit-scrollbar-thumb:hover,
+.SidebarManagement-config-item-menu-list::-webkit-scrollbar-thumb:hover,
+.SidebarManagement-modal-content::-webkit-scrollbar-thumb:hover {
+  background: #888;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .SidebarManagement-tab {
+    padding: 12px 8px;
+    font-size: 13px;
+  }
+  
+  .SidebarManagement-stepper-paper {
+    padding: 16px;
+  }
+  
+  .SidebarManagement-card-content {
+    padding: 16px;
+  }
+  
+  .SidebarManagement-menu-header {
+    padding: 16px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .SidebarManagement-category-header {
+    padding: 10px 16px;
+  }
+  
+  .SidebarManagement-category-items-grid {
+    padding: 12px 16px;
+  }
+  
+  .SidebarManagement-save-footer {
+    padding: 16px;
+  }
+  
+  .SidebarManagement-save-button {
+    padding: 12px 24px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .SidebarManagement-header-content {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .SidebarManagement-company-item {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .SidebarManagement-category-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .SidebarManagement-category-select-btn {
+    width: 100%;
+  }
+  
+  .SidebarManagement-menu-item {
+    padding: 8px;
+  }
+}
+
+/* Print styles */
+@media print {
+  .SidebarManagement-fab,
+  .SidebarManagement-snackbar,
+  .SidebarManagement-modal-overlay {
+    display: none;
+  }
+}

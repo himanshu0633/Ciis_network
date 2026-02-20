@@ -1,38 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box, Button, TextField, Typography, Paper, 
-  Table, TableBody, TableCell, TableContainer, 
-  TableHead, TableRow, TablePagination, IconButton,
-  Dialog, DialogTitle, DialogContent, DialogActions,
-  Chip, Tooltip, Alert, Snackbar, FormControlLabel,
-  Switch, Select, MenuItem, FormControl, InputLabel,
-  Card, CardContent, Stack, Avatar, 
-  InputAdornment, Divider, Fade, Zoom, Slide,
-  useTheme, useMediaQuery, Badge, Grid, Fab,
-  Menu, ListItemIcon, ListItemText,
-  LinearProgress, CircularProgress
-} from '@mui/material';
-import { alpha } from '@mui/material/styles';
-import { 
-  Edit, Delete, Add, Search, Business, 
-  Description, Person, Code, Refresh,
-  MoreVert, FilterList, Clear, CheckCircle,
-  Cancel, CorporateFare, AdminPanelSettings,
-  VerifiedUser, WorkOutline, Category,
-  Assignment, Today, Schedule, Apartment
-} from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import axios from '../../utils/axiosConfig';
+import './JobRoleManagement.css';
 
 // Transition for dialog
-const Transition = React.forwardRef(function Transition(props, ref) {
-  return <Slide direction="up" ref={ref} {...props} />;
-});
+const Transition = (props) => {
+  return <div className="JobRoleManagement-transition" {...props} />;
+};
 
 const JobRoleManagement = () => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isTablet, setIsTablet] = useState(window.innerWidth >= 768 && window.innerWidth < 1024);
   
   const [jobRoles, setJobRoles] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -47,7 +25,7 @@ const JobRoleManagement = () => {
   });
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(isMobile ? 5 : 10);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
   const [userInfo, setUserInfo] = useState(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
@@ -61,6 +39,18 @@ const JobRoleManagement = () => {
     inactive: 0,
     withDepartment: 0
   });
+
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+      setIsTablet(window.innerWidth >= 768 && window.innerWidth < 1024);
+      setRowsPerPage(window.innerWidth < 768 ? 5 : 10);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Format date
   const formatDate = (dateString) => {
@@ -250,33 +240,25 @@ const JobRoleManagement = () => {
       if (editingJobRole) {
         await axios.put(`/job-roles/${editingJobRole._id}`, submitData);
         toast.success(
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <CheckCircle sx={{ color: '#4caf50', fontSize: 24 }} />
-            <Box>
-              <Typography variant="body1" fontWeight={600}>
-                Job Role Updated!
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {formData.name} has been updated successfully
-              </Typography>
-            </Box>
-          </Box>,
+          <div className="JobRoleManagement-toast-content">
+            <span className="JobRoleManagement-toast-icon">✓</span>
+            <div>
+              <div className="JobRoleManagement-toast-title">Job Role Updated!</div>
+              <div className="JobRoleManagement-toast-subtitle">{formData.name} has been updated successfully</div>
+            </div>
+          </div>,
           { icon: false, autoClose: 3000 }
         );
       } else {
         await axios.post('/job-roles', submitData);
         toast.success(
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <CheckCircle sx={{ color: '#4caf50', fontSize: 24 }} />
-            <Box>
-              <Typography variant="body1" fontWeight={600}>
-                Job Role Created!
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {formData.name} has been added to your organization
-              </Typography>
-            </Box>
-          </Box>,
+          <div className="JobRoleManagement-toast-content">
+            <span className="JobRoleManagement-toast-icon">✓</span>
+            <div>
+              <div className="JobRoleManagement-toast-title">Job Role Created!</div>
+              <div className="JobRoleManagement-toast-subtitle">{formData.name} has been added to your organization</div>
+            </div>
+          </div>,
           { icon: false, autoClose: 3000 }
         );
       }
@@ -308,17 +290,13 @@ const JobRoleManagement = () => {
       setLoading(true);
       await axios.delete(`/job-roles/${id}`);
       toast.success(
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Delete sx={{ color: '#f44336', fontSize: 24 }} />
-          <Box>
-            <Typography variant="body1" fontWeight={600}>
-              Job Role Deleted!
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {jobRole?.name} has been removed
-            </Typography>
-          </Box>
-        </Box>,
+        <div className="JobRoleManagement-toast-content">
+          <span className="JobRoleManagement-toast-icon JobRoleManagement-toast-icon-delete">🗑️</span>
+          <div>
+            <div className="JobRoleManagement-toast-title">Job Role Deleted!</div>
+            <div className="JobRoleManagement-toast-subtitle">{jobRole?.name} has been removed</div>
+          </div>
+        </div>,
         { icon: false, autoClose: 3000 }
       );
       setRefreshKey(prev => prev + 1);
@@ -394,739 +372,212 @@ const JobRoleManagement = () => {
 
   const filteredJobRoles = getFilteredJobRoles();
 
-  // Mobile card view
+  // Mobile card view component
   const MobileJobRoleCard = ({ jobRole }) => (
-    <Card 
-      sx={{ 
-        mb: 2, 
-        borderRadius: 3,
-        border: '1px solid',
-        borderColor: 'grey.200',
-        transition: 'all 0.3s ease',
-        position: 'relative',
-        overflow: 'visible',
-        '&:hover': {
-          boxShadow: '0 12px 24px rgba(33, 150, 243, 0.12)',
-          transform: 'translateY(-4px)',
-          borderColor: 'primary.200'
-        }
-      }}
-    >
-      {/* Status Indicator */}
-      <Box sx={{
-        position: 'absolute',
-        top: 12,
-        right: 12,
-        width: 8,
-        height: 8,
-        borderRadius: '50%',
-        bgcolor: jobRole.isActive !== false ? '#4caf50' : '#f44336',
-        boxShadow: `0 0 0 2px ${jobRole.isActive !== false ? 'rgba(76, 175, 80, 0.2)' : 'rgba(244, 67, 54, 0.2)'}`,
-        animation: jobRole.isActive !== false ? 'pulse 2s infinite' : 'none'
-      }} />
+    <div className="JobRoleManagement-mobile-card">
+      <div className="JobRoleManagement-mobile-card-status" 
+           style={{ backgroundColor: jobRole.isActive !== false ? '#4caf50' : '#f44336' }}></div>
       
-      <CardContent sx={{ p: 2.5 }}>
-        <Stack spacing={2.5}>
-          {/* Header with Icon and Name */}
-          <Stack direction="row" alignItems="center" spacing={2}>
-            <Avatar 
-              sx={{ 
-                bgcolor: 'primary.50',
-                color: 'primary.main',
-                width: 48,
-                height: 48,
-                borderRadius: 2,
-                boxShadow: '0 4px 8px rgba(33, 150, 243, 0.2)'
-              }}
-            >
-              <WorkOutline sx={{ fontSize: 26 }} />
-            </Avatar>
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="h6" fontWeight={700} sx={{ fontSize: '1.1rem', mb: 0.5 }}>
-                {jobRole.name}
-              </Typography>
-              <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" sx={{ gap: 0.5 }}>
-                {jobRole.department?.name && (
-                  <Chip 
-                    label={jobRole.department.name} 
-                    size="small" 
-                    sx={{ 
-                      height: 22, 
-                      fontSize: '0.65rem',
-                      bgcolor: 'primary.50',
-                      color: 'primary.main',
-                      fontWeight: 600,
-                      '& .MuiChip-label': { px: 1 }
-                    }}
-                  />
-                )}
-                {jobRole.companyCode && (
-                  <Chip 
-                    label={jobRole.companyCode} 
-                    size="small" 
-                    sx={{ 
-                      height: 22, 
-                      fontSize: '0.65rem',
-                      bgcolor: 'primary.50',
-                      color: 'primary.main',
-                      fontWeight: 600,
-                      '& .MuiChip-label': { px: 1 }
-                    }}
-                  />
-                )}
-                <Chip
-                  label={jobRole.isActive !== false ? 'Active' : 'Inactive'}
-                  size="small"
-                  sx={{
-                    height: 22,
-                    fontSize: '0.65rem',
-                    bgcolor: jobRole.isActive !== false ? 'success.50' : 'error.50',
-                    color: jobRole.isActive !== false ? 'success.main' : 'error.main',
-                    fontWeight: 600,
-                    '& .MuiChip-label': { px: 1 }
-                  }}
-                />
-              </Stack>
-            </Box>
-          </Stack>
-
-          {/* Description */}
-          {jobRole.description && (
-            <Box sx={{ 
-              bgcolor: 'grey.50', 
-              p: 1.5, 
-              borderRadius: 2,
-              border: '1px solid',
-              borderColor: 'grey.200'
-            }}>
-              <Stack direction="row" spacing={1} alignItems="flex-start">
-                <Description sx={{ fontSize: 18, color: 'grey.500', mt: 0.2 }} />
-                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5 }}>
-                  {jobRole.description}
-                </Typography>
-              </Stack>
-            </Box>
-          )}
-
-          {/* Footer with Meta Info and Actions */}
-          <Stack direction="row" justifyContent="space-between" alignItems="center">
-            <Stack direction="row" spacing={1.5}>
-              <Tooltip title="Created">
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <Today sx={{ fontSize: 14, color: 'grey.500' }} />
-                  <Typography variant="caption" color="text.secondary">
-                    {formatDate(jobRole.createdAt)}
-                  </Typography>
-                </Box>
-              </Tooltip>
-              {jobRole.createdBy?.name && (
-                <Tooltip title="Created By">
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <Person sx={{ fontSize: 14, color: 'grey.500' }} />
-                    <Typography variant="caption" color="text.secondary">
-                      {jobRole.createdBy.name}
-                    </Typography>
-                  </Box>
-                </Tooltip>
+      <div className="JobRoleManagement-mobile-card-content">
+        <div className="JobRoleManagement-mobile-card-header">
+          <div className="JobRoleManagement-mobile-card-avatar">
+            <span className="JobRoleManagement-mobile-card-avatar-icon">💼</span>
+          </div>
+          <div className="JobRoleManagement-mobile-card-title-section">
+            <div className="JobRoleManagement-mobile-card-title">{jobRole.name}</div>
+            <div className="JobRoleManagement-mobile-card-badges">
+              {jobRole.department?.name && (
+                <span className="JobRoleManagement-mobile-card-badge JobRoleManagement-badge-primary">
+                  {jobRole.department.name}
+                </span>
               )}
-            </Stack>
-            
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Tooltip title="Edit">
-                <IconButton 
-                  size="small" 
-                  onClick={() => handleEdit(jobRole)}
-                  sx={{ 
-                    bgcolor: 'primary.50',
-                    color: 'primary.main',
-                    width: 32,
-                    height: 32,
-                    '&:hover': { 
-                      bgcolor: 'primary.100',
-                      transform: 'scale(1.1)'
-                    },
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  <Edit sx={{ fontSize: 18 }} />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Delete">
-                <IconButton 
-                  size="small"
-                  onClick={() => handleDelete(jobRole._id)}
-                  sx={{ 
-                    bgcolor: 'error.50',
-                    color: 'error.main',
-                    width: 32,
-                    height: 32,
-                    '&:hover': { 
-                      bgcolor: 'error.100',
-                      transform: 'scale(1.1)'
-                    },
-                    transition: 'all 0.2s ease',
-                    opacity: jobRole.isActive === false ? 0.5 : 1
-                  }}
-                  disabled={jobRole.isActive === false}
-                >
-                  <Delete sx={{ fontSize: 18 }} />
-                </IconButton>
-              </Tooltip>
-            </Box>
-          </Stack>
-        </Stack>
-      </CardContent>
-    </Card>
+              {jobRole.companyCode && (
+                <span className="JobRoleManagement-mobile-card-badge JobRoleManagement-badge-primary">
+                  {jobRole.companyCode}
+                </span>
+              )}
+              <span className={`JobRoleManagement-mobile-card-badge JobRoleManagement-badge-${jobRole.isActive !== false ? 'success' : 'error'}`}>
+                {jobRole.isActive !== false ? 'Active' : 'Inactive'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {jobRole.description && (
+          <div className="JobRoleManagement-mobile-card-description">
+            <span className="JobRoleManagement-description-icon">📝</span>
+            <span className="JobRoleManagement-description-text">{jobRole.description}</span>
+          </div>
+        )}
+
+        <div className="JobRoleManagement-mobile-card-footer">
+          <div className="JobRoleManagement-mobile-card-meta">
+            <span className="JobRoleManagement-meta-item">
+              <span className="JobRoleManagement-meta-icon">📅</span>
+              <span className="JobRoleManagement-meta-text">{formatDate(jobRole.createdAt)}</span>
+            </span>
+            {jobRole.createdBy?.name && (
+              <span className="JobRoleManagement-meta-item">
+                <span className="JobRoleManagement-meta-icon">👤</span>
+                <span className="JobRoleManagement-meta-text">{jobRole.createdBy.name}</span>
+              </span>
+            )}
+          </div>
+          
+          <div className="JobRoleManagement-mobile-card-actions">
+            <button 
+              className="JobRoleManagement-action-btn JobRoleManagement-action-edit"
+              onClick={() => handleEdit(jobRole)}
+            >
+              <span className="JobRoleManagement-action-icon">✏️</span>
+            </button>
+            <button 
+              className={`JobRoleManagement-action-btn JobRoleManagement-action-delete ${jobRole.isActive === false ? 'JobRoleManagement-disabled' : ''}`}
+              onClick={() => handleDelete(jobRole._id)}
+              disabled={jobRole.isActive === false}
+            >
+              <span className="JobRoleManagement-action-icon">🗑️</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 
   return (
-    <Box sx={{ 
-      p: { xs: 1.5, sm: 2, md: 3 },
-      minHeight: '100vh',
-      bgcolor: '#f8fafc'
-    }}>
+    <div className="JobRoleManagement-container">
       {/* Loading Overlay */}
       {loading && (
-        <Box sx={{ width: '100%', mb: 2 }}>
-          <LinearProgress sx={{ borderRadius: 1, height: 4, bgcolor: 'primary.100' }} />
-        </Box>
+        <div className="JobRoleManagement-loading-overlay">
+          <div className="JobRoleManagement-progress-bar">
+            <div className="JobRoleManagement-progress-fill"></div>
+          </div>
+        </div>
       )}
 
-      {/* Stats Cards - Always visible */}
+      {/* Stats Cards */}
       {jobRoles.length > 0 && (
-        <Box sx={{ 
-          display: 'grid', 
-          gridTemplateColumns: { xs: '1fr 1fr', sm: '1fr 1fr 1fr 1fr' },
-          gap: { xs: 1.5, sm: 2.5 },
-          mb: 4,
-          width: '100%'
-        }}>
+        <div className="JobRoleManagement-stats-grid">
           {/* Total Job Roles */}
-          <Paper 
-            elevation={0}
-            sx={{ 
-              p: { xs: 2, sm: 2.5 },
-              borderRadius: 3,
-              background: 'linear-gradient(135deg, #ffffff 0%, #e3f2fd 100%)',
-              border: '1px solid',
-              borderColor: '#90caf9',
-              boxShadow: '0 4px 12px rgba(33, 150, 243, 0.12)',
-              transition: 'all 0.3s ease',
-              position: 'relative',
-              overflow: 'hidden',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: '4px',
-                background: 'linear-gradient(90deg, #2196f3, #64b5f6)',
-              },
-              '&:hover': { 
-                transform: 'translateY(-4px)',
-                boxShadow: '0 12px 24px rgba(33, 150, 243, 0.25)',
-                borderColor: '#64b5f6',
-                '& .icon-box': {
-                  transform: 'scale(1.1) rotate(5deg)',
-                  bgcolor: '#bbdefb'
-                }
-              }
-            }}
-          >
-            <Stack direction="row" alignItems="center" spacing={2}>
-              <Box 
-                className="icon-box"
-                sx={{
-                  width: { xs: 44, sm: 52 },
-                  height: { xs: 44, sm: 52 },
-                  borderRadius: 2.5,
-                  background: 'linear-gradient(135deg, #bbdefb 0%, #90caf9 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.3s ease',
-                  boxShadow: '0 4px 8px rgba(33, 150, 243, 0.2)'
-                }}
-              >
-                <Assignment sx={{ 
-                  fontSize: { xs: 24, sm: 28 }, 
-                  color: '#1976d2',
-                  filter: 'drop-shadow(0 2px 4px rgba(33, 150, 243, 0.3))'
-                }} />
-              </Box>
+          <div className="JobRoleManagement-stat-card JobRoleManagement-stat-blue">
+            <div className="JobRoleManagement-stat-content">
+              <div className="JobRoleManagement-stat-icon-box">
+                <span className="JobRoleManagement-stat-icon">📋</span>
+              </div>
               
-              <Box sx={{ flex: 1 }}>
-                <Typography 
-                  variant="body2" 
-                  color="#546e7a"
-                  fontWeight={600}
-                  sx={{ 
-                    fontSize: { xs: '0.75rem', sm: '0.8rem' },
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    mb: 0.5
-                  }}
-                >
-                  Total Roles
-                </Typography>
-                <Stack direction="row" alignItems="baseline" justifyContent="space-between">
-                  <Typography 
-                    variant="h4" 
-                    fontWeight={800}
-                    sx={{ 
-                      fontSize: { xs: '1.5rem', sm: '1.8rem', md: '2rem' },
-                      lineHeight: 1,
-                      color: '#0d47a1',
-                      textShadow: '0 2px 4px rgba(33, 150, 243, 0.2)'
-                    }}
-                  >
-                    {stats.total}
-                  </Typography>
-                  <Chip 
-                    label="All roles"
-                    size="small"
-                    sx={{
-                      height: 22,
-                      fontSize: '0.65rem',
-                      fontWeight: 600,
-                      bgcolor: '#bbdefb',
-                      color: '#1976d2',
-                      border: '1px solid #90caf9'
-                    }}
-                  />
-                </Stack>
-              </Box>
-            </Stack>
-          </Paper>
+              <div className="JobRoleManagement-stat-info">
+                <span className="JobRoleManagement-stat-label">Total Roles</span>
+                <div className="JobRoleManagement-stat-value-wrapper">
+                  <span className="JobRoleManagement-stat-value">{stats.total}</span>
+                  <span className="JobRoleManagement-stat-chip">All roles</span>
+                </div>
+              </div>
+            </div>
+          </div>
 
           {/* Active Job Roles */}
-          <Paper 
-            elevation={0}
-            sx={{ 
-              p: { xs: 2, sm: 2.5 },
-              borderRadius: 3,
-              background: 'linear-gradient(135deg, #ffffff 0%, #e8f5e9 100%)',
-              border: '1px solid',
-              borderColor: '#a5d6a7',
-              boxShadow: '0 4px 12px rgba(76, 175, 80, 0.12)',
-              transition: 'all 0.3s ease',
-              position: 'relative',
-              overflow: 'hidden',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: '4px',
-                background: 'linear-gradient(90deg, #4caf50, #81c784)',
-              },
-              '&:hover': { 
-                transform: 'translateY(-4px)',
-                boxShadow: '0 12px 24px rgba(76, 175, 80, 0.25)',
-                borderColor: '#81c784',
-                '& .icon-box': {
-                  transform: 'scale(1.1) rotate(5deg)',
-                  bgcolor: '#c8e6c9'
-                }
-              }
-            }}
-          >
-            <Stack direction="row" alignItems="center" spacing={2}>
-              <Box 
-                className="icon-box"
-                sx={{
-                  width: { xs: 44, sm: 52 },
-                  height: { xs: 44, sm: 52 },
-                  borderRadius: 2.5,
-                  background: 'linear-gradient(135deg, #c8e6c9 0%, #a5d6a7 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.3s ease',
-                  boxShadow: '0 4px 8px rgba(76, 175, 80, 0.2)'
-                }}
-              >
-                <CheckCircle sx={{ 
-                  fontSize: { xs: 24, sm: 28 }, 
-                  color: '#2e7d32',
-                  filter: 'drop-shadow(0 2px 4px rgba(76, 175, 80, 0.3))'
-                }} />
-              </Box>
+          <div className="JobRoleManagement-stat-card JobRoleManagement-stat-green">
+            <div className="JobRoleManagement-stat-content">
+              <div className="JobRoleManagement-stat-icon-box">
+                <span className="JobRoleManagement-stat-icon">✓</span>
+              </div>
               
-              <Box sx={{ flex: 1 }}>
-                <Typography 
-                  variant="body2" 
-                  color="#546e7a"
-                  fontWeight={600}
-                  sx={{ 
-                    fontSize: { xs: '0.75rem', sm: '0.8rem' },
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    mb: 0.5
-                  }}
-                >
-                  Active Roles
-                </Typography>
-                <Stack direction="row" alignItems="baseline" justifyContent="space-between">
-                  <Typography 
-                    variant="h4" 
-                    fontWeight={800}
-                    sx={{ 
-                      fontSize: { xs: '1.5rem', sm: '1.8rem', md: '2rem' },
-                      lineHeight: 1,
-                      color: '#1b5e20',
-                      textShadow: '0 2px 4px rgba(76, 175, 80, 0.2)'
-                    }}
-                  >
-                    {stats.active}
-                  </Typography>
-                  <Chip 
-                    label={`${stats.total > 0 ? Math.round((stats.active / stats.total) * 100) : 0}%`}
-                    size="small"
-                    sx={{
-                      height: 22,
-                      fontSize: '0.65rem',
-                      fontWeight: 600,
-                      bgcolor: '#c8e6c9',
-                      color: '#2e7d32',
-                      border: '1px solid #a5d6a7'
-                    }}
-                  />
-                </Stack>
-              </Box>
-            </Stack>
-          </Paper>
+              <div className="JobRoleManagement-stat-info">
+                <span className="JobRoleManagement-stat-label">Active Roles</span>
+                <div className="JobRoleManagement-stat-value-wrapper">
+                  <span className="JobRoleManagement-stat-value">{stats.active}</span>
+                  <span className="JobRoleManagement-stat-chip">{stats.total > 0 ? Math.round((stats.active / stats.total) * 100) : 0}%</span>
+                </div>
+              </div>
+            </div>
+          </div>
 
           {/* With Department */}
-          <Paper 
-            elevation={0}
-            sx={{ 
-              p: { xs: 2, sm: 2.5 },
-              borderRadius: 3,
-              background: 'linear-gradient(135deg, #ffffff 0%, #e3f2fd 100%)',
-              border: '1px solid',
-              borderColor: '#90caf9',
-              boxShadow: '0 4px 12px rgba(33, 150, 243, 0.12)',
-              transition: 'all 0.3s ease',
-              position: 'relative',
-              overflow: 'hidden',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: '4px',
-                background: 'linear-gradient(90deg, #2196f3, #64b5f6)',
-              },
-              '&:hover': { 
-                transform: 'translateY(-4px)',
-                boxShadow: '0 12px 24px rgba(33, 150, 243, 0.25)',
-                borderColor: '#64b5f6',
-                '& .icon-box': {
-                  transform: 'scale(1.1) rotate(5deg)',
-                  bgcolor: '#bbdefb'
-                }
-              }
-            }}
-          >
-            <Stack direction="row" alignItems="center" spacing={2}>
-              <Box 
-                className="icon-box"
-                sx={{
-                  width: { xs: 44, sm: 52 },
-                  height: { xs: 44, sm: 52 },
-                  borderRadius: 2.5,
-                  background: 'linear-gradient(135deg, #bbdefb 0%, #90caf9 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.3s ease',
-                  boxShadow: '0 4px 8px rgba(33, 150, 243, 0.2)'
-                }}
-              >
-                <Category sx={{ 
-                  fontSize: { xs: 24, sm: 28 }, 
-                  color: '#1976d2',
-                  filter: 'drop-shadow(0 2px 4px rgba(33, 150, 243, 0.3))'
-                }} />
-              </Box>
+          <div className="JobRoleManagement-stat-card JobRoleManagement-stat-blue">
+            <div className="JobRoleManagement-stat-content">
+              <div className="JobRoleManagement-stat-icon-box">
+                <span className="JobRoleManagement-stat-icon">📂</span>
+              </div>
               
-              <Box sx={{ flex: 1 }}>
-                <Typography 
-                  variant="body2" 
-                  color="#546e7a"
-                  fontWeight={600}
-                  sx={{ 
-                    fontSize: { xs: '0.75rem', sm: '0.8rem' },
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    mb: 0.5
-                  }}
-                >
-                  With Dept
-                </Typography>
-                <Stack direction="row" alignItems="baseline" justifyContent="space-between">
-                  <Typography 
-                    variant="h4" 
-                    fontWeight={800}
-                    sx={{ 
-                      fontSize: { xs: '1.5rem', sm: '1.8rem', md: '2rem' },
-                      lineHeight: 1,
-                      color: '#0d47a1',
-                      textShadow: '0 2px 4px rgba(33, 150, 243, 0.2)'
-                    }}
-                  >
-                    {stats.withDepartment}
-                  </Typography>
-                  <Chip 
-                    label={`${stats.total > 0 ? Math.round((stats.withDepartment / stats.total) * 100) : 0}%`}
-                    size="small"
-                    sx={{
-                      height: 22,
-                      fontSize: '0.65rem',
-                      fontWeight: 600,
-                      bgcolor: '#bbdefb',
-                      color: '#1976d2',
-                      border: '1px solid #90caf9'
-                    }}
-                  />
-                </Stack>
-              </Box>
-            </Stack>
-          </Paper>
+              <div className="JobRoleManagement-stat-info">
+                <span className="JobRoleManagement-stat-label">With Dept</span>
+                <div className="JobRoleManagement-stat-value-wrapper">
+                  <span className="JobRoleManagement-stat-value">{stats.withDepartment}</span>
+                  <span className="JobRoleManagement-stat-chip">{stats.total > 0 ? Math.round((stats.withDepartment / stats.total) * 100) : 0}%</span>
+                </div>
+              </div>
+            </div>
+          </div>
 
           {/* Inactive */}
-          <Paper 
-            elevation={0}
-            sx={{ 
-              p: { xs: 2, sm: 2.5 },
-              borderRadius: 3,
-              background: 'linear-gradient(135deg, #ffffff 0%, #ffebee 100%)',
-              border: '1px solid',
-              borderColor: '#ffcdd2',
-              boxShadow: '0 4px 12px rgba(244, 67, 54, 0.12)',
-              transition: 'all 0.3s ease',
-              position: 'relative',
-              overflow: 'hidden',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: '4px',
-                background: 'linear-gradient(90deg, #f44336, #ef5350)',
-              },
-              '&:hover': { 
-                transform: 'translateY(-4px)',
-                boxShadow: '0 12px 24px rgba(244, 67, 54, 0.25)',
-                borderColor: '#ef9a9a',
-                '& .icon-box': {
-                  transform: 'scale(1.1) rotate(5deg)',
-                  bgcolor: '#ffcdd2'
-                }
-              }
-            }}
-          >
-            <Stack direction="row" alignItems="center" spacing={2}>
-              <Box 
-                className="icon-box"
-                sx={{
-                  width: { xs: 44, sm: 52 },
-                  height: { xs: 44, sm: 52 },
-                  borderRadius: 2.5,
-                  background: 'linear-gradient(135deg, #ffcdd2 0%, #ef9a9a 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.3s ease',
-                  boxShadow: '0 4px 8px rgba(244, 67, 54, 0.2)'
-                }}
-              >
-                <Cancel sx={{ 
-                  fontSize: { xs: 24, sm: 28 }, 
-                  color: '#c62828',
-                  filter: 'drop-shadow(0 2px 4px rgba(244, 67, 54, 0.3))'
-                }} />
-              </Box>
+          <div className="JobRoleManagement-stat-card JobRoleManagement-stat-red">
+            <div className="JobRoleManagement-stat-content">
+              <div className="JobRoleManagement-stat-icon-box">
+                <span className="JobRoleManagement-stat-icon">✗</span>
+              </div>
               
-              <Box sx={{ flex: 1 }}>
-                <Typography 
-                  variant="body2" 
-                  color="#546e7a"
-                  fontWeight={600}
-                  sx={{ 
-                    fontSize: { xs: '0.75rem', sm: '0.8rem' },
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    mb: 0.5
-                  }}
-                >
-                  Inactive
-                </Typography>
-                <Stack direction="row" alignItems="baseline" justifyContent="space-between">
-                  <Typography 
-                    variant="h4" 
-                    fontWeight={800}
-                    sx={{ 
-                      fontSize: { xs: '1.5rem', sm: '1.8rem', md: '2rem' },
-                      lineHeight: 1,
-                      color: '#b71c1c',
-                      textShadow: '0 2px 4px rgba(244, 67, 54, 0.2)'
-                    }}
-                  >
-                    {stats.inactive}
-                  </Typography>
-                  <Chip 
-                    label={`${stats.total > 0 ? Math.round((stats.inactive / stats.total) * 100) : 0}%`}
-                    size="small"
-                    sx={{
-                      height: 22,
-                      fontSize: '0.65rem',
-                      fontWeight: 600,
-                      bgcolor: '#ffcdd2',
-                      color: '#c62828',
-                      border: '1px solid #ef9a9a'
-                    }}
-                  />
-                </Stack>
-              </Box>
-            </Stack>
-          </Paper>
-        </Box>
+              <div className="JobRoleManagement-stat-info">
+                <span className="JobRoleManagement-stat-label">Inactive</span>
+                <div className="JobRoleManagement-stat-value-wrapper">
+                  <span className="JobRoleManagement-stat-value">{stats.inactive}</span>
+                  <span className="JobRoleManagement-stat-chip">{stats.total > 0 ? Math.round((stats.inactive / stats.total) * 100) : 0}%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
-      <Paper 
-        sx={{ 
-          p: { xs: 2, sm: 3 }, 
-          borderRadius: { xs: 2, sm: 3 }, 
-          boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
-          overflow: 'hidden',
-          position: 'relative'
-        }} 
-        elevation={6}
-      >
+      <div className="JobRoleManagement-paper">
         {/* Header Section */}
-        <Stack 
-          direction={{ xs: 'column', sm: 'row' }} 
-          justifyContent="space-between" 
-          alignItems={{ xs: 'stretch', sm: 'center' }} 
-          spacing={2}
-          mb={3}
-        >
-          <Box>
-            <Stack direction="row" alignItems="center" spacing={1.5}>
-              <Box sx={{
-                width: { xs: 40, sm: 48 },
-                height: { xs: 40, sm: 48 },
-                borderRadius: 2,
-                background: 'linear-gradient(145deg, #2196f3 0%, #1976d2 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 4px 12px rgba(33, 150, 243, 0.3)'
-              }}>
-                <Assignment sx={{ 
-                  fontSize: { xs: 24, sm: 28 }, 
-                  color: 'white' 
-                }} />
-              </Box>
-              <Box>
-                <Typography variant={isMobile ? "h6" : "h5"} fontWeight={700}>
-                  Job Role Management
-                </Typography>
-                {userInfo && (
-                  <Stack 
-                    direction="row" 
-                    spacing={1} 
-                    alignItems="center"
-                    sx={{ mt: 0.5, flexWrap: 'wrap', gap: 0.5 }}
-                  >
-                    <Chip 
-                      avatar={<Person sx={{ fontSize: 14 }} />}
-                      label={userInfo.name}
-                      size="small"
-                      sx={{ 
-                        height: 24, 
-                        fontSize: '0.7rem',
-                        bgcolor: 'grey.100'
-                      }}
-                    />
-                    <Chip 
-                      label={userInfo.role}
-                      size="small"
-                      sx={{ 
-                        height: 24, 
-                        fontSize: '0.7rem',
-                        bgcolor: isSuperAdmin ? 'primary.50' : 'primary.50',
-                        color: isSuperAdmin ? 'primary.main' : 'primary.main',
-                        fontWeight: 600
-                      }}
-                    />
-                    {userInfo.companyCode && (
-                      <Chip 
-                        icon={<Code sx={{ fontSize: 12 }} />}
-                        label={userInfo.companyCode}
-                        size="small"
-                        sx={{ 
-                          height: 24, 
-                          fontSize: '0.7rem',
-                          bgcolor: 'primary.50',
-                          color: 'primary.main'
-                        }}
-                      />
-                    )}
-                  </Stack>
-                )}
-              </Box>
-            </Stack>
-          </Box>
+        <div className="JobRoleManagement-header">
+          <div className="JobRoleManagement-header-left">
+            <div className="JobRoleManagement-header-icon-box">
+              <span className="JobRoleManagement-header-icon">📋</span>
+            </div>
+            <div className="JobRoleManagement-header-text">
+              <h2 className="JobRoleManagement-header-title">Job Role Management</h2>
+              {userInfo && (
+                <div className="JobRoleManagement-user-info">
+                  <span className="JobRoleManagement-user-chip">
+                    <span className="JobRoleManagement-chip-icon">👤</span>
+                    {userInfo.name}
+                  </span>
+                  <span className="JobRoleManagement-user-chip JobRoleManagement-chip-primary">
+                    {userInfo.role}
+                  </span>
+                  {userInfo.companyCode && (
+                    <span className="JobRoleManagement-user-chip JobRoleManagement-chip-primary">
+                      <span className="JobRoleManagement-chip-icon">📊</span>
+                      {userInfo.companyCode}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
           
-          <Stack 
-            direction={{ xs: 'column', sm: 'row' }} 
-            spacing={1.5}
-            sx={{ width: { xs: '100%', sm: 'auto' } }}
-          >
+          <div className="JobRoleManagement-header-actions">
             {/* Search Bar */}
-            <TextField
-              size="small"
-              placeholder="Search job roles..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              sx={{ 
-                width: { xs: '100%', sm: 280 },
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 3,
-                  bgcolor: 'white',
-                  transition: 'all 0.2s ease',
-                  '&:hover, &:focus-within': {
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                  }
-                }
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search sx={{ fontSize: 20, color: 'action.active' }} />
-                  </InputAdornment>
-                ),
-                endAdornment: searchTerm && (
-                  <InputAdornment position="end">
-                    <IconButton size="small" onClick={handleClearSearch}>
-                      <Clear sx={{ fontSize: 18 }} />
-                    </IconButton>
-                  </InputAdornment>
-                )
-              }}
-            />
+            <div className="JobRoleManagement-search-container">
+              <span className="JobRoleManagement-search-icon">🔍</span>
+              <input
+                type="text"
+                className="JobRoleManagement-search-input"
+                placeholder="Search job roles..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              {searchTerm && (
+                <button className="JobRoleManagement-clear-search" onClick={handleClearSearch}>
+                  <span className="JobRoleManagement-clear-icon">✕</span>
+                </button>
+              )}
+            </div>
             
             {/* Add Job Role Button */}
-            <Button
-              variant="contained"
-              startIcon={<Add />}
+            <button
+              className="JobRoleManagement-btn-primary"
               onClick={() => {
                 setEditingJobRole(null);
                 const user = getUserFromStorage();
@@ -1145,158 +596,82 @@ const JobRoleManagement = () => {
                 });
                 setOpenDialog(true);
               }}
-              sx={{ 
-                width: { xs: '100%', sm: 'auto' },
-                borderRadius: 3,
-                py: 1,
-                px: 3,
-                background: 'linear-gradient(145deg, #2196f3 0%, #1976d2 100%)',
-                boxShadow: '0 4px 12px rgba(33, 150, 243, 0.3)',
-                '&:hover': {
-                  background: 'linear-gradient(145deg, #1976d2 0%, #1565c0 100%)',
-                  boxShadow: '0 6px 16px rgba(33, 150, 243, 0.4)',
-                  transform: 'translateY(-2px)'
-                },
-                transition: 'all 0.3s ease'
-              }}
             >
-              {isMobile ? 'Add Job Role' : 'Add Job Role'}
-            </Button>
-          </Stack>
-        </Stack>
+              <span className="JobRoleManagement-btn-icon">+</span>
+              {isMobile ? 'Add' : 'Add Job Role'}
+            </button>
+          </div>
+        </div>
 
-        {/* Super Admin Toggle (if applicable) */}
+        {/* Super Admin Toggle */}
         {isSuperAdmin && (
-          <Fade in={isSuperAdmin}>
-            <Paper 
-              variant="outlined" 
-              sx={{ 
-                p: 2, 
-                mb: 3, 
-                borderRadius: 3,
-                bgcolor: 'primary.50',
-                borderColor: 'primary.200',
-                background: 'linear-gradient(145deg, #e3f2fd 0%, #bbdefb 100%)'
-              }}
-            >
-              <Stack 
-                direction={{ xs: 'column', sm: 'row' }} 
-                alignItems="center" 
-                justifyContent="space-between"
-                spacing={2}
-              >
-                <Stack direction="row" alignItems="center" spacing={1.5}>
-                  <Avatar sx={{ 
-                    bgcolor: 'primary.main',
-                    width: 40,
-                    height: 40
-                  }}>
-                    <AdminPanelSettings sx={{ fontSize: 24 }} />
-                  </Avatar>
-                  <Box>
-                    <Typography variant="body1" fontWeight={600} color="primary.dark">
-                      Super Admin Mode
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      You have access to view all job roles
-                    </Typography>
-                  </Box>
-                </Stack>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={showAllCompanies}
-                      onChange={(e) => setShowAllCompanies(e.target.checked)}
-                      color="primary"
-                    />
-                  }
-                  label={
-                    <Typography variant="body2" fontWeight={500}>
-                      {showAllCompanies ? 'Showing All Companies' : 'Showing My Company Only'}
-                    </Typography>
-                  }
-                />
-              </Stack>
-            </Paper>
-          </Fade>
+          <div className="JobRoleManagement-super-admin-panel">
+            <div className="JobRoleManagement-super-admin-content">
+              <div className="JobRoleManagement-super-admin-left">
+                <div className="JobRoleManagement-super-admin-avatar">👑</div>
+                <div className="JobRoleManagement-super-admin-text">
+                  <div className="JobRoleManagement-super-admin-title">Super Admin Mode</div>
+                  <div className="JobRoleManagement-super-admin-subtitle">You have access to view all job roles</div>
+                </div>
+              </div>
+              <div className="JobRoleManagement-super-admin-toggle">
+                <label className="JobRoleManagement-switch">
+                  <input
+                    type="checkbox"
+                    checked={showAllCompanies}
+                    onChange={(e) => setShowAllCompanies(e.target.checked)}
+                  />
+                  <span className="JobRoleManagement-slider"></span>
+                </label>
+                <span className="JobRoleManagement-toggle-label">
+                  {showAllCompanies ? 'Showing All Companies' : 'Showing My Company Only'}
+                </span>
+              </div>
+            </div>
+          </div>
         )}
 
         {!userInfo && (
-          <Alert 
-            severity="warning" 
-            sx={{ 
-              mb: 3, 
-              borderRadius: 2,
-              '& .MuiAlert-icon': { alignItems: 'center' }
-            }}
-          >
-            User information not found. Please login again.
-          </Alert>
+          <div className="JobRoleManagement-alert JobRoleManagement-alert-warning">
+            <span className="JobRoleManagement-alert-icon">⚠️</span>
+            <span>User information not found. Please login again.</span>
+          </div>
         )}
 
         {/* Table/List View */}
         {isMobile ? (
           // Mobile Card View
-          <Box sx={{ mt: 2 }}>
+          <div className="JobRoleManagement-mobile-view">
             {filteredJobRoles.length === 0 ? (
-              <Box sx={{ 
-                py: 8, 
-                px: 2, 
-                textAlign: 'center',
-                bgcolor: 'white',
-                borderRadius: 3,
-                border: '2px dashed',
-                borderColor: 'grey.200'
-              }}>
-                <Box sx={{
-                  width: 100,
-                  height: 100,
-                  borderRadius: '50%',
-                  bgcolor: 'grey.100',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  mx: 'auto',
-                  mb: 3
-                }}>
-                  <Assignment sx={{ fontSize: 50, color: 'grey.400' }} />
-                </Box>
-                <Typography variant="h6" fontWeight={700} gutterBottom>
-                  No Job Roles Found
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 4, maxWidth: 300, mx: 'auto' }}>
+              <div className="JobRoleManagement-empty-state">
+                <div className="JobRoleManagement-empty-icon">📋</div>
+                <h3 className="JobRoleManagement-empty-title">No Job Roles Found</h3>
+                <p className="JobRoleManagement-empty-text">
                   {searchTerm 
                     ? 'No job roles match your search criteria. Try different keywords.'
                     : 'Get started by creating your first job role to define positions.'}
-                </Typography>
+                </p>
                 {searchTerm ? (
-                  <Button 
-                    variant="outlined" 
+                  <button 
+                    className="JobRoleManagement-btn-outline"
                     onClick={handleClearSearch}
-                    startIcon={<Clear />}
-                    sx={{ borderRadius: 3, px: 4 }}
                   >
+                    <span className="JobRoleManagement-btn-icon">✕</span>
                     Clear Search
-                  </Button>
+                  </button>
                 ) : (
-                  <Button 
-                    variant="contained" 
-                    startIcon={<Add />}
+                  <button 
+                    className="JobRoleManagement-btn-primary"
                     onClick={() => {
                       setEditingJobRole(null);
                       setOpenDialog(true);
                     }}
-                    sx={{ 
-                      borderRadius: 3, 
-                      px: 4,
-                      py: 1.2,
-                      background: 'linear-gradient(145deg, #2196f3 0%, #1976d2 100%)'
-                    }}
                   >
+                    <span className="JobRoleManagement-btn-icon">+</span>
                     Add Job Role
-                  </Button>
+                  </button>
                 )}
-              </Box>
+              </div>
             ) : (
               <>
                 {filteredJobRoles
@@ -1307,632 +682,333 @@ const JobRoleManagement = () => {
                 }
               </>
             )}
-          </Box>
+          </div>
         ) : (
           // Desktop Table View
-          <TableContainer 
-            sx={{ 
-              borderRadius: 2,
-              border: '1px solid',
-              borderColor: 'grey.200',
-              overflow: 'auto'
-            }}
-          >
-            <Table>
-              <TableHead>
-                <TableRow sx={{ bgcolor: 'grey.100' }}>
-                  <TableCell sx={{ fontWeight: 700, fontSize: '0.9rem' }}>Job Role Name</TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: '0.9rem' }}>Description</TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: '0.9rem' }}>Department</TableCell>
+          <div className="JobRoleManagement-table-container">
+            <table className="JobRoleManagement-table">
+              <thead>
+                <tr>
+                  <th>Job Role Name</th>
+                  <th>Description</th>
+                  <th>Department</th>
                   {isSuperAdmin && showAllCompanies && (
-                    <TableCell sx={{ fontWeight: 700, fontSize: '0.9rem' }}>Company Code</TableCell>
+                    <th>Company Code</th>
                   )}
-                  <TableCell sx={{ fontWeight: 700, fontSize: '0.9rem' }}>Created By</TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: '0.9rem' }}>Created On</TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: '0.9rem' }}>Status</TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: '0.9rem' }}>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
+                  <th>Created By</th>
+                  <th>Created On</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
                 {filteredJobRoles.length === 0 ? (
-                  <TableRow>
-                    <TableCell 
-                      colSpan={isSuperAdmin && showAllCompanies ? 8 : 7} 
-                      align="center"
-                      sx={{ py: 8 }}
-                    >
-                      <Box sx={{ textAlign: 'center' }}>
-                        <Assignment sx={{ fontSize: 60, color: 'grey.300', mb: 2 }} />
-                        <Typography variant="h6" fontWeight={600} gutterBottom>
-                          No Job Roles Found
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {searchTerm ? 'No job roles match your search' : 'Get started by adding a job role'}
-                        </Typography>
-                      </Box>
-                    </TableCell>
-                  </TableRow>
+                  <tr>
+                    <td colSpan={isSuperAdmin && showAllCompanies ? 8 : 7} className="JobRoleManagement-empty-cell">
+                      <div className="JobRoleManagement-table-empty">
+                        <span className="JobRoleManagement-table-empty-icon">📋</span>
+                        <h4>No Job Roles Found</h4>
+                        <p>{searchTerm ? 'No job roles match your search' : 'Get started by adding a job role'}</p>
+                      </div>
+                    </td>
+                  </tr>
                 ) : (
                   filteredJobRoles
                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                     .map((jobRole, index) => (
-                      <TableRow 
-                        key={jobRole._id} 
-                        hover
-                        sx={{ 
-                          transition: 'all 0.2s ease',
-                          '&:hover': { 
-                            bgcolor: alpha(theme.palette.primary.main, 0.04),
-                            '& .action-buttons': {
-                              opacity: 1
-                            }
-                          },
-                          animation: `fadeIn 0.3s ease ${index * 0.05}s`
-                        }}
-                      >
-                        <TableCell>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                            <Avatar sx={{ 
-                              width: 36, 
-                              height: 36, 
-                              bgcolor: 'primary.50',
-                              color: 'primary.main',
-                              borderRadius: 2
-                            }}>
-                              <WorkOutline sx={{ fontSize: 20 }} />
-                            </Avatar>
-                            <Typography fontWeight={600}>{jobRole.name}</Typography>
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 250 }}>
+                      <tr key={jobRole._id} className="JobRoleManagement-table-row">
+                        <td>
+                          <div className="JobRoleManagement-job-role-cell">
+                            <span className="JobRoleManagement-job-role-icon">💼</span>
+                            <span className="JobRoleManagement-job-role-name">{jobRole.name}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <span className="JobRoleManagement-description">
                             {jobRole.description || '—'}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
+                          </span>
+                        </td>
+                        <td>
                           {jobRole.department?.name ? (
-                            <Chip 
-                              label={jobRole.department.name} 
-                              size="small" 
-                              sx={{ 
-                                bgcolor: 'primary.50',
-                                color: 'primary.main',
-                                fontWeight: 600,
-                                fontSize: '0.7rem'
-                              }}
-                            />
+                            <span className="JobRoleManagement-badge JobRoleManagement-badge-primary">
+                              {jobRole.department.name}
+                            </span>
                           ) : (
-                            <Typography variant="body2" color="text.disabled">
-                              Not assigned
-                            </Typography>
+                            <span className="JobRoleManagement-text-disabled">Not assigned</span>
                           )}
-                        </TableCell>
+                        </td>
                         {isSuperAdmin && showAllCompanies && (
-                          <TableCell>
+                          <td>
                             {jobRole.companyCode ? (
-                              <Chip 
-                                label={jobRole.companyCode} 
-                                size="small" 
-                                sx={{ 
-                                  bgcolor: 'primary.50',
-                                  color: 'primary.main',
-                                  fontWeight: 600,
-                                  fontSize: '0.7rem'
-                                }}
-                              />
+                              <span className="JobRoleManagement-badge JobRoleManagement-badge-primary">
+                                {jobRole.companyCode}
+                              </span>
                             ) : (
-                              <Typography variant="body2" color="text.disabled">
-                                Global
-                              </Typography>
+                              <span className="JobRoleManagement-text-disabled">Global</span>
                             )}
-                          </TableCell>
+                          </td>
                         )}
-                        <TableCell>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <Person sx={{ fontSize: 16, color: 'grey.500' }} />
-                            <Typography variant="body2">
-                              {jobRole.createdBy?.name || 'System'}
-                            </Typography>
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <Today sx={{ fontSize: 16, color: 'grey.500' }} />
-                            <Typography variant="body2">
-                              {formatDate(jobRole.createdAt)}
-                            </Typography>
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            label={jobRole.isActive !== false ? 'Active' : 'Inactive'}
-                            size="small"
-                            sx={{
-                              bgcolor: jobRole.isActive !== false ? 'success.50' : 'error.50',
-                              color: jobRole.isActive !== false ? 'success.main' : 'error.main',
-                              fontWeight: 600,
-                              fontSize: '0.7rem',
-                              height: 24
-                            }}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Box 
-                            className="action-buttons"
-                            sx={{ 
-                              display: 'flex', 
-                              gap: 1,
-                              opacity: { xs: 1, sm: 0.7 },
-                              transition: 'opacity 0.2s ease'
-                            }}
-                          >
-                            <Tooltip title="Edit Job Role" arrow>
-                              <IconButton 
-                                size="small" 
-                                onClick={() => handleEdit(jobRole)}
-                                sx={{ 
-                                  color: 'primary.main',
-                                  bgcolor: 'primary.50',
-                                  width: 32,
-                                  height: 32,
-                                  '&:hover': { 
-                                    bgcolor: 'primary.100',
-                                    transform: 'scale(1.1)'
-                                  }
-                                }}
-                              >
-                                <Edit fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Delete Job Role" arrow>
-                              <IconButton 
-                                size="small"
-                                onClick={() => handleDelete(jobRole._id)}
-                                sx={{ 
-                                  color: 'error.main',
-                                  bgcolor: 'error.50',
-                                  width: 32,
-                                  height: 32,
-                                  '&:hover': { 
-                                    bgcolor: 'error.100',
-                                    transform: 'scale(1.1)'
-                                  },
-                                  opacity: jobRole.isActive === false ? 0.5 : 1
-                                }}
-                                disabled={jobRole.isActive === false}
-                              >
-                                <Delete fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          </Box>
-                        </TableCell>
-                      </TableRow>
+                        <td>
+                          <div className="JobRoleManagement-created-by">
+                            <span className="JobRoleManagement-created-by-icon">👤</span>
+                            <span>{jobRole.createdBy?.name || 'System'}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="JobRoleManagement-created-date">
+                            <span className="JobRoleManagement-date-icon">📅</span>
+                            <span>{formatDate(jobRole.createdAt)}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <span className={`JobRoleManagement-badge JobRoleManagement-badge-${jobRole.isActive !== false ? 'success' : 'error'}`}>
+                            {jobRole.isActive !== false ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="JobRoleManagement-action-buttons">
+                            <button 
+                              className="JobRoleManagement-icon-btn JobRoleManagement-icon-edit"
+                              onClick={() => handleEdit(jobRole)}
+                              title="Edit Job Role"
+                            >
+                              <span className="JobRoleManagement-icon">✏️</span>
+                            </button>
+                            <button 
+                              className={`JobRoleManagement-icon-btn JobRoleManagement-icon-delete ${jobRole.isActive === false ? 'JobRoleManagement-disabled' : ''}`}
+                              onClick={() => handleDelete(jobRole._id)}
+                              title="Delete Job Role"
+                              disabled={jobRole.isActive === false}
+                            >
+                              <span className="JobRoleManagement-icon">🗑️</span>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
                     ))
                 )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+              </tbody>
+            </table>
+          </div>
         )}
 
         {/* Pagination */}
         {filteredJobRoles.length > 0 && (
-          <TablePagination
-            component="div"
-            count={filteredJobRoles.length}
-            page={page}
-            onPageChange={(e, newPage) => setPage(newPage)}
-            rowsPerPage={rowsPerPage}
-            onRowsPerPageChange={(e) => {
-              setRowsPerPage(parseInt(e.target.value, 10));
-              setPage(0);
-            }}
-            rowsPerPageOptions={isMobile ? [5, 10, 25] : [5, 10, 25, 50]}
-            sx={{
-              mt: 2,
-              '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
-                fontSize: { xs: '0.75rem', sm: '0.875rem' }
-              }
-            }}
-          />
+          <div className="JobRoleManagement-pagination">
+            <div className="JobRoleManagement-pagination-info">
+              Showing {page * rowsPerPage + 1} to {Math.min((page + 1) * rowsPerPage, filteredJobRoles.length)} of {filteredJobRoles.length} entries
+            </div>
+            <div className="JobRoleManagement-pagination-controls">
+              <select 
+                className="JobRoleManagement-rows-per-page"
+                value={rowsPerPage}
+                onChange={(e) => {
+                  setRowsPerPage(parseInt(e.target.value, 10));
+                  setPage(0);
+                }}
+              >
+                <option value={5}>5 per page</option>
+                <option value={10}>10 per page</option>
+                <option value={25}>25 per page</option>
+                <option value={50}>50 per page</option>
+              </select>
+              
+              <div className="JobRoleManagement-pagination-buttons">
+                <button 
+                  className="JobRoleManagement-pagination-btn"
+                  onClick={() => setPage(prev => Math.max(0, prev - 1))}
+                  disabled={page === 0}
+                >
+                  ‹
+                </button>
+                {Array.from({ length: Math.ceil(filteredJobRoles.length / rowsPerPage) }, (_, i) => (
+                  <button
+                    key={i}
+                    className={`JobRoleManagement-pagination-btn ${page === i ? 'JobRoleManagement-active' : ''}`}
+                    onClick={() => setPage(i)}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+                <button 
+                  className="JobRoleManagement-pagination-btn"
+                  onClick={() => setPage(prev => Math.min(Math.ceil(filteredJobRoles.length / rowsPerPage) - 1, prev + 1))}
+                  disabled={page === Math.ceil(filteredJobRoles.length / rowsPerPage) - 1}
+                >
+                  ›
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Floating Action Button for Mobile */}
         {isMobile && (
-          <Zoom in={isMobile}>
-            <Fab
-              color="primary"
-              sx={{
-                position: 'fixed',
-                bottom: 24,
-                right: 24,
-                boxShadow: '0 8px 16px rgba(33, 150, 243, 0.4)',
-                width: 56,
-                height: 56,
-                '&:hover': {
-                  transform: 'scale(1.1)',
-                  boxShadow: '0 12px 24px rgba(33, 150, 243, 0.5)'
-                },
-                transition: 'all 0.3s ease'
-              }}
-              onClick={() => {
-                const user = getUserFromStorage();
-                setFormData({ 
-                  name: '', 
-                  description: '',
-                  department: '',
-                  company: user?.company || '',
-                  companyCode: user?.companyCode || ''
-                });
-                setOpenDialog(true);
-              }}
-            >
-              <Add sx={{ fontSize: 28 }} />
-            </Fab>
-          </Zoom>
+          <button
+            className="JobRoleManagement-fab"
+            onClick={() => {
+              const user = getUserFromStorage();
+              setFormData({ 
+                name: '', 
+                description: '',
+                department: '',
+                company: user?.company || '',
+                companyCode: user?.companyCode || ''
+              });
+              setOpenDialog(true);
+            }}
+          >
+            <span className="JobRoleManagement-fab-icon">+</span>
+          </button>
         )}
 
         {/* Options Menu for Mobile */}
-        <Menu
-          anchorEl={anchorEl}
-          open={Boolean(anchorEl)}
-          onClose={handleMenuClose}
-          TransitionComponent={Zoom}
-          PaperProps={{
-            sx: {
-              borderRadius: 3,
-              boxShadow: '0 12px 32px rgba(0,0,0,0.2)',
-              minWidth: 200,
-              overflow: 'hidden',
-              '& .MuiMenuItem-root': {
-                py: 1.5,
-                px: 2
-              }
-            }
-          }}
-        >
-          <MenuItem onClick={() => {
-            handleEdit(selectedJobRoleMenu);
-            handleMenuClose();
-          }}>
-            <ListItemIcon>
-              <Edit fontSize="small" color="primary" />
-            </ListItemIcon>
-            <ListItemText 
-              primary="Edit Job Role"
-              secondary="Modify role details"
-              secondaryTypographyProps={{ fontSize: '0.7rem' }}
-            />
-          </MenuItem>
-          <Divider />
-          <MenuItem 
-            onClick={() => {
-              handleDelete(selectedJobRoleMenu?._id);
-              handleMenuClose();
-            }} 
-            disabled={!selectedJobRoleMenu?.isActive}
-            sx={{ 
-              color: 'error.main',
-              '&.Mui-disabled': { opacity: 0.5 }
-            }}
-          >
-            <ListItemIcon>
-              <Delete fontSize="small" color="error" />
-            </ListItemIcon>
-            <ListItemText 
-              primary="Delete Job Role"
-              secondary={!selectedJobRoleMenu?.isActive ? 'Already inactive' : 'Remove permanently'}
-              secondaryTypographyProps={{ fontSize: '0.7rem' }}
-            />
-          </MenuItem>
-        </Menu>
-
-        {/* CSS Animations */}
-        <style>
-          {`
-            @keyframes fadeIn {
-              from {
-                opacity: 0;
-                transform: translateY(10px);
-              }
-              to {
-                opacity: 1;
-                transform: translateY(0);
-              }
-            }
-            
-            @keyframes pulse {
-              0% {
-                box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.4);
-              }
-              70% {
-                box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
-              }
-              100% {
-                box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
-              }
-            }
-          `}
-        </style>
-      </Paper>
+        {anchorEl && (
+          <div className="JobRoleManagement-menu-overlay" onClick={handleMenuClose}>
+            <div className="JobRoleManagement-menu" style={{top: anchorEl.getBoundingClientRect().bottom, left: anchorEl.getBoundingClientRect().left}}>
+              <button className="JobRoleManagement-menu-item" onClick={() => {
+                handleEdit(selectedJobRoleMenu);
+                handleMenuClose();
+              }}>
+                <span className="JobRoleManagement-menu-icon">✏️</span>
+                <div className="JobRoleManagement-menu-text">
+                  <div className="JobRoleManagement-menu-title">Edit Job Role</div>
+                  <div className="JobRoleManagement-menu-subtitle">Modify role details</div>
+                </div>
+              </button>
+              <hr className="JobRoleManagement-menu-divider" />
+              <button 
+                className={`JobRoleManagement-menu-item ${!selectedJobRoleMenu?.isActive ? 'JobRoleManagement-menu-item-disabled' : ''}`}
+                onClick={() => {
+                  handleDelete(selectedJobRoleMenu?._id);
+                  handleMenuClose();
+                }} 
+                disabled={!selectedJobRoleMenu?.isActive}
+              >
+                <span className="JobRoleManagement-menu-icon">🗑️</span>
+                <div className="JobRoleManagement-menu-text">
+                  <div className="JobRoleManagement-menu-title">Delete Job Role</div>
+                  <div className="JobRoleManagement-menu-subtitle">
+                    {!selectedJobRoleMenu?.isActive ? 'Already inactive' : 'Remove permanently'}
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Add/Edit Dialog */}
-      <Dialog 
-        open={openDialog} 
-        onClose={() => !loading && setOpenDialog(false)} 
-        maxWidth="sm" 
-        fullWidth
-        fullScreen={isMobile}
-        TransitionComponent={Transition}
-        PaperProps={{
-          sx: {
-            borderRadius: isMobile ? 0 : 4,
-            overflow: 'hidden',
-            background: 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)'
-          }
-        }}
-      >
-        <DialogTitle sx={{ 
-          background: 'linear-gradient(145deg, #2196f3 0%, #1976d2 100%)',
-          color: 'white',
-          py: 3,
-          px: 3,
-          position: 'relative',
-          overflow: 'hidden'
-        }}>
-          {/* Decorative elements */}
-          <Box sx={{
-            position: 'absolute',
-            top: -50,
-            right: -50,
-            width: 150,
-            height: 150,
-            borderRadius: '50%',
-            background: 'rgba(255,255,255,0.1)',
-            animation: 'float 8s ease-in-out infinite'
-          }} />
-          <Box sx={{
-            position: 'absolute',
-            bottom: -50,
-            left: -50,
-            width: 150,
-            height: 150,
-            borderRadius: '50%',
-            background: 'rgba(255,255,255,0.1)',
-            animation: 'float 10s ease-in-out infinite reverse'
-          }} />
-          
-          <Stack direction="row" alignItems="center" spacing={2} position="relative">
-            <Box sx={{
-              width: 48,
-              height: 48,
-              borderRadius: '50%',
-              bgcolor: 'white',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 8px 16px rgba(0,0,0,0.2)'
-            }}>
-              {editingJobRole ? (
-                <Edit sx={{ color: 'primary.main', fontSize: 26 }} />
-              ) : (
-                <Add sx={{ color: 'primary.main', fontSize: 26 }} />
-              )}
-            </Box>
-            <Box>
-              <Typography variant="h6" fontWeight={700}>
-                {editingJobRole ? 'Edit Job Role' : 'Create New Job Role'}
-              </Typography>
-              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.9)' }}>
-                {editingJobRole 
-                  ? 'Update job role information' 
-                  : 'Add a new job role to define positions'}
-              </Typography>
-            </Box>
-          </Stack>
-        </DialogTitle>
-        
-        <DialogContent sx={{ p: { xs: 2.5, sm: 3.5 } }}>
-          <Box pt={1}>
-            {/* User Info Banner */}
-            {userInfo?.companyCode && !isSuperAdmin && (
-              <Paper 
-                variant="outlined" 
-                sx={{ 
-                  p: 1.5, 
-                  mb: 3, 
-                  borderRadius: 2,
-                  bgcolor: 'primary.50',
-                  borderColor: 'primary.200'
-                }}
-              >
-                <Stack direction="row" alignItems="center" spacing={1.5}>
-                  <Apartment sx={{ color: 'primary.main', fontSize: 22 }} />
-                  <Box>
-                    <Typography variant="body2" fontWeight={600} color="primary.dark">
+      {openDialog && (
+        <div className="JobRoleManagement-modal-overlay" onClick={() => !loading && setOpenDialog(false)}>
+          <div className={`JobRoleManagement-modal ${isMobile ? 'JobRoleManagement-modal-fullscreen' : ''}`} onClick={e => e.stopPropagation()}>
+            <div className="JobRoleManagement-modal-header">
+              <div className="JobRoleManagement-modal-header-content">
+                <div className="JobRoleManagement-modal-avatar">
+                  {editingJobRole ? '✏️' : '+'}
+                </div>
+                <div className="JobRoleManagement-modal-title-section">
+                  <h3 className="JobRoleManagement-modal-title">
+                    {editingJobRole ? 'Edit Job Role' : 'Create New Job Role'}
+                  </h3>
+                  <p className="JobRoleManagement-modal-subtitle">
+                    {editingJobRole 
+                      ? 'Update job role information' 
+                      : 'Add a new job role to define positions'}
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="JobRoleManagement-modal-body">
+              {/* User Info Banner */}
+              {userInfo?.companyCode && !isSuperAdmin && (
+                <div className="JobRoleManagement-info-banner">
+                  <span className="JobRoleManagement-info-icon">🏢</span>
+                  <div>
+                    <div className="JobRoleManagement-info-title">
                       Creating job role for {userInfo.companyCode}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
+                    </div>
+                    <div className="JobRoleManagement-info-subtitle">
                       This role will be associated with your company
-                    </Typography>
-                  </Box>
-                </Stack>
-              </Paper>
-            )}
-            
-            <TextField
-              label="Job Role Name *"
-              fullWidth
-              margin="normal"
-              value={formData.name}
-              onChange={(e) => setFormData({...formData, name: e.target.value})}
-              required
-              size={isMobile ? "small" : "medium"}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <WorkOutline sx={{ fontSize: 20, color: 'primary.main' }} />
-                  </InputAdornment>
-                )
-              }}
-              sx={{ 
-                '& .MuiOutlinedInput-root': { 
-                  borderRadius: 2,
-                  '&:hover fieldset': {
-                    borderColor: 'primary.main',
-                  }
-                },
-                mb: 2
-              }}
-            />
-            
-            <TextField
-              label="Description"
-              fullWidth
-              margin="normal"
-              multiline
-              rows={isMobile ? 3 : 4}
-              value={formData.description}
-              onChange={(e) => setFormData({...formData, description: e.target.value})}
-              size={isMobile ? "small" : "medium"}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Description sx={{ fontSize: 20, color: 'grey.500' }} />
-                  </InputAdornment>
-                )
-              }}
-              placeholder="Describe the responsibilities of this role (optional)"
-              sx={{ 
-                '& .MuiOutlinedInput-root': { 
-                  borderRadius: 2,
-                  alignItems: 'flex-start'
-                },
-                mb: 2
-              }}
-            />
-            
-            <FormControl fullWidth margin="normal" required>
-              <InputLabel>Department *</InputLabel>
-              <Select
-                value={formData.department}
-                onChange={(e) => setFormData({...formData, department: e.target.value})}
-                label="Department *"
-                size={isMobile ? "small" : "medium"}
-                sx={{ borderRadius: 2 }}
-              >
-                <MenuItem value="">
-                  <em>Select Department</em>
-                </MenuItem>
-                {departments.map(dept => (
-                  <MenuItem key={dept._id} value={dept._id}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Category sx={{ fontSize: 18, color: 'primary.main' }} />
-                      <Typography variant="body2">{dept.name}</Typography>
-                      {dept.companyCode && (
-                        <Chip 
-                          label={dept.companyCode} 
-                          size="small" 
-                          sx={{ 
-                            height: 18, 
-                            fontSize: '0.6rem',
-                            ml: 'auto',
-                            bgcolor: 'primary.50',
-                            color: 'primary.main'
-                          }}
-                        />
-                      )}
-                    </Box>
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            {/* Removed Optional Company Assignment section */}
-          </Box>
-        </DialogContent>
-        
-        <DialogActions sx={{ 
-          p: 3, 
-          pt: 2,
-          borderTop: '1px solid',
-          borderColor: 'grey.200',
-          bgcolor: 'grey.50'
-        }}>
-          <Stack direction="row" spacing={2} justifyContent="flex-end" width="100%">
-            <Button 
-              onClick={() => setOpenDialog(false)} 
-              variant="outlined"
-              disabled={loading}
-              sx={{ 
-                borderRadius: 2,
-                px: 4,
-                py: 1,
-                fontSize: '0.875rem',
-                fontWeight: 600,
-                borderColor: 'grey.400',
-                color: 'text.primary',
-                '&:hover': {
-                  borderColor: 'grey.600',
-                  bgcolor: 'grey.100'
-                }
-              }}
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleSubmit} 
-              variant="contained"
-              disabled={loading || !formData.name.trim() || !formData.department}
-              sx={{ 
-                borderRadius: 2,
-                px: 5,
-                py: 1,
-                fontSize: '0.875rem',
-                fontWeight: 700,
-                background: 'linear-gradient(145deg, #2196f3 0%, #1976d2 100%)',
-                boxShadow: '0 4px 12px rgba(33, 150, 243, 0.3)',
-                '&:hover': {
-                  background: 'linear-gradient(145deg, #1976d2 0%, #1565c0 100%)',
-                  boxShadow: '0 6px 16px rgba(33, 150, 243, 0.4)',
-                  transform: 'translateY(-2px)'
-                },
-                transition: 'all 0.3s ease',
-                position: 'relative',
-                overflow: 'hidden',
-                '&::after': {
-                  content: '""',
-                  position: 'absolute',
-                  top: 0,
-                  left: '-100%',
-                  width: '100%',
-                  height: '100%',
-                  background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
-                  transition: 'left 0.5s ease',
-                },
-                '&:hover::after': {
-                  left: '100%'
-                }
-              }}
-            >
-              {loading ? (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <CircularProgress size={16} color="inherit" />
-                  <span>Saving...</span>
-                </Box>
-              ) : (
-                editingJobRole ? 'Update Job Role' : 'Create Job Role'
+                    </div>
+                  </div>
+                </div>
               )}
-            </Button>
-          </Stack>
-        </DialogActions>
-      </Dialog>
-
-      {/* Refresh Indicator (hidden) */}
-      <Snackbar
-        open={false}
-        autoHideDuration={3000}
-      />
-    </Box>
+              
+              <div className="JobRoleManagement-form-group">
+                <label className="JobRoleManagement-form-label">Job Role Name *</label>
+                <div className="JobRoleManagement-input-wrapper">
+                  <span className="JobRoleManagement-input-icon">💼</span>
+                  <input
+                    type="text"
+                    className="JobRoleManagement-form-input"
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    placeholder="Enter job role name"
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div className="JobRoleManagement-form-group">
+                <label className="JobRoleManagement-form-label">Description</label>
+                <div className="JobRoleManagement-textarea-wrapper">
+                  <span className="JobRoleManagement-textarea-icon">📝</span>
+                  <textarea
+                    className="JobRoleManagement-form-textarea"
+                    rows={isMobile ? 3 : 4}
+                    value={formData.description}
+                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    placeholder="Describe the responsibilities of this role (optional)"
+                  />
+                </div>
+              </div>
+              
+              <div className="JobRoleManagement-form-group">
+                <label className="JobRoleManagement-form-label">Department *</label>
+                <select
+                  className="JobRoleManagement-form-select"
+                  value={formData.department}
+                  onChange={(e) => setFormData({...formData, department: e.target.value})}
+                >
+                  <option value="">Select Department</option>
+                  {departments.map(dept => (
+                    <option key={dept._id} value={dept._id}>
+                      {dept.name} {dept.companyCode ? `(${dept.companyCode})` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            
+            <div className="JobRoleManagement-modal-footer">
+              <button 
+                className="JobRoleManagement-btn-secondary"
+                onClick={() => setOpenDialog(false)}
+                disabled={loading}
+              >
+                Cancel
+              </button>
+              <button 
+                className="JobRoleManagement-btn-primary"
+                onClick={handleSubmit}
+                disabled={loading || !formData.name.trim() || !formData.department}
+              >
+                {loading ? (
+                  <>
+                    <span className="JobRoleManagement-spinner"></span>
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  editingJobRole ? 'Update Job Role' : 'Create Job Role'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

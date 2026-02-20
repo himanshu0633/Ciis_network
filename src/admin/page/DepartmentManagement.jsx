@@ -1,37 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box, Button, TextField, Typography, Paper, 
-  Table, TableBody, TableCell, TableContainer, 
-  TableHead, TableRow, TablePagination, IconButton,
-  Dialog, DialogTitle, DialogContent, DialogActions,
-  Chip, Tooltip, Alert, Snackbar, FormControlLabel,
-  Switch, Card, CardContent, Stack, Avatar, 
-  InputAdornment, Divider, Fade, Zoom, Slide,
-  useTheme, useMediaQuery, Badge, Grid, Fab,
-  Menu, MenuItem, ListItemIcon, ListItemText,
-  LinearProgress, CircularProgress
-} from '@mui/material';
-import { alpha } from '@mui/material/styles';
-import { 
-  Edit, Delete, Add, Search, Business, 
-  Description, Person, Code, Refresh,
-  MoreVert, FilterList, Clear, CheckCircle,
-  Cancel, CorporateFare, AdminPanelSettings,
-  VerifiedUser, FolderSpecial, Today,
-  Schedule, Apartment, ArrowForward
-} from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import axios from '../../utils/axiosConfig';
-
-// Transition for dialog
-const Transition = React.forwardRef(function Transition(props, ref) {
-  return <Slide direction="up" ref={ref} {...props} />;
-});
+import './DepartmentManagement.css';
 
 const DepartmentManagement = () => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isTablet, setIsTablet] = useState(window.innerWidth >= 768 && window.innerWidth < 1024);
   
   const [departments, setDepartments] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
@@ -49,7 +23,6 @@ const DepartmentManagement = () => {
   const [userInfo, setUserInfo] = useState(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [showAllCompanies, setShowAllCompanies] = useState(false);
-  const [anchorEl, setAnchorEl] = useState(null);
   const [selectedDeptMenu, setSelectedDeptMenu] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [stats, setStats] = useState({
@@ -57,6 +30,24 @@ const DepartmentManagement = () => {
     active: 0,
     inactive: 0
   });
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
+  const [showMenu, setShowMenu] = useState(false);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [sortBy, setSortBy] = useState('name');
+  const [sortOrder, setSortOrder] = useState('asc');
+
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      const tablet = window.innerWidth >= 768 && window.innerWidth < 1024;
+      setIsMobile(mobile);
+      setIsTablet(tablet);
+      setRowsPerPage(mobile ? 5 : tablet ? 8 : 10);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Function to get user from localStorage
   const getUserFromStorage = () => {
@@ -183,33 +174,29 @@ const DepartmentManagement = () => {
       if (editingDept) {
         await axios.put(`/departments/${editingDept._id}`, submitData);
         toast.success(
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <CheckCircle sx={{ color: '#4caf50', fontSize: 24 }} />
-            <Box>
-              <Typography variant="body1" fontWeight={600}>
-                Department Updated!
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {formData.name} has been updated successfully
-              </Typography>
-            </Box>
-          </Box>,
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <svg style={{ color: '#4caf50', width: '24px', height: '24px' }} viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            </svg>
+            <div>
+              <div style={{ fontWeight: 600 }}>Department Updated!</div>
+              <div style={{ fontSize: '0.75rem', color: '#666' }}>{formData.name} has been updated successfully</div>
+            </div>
+          </div>,
           { icon: false, autoClose: 3000 }
         );
       } else {
         await axios.post('/departments', submitData);
         toast.success(
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <CheckCircle sx={{ color: '#4caf50', fontSize: 24 }} />
-            <Box>
-              <Typography variant="body1" fontWeight={600}>
-                Department Created!
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {formData.name} has been added to your organization
-              </Typography>
-            </Box>
-          </Box>,
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <svg style={{ color: '#4caf50', width: '24px', height: '24px' }} viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            </svg>
+            <div>
+              <div style={{ fontWeight: 600 }}>Department Created!</div>
+              <div style={{ fontSize: '0.75rem', color: '#666' }}>{formData.name} has been added to your organization</div>
+            </div>
+          </div>,
           { icon: false, autoClose: 3000 }
         );
       }
@@ -240,17 +227,15 @@ const DepartmentManagement = () => {
       setLoading(true);
       await axios.delete(`/departments/${id}`);
       toast.success(
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Delete sx={{ color: '#f44336', fontSize: 24 }} />
-          <Box>
-            <Typography variant="body1" fontWeight={600}>
-              Department Deleted!
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {dept?.name} has been removed
-            </Typography>
-          </Box>
-        </Box>,
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <svg style={{ color: '#f44336', width: '24px', height: '24px' }} viewBox="0 0 24 24" fill="currentColor">
+            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+          </svg>
+          <div>
+            <div style={{ fontWeight: 600 }}>Department Deleted!</div>
+            <div style={{ fontSize: '0.75rem', color: '#666' }}>{dept?.name} has been removed</div>
+          </div>
+        </div>,
         { icon: false, autoClose: 3000 }
       );
       setRefreshKey(prev => prev + 1);
@@ -273,17 +258,22 @@ const DepartmentManagement = () => {
       companyCode: dept.companyCode || user?.companyCode || ''
     });
     setOpenDialog(true);
-    setAnchorEl(null);
+    setShowMenu(false);
   };
 
   // Handle menu open
   const handleMenuOpen = (event, dept) => {
-    setAnchorEl(event.currentTarget);
+    const rect = event.currentTarget.getBoundingClientRect();
+    setMenuPosition({
+      top: rect.bottom + window.scrollY,
+      left: rect.left + window.scrollX
+    });
     setSelectedDeptMenu(dept);
+    setShowMenu(true);
   };
 
   const handleMenuClose = () => {
-    setAnchorEl(null);
+    setShowMenu(false);
     setSelectedDeptMenu(null);
   };
 
@@ -296,6 +286,27 @@ const DepartmentManagement = () => {
   // Handle clear search
   const handleClearSearch = () => {
     setSearchTerm('');
+  };
+
+  // Sort departments
+  const sortDepartments = (depts) => {
+    return [...depts].sort((a, b) => {
+      let comparison = 0;
+      switch(sortBy) {
+        case 'name':
+          comparison = a.name.localeCompare(b.name);
+          break;
+        case 'date':
+          comparison = new Date(b.createdAt) - new Date(a.createdAt);
+          break;
+        case 'status':
+          comparison = (a.isActive === b.isActive) ? 0 : a.isActive ? -1 : 1;
+          break;
+        default:
+          comparison = 0;
+      }
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
   };
 
   // Filter departments
@@ -318,7 +329,7 @@ const DepartmentManagement = () => {
       );
     }
     
-    return filtered;
+    return sortDepartments(filtered);
   };
 
   const filteredDepartments = getFilteredDepartments();
@@ -338,793 +349,494 @@ const DepartmentManagement = () => {
     }
   };
 
-  // Mobile card view
+  const handlePageChange = (newPage) => {
+    setPage(newPage);
+    if (isMobile) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handleRowsPerPageChange = (e) => {
+    setRowsPerPage(parseInt(e.target.value, 10));
+    setPage(0);
+  };
+
+  // Mobile Department Card Component
   const MobileDepartmentCard = ({ dept }) => (
-    <Card 
-      sx={{ 
-        mb: 2, 
-        borderRadius: 3,
-        border: '1px solid',
-        borderColor: 'grey.200',
-        transition: 'all 0.3s ease',
-        position: 'relative',
-        overflow: 'visible',
-        '&:hover': {
-          boxShadow: '0 12px 24px rgba(0,0,0,0.12)',
-          transform: 'translateY(-4px)',
-          borderColor: 'primary.200'
-        }
-      }}
-    >
-      {/* Status Indicator */}
-      <Box sx={{
-        position: 'absolute',
-        top: 12,
-        right: 12,
-        width: 8,
-        height: 8,
-        borderRadius: '50%',
-        bgcolor: dept.isActive !== false ? '#4caf50' : '#f44336',
-        boxShadow: `0 0 0 2px ${dept.isActive !== false ? 'rgba(76, 175, 80, 0.2)' : 'rgba(244, 67, 54, 0.2)'}`,
-        animation: dept.isActive !== false ? 'pulse 2s infinite' : 'none'
-      }} />
+    <div className="DepartmentManagement-mobile-card">
+      <div className="DepartmentManagement-status-indicator" style={{
+        backgroundColor: dept.isActive !== false ? '#4caf50' : '#f44336'
+      }}></div>
       
-      <CardContent sx={{ p: 2.5 }}>
-        <Stack spacing={2.5}>
-          {/* Header with Icon and Name */}
-          <Stack direction="row" alignItems="center" spacing={2}>
-            <Avatar 
-              sx={{ 
-                bgcolor: 'primary.50',
-                color: 'primary.main',
-                width: 48,
-                height: 48,
-                borderRadius: 2,
-                boxShadow: '0 4px 8px rgba(33, 150, 243, 0.2)'
-              }}
-            >
-              <Business sx={{ fontSize: 26 }} />
-            </Avatar>
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="h6" fontWeight={700} sx={{ fontSize: '1.1rem', mb: 0.5 }}>
-                {dept.name}
-              </Typography>
-              <Stack direction="row" spacing={1} alignItems="center">
-                {dept.companyCode && (
-                  <Chip 
-                    label={dept.companyCode} 
-                    size="small" 
-                    sx={{ 
-                      height: 22, 
-                      fontSize: '0.65rem',
-                      bgcolor: 'primary.50',
-                      color: 'primary.main',
-                      fontWeight: 600,
-                      '& .MuiChip-label': { px: 1 }
-                    }}
-                  />
-                )}
-                <Chip
-                  label={dept.isActive !== false ? 'Active' : 'Inactive'}
-                  size="small"
-                  sx={{
-                    height: 22,
-                    fontSize: '0.65rem',
-                    bgcolor: dept.isActive !== false ? 'success.50' : 'error.50',
-                    color: dept.isActive !== false ? 'success.main' : 'error.main',
-                    fontWeight: 600,
-                    '& .MuiChip-label': { px: 1 }
-                  }}
-                />
-              </Stack>
-            </Box>
-          </Stack>
-
-          {/* Description */}
-          {dept.description && (
-            <Box sx={{ 
-              bgcolor: 'grey.50', 
-              p: 1.5, 
-              borderRadius: 2,
-              border: '1px solid',
-              borderColor: 'grey.200'
-            }}>
-              <Stack direction="row" spacing={1} alignItems="flex-start">
-                <Description sx={{ fontSize: 18, color: 'grey.500', mt: 0.2 }} />
-                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5 }}>
-                  {dept.description}
-                </Typography>
-              </Stack>
-            </Box>
-          )}
-
-          {/* Footer with Meta Info and Actions */}
-          <Stack direction="row" justifyContent="space-between" alignItems="center">
-            <Stack direction="row" spacing={1.5}>
-              <Tooltip title="Created">
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <Today sx={{ fontSize: 14, color: 'grey.500' }} />
-                  <Typography variant="caption" color="text.secondary">
-                    {formatDate(dept.createdAt)}
-                  </Typography>
-                </Box>
-              </Tooltip>
-              {dept.createdBy?.name && (
-                <Tooltip title="Created By">
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <Person sx={{ fontSize: 14, color: 'grey.500' }} />
-                    <Typography variant="caption" color="text.secondary">
-                      {dept.createdBy.name}
-                    </Typography>
-                  </Box>
-                </Tooltip>
+      <div className="DepartmentManagement-card-content">
+        <div className="DepartmentManagement-card-header">
+          <div className="DepartmentManagement-card-icon">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10z"/>
+            </svg>
+          </div>
+          <div className="DepartmentManagement-card-info">
+            <div className="DepartmentManagement-card-title">{dept.name}</div>
+            <div className="DepartmentManagement-card-tags">
+              {dept.companyCode && (
+                <span className="DepartmentManagement-tag DepartmentManagement-tag-code">{dept.companyCode}</span>
               )}
-            </Stack>
-            
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Tooltip title="Edit">
-                <IconButton 
-                  size="small" 
-                  onClick={() => handleEdit(dept)}
-                  sx={{ 
-                    bgcolor: 'primary.50',
-                    color: 'primary.main',
-                    width: 32,
-                    height: 32,
-                    '&:hover': { 
-                      bgcolor: 'primary.100',
-                      transform: 'scale(1.1)'
-                    },
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  <Edit sx={{ fontSize: 18 }} />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Delete">
-                <IconButton 
-                  size="small"
-                  onClick={() => handleDelete(dept._id)}
-                  sx={{ 
-                    bgcolor: 'error.50',
-                    color: 'error.main',
-                    width: 32,
-                    height: 32,
-                    '&:hover': { 
-                      bgcolor: 'error.100',
-                      transform: 'scale(1.1)'
-                    },
-                    transition: 'all 0.2s ease',
-                    opacity: dept.isActive === false ? 0.5 : 1
-                  }}
-                  disabled={dept.isActive === false}
-                >
-                  <Delete sx={{ fontSize: 18 }} />
-                </IconButton>
-              </Tooltip>
-            </Box>
-          </Stack>
-        </Stack>
-      </CardContent>
-    </Card>
-  );
+              <span className={`DepartmentManagement-tag ${dept.isActive !== false ? 'DepartmentManagement-tag-active' : 'DepartmentManagement-tag-inactive'}`}>
+                {dept.isActive !== false ? 'Active' : 'Inactive'}
+              </span>
+            </div>
+          </div>
+        </div>
 
-  return (
-    <Box sx={{ 
-      p: { xs: 1.5, sm: 2, md: 3 },
-      minHeight: '100vh',
-      bgcolor: '#f8fafc'
-    }}>
-      {/* Loading Overlay */}
-      {loading && (
-        <Box sx={{ width: '100%', mb: 2 }}>
-          <LinearProgress sx={{ borderRadius: 1, height: 4 }} />
-        </Box>
-      )}
-
-      {/* Stats Cards - Always visible, in a single line with consistent blue theme */}
-     {departments.length > 0 && (
-  <Box sx={{ 
-    display: 'grid', 
-    gridTemplateColumns: { xs: '1fr 1fr', sm: '1fr 1fr 1fr' },
-    gap: { xs: 1.5, sm: 2.5 },
-    mb: 4,
-    width: '100%'
-  }}>
-    {/* Total Departments Card */}
-    <Paper 
-      elevation={0}
-      sx={{ 
-        p: { xs: 2, sm: 2.5 },
-        borderRadius: 3,
-        background: 'linear-gradient(135deg, #ffffff 0%, #f5f9ff 100%)',
-        border: '1px solid',
-        borderColor: '#e3f2fd',
-        boxShadow: '0 4px 12px rgba(33, 150, 243, 0.12)',
-        transition: 'all 0.3s ease',
-        position: 'relative',
-        overflow: 'hidden',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: '4px',
-          background: 'linear-gradient(90deg, #2196f3, #64b5f6)',
-        },
-        '&:hover': { 
-          transform: 'translateY(-4px)',
-          boxShadow: '0 12px 24px rgba(33, 150, 243, 0.25)',
-          borderColor: '#90caf9',
-          '& .icon-box': {
-            transform: 'scale(1.1) rotate(5deg)',
-            bgcolor: '#e3f2fd'
-          }
-        }
-      }}
-    >
-      <Stack direction="row" alignItems="center" spacing={2}>
-        <Box 
-          className="icon-box"
-          sx={{
-            width: { xs: 44, sm: 52 },
-            height: { xs: 44, sm: 52 },
-            borderRadius: 2.5,
-            background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'all 0.3s ease',
-            boxShadow: '0 4px 8px rgba(33, 150, 243, 0.2)'
-          }}
-        >
-          <CorporateFare sx={{ 
-            fontSize: { xs: 24, sm: 28 }, 
-            color: '#1976d2',
-            filter: 'drop-shadow(0 2px 4px rgba(33, 150, 243, 0.3))'
-          }} />
-        </Box>
-        
-        <Box sx={{ flex: 1 }}>
-          <Typography 
-            variant="body2" 
-            color="#546e7a"
-            fontWeight={600}
-            sx={{ 
-              fontSize: { xs: '0.75rem', sm: '0.8rem' },
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-              mb: 0.5
-            }}
-          >
-            Total Departments
-          </Typography>
-          <Stack direction="row" alignItems="baseline" justifyContent="space-between">
-            <Typography 
-              variant="h4" 
-              fontWeight={800}
-              sx={{ 
-                fontSize: { xs: '1.5rem', sm: '1.8rem', md: '2rem' },
-                lineHeight: 1,
-                color: '#0d47a1',
-                textShadow: '0 2px 4px rgba(33, 150, 243, 0.2)'
-              }}
-            >
-              {stats.total}
-            </Typography>
-            <Chip 
-              label="All departments"
-              size="small"
-              sx={{
-                height: 22,
-                fontSize: '0.65rem',
-                fontWeight: 600,
-                bgcolor: '#e3f2fd',
-                color: '#1976d2',
-                border: '1px solid #bbdefb'
-              }}
-            />
-          </Stack>
-        </Box>
-      </Stack>
-    </Paper>
-
-    {/* Active Departments Card */}
-    <Paper 
-      elevation={0}
-      sx={{ 
-        p: { xs: 2, sm: 2.5 },
-        borderRadius: 3,
-        background: 'linear-gradient(135deg, #ffffff 0%, #f1f8e9 100%)',
-        border: '1px solid',
-        borderColor: '#c8e6c9',
-        boxShadow: '0 4px 12px rgba(76, 175, 80, 0.12)',
-        transition: 'all 0.3s ease',
-        position: 'relative',
-        overflow: 'hidden',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: '4px',
-          background: 'linear-gradient(90deg, #4caf50, #81c784)',
-        },
-        '&:hover': { 
-          transform: 'translateY(-4px)',
-          boxShadow: '0 12px 24px rgba(76, 175, 80, 0.25)',
-          borderColor: '#a5d6a7',
-          '& .icon-box': {
-            transform: 'scale(1.1) rotate(5deg)',
-            bgcolor: '#c8e6c9'
-          }
-        }
-      }}
-    >
-      <Stack direction="row" alignItems="center" spacing={2}>
-        <Box 
-          className="icon-box"
-          sx={{
-            width: { xs: 44, sm: 52 },
-            height: { xs: 44, sm: 52 },
-            borderRadius: 2.5,
-            background: 'linear-gradient(135deg, #c8e6c9 0%, #a5d6a7 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'all 0.3s ease',
-            boxShadow: '0 4px 8px rgba(76, 175, 80, 0.2)'
-          }}
-        >
-          <CheckCircle sx={{ 
-            fontSize: { xs: 24, sm: 28 }, 
-            color: '#2e7d32',
-            filter: 'drop-shadow(0 2px 4px rgba(76, 175, 80, 0.3))'
-          }} />
-        </Box>
-        
-        <Box sx={{ flex: 1 }}>
-          <Typography 
-            variant="body2" 
-            color="#546e7a"
-            fontWeight={600}
-            sx={{ 
-              fontSize: { xs: '0.75rem', sm: '0.8rem' },
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-              mb: 0.5
-            }}
-          >
-            Active Departments
-          </Typography>
-          <Stack direction="row" alignItems="baseline" justifyContent="space-between">
-            <Typography 
-              variant="h4" 
-              fontWeight={800}
-              sx={{ 
-                fontSize: { xs: '1.5rem', sm: '1.8rem', md: '2rem' },
-                lineHeight: 1,
-                color: '#1b5e20',
-                textShadow: '0 2px 4px rgba(76, 175, 80, 0.2)'
-              }}
-            >
-              {stats.active}
-            </Typography>
-            <Chip 
-              label={`${stats.total > 0 ? Math.round((stats.active / stats.total) * 100) : 0}%`}
-              size="small"
-              sx={{
-                height: 22,
-                fontSize: '0.65rem',
-                fontWeight: 600,
-                bgcolor: '#c8e6c9',
-                color: '#2e7d32',
-                border: '1px solid #a5d6a7'
-              }}
-            />
-          </Stack>
-        </Box>
-      </Stack>
-    </Paper>
-
-    {/* Inactive Departments Card */}
-    <Paper 
-      elevation={0}
-      sx={{ 
-        p: { xs: 2, sm: 2.5 },
-        borderRadius: 3,
-        background: 'linear-gradient(135deg, #ffffff 0%, #ffebee 100%)',
-        border: '1px solid',
-        borderColor: '#ffcdd2',
-        boxShadow: '0 4px 12px rgba(244, 67, 54, 0.12)',
-        transition: 'all 0.3s ease',
-        position: 'relative',
-        overflow: 'hidden',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: '4px',
-          background: 'linear-gradient(90deg, #f44336, #ef5350)',
-        },
-        '&:hover': { 
-          transform: 'translateY(-4px)',
-          boxShadow: '0 12px 24px rgba(244, 67, 54, 0.25)',
-          borderColor: '#ef9a9a',
-          '& .icon-box': {
-            transform: 'scale(1.1) rotate(5deg)',
-            bgcolor: '#ffcdd2'
-          }
-        }
-      }}
-    >
-      <Stack direction="row" alignItems="center" spacing={2}>
-        <Box 
-          className="icon-box"
-          sx={{
-            width: { xs: 44, sm: 52 },
-            height: { xs: 44, sm: 52 },
-            borderRadius: 2.5,
-            background: 'linear-gradient(135deg, #ffcdd2 0%, #ef9a9a 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'all 0.3s ease',
-            boxShadow: '0 4px 8px rgba(244, 67, 54, 0.2)'
-          }}
-        >
-          <Cancel sx={{ 
-            fontSize: { xs: 24, sm: 28 }, 
-            color: '#c62828',
-            filter: 'drop-shadow(0 2px 4px rgba(244, 67, 54, 0.3))'
-          }} />
-        </Box>
-        
-        <Box sx={{ flex: 1 }}>
-          <Typography 
-            variant="body2" 
-            color="#546e7a"
-            fontWeight={600}
-            sx={{ 
-              fontSize: { xs: '0.75rem', sm: '0.8rem' },
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-              mb: 0.5
-            }}
-          >
-            Inactive Departments
-          </Typography>
-          <Stack direction="row" alignItems="baseline" justifyContent="space-between">
-            <Typography 
-              variant="h4" 
-              fontWeight={800}
-              sx={{ 
-                fontSize: { xs: '1.5rem', sm: '1.8rem', md: '2rem' },
-                lineHeight: 1,
-                color: '#b71c1c',
-                textShadow: '0 2px 4px rgba(244, 67, 54, 0.2)'
-              }}
-            >
-              {stats.inactive}
-            </Typography>
-            <Chip 
-              label={`${stats.total > 0 ? Math.round((stats.inactive / stats.total) * 100) : 0}%`}
-              size="small"
-              sx={{
-                height: 22,
-                fontSize: '0.65rem',
-                fontWeight: 600,
-                bgcolor: '#ffcdd2',
-                color: '#c62828',
-                border: '1px solid #ef9a9a'
-              }}
-            />
-          </Stack>
-        </Box>
-      </Stack>
-    </Paper>
-  </Box>
-)}
-
-      <Paper 
-        sx={{ 
-          p: { xs: 2, sm: 3 }, 
-          borderRadius: { xs: 2, sm: 3 }, 
-          boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
-          overflow: 'hidden',
-          position: 'relative'
-        }} 
-        elevation={6}
-      >
-        {/* Header Section */}
-        <Stack 
-          direction={{ xs: 'column', sm: 'row' }} 
-          justifyContent="space-between" 
-          alignItems={{ xs: 'stretch', sm: 'center' }} 
-          spacing={2}
-          mb={3}
-        >
-          <Box>
-            <Stack direction="row" alignItems="center" spacing={1.5}>
-              <Box sx={{
-                width: { xs: 40, sm: 48 },
-                height: { xs: 40, sm: 48 },
-                borderRadius: 2,
-                background: 'linear-gradient(145deg, #2196f3 0%, #1976d2 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 4px 12px rgba(33, 150, 243, 0.3)'
-              }}>
-                <CorporateFare sx={{ 
-                  fontSize: { xs: 24, sm: 28 }, 
-                  color: 'white' 
-                }} />
-              </Box>
-              <Box>
-                <Typography variant={isMobile ? "h6" : "h5"} fontWeight={700}>
-                  Department Management
-                </Typography>
-                {userInfo && (
-                  <Stack 
-                    direction="row" 
-                    spacing={1} 
-                    alignItems="center"
-                    sx={{ mt: 0.5, flexWrap: 'wrap', gap: 0.5 }}
-                  >
-                    <Chip 
-                      avatar={<Person sx={{ fontSize: 14 }} />}
-                      label={userInfo.name}
-                      size="small"
-                      sx={{ 
-                        height: 24, 
-                        fontSize: '0.7rem',
-                        bgcolor: 'grey.100'
-                      }}
-                    />
-                    <Chip 
-                      label={userInfo.role}
-                      size="small"
-                      sx={{ 
-                        height: 24, 
-                        fontSize: '0.7rem',
-                        bgcolor: isSuperAdmin ? 'secondary.50' : 'primary.50',
-                        color: isSuperAdmin ? 'secondary.main' : 'primary.main',
-                        fontWeight: 600
-                      }}
-                    />
-                    {userInfo.companyCode && (
-                      <Chip 
-                        icon={<Code sx={{ fontSize: 12 }} />}
-                        label={userInfo.companyCode}
-                        size="small"
-                        sx={{ 
-                          height: 24, 
-                          fontSize: '0.7rem',
-                          bgcolor: 'info.50',
-                          color: 'info.main'
-                        }}
-                      />
-                    )}
-                  </Stack>
-                )}
-              </Box>
-            </Stack>
-          </Box>
-          
-          <Stack 
-            direction={{ xs: 'column', sm: 'row' }} 
-            spacing={1.5}
-            sx={{ width: { xs: '100%', sm: 'auto' } }}
-          >
-            {/* Search Bar */}
-            <TextField
-              size="small"
-              placeholder="Search departments..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              sx={{ 
-                width: { xs: '100%', sm: 280 },
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 3,
-                  bgcolor: 'white',
-                  transition: 'all 0.2s ease',
-                  '&:hover, &:focus-within': {
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                  }
-                }
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search sx={{ fontSize: 20, color: 'action.active' }} />
-                  </InputAdornment>
-                ),
-                endAdornment: searchTerm && (
-                  <InputAdornment position="end">
-                    <IconButton size="small" onClick={handleClearSearch}>
-                      <Clear sx={{ fontSize: 18 }} />
-                    </IconButton>
-                  </InputAdornment>
-                )
-              }}
-            />
-            
-            {/* Add Department Button */}
-            <Button
-              variant="contained"
-              startIcon={<Add />}
-              onClick={() => {
-                setEditingDept(null);
-                const user = getUserFromStorage();
-                if (!user) {
-                  toast.error('Please login first');
-                  return;
-                }
-                setFormData({ 
-                  name: '', 
-                  description: '',
-                  company: user.company || '',
-                  companyCode: user.companyCode || ''
-                });
-                setOpenDialog(true);
-              }}
-              sx={{ 
-                width: { xs: '100%', sm: 'auto' },
-                borderRadius: 3,
-                py: 1,
-                px: 3,
-                background: 'linear-gradient(145deg, #2196f3 0%, #1976d2 100%)',
-                boxShadow: '0 4px 12px rgba(33, 150, 243, 0.3)',
-                '&:hover': {
-                  background: 'linear-gradient(145deg, #1976d2 0%, #1565c0 100%)',
-                  boxShadow: '0 6px 16px rgba(33, 150, 243, 0.4)',
-                  transform: 'translateY(-2px)'
-                },
-                transition: 'all 0.3s ease'
-              }}
-            >
-              {isMobile ? 'Add Department' : 'Add Department'}
-            </Button>
-          </Stack>
-        </Stack>
-
-        {/* Super Admin Toggle (if applicable) */}
-         {isSuperAdmin && (
-                 <Fade in={isSuperAdmin}>
-                   <Paper 
-                     variant="outlined" 
-                     sx={{ 
-                       p: 2, 
-                       mb: 3, 
-                       borderRadius: 3,
-                       bgcolor: 'primary.50',
-                       borderColor: 'primary.200',
-                       background: 'linear-gradient(145deg, #e3f2fd 0%, #bbdefb 100%)'
-                     }}
-                   >
-                     <Stack 
-                       direction={{ xs: 'column', sm: 'row' }} 
-                       alignItems="center" 
-                       justifyContent="space-between"
-                       spacing={2}
-                     >
-                       <Stack direction="row" alignItems="center" spacing={1.5}>
-                         <Avatar sx={{ 
-                           bgcolor: 'primary.main',
-                           width: 40,
-                           height: 40
-                         }}>
-                           <AdminPanelSettings sx={{ fontSize: 24 }} />
-                         </Avatar>
-                         <Box>
-                           <Typography variant="body1" fontWeight={600} color="primary.dark">
-                             Super Admin Mode
-                           </Typography>
-                           <Typography variant="caption" color="text.secondary">
-                             You have access to view all job roles
-                           </Typography>
-                         </Box>
-                       </Stack>
-                       <FormControlLabel
-                         control={
-                           <Switch
-                             checked={showAllCompanies}
-                             onChange={(e) => setShowAllCompanies(e.target.checked)}
-                             color="primary"
-                           />
-                         }
-                         label={
-                           <Typography variant="body2" fontWeight={500}>
-                             {showAllCompanies ? 'Showing All Companies' : 'Showing My Company Only'}
-                           </Typography>
-                         }
-                       />
-                     </Stack>
-                   </Paper>
-                 </Fade>
-               )}
-
-        {!userInfo && (
-          <Alert 
-            severity="warning" 
-            sx={{ 
-              mb: 3, 
-              borderRadius: 2,
-              '& .MuiAlert-icon': { alignItems: 'center' }
-            }}
-          >
-            User information not found. Please login again.
-          </Alert>
+        {dept.description && (
+          <div className="DepartmentManagement-description">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+            </svg>
+            <span>{dept.description}</span>
+          </div>
         )}
 
-        {/* Table/List View */}
+        <div className="DepartmentManagement-card-footer">
+          <div className="DepartmentManagement-meta">
+            <div className="DepartmentManagement-meta-item">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z"/>
+              </svg>
+              <span>{formatDate(dept.createdAt)}</span>
+            </div>
+            {dept.createdBy?.name && (
+              <div className="DepartmentManagement-meta-item">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </svg>
+                <span>{dept.createdBy.name}</span>
+              </div>
+            )}
+          </div>
+          
+          <div className="DepartmentManagement-card-actions">
+            <button 
+              className="DepartmentManagement-icon-btn DepartmentManagement-icon-btn-primary" 
+              onClick={() => handleEdit(dept)}
+              title="Edit"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+              </svg>
+            </button>
+            <button 
+              className="DepartmentManagement-icon-btn DepartmentManagement-icon-btn-danger" 
+              onClick={() => handleDelete(dept._id)}
+              disabled={dept.isActive === false}
+              title="Delete"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Tablet Department Card Component
+  const TabletDepartmentCard = ({ dept }) => (
+    <div className="DepartmentManagement-tablet-card">
+      <div className="DepartmentManagement-tablet-card-header">
+        <div className="DepartmentManagement-tablet-card-title">
+          <div className="DepartmentManagement-tablet-card-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10z"/>
+            </svg>
+          </div>
+          <div>
+            <h3 className="DepartmentManagement-tablet-card-name">{dept.name}</h3>
+            <div className="DepartmentManagement-tablet-card-tags">
+              {dept.companyCode && (
+                <span className="DepartmentManagement-tag DepartmentManagement-tag-code">{dept.companyCode}</span>
+              )}
+              <span className={`DepartmentManagement-tag ${dept.isActive !== false ? 'DepartmentManagement-tag-active' : 'DepartmentManagement-tag-inactive'}`}>
+                {dept.isActive !== false ? 'Active' : 'Inactive'}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div className="DepartmentManagement-tablet-card-actions">
+          <button 
+            className="DepartmentManagement-icon-btn DepartmentManagement-icon-btn-primary" 
+            onClick={() => handleEdit(dept)}
+            title="Edit"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+            </svg>
+          </button>
+          <button 
+            className="DepartmentManagement-icon-btn DepartmentManagement-icon-btn-danger" 
+            onClick={() => handleDelete(dept._id)}
+            disabled={dept.isActive === false}
+            title="Delete"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      
+      {dept.description && (
+        <div className="DepartmentManagement-tablet-card-description">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+          </svg>
+          <span>{dept.description}</span>
+        </div>
+      )}
+      
+      <div className="DepartmentManagement-tablet-card-footer">
+        <div className="DepartmentManagement-meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z"/>
+          </svg>
+          <span>{formatDate(dept.createdAt)}</span>
+        </div>
+        {dept.createdBy?.name && (
+          <div className="DepartmentManagement-meta-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+            </svg>
+            <span>{dept.createdBy.name}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const getIconSvg = (iconName, size = 24) => {
+    switch(iconName) {
+      case 'corporate':
+        return <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10z"/></svg>;
+      case 'check':
+        return <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>;
+      case 'cancel':
+        return <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z"/></svg>;
+      case 'add':
+        return <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>;
+      case 'search':
+        return <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>;
+      case 'clear':
+        return <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>;
+      case 'admin':
+        return <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>;
+      case 'business':
+        return <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10z"/></svg>;
+      case 'description':
+        return <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>;
+      case 'code':
+        return <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>;
+      case 'refresh':
+        return <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>;
+      case 'filter':
+        return <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"><path d="M4.25 5.61C6.27 8.2 10 13 10 13v6c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-6s3.72-4.8 5.74-7.39c.51-.66.04-1.61-.8-1.61H5.04c-.83 0-1.3.95-.79 1.61z"/></svg>;
+      case 'person':
+        return <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>;
+      case 'today':
+        return <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"><path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z"/></svg>;
+      case 'edit':
+        return <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>;
+      case 'delete':
+        return <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>;
+      case 'sort':
+        return <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"><path d="M3 18h6v-2H3v2zM3 6v2h18V6H3zm0 7h12v-2H3v2z"/></svg>;
+      default:
+        return null;
+    }
+  };
+
+  if (!userInfo) {
+    return (
+      <div className="DepartmentManagement-loading-container">
+        <div className="DepartmentManagement-loading-card">
+          <div className="DepartmentManagement-loading-spinner"></div>
+          <h2 className="DepartmentManagement-loading-title">Loading...</h2>
+          <p className="DepartmentManagement-loading-text">Fetching your information</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="DepartmentManagement">
+      {/* Loading Overlay */}
+      {loading && (
+        <div className="DepartmentManagement-loading-overlay">
+          <div className="DepartmentManagement-progress-bar">
+            <div className="DepartmentManagement-progress-fill" style={{ width: '100%' }}></div>
+          </div>
+        </div>
+      )}
+
+      {/* Stats Cards */}
+      {departments.length > 0 && (
+        <div className="DepartmentManagement-stats-grid">
+          {/* Total Departments Card */}
+          <div className="DepartmentManagement-stat-card DepartmentManagement-stat-total">
+            <div className="DepartmentManagement-stat-icon">
+              {getIconSvg('corporate', isMobile ? 24 : 28)}
+            </div>
+            <div className="DepartmentManagement-stat-content">
+              <div className="DepartmentManagement-stat-label">Total</div>
+              <div className="DepartmentManagement-stat-value-wrapper">
+                <span className="DepartmentManagement-stat-value">{stats.total}</span>
+                {!isMobile && <span className="DepartmentManagement-stat-badge">All</span>}
+              </div>
+            </div>
+          </div>
+
+          {/* Active Departments Card */}
+          <div className="DepartmentManagement-stat-card DepartmentManagement-stat-active">
+            <div className="DepartmentManagement-stat-icon">
+              {getIconSvg('check', isMobile ? 24 : 28)}
+            </div>
+            <div className="DepartmentManagement-stat-content">
+              <div className="DepartmentManagement-stat-label">Active</div>
+              <div className="DepartmentManagement-stat-value-wrapper">
+                <span className="DepartmentManagement-stat-value">{stats.active}</span>
+                {!isMobile && (
+                  <span className="DepartmentManagement-stat-badge">
+                    {stats.total > 0 ? Math.round((stats.active / stats.total) * 100) : 0}%
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Inactive Departments Card */}
+          <div className="DepartmentManagement-stat-card DepartmentManagement-stat-inactive">
+            <div className="DepartmentManagement-stat-icon">
+              {getIconSvg('cancel', isMobile ? 24 : 28)}
+            </div>
+            <div className="DepartmentManagement-stat-content">
+              <div className="DepartmentManagement-stat-label">Inactive</div>
+              <div className="DepartmentManagement-stat-value-wrapper">
+                <span className="DepartmentManagement-stat-value">{stats.inactive}</span>
+                {!isMobile && (
+                  <span className="DepartmentManagement-stat-badge">
+                    {stats.total > 0 ? Math.round((stats.inactive / stats.total) * 100) : 0}%
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="DepartmentManagement-paper">
+        {/* Header Section */}
+        <div className="DepartmentManagement-header">
+          <div className="DepartmentManagement-title-section">
+            <div className="DepartmentManagement-title-icon">
+              {getIconSvg('corporate', isMobile ? 24 : 28)}
+            </div>
+            <div>
+              <h2 className="DepartmentManagement-title">
+                {isMobile ? 'Departments' : 'Department Management'}
+              </h2>
+              {userInfo && !isMobile && (
+                <div className="DepartmentManagement-user-info">
+                  <span className="DepartmentManagement-user-chip">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    </svg>
+                    {userInfo.name}
+                  </span>
+                  <span className={`DepartmentManagement-role-chip ${isSuperAdmin ? 'DepartmentManagement-role-super' : 'DepartmentManagement-role-regular'}`}>
+                    {userInfo.role}
+                  </span>
+                  {userInfo.companyCode && (
+                    <span className="DepartmentManagement-company-chip">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/>
+                      </svg>
+                      {userInfo.companyCode}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <div className="DepartmentManagement-header-actions">
+            {/* Search Bar - Always visible */}
+            <div className="DepartmentManagement-search-wrapper">
+              <span className="DepartmentManagement-search-icon">
+                {getIconSvg('search', isMobile ? 18 : 20)}
+              </span>
+              <input
+                type="text"
+                className="DepartmentManagement-search-input"
+                placeholder={isMobile ? "Search..." : "Search departments..."}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              {searchTerm && (
+                <button className="DepartmentManagement-clear-search" onClick={handleClearSearch}>
+                  {getIconSvg('clear', isMobile ? 16 : 18)}
+                </button>
+              )}
+            </div>
+            
+            {/* Mobile Filter Button */}
+            {isMobile && (
+              <button
+                className="DepartmentManagement-filter-btn"
+                onClick={() => setShowMobileFilters(!showMobileFilters)}
+              >
+                {getIconSvg('filter', 20)}
+              </button>
+            )}
+            
+            {/* Add Department Button - Hidden on mobile (FAB used instead) */}
+            {!isMobile && (
+              <button
+                className="DepartmentManagement-btn DepartmentManagement-btn-primary"
+                onClick={() => {
+                  setEditingDept(null);
+                  const user = getUserFromStorage();
+                  if (!user) {
+                    toast.error('Please login first');
+                    return;
+                  }
+                  setFormData({ 
+                    name: '', 
+                    description: '',
+                    company: user.company || '',
+                    companyCode: user.companyCode || ''
+                  });
+                  setOpenDialog(true);
+                }}
+              >
+                {getIconSvg('add', 18)}
+                {isTablet ? 'Add' : 'Add Department'}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Mobile Filters */}
+        {isMobile && showMobileFilters && (
+          <div className="DepartmentManagement-mobile-filters">
+            <div className="DepartmentManagement-mobile-filter-header">
+              <h4>Sort & Filter</h4>
+              <button onClick={() => setShowMobileFilters(false)}>×</button>
+            </div>
+            <div className="DepartmentManagement-mobile-filter-content">
+              <div className="DepartmentManagement-filter-group">
+                <label>Sort By</label>
+                <select 
+                  value={sortBy} 
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="DepartmentManagement-filter-select"
+                >
+                  <option value="name">Name</option>
+                  <option value="date">Date Created</option>
+                  <option value="status">Status</option>
+                </select>
+              </div>
+              <div className="DepartmentManagement-filter-group">
+                <label>Order</label>
+                <select 
+                  value={sortOrder} 
+                  onChange={(e) => setSortOrder(e.target.value)}
+                  className="DepartmentManagement-filter-select"
+                >
+                  <option value="asc">Ascending</option>
+                  <option value="desc">Descending</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Super Admin Toggle */}
+        {isSuperAdmin && (
+          <div className="DepartmentManagement-super-admin-banner">
+            <div className="DepartmentManagement-super-admin-content">
+              <div className="DepartmentManagement-super-admin-icon">
+                {getIconSvg('admin', isMobile ? 20 : 24)}
+              </div>
+              <div>
+                <div className="DepartmentManagement-super-admin-title">
+                  {isMobile ? 'Super Admin' : 'Super Admin Mode'}
+                </div>
+                {!isMobile && (
+                  <div className="DepartmentManagement-super-admin-subtitle">
+                    You have access to view all departments
+                  </div>
+                )}
+              </div>
+            </div>
+            <label className="DepartmentManagement-toggle">
+              <input
+                type="checkbox"
+                checked={showAllCompanies}
+                onChange={(e) => setShowAllCompanies(e.target.checked)}
+              />
+              <span className="DepartmentManagement-toggle-slider"></span>
+              {!isMobile && (
+                <span className="DepartmentManagement-toggle-label">
+                  {showAllCompanies ? 'All Companies' : 'My Company'}
+                </span>
+              )}
+            </label>
+          </div>
+        )}
+
+        {/* View Selection */}
+        {isTablet && !isMobile && (
+          <div className="DepartmentManagement-view-tabs">
+            <button 
+              className={`DepartmentManagement-view-tab ${!isMobile ? 'active' : ''}`}
+              onClick={() => {}}
+            >
+              Grid View
+            </button>
+            <button 
+              className={`DepartmentManagement-view-tab ${isMobile ? 'active' : ''}`}
+              onClick={() => {}}
+            >
+              List View
+            </button>
+          </div>
+        )}
+
+        {/* Content View */}
         {isMobile ? (
           // Mobile Card View
-          <Box sx={{ mt: 2 }}>
+          <div className="DepartmentManagement-mobile-view">
             {filteredDepartments.length === 0 ? (
-              <Box sx={{ 
-                py: 8, 
-                px: 2, 
-                textAlign: 'center',
-                bgcolor: 'white',
-                borderRadius: 3,
-                border: '2px dashed',
-                borderColor: 'grey.200'
-              }}>
-                <Box sx={{
-                  width: 100,
-                  height: 100,
-                  borderRadius: '50%',
-                  bgcolor: 'grey.100',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  mx: 'auto',
-                  mb: 3
-                }}>
-                  <CorporateFare sx={{ fontSize: 50, color: 'grey.400' }} />
-                </Box>
-                <Typography variant="h6" fontWeight={700} gutterBottom>
-                  No Departments Found
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 4, maxWidth: 300, mx: 'auto' }}>
+              <div className="DepartmentManagement-empty-state">
+                <div className="DepartmentManagement-empty-icon">
+                  {getIconSvg('corporate', 50)}
+                </div>
+                <h3 className="DepartmentManagement-empty-title">No Departments Found</h3>
+                <p className="DepartmentManagement-empty-message">
                   {searchTerm 
-                    ? 'No departments match your search criteria. Try different keywords.'
-                    : 'Get started by creating your first department to organize your teams.'}
-                </Typography>
+                    ? 'No matches found. Try different keywords.'
+                    : 'Create your first department to get started.'}
+                </p>
                 {searchTerm ? (
-                  <Button 
-                    variant="outlined" 
+                  <button 
+                    className="DepartmentManagement-btn DepartmentManagement-btn-outline"
                     onClick={handleClearSearch}
-                    startIcon={<Clear />}
-                    sx={{ borderRadius: 3, px: 4 }}
                   >
+                    {getIconSvg('clear', 18)}
                     Clear Search
-                  </Button>
-                ) : (
-                  <Button 
-                    variant="contained" 
-                    startIcon={<Add />}
-                    onClick={() => {
-                      setEditingDept(null);
-                      setOpenDialog(true);
-                    }}
-                    sx={{ 
-                      borderRadius: 3, 
-                      px: 4,
-                      py: 1.2,
-                      background: 'linear-gradient(145deg, #2196f3 0%, #1976d2 100%)'
-                    }}
-                  >
-                    Add Department
-                  </Button>
-                )}
-              </Box>
+                  </button>
+                ) : null}
+              </div>
             ) : (
               <>
                 {filteredDepartments
@@ -1135,576 +847,365 @@ const DepartmentManagement = () => {
                 }
               </>
             )}
-          </Box>
+          </div>
+        ) : isTablet ? (
+          // Tablet Grid View
+          <div className="DepartmentManagement-tablet-grid">
+            {filteredDepartments.length === 0 ? (
+              <div className="DepartmentManagement-empty-state">
+                <div className="DepartmentManagement-empty-icon">
+                  {getIconSvg('corporate', 50)}
+                </div>
+                <h3 className="DepartmentManagement-empty-title">No Departments Found</h3>
+                <p className="DepartmentManagement-empty-message">
+                  {searchTerm ? 'No departments match your search' : 'Get started by adding a department'}
+                </p>
+              </div>
+            ) : (
+              filteredDepartments
+                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                .map(dept => (
+                  <TabletDepartmentCard key={dept._id} dept={dept} />
+                ))
+            )}
+          </div>
         ) : (
           // Desktop Table View
-          <TableContainer 
-            sx={{ 
-              borderRadius: 2,
-              border: '1px solid',
-              borderColor: 'grey.200',
-              overflow: 'auto'
-            }}
-          >
-            <Table>
-              <TableHead>
-                <TableRow sx={{ bgcolor: 'grey.100' }}>
-                  <TableCell sx={{ fontWeight: 700, fontSize: '0.9rem' }}>Department Name</TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: '0.9rem' }}>Description</TableCell>
-                  {isSuperAdmin && showAllCompanies && (
-                    <TableCell sx={{ fontWeight: 700, fontSize: '0.9rem' }}>Company Code</TableCell>
-                  )}
-                  <TableCell sx={{ fontWeight: 700, fontSize: '0.9rem' }}>Created By</TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: '0.9rem' }}>Created On</TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: '0.9rem' }}>Status</TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: '0.9rem' }}>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
+          <div className="DepartmentManagement-table-container">
+            <table className="DepartmentManagement-table">
+              <thead>
+                <tr>
+                  <th>Department Name</th>
+                  <th>Description</th>
+                  {isSuperAdmin && showAllCompanies && <th>Company Code</th>}
+                  <th>Created By</th>
+                  <th>Created On</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
                 {filteredDepartments.length === 0 ? (
-                  <TableRow>
-                    <TableCell 
-                      colSpan={isSuperAdmin && showAllCompanies ? 7 : 6} 
-                      align="center"
-                      sx={{ py: 8 }}
-                    >
-                      <Box sx={{ textAlign: 'center' }}>
-                        <CorporateFare sx={{ fontSize: 60, color: 'grey.300', mb: 2 }} />
-                        <Typography variant="h6" fontWeight={600} gutterBottom>
-                          No Departments Found
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
+                  <tr>
+                    <td colSpan={isSuperAdmin && showAllCompanies ? 7 : 6} className="DepartmentManagement-empty-cell">
+                      <div className="DepartmentManagement-empty-state">
+                        <div className="DepartmentManagement-empty-icon">
+                          {getIconSvg('corporate', 50)}
+                        </div>
+                        <h3 className="DepartmentManagement-empty-title">No Departments Found</h3>
+                        <p className="DepartmentManagement-empty-message">
                           {searchTerm ? 'No departments match your search' : 'Get started by adding a department'}
-                        </Typography>
-                      </Box>
-                    </TableCell>
-                  </TableRow>
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
                 ) : (
                   filteredDepartments
                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                     .map((dept, index) => (
-                      <TableRow 
-                        key={dept._id} 
-                        hover
-                        sx={{ 
-                          transition: 'all 0.2s ease',
-                          '&:hover': { 
-                            bgcolor: alpha(theme.palette.primary.main, 0.04),
-                            '& .action-buttons': {
-                              opacity: 1
-                            }
-                          },
-                          animation: `fadeIn 0.3s ease ${index * 0.05}s`
-                        }}
-                      >
-                        <TableCell>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                            <Avatar sx={{ 
-                              width: 36, 
-                              height: 36, 
-                              bgcolor: 'primary.50',
-                              color: 'primary.main',
-                              borderRadius: 2
-                            }}>
-                              <Business sx={{ fontSize: 20 }} />
-                            </Avatar>
-                            <Typography fontWeight={600}>{dept.name}</Typography>
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 250 }}>
+                      <tr key={dept._id} className="DepartmentManagement-table-row">
+                        <td>
+                          <div className="DepartmentManagement-department-name">
+                            <div className="DepartmentManagement-department-icon">
+                              {getIconSvg('business', 20)}
+                            </div>
+                            <span>{dept.name}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <span className="DepartmentManagement-description-text">
                             {dept.description || '—'}
-                          </Typography>
-                        </TableCell>
+                          </span>
+                        </td>
                         {isSuperAdmin && showAllCompanies && (
-                          <TableCell>
+                          <td>
                             {dept.companyCode ? (
-                              <Chip 
-                                label={dept.companyCode} 
-                                size="small" 
-                                sx={{ 
-                                  bgcolor: 'primary.50',
-                                  color: 'primary.main',
-                                  fontWeight: 600,
-                                  fontSize: '0.7rem'
-                                }}
-                              />
+                              <span className="DepartmentManagement-chip DepartmentManagement-chip-code">
+                                {dept.companyCode}
+                              </span>
                             ) : (
-                              <Typography variant="body2" color="text.disabled">
-                                Global
-                              </Typography>
+                              <span className="DepartmentManagement-text-muted">Global</span>
                             )}
-                          </TableCell>
+                          </td>
                         )}
-                        <TableCell>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <Person sx={{ fontSize: 16, color: 'grey.500' }} />
-                            <Typography variant="body2">
-                              {dept.createdBy?.name || 'System'}
-                            </Typography>
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <Today sx={{ fontSize: 16, color: 'grey.500' }} />
-                            <Typography variant="body2">
-                              {formatDate(dept.createdAt)}
-                            </Typography>
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            label={dept.isActive !== false ? 'Active' : 'Inactive'}
-                            size="small"
-                            sx={{
-                              bgcolor: dept.isActive !== false ? 'success.50' : 'error.50',
-                              color: dept.isActive !== false ? 'success.main' : 'error.main',
-                              fontWeight: 600,
-                              fontSize: '0.7rem',
-                              height: 24
-                            }}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Box 
-                            className="action-buttons"
-                            sx={{ 
-                              display: 'flex', 
-                              gap: 1,
-                              opacity: { xs: 1, sm: 0.7 },
-                              transition: 'opacity 0.2s ease'
-                            }}
-                          >
-                            <Tooltip title="Edit Department" arrow>
-                              <IconButton 
-                                size="small" 
-                                onClick={() => handleEdit(dept)}
-                                sx={{ 
-                                  color: 'primary.main',
-                                  bgcolor: 'primary.50',
-                                  width: 32,
-                                  height: 32,
-                                  '&:hover': { 
-                                    bgcolor: 'primary.100',
-                                    transform: 'scale(1.1)'
-                                  }
-                                }}
-                              >
-                                <Edit fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Delete Department" arrow>
-                              <IconButton 
-                                size="small"
-                                onClick={() => handleDelete(dept._id)}
-                                sx={{ 
-                                  color: 'error.main',
-                                  bgcolor: 'error.50',
-                                  width: 32,
-                                  height: 32,
-                                  '&:hover': { 
-                                    bgcolor: 'error.100',
-                                    transform: 'scale(1.1)'
-                                  },
-                                  opacity: dept.isActive === false ? 0.5 : 1
-                                }}
-                                disabled={dept.isActive === false}
-                              >
-                                <Delete fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          </Box>
-                        </TableCell>
-                      </TableRow>
+                        <td>
+                          <div className="DepartmentManagement-meta-item">
+                            {getIconSvg('person', 16)}
+                            <span>{dept.createdBy?.name || 'System'}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="DepartmentManagement-meta-item">
+                            {getIconSvg('today', 16)}
+                            <span>{formatDate(dept.createdAt)}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <span className={`DepartmentManagement-status ${dept.isActive !== false ? 'DepartmentManagement-status-active' : 'DepartmentManagement-status-inactive'}`}>
+                            {dept.isActive !== false ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="DepartmentManagement-action-buttons">
+                            <button 
+                              className="DepartmentManagement-action-btn DepartmentManagement-action-edit"
+                              onClick={() => handleEdit(dept)}
+                              title="Edit Department"
+                            >
+                              {getIconSvg('edit', 18)}
+                            </button>
+                            <button 
+                              className="DepartmentManagement-action-btn DepartmentManagement-action-delete"
+                              onClick={() => handleDelete(dept._id)}
+                              disabled={dept.isActive === false}
+                              title="Delete Department"
+                            >
+                              {getIconSvg('delete', 18)}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
                     ))
                 )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+              </tbody>
+            </table>
+          </div>
         )}
 
         {/* Pagination */}
         {filteredDepartments.length > 0 && (
-          <TablePagination
-            component="div"
-            count={filteredDepartments.length}
-            page={page}
-            onPageChange={(e, newPage) => setPage(newPage)}
-            rowsPerPage={rowsPerPage}
-            onRowsPerPageChange={(e) => {
-              setRowsPerPage(parseInt(e.target.value, 10));
-              setPage(0);
-            }}
-            rowsPerPageOptions={isMobile ? [5, 10, 25] : [5, 10, 25, 50]}
-            sx={{
-              mt: 2,
-              '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
-                fontSize: { xs: '0.75rem', sm: '0.875rem' }
-              }
-            }}
-          />
+          <div className="DepartmentManagement-pagination">
+            <div className="DepartmentManagement-pagination-info">
+              {isMobile ? (
+                <span>{page * rowsPerPage + 1}-{Math.min((page + 1) * rowsPerPage, filteredDepartments.length)} of {filteredDepartments.length}</span>
+              ) : (
+                <span>Showing {page * rowsPerPage + 1} to {Math.min((page + 1) * rowsPerPage, filteredDepartments.length)} of {filteredDepartments.length} entries</span>
+              )}
+            </div>
+            <div className="DepartmentManagement-pagination-controls">
+              {!isMobile && (
+                <select 
+                  className="DepartmentManagement-rows-per-page"
+                  value={rowsPerPage}
+                  onChange={handleRowsPerPageChange}
+                >
+                  <option value="5">5 per page</option>
+                  <option value="10">10 per page</option>
+                  <option value="25">25 per page</option>
+                  <option value="50">50 per page</option>
+                </select>
+              )}
+              <div className="DepartmentManagement-pagination-buttons">
+                <button 
+                  className="DepartmentManagement-pagination-btn"
+                  onClick={() => handlePageChange(page - 1)}
+                  disabled={page === 0}
+                >
+                  {isMobile ? '‹' : 'Previous'}
+                </button>
+                <span className="DepartmentManagement-pagination-current">
+                  {isMobile ? page + 1 : `Page ${page + 1}`}
+                </span>
+                <button 
+                  className="DepartmentManagement-pagination-btn"
+                  onClick={() => handlePageChange(page + 1)}
+                  disabled={page >= Math.ceil(filteredDepartments.length / rowsPerPage) - 1}
+                >
+                  {isMobile ? '›' : 'Next'}
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Floating Action Button for Mobile */}
         {isMobile && (
-          <Zoom in={isMobile}>
-            <Fab
-              color="primary"
-              sx={{
-                position: 'fixed',
-                bottom: 24,
-                right: 24,
-                boxShadow: '0 8px 16px rgba(33, 150, 243, 0.4)',
-                width: 56,
-                height: 56,
-                '&:hover': {
-                  transform: 'scale(1.1)',
-                  boxShadow: '0 12px 24px rgba(33, 150, 243, 0.5)'
-                },
-                transition: 'all 0.3s ease'
-              }}
-              onClick={() => {
-                const user = getUserFromStorage();
-                setFormData({ 
-                  name: '', 
-                  description: '',
-                  company: user?.company || '',
-                  companyCode: user?.companyCode || ''
-                });
-                setOpenDialog(true);
-              }}
-            >
-              <Add sx={{ fontSize: 28 }} />
-            </Fab>
-          </Zoom>
+          <button
+            className="DepartmentManagement-fab"
+            onClick={() => {
+              const user = getUserFromStorage();
+              setFormData({ 
+                name: '', 
+                description: '',
+                company: user?.company || '',
+                companyCode: user?.companyCode || ''
+              });
+              setOpenDialog(true);
+            }}
+          >
+            {getIconSvg('add', 28)}
+          </button>
         )}
 
         {/* Options Menu for Mobile */}
-        <Menu
-          anchorEl={anchorEl}
-          open={Boolean(anchorEl)}
-          onClose={handleMenuClose}
-          TransitionComponent={Zoom}
-          PaperProps={{
-            sx: {
-              borderRadius: 3,
-              boxShadow: '0 12px 32px rgba(0,0,0,0.2)',
-              minWidth: 200,
-              overflow: 'hidden',
-              '& .MuiMenuItem-root': {
-                py: 1.5,
-                px: 2
-              }
-            }
-          }}
-        >
-          <MenuItem onClick={() => {
-            handleEdit(selectedDeptMenu);
-            handleMenuClose();
-          }}>
-            <ListItemIcon>
-              <Edit fontSize="small" color="primary" />
-            </ListItemIcon>
-            <ListItemText 
-              primary="Edit Department"
-              secondary="Modify department details"
-              secondaryTypographyProps={{ fontSize: '0.7rem' }}
-            />
-          </MenuItem>
-          <Divider />
-          <MenuItem 
-            onClick={() => {
-              handleDelete(selectedDeptMenu?._id);
-              handleMenuClose();
-            }} 
-            disabled={!selectedDeptMenu?.isActive}
-            sx={{ 
-              color: 'error.main',
-              '&.Mui-disabled': { opacity: 0.5 }
-            }}
+        {showMenu && (
+          <div 
+            className="DepartmentManagement-menu-overlay"
+            onClick={handleMenuClose}
           >
-            <ListItemIcon>
-              <Delete fontSize="small" color="error" />
-            </ListItemIcon>
-            <ListItemText 
-              primary="Delete Department"
-              secondary={!selectedDeptMenu?.isActive ? 'Already inactive' : 'Remove permanently'}
-              secondaryTypographyProps={{ fontSize: '0.7rem' }}
-            />
-          </MenuItem>
-        </Menu>
-
-        {/* CSS Animations */}
-        <style>
-          {`
-            @keyframes fadeIn {
-              from {
-                opacity: 0;
-                transform: translateY(10px);
-              }
-              to {
-                opacity: 1;
-                transform: translateY(0);
-              }
-            }
-            
-            @keyframes pulse {
-              0% {
-                box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.4);
-              }
-              70% {
-                box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
-              }
-              100% {
-                box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
-              }
-            }
-          `}
-        </style>
-      </Paper>
-
-      {/* Add/Edit Dialog */}
-      <Dialog 
-        open={openDialog} 
-        onClose={() => !loading && setOpenDialog(false)} 
-        maxWidth="sm" 
-        fullWidth
-        fullScreen={isMobile}
-        TransitionComponent={Transition}
-        PaperProps={{
-          sx: {
-            borderRadius: isMobile ? 0 : 4,
-            overflow: 'hidden',
-            background: 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)'
-          }
-        }}
-      >
-        <DialogTitle sx={{ 
-          background: 'linear-gradient(145deg, #2196f3 0%, #1976d2 100%)',
-          color: 'white',
-          py: 3,
-          px: 3,
-          position: 'relative',
-          overflow: 'hidden'
-        }}>
-          {/* Decorative elements */}
-          <Box sx={{
-            position: 'absolute',
-            top: -50,
-            right: -50,
-            width: 150,
-            height: 150,
-            borderRadius: '50%',
-            background: 'rgba(255,255,255,0.1)',
-            animation: 'float 8s ease-in-out infinite'
-          }} />
-          <Box sx={{
-            position: 'absolute',
-            bottom: -50,
-            left: -50,
-            width: 150,
-            height: 150,
-            borderRadius: '50%',
-            background: 'rgba(255,255,255,0.1)',
-            animation: 'float 10s ease-in-out infinite reverse'
-          }} />
-          
-          <Stack direction="row" alignItems="center" spacing={2} position="relative">
-            <Box sx={{
-              width: 48,
-              height: 48,
-              borderRadius: '50%',
-              bgcolor: 'white',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 8px 16px rgba(0,0,0,0.2)'
-            }}>
-              {editingDept ? (
-                <Edit sx={{ color: 'primary.main', fontSize: 26 }} />
-              ) : (
-                <Add sx={{ color: 'primary.main', fontSize: 26 }} />
-              )}
-            </Box>
-            <Box>
-              <Typography variant="h6" fontWeight={700}>
-                {editingDept ? 'Edit Department' : 'Create New Department'}
-              </Typography>
-              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.9)' }}>
-                {editingDept 
-                  ? 'Update department information' 
-                  : 'Add a new department to organize your teams'}
-              </Typography>
-            </Box>
-          </Stack>
-        </DialogTitle>
-        
-        <DialogContent sx={{ p: { xs: 2.5, sm: 3.5 } }}>
-          <Box pt={1}>
-            {/* User Info Banner */}
-            {userInfo?.companyCode && !isSuperAdmin && (
-              <Paper 
-                variant="outlined" 
-                sx={{ 
-                  p: 1.5, 
-                  mb: 3, 
-                  borderRadius: 2,
-                  bgcolor: 'primary.50',
-                  borderColor: 'primary.200'
+            <div 
+              className="DepartmentManagement-menu"
+              style={{
+                top: Math.min(menuPosition.top, window.innerHeight - 200),
+                left: Math.min(menuPosition.left, window.innerWidth - 220)
+              }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="DepartmentManagement-menu-item" onClick={() => {
+                handleEdit(selectedDeptMenu);
+                handleMenuClose();
+              }}>
+                <span className="DepartmentManagement-menu-icon DepartmentManagement-menu-icon-primary">
+                  {getIconSvg('edit', 18)}
+                </span>
+                <div className="DepartmentManagement-menu-content">
+                  <span className="DepartmentManagement-menu-title">Edit Department</span>
+                  {!isMobile && <span className="DepartmentManagement-menu-subtitle">Modify department details</span>}
+                </div>
+              </div>
+              <div className="DepartmentManagement-menu-divider"></div>
+              <div 
+                className={`DepartmentManagement-menu-item ${!selectedDeptMenu?.isActive ? 'DepartmentManagement-menu-item-disabled' : ''}`}
+                onClick={() => {
+                  if (selectedDeptMenu?.isActive) {
+                    handleDelete(selectedDeptMenu?._id);
+                    handleMenuClose();
+                  }
                 }}
               >
-                <Stack direction="row" alignItems="center" spacing={1.5}>
-                  <Apartment sx={{ color: 'primary.main', fontSize: 22 }} />
-                  <Box>
-                    <Typography variant="body2" fontWeight={600} color="primary.dark">
-                      Creating department for {userInfo.companyCode}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      This department will be associated with your company
-                    </Typography>
-                  </Box>
-                </Stack>
-              </Paper>
-            )}
-            
-            <TextField
-              label="Department Name *"
-              fullWidth
-              margin="normal"
-              value={formData.name}
-              onChange={(e) => setFormData({...formData, name: e.target.value})}
-              required
-              size={isMobile ? "small" : "medium"}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Business sx={{ fontSize: 20, color: 'primary.main' }} />
-                  </InputAdornment>
-                )
-              }}
-              sx={{ 
-                '& .MuiOutlinedInput-root': { 
-                  borderRadius: 2,
-                  '&:hover fieldset': {
-                    borderColor: 'primary.main',
-                  }
-                },
-                mb: 2
-              }}
-            />
-            
-            <TextField
-              label="Description"
-              fullWidth
-              margin="normal"
-              multiline
-              rows={isMobile ? 3 : 4}
-              value={formData.description}
-              onChange={(e) => setFormData({...formData, description: e.target.value})}
-              size={isMobile ? "small" : "medium"}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Description sx={{ fontSize: 20, color: 'grey.500' }} />
-                  </InputAdornment>
-                )
-              }}
-              placeholder="Describe the purpose of this department (optional)"
-              sx={{ 
-                '& .MuiOutlinedInput-root': { 
-                  borderRadius: 2,
-                  alignItems: 'flex-start'
-                },
-                mb: 1
-              }}
-            />
+                <span className="DepartmentManagement-menu-icon DepartmentManagement-menu-icon-danger">
+                  {getIconSvg('delete', 18)}
+                </span>
+                <div className="DepartmentManagement-menu-content">
+                  <span className="DepartmentManagement-menu-title">Delete Department</span>
+                  {!isMobile && (
+                    <span className="DepartmentManagement-menu-subtitle">
+                      {!selectedDeptMenu?.isActive ? 'Already inactive' : 'Remove permanently'}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
-            {/* Removed Optional Company Assignment section */}
-          </Box>
-        </DialogContent>
-        
-        <DialogActions sx={{ 
-          p: 3, 
-          pt: 2,
-          borderTop: '1px solid',
-          borderColor: 'grey.200',
-          bgcolor: 'grey.50'
-        }}>
-          <Stack direction="row" spacing={2} justifyContent="flex-end" width="100%">
-            <Button 
-              onClick={() => setOpenDialog(false)} 
-              variant="outlined"
-              disabled={loading}
-              sx={{ 
-                borderRadius: 2,
-                px: 4,
-                py: 1,
-                fontSize: '0.875rem',
-                fontWeight: 600,
-                borderColor: 'grey.400',
-                color: 'text.primary',
-                '&:hover': {
-                  borderColor: 'grey.600',
-                  bgcolor: 'grey.100'
-                }
-              }}
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleSubmit} 
-              variant="contained"
-              disabled={loading || !formData.name.trim()}
-              sx={{ 
-                borderRadius: 2,
-                px: 5,
-                py: 1,
-                fontSize: '0.875rem',
-                fontWeight: 700,
-                background: 'linear-gradient(145deg, #2196f3 0%, #1976d2 100%)',
-                boxShadow: '0 4px 12px rgba(33, 150, 243, 0.3)',
-                '&:hover': {
-                  background: 'linear-gradient(145deg, #1976d2 0%, #1565c0 100%)',
-                  boxShadow: '0 6px 16px rgba(33, 150, 243, 0.4)',
-                  transform: 'translateY(-2px)'
-                },
-                transition: 'all 0.3s ease',
-                position: 'relative',
-                overflow: 'hidden',
-                '&::after': {
-                  content: '""',
-                  position: 'absolute',
-                  top: 0,
-                  left: '-100%',
-                  width: '100%',
-                  height: '100%',
-                  background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
-                  transition: 'left 0.5s ease',
-                },
-                '&:hover::after': {
-                  left: '100%'
-                }
-              }}
-            >
-              {loading ? (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <CircularProgress size={16} color="inherit" />
-                  <span>Saving...</span>
-                </Box>
-              ) : (
-                editingDept ? 'Update Department' : 'Create Department'
+      {/* Add/Edit Dialog */}
+      {openDialog && (
+        <div className="DepartmentManagement-modal-overlay" onClick={() => !loading && setOpenDialog(false)}>
+          <div 
+            className={`DepartmentManagement-modal ${isMobile ? 'DepartmentManagement-modal-fullscreen' : ''}`}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="DepartmentManagement-modal-header">
+              <div className="DepartmentManagement-modal-header-content">
+                <div className="DepartmentManagement-modal-icon">
+                  {editingDept ? getIconSvg('edit', isMobile ? 22 : 26) : getIconSvg('add', isMobile ? 22 : 26)}
+                </div>
+                <div>
+                  <h3 className="DepartmentManagement-modal-title">
+                    {editingDept ? 'Edit Department' : 'Create Department'}
+                  </h3>
+                  {!isMobile && (
+                    <p className="DepartmentManagement-modal-subtitle">
+                      {editingDept 
+                        ? 'Update department information' 
+                        : 'Add a new department to organize your teams'}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <button 
+                className="DepartmentManagement-modal-close"
+                onClick={() => setOpenDialog(false)}
+                disabled={loading}
+              >
+                <svg width={isMobile ? "18" : "20"} height={isMobile ? "18" : "20"} viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                </svg>
+              </button>
+            </div>
+
+            <div className="DepartmentManagement-modal-body">
+              {/* User Info Banner */}
+              {userInfo?.companyCode && !isSuperAdmin && (
+                <div className="DepartmentManagement-info-banner">
+                  <svg width={isMobile ? "18" : "22"} height={isMobile ? "18" : "22"} viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10z"/>
+                  </svg>
+                  <div>
+                    <div className="DepartmentManagement-info-title">
+                      {isMobile ? userInfo.companyCode : `Creating for ${userInfo.companyCode}`}
+                    </div>
+                    {!isMobile && (
+                      <div className="DepartmentManagement-info-subtitle">
+                        This department will be associated with your company
+                      </div>
+                    )}
+                  </div>
+                </div>
               )}
-            </Button>
-          </Stack>
-        </DialogActions>
-      </Dialog>
 
-      {/* Refresh Indicator (hidden) */}
-      <Snackbar
-        open={false}
-        autoHideDuration={3000}
-      />
-    </Box>
+              <div className="DepartmentManagement-form-group">
+                <label className="DepartmentManagement-form-label">Name *</label>
+                <div className="DepartmentManagement-input-wrapper">
+                  <span className="DepartmentManagement-input-icon">
+                    {getIconSvg('business', isMobile ? 18 : 20)}
+                  </span>
+                  <input
+                    type="text"
+                    className="DepartmentManagement-form-input"
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    placeholder="Enter department name"
+                  />
+                </div>
+              </div>
+
+              <div className="DepartmentManagement-form-group">
+                <label className="DepartmentManagement-form-label">Description</label>
+                <div className="DepartmentManagement-input-wrapper">
+                  <span className="DepartmentManagement-input-icon">
+                    {getIconSvg('description', isMobile ? 18 : 20)}
+                  </span>
+                  <textarea
+                    className="DepartmentManagement-form-input DepartmentManagement-textarea"
+                    value={formData.description}
+                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    placeholder={isMobile ? "Optional" : "Describe the purpose of this department (optional)"}
+                    rows={isMobile ? 3 : 4}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="DepartmentManagement-modal-footer">
+              <button 
+                className="DepartmentManagement-btn DepartmentManagement-btn-secondary"
+                onClick={() => setOpenDialog(false)}
+                disabled={loading}
+              >
+                Cancel
+              </button>
+              <button 
+                className="DepartmentManagement-btn DepartmentManagement-btn-primary"
+                onClick={handleSubmit}
+                disabled={loading || !formData.name.trim()}
+              >
+                {loading ? (
+                  <>
+                    <span className="DepartmentManagement-spinner"></span>
+                    {isMobile ? 'Saving' : 'Saving...'}
+                  </>
+                ) : (
+                  editingDept ? (isMobile ? 'Update' : 'Update Department') : (isMobile ? 'Create' : 'Create Department')
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

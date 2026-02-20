@@ -1,1555 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { toast } from "react-toastify";
 import API_URL from "../../config";
+import "./CompanyDetails.css";
 
-import {
-  Business,
-  LocationOn,
-  Person,
-  CalendarToday,
-  CheckCircle,
-  Cancel,
-  Edit,
-  Refresh,
-  ArrowBack,
-  Security,
-  Domain,
-  Link,
-  Image,
-  Storage,
-  Settings,
-  People,
-  ListAlt,
-  Close,
-  Save,
-  Delete,
-  Code,
-  Work,
-  Email,
-  Phone,
-  Language,
-  AccessTime,
-  Today,
-  Group,
-  School,
-  Login,
-  CardMembership,
-  MoreVert,
-  Dashboard,
-  AdminPanelSettings,
-  VerifiedUser,
-  CorporateFare,
-  Badge,
-  Web,
-  Description,
-  Speed,
-  TrendingUp,
-  Apartment,
-  AccountBalance,
-  Build,
-  Assessment,
-  Timeline,
-  Event,
-  Fingerprint,
-  Public,
-  Mail,
-  ContactPhone,
-  AccountCircle,
-  WorkOutline,
-  Category,
-  CheckCircleOutline,
-  CancelOutlined,
-  ErrorOutline,
-  InfoOutlined,
-  WarningAmber,
-  Add,
-  ViewList,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Save as SaveIcon,
-  Close as CloseIcon,
-  Refresh as RefreshIcon,
-  ArrowBack as ArrowBackIcon,
-  MoreVert as MoreVertIcon,
-  Face,
-  Wc,
-  Favorite,
-  ChildCare,
-  AttachMoney,
-  AccountBalance as AccountBalanceIcon,
-  CreditCard,
-  Emergency,
-  FamilyRestroom,
-  Home,
-  Notes,
-  DateRange,
-  WorkHistory,
-  LocalAtm,
-  Badge as BadgeIcon,
-  Assignment,
-  MedicalServices,
-  School as SchoolIcon,
-  MilitaryTech,
-  EmojiEvents,
-  Star,
-  StarBorder,
-  Verified,
-  Warning,
-  Analytics,
-  BusinessCenter,
-  WorkspacePremium,
-  PrecisionManufacturing,
-  AutoGraph,
-  BarChart,
-  FileDownload,
-  Print,
-  Share,
-  Bookmark,
-  BookmarkBorder,
-  PushPin,
-  PushPinOutlined,
-  Grade,
-  GradeOutlined,
-  ArrowForward,
-  Menu as MenuIcon
-} from "@mui/icons-material";
-
-import {
-  Card,
-  CardContent,
-  Typography,
-  Grid,
-  Chip,
-  Button,
-  Divider,
-  Box,
-  LinearProgress,
-  Avatar,
-  CircularProgress,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  IconButton,
-  Switch,
-  FormControlLabel,
-  Alert,
-  Autocomplete,
-  Paper,
-  Stack,
-  Tooltip,
-  Badge as MuiBadge,
-  Tabs,
-  Tab,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  ListItemAvatar,
-  Menu,
-  MenuItem,
-  alpha,
-  CardHeader,
-  CardActions,
-  Fade,
-  Grow,
-  Slide,
-  Zoom,
-  Skeleton,
-  Container,
-  useTheme,
-  useMediaQuery,
-  Fab,
-  SpeedDial,
-  SpeedDialAction,
-  SpeedDialIcon,
-  Backdrop,
-  Modal,
-  Typography as MuiTypography,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  InputAdornment,
-  MenuItem as SelectMenuItem,
-  FormControl,
-  InputLabel,
-  Select,
-  FormHelperText,
-  styled,
-  Drawer,
-  BottomNavigation,
-  BottomNavigationAction,
-  AppBar,
-  Toolbar
-} from "@mui/material";
-
-// Enhanced Styled Components with responsive design
-const GlassCard = styled(Card)(({ theme }) => ({
-  background: 'rgba(255, 255, 255, 0.9)',
-  backdropFilter: 'blur(10px)',
-  border: '1px solid rgba(255, 255, 255, 0.3)',
-  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
-  [theme.breakpoints.down('sm')]: {
-    borderRadius: 16,
-  },
-}));
-
-const GradientCard = styled(Card)(({ theme, gradient }) => ({
-  background: gradient || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-  color: 'white',
-  borderRadius: 24,
-  position: 'relative',
-  overflow: 'hidden',
-  '&::before': {
-    content: '""',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.2) 0%, transparent 60%)',
-  },
-  [theme.breakpoints.down('sm')]: {
-    borderRadius: 20,
-    padding: theme.spacing(2),
-  },
-}));
-
-const StatBox = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(2),
-  borderRadius: 16,
-  background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-  border: '1px solid rgba(226, 232, 240, 0.6)',
-  transition: 'all 0.3s ease',
-  '&:hover': {
-    transform: 'translateY(-4px)',
-    borderColor: theme.palette.primary.main,
-    boxShadow: `0 12px 30px ${alpha(theme.palette.primary.main, 0.15)}`,
-  },
-  [theme.breakpoints.down('sm')]: {
-    padding: theme.spacing(1.5),
-    borderRadius: 12,
-  },
-}));
-
-const InfoChip = styled(Chip)(({ theme }) => ({
-  borderRadius: 8,
-  fontWeight: 600,
-  '& .MuiChip-icon': {
-    color: 'inherit',
-  },
-  [theme.breakpoints.down('sm')]: {
-    height: 24,
-    fontSize: '0.75rem',
-  },
-}));
-
-const AnimatedNumber = styled(Typography)(({ theme }) => ({
-  fontWeight: 800,
-  background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
-  WebkitBackgroundClip: 'text',
-  WebkitTextFillColor: 'transparent',
-  backgroundClip: 'text',
-  animation: 'countUp 2s ease-out',
-  '@keyframes countUp': {
-    '0%': {
-      opacity: 0,
-      transform: 'translateY(20px)',
-    },
-    '100%': {
-      opacity: 1,
-      transform: 'translateY(0)',
-    },
-  },
-  [theme.breakpoints.down('sm')]: {
-    fontSize: '1.5rem',
-  },
-}));
-
-// Responsive Container component
-const ResponsiveContainer = styled(Container)(({ theme }) => ({
-  position: 'relative',
-  zIndex: 1,
-  [theme.breakpoints.down('sm')]: {
-    paddingLeft: theme.spacing(1.5),
-    paddingRight: theme.spacing(1.5),
-  },
-  [theme.breakpoints.between('sm', 'md')]: {
-    paddingLeft: theme.spacing(2),
-    paddingRight: theme.spacing(2),
-  },
-}));
-
-// Transition for dialog
-const Transition = React.forwardRef(function Transition(props, ref) {
-  return <Slide direction="up" ref={ref} {...props} />;
-});
-
-// Mobile Menu Drawer
-const MobileMenuDrawer = ({ open, onClose, company, handleEditCompany, handleRefresh, handleAddNewUser }) => {
-  const theme = useTheme();
-  
-  return (
-    <Drawer
-      anchor="bottom"
-      open={open}
-      onClose={onClose}
-      PaperProps={{
-        sx: {
-          borderTopLeftRadius: 20,
-          borderTopRightRadius: 20,
-          maxHeight: '60vh',
-          padding: theme.spacing(2)
-        }
-      }}
-    >
-      <Box sx={{ p: 2 }}>
-        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-          <Typography variant="h6" fontWeight={700} sx={{ fontSize: '1.1rem' }}>Menu Options</Typography>
-          <IconButton onClick={onClose} size="small">
-            <Close sx={{ fontSize: 20 }} />
-          </IconButton>
-        </Stack>
-        
-        <Divider sx={{ mb: 2 }} />
-        
-        <List>
-          <ListItem 
-            button 
-            onClick={() => {
-              handleEditCompany();
-              onClose();
-            }}
-            sx={{
-              borderRadius: 2,
-              mb: 1,
-              py: 1.5,
-              '&:hover': {
-                bgcolor: alpha(theme.palette.primary.main, 0.1)
-              }
-            }}
-          >
-            <ListItemIcon>
-              <Edit sx={{ color: theme.palette.primary.main, fontSize: 22 }} />
-            </ListItemIcon>
-            <ListItemText 
-              primary="Edit Company" 
-              secondary="Update company details"
-              primaryTypographyProps={{ fontWeight: 600, fontSize: '0.95rem' }}
-              secondaryTypographyProps={{ fontSize: '0.8rem' }}
-            />
-          </ListItem>
-          
-          <ListItem 
-            button 
-            onClick={() => {
-              handleRefresh();
-              onClose();
-            }}
-            sx={{
-              borderRadius: 2,
-              mb: 1,
-              py: 1.5,
-              '&:hover': {
-                bgcolor: alpha(theme.palette.info.main, 0.1)
-              }
-            }}
-          >
-            <ListItemIcon>
-              <Refresh sx={{ color: theme.palette.info.main, fontSize: 22 }} />
-            </ListItemIcon>
-            <ListItemText 
-              primary="Refresh Data" 
-              secondary="Reload company information"
-              primaryTypographyProps={{ fontWeight: 600, fontSize: '0.95rem' }}
-              secondaryTypographyProps={{ fontSize: '0.8rem' }}
-            />
-          </ListItem>
-          
-          <ListItem 
-            button 
-            onClick={() => {
-              handleAddNewUser();
-              onClose();
-            }}
-            sx={{
-              borderRadius: 2,
-              mb: 1,
-              py: 1.5,
-              '&:hover': {
-                bgcolor: alpha(theme.palette.success.main, 0.1)
-              }
-            }}
-          >
-            <ListItemIcon>
-              <Add sx={{ color: theme.palette.success.main, fontSize: 22 }} />
-            </ListItemIcon>
-            <ListItemText 
-              primary="Add New User" 
-              secondary="Create a new user account"
-              primaryTypographyProps={{ fontWeight: 600, fontSize: '0.95rem' }}
-              secondaryTypographyProps={{ fontSize: '0.8rem' }}
-            />
-          </ListItem>
-        </List>
-      </Box>
-    </Drawer>
-  );
-};
-
-// Mobile Bottom Navigation
-const MobileBottomNav = ({ activeTab, setActiveTab, handleAddNewUser, company }) => {
-  const theme = useTheme();
-  
-  return (
-    <Paper 
-      sx={{ 
-        position: 'fixed', 
-        bottom: 0, 
-        left: 0, 
-        right: 0, 
-        zIndex: 1000,
-        display: { xs: 'block', sm: 'none' },
-        borderRadius: '16px 16px 0 0',
-        overflow: 'hidden',
-        boxShadow: '0 -4px 20px rgba(0,0,0,0.1)'
-      }} 
-      elevation={3}
-    >
-      <BottomNavigation
-        value={activeTab}
-        onChange={(event, newValue) => {
-          setActiveTab(newValue);
-        }}
-        showLabels
-        sx={{
-          height: 56,
-          '& .MuiBottomNavigationAction-root': {
-            minWidth: 'auto',
-            padding: '4px 0',
-            '&.Mui-selected': {
-              color: theme.palette.primary.main,
-            }
-          }
-        }}
-      >
-        <BottomNavigationAction 
-          label="Overview" 
-          icon={<Business sx={{ fontSize: 20 }} />} 
-          sx={{
-            '& .MuiBottomNavigationAction-label': {
-              fontSize: '0.7rem',
-              '&.Mui-selected': {
-                fontSize: '0.7rem'
-              }
-            }
-          }}
-        />
-        <BottomNavigationAction 
-          label="Users" 
-          icon={<People sx={{ fontSize: 20 }} />} 
-          sx={{
-            '& .MuiBottomNavigationAction-label': {
-              fontSize: '0.7rem',
-              '&.Mui-selected': {
-                fontSize: '0.7rem'
-              }
-            }
-          }}
-        />
-        <BottomNavigationAction 
-          label="Add User" 
-          icon={<Add sx={{ fontSize: 20 }} />} 
-          onClick={(e) => {
-            e.stopPropagation();
-            handleAddNewUser();
-          }}
-          sx={{
-            '& .MuiBottomNavigationAction-label': {
-              fontSize: '0.7rem',
-              '&.Mui-selected': {
-                fontSize: '0.7rem'
-              }
-            }
-          }}
-        />
-      </BottomNavigation>
-    </Paper>
-  );
-};
-
-// Responsive Company Header
-const ResponsiveCompanyHeader = ({ company, handleEditCompany, handleRefresh, handleAddNewUser, handleCopy, copied }) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  
-  const defaultLogo = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
-  
-  const formatRelativeTime = (dateString) => {
-    if (!dateString) return "Unknown";
-    try {
-      const date = new Date(dateString);
-      const now = new Date();
-      const diffTime = Math.abs(now - date);
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
-      if (diffDays === 0) return "Today";
-      if (diffDays === 1) return "Yesterday";
-      if (diffDays < 7) return `${diffDays} days ago`;
-      if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-      if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
-      return `${Math.floor(diffDays / 365)} years ago`;
-    } catch (error) {
-      return "Unknown";
-    }
-  };
-  
-  return (
-    <>
-      <GradientCard 
-        gradient="linear-gradient(145deg, #1a237e 0%, #0d47a1 50%, #01579b 100%)"
-        sx={{
-          mt: { xs: 1, sm: 2, md: 3, lg: 4 },
-          mb: { xs: 2, sm: 3, md: 4 },
-          p: { xs: 1.5, sm: 2, md: 3, lg: 4 },
-          borderRadius: { xs: 2, sm: 3, md: 4, lg: 5 },
-          boxShadow: '0 10px 30px rgba(0,0,0,0.15)'
-        }}
-      >
-        <Stack 
-          direction={{ xs: 'column', sm: 'row' }} 
-          alignItems={{ xs: 'stretch', sm: 'center' }} 
-          justifyContent="space-between"
-          spacing={{ xs: 2, sm: 3 }}
-        >
-          {/* Left Section - Logo and Company Info */}
-          <Stack 
-            direction={{ xs: 'row', sm: 'row' }} 
-            alignItems="center" 
-            spacing={{ xs: 1.5, sm: 2, md: 3 }}
-            sx={{ width: '100%' }}
-          >
-            {/* Logo */}
-            <Box sx={{ 
-              position: 'relative',
-              flexShrink: 0
-            }}>
-              <Avatar
-                src={company.logo || defaultLogo}
-                sx={{
-                  width: { xs: 50, sm: 70, md: 100, lg: 120 },
-                  height: { xs: 50, sm: 70, md: 100, lg: 120 },
-                  border: '2px solid white',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-                  bgcolor: 'white',
-                  '& img': {
-                    objectFit: 'contain'
-                  }
-                }}
-              >
-                {!company.logo && (company.companyName?.charAt(0) || 'C')}
-              </Avatar>
-              
-              {company.isActive && (
-                <Box sx={{
-                  position: 'absolute',
-                  bottom: { xs: 0, sm: 2 },
-                  right: { xs: 0, sm: 2 },
-                  width: { xs: 16, sm: 20, md: 24 },
-                  height: { xs: 16, sm: 20, md: 24 },
-                  borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #4caf50 0%, #388e3c 100%)',
-                  border: '2px solid white',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
-                }}>
-                  <CheckCircle sx={{ fontSize: { xs: 8, sm: 10, md: 14 }, color: 'white' }} />
-                </Box>
-              )}
-            </Box>
-            
-            {/* Company Name and Chips */}
-            <Box sx={{ 
-              flex: 1,
-              minWidth: 0
-            }}>
-              {/* Company Name with Edit Icon */}
-              <Stack 
-                direction="row" 
-                alignItems="center" 
-                spacing={0.5} 
-                sx={{ 
-                  mb: 0.5,
-                  flexWrap: 'wrap'
-                }}
-              >
-                <Typography 
-                  variant={isMobile ? "subtitle1" : isTablet ? "h5" : "h4"} 
-                  sx={{ 
-                    fontWeight: 700, 
-                    fontSize: { xs: '1rem', sm: '1.3rem', md: '1.8rem', lg: '2.2rem' },
-                    textShadow: '1px 1px 2px rgba(0,0,0,0.2)',
-                    background: 'linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    wordBreak: 'break-word',
-                    lineHeight: 1.2
-                  }}
-                >
-                  {company.companyName}
-                </Typography>
-                
-                {/* Edit button */}
-                <Tooltip title="Edit Company" arrow placement="top">
-                  <IconButton 
-                    onClick={handleEditCompany}
-                    size="small"
-                    sx={{ 
-                      color: 'white',
-                      bgcolor: 'rgba(255,255,255,0.15)',
-                      backdropFilter: 'blur(5px)',
-                      width: { xs: 28, sm: 32, md: 36 },
-                      height: { xs: 28, sm: 32, md: 36 },
-                      '&:hover': { 
-                        bgcolor: 'rgba(255,255,255,0.25)',
-                      },
-                      ml: 0.5
-                    }}
-                  >
-                    <Edit sx={{ fontSize: { xs: 14, sm: 16, md: 18 } }} />
-                  </IconButton>
-                </Tooltip>
-              </Stack>
-              
-              {/* Company Chips */}
-              <Box sx={{ 
-                display: 'flex', 
-                flexWrap: 'wrap', 
-                gap: { xs: 0.5, sm: 0.8 },
-                alignItems: 'center',
-                mb: { xs: 1, sm: 1.5 }
-              }}>
-                <Chip
-                  icon={company.isActive ? <CheckCircle sx={{ fontSize: { xs: '0.7rem !important', sm: '0.8rem !important' } }} /> : <Cancel sx={{ fontSize: { xs: '0.7rem !important', sm: '0.8rem !important' } }} />}
-                  label={company.isActive ? "Active" : "Inactive"}
-                  size="small"
-                  sx={{
-                    background: company.isActive 
-                      ? 'linear-gradient(135deg, #4caf50 0%, #388e3c 100%)' 
-                      : 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)',
-                    color: 'white',
-                    fontWeight: 600,
-                    height: { xs: 22, sm: 24, md: 26 },
-                    fontSize: { xs: '0.65rem', sm: '0.7rem', md: '0.75rem' },
-                    '& .MuiChip-icon': { color: 'white' },
-                    '& .MuiChip-label': { px: { xs: 0.8, sm: 1 } },
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                  }}
-                />
-                
-                {company.companyCode && (
-                  <Chip
-                    icon={<Code sx={{ fontSize: { xs: '0.7rem !important', sm: '0.8rem !important' } }} />}
-                    label={`Code: ${company.companyCode}`}
-                    size="small"
-                    sx={{
-                      bgcolor: 'rgba(255,255,255,0.15)',
-                      color: 'white',
-                      fontWeight: 500,
-                      height: { xs: 22, sm: 24, md: 26 },
-                      fontSize: { xs: '0.65rem', sm: '0.7rem', md: '0.75rem' },
-                      backdropFilter: 'blur(5px)',
-                      border: '1px solid rgba(255,255,255,0.2)',
-                      '& .MuiChip-icon': { color: 'white' },
-                      '& .MuiChip-label': { px: { xs: 0.8, sm: 1 } }
-                    }}
-                  />
-                )}
-                
-                <Chip
-                  icon={<CalendarToday sx={{ fontSize: { xs: '0.7rem !important', sm: '0.8rem !important' } }} />}
-                  label={`Joined ${formatRelativeTime(company.createdAt)}`}
-                  size="small"
-                  sx={{
-                    bgcolor: 'rgba(255,255,255,0.15)',
-                    color: 'white',
-                    fontWeight: 500,
-                    height: { xs: 22, sm: 24, md: 26 },
-                    fontSize: { xs: '0.65rem', sm: '0.7rem', md: '0.75rem' },
-                    backdropFilter: 'blur(5px)',
-                    border: '1px solid rgba(255,255,255,0.2)',
-                    '& .MuiChip-icon': { color: 'white' },
-                    '& .MuiChip-label': { px: { xs: 0.8, sm: 1 } },
-                    maxWidth: { xs: '100%', sm: 'none' }
-                  }}
-                />
-              </Box>
-            </Box>
-          </Stack>
-          
-          {/* Action Buttons - Desktop/Tablet */}
-          <Stack 
-            direction="row" 
-            spacing={1.5}
-            sx={{ 
-              display: { xs: 'none', sm: 'flex' },
-              alignItems: 'center',
-              flexShrink: 0
-            }}
-          >
-            <Tooltip title="Refresh Data" arrow>
-              <IconButton
-                onClick={handleRefresh}
-                sx={{
-                  color: 'white',
-                  bgcolor: 'rgba(255,255,255,0.15)',
-                  backdropFilter: 'blur(5px)',
-                  width: { sm: 36, md: 40, lg: 44 },
-                  height: { sm: 36, md: 40, lg: 44 },
-                  '&:hover': { 
-                    bgcolor: 'rgba(255,255,255,0.25)',
-                    transform: 'rotate(180deg)'
-                  },
-                  transition: 'all 0.5s ease'
-                }}
-              >
-                <Refresh fontSize={isTablet ? "small" : "medium"} />
-              </IconButton>
-            </Tooltip>
-            
-            <Button
-              variant="contained"
-              onClick={handleAddNewUser}
-              startIcon={<Add />}
-              disabled={!company?._id}
-              size={isTablet ? "small" : "medium"}
-              sx={{
-                background: 'linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%)',
-                color: '#0d47a1',
-                fontWeight: 700,
-                px: { sm: 2, md: 2.5, lg: 3 },
-                py: { sm: 0.6, md: 0.8, lg: 1 },
-                borderRadius: 2,
-                fontSize: { sm: '0.75rem', md: '0.8rem', lg: '0.85rem' },
-                boxShadow: '0 4px 10px rgba(0,0,0,0.15)',
-                '&:hover': {
-                  background: 'white',
-                  boxShadow: '0 6px 14px rgba(0,0,0,0.2)',
-                  transform: 'translateY(-2px)'
-                },
-                transition: 'all 0.2s ease',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              Add User
-            </Button>
-          </Stack>
-          
-          {/* Mobile Menu Button */}
-          <Box sx={{ display: { xs: 'block', sm: 'none' }, position: 'absolute', top: 8, right: 8 }}>
-            <IconButton
-              onClick={() => setMobileMenuOpen(true)}
-              sx={{
-                color: 'white',
-                bgcolor: 'rgba(255,255,255,0.15)',
-                '&:hover': { bgcolor: 'rgba(255,255,255,0.25)' },
-                width: 32,
-                height: 32
-              }}
-            >
-              <MenuIcon sx={{ fontSize: 18 }} />
-            </IconButton>
-          </Box>
-        </Stack>
-        
-        {/* Mobile Login URL */}
-        <Box sx={{ 
-          display: { xs: 'block', sm: 'none' }, 
-          mt: 2,
-          p: 1.5,
-          bgcolor: 'rgba(0,0,0,0.2)',
-          borderRadius: 2
-        }}>
-          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)', display: 'block', mb: 0.5, fontSize: '0.7rem' }}>
-            Login URL:
-          </Typography>
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <Box sx={{
-              flex: 1,
-              bgcolor: 'rgba(255,255,255,0.1)',
-              borderRadius: 1.5,
-              px: 1.5,
-              py: 1,
-              overflow: 'hidden'
-            }}>
-              <Typography 
-                variant="caption" 
-                sx={{ 
-                  fontFamily: 'monospace',
-                  color: 'white',
-                  fontWeight: 500,
-                  display: 'block',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  fontSize: '0.7rem'
-                }}
-              >
-                {window.location.origin}{company.loginUrl}
-              </Typography>
-            </Box>
-            <IconButton
-              size="small"
-              onClick={handleCopy}
-              sx={{
-                color: 'white',
-                bgcolor: copied ? 'rgba(76, 175, 80, 0.3)' : 'rgba(255,255,255,0.15)',
-                width: 36,
-                height: 36,
-                '&:hover': { bgcolor: copied ? 'rgba(76, 175, 80, 0.4)' : 'rgba(255,255,255,0.25)' }
-              }}
-            >
-              {copied ? <CheckCircle sx={{ fontSize: 16 }} /> : <ContentCopyIcon sx={{ fontSize: 16 }} />}
-            </IconButton>
-          </Stack>
-          {copied && (
-            <Typography 
-              variant="caption" 
-              sx={{ 
-                color: '#4caf50', 
-                display: 'block', 
-                mt: 0.5,
-                fontSize: '0.65rem',
-                fontWeight: 600
-              }}
-            >
-              ✓ Copied to clipboard!
-            </Typography>
-          )}
-        </Box>
-      </GradientCard>
-      
-      {/* Mobile Menu Drawer */}
-      <MobileMenuDrawer
-        open={mobileMenuOpen}
-        onClose={() => setMobileMenuOpen(false)}
-        company={company}
-        handleEditCompany={handleEditCompany}
-        handleRefresh={handleRefresh}
-        handleAddNewUser={handleAddNewUser}
-      />
-    </>
-  );
-};
-
-// Responsive Stats Grid
-const ResponsiveStatsGrid = ({ stats }) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  
-  const statsData = [
-    {
-      icon: <People sx={{ fontSize: isMobile ? 20 : 24, color: 'white' }} />,
-      value: stats.totalUsers,
-      label: 'TOTAL USERS',
-      color: '#2196f3',
-      gradient: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)'
-    },
-    {
-      icon: <CheckCircle sx={{ fontSize: isMobile ? 20 : 24, color: 'white' }} />,
-      value: stats.activeUsers,
-      label: 'ACTIVE USERS',
-      color: '#4caf50',
-      gradient: 'linear-gradient(135deg, #4caf50 0%, #388e3c 100%)'
-    },
-    {
-      icon: <CorporateFare sx={{ fontSize: isMobile ? 20 : 24, color: 'white' }} />,
-      value: stats.departments,
-      label: 'DEPARTMENTS',
-      color: '#ff9800',
-      gradient: 'linear-gradient(135deg, #ff9800 0%, #ed6c02 100%)'
-    },
-    {
-      icon: <Today sx={{ fontSize: isMobile ? 20 : 24, color: 'white' }} />,
-      value: stats.todayLogins,
-      label: "TODAY'S LOGINS",
-      color: '#9c27b0',
-      gradient: 'linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%)'
-    }
-  ];
-  
-  return (
-    <Box sx={{ 
-      display: 'grid', 
-      gridTemplateColumns: { 
-        xs: 'repeat(2, 1fr)', 
-        sm: 'repeat(4, 1fr)' 
-      },
-      gap: { xs: 1.5, sm: 2, md: 2.5 },
-      mb: { xs: 2, sm: 3 }
-    }}>
-      {statsData.map((stat, index) => (
-        <StatBox key={index}>
-          <Box sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            textAlign: 'center'
-          }}>
-            <Box sx={{
-              width: { xs: 36, sm: 40, md: 44, lg: 48 },
-              height: { xs: 36, sm: 40, md: 44, lg: 48 },
-              borderRadius: { xs: 1.5, sm: 2, md: 2.5, lg: 3 },
-              background: stat.gradient,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 8px auto',
-              boxShadow: `0 4px 12px ${alpha(stat.color, 0.3)}`,
-            }}>
-              {stat.icon}
-            </Box>
-            <AnimatedNumber sx={{ 
-              fontWeight: 800, 
-              color: stat.color, 
-              fontSize: { xs: '1.2rem', sm: '1.4rem', md: '1.8rem', lg: '2rem' },
-              lineHeight: 1.2,
-              mb: 0.3
-            }}>
-              {stat.value}
-            </AnimatedNumber>
-            <Typography sx={{ 
-              fontSize: { xs: '0.55rem', sm: '0.6rem', md: '0.65rem', lg: '0.7rem' }, 
-              color: '#64748b', 
-              fontWeight: 600, 
-              textTransform: 'uppercase', 
-              letterSpacing: '0.3px',
-              whiteSpace: 'nowrap'
-            }}>
-              {stat.label}
-            </Typography>
-          </Box>
-        </StatBox>
-      ))}
-    </Box>
-  );
-};
-
-// Responsive Company Information Card
-const ResponsiveCompanyInfoCard = ({ company }) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  
-  const formatDate = (dateString) => {
-    if (!dateString) return "Not available";
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-    } catch (error) {
-      return "Invalid date";
-    }
-  };
-  
-  const infoItems = [
-    {
-      icon: <Fingerprint sx={{ fontSize: isMobile ? 18 : 20, color: 'white' }} />,
-      label: 'Company Code',
-      value: company.companyCode || "N/A",
-      gradient: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)'
-    },
-    // {
-    //   icon: <Email sx={{ fontSize: isMobile ? 18 : 20, color: 'white' }} />,
-    //   label: 'Email',
-    //   value: company.companyEmail || "Not provided",
-    //   gradient: 'linear-gradient(135deg, #ff9800 0%, #ed6c02 100%)'
-    // },
-    // {
-    //   icon: <Phone sx={{ fontSize: isMobile ? 18 : 20, color: 'white' }} />,
-    //   label: 'Phone',
-    //   value: company.companyPhone || "Not provided",
-    //   gradient: 'linear-gradient(135deg, #4caf50 0%, #388e3c 100%)'
-    // },
-    // {
-    //   icon: <LocationOn sx={{ fontSize: isMobile ? 18 : 20, color: 'white' }} />,
-    //   label: 'Address',
-    //   value: company.companyAddress || "Not provided",
-    //   gradient: 'linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%)'
-    // },
-    {
-      icon: <Event sx={{ fontSize: isMobile ? 18 : 20, color: 'white' }} />,
-      label: 'Created On',
-      value: formatDate(company.createdAt),
-      gradient: 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)'
-    },
-    {
-      icon: <Person sx={{ fontSize: isMobile ? 18 : 20, color: 'white' }} />,
-      label: 'Owner',
-      value: company.ownerName || "Administrator",
-      gradient: 'linear-gradient(135deg, #607d8b 0%, #455a64 100%)'
-    }
-  ];
-  
-  return (
-    <Card sx={{ 
-      borderRadius: { xs: 2, sm: 3, md: 4 },
-      bgcolor: 'white',
-      boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
-      mb: { xs: 2, sm: 3 },
-      overflow: 'hidden',
-      border: '1px solid rgba(226, 232, 240, 0.6)',
-    }}>
-      <Box sx={{
-        height: 4,
-        background: 'linear-gradient(90deg, #2196f3, #9c27b0, #ff9800)'
-      }} />
-      
-      <CardHeader
-        title={
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <Box sx={{
-              p: { xs: 0.5, sm: 0.75, md: 1 },
-              borderRadius: { xs: 1.5, sm: 2 },
-              bgcolor: alpha(theme.palette.primary.main, 0.1),
-              display: 'flex'
-            }}>
-              <Business sx={{ color: 'primary.main', fontSize: { xs: 16, sm: 18, md: 20 } }} />
-            </Box>
-            <Typography variant={isMobile ? "body2" : "h6"} fontWeight={700} sx={{ fontSize: { xs: '0.95rem', sm: '1.1rem', md: '1.25rem' } }}>
-              Company Information
-            </Typography>
-          </Stack>
-        }
-        sx={{ 
-          borderBottom: '1px solid', 
-          borderColor: 'grey.100', 
-          py: { xs: 1, sm: 1.5, md: 2 },
-          px: { xs: 1.5, sm: 2, md: 3 },
-          bgcolor: 'grey.50'
-        }}
-      />
-      
-      <CardContent sx={{ p: { xs: 1.5, sm: 2, md: 3 } }}>
-        <Grid container spacing={{ xs: 1.5, sm: 2, md: 2.5 }}>
-          {infoItems.map((item, index) => (
-            <Grid item xs={12} sm={6} md={4} key={index}>
-              <Box sx={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: { xs: 1, sm: 1.5 },
-                p: { xs: 1, sm: 1.2, md: 1.5 },
-                bgcolor: alpha(theme.palette.primary.main, 0.02),
-                borderRadius: { xs: 1.5, sm: 2 },
-                border: '1px solid',
-                borderColor: 'grey.100',
-                height: '100%'
-              }}>
-                <Box sx={{ 
-                  width: { xs: 32, sm: 36, md: 40 },
-                  height: { xs: 32, sm: 36, md: 40 },
-                  borderRadius: { xs: 1.5, sm: 2 },
-                  background: item.gradient,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}>
-                  {item.icon}
-                </Box>
-                <Box sx={{ minWidth: 0, flex: 1 }}>
-                  <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ 
-                    fontSize: { xs: '0.55rem', sm: '0.6rem', md: '0.65rem' },
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.3px',
-                    display: 'block',
-                    mb: 0.2
-                  }}>
-                    {item.label}
-                  </Typography>
-                  <Typography variant="body2" fontWeight={600} sx={{ 
-                    fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.85rem' },
-                    wordBreak: 'break-word',
-                    color: '#0f172a',
-                    lineHeight: 1.3
-                  }}>
-                    {item.value}
-                  </Typography>
-                </Box>
-              </Box>
-            </Grid>
-          ))}
-        </Grid>
-      </CardContent>
-    </Card>
-  );
-};
-
-// Responsive Subscription Card
-const ResponsiveSubscriptionCard = ({ company }) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  
-  const getDaysRemaining = (expiryDate) => {
-    if (!expiryDate) return 30;
-    try {
-      const expiry = new Date(expiryDate);
-      const today = new Date();
-      const diffTime = expiry - today;
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      return diffDays > 0 ? diffDays : 0;
-    } catch (error) {
-      return 30;
-    }
-  };
-  
-  const getSubscriptionStatus = (daysRemaining) => {
-    if (daysRemaining > 15) return { color: 'success', text: 'Active', bg: 'linear-gradient(135deg, #4caf50 0%, #388e3c 100%)' };
-    if (daysRemaining > 7) return { color: 'warning', text: 'Expiring Soon', bg: 'linear-gradient(135deg, #ff9800 0%, #ed6c02 100%)' };
-    if (daysRemaining > 0) return { color: 'error', text: 'Critical', bg: 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)' };
-    return { color: 'error', text: 'Expired', bg: 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)' };
-  };
-  
-  const formatDate = (dateString) => {
-    if (!dateString) return "Not available";
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-    } catch (error) {
-      return "Invalid date";
-    }
-  };
-  
-  const daysRemaining = getDaysRemaining(company.subscriptionExpiry);
-  const subscriptionStatus = getSubscriptionStatus(daysRemaining);
-  const subscriptionProgress = Math.min((daysRemaining / 30) * 100, 100);
-  
-  return (
-    <Card sx={{ 
-      borderRadius: { xs: 2, sm: 3, md: 4 },
-      boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
-      background: `linear-gradient(145deg, ${
-        subscriptionStatus.color === 'success' ? '#e8f5e9' :
-        subscriptionStatus.color === 'warning' ? '#fff3e0' :
-        '#ffebee'
-      } 0%, ${
-        subscriptionStatus.color === 'success' ? '#c8e6c9' :
-        subscriptionStatus.color === 'warning' ? '#ffe0b2' :
-        '#ffcdd2'
-      } 100%)`,
-      overflow: 'hidden',
-      position: 'relative',
-      border: '1px solid rgba(226, 232, 240, 0.6)',
-      mb: { xs: 2, sm: 3 }
-    }}>
-      <Box sx={{
-        position: 'absolute',
-        top: -20,
-        right: -20,
-        width: { xs: 100, sm: 120, md: 150 },
-        height: { xs: 100, sm: 120, md: 150 },
-        borderRadius: '50%',
-        background: `radial-gradient(circle, ${
-          subscriptionStatus.color === 'success' ? 'rgba(76, 175, 80, 0.15)' :
-          subscriptionStatus.color === 'warning' ? 'rgba(255, 152, 0, 0.15)' :
-          'rgba(244, 67, 54, 0.15)'
-        } 0%, transparent 70%)`,
-      }} />
-      
-      <CardContent sx={{ p: { xs: 1.5, sm: 2, md: 3 }, position: 'relative' }}>
-        <Stack 
-          direction={{ xs: 'column', sm: 'row' }} 
-          alignItems="center" 
-          justifyContent="space-between" 
-          spacing={{ xs: 2, sm: 3 }}
-        >
-          <Box sx={{ width: '100%' }}>
-            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: { xs: 1.5, sm: 2 }, flexWrap: 'wrap' }}>
-              <Box sx={{
-                p: { xs: 0.5, sm: 0.75, md: 1 },
-                borderRadius: { xs: 1.5, sm: 2 },
-                background: subscriptionStatus.bg,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-                <CardMembership sx={{ 
-                  color: 'white',
-                  fontSize: { xs: 16, sm: 18, md: 20 }
-                }} />
-              </Box>
-              <Typography variant={isMobile ? "body2" : "h6"} fontWeight={700} color={`${subscriptionStatus.color}.dark`} sx={{ fontSize: { xs: '0.9rem', sm: '1.1rem', md: '1.25rem' } }}>
-                Subscription Status
-              </Typography>
-              <Chip
-                label={subscriptionStatus.text}
-                size="small"
-                sx={{
-                  background: subscriptionStatus.bg,
-                  color: 'white',
-                  fontWeight: 600,
-                  height: { xs: 20, sm: 22, md: 24 },
-                  fontSize: { xs: '0.6rem', sm: '0.65rem', md: '0.7rem' },
-                  ml: { xs: 0, sm: 'auto' },
-                  '& .MuiChip-label': { px: 1 }
-                }}
-              />
-            </Stack>
-            
-            <Typography variant="body2" color="text.secondary" sx={{ 
-              mb: { xs: 1.5, sm: 2 },
-              fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8rem' }
-            }}>
-              <strong>Expires on:</strong> {formatDate(company.subscriptionExpiry)}
-            </Typography>
-            
-            <Box sx={{ mb: { xs: 1.5, sm: 2 } }}>
-              <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 0.5 }}>
-                <Typography variant="body2" fontWeight={600} color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.7rem', md: '0.75rem' } }}>
-                  Days Remaining
-                </Typography>
-                <Typography 
-                  variant={isMobile ? "body1" : "h6"} 
-                  fontWeight={800} 
-                  sx={{
-                    background: subscriptionStatus.bg,
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    fontSize: { xs: '1rem', sm: '1.2rem', md: '1.4rem' }
-                  }}
-                >
-                  {daysRemaining} days
-                </Typography>
-              </Stack>
-              <LinearProgress 
-                variant="determinate" 
-                value={subscriptionProgress}
-                sx={{ 
-                  height: { xs: 6, sm: 8, md: 10 },
-                  borderRadius: 4,
-                  bgcolor: 'rgba(0,0,0,0.05)',
-                  '& .MuiLinearProgress-bar': {
-                    borderRadius: 4,
-                    background: subscriptionStatus.bg,
-                  }
-                }}
-              />
-            </Box>
-            
-            <Alert 
-              severity={subscriptionStatus.color}
-              iconMapping={{
-                success: <CheckCircle fontSize="inherit" />,
-                warning: <WarningAmber fontSize="inherit" />,
-                error: <ErrorOutline fontSize="inherit" />
-              }}
-              sx={{ 
-                mt: { xs: 1, sm: 1.5 }, 
-                borderRadius: { xs: 1.5, sm: 2 },
-                py: { xs: 0.3, sm: 0.5 },
-                '& .MuiAlert-icon': {
-                  fontSize: { xs: '1rem', sm: '1.1rem' }
-                },
-                '& .MuiAlert-message': {
-                  fontSize: { xs: '0.65rem', sm: '0.7rem', md: '0.75rem' },
-                  padding: '2px 0'
-                }
-              }}
-            >
-              {daysRemaining > 0 
-                ? `Your subscription will expire in ${daysRemaining} days.`
-                : 'Your subscription has expired.'}
-            </Alert>
-          </Box>
-        </Stack>
-      </CardContent>
-    </Card>
-  );
-};
-
-// Responsive Recent Users Card
-const ResponsiveRecentUsersCard = ({ recentUsers, handleEditUser, handleAddNewUser, isMobile }) => {
-  const theme = useTheme();
-  
-  return (
-    <Card sx={{ 
-      borderRadius: { xs: 2, sm: 3, md: 4 },
-      bgcolor: 'white',
-      boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
-      height: '100%',
-      display: 'flex',
-      flexDirection: 'column',
-      maxHeight: { lg: '600px' },
-      border: '1px solid rgba(226, 232, 240, 0.6)',
-      position: 'relative',
-      overflow: 'hidden'
-    }}>
-      <Box sx={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        height: 4,
-        background: 'linear-gradient(90deg, #4caf50, #2196f3, #9c27b0)'
-      }} />
-      
-      <CardHeader
-        title={
-          <Stack direction="row" alignItems="center" justifyContent="space-between">
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <Box sx={{
-                p: { xs: 0.5, sm: 0.75, md: 1 },
-                borderRadius: { xs: 1.5, sm: 2 },
-                bgcolor: alpha(theme.palette.primary.main, 0.1),
-                display: 'flex'
-              }}>
-                <People sx={{ color: 'primary.main', fontSize: { xs: 16, sm: 18, md: 20 } }} />
-              </Box>
-              <Typography variant={isMobile ? "body2" : "h6"} fontWeight={700} sx={{ fontSize: { xs: '0.95rem', sm: '1.1rem', md: '1.25rem' } }}>
-                Recent Users
-              </Typography>
-            </Stack>
-            <MuiBadge 
-              badgeContent={recentUsers.length} 
-              color="primary"
-              sx={{ 
-                '& .MuiBadge-badge': { 
-                  fontWeight: 700,
-                  fontSize: { xs: '0.6rem', sm: '0.65rem', md: '0.7rem' },
-                  height: { xs: 16, sm: 18, md: 20 },
-                  minWidth: { xs: 16, sm: 18, md: 20 },
-                } 
-              }}
-            />
-          </Stack>
-        }
-        sx={{ 
-          borderBottom: '1px solid', 
-          borderColor: 'grey.100', 
-          py: { xs: 1, sm: 1.5, md: 2 },
-          px: { xs: 1.5, sm: 2, md: 3 },
-          bgcolor: 'grey.50'
-        }}
-      />
-      
-      {/* Scrollable Content Area */}
-      <CardContent 
-        sx={{ 
-          p: 0, 
-          flexGrow: 1,
-          overflowY: 'auto',
-          maxHeight: { xs: '300px', sm: '350px', md: '400px', lg: '500px' },
-          '&::-webkit-scrollbar': {
-            width: '4px',
-          },
-          '&::-webkit-scrollbar-track': {
-            background: '#f1f1f1',
-          },
-          '&::-webkit-scrollbar-thumb': {
-            background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
-            borderRadius: '4px',
-          },
-        }}
-      >
-        {recentUsers.length > 0 ? (
-          <List sx={{ p: 0 }}>
-            {recentUsers.map((user, index) => (
-              <ListItem
-                key={user.id || user._id || index}
-                sx={{
-                  px: { xs: 1.5, sm: 2, md: 3 },
-                  py: { xs: 1.2, sm: 1.5, md: 2 },
-                  borderBottom: index < recentUsers.length - 1 ? '1px solid' : 'none',
-                  borderColor: 'grey.100',
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    bgcolor: alpha(theme.palette.primary.main, 0.04),
-                  },
-                }}
-              >
-                <ListItemAvatar>
-                  <MuiBadge
-                    overlap="circular"
-                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                    badgeContent={
-                      <Box
-                        sx={{
-                          width: { xs: 8, sm: 9, md: 10 },
-                          height: { xs: 8, sm: 9, md: 10 },
-                          borderRadius: '50%',
-                          background: user.isActive 
-                            ? 'linear-gradient(135deg, #4caf50 0%, #388e3c 100%)'
-                            : 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)',
-                          border: '2px solid white',
-                        }}
-                      />
-                    }
-                  >
-                    <Avatar
-                      sx={{
-                        width: { xs: 36, sm: 40, md: 44 },
-                        height: { xs: 36, sm: 40, md: 44 },
-                        background: user.isActive 
-                          ? 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)'
-                          : 'linear-gradient(135deg, #9e9e9e 0%, #757575 100%)',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                        fontSize: { xs: '0.8rem', sm: '0.9rem', md: '1rem' },
-                      }}
-                    >
-                      {user.name?.charAt(0) || 'U'}
-                    </Avatar>
-                  </MuiBadge>
-                </ListItemAvatar>
-                
-                <ListItemText
-                  primary={
-                    <Typography 
-                      variant="body1" 
-                      fontWeight={700} 
-                      noWrap
-                      sx={{ 
-                        fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.9rem' },
-                        color: '#0f172a',
-                        mb: 0.2
-                      }}
-                    >
-                      {user.name || 'Unknown User'}
-                    </Typography>
-                  }
-                  secondary={
-                    <Stack direction="row" alignItems="center" spacing={0.5} sx={{ flexWrap: 'wrap', gap: 0.3 }}>
-                      {user.employeeType && (
-                        <Chip
-                          label={user.employeeType}
-                          size="small"
-                          sx={{ 
-                            height: { xs: 16, sm: 18 }, 
-                            fontSize: { xs: '0.5rem', sm: '0.55rem' },
-                            fontWeight: 600,
-                            background: 'linear-gradient(135deg, #ff9800 0%, #ed6c02 100%)',
-                            color: 'white',
-                            '& .MuiChip-label': { px: 0.6 }
-                          }}
-                        />
-                      )}
-                      <Chip
-                        label={user.department || 'No Dept'}
-                        size="small"
-                        sx={{ 
-                          height: { xs: 16, sm: 18 }, 
-                          fontSize: { xs: '0.5rem', sm: '0.55rem' },
-                          fontWeight: 600,
-                          bgcolor: alpha(theme.palette.primary.main, 0.1),
-                          color: 'primary.main',
-                          '& .MuiChip-label': { px: 0.6 }
-                        }}
-                      />
-                    </Stack>
-                  }
-                />
-                
-                <Tooltip title="Edit User" arrow placement="left">
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    startIcon={<Edit sx={{ fontSize: { xs: 12, sm: 14 } }} />}
-                    onClick={() => handleEditUser(user)}
-                    sx={{
-                      ml: 1,
-                      borderRadius: 1.5,
-                      borderColor: 'primary.main',
-                      color: 'primary.main',
-                      minWidth: { xs: 32, sm: 36, md: 40 },
-                      fontSize: { xs: '0.55rem', sm: '0.6rem', md: '0.65rem' },
-                      py: { xs: 0.2, sm: 0.3, md: 0.4 },
-                      px: { xs: 0.6, sm: 0.8, md: 1 },
-                      '&:hover': {
-                        background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
-                        color: 'white',
-                        borderColor: 'transparent',
-                      },
-                      transition: 'all 0.2s ease',
-                      flexShrink: 0
-                    }}
-                  >
-                    {isMobile ? '' : 'Edit'}
-                  </Button>
-                </Tooltip>
-              </ListItem>
-            ))}
-          </List>
-        ) : (
-          <Box sx={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            py: { xs: 4, sm: 5, md: 6 },
-            px: 2,
-            height: '100%',
-            minHeight: { xs: '200px', sm: '250px' }
-          }}>
-            <Box sx={{
-              width: { xs: 50, sm: 60, md: 70 },
-              height: { xs: 50, sm: 60, md: 70 },
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              mb: 2,
-            }}>
-              <People sx={{ fontSize: { xs: 24, sm: 28, md: 32 }, color: '#1976d2' }} />
-            </Box>
-            <Typography variant="body2" fontWeight={700} gutterBottom sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem', md: '1rem' } }}>
-              No Users Found
-            </Typography>
-            <Typography variant="caption" color="text.secondary" align="center" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' }, mb: 2 }}>
-              Get started by adding users
-            </Typography>
-            <Button
-              variant="contained"
-              onClick={handleAddNewUser}
-              startIcon={<Add sx={{ fontSize: 14 }} />}
-              size="small"
-              sx={{
-                background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
-                color: 'white',
-                fontWeight: 600,
-                px: 2,
-                py: 0.5,
-                borderRadius: 1.5,
-                fontSize: { xs: '0.65rem', sm: '0.7rem' },
-              }}
-            >
-              Add First User
-            </Button>
-          </Box>
-        )}
-      </CardContent>
-    </Card>
-  );
-};
-
-// Main Component
 const CompanyDetails = () => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [company, setCompany] = useState(null);
@@ -1563,12 +19,13 @@ const CompanyDetails = () => {
   const [userRole, setUserRole] = useState("");
   const [activeTab, setActiveTab] = useState(0);
   const [apiDebug, setApiDebug] = useState({});
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isTablet, setIsTablet] = useState(window.innerWidth >= 768 && window.innerWidth < 1024);
   
   // Modal States
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [editFormData, setEditFormData] = useState({
-    // Basic Info
     name: "",
     email: "",
     phone: "",
@@ -1576,32 +33,22 @@ const CompanyDetails = () => {
     gender: "",
     maritalStatus: "",
     dob: "",
-    
-    // Employment Info
     department: "",
     jobRole: "",
     role: "",
     employeeType: "",
     designation: "",
     salary: "",
-    
-    // Bank Details
     accountNumber: "",
     ifsc: "",
     bankName: "",
     bankHolderName: "",
-    
-    // Family Details
     fatherName: "",
     motherName: "",
-    
-    // Emergency Contact
     emergencyName: "",
     emergencyPhone: "",
     emergencyRelation: "",
     emergencyAddress: "",
-    
-    // Additional
     isActive: true,
     properties: [],
     propertyOwned: "",
@@ -1632,18 +79,23 @@ const CompanyDetails = () => {
   const [jobRoles, setJobRoles] = useState([]);
   const [loadingDepartments, setLoadingDepartments] = useState(false);
   const [loadingJobRoles, setLoadingJobRoles] = useState(false);
-
-  // Copy URL state
   const [copied, setCopied] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Gender options
   const genderOptions = ["male", "female", "other"];
-  
-  // Marital status options
   const maritalStatusOptions = ["single", "married", "divorced", "widowed"];
-  
-  // Employee type options
   const employeeTypeOptions = ["permanent", "contract", "intern", "trainee", "consultant", "part-time", "freelance"];
+
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+      setIsTablet(window.innerWidth >= 768 && window.innerWidth < 1024);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Handle copy URL
   const handleCopy = () => {
@@ -2235,17 +687,15 @@ const CompanyDetails = () => {
       setCompanyEditSuccess(true);
       
       toast.success(
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <CheckCircle sx={{ color: '#4caf50', fontSize: 24 }} />
-          <Box>
-            <Typography variant="body1" fontWeight={600}>
-              Company Updated Successfully!
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {companyEditFormData.companyName} has been updated
-            </Typography>
-          </Box>
-        </Box>,
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <svg style={{ color: '#4caf50', width: '24px', height: '24px' }} viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+          </svg>
+          <div>
+            <div style={{ fontWeight: 600 }}>Company Updated Successfully!</div>
+            <div style={{ fontSize: '0.75rem', color: '#666' }}>{companyEditFormData.companyName} has been updated</div>
+          </div>
+        </div>,
         { icon: false, autoClose: 4000 }
       );
       
@@ -2332,10 +782,10 @@ const CompanyDetails = () => {
 
   // Handle form input changes
   const handleInputChange = (e) => {
-    const { name, value, checked } = e.target;
+    const { name, value, type, checked } = e.target;
     setEditFormData(prev => ({
       ...prev,
-      [name]: name === 'isActive' ? checked : value
+      [name]: type === 'checkbox' ? checked : value
     }));
     
     if (formErrors[name]) {
@@ -2356,35 +806,20 @@ const CompanyDetails = () => {
   };
 
   // Handle department change
-  const handleDepartmentChange = (event, newValue) => {
-    if (newValue && typeof newValue === 'object') {
-      setEditFormData(prev => ({
-        ...prev,
-        department: newValue.name || newValue.value || newValue
-      }));
-    } else {
-      setEditFormData(prev => ({
-        ...prev,
-        department: newValue || ""
-      }));
-    }
+  const handleDepartmentChange = (value) => {
+    setEditFormData(prev => ({
+      ...prev,
+      department: value
+    }));
   };
 
   // Handle job role change
-  const handleRoleChange = (event, newValue) => {
-    if (newValue && typeof newValue === 'object') {
-      setEditFormData(prev => ({
-        ...prev,
-        jobRole: newValue.name || newValue.value || newValue,
-        role: newValue.name || newValue.value || newValue
-      }));
-    } else {
-      setEditFormData(prev => ({
-        ...prev,
-        jobRole: newValue || "",
-        role: newValue || ""
-      }));
-    }
+  const handleRoleChange = (value) => {
+    setEditFormData(prev => ({
+      ...prev,
+      jobRole: value,
+      role: value
+    }));
   };
 
   // Validate form
@@ -2520,17 +955,15 @@ const CompanyDetails = () => {
         }));
         
         toast.success(
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <CheckCircle sx={{ color: '#4caf50', fontSize: 24 }} />
-            <Box>
-              <Typography variant="body1" fontWeight={600}>
-                User Updated Successfully!
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {editFormData.name} has been updated
-              </Typography>
-            </Box>
-          </Box>,
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <svg style={{ color: '#4caf50', width: '24px', height: '24px' }} viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            </svg>
+            <div>
+              <div style={{ fontWeight: 600 }}>User Updated Successfully!</div>
+              <div style={{ fontSize: '0.75rem', color: '#666' }}>{editFormData.name} has been updated</div>
+            </div>
+          </div>,
           { icon: false, autoClose: 4000 }
         );
         
@@ -2550,17 +983,15 @@ const CompanyDetails = () => {
     setEditSuccess(true);
     
     toast.success(
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-        <CheckCircle sx={{ color: '#4caf50', fontSize: 24 }} />
-        <Box>
-          <Typography variant="body1" fontWeight={600}>
-            User Updated Successfully!
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {editFormData.name} has been updated
-          </Typography>
-        </Box>
-      </Box>,
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <svg style={{ color: '#4caf50', width: '24px', height: '24px' }} viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+        </svg>
+        <div>
+          <div style={{ fontWeight: 600 }}>User Updated Successfully!</div>
+          <div style={{ fontSize: '0.75rem', color: '#666' }}>{editFormData.name} has been updated</div>
+        </div>
+      </div>,
       { icon: false, autoClose: 4000 }
     );
     
@@ -2625,17 +1056,15 @@ const CompanyDetails = () => {
       }
       
       toast.success(
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Delete sx={{ color: '#f44336', fontSize: 24 }} />
-          <Box>
-            <Typography variant="body1" fontWeight={600}>
-              User Deleted Successfully!
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {selectedUser.name} has been removed
-            </Typography>
-          </Box>
-        </Box>,
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <svg style={{ color: '#f44336', width: '24px', height: '24px' }} viewBox="0 0 24 24" fill="currentColor">
+            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+          </svg>
+          <div>
+            <div style={{ fontWeight: 600 }}>User Deleted Successfully!</div>
+            <div style={{ fontSize: '0.75rem', color: '#666' }}>{selectedUser.name} has been removed</div>
+          </div>
+        </div>,
         { icon: false, autoClose: 4000 }
       );
       
@@ -2708,8 +1137,8 @@ const CompanyDetails = () => {
   };
 
   // Handle tab change
-  const handleTabChange = (event, newValue) => {
-    setActiveTab(newValue);
+  const handleTabChange = (tabIndex) => {
+    setActiveTab(tabIndex);
   };
 
   // Initial load
@@ -2717,1372 +1146,1203 @@ const CompanyDetails = () => {
     fetchCurrentUserCompany();
   }, []);
 
+  const defaultLogo = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
+  const daysRemaining = getDaysRemaining(company?.subscriptionExpiry);
+  const subscriptionStatus = getSubscriptionStatus(daysRemaining);
+  const subscriptionProgress = Math.min((daysRemaining / 30) * 100, 100);
+
   if (loading) {
     return (
-      <Box sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100vh',
-        background: 'linear-gradient(145deg, #667eea 0%, #764ba2 100%)',
-        px: 2
-      }}>
-        <Paper
-          elevation={24}
-          sx={{
-            p: { xs: 3, sm: 5 },
-            borderRadius: { xs: 3, sm: 4 },
-            bgcolor: 'rgba(255,255,255,0.95)',
-            backdropFilter: 'blur(20px)',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-            textAlign: 'center',
-            maxWidth: 400,
-            width: '100%'
-          }}
-        >
-          <CircularProgress 
-            size={isMobile ? 50 : 70} 
-            thickness={4} 
-            sx={{ 
-              mb: 3,
-              color: 'primary.main'
-            }} 
-          />
-          <Typography 
-            variant={isMobile ? "h5" : "h4"} 
-            sx={{ 
-              fontWeight: 800,
-              background: 'linear-gradient(145deg, #667eea 0%, #764ba2 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              mb: 1,
-              fontSize: { xs: '1.5rem', sm: '2rem' }
-            }}
-          >
-            Loading...
-          </Typography>
-          <Typography 
-            variant="body1" 
-            color="text.secondary"
-            sx={{ fontWeight: 500, fontSize: { xs: '0.9rem', sm: '1rem' } }}
-          >
-            Fetching company details
-          </Typography>
-        </Paper>
-      </Box>
+      <div className="CompanyDetails-loading-container">
+        <div className="CompanyDetails-loading-card">
+          <div className="CompanyDetails-loading-spinner"></div>
+          <h2 className="CompanyDetails-loading-title">Loading...</h2>
+          <p className="CompanyDetails-loading-text">Fetching company details</p>
+        </div>
+      </div>
     );
   }
 
   if (!company) {
     return (
-      <Box sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100vh',
-        p: 3,
-        background: 'linear-gradient(145deg, #f6f9fc 0%, #edf2f7 100%)'
-      }}>
-        <Paper
-          elevation={24}
-          sx={{
-            p: { xs: 4, sm: 6 },
-            borderRadius: { xs: 3, sm: 4 },
-            bgcolor: 'rgba(255,255,255,0.95)',
-            backdropFilter: 'blur(20px)',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
-            textAlign: 'center',
-            maxWidth: 500,
-            width: '100%'
-          }}
-        >
-          <Box sx={{
-            width: { xs: 80, sm: 120 },
-            height: { xs: 80, sm: 120 },
-            borderRadius: '50%',
-            bgcolor: 'error.50',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            mx: 'auto',
-            mb: 3,
-            border: '4px solid',
-            borderColor: 'error.100'
-          }}>
-            <Business sx={{ fontSize: { xs: 40, sm: 60 }, color: 'error.main' }} />
-          </Box>
-          <Typography variant={isMobile ? "h4" : "h3"} fontWeight={800} color="error.main" gutterBottom sx={{ fontSize: { xs: '1.8rem', sm: '2.5rem' } }}>
-            Oops!
-          </Typography>
-          <Typography variant={isMobile ? "h6" : "h5"} fontWeight={700} gutterBottom sx={{ fontSize: { xs: '1.1rem', sm: '1.5rem' } }}>
-            Company Not Found
-          </Typography>
-          <Typography variant="body1" color="text.secondary" paragraph sx={{ mb: 4, fontSize: isMobile ? '0.9rem' : '1rem' }}>
-            Unable to load company details. Please try again or contact support.
-          </Typography>
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="center">
-            <Button
-              variant="contained"
-              size={isMobile ? "medium" : "large"}
-              onClick={() => navigate("/Ciis-network/SuperAdminDashboard")}
-              startIcon={<ArrowBack />}
-              sx={{
-                borderRadius: 2,
-                px: { xs: 3, sm: 4 },
-                py: { xs: 1, sm: 1.5 },
-                fontWeight: 700,
-                fontSize: { xs: '0.85rem', sm: '1rem' },
-                background: 'linear-gradient(145deg, #2196f3 0%, #1976d2 100%)',
-                '&:hover': {
-                  boxShadow: '0 12px 24px rgba(33, 150, 243, 0.4)',
-                  transform: 'translateY(-2px)'
-                }
-              }}
-            >
+      <div className="CompanyDetails-error-container">
+        <div className="CompanyDetails-error-card">
+          <div className="CompanyDetails-error-icon">
+            <svg width="60" height="60" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+            </svg>
+          </div>
+          <h2 className="CompanyDetails-error-title">Oops!</h2>
+          <h3 className="CompanyDetails-error-subtitle">Company Not Found</h3>
+          <p className="CompanyDetails-error-message">Unable to load company details. Please try again or contact support.</p>
+          <div className="CompanyDetails-error-actions">
+            <button className="CompanyDetails-btn CompanyDetails-btn-primary" onClick={() => navigate("/Ciis-network/SuperAdminDashboard")}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style={{ marginRight: '8px' }}>
+                <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+              </svg>
               Back to Dashboard
-            </Button>
-            <Button
-              variant="outlined"
-              size={isMobile ? "medium" : "large"}
-              onClick={handleRefresh}
-              startIcon={<Refresh />}
-              sx={{
-                borderRadius: 2,
-                px: { xs: 3, sm: 4 },
-                py: { xs: 1, sm: 1.5 },
-                fontWeight: 700,
-                fontSize: { xs: '0.85rem', sm: '1rem' },
-                borderWidth: 2,
-                '&:hover': {
-                  borderWidth: 2
-                }
-              }}
-            >
+            </button>
+            <button className="CompanyDetails-btn CompanyDetails-btn-outline" onClick={handleRefresh}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style={{ marginRight: '8px' }}>
+                <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+              </svg>
               Retry
-            </Button>
-          </Stack>
-        </Paper>
-      </Box>
+            </button>
+          </div>
+        </div>
+      </div>
     );
   }
 
-  const daysRemaining = getDaysRemaining(company.subscriptionExpiry);
-  const subscriptionStatus = getSubscriptionStatus(daysRemaining);
-  const subscriptionProgress = Math.min((daysRemaining / 30) * 100, 100);
+  const statsData = [
+    {
+      icon: 'people',
+      value: stats.totalUsers,
+      label: 'TOTAL USERS',
+      color: '#2196f3',
+      gradient: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)'
+    },
+    {
+      icon: 'check',
+      value: stats.activeUsers,
+      label: 'ACTIVE USERS',
+      color: '#4caf50',
+      gradient: 'linear-gradient(135deg, #4caf50 0%, #388e3c 100%)'
+    },
+    {
+      icon: 'building',
+      value: stats.departments,
+      label: 'DEPARTMENTS',
+      color: '#ff9800',
+      gradient: 'linear-gradient(135deg, #ff9800 0%, #ed6c02 100%)'
+    },
+    {
+      icon: 'calendar',
+      value: stats.todayLogins,
+      label: "TODAY'S LOGINS",
+      color: '#9c27b0',
+      gradient: 'linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%)'
+    }
+  ];
 
-  // Prepare department options for Autocomplete
-  const departmentOptions = departments.map(dept => ({
-    id: dept.id,
-    name: dept.name,
-    label: dept.name,
-    value: dept.id
-  }));
+  const infoItems = [
+    {
+      icon: 'fingerprint',
+      label: 'Company Code',
+      value: company.companyCode || "N/A",
+      gradient: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)'
+    },
+    {
+      icon: 'event',
+      label: 'Created On',
+      value: formatDate(company.createdAt),
+      gradient: 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)'
+    },
+    {
+      icon: 'person',
+      label: 'Owner',
+      value: company.ownerName || "Administrator",
+      gradient: 'linear-gradient(135deg, #607d8b 0%, #455a64 100%)'
+    }
+  ];
 
-  // Prepare job role options for Autocomplete
-  const jobRoleOptions = jobRoles.map(role => ({
-    id: role.id,
-    name: role.name,
-    label: role.name,
-    value: role.id,
-    departmentId: role.departmentId,
-    departmentName: role.departmentName
-  }));
+  const getIconSvg = (iconName) => {
+    switch(iconName) {
+      case 'people':
+        return <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-1 .05 1.16.84 2 1.87 2 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>;
+      case 'check':
+        return <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>;
+      case 'building':
+        return <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/></svg>;
+      case 'calendar':
+        return <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z"/></svg>;
+      case 'fingerprint':
+        return <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.81 4.47c-.08 0-.16-.02-.23-.06C15.66 3.42 14 3 12.01 3c-1.98 0-3.86.47-5.57 1.41-.24.13-.54.04-.68-.2-.13-.24-.04-.54.2-.68C7.82 2.52 9.86 2 12.01 2c2.13 0 4.13.51 5.98 1.52.23.13.32.43.2.66-.09.18-.26.29-.45.29zM4.12 5.66c-.13 0-.26-.05-.35-.15-.2-.2-.2-.51 0-.71.5-.5 1.06-.94 1.67-1.28.22-.13.5-.05.62.18.13.22.05.5-.18.62-.54.31-1.03.68-1.48 1.12-.09.1-.22.15-.35.15z"/></svg>;
+      case 'event':
+        return <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z"/></svg>;
+      case 'person':
+        return <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>;
+      case 'business':
+        return <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/></svg>;
+      case 'email':
+        return <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>;
+      case 'phone':
+        return <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>;
+      case 'location':
+        return <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>;
+      case 'work':
+        return <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg>;
+      default:
+        return null;
+    }
+  };
 
   return (
-    <Box sx={{ 
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
-      pb: { xs: 8, sm: 6 },
-      position: 'relative'
-    }}>
+    <div className="CompanyDetails">
       {/* Animated Background */}
-      <Box sx={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        overflow: 'hidden',
-        zIndex: 0,
-        pointerEvents: 'none',
-      }}>
-        <Box sx={{
-          position: 'absolute',
-          top: '10%',
-          left: '5%',
-          width: { xs: 200, sm: 250, md: 300 },
-          height: { xs: 200, sm: 250, md: 300 },
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(37, 99, 235, 0.03) 0%, transparent 70%)',
-          animation: 'float 20s infinite',
-        }} />
-        <Box sx={{
-          position: 'absolute',
-          bottom: '20%',
-          right: '10%',
-          width: { xs: 250, sm: 300, md: 400 },
-          height: { xs: 250, sm: 300, md: 400 },
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(124, 58, 237, 0.03) 0%, transparent 70%)',
-          animation: 'float 25s infinite reverse',
-        }} />
-        <style>
-          {`
-            @keyframes float {
-              0%, 100% { transform: translate(0, 0) scale(1); }
-              25% { transform: translate(-20px, 20px) scale(1.05); }
-              50% { transform: translate(20px, -20px) scale(0.95); }
-              75% { transform: translate(-10px, -10px) scale(1.02); }
-            }
-          `}
-        </style>
-      </Box>
+      <div className="CompanyDetails-animated-bg">
+        <div className="CompanyDetails-bg-blob CompanyDetails-blob-1"></div>
+        <div className="CompanyDetails-bg-blob CompanyDetails-blob-2"></div>
+      </div>
 
-      <ResponsiveContainer maxWidth="xl">
+      <div className="CompanyDetails-container">
         {/* Responsive Header */}
-        <ResponsiveCompanyHeader
-          company={company}
-          handleEditCompany={handleEditCompany}
-          handleRefresh={handleRefresh}
-          handleAddNewUser={handleAddNewUser}
-          handleCopy={handleCopy}
-          copied={copied}
-        />
+        <div className="CompanyDetails-header">
+          <div className="CompanyDetails-header-gradient">
+            <div className="CompanyDetails-header-content">
+              {/* Logo and Company Info */}
+              <div className="CompanyDetails-header-left">
+                <div className="CompanyDetails-logo-wrapper">
+                  <img 
+                    src={company.logo || defaultLogo}
+                    alt={company.companyName}
+                    className="CompanyDetails-company-logo"
+                    onError={(e) => { e.target.src = defaultLogo; }}
+                  />
+                  {company.isActive && (
+                    <div className="CompanyDetails-active-badge">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                      </svg>
+                    </div>
+                  )}
+                </div>
 
-        {/* Responsive Stats Grid */}
-        <ResponsiveStatsGrid stats={stats} />
+                <div className="CompanyDetails-company-info">
+                  <div className="CompanyDetails-company-name-wrapper">
+                    <h1 className="CompanyDetails-company-name">{company.companyName}</h1>
+                    <button className="CompanyDetails-icon-btn CompanyDetails-edit-btn" onClick={handleEditCompany} title="Edit Company">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div className="CompanyDetails-company-chips">
+                    <span className={`CompanyDetails-chip ${company.isActive ? 'CompanyDetails-chip-active' : 'CompanyDetails-chip-inactive'}`}>
+                      {company.isActive ? (
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                      ) : (
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z"/>
+                        </svg>
+                      )}
+                      {company.isActive ? "Active" : "Inactive"}
+                    </span>
+
+                    {company.companyCode && (
+                      <span className="CompanyDetails-chip CompanyDetails-chip-code">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/>
+                        </svg>
+                        Code: {company.companyCode}
+                      </span>
+                    )}
+
+                    <span className="CompanyDetails-chip CompanyDetails-chip-date">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z"/>
+                      </svg>
+                      Joined {formatRelativeTime(company.createdAt)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons - Desktop/Tablet */}
+              <div className="CompanyDetails-header-actions">
+                <button className="CompanyDetails-icon-btn CompanyDetails-refresh-btn" onClick={handleRefresh} title="Refresh Data">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                  </svg>
+                </button>
+
+                <button className="CompanyDetails-btn CompanyDetails-btn-primary" onClick={handleAddNewUser} disabled={!company?._id}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                  </svg>
+                  Add User
+                </button>
+              </div>
+
+              {/* Mobile Menu Button */}
+              <button className="CompanyDetails-mobile-menu-btn" onClick={() => setMobileMenuOpen(true)}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+                </svg>
+              </button>
+            </div>
+
+            {/* Mobile Login URL */}
+            <div className="CompanyDetails-mobile-login-url">
+              <span className="CompanyDetails-url-label">Login URL:</span>
+              <div className="CompanyDetails-url-container">
+                <div className="CompanyDetails-url-display">
+                  <span className="CompanyDetails-url-text">
+                    {window.location.origin}{company.loginUrl}
+                  </span>
+                </div>
+                <button className={`CompanyDetails-copy-btn ${copied ? 'CompanyDetails-copied' : ''}`} onClick={handleCopy}>
+                  {copied ? (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                    </svg>
+                  )}
+                </button>
+              </div>
+              {copied && <span className="CompanyDetails-copy-success">✓ Copied to clipboard!</span>}
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Menu Drawer */}
+        {mobileMenuOpen && (
+          <div className="CompanyDetails-mobile-menu-drawer">
+            <div className="CompanyDetails-drawer-header">
+              <h3 className="CompanyDetails-drawer-title">Menu Options</h3>
+              <button className="CompanyDetails-close-btn" onClick={() => setMobileMenuOpen(false)}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                </svg>
+              </button>
+            </div>
+            <div className="CompanyDetails-drawer-menu">
+              <button className="CompanyDetails-menu-item" onClick={() => { handleEditCompany(); setMobileMenuOpen(false); }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                </svg>
+                <div className="CompanyDetails-menu-item-content">
+                  <span className="CompanyDetails-menu-item-title">Edit Company</span>
+                  <span className="CompanyDetails-menu-item-subtitle">Update company details</span>
+                </div>
+              </button>
+
+              <button className="CompanyDetails-menu-item" onClick={() => { handleRefresh(); setMobileMenuOpen(false); }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                </svg>
+                <div className="CompanyDetails-menu-item-content">
+                  <span className="CompanyDetails-menu-item-title">Refresh Data</span>
+                  <span className="CompanyDetails-menu-item-subtitle">Reload company information</span>
+                </div>
+              </button>
+
+              <button className="CompanyDetails-menu-item" onClick={() => { handleAddNewUser(); setMobileMenuOpen(false); }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                </svg>
+                <div className="CompanyDetails-menu-item-content">
+                  <span className="CompanyDetails-menu-item-title">Add New User</span>
+                  <span className="CompanyDetails-menu-item-subtitle">Create a new user account</span>
+                </div>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Stats Grid */}
+        <div className="CompanyDetails-stats-grid">
+          {statsData.map((stat, index) => (
+            <div key={index} className="CompanyDetails-stat-card">
+              <div className="CompanyDetails-stat-icon" style={{ background: stat.gradient }}>
+                {getIconSvg(stat.icon)}
+              </div>
+              <div className="CompanyDetails-stat-value" style={{ color: stat.color }}>
+                {stat.value}
+              </div>
+              <div className="CompanyDetails-stat-label">{stat.label}</div>
+            </div>
+          ))}
+        </div>
 
         {/* Conditional Rendering based on tab for mobile */}
         {isMobile ? (
           <>
             {activeTab === 0 && (
               <>
-                <ResponsiveCompanyInfoCard company={company} />
-                <ResponsiveSubscriptionCard company={company} />
+                {/* Company Information Card */}
+                <div className="CompanyDetails-info-card">
+                  <div className="CompanyDetails-card-header">
+                    <div className="CompanyDetails-header-icon CompanyDetails-primary-bg">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/>
+                      </svg>
+                    </div>
+                    <h3 className="CompanyDetails-card-title">Company Information</h3>
+                  </div>
+
+                  <div className="CompanyDetails-info-grid">
+                    {infoItems.map((item, index) => (
+                      <div key={index} className="CompanyDetails-info-item">
+                        <div className="CompanyDetails-info-icon" style={{ background: item.gradient }}>
+                          {getIconSvg(item.icon)}
+                        </div>
+                        <div className="CompanyDetails-info-content">
+                          <span className="CompanyDetails-info-label">{item.label}</span>
+                          <span className="CompanyDetails-info-value">{item.value}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Subscription Card */}
+                <div className={`CompanyDetails-subscription-card CompanyDetails-status-${subscriptionStatus.color}`}>
+                  <div className="CompanyDetails-subscription-bg"></div>
+                  <div className="CompanyDetails-subscription-content">
+                    <div className="CompanyDetails-subscription-header">
+                      <div className="CompanyDetails-header-icon" style={{ background: subscriptionStatus.bg }}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/>
+                        </svg>
+                      </div>
+                      <h3 className="CompanyDetails-card-title">Subscription Status</h3>
+                      <span className="CompanyDetails-status-badge" style={{ background: subscriptionStatus.bg }}>
+                        {subscriptionStatus.text}
+                      </span>
+                    </div>
+
+                    <p className="CompanyDetails-expiry-text">
+                      <strong>Expires on:</strong> {formatDate(company.subscriptionExpiry)}
+                    </p>
+
+                    <div className="CompanyDetails-progress-container">
+                      <div className="CompanyDetails-progress-header">
+                        <span className="CompanyDetails-progress-label">Days Remaining</span>
+                        <span className="CompanyDetails-progress-value" style={{ background: subscriptionStatus.bg, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                          {daysRemaining} days
+                        </span>
+                      </div>
+                      <div className="CompanyDetails-progress-bar">
+                        <div className="CompanyDetails-progress-fill" style={{ width: `${subscriptionProgress}%`, background: subscriptionStatus.bg }}></div>
+                      </div>
+                    </div>
+
+                    <div className={`CompanyDetails-alert CompanyDetails-alert-${subscriptionStatus.color}`}>
+                      {daysRemaining > 0 
+                        ? `Your subscription will expire in ${daysRemaining} days.`
+                        : 'Your subscription has expired.'}
+                    </div>
+                  </div>
+                </div>
               </>
             )}
+
             {activeTab === 1 && (
-              <ResponsiveRecentUsersCard
-                recentUsers={recentUsers}
-                handleEditUser={handleEditUser}
-                handleAddNewUser={handleAddNewUser}
-                isMobile={isMobile}
-              />
+              <div className="CompanyDetails-recent-users-card">
+                <div className="CompanyDetails-card-header">
+                  <div className="CompanyDetails-header-icon CompanyDetails-primary-bg">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-1 .05 1.16.84 2 1.87 2 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                    </svg>
+                  </div>
+                  <h3 className="CompanyDetails-card-title">Recent Users</h3>
+                  <span className="CompanyDetails-badge">{recentUsers.length}</span>
+                </div>
+
+                <div className="CompanyDetails-users-list">
+                  {recentUsers.length > 0 ? (
+                    recentUsers.map((user, index) => (
+                      <div key={user.id || user._id || index} className="CompanyDetails-user-item">
+                        <div className="CompanyDetails-user-avatar-wrapper">
+                          <div className={`CompanyDetails-user-avatar ${user.isActive ? 'CompanyDetails-active' : 'CompanyDetails-inactive'}`}>
+                            {user.name?.charAt(0) || 'U'}
+                          </div>
+                          <div className={`CompanyDetails-status-dot ${user.isActive ? 'CompanyDetails-active' : 'CompanyDetails-inactive'}`}></div>
+                        </div>
+
+                        <div className="CompanyDetails-user-info">
+                          <div className="CompanyDetails-user-name">{user.name || 'Unknown User'}</div>
+                          <div className="CompanyDetails-user-tags">
+                            {user.employeeType && (
+                              <span className="CompanyDetails-tag CompanyDetails-employee-type">{user.employeeType}</span>
+                            )}
+                            <span className="CompanyDetails-tag CompanyDetails-department">{user.department || 'No Dept'}</span>
+                          </div>
+                        </div>
+
+                        <button className="CompanyDetails-edit-user-btn" onClick={() => handleEditUser(user)} title="Edit User">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                          </svg>
+                          {!isMobile && 'Edit'}
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="CompanyDetails-empty-state">
+                      <div className="CompanyDetails-empty-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-1 .05 1.16.84 2 1.87 2 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                        </svg>
+                      </div>
+                      <p className="CompanyDetails-empty-title">No Users Found</p>
+                      <p className="CompanyDetails-empty-subtitle">Get started by adding users</p>
+                      <button className="CompanyDetails-btn CompanyDetails-btn-primary CompanyDetails-btn-sm" onClick={handleAddNewUser}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                        </svg>
+                        Add First User
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
             )}
           </>
         ) : (
           /* Desktop/Tablet Layout */
-          <Grid container spacing={{ sm: 2, md: 3 }}>
-            {/* Left Column - Company Info & Subscription */}
-            <Grid item xs={12} lg={8}>
-              <ResponsiveCompanyInfoCard company={company} />
-              <ResponsiveSubscriptionCard company={company} />
-            </Grid>
-            
-            {/* Right Column - Recent Users */}
-            <Grid item xs={12} lg={4}>
-              <ResponsiveRecentUsersCard
-                recentUsers={recentUsers}
-                handleEditUser={handleEditUser}
-                handleAddNewUser={handleAddNewUser}
-                isMobile={isMobile}
-              />
-            </Grid>
-          </Grid>
+          <div className="CompanyDetails-desktop-grid">
+            <div className="CompanyDetails-left-column">
+              {/* Company Information Card */}
+              <div className="CompanyDetails-info-card">
+                <div className="CompanyDetails-card-header">
+                  <div className="CompanyDetails-header-icon CompanyDetails-primary-bg">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/>
+                    </svg>
+                  </div>
+                  <h3 className="CompanyDetails-card-title">Company Information</h3>
+                </div>
+
+                <div className="CompanyDetails-info-grid">
+                  {infoItems.map((item, index) => (
+                    <div key={index} className="CompanyDetails-info-item">
+                      <div className="CompanyDetails-info-icon" style={{ background: item.gradient }}>
+                        {getIconSvg(item.icon)}
+                      </div>
+                      <div className="CompanyDetails-info-content">
+                        <span className="CompanyDetails-info-label">{item.label}</span>
+                        <span className="CompanyDetails-info-value">{item.value}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Subscription Card */}
+              <div className={`CompanyDetails-subscription-card CompanyDetails-status-${subscriptionStatus.color}`}>
+                <div className="CompanyDetails-subscription-bg"></div>
+                <div className="CompanyDetails-subscription-content">
+                  <div className="CompanyDetails-subscription-header">
+                    <div className="CompanyDetails-header-icon" style={{ background: subscriptionStatus.bg }}>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/>
+                      </svg>
+                    </div>
+                    <h3 className="CompanyDetails-card-title">Subscription Status</h3>
+                    <span className="CompanyDetails-status-badge" style={{ background: subscriptionStatus.bg }}>
+                      {subscriptionStatus.text}
+                    </span>
+                  </div>
+
+                  <p className="CompanyDetails-expiry-text">
+                    <strong>Expires on:</strong> {formatDate(company.subscriptionExpiry)}
+                  </p>
+
+                  <div className="CompanyDetails-progress-container">
+                    <div className="CompanyDetails-progress-header">
+                      <span className="CompanyDetails-progress-label">Days Remaining</span>
+                      <span className="CompanyDetails-progress-value" style={{ background: subscriptionStatus.bg, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                        {daysRemaining} days
+                      </span>
+                    </div>
+                    <div className="CompanyDetails-progress-bar">
+                      <div className="CompanyDetails-progress-fill" style={{ width: `${subscriptionProgress}%`, background: subscriptionStatus.bg }}></div>
+                    </div>
+                  </div>
+
+                  <div className={`CompanyDetails-alert CompanyDetails-alert-${subscriptionStatus.color}`}>
+                    {daysRemaining > 0 
+                      ? `Your subscription will expire in ${daysRemaining} days.`
+                      : 'Your subscription has expired.'}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="CompanyDetails-right-column">
+              <div className="CompanyDetails-recent-users-card">
+                <div className="CompanyDetails-card-header">
+                  <div className="CompanyDetails-header-icon CompanyDetails-primary-bg">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-1 .05 1.16.84 2 1.87 2 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                    </svg>
+                  </div>
+                  <h3 className="CompanyDetails-card-title">Recent Users</h3>
+                  <span className="CompanyDetails-badge">{recentUsers.length}</span>
+                </div>
+
+                <div className="CompanyDetails-users-list">
+                  {recentUsers.length > 0 ? (
+                    recentUsers.map((user, index) => (
+                      <div key={user.id || user._id || index} className="CompanyDetails-user-item">
+                        <div className="CompanyDetails-user-avatar-wrapper">
+                          <div className={`CompanyDetails-user-avatar ${user.isActive ? 'CompanyDetails-active' : 'CompanyDetails-inactive'}`}>
+                            {user.name?.charAt(0) || 'U'}
+                          </div>
+                          <div className={`CompanyDetails-status-dot ${user.isActive ? 'CompanyDetails-active' : 'CompanyDetails-inactive'}`}></div>
+                        </div>
+
+                        <div className="CompanyDetails-user-info">
+                          <div className="CompanyDetails-user-name">{user.name || 'Unknown User'}</div>
+                          <div className="CompanyDetails-user-tags">
+                            {user.employeeType && (
+                              <span className="CompanyDetails-tag CompanyDetails-employee-type">{user.employeeType}</span>
+                            )}
+                            <span className="CompanyDetails-tag CompanyDetails-department">{user.department || 'No Dept'}</span>
+                          </div>
+                        </div>
+
+                        <button className="CompanyDetails-edit-user-btn" onClick={() => handleEditUser(user)} title="Edit User">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                          </svg>
+                          {!isMobile && 'Edit'}
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="CompanyDetails-empty-state">
+                      <div className="CompanyDetails-empty-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-1 .05 1.16.84 2 1.87 2 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                        </svg>
+                      </div>
+                      <p className="CompanyDetails-empty-title">No Users Found</p>
+                      <p className="CompanyDetails-empty-subtitle">Get started by adding users</p>
+                      <button className="CompanyDetails-btn CompanyDetails-btn-primary CompanyDetails-btn-sm" onClick={handleAddNewUser}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                        </svg>
+                        Add First User
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
         )}
-      </ResponsiveContainer>
+      </div>
 
       {/* Mobile Bottom Navigation */}
-      <MobileBottomNav
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        handleAddNewUser={handleAddNewUser}
-        company={company}
-      />
+      <div className="CompanyDetails-mobile-bottom-nav">
+        <button 
+          className={`CompanyDetails-nav-item ${activeTab === 0 ? 'CompanyDetails-active' : ''}`} 
+          onClick={() => handleTabChange(0)}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/>
+          </svg>
+          <span>Overview</span>
+        </button>
+        <button 
+          className={`CompanyDetails-nav-item ${activeTab === 1 ? 'CompanyDetails-active' : ''}`} 
+          onClick={() => handleTabChange(1)}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-1 .05 1.16.84 2 1.87 2 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+          </svg>
+          <span>Users</span>
+        </button>
+        <button 
+          className="CompanyDetails-nav-item CompanyDetails-add" 
+          onClick={(e) => {
+            e.stopPropagation();
+            handleAddNewUser();
+          }}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+          </svg>
+        </button>
+      </div>
 
       {/* Company Edit Modal */}
-      <Dialog 
-        open={companyEditModalOpen} 
-        onClose={() => !companyEditLoading && setCompanyEditModalOpen(false)}
-        maxWidth="sm"
-        fullWidth
-        fullScreen={isMobile}
-        TransitionComponent={Transition}
-        keepMounted
-        PaperProps={{
-          sx: { 
-            borderRadius: isMobile ? 0 : { sm: 3, md: 4 },
-            overflow: 'hidden',
-            background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
-            border: '1px solid rgba(226, 232, 240, 0.6)',
-            margin: isMobile ? 0 : 2
-          }
-        }}
-      >
-        <DialogTitle sx={{ 
-          background: 'linear-gradient(135deg, #1a237e 0%, #0d47a1 100%)',
-          color: 'white',
-          py: { xs: 2, sm: 2.5, md: 3 },
-          px: { xs: 2, sm: 2.5, md: 4 },
-          position: 'relative',
-          overflow: 'hidden'
-        }}>
-          <Box sx={{
-            position: 'absolute',
-            top: -50,
-            right: -50,
-            width: { xs: 100, sm: 120, md: 150 },
-            height: { xs: 100, sm: 120, md: 150 },
-            borderRadius: '50%',
-            background: 'rgba(255,255,255,0.1)',
-            animation: 'float 8s ease-in-out infinite'
-          }} />
-          
-          <Stack direction="row" alignItems="center" justifyContent="space-between" position="relative">
-            <Stack direction="row" alignItems="center" spacing={{ xs: 1, sm: 2 }}>
-              <Box sx={{
-                width: { xs: 40, sm: 45, md: 55 },
-                height: { xs: 40, sm: 45, md: 55 },
-                borderRadius: '50%',
-                bgcolor: 'white',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 8px 16px rgba(0,0,0,0.2)'
-              }}>
-                <Business sx={{ color: '#0d47a1', fontSize: { xs: 20, sm: 24, md: 30 } }} />
-              </Box>
-              <Box>
-                <Typography variant={isMobile ? "subtitle1" : "h6"} fontWeight={700} sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                  Edit Company Details
-                </Typography>
-                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)', fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.875rem' } }}>
-                  Update company information
-                </Typography>
-              </Box>
-            </Stack>
-            <IconButton
-              onClick={() => setCompanyEditModalOpen(false)}
-              disabled={companyEditLoading}
-              sx={{ 
-                color: 'white',
-                bgcolor: 'rgba(255,255,255,0.2)',
-                '&:hover': { 
-                  bgcolor: 'rgba(255,255,255,0.3)',
-                  transform: 'rotate(90deg)'
-                },
-                transition: 'all 0.3s ease',
-                width: { xs: 32, sm: 36, md: 40 },
-                height: { xs: 32, sm: 36, md: 40 }
-              }}
-            >
-              <Close sx={{ fontSize: { xs: 18, sm: 20, md: 24 } }} />
-            </IconButton>
-          </Stack>
-        </DialogTitle>
-        
-        <DialogContent sx={{ p: { xs: 2, sm: 2.5, md: 4 } }}>
-          <Fade in={!companyEditSuccess} timeout={600}>
-            <Box>
+      {companyEditModalOpen && (
+        <div className="CompanyDetails-modal-overlay" onClick={() => !companyEditLoading && setCompanyEditModalOpen(false)}>
+          <div className={`CompanyDetails-modal-content ${isMobile ? 'CompanyDetails-fullscreen' : ''}`} onClick={e => e.stopPropagation()}>
+            <div className="CompanyDetails-modal-header CompanyDetails-primary-header">
+              <div className="CompanyDetails-modal-header-left">
+                <div className="CompanyDetails-modal-header-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/>
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="CompanyDetails-modal-title">Edit Company Details</h2>
+                  <p className="CompanyDetails-modal-subtitle">Update company information</p>
+                </div>
+              </div>
+              <button className="CompanyDetails-modal-close" onClick={() => setCompanyEditModalOpen(false)} disabled={companyEditLoading}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                </svg>
+              </button>
+            </div>
+
+            <div className="CompanyDetails-modal-body">
               {!companyEditSuccess ? (
-                <Stack spacing={3}>
-                  <Alert 
-                    severity="info" 
-                    icon={<InfoOutlined />}
-                    sx={{ 
-                      borderRadius: { xs: 1.5, sm: 2 },
-                      py: { xs: 0.5, sm: 0.75 },
-                      '& .MuiAlert-icon': {
-                        fontSize: { xs: '1.2rem', sm: '1.4rem' }
-                      },
-                      '& .MuiAlert-message': {
-                        fontSize: { xs: '0.8rem', sm: '0.85rem', md: '0.9rem' }
-                      }
-                    }}
-                  >
-                    Editing: <strong>{company.companyName}</strong>
-                  </Alert>
-                  
-                  <Grid container spacing={2}>
-                    <Grid item xs={12}>
-                      <TextField
-                        fullWidth
-                        label="Company Name"
-                        name="companyName"
-                        value={companyEditFormData.companyName}
-                        onChange={handleCompanyInputChange}
-                        variant="outlined"
-                        size={isMobile ? "small" : "medium"}
-                        required
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <Business sx={{ color: 'primary.main', fontSize: { xs: 18, sm: 20 } }} />
-                            </InputAdornment>
-                          )
-                        }}
-                        sx={{
-                          '& .MuiOutlinedInput-root': {
-                            borderRadius: { xs: 1.5, sm: 2 },
-                            fontSize: { xs: '0.9rem', sm: '1rem' }
-                          }
-                        }}
-                      />
-                    </Grid>
-                    
-                    <Grid item xs={12} md={6}>
-                      <TextField
-                        fullWidth
-                        label="Email Address"
-                        name="companyEmail"
-                        type="email"
-                        value={companyEditFormData.companyEmail}
-                        onChange={handleCompanyInputChange}
-                        variant="outlined"
-                        size={isMobile ? "small" : "medium"}
-                        placeholder="Enter company email"
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <Email sx={{ color: 'primary.main', fontSize: { xs: 18, sm: 20 } }} />
-                            </InputAdornment>
-                          )
-                        }}
-                        sx={{
-                          '& .MuiOutlinedInput-root': {
-                            borderRadius: { xs: 1.5, sm: 2 },
-                            fontSize: { xs: '0.9rem', sm: '1rem' }
-                          }
-                        }}
-                      />
-                    </Grid>
-                    
-                    <Grid item xs={12} md={6}>
-                      <TextField
-                        fullWidth
-                        label="Phone Number"
-                        name="companyPhone"
-                        value={companyEditFormData.companyPhone}
-                        onChange={handleCompanyInputChange}
-                        variant="outlined"
-                        size={isMobile ? "small" : "medium"}
-                        placeholder="Enter company phone"
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <Phone sx={{ color: 'primary.main', fontSize: { xs: 18, sm: 20 } }} />
-                            </InputAdornment>
-                          )
-                        }}
-                        sx={{
-                          '& .MuiOutlinedInput-root': {
-                            borderRadius: { xs: 1.5, sm: 2 },
-                            fontSize: { xs: '0.9rem', sm: '1rem' }
-                          }
-                        }}
-                      />
-                    </Grid>
-                    
-                    <Grid item xs={12}>
-                      <TextField
-                        fullWidth
-                        label="Logo URL"
-                        name="logo"
-                        value={companyEditFormData.logo}
-                        onChange={handleCompanyInputChange}
-                        variant="outlined"
-                        size={isMobile ? "small" : "medium"}
-                        placeholder="https://example.com/logo.png"
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <Image sx={{ color: 'primary.main', fontSize: { xs: 18, sm: 20 } }} />
-                            </InputAdornment>
-                          )
-                        }}
-                        helperText="Leave empty for default logo"
-                        sx={{
-                          '& .MuiOutlinedInput-root': {
-                            borderRadius: { xs: 1.5, sm: 2 },
-                            fontSize: { xs: '0.9rem', sm: '1rem' }
-                          },
-                          '& .MuiFormHelperText-root': {
-                            fontSize: { xs: '0.7rem', sm: '0.75rem' }
-                          }
-                        }}
-                      />
-                    </Grid>
-                    
-                    <Grid item xs={12}>
-                      <TextField
-                        fullWidth
-                        label="Address"
-                        name="companyAddress"
-                        value={companyEditFormData.companyAddress}
-                        onChange={handleCompanyInputChange}
-                        variant="outlined"
-                        size={isMobile ? "small" : "medium"}
-                        placeholder="Enter company address"
-                        multiline
-                        rows={isMobile ? 2 : 3}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <LocationOn sx={{ color: 'primary.main', fontSize: { xs: 18, sm: 20 } }} />
-                            </InputAdornment>
-                          )
-                        }}
-                        sx={{
-                          '& .MuiOutlinedInput-root': {
-                            borderRadius: { xs: 1.5, sm: 2 },
-                            fontSize: { xs: '0.9rem', sm: '1rem' }
-                          }
-                        }}
-                      />
-                    </Grid>
-                  </Grid>
+                <div className="CompanyDetails-form-container">
+                  <div className="CompanyDetails-alert-info">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                    </svg>
+                    <span>Editing: <strong>{company.companyName}</strong></span>
+                  </div>
+
+                  <div className="CompanyDetails-form-grid">
+                    <div className="CompanyDetails-form-group CompanyDetails-full-width">
+                      <label className="CompanyDetails-form-label">Company Name *</label>
+                      <div className="CompanyDetails-input-wrapper">
+                        <span className="CompanyDetails-input-icon">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10z"/>
+                          </svg>
+                        </span>
+                        <input
+                          type="text"
+                          name="companyName"
+                          value={companyEditFormData.companyName}
+                          onChange={handleCompanyInputChange}
+                          className="CompanyDetails-form-input"
+                          placeholder="Enter company name"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="CompanyDetails-form-group">
+                      <label className="CompanyDetails-form-label">Email Address</label>
+                      <div className="CompanyDetails-input-wrapper">
+                        <span className="CompanyDetails-input-icon">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                          </svg>
+                        </span>
+                        <input
+                          type="email"
+                          name="companyEmail"
+                          value={companyEditFormData.companyEmail}
+                          onChange={handleCompanyInputChange}
+                          className="CompanyDetails-form-input"
+                          placeholder="Enter company email"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="CompanyDetails-form-group">
+                      <label className="CompanyDetails-form-label">Phone Number</label>
+                      <div className="CompanyDetails-input-wrapper">
+                        <span className="CompanyDetails-input-icon">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
+                          </svg>
+                        </span>
+                        <input
+                          type="text"
+                          name="companyPhone"
+                          value={companyEditFormData.companyPhone}
+                          onChange={handleCompanyInputChange}
+                          className="CompanyDetails-form-input"
+                          placeholder="Enter company phone"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="CompanyDetails-form-group CompanyDetails-full-width">
+                      <label className="CompanyDetails-form-label">Logo URL</label>
+                      <div className="CompanyDetails-input-wrapper">
+                        <span className="CompanyDetails-input-icon">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+                          </svg>
+                        </span>
+                        <input
+                          type="text"
+                          name="logo"
+                          value={companyEditFormData.logo}
+                          onChange={handleCompanyInputChange}
+                          className="CompanyDetails-form-input"
+                          placeholder="https://example.com/logo.png"
+                        />
+                      </div>
+                      <span className="CompanyDetails-input-hint">Leave empty for default logo</span>
+                    </div>
+
+                    <div className="CompanyDetails-form-group CompanyDetails-full-width">
+                      <label className="CompanyDetails-form-label">Address</label>
+                      <div className="CompanyDetails-input-wrapper">
+                        <span className="CompanyDetails-input-icon">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                          </svg>
+                        </span>
+                        <textarea
+                          name="companyAddress"
+                          value={companyEditFormData.companyAddress}
+                          onChange={handleCompanyInputChange}
+                          className="CompanyDetails-form-input"
+                          placeholder="Enter company address"
+                          rows={isMobile ? 2 : 3}
+                        />
+                      </div>
+                    </div>
+                  </div>
 
                   {companyEditFormData.logo && (
-                    <Paper 
-                      variant="outlined" 
-                      sx={{ 
-                        p: { xs: 1.5, sm: 2 }, 
-                        borderRadius: { xs: 1.5, sm: 2 },
-                        bgcolor: 'grey.50',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 2,
-                        border: '1px solid',
-                        borderColor: 'grey.200'
-                      }}
-                    >
-                      <Avatar
-                        src={companyEditFormData.logo}
-                        sx={{ 
-                          width: { xs: 50, sm: 55, md: 60 }, 
-                          height: { xs: 50, sm: 55, md: 60 }, 
-                          border: '2px solid',
-                          borderColor: 'primary.main',
-                        }}
-                      >
-                        {companyEditFormData.companyName?.charAt(0)}
-                      </Avatar>
-                      <Box sx={{ overflow: 'hidden' }}>
-                        <Typography variant="body2" fontWeight={600} sx={{ fontSize: { xs: '0.8rem', sm: '0.9rem' } }}>
-                          Logo Preview
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary" sx={{ 
-                          display: 'block', 
-                          wordBreak: 'break-all',
-                          fontSize: { xs: '0.65rem', sm: '0.7rem' }
-                        }}>
-                          {companyEditFormData.logo.substring(0, 40)}...
-                        </Typography>
-                      </Box>
-                    </Paper>
+                    <div className="CompanyDetails-logo-preview">
+                      <img 
+                        src={companyEditFormData.logo} 
+                        alt="Logo preview"
+                        className="CompanyDetails-preview-img"
+                        onError={(e) => { e.target.src = defaultLogo; }}
+                      />
+                      <div className="CompanyDetails-preview-text">
+                        <span className="CompanyDetails-preview-label">Logo Preview</span>
+                        <span className="CompanyDetails-preview-url">{companyEditFormData.logo.substring(0, 40)}...</span>
+                      </div>
+                    </div>
                   )}
-                </Stack>
+                </div>
               ) : (
-                <Zoom in={companyEditSuccess}>
-                  <Box sx={{ 
-                    py: { xs: 4, sm: 6, md: 8 }, 
-                    px: { xs: 2, sm: 3, md: 4 }, 
-                    textAlign: 'center'
-                  }}>
-                    <Box sx={{
-                      width: { xs: 80, sm: 100, md: 120 },
-                      height: { xs: 80, sm: 100, md: 120 },
-                      borderRadius: '50%',
-                      background: 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      mx: 'auto',
-                      mb: { xs: 2, sm: 3, md: 4 },
-                      border: '3px solid white'
-                    }}>
-                      <CheckCircle sx={{ fontSize: { xs: 40, sm: 50, md: 60 }, color: 'success.main' }} />
-                    </Box>
-                    <Typography variant={isMobile ? "h5" : "h4"} fontWeight={800} gutterBottom sx={{ fontSize: { xs: '1.3rem', sm: '1.6rem', md: '2rem' } }}>
-                      Company Updated!
-                    </Typography>
-                    <Typography variant="body1" color="text.secondary" sx={{ 
-                      mb: { xs: 2, sm: 3 }, 
-                      fontSize: { xs: '0.85rem', sm: '0.95rem', md: '1rem' } 
-                    }}>
-                      <strong style={{ color: theme.palette.primary.main }}>{companyEditFormData.companyName}</strong> has been updated successfully.
-                    </Typography>
-                    <CircularProgress 
-                      size={isMobile ? 24 : 30} 
-                      sx={{ color: 'success.main' }} 
-                    />
-                  </Box>
-                </Zoom>
+                <div className="CompanyDetails-success-state">
+                  <div className="CompanyDetails-success-icon">
+                    <svg width="60" height="60" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
+                  </div>
+                  <h3 className="CompanyDetails-success-title">Company Updated!</h3>
+                  <p className="CompanyDetails-success-message">
+                    <span className="CompanyDetails-highlight">{companyEditFormData.companyName}</span> has been updated successfully.
+                  </p>
+                  <div className="CompanyDetails-success-spinner"></div>
+                </div>
               )}
-            </Box>
-          </Fade>
-        </DialogContent>
-        
-        {!companyEditSuccess && (
-          <DialogActions sx={{ 
-            p: { xs: 2, sm: 2.5, md: 4 }, 
-            pt: { xs: 1, sm: 0 },
-            borderTop: '1px solid',
-            borderColor: 'grey.200',
-            bgcolor: 'grey.50',
-            flexDirection: { xs: 'column', sm: 'row' },
-            gap: { xs: 1, sm: 0 }
-          }}>
-            <Stack 
-              direction={{ xs: 'column', sm: 'row' }} 
-              spacing={{ xs: 1, sm: 2 }} 
-              justifyContent="flex-end" 
-              width="100%"
-            >
-              <Button
-                onClick={() => setCompanyEditModalOpen(false)}
-                color="inherit"
-                disabled={companyEditLoading}
-                variant="outlined"
-                fullWidth={isMobile}
-                size={isMobile ? "small" : "medium"}
-                sx={{ 
-                  borderRadius: { xs: 1.5, sm: 2 },
-                  px: { xs: 2, sm: 3, md: 4 },
-                  py: { xs: 0.6, sm: 0.8, md: 1.2 },
-                  fontWeight: 600,
-                  fontSize: { xs: '0.8rem', sm: '0.85rem', md: '0.9rem' },
-                }}
-              >
-                Cancel
-              </Button>
-              
-              <Button
-                onClick={handleSaveCompany}
-                variant="contained"
-                startIcon={companyEditLoading ? <CircularProgress size={16} color="inherit" /> : <Save />}
-                disabled={companyEditLoading}
-                fullWidth={isMobile}
-                size={isMobile ? "small" : "medium"}
-                sx={{ 
-                  px: { xs: 3, sm: 4, md: 5 },
-                  py: { xs: 0.6, sm: 0.8, md: 1.2 },
-                  fontWeight: 700,
-                  fontSize: { xs: '0.8rem', sm: '0.85rem', md: '0.9rem' },
-                  borderRadius: { xs: 1.5, sm: 2 },
-                  background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
-                  '&:hover': {
-                    background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
-                  },
-                }}
-              >
-                {companyEditLoading ? 'Saving...' : 'Save Changes'}
-              </Button>
-            </Stack>
-          </DialogActions>
-        )}
-      </Dialog>
+            </div>
+
+            {!companyEditSuccess && (
+              <div className="CompanyDetails-modal-footer">
+                <button className="CompanyDetails-btn CompanyDetails-btn-secondary" onClick={() => setCompanyEditModalOpen(false)} disabled={companyEditLoading}>
+                  Cancel
+                </button>
+                <button 
+                  className="CompanyDetails-btn CompanyDetails-btn-primary" 
+                  onClick={handleSaveCompany} 
+                  disabled={companyEditLoading}
+                >
+                  {companyEditLoading ? (
+                    <>
+                      <span className="CompanyDetails-spinner"></span>
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm4-10H5V5h11v4z"/>
+                      </svg>
+                      Save Changes
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Edit User Modal */}
-      <Dialog 
-        open={editModalOpen} 
-        onClose={() => !saveLoading && setEditModalOpen(false)}
-        maxWidth="lg"
-        fullWidth
-        fullScreen={isMobile}
-        TransitionComponent={Transition}
-        keepMounted
-        PaperProps={{
-          sx: { 
-            borderRadius: isMobile ? 0 : { sm: 3, md: 4 },
-            overflow: 'hidden',
-            background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
-            border: '1px solid rgba(226, 232, 240, 0.6)',
-            margin: isMobile ? 0 : 2
-          }
-        }}
-      >
-        <DialogTitle sx={{ 
-          background: 'linear-gradient(135deg, #1a237e 0%, #0d47a1 100%)',
-          color: 'white',
-          py: { xs: 2, sm: 2.5, md: 3 },
-          px: { xs: 2, sm: 2.5, md: 4 },
-          position: 'relative',
-          overflow: 'hidden'
-        }}>
-          <Box sx={{
-            position: 'absolute',
-            top: -50,
-            right: -50,
-            width: { xs: 100, sm: 120, md: 150 },
-            height: { xs: 100, sm: 120, md: 150 },
-            borderRadius: '50%',
-            background: 'rgba(255,255,255,0.1)',
-            animation: 'float 8s ease-in-out infinite'
-          }} />
-          
-          <Stack direction="row" alignItems="center" justifyContent="space-between" position="relative">
-            <Stack direction="row" alignItems="center" spacing={{ xs: 1, sm: 2 }}>
-              <Box sx={{
-                width: { xs: 40, sm: 45, md: 55 },
-                height: { xs: 40, sm: 45, md: 55 },
-                borderRadius: '50%',
-                bgcolor: 'white',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 8px 16px rgba(0,0,0,0.2)'
-              }}>
-                <Person sx={{ color: '#0d47a1', fontSize: { xs: 20, sm: 24, md: 30 } }} />
-              </Box>
-              <Box>
-                <Typography variant={isMobile ? "subtitle1" : "h6"} fontWeight={700} sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                  Edit User Details
-                </Typography>
-                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)', fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.875rem' } }}>
-                  Complete user profile management
-                </Typography>
-              </Box>
-            </Stack>
-            <IconButton
-              onClick={() => setEditModalOpen(false)}
-              disabled={saveLoading}
-              sx={{ 
-                color: 'white',
-                bgcolor: 'rgba(255,255,255,0.2)',
-                '&:hover': { 
-                  bgcolor: 'rgba(255,255,255,0.3)',
-                  transform: 'rotate(90deg)'
-                },
-                transition: 'all 0.3s ease',
-                width: { xs: 32, sm: 36, md: 40 },
-                height: { xs: 32, sm: 36, md: 40 }
-              }}
-            >
-              <Close sx={{ fontSize: { xs: 18, sm: 20, md: 24 } }} />
-            </IconButton>
-          </Stack>
-        </DialogTitle>
-        
-        <DialogContent sx={{ p: { xs: 2, sm: 2.5, md: 4 } }}>
-          {selectedUser && (
-            <Fade in={!editSuccess} timeout={600}>
-              <Box>
-                {!editSuccess ? (
-                  <Stack spacing={{ xs: 2, sm: 3, md: 4 }}>
-                    <Alert 
-                      severity="info" 
-                      icon={<InfoOutlined />}
-                      sx={{ 
-                        borderRadius: { xs: 1.5, sm: 2 },
-                        py: { xs: 0.5, sm: 0.75 },
-                        '& .MuiAlert-icon': {
-                          fontSize: { xs: '1.2rem', sm: '1.4rem' }
-                        },
-                        '& .MuiAlert-message': {
-                          fontSize: { xs: '0.8rem', sm: '0.85rem', md: '0.9rem' }
-                        }
-                      }}
-                    >
-                      Editing: <strong>{selectedUser.name}</strong> ({selectedUser.email})
-                    </Alert>
-                    
-                    {/* SECTION 1: BASIC INFORMATION */}
-                    <Paper elevation={0} sx={{ 
-                      p: { xs: 1.5, sm: 2, md: 3 }, 
-                      bgcolor: 'grey.50', 
-                      borderRadius: { xs: 1.5, sm: 2 },
-                      border: '1px solid',
-                      borderColor: 'grey.200'
-                    }}>
-                      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: { xs: 2, sm: 2.5, md: 3 } }}>
-                        <Box sx={{
-                          p: { xs: 0.5, sm: 0.75, md: 1 },
-                          borderRadius: { xs: 1.5, sm: 2 },
-                          background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
-                          color: 'white',
-                          display: 'flex'
-                        }}>
-                          <AccountCircle sx={{ fontSize: { xs: 16, sm: 18, md: 20 } }} />
-                        </Box>
-                        <Typography variant={isMobile ? "body2" : "h6"} fontWeight={700} sx={{ fontSize: { xs: '0.95rem', sm: '1.1rem', md: '1.25rem' } }}>
-                          Basic Information
-                        </Typography>
-                      </Stack>
-                      
-                      <Grid container spacing={2}>
-                        <Grid item xs={12} md={6}>
-                          <TextField
-                            fullWidth
-                            label="Full Name"
+      {editModalOpen && selectedUser && (
+        <div className="CompanyDetails-modal-overlay" onClick={() => !saveLoading && setEditModalOpen(false)}>
+          <div className={`CompanyDetails-modal-content CompanyDetails-large ${isMobile ? 'CompanyDetails-fullscreen' : ''}`} onClick={e => e.stopPropagation()}>
+            <div className="CompanyDetails-modal-header CompanyDetails-primary-header">
+              <div className="CompanyDetails-modal-header-left">
+                <div className="CompanyDetails-modal-header-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="CompanyDetails-modal-title">Edit User Details</h2>
+                  <p className="CompanyDetails-modal-subtitle">Complete user profile management</p>
+                </div>
+              </div>
+              <button className="CompanyDetails-modal-close" onClick={() => setEditModalOpen(false)} disabled={saveLoading}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                </svg>
+              </button>
+            </div>
+
+            <div className="CompanyDetails-modal-body">
+              {!editSuccess ? (
+                <div className="CompanyDetails-form-container">
+                  <div className="CompanyDetails-alert-info">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                    </svg>
+                    <span>Editing: <strong>{selectedUser.name}</strong> ({selectedUser.email})</span>
+                  </div>
+
+                  {/* SECTION 1: BASIC INFORMATION */}
+                  <div className="CompanyDetails-form-section">
+                    <div className="CompanyDetails-section-header">
+                      <div className="CompanyDetails-section-icon CompanyDetails-blue-bg">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                        </svg>
+                      </div>
+                      <h3 className="CompanyDetails-section-title">Basic Information</h3>
+                    </div>
+
+                    <div className="CompanyDetails-form-grid">
+                      <div className="CompanyDetails-form-group">
+                        <label className="CompanyDetails-form-label">Full Name *</label>
+                        <div className="CompanyDetails-input-wrapper">
+                          <span className="CompanyDetails-input-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                            </svg>
+                          </span>
+                          <input
+                            type="text"
                             name="name"
                             value={editFormData.name}
                             onChange={handleInputChange}
-                            variant="outlined"
-                            size={isMobile ? "small" : "medium"}
-                            required
-                            error={!!formErrors.name}
-                            helperText={formErrors.name}
-                            InputProps={{
-                              startAdornment: (
-                                <InputAdornment position="start">
-                                  <Person sx={{ fontSize: { xs: 16, sm: 18 } }} />
-                                </InputAdornment>
-                              )
-                            }}
-                            sx={{
-                              '& .MuiOutlinedInput-root': {
-                                borderRadius: { xs: 1.5, sm: 2 },
-                                fontSize: { xs: '0.85rem', sm: '0.9rem' }
-                              },
-                              '& .MuiFormHelperText-root': {
-                                fontSize: { xs: '0.65rem', sm: '0.7rem' }
-                              }
-                            }}
+                            className={`CompanyDetails-form-input ${formErrors.name ? 'CompanyDetails-error' : ''}`}
+                            placeholder="Enter full name"
                           />
-                        </Grid>
-                        
-                        <Grid item xs={12} md={6}>
-                          <TextField
-                            fullWidth
-                            label="Email Address"
-                            name="email"
+                        </div>
+                        {formErrors.name && <span className="CompanyDetails-error-message">{formErrors.name}</span>}
+                      </div>
+
+                      <div className="CompanyDetails-form-group">
+                        <label className="CompanyDetails-form-label">Email Address</label>
+                        <div className="CompanyDetails-input-wrapper">
+                          <span className="CompanyDetails-input-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                            </svg>
+                          </span>
+                          <input
                             type="email"
+                            name="email"
                             value={editFormData.email}
                             onChange={handleInputChange}
-                            variant="outlined"
-                            size={isMobile ? "small" : "medium"}
-                            error={!!formErrors.email}
-                            helperText={formErrors.email}
-                            InputProps={{
-                              startAdornment: (
-                                <InputAdornment position="start">
-                                  <Email sx={{ fontSize: { xs: 16, sm: 18 } }} />
-                                </InputAdornment>
-                              )
-                            }}
-                            sx={{
-                              '& .MuiOutlinedInput-root': {
-                                borderRadius: { xs: 1.5, sm: 2 },
-                                fontSize: { xs: '0.85rem', sm: '0.9rem' }
-                              },
-                              '& .MuiFormHelperText-root': {
-                                fontSize: { xs: '0.65rem', sm: '0.7rem' }
-                              }
-                            }}
+                            className={`CompanyDetails-form-input ${formErrors.email ? 'CompanyDetails-error' : ''}`}
+                            placeholder="Enter email"
                           />
-                        </Grid>
-                        
-                        <Grid item xs={12} md={6}>
-                          <TextField
-                            fullWidth
-                            label="Phone Number"
+                        </div>
+                        {formErrors.email && <span className="CompanyDetails-error-message">{formErrors.email}</span>}
+                      </div>
+
+                      <div className="CompanyDetails-form-group">
+                        <label className="CompanyDetails-form-label">Phone Number</label>
+                        <div className="CompanyDetails-input-wrapper">
+                          <span className="CompanyDetails-input-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
+                            </svg>
+                          </span>
+                          <input
+                            type="text"
                             name="phone"
                             value={editFormData.phone}
                             onChange={handleInputChange}
-                            variant="outlined"
-                            size={isMobile ? "small" : "medium"}
-                            InputProps={{
-                              startAdornment: (
-                                <InputAdornment position="start">
-                                  <Phone sx={{ fontSize: { xs: 16, sm: 18 } }} />
-                                </InputAdornment>
-                              )
-                            }}
-                            sx={{
-                              '& .MuiOutlinedInput-root': {
-                                borderRadius: { xs: 1.5, sm: 2 },
-                                fontSize: { xs: '0.85rem', sm: '0.9rem' }
-                              }
-                            }}
+                            className="CompanyDetails-form-input"
+                            placeholder="Enter phone number"
                           />
-                        </Grid>
-                        
-                        <Grid item xs={12} md={6}>
-                          <TextField
-                            fullWidth
-                            label="Date of Birth"
-                            name="dob"
+                        </div>
+                      </div>
+
+                      <div className="CompanyDetails-form-group">
+                        <label className="CompanyDetails-form-label">Date of Birth</label>
+                        <div className="CompanyDetails-input-wrapper">
+                          <span className="CompanyDetails-input-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z"/>
+                            </svg>
+                          </span>
+                          <input
                             type="date"
+                            name="dob"
                             value={editFormData.dob}
                             onChange={handleInputChange}
-                            variant="outlined"
-                            size={isMobile ? "small" : "medium"}
-                            InputLabelProps={{ shrink: true }}
-                            InputProps={{
-                              startAdornment: (
-                                <InputAdornment position="start">
-                                  <CalendarToday sx={{ fontSize: { xs: 16, sm: 18 } }} />
-                                </InputAdornment>
-                              )
-                            }}
-                            sx={{
-                              '& .MuiOutlinedInput-root': {
-                                borderRadius: { xs: 1.5, sm: 2 },
-                                fontSize: { xs: '0.85rem', sm: '0.9rem' }
-                              }
-                            }}
+                            className="CompanyDetails-form-input"
                           />
-                        </Grid>
-                        
-                        <Grid item xs={12} md={6}>
-                          <FormControl fullWidth variant="outlined" size={isMobile ? "small" : "medium"}>
-                            <InputLabel sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>Gender</InputLabel>
-                            <Select
-                              name="gender"
-                              value={editFormData.gender}
-                              onChange={handleSelectChange}
-                              label="Gender"
-                              startAdornment={
-                                <InputAdornment position="start">
-                                  <Wc sx={{ fontSize: { xs: 16, sm: 18 } }} />
-                                </InputAdornment>
-                              }
-                              sx={{ 
-                                borderRadius: { xs: 1.5, sm: 2 },
-                                fontSize: { xs: '0.85rem', sm: '0.9rem' }
-                              }}
-                            >
-                              <SelectMenuItem value="">
-                                <em>None</em>
-                              </SelectMenuItem>
-                              {genderOptions.map(option => (
-                                <SelectMenuItem key={option} value={option}>
-                                  {option.charAt(0).toUpperCase() + option.slice(1)}
-                                </SelectMenuItem>
-                              ))}
-                            </Select>
-                          </FormControl>
-                        </Grid>
-                        
-                        <Grid item xs={12} md={6}>
-                          <FormControl fullWidth variant="outlined" size={isMobile ? "small" : "medium"}>
-                            <InputLabel sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>Marital Status</InputLabel>
-                            <Select
-                              name="maritalStatus"
-                              value={editFormData.maritalStatus}
-                              onChange={handleSelectChange}
-                              label="Marital Status"
-                              startAdornment={
-                                <InputAdornment position="start">
-                                  <Favorite sx={{ fontSize: { xs: 16, sm: 18 } }} />
-                                </InputAdornment>
-                              }
-                              sx={{ 
-                                borderRadius: { xs: 1.5, sm: 2 },
-                                fontSize: { xs: '0.85rem', sm: '0.9rem' }
-                              }}
-                            >
-                              <SelectMenuItem value="">
-                                <em>None</em>
-                              </SelectMenuItem>
-                              {maritalStatusOptions.map(option => (
-                                <SelectMenuItem key={option} value={option}>
-                                  {option.charAt(0).toUpperCase() + option.slice(1)}
-                                </SelectMenuItem>
-                              ))}
-                            </Select>
-                          </FormControl>
-                        </Grid>
-                        
-                        <Grid item xs={12}>
-                          <TextField
-                            fullWidth
-                            label="Address"
+                        </div>
+                      </div>
+
+                      <div className="CompanyDetails-form-group">
+                        <label className="CompanyDetails-form-label">Gender</label>
+                        <div className="CompanyDetails-input-wrapper">
+                          <span className="CompanyDetails-input-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 4c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2z"/>
+                            </svg>
+                          </span>
+                          <select
+                            name="gender"
+                            value={editFormData.gender}
+                            onChange={handleSelectChange}
+                            className="CompanyDetails-form-input"
+                          >
+                            <option value="">None</option>
+                            {genderOptions.map(option => (
+                              <option key={option} value={option}>
+                                {option.charAt(0).toUpperCase() + option.slice(1)}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="CompanyDetails-form-group">
+                        <label className="CompanyDetails-form-label">Marital Status</label>
+                        <div className="CompanyDetails-input-wrapper">
+                          <span className="CompanyDetails-input-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                            </svg>
+                          </span>
+                          <select
+                            name="maritalStatus"
+                            value={editFormData.maritalStatus}
+                            onChange={handleSelectChange}
+                            className="CompanyDetails-form-input"
+                          >
+                            <option value="">None</option>
+                            {maritalStatusOptions.map(option => (
+                              <option key={option} value={option}>
+                                {option.charAt(0).toUpperCase() + option.slice(1)}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="CompanyDetails-form-group CompanyDetails-full-width">
+                        <label className="CompanyDetails-form-label">Address</label>
+                        <div className="CompanyDetails-input-wrapper">
+                          <span className="CompanyDetails-input-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                            </svg>
+                          </span>
+                          <textarea
                             name="address"
                             value={editFormData.address}
                             onChange={handleInputChange}
-                            variant="outlined"
-                            size={isMobile ? "small" : "medium"}
-                            multiline
+                            className="CompanyDetails-form-input"
+                            placeholder="Enter address"
                             rows={isMobile ? 1 : 2}
-                            InputProps={{
-                              startAdornment: (
-                                <InputAdornment position="start">
-                                  <LocationOn sx={{ fontSize: { xs: 16, sm: 18 } }} />
-                                </InputAdornment>
-                              )
-                            }}
-                            sx={{
-                              '& .MuiOutlinedInput-root': {
-                                borderRadius: { xs: 1.5, sm: 2 },
-                                fontSize: { xs: '0.85rem', sm: '0.9rem' }
-                              }
-                            }}
                           />
-                        </Grid>
-                      </Grid>
-                    </Paper>
-                    
-                    {/* SECTION 2: EMPLOYMENT INFORMATION */}
-                    <Paper elevation={0} sx={{ 
-                      p: { xs: 1.5, sm: 2, md: 3 }, 
-                      bgcolor: 'grey.50', 
-                      borderRadius: { xs: 1.5, sm: 2 },
-                      border: '1px solid',
-                      borderColor: 'grey.200'
-                    }}>
-                      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: { xs: 2, sm: 2.5, md: 3 } }}>
-                        <Box sx={{
-                          p: { xs: 0.5, sm: 0.75, md: 1 },
-                          borderRadius: { xs: 1.5, sm: 2 },
-                          background: 'linear-gradient(135deg, #ff9800 0%, #ed6c02 100%)',
-                          color: 'white',
-                          display: 'flex'
-                        }}>
-                          <Work sx={{ fontSize: { xs: 16, sm: 18, md: 20 } }} />
-                        </Box>
-                        <Typography variant={isMobile ? "body2" : "h6"} fontWeight={700} sx={{ fontSize: { xs: '0.95rem', sm: '1.1rem', md: '1.25rem' } }}>
-                          Employment Information
-                        </Typography>
-                      </Stack>
-                      
-                      <Grid container spacing={2}>
-                        <Grid item xs={12} md={6}>
-                          <Autocomplete
-                            freeSolo
-                            options={jobRoleOptions}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* SECTION 2: EMPLOYMENT INFORMATION */}
+                  <div className="CompanyDetails-form-section">
+                    <div className="CompanyDetails-section-header">
+                      <div className="CompanyDetails-section-icon CompanyDetails-orange-bg">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/>
+                        </svg>
+                      </div>
+                      <h3 className="CompanyDetails-section-title">Employment Information</h3>
+                    </div>
+
+                    <div className="CompanyDetails-form-grid">
+                      <div className="CompanyDetails-form-group">
+                        <label className="CompanyDetails-form-label">Job Role</label>
+                        <div className="CompanyDetails-input-wrapper">
+                          <span className="CompanyDetails-input-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2z"/>
+                            </svg>
+                          </span>
+                          <input
+                            type="text"
+                            name="jobRole"
                             value={editFormData.jobRole}
-                            onChange={handleRoleChange}
-                            getOptionLabel={(option) => {
-                              if (typeof option === 'string') return option;
-                              return option.label || option.name || '';
-                            }}
-                            renderInput={(params) => (
-                              <TextField
-                                {...params}
-                                label="Job Role"
-                                variant="outlined"
-                                size={isMobile ? "small" : "medium"}
-                                fullWidth
-                                InputProps={{
-                                  ...params.InputProps,
-                                  startAdornment: (
-                                    <>
-                                      <InputAdornment position="start">
-                                        <Badge sx={{ fontSize: { xs: 16, sm: 18 } }} />
-                                      </InputAdornment>
-                                      {params.InputProps.startAdornment}
-                                    </>
-                                  )
-                                }}
-                                sx={{
-                                  '& .MuiOutlinedInput-root': {
-                                    borderRadius: { xs: 1.5, sm: 2 },
-                                    fontSize: { xs: '0.85rem', sm: '0.9rem' }
-                                  }
-                                }}
-                              />
-                            )}
-                            renderOption={(props, option) => (
-                              <li {...props}>
-                                <Stack direction="row" alignItems="center" spacing={1}>
-                                  <Work sx={{ fontSize: 14, color: 'action.active' }} />
-                                  <Typography sx={{ fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.85rem' } }}>
-                                    {option.label || option.name}
-                                  </Typography>
-                                  {option.departmentName && (
-                                    <Chip 
-                                      label={option.departmentName} 
-                                      size="small" 
-                                      sx={{ 
-                                        height: 18, 
-                                        fontSize: '0.55rem',
-                                      }}
-                                    />
-                                  )}
-                                </Stack>
-                              </li>
-                            )}
-                            loading={loadingJobRoles}
-                            loadingText="Loading job roles..."
+                            onChange={handleInputChange}
+                            className="CompanyDetails-form-input"
+                            placeholder="Enter job role"
+                            list="CompanyDetails-job-roles"
                           />
-                        </Grid>
-                        
-                        <Grid item xs={12} md={6}>
-                          <Autocomplete
-                            freeSolo
-                            options={departmentOptions}
+                          <datalist id="CompanyDetails-job-roles">
+                            {jobRoles.map(role => (
+                              <option key={role.id} value={role.name} />
+                            ))}
+                          </datalist>
+                        </div>
+                      </div>
+
+                      <div className="CompanyDetails-form-group">
+                        <label className="CompanyDetails-form-label">Department</label>
+                        <div className="CompanyDetails-input-wrapper">
+                          <span className="CompanyDetails-input-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10z"/>
+                            </svg>
+                          </span>
+                          <input
+                            type="text"
+                            name="department"
                             value={editFormData.department}
-                            onChange={handleDepartmentChange}
-                            getOptionLabel={(option) => {
-                              if (typeof option === 'string') return option;
-                              return option.label || option.name || '';
-                            }}
-                            renderInput={(params) => (
-                              <TextField
-                                {...params}
-                                label="Department"
-                                variant="outlined"
-                                size={isMobile ? "small" : "medium"}
-                                fullWidth
-                                InputProps={{
-                                  ...params.InputProps,
-                                  startAdornment: (
-                                    <>
-                                      <InputAdornment position="start">
-                                        <Business sx={{ fontSize: { xs: 16, sm: 18 } }} />
-                                      </InputAdornment>
-                                      {params.InputProps.startAdornment}
-                                    </>
-                                  )
-                                }}
-                                sx={{
-                                  '& .MuiOutlinedInput-root': {
-                                    borderRadius: { xs: 1.5, sm: 2 },
-                                    fontSize: { xs: '0.85rem', sm: '0.9rem' }
-                                  }
-                                }}
-                              />
-                            )}
-                            renderOption={(props, option) => (
-                              <li {...props}>
-                                <Stack direction="row" alignItems="center" spacing={1}>
-                                  <CorporateFare sx={{ fontSize: 14, color: 'action.active' }} />
-                                  <Typography sx={{ fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.85rem' } }}>
-                                    {option.label || option.name}
-                                  </Typography>
-                                </Stack>
-                              </li>
-                            )}
-                            loading={loadingDepartments}
-                            loadingText="Loading departments..."
+                            onChange={handleInputChange}
+                            className="CompanyDetails-form-input"
+                            placeholder="Enter department"
+                            list="CompanyDetails-departments"
                           />
-                        </Grid>
-                        
-                        <Grid item xs={12} md={6}>
-                          <FormControl fullWidth variant="outlined" size={isMobile ? "small" : "medium"}>
-                            <InputLabel sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>Employee Type</InputLabel>
-                            <Select
-                              name="employeeType"
-                              value={editFormData.employeeType}
-                              onChange={handleSelectChange}
-                              label="Employee Type"
-                              startAdornment={
-                                <InputAdornment position="start">
-                                  <WorkHistory sx={{ fontSize: { xs: 16, sm: 18 } }} />
-                                </InputAdornment>
-                              }
-                              sx={{ 
-                                borderRadius: { xs: 1.5, sm: 2 },
-                                fontSize: { xs: '0.85rem', sm: '0.9rem' }
-                              }}
-                            >
-                              <SelectMenuItem value="">
-                                <em>None</em>
-                              </SelectMenuItem>
-                              {employeeTypeOptions.map(option => (
-                                <SelectMenuItem key={option} value={option}>
-                                  {option.charAt(0).toUpperCase() + option.slice(1)}
-                                </SelectMenuItem>
-                              ))}
-                            </Select>
-                          </FormControl>
-                        </Grid>
-                        
-                        <Grid item xs={12} md={6}>
-                          <TextField
-                            fullWidth
-                            label="Designation"
+                          <datalist id="CompanyDetails-departments">
+                            {departments.map(dept => (
+                              <option key={dept.id} value={dept.name} />
+                            ))}
+                          </datalist>
+                        </div>
+                      </div>
+
+                      <div className="CompanyDetails-form-group">
+                        <label className="CompanyDetails-form-label">Employee Type</label>
+                        <div className="CompanyDetails-input-wrapper">
+                          <span className="CompanyDetails-input-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2z"/>
+                            </svg>
+                          </span>
+                          <select
+                            name="employeeType"
+                            value={editFormData.employeeType}
+                            onChange={handleSelectChange}
+                            className="CompanyDetails-form-input"
+                          >
+                            <option value="">None</option>
+                            {employeeTypeOptions.map(option => (
+                              <option key={option} value={option}>
+                                {option.charAt(0).toUpperCase() + option.slice(1)}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="CompanyDetails-form-group">
+                        <label className="CompanyDetails-form-label">Designation</label>
+                        <div className="CompanyDetails-input-wrapper">
+                          <span className="CompanyDetails-input-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                            </svg>
+                          </span>
+                          <input
+                            type="text"
                             name="designation"
                             value={editFormData.designation}
                             onChange={handleInputChange}
-                            variant="outlined"
-                            size={isMobile ? "small" : "medium"}
-                            InputProps={{
-                              startAdornment: (
-                                <InputAdornment position="start">
-                                  <Badge sx={{ fontSize: { xs: 16, sm: 18 } }} />
-                                </InputAdornment>
-                              )
-                            }}
-                            sx={{
-                              '& .MuiOutlinedInput-root': {
-                                borderRadius: { xs: 1.5, sm: 2 },
-                                fontSize: { xs: '0.85rem', sm: '0.9rem' }
-                              }
-                            }}
+                            className="CompanyDetails-form-input"
+                            placeholder="Enter designation"
                           />
-                        </Grid>
-                        
-                        <Grid item xs={12} md={6}>
-                          <TextField
-                            fullWidth
-                            label="Salary"
+                        </div>
+                      </div>
+
+                      <div className="CompanyDetails-form-group">
+                        <label className="CompanyDetails-form-label">Salary</label>
+                        <div className="CompanyDetails-input-wrapper">
+                          <span className="CompanyDetails-input-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M11.5 1L8 7h7l-3.5-6zm0 22L8 17h7l-3.5 6zM12 10.5l-3.5 6h7l-3.5-6z"/>
+                            </svg>
+                          </span>
+                          <input
+                            type="number"
                             name="salary"
                             value={editFormData.salary}
                             onChange={handleInputChange}
-                            variant="outlined"
-                            size={isMobile ? "small" : "medium"}
-                            type="number"
-                            InputProps={{
-                              startAdornment: (
-                                <InputAdornment position="start">
-                                  <AttachMoney sx={{ fontSize: { xs: 16, sm: 18 } }} />
-                                </InputAdornment>
-                              )
-                            }}
-                            sx={{
-                              '& .MuiOutlinedInput-root': {
-                                borderRadius: { xs: 1.5, sm: 2 },
-                                fontSize: { xs: '0.85rem', sm: '0.9rem' }
-                              }
-                            }}
+                            className="CompanyDetails-form-input"
+                            placeholder="Enter salary"
                           />
-                        </Grid>
-                        
-                        <Grid item xs={12} md={6}>
-                          <FormControlLabel
-                            control={
-                              <Switch
-                                checked={editFormData.isActive}
-                                onChange={handleInputChange}
-                                name="isActive"
-                                color="success"
-                                size={isMobile ? "small" : "medium"}
-                              />
-                            }
-                            label={
-                              <Typography sx={{ fontSize: { xs: '0.8rem', sm: '0.85rem', md: '0.9rem' } }}>
-                                Active Status
-                              </Typography>
-                            }
+                        </div>
+                      </div>
+
+                      <div className="CompanyDetails-form-group CompanyDetails-checkbox-group">
+                        <label className="CompanyDetails-checkbox-label">
+                          <input
+                            type="checkbox"
+                            name="isActive"
+                            checked={editFormData.isActive}
+                            onChange={handleInputChange}
+                            className="CompanyDetails-checkbox-input"
                           />
-                        </Grid>
-                      </Grid>
-                    </Paper>
-                  </Stack>
-                ) : (
-                  <Zoom in={editSuccess}>
-                    <Box sx={{ 
-                      py: { xs: 4, sm: 6, md: 8 }, 
-                      px: { xs: 2, sm: 3, md: 4 }, 
-                      textAlign: 'center'
-                    }}>
-                      <Box sx={{
-                        width: { xs: 80, sm: 100, md: 120 },
-                        height: { xs: 80, sm: 100, md: 120 },
-                        borderRadius: '50%',
-                        background: 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        mx: 'auto',
-                        mb: { xs: 2, sm: 3, md: 4 },
-                        border: '3px solid white'
-                      }}>
-                        <CheckCircle sx={{ fontSize: { xs: 40, sm: 50, md: 60 }, color: 'success.main' }} />
-                      </Box>
-                      <Typography variant={isMobile ? "h5" : "h4"} fontWeight={800} gutterBottom sx={{ fontSize: { xs: '1.3rem', sm: '1.6rem', md: '2rem' } }}>
-                        Update Successful!
-                      </Typography>
-                      <Typography variant="body1" color="text.secondary" sx={{ 
-                        mb: { xs: 2, sm: 3 }, 
-                        fontSize: { xs: '0.85rem', sm: '0.95rem', md: '1rem' } 
-                      }}>
-                        User <strong style={{ color: theme.palette.primary.main }}>{editFormData.name}</strong> has been updated successfully.
-                      </Typography>
-                      <CircularProgress 
-                        size={isMobile ? 24 : 30} 
-                        sx={{ color: 'success.main' }} 
-                      />
-                    </Box>
-                  </Zoom>
-                )}
-              </Box>
-            </Fade>
-          )}
-        </DialogContent>
-        
-        {!editSuccess && (
-          <DialogActions sx={{ 
-            p: { xs: 2, sm: 2.5, md: 4 }, 
-            pt: { xs: 1, sm: 0 },
-            borderTop: '1px solid',
-            borderColor: 'grey.200',
-            bgcolor: 'grey.50',
-            flexDirection: { xs: 'column', sm: 'row' },
-            gap: { xs: 1, sm: 0 }
-          }}>
-            <Stack 
-              direction={{ xs: 'column', sm: 'row' }} 
-              spacing={{ xs: 1, sm: 2 }} 
-              justifyContent="flex-end" 
-              width="100%"
-            >
-              <Button
-                onClick={() => setEditModalOpen(false)}
-                color="inherit"
-                disabled={saveLoading}
-                variant="outlined"
-                fullWidth={isMobile}
-                size={isMobile ? "small" : "medium"}
-                sx={{ 
-                  borderRadius: { xs: 1.5, sm: 2 },
-                  px: { xs: 2, sm: 3, md: 4 },
-                  py: { xs: 0.6, sm: 0.8, md: 1.2 },
-                  fontWeight: 600,
-                  fontSize: { xs: '0.8rem', sm: '0.85rem', md: '0.9rem' },
-                }}
-              >
-                Cancel
-              </Button>
-              
-              <Button
-                onClick={handleDeleteUser}
-                color="error"
-                startIcon={<Delete />}
-                disabled={saveLoading}
-                variant="outlined"
-                fullWidth={isMobile}
-                size={isMobile ? "small" : "medium"}
-                sx={{ 
-                  borderRadius: { xs: 1.5, sm: 2 },
-                  px: { xs: 2, sm: 3, md: 4 },
-                  py: { xs: 0.6, sm: 0.8, md: 1.2 },
-                  fontWeight: 600,
-                  fontSize: { xs: '0.8rem', sm: '0.85rem', md: '0.9rem' },
-                  borderColor: 'error.main',
-                  color: 'error.main',
-                  '&:hover': {
-                    borderColor: 'error.dark',
-                    bgcolor: 'error.50'
-                  }
-                }}
-              >
-                Delete
-              </Button>
-              
-              <Button
-                onClick={handleSaveUser}
-                variant="contained"
-                startIcon={saveLoading ? <CircularProgress size={16} color="inherit" /> : <Save />}
-                disabled={saveLoading || !editFormData.name.trim()}
-                fullWidth={isMobile}
-                size={isMobile ? "small" : "medium"}
-                sx={{ 
-                  px: { xs: 3, sm: 4, md: 5 },
-                  py: { xs: 0.6, sm: 0.8, md: 1.2 },
-                  fontWeight: 700,
-                  fontSize: { xs: '0.8rem', sm: '0.85rem', md: '0.9rem' },
-                  borderRadius: { xs: 1.5, sm: 2 },
-                  background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
-                  '&:hover': {
-                    background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
-                  },
-                }}
-              >
-                {saveLoading ? 'Saving...' : 'Save Changes'}
-              </Button>
-            </Stack>
-          </DialogActions>
-        )}
-      </Dialog>
-    </Box>
+                          <span className="CompanyDetails-checkbox-text">Active Status</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="CompanyDetails-success-state">
+                  <div className="CompanyDetails-success-icon">
+                    <svg width="60" height="60" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
+                  </div>
+                  <h3 className="CompanyDetails-success-title">Update Successful!</h3>
+                  <p className="CompanyDetails-success-message">
+                    User <span className="CompanyDetails-highlight">{editFormData.name}</span> has been updated successfully.
+                  </p>
+                  <div className="CompanyDetails-success-spinner"></div>
+                </div>
+              )}
+            </div>
+
+            {!editSuccess && (
+              <div className="CompanyDetails-modal-footer">
+                <button className="CompanyDetails-btn CompanyDetails-btn-secondary" onClick={() => setEditModalOpen(false)} disabled={saveLoading}>
+                  Cancel
+                </button>
+                <button 
+                  className="CompanyDetails-btn CompanyDetails-btn-danger" 
+                  onClick={handleDeleteUser} 
+                  disabled={saveLoading}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                  </svg>
+                  Delete
+                </button>
+                <button 
+                  className="CompanyDetails-btn CompanyDetails-btn-primary" 
+                  onClick={handleSaveUser} 
+                  disabled={saveLoading || !editFormData.name.trim()}
+                >
+                  {saveLoading ? (
+                    <>
+                      <span className="CompanyDetails-spinner"></span>
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm4-10H5V5h11v4z"/>
+                      </svg>
+                      Save Changes
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 
