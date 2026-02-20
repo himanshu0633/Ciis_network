@@ -113,7 +113,8 @@ import {
   PushPinOutlined,
   Grade,
   GradeOutlined,
-  ArrowForward
+  ArrowForward,
+  Menu as MenuIcon
 } from "@mui/icons-material";
 
 import {
@@ -178,15 +179,23 @@ import {
   InputLabel,
   Select,
   FormHelperText,
-  styled
+  styled,
+  Drawer,
+  BottomNavigation,
+  BottomNavigationAction,
+  AppBar,
+  Toolbar
 } from "@mui/material";
 
-// Enhanced Styled Components
+// Enhanced Styled Components with responsive design
 const GlassCard = styled(Card)(({ theme }) => ({
   background: 'rgba(255, 255, 255, 0.9)',
   backdropFilter: 'blur(10px)',
   border: '1px solid rgba(255, 255, 255, 0.3)',
   boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
+  [theme.breakpoints.down('sm')]: {
+    borderRadius: 16,
+  },
 }));
 
 const GradientCard = styled(Card)(({ theme, gradient }) => ({
@@ -206,6 +215,7 @@ const GradientCard = styled(Card)(({ theme, gradient }) => ({
   },
   [theme.breakpoints.down('sm')]: {
     borderRadius: 20,
+    padding: theme.spacing(2),
   },
 }));
 
@@ -222,6 +232,7 @@ const StatBox = styled(Paper)(({ theme }) => ({
   },
   [theme.breakpoints.down('sm')]: {
     padding: theme.spacing(1.5),
+    borderRadius: 12,
   },
 }));
 
@@ -230,6 +241,10 @@ const InfoChip = styled(Chip)(({ theme }) => ({
   fontWeight: 600,
   '& .MuiChip-icon': {
     color: 'inherit',
+  },
+  [theme.breakpoints.down('sm')]: {
+    height: 24,
+    fontSize: '0.75rem',
   },
 }));
 
@@ -250,6 +265,23 @@ const AnimatedNumber = styled(Typography)(({ theme }) => ({
       transform: 'translateY(0)',
     },
   },
+  [theme.breakpoints.down('sm')]: {
+    fontSize: '1.5rem',
+  },
+}));
+
+// Responsive Container component
+const ResponsiveContainer = styled(Container)(({ theme }) => ({
+  position: 'relative',
+  zIndex: 1,
+  [theme.breakpoints.down('sm')]: {
+    paddingLeft: theme.spacing(1.5),
+    paddingRight: theme.spacing(1.5),
+  },
+  [theme.breakpoints.between('sm', 'md')]: {
+    paddingLeft: theme.spacing(2),
+    paddingRight: theme.spacing(2),
+  },
 }));
 
 // Transition for dialog
@@ -257,10 +289,1267 @@ const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
 });
 
+// Mobile Menu Drawer
+const MobileMenuDrawer = ({ open, onClose, company, handleEditCompany, handleRefresh, handleAddNewUser }) => {
+  const theme = useTheme();
+  
+  return (
+    <Drawer
+      anchor="bottom"
+      open={open}
+      onClose={onClose}
+      PaperProps={{
+        sx: {
+          borderTopLeftRadius: 20,
+          borderTopRightRadius: 20,
+          maxHeight: '60vh',
+          padding: theme.spacing(2)
+        }
+      }}
+    >
+      <Box sx={{ p: 2 }}>
+        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+          <Typography variant="h6" fontWeight={700} sx={{ fontSize: '1.1rem' }}>Menu Options</Typography>
+          <IconButton onClick={onClose} size="small">
+            <Close sx={{ fontSize: 20 }} />
+          </IconButton>
+        </Stack>
+        
+        <Divider sx={{ mb: 2 }} />
+        
+        <List>
+          <ListItem 
+            button 
+            onClick={() => {
+              handleEditCompany();
+              onClose();
+            }}
+            sx={{
+              borderRadius: 2,
+              mb: 1,
+              py: 1.5,
+              '&:hover': {
+                bgcolor: alpha(theme.palette.primary.main, 0.1)
+              }
+            }}
+          >
+            <ListItemIcon>
+              <Edit sx={{ color: theme.palette.primary.main, fontSize: 22 }} />
+            </ListItemIcon>
+            <ListItemText 
+              primary="Edit Company" 
+              secondary="Update company details"
+              primaryTypographyProps={{ fontWeight: 600, fontSize: '0.95rem' }}
+              secondaryTypographyProps={{ fontSize: '0.8rem' }}
+            />
+          </ListItem>
+          
+          <ListItem 
+            button 
+            onClick={() => {
+              handleRefresh();
+              onClose();
+            }}
+            sx={{
+              borderRadius: 2,
+              mb: 1,
+              py: 1.5,
+              '&:hover': {
+                bgcolor: alpha(theme.palette.info.main, 0.1)
+              }
+            }}
+          >
+            <ListItemIcon>
+              <Refresh sx={{ color: theme.palette.info.main, fontSize: 22 }} />
+            </ListItemIcon>
+            <ListItemText 
+              primary="Refresh Data" 
+              secondary="Reload company information"
+              primaryTypographyProps={{ fontWeight: 600, fontSize: '0.95rem' }}
+              secondaryTypographyProps={{ fontSize: '0.8rem' }}
+            />
+          </ListItem>
+          
+          <ListItem 
+            button 
+            onClick={() => {
+              handleAddNewUser();
+              onClose();
+            }}
+            sx={{
+              borderRadius: 2,
+              mb: 1,
+              py: 1.5,
+              '&:hover': {
+                bgcolor: alpha(theme.palette.success.main, 0.1)
+              }
+            }}
+          >
+            <ListItemIcon>
+              <Add sx={{ color: theme.palette.success.main, fontSize: 22 }} />
+            </ListItemIcon>
+            <ListItemText 
+              primary="Add New User" 
+              secondary="Create a new user account"
+              primaryTypographyProps={{ fontWeight: 600, fontSize: '0.95rem' }}
+              secondaryTypographyProps={{ fontSize: '0.8rem' }}
+            />
+          </ListItem>
+        </List>
+      </Box>
+    </Drawer>
+  );
+};
+
+// Mobile Bottom Navigation
+const MobileBottomNav = ({ activeTab, setActiveTab, handleAddNewUser, company }) => {
+  const theme = useTheme();
+  
+  return (
+    <Paper 
+      sx={{ 
+        position: 'fixed', 
+        bottom: 0, 
+        left: 0, 
+        right: 0, 
+        zIndex: 1000,
+        display: { xs: 'block', sm: 'none' },
+        borderRadius: '16px 16px 0 0',
+        overflow: 'hidden',
+        boxShadow: '0 -4px 20px rgba(0,0,0,0.1)'
+      }} 
+      elevation={3}
+    >
+      <BottomNavigation
+        value={activeTab}
+        onChange={(event, newValue) => {
+          setActiveTab(newValue);
+        }}
+        showLabels
+        sx={{
+          height: 56,
+          '& .MuiBottomNavigationAction-root': {
+            minWidth: 'auto',
+            padding: '4px 0',
+            '&.Mui-selected': {
+              color: theme.palette.primary.main,
+            }
+          }
+        }}
+      >
+        <BottomNavigationAction 
+          label="Overview" 
+          icon={<Business sx={{ fontSize: 20 }} />} 
+          sx={{
+            '& .MuiBottomNavigationAction-label': {
+              fontSize: '0.7rem',
+              '&.Mui-selected': {
+                fontSize: '0.7rem'
+              }
+            }
+          }}
+        />
+        <BottomNavigationAction 
+          label="Users" 
+          icon={<People sx={{ fontSize: 20 }} />} 
+          sx={{
+            '& .MuiBottomNavigationAction-label': {
+              fontSize: '0.7rem',
+              '&.Mui-selected': {
+                fontSize: '0.7rem'
+              }
+            }
+          }}
+        />
+        <BottomNavigationAction 
+          label="Add User" 
+          icon={<Add sx={{ fontSize: 20 }} />} 
+          onClick={(e) => {
+            e.stopPropagation();
+            handleAddNewUser();
+          }}
+          sx={{
+            '& .MuiBottomNavigationAction-label': {
+              fontSize: '0.7rem',
+              '&.Mui-selected': {
+                fontSize: '0.7rem'
+              }
+            }
+          }}
+        />
+      </BottomNavigation>
+    </Paper>
+  );
+};
+
+// Responsive Company Header
+const ResponsiveCompanyHeader = ({ company, handleEditCompany, handleRefresh, handleAddNewUser, handleCopy, copied }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  const defaultLogo = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
+  
+  const formatRelativeTime = (dateString) => {
+    if (!dateString) return "Unknown";
+    try {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffTime = Math.abs(now - date);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays === 0) return "Today";
+      if (diffDays === 1) return "Yesterday";
+      if (diffDays < 7) return `${diffDays} days ago`;
+      if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+      if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
+      return `${Math.floor(diffDays / 365)} years ago`;
+    } catch (error) {
+      return "Unknown";
+    }
+  };
+  
+  return (
+    <>
+      <GradientCard 
+        gradient="linear-gradient(145deg, #1a237e 0%, #0d47a1 50%, #01579b 100%)"
+        sx={{
+          mt: { xs: 1, sm: 2, md: 3, lg: 4 },
+          mb: { xs: 2, sm: 3, md: 4 },
+          p: { xs: 1.5, sm: 2, md: 3, lg: 4 },
+          borderRadius: { xs: 2, sm: 3, md: 4, lg: 5 },
+          boxShadow: '0 10px 30px rgba(0,0,0,0.15)'
+        }}
+      >
+        <Stack 
+          direction={{ xs: 'column', sm: 'row' }} 
+          alignItems={{ xs: 'stretch', sm: 'center' }} 
+          justifyContent="space-between"
+          spacing={{ xs: 2, sm: 3 }}
+        >
+          {/* Left Section - Logo and Company Info */}
+          <Stack 
+            direction={{ xs: 'row', sm: 'row' }} 
+            alignItems="center" 
+            spacing={{ xs: 1.5, sm: 2, md: 3 }}
+            sx={{ width: '100%' }}
+          >
+            {/* Logo */}
+            <Box sx={{ 
+              position: 'relative',
+              flexShrink: 0
+            }}>
+              <Avatar
+                src={company.logo || defaultLogo}
+                sx={{
+                  width: { xs: 50, sm: 70, md: 100, lg: 120 },
+                  height: { xs: 50, sm: 70, md: 100, lg: 120 },
+                  border: '2px solid white',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                  bgcolor: 'white',
+                  '& img': {
+                    objectFit: 'contain'
+                  }
+                }}
+              >
+                {!company.logo && (company.companyName?.charAt(0) || 'C')}
+              </Avatar>
+              
+              {company.isActive && (
+                <Box sx={{
+                  position: 'absolute',
+                  bottom: { xs: 0, sm: 2 },
+                  right: { xs: 0, sm: 2 },
+                  width: { xs: 16, sm: 20, md: 24 },
+                  height: { xs: 16, sm: 20, md: 24 },
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #4caf50 0%, #388e3c 100%)',
+                  border: '2px solid white',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+                }}>
+                  <CheckCircle sx={{ fontSize: { xs: 8, sm: 10, md: 14 }, color: 'white' }} />
+                </Box>
+              )}
+            </Box>
+            
+            {/* Company Name and Chips */}
+            <Box sx={{ 
+              flex: 1,
+              minWidth: 0
+            }}>
+              {/* Company Name with Edit Icon */}
+              <Stack 
+                direction="row" 
+                alignItems="center" 
+                spacing={0.5} 
+                sx={{ 
+                  mb: 0.5,
+                  flexWrap: 'wrap'
+                }}
+              >
+                <Typography 
+                  variant={isMobile ? "subtitle1" : isTablet ? "h5" : "h4"} 
+                  sx={{ 
+                    fontWeight: 700, 
+                    fontSize: { xs: '1rem', sm: '1.3rem', md: '1.8rem', lg: '2.2rem' },
+                    textShadow: '1px 1px 2px rgba(0,0,0,0.2)',
+                    background: 'linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    wordBreak: 'break-word',
+                    lineHeight: 1.2
+                  }}
+                >
+                  {company.companyName}
+                </Typography>
+                
+                {/* Edit button */}
+                <Tooltip title="Edit Company" arrow placement="top">
+                  <IconButton 
+                    onClick={handleEditCompany}
+                    size="small"
+                    sx={{ 
+                      color: 'white',
+                      bgcolor: 'rgba(255,255,255,0.15)',
+                      backdropFilter: 'blur(5px)',
+                      width: { xs: 28, sm: 32, md: 36 },
+                      height: { xs: 28, sm: 32, md: 36 },
+                      '&:hover': { 
+                        bgcolor: 'rgba(255,255,255,0.25)',
+                      },
+                      ml: 0.5
+                    }}
+                  >
+                    <Edit sx={{ fontSize: { xs: 14, sm: 16, md: 18 } }} />
+                  </IconButton>
+                </Tooltip>
+              </Stack>
+              
+              {/* Company Chips */}
+              <Box sx={{ 
+                display: 'flex', 
+                flexWrap: 'wrap', 
+                gap: { xs: 0.5, sm: 0.8 },
+                alignItems: 'center',
+                mb: { xs: 1, sm: 1.5 }
+              }}>
+                <Chip
+                  icon={company.isActive ? <CheckCircle sx={{ fontSize: { xs: '0.7rem !important', sm: '0.8rem !important' } }} /> : <Cancel sx={{ fontSize: { xs: '0.7rem !important', sm: '0.8rem !important' } }} />}
+                  label={company.isActive ? "Active" : "Inactive"}
+                  size="small"
+                  sx={{
+                    background: company.isActive 
+                      ? 'linear-gradient(135deg, #4caf50 0%, #388e3c 100%)' 
+                      : 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)',
+                    color: 'white',
+                    fontWeight: 600,
+                    height: { xs: 22, sm: 24, md: 26 },
+                    fontSize: { xs: '0.65rem', sm: '0.7rem', md: '0.75rem' },
+                    '& .MuiChip-icon': { color: 'white' },
+                    '& .MuiChip-label': { px: { xs: 0.8, sm: 1 } },
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                  }}
+                />
+                
+                {company.companyCode && (
+                  <Chip
+                    icon={<Code sx={{ fontSize: { xs: '0.7rem !important', sm: '0.8rem !important' } }} />}
+                    label={`Code: ${company.companyCode}`}
+                    size="small"
+                    sx={{
+                      bgcolor: 'rgba(255,255,255,0.15)',
+                      color: 'white',
+                      fontWeight: 500,
+                      height: { xs: 22, sm: 24, md: 26 },
+                      fontSize: { xs: '0.65rem', sm: '0.7rem', md: '0.75rem' },
+                      backdropFilter: 'blur(5px)',
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      '& .MuiChip-icon': { color: 'white' },
+                      '& .MuiChip-label': { px: { xs: 0.8, sm: 1 } }
+                    }}
+                  />
+                )}
+                
+                <Chip
+                  icon={<CalendarToday sx={{ fontSize: { xs: '0.7rem !important', sm: '0.8rem !important' } }} />}
+                  label={`Joined ${formatRelativeTime(company.createdAt)}`}
+                  size="small"
+                  sx={{
+                    bgcolor: 'rgba(255,255,255,0.15)',
+                    color: 'white',
+                    fontWeight: 500,
+                    height: { xs: 22, sm: 24, md: 26 },
+                    fontSize: { xs: '0.65rem', sm: '0.7rem', md: '0.75rem' },
+                    backdropFilter: 'blur(5px)',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    '& .MuiChip-icon': { color: 'white' },
+                    '& .MuiChip-label': { px: { xs: 0.8, sm: 1 } },
+                    maxWidth: { xs: '100%', sm: 'none' }
+                  }}
+                />
+              </Box>
+            </Box>
+          </Stack>
+          
+          {/* Action Buttons - Desktop/Tablet */}
+          <Stack 
+            direction="row" 
+            spacing={1.5}
+            sx={{ 
+              display: { xs: 'none', sm: 'flex' },
+              alignItems: 'center',
+              flexShrink: 0
+            }}
+          >
+            <Tooltip title="Refresh Data" arrow>
+              <IconButton
+                onClick={handleRefresh}
+                sx={{
+                  color: 'white',
+                  bgcolor: 'rgba(255,255,255,0.15)',
+                  backdropFilter: 'blur(5px)',
+                  width: { sm: 36, md: 40, lg: 44 },
+                  height: { sm: 36, md: 40, lg: 44 },
+                  '&:hover': { 
+                    bgcolor: 'rgba(255,255,255,0.25)',
+                    transform: 'rotate(180deg)'
+                  },
+                  transition: 'all 0.5s ease'
+                }}
+              >
+                <Refresh fontSize={isTablet ? "small" : "medium"} />
+              </IconButton>
+            </Tooltip>
+            
+            <Button
+              variant="contained"
+              onClick={handleAddNewUser}
+              startIcon={<Add />}
+              disabled={!company?._id}
+              size={isTablet ? "small" : "medium"}
+              sx={{
+                background: 'linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%)',
+                color: '#0d47a1',
+                fontWeight: 700,
+                px: { sm: 2, md: 2.5, lg: 3 },
+                py: { sm: 0.6, md: 0.8, lg: 1 },
+                borderRadius: 2,
+                fontSize: { sm: '0.75rem', md: '0.8rem', lg: '0.85rem' },
+                boxShadow: '0 4px 10px rgba(0,0,0,0.15)',
+                '&:hover': {
+                  background: 'white',
+                  boxShadow: '0 6px 14px rgba(0,0,0,0.2)',
+                  transform: 'translateY(-2px)'
+                },
+                transition: 'all 0.2s ease',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              Add User
+            </Button>
+          </Stack>
+          
+          {/* Mobile Menu Button */}
+          <Box sx={{ display: { xs: 'block', sm: 'none' }, position: 'absolute', top: 8, right: 8 }}>
+            <IconButton
+              onClick={() => setMobileMenuOpen(true)}
+              sx={{
+                color: 'white',
+                bgcolor: 'rgba(255,255,255,0.15)',
+                '&:hover': { bgcolor: 'rgba(255,255,255,0.25)' },
+                width: 32,
+                height: 32
+              }}
+            >
+              <MenuIcon sx={{ fontSize: 18 }} />
+            </IconButton>
+          </Box>
+        </Stack>
+        
+        {/* Mobile Login URL */}
+        <Box sx={{ 
+          display: { xs: 'block', sm: 'none' }, 
+          mt: 2,
+          p: 1.5,
+          bgcolor: 'rgba(0,0,0,0.2)',
+          borderRadius: 2
+        }}>
+          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)', display: 'block', mb: 0.5, fontSize: '0.7rem' }}>
+            Login URL:
+          </Typography>
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <Box sx={{
+              flex: 1,
+              bgcolor: 'rgba(255,255,255,0.1)',
+              borderRadius: 1.5,
+              px: 1.5,
+              py: 1,
+              overflow: 'hidden'
+            }}>
+              <Typography 
+                variant="caption" 
+                sx={{ 
+                  fontFamily: 'monospace',
+                  color: 'white',
+                  fontWeight: 500,
+                  display: 'block',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  fontSize: '0.7rem'
+                }}
+              >
+                {window.location.origin}{company.loginUrl}
+              </Typography>
+            </Box>
+            <IconButton
+              size="small"
+              onClick={handleCopy}
+              sx={{
+                color: 'white',
+                bgcolor: copied ? 'rgba(76, 175, 80, 0.3)' : 'rgba(255,255,255,0.15)',
+                width: 36,
+                height: 36,
+                '&:hover': { bgcolor: copied ? 'rgba(76, 175, 80, 0.4)' : 'rgba(255,255,255,0.25)' }
+              }}
+            >
+              {copied ? <CheckCircle sx={{ fontSize: 16 }} /> : <ContentCopyIcon sx={{ fontSize: 16 }} />}
+            </IconButton>
+          </Stack>
+          {copied && (
+            <Typography 
+              variant="caption" 
+              sx={{ 
+                color: '#4caf50', 
+                display: 'block', 
+                mt: 0.5,
+                fontSize: '0.65rem',
+                fontWeight: 600
+              }}
+            >
+              ✓ Copied to clipboard!
+            </Typography>
+          )}
+        </Box>
+      </GradientCard>
+      
+      {/* Mobile Menu Drawer */}
+      <MobileMenuDrawer
+        open={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+        company={company}
+        handleEditCompany={handleEditCompany}
+        handleRefresh={handleRefresh}
+        handleAddNewUser={handleAddNewUser}
+      />
+    </>
+  );
+};
+
+// Responsive Stats Grid
+const ResponsiveStatsGrid = ({ stats }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
+  const statsData = [
+    {
+      icon: <People sx={{ fontSize: isMobile ? 20 : 24, color: 'white' }} />,
+      value: stats.totalUsers,
+      label: 'TOTAL USERS',
+      color: '#2196f3',
+      gradient: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)'
+    },
+    {
+      icon: <CheckCircle sx={{ fontSize: isMobile ? 20 : 24, color: 'white' }} />,
+      value: stats.activeUsers,
+      label: 'ACTIVE USERS',
+      color: '#4caf50',
+      gradient: 'linear-gradient(135deg, #4caf50 0%, #388e3c 100%)'
+    },
+    {
+      icon: <CorporateFare sx={{ fontSize: isMobile ? 20 : 24, color: 'white' }} />,
+      value: stats.departments,
+      label: 'DEPARTMENTS',
+      color: '#ff9800',
+      gradient: 'linear-gradient(135deg, #ff9800 0%, #ed6c02 100%)'
+    },
+    {
+      icon: <Today sx={{ fontSize: isMobile ? 20 : 24, color: 'white' }} />,
+      value: stats.todayLogins,
+      label: "TODAY'S LOGINS",
+      color: '#9c27b0',
+      gradient: 'linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%)'
+    }
+  ];
+  
+  return (
+    <Box sx={{ 
+      display: 'grid', 
+      gridTemplateColumns: { 
+        xs: 'repeat(2, 1fr)', 
+        sm: 'repeat(4, 1fr)' 
+      },
+      gap: { xs: 1.5, sm: 2, md: 2.5 },
+      mb: { xs: 2, sm: 3 }
+    }}>
+      {statsData.map((stat, index) => (
+        <StatBox key={index}>
+          <Box sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            textAlign: 'center'
+          }}>
+            <Box sx={{
+              width: { xs: 36, sm: 40, md: 44, lg: 48 },
+              height: { xs: 36, sm: 40, md: 44, lg: 48 },
+              borderRadius: { xs: 1.5, sm: 2, md: 2.5, lg: 3 },
+              background: stat.gradient,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 8px auto',
+              boxShadow: `0 4px 12px ${alpha(stat.color, 0.3)}`,
+            }}>
+              {stat.icon}
+            </Box>
+            <AnimatedNumber sx={{ 
+              fontWeight: 800, 
+              color: stat.color, 
+              fontSize: { xs: '1.2rem', sm: '1.4rem', md: '1.8rem', lg: '2rem' },
+              lineHeight: 1.2,
+              mb: 0.3
+            }}>
+              {stat.value}
+            </AnimatedNumber>
+            <Typography sx={{ 
+              fontSize: { xs: '0.55rem', sm: '0.6rem', md: '0.65rem', lg: '0.7rem' }, 
+              color: '#64748b', 
+              fontWeight: 600, 
+              textTransform: 'uppercase', 
+              letterSpacing: '0.3px',
+              whiteSpace: 'nowrap'
+            }}>
+              {stat.label}
+            </Typography>
+          </Box>
+        </StatBox>
+      ))}
+    </Box>
+  );
+};
+
+// Responsive Company Information Card
+const ResponsiveCompanyInfoCard = ({ company }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
+  const formatDate = (dateString) => {
+    if (!dateString) return "Not available";
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch (error) {
+      return "Invalid date";
+    }
+  };
+  
+  const infoItems = [
+    {
+      icon: <Fingerprint sx={{ fontSize: isMobile ? 18 : 20, color: 'white' }} />,
+      label: 'Company Code',
+      value: company.companyCode || "N/A",
+      gradient: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)'
+    },
+    // {
+    //   icon: <Email sx={{ fontSize: isMobile ? 18 : 20, color: 'white' }} />,
+    //   label: 'Email',
+    //   value: company.companyEmail || "Not provided",
+    //   gradient: 'linear-gradient(135deg, #ff9800 0%, #ed6c02 100%)'
+    // },
+    // {
+    //   icon: <Phone sx={{ fontSize: isMobile ? 18 : 20, color: 'white' }} />,
+    //   label: 'Phone',
+    //   value: company.companyPhone || "Not provided",
+    //   gradient: 'linear-gradient(135deg, #4caf50 0%, #388e3c 100%)'
+    // },
+    // {
+    //   icon: <LocationOn sx={{ fontSize: isMobile ? 18 : 20, color: 'white' }} />,
+    //   label: 'Address',
+    //   value: company.companyAddress || "Not provided",
+    //   gradient: 'linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%)'
+    // },
+    {
+      icon: <Event sx={{ fontSize: isMobile ? 18 : 20, color: 'white' }} />,
+      label: 'Created On',
+      value: formatDate(company.createdAt),
+      gradient: 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)'
+    },
+    {
+      icon: <Person sx={{ fontSize: isMobile ? 18 : 20, color: 'white' }} />,
+      label: 'Owner',
+      value: company.ownerName || "Administrator",
+      gradient: 'linear-gradient(135deg, #607d8b 0%, #455a64 100%)'
+    }
+  ];
+  
+  return (
+    <Card sx={{ 
+      borderRadius: { xs: 2, sm: 3, md: 4 },
+      bgcolor: 'white',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+      mb: { xs: 2, sm: 3 },
+      overflow: 'hidden',
+      border: '1px solid rgba(226, 232, 240, 0.6)',
+    }}>
+      <Box sx={{
+        height: 4,
+        background: 'linear-gradient(90deg, #2196f3, #9c27b0, #ff9800)'
+      }} />
+      
+      <CardHeader
+        title={
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <Box sx={{
+              p: { xs: 0.5, sm: 0.75, md: 1 },
+              borderRadius: { xs: 1.5, sm: 2 },
+              bgcolor: alpha(theme.palette.primary.main, 0.1),
+              display: 'flex'
+            }}>
+              <Business sx={{ color: 'primary.main', fontSize: { xs: 16, sm: 18, md: 20 } }} />
+            </Box>
+            <Typography variant={isMobile ? "body2" : "h6"} fontWeight={700} sx={{ fontSize: { xs: '0.95rem', sm: '1.1rem', md: '1.25rem' } }}>
+              Company Information
+            </Typography>
+          </Stack>
+        }
+        sx={{ 
+          borderBottom: '1px solid', 
+          borderColor: 'grey.100', 
+          py: { xs: 1, sm: 1.5, md: 2 },
+          px: { xs: 1.5, sm: 2, md: 3 },
+          bgcolor: 'grey.50'
+        }}
+      />
+      
+      <CardContent sx={{ p: { xs: 1.5, sm: 2, md: 3 } }}>
+        <Grid container spacing={{ xs: 1.5, sm: 2, md: 2.5 }}>
+          {infoItems.map((item, index) => (
+            <Grid item xs={12} sm={6} md={4} key={index}>
+              <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: { xs: 1, sm: 1.5 },
+                p: { xs: 1, sm: 1.2, md: 1.5 },
+                bgcolor: alpha(theme.palette.primary.main, 0.02),
+                borderRadius: { xs: 1.5, sm: 2 },
+                border: '1px solid',
+                borderColor: 'grey.100',
+                height: '100%'
+              }}>
+                <Box sx={{ 
+                  width: { xs: 32, sm: 36, md: 40 },
+                  height: { xs: 32, sm: 36, md: 40 },
+                  borderRadius: { xs: 1.5, sm: 2 },
+                  background: item.gradient,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}>
+                  {item.icon}
+                </Box>
+                <Box sx={{ minWidth: 0, flex: 1 }}>
+                  <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ 
+                    fontSize: { xs: '0.55rem', sm: '0.6rem', md: '0.65rem' },
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.3px',
+                    display: 'block',
+                    mb: 0.2
+                  }}>
+                    {item.label}
+                  </Typography>
+                  <Typography variant="body2" fontWeight={600} sx={{ 
+                    fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.85rem' },
+                    wordBreak: 'break-word',
+                    color: '#0f172a',
+                    lineHeight: 1.3
+                  }}>
+                    {item.value}
+                  </Typography>
+                </Box>
+              </Box>
+            </Grid>
+          ))}
+        </Grid>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Responsive Subscription Card
+const ResponsiveSubscriptionCard = ({ company }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
+  const getDaysRemaining = (expiryDate) => {
+    if (!expiryDate) return 30;
+    try {
+      const expiry = new Date(expiryDate);
+      const today = new Date();
+      const diffTime = expiry - today;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays > 0 ? diffDays : 0;
+    } catch (error) {
+      return 30;
+    }
+  };
+  
+  const getSubscriptionStatus = (daysRemaining) => {
+    if (daysRemaining > 15) return { color: 'success', text: 'Active', bg: 'linear-gradient(135deg, #4caf50 0%, #388e3c 100%)' };
+    if (daysRemaining > 7) return { color: 'warning', text: 'Expiring Soon', bg: 'linear-gradient(135deg, #ff9800 0%, #ed6c02 100%)' };
+    if (daysRemaining > 0) return { color: 'error', text: 'Critical', bg: 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)' };
+    return { color: 'error', text: 'Expired', bg: 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)' };
+  };
+  
+  const formatDate = (dateString) => {
+    if (!dateString) return "Not available";
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch (error) {
+      return "Invalid date";
+    }
+  };
+  
+  const daysRemaining = getDaysRemaining(company.subscriptionExpiry);
+  const subscriptionStatus = getSubscriptionStatus(daysRemaining);
+  const subscriptionProgress = Math.min((daysRemaining / 30) * 100, 100);
+  
+  return (
+    <Card sx={{ 
+      borderRadius: { xs: 2, sm: 3, md: 4 },
+      boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+      background: `linear-gradient(145deg, ${
+        subscriptionStatus.color === 'success' ? '#e8f5e9' :
+        subscriptionStatus.color === 'warning' ? '#fff3e0' :
+        '#ffebee'
+      } 0%, ${
+        subscriptionStatus.color === 'success' ? '#c8e6c9' :
+        subscriptionStatus.color === 'warning' ? '#ffe0b2' :
+        '#ffcdd2'
+      } 100%)`,
+      overflow: 'hidden',
+      position: 'relative',
+      border: '1px solid rgba(226, 232, 240, 0.6)',
+      mb: { xs: 2, sm: 3 }
+    }}>
+      <Box sx={{
+        position: 'absolute',
+        top: -20,
+        right: -20,
+        width: { xs: 100, sm: 120, md: 150 },
+        height: { xs: 100, sm: 120, md: 150 },
+        borderRadius: '50%',
+        background: `radial-gradient(circle, ${
+          subscriptionStatus.color === 'success' ? 'rgba(76, 175, 80, 0.15)' :
+          subscriptionStatus.color === 'warning' ? 'rgba(255, 152, 0, 0.15)' :
+          'rgba(244, 67, 54, 0.15)'
+        } 0%, transparent 70%)`,
+      }} />
+      
+      <CardContent sx={{ p: { xs: 1.5, sm: 2, md: 3 }, position: 'relative' }}>
+        <Stack 
+          direction={{ xs: 'column', sm: 'row' }} 
+          alignItems="center" 
+          justifyContent="space-between" 
+          spacing={{ xs: 2, sm: 3 }}
+        >
+          <Box sx={{ width: '100%' }}>
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: { xs: 1.5, sm: 2 }, flexWrap: 'wrap' }}>
+              <Box sx={{
+                p: { xs: 0.5, sm: 0.75, md: 1 },
+                borderRadius: { xs: 1.5, sm: 2 },
+                background: subscriptionStatus.bg,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <CardMembership sx={{ 
+                  color: 'white',
+                  fontSize: { xs: 16, sm: 18, md: 20 }
+                }} />
+              </Box>
+              <Typography variant={isMobile ? "body2" : "h6"} fontWeight={700} color={`${subscriptionStatus.color}.dark`} sx={{ fontSize: { xs: '0.9rem', sm: '1.1rem', md: '1.25rem' } }}>
+                Subscription Status
+              </Typography>
+              <Chip
+                label={subscriptionStatus.text}
+                size="small"
+                sx={{
+                  background: subscriptionStatus.bg,
+                  color: 'white',
+                  fontWeight: 600,
+                  height: { xs: 20, sm: 22, md: 24 },
+                  fontSize: { xs: '0.6rem', sm: '0.65rem', md: '0.7rem' },
+                  ml: { xs: 0, sm: 'auto' },
+                  '& .MuiChip-label': { px: 1 }
+                }}
+              />
+            </Stack>
+            
+            <Typography variant="body2" color="text.secondary" sx={{ 
+              mb: { xs: 1.5, sm: 2 },
+              fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8rem' }
+            }}>
+              <strong>Expires on:</strong> {formatDate(company.subscriptionExpiry)}
+            </Typography>
+            
+            <Box sx={{ mb: { xs: 1.5, sm: 2 } }}>
+              <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 0.5 }}>
+                <Typography variant="body2" fontWeight={600} color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.7rem', md: '0.75rem' } }}>
+                  Days Remaining
+                </Typography>
+                <Typography 
+                  variant={isMobile ? "body1" : "h6"} 
+                  fontWeight={800} 
+                  sx={{
+                    background: subscriptionStatus.bg,
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    fontSize: { xs: '1rem', sm: '1.2rem', md: '1.4rem' }
+                  }}
+                >
+                  {daysRemaining} days
+                </Typography>
+              </Stack>
+              <LinearProgress 
+                variant="determinate" 
+                value={subscriptionProgress}
+                sx={{ 
+                  height: { xs: 6, sm: 8, md: 10 },
+                  borderRadius: 4,
+                  bgcolor: 'rgba(0,0,0,0.05)',
+                  '& .MuiLinearProgress-bar': {
+                    borderRadius: 4,
+                    background: subscriptionStatus.bg,
+                  }
+                }}
+              />
+            </Box>
+            
+            <Alert 
+              severity={subscriptionStatus.color}
+              iconMapping={{
+                success: <CheckCircle fontSize="inherit" />,
+                warning: <WarningAmber fontSize="inherit" />,
+                error: <ErrorOutline fontSize="inherit" />
+              }}
+              sx={{ 
+                mt: { xs: 1, sm: 1.5 }, 
+                borderRadius: { xs: 1.5, sm: 2 },
+                py: { xs: 0.3, sm: 0.5 },
+                '& .MuiAlert-icon': {
+                  fontSize: { xs: '1rem', sm: '1.1rem' }
+                },
+                '& .MuiAlert-message': {
+                  fontSize: { xs: '0.65rem', sm: '0.7rem', md: '0.75rem' },
+                  padding: '2px 0'
+                }
+              }}
+            >
+              {daysRemaining > 0 
+                ? `Your subscription will expire in ${daysRemaining} days.`
+                : 'Your subscription has expired.'}
+            </Alert>
+          </Box>
+        </Stack>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Responsive Recent Users Card
+const ResponsiveRecentUsersCard = ({ recentUsers, handleEditUser, handleAddNewUser, isMobile }) => {
+  const theme = useTheme();
+  
+  return (
+    <Card sx={{ 
+      borderRadius: { xs: 2, sm: 3, md: 4 },
+      bgcolor: 'white',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      maxHeight: { lg: '600px' },
+      border: '1px solid rgba(226, 232, 240, 0.6)',
+      position: 'relative',
+      overflow: 'hidden'
+    }}>
+      <Box sx={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 4,
+        background: 'linear-gradient(90deg, #4caf50, #2196f3, #9c27b0)'
+      }} />
+      
+      <CardHeader
+        title={
+          <Stack direction="row" alignItems="center" justifyContent="space-between">
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <Box sx={{
+                p: { xs: 0.5, sm: 0.75, md: 1 },
+                borderRadius: { xs: 1.5, sm: 2 },
+                bgcolor: alpha(theme.palette.primary.main, 0.1),
+                display: 'flex'
+              }}>
+                <People sx={{ color: 'primary.main', fontSize: { xs: 16, sm: 18, md: 20 } }} />
+              </Box>
+              <Typography variant={isMobile ? "body2" : "h6"} fontWeight={700} sx={{ fontSize: { xs: '0.95rem', sm: '1.1rem', md: '1.25rem' } }}>
+                Recent Users
+              </Typography>
+            </Stack>
+            <MuiBadge 
+              badgeContent={recentUsers.length} 
+              color="primary"
+              sx={{ 
+                '& .MuiBadge-badge': { 
+                  fontWeight: 700,
+                  fontSize: { xs: '0.6rem', sm: '0.65rem', md: '0.7rem' },
+                  height: { xs: 16, sm: 18, md: 20 },
+                  minWidth: { xs: 16, sm: 18, md: 20 },
+                } 
+              }}
+            />
+          </Stack>
+        }
+        sx={{ 
+          borderBottom: '1px solid', 
+          borderColor: 'grey.100', 
+          py: { xs: 1, sm: 1.5, md: 2 },
+          px: { xs: 1.5, sm: 2, md: 3 },
+          bgcolor: 'grey.50'
+        }}
+      />
+      
+      {/* Scrollable Content Area */}
+      <CardContent 
+        sx={{ 
+          p: 0, 
+          flexGrow: 1,
+          overflowY: 'auto',
+          maxHeight: { xs: '300px', sm: '350px', md: '400px', lg: '500px' },
+          '&::-webkit-scrollbar': {
+            width: '4px',
+          },
+          '&::-webkit-scrollbar-track': {
+            background: '#f1f1f1',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
+            borderRadius: '4px',
+          },
+        }}
+      >
+        {recentUsers.length > 0 ? (
+          <List sx={{ p: 0 }}>
+            {recentUsers.map((user, index) => (
+              <ListItem
+                key={user.id || user._id || index}
+                sx={{
+                  px: { xs: 1.5, sm: 2, md: 3 },
+                  py: { xs: 1.2, sm: 1.5, md: 2 },
+                  borderBottom: index < recentUsers.length - 1 ? '1px solid' : 'none',
+                  borderColor: 'grey.100',
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    bgcolor: alpha(theme.palette.primary.main, 0.04),
+                  },
+                }}
+              >
+                <ListItemAvatar>
+                  <MuiBadge
+                    overlap="circular"
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                    badgeContent={
+                      <Box
+                        sx={{
+                          width: { xs: 8, sm: 9, md: 10 },
+                          height: { xs: 8, sm: 9, md: 10 },
+                          borderRadius: '50%',
+                          background: user.isActive 
+                            ? 'linear-gradient(135deg, #4caf50 0%, #388e3c 100%)'
+                            : 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)',
+                          border: '2px solid white',
+                        }}
+                      />
+                    }
+                  >
+                    <Avatar
+                      sx={{
+                        width: { xs: 36, sm: 40, md: 44 },
+                        height: { xs: 36, sm: 40, md: 44 },
+                        background: user.isActive 
+                          ? 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)'
+                          : 'linear-gradient(135deg, #9e9e9e 0%, #757575 100%)',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                        fontSize: { xs: '0.8rem', sm: '0.9rem', md: '1rem' },
+                      }}
+                    >
+                      {user.name?.charAt(0) || 'U'}
+                    </Avatar>
+                  </MuiBadge>
+                </ListItemAvatar>
+                
+                <ListItemText
+                  primary={
+                    <Typography 
+                      variant="body1" 
+                      fontWeight={700} 
+                      noWrap
+                      sx={{ 
+                        fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.9rem' },
+                        color: '#0f172a',
+                        mb: 0.2
+                      }}
+                    >
+                      {user.name || 'Unknown User'}
+                    </Typography>
+                  }
+                  secondary={
+                    <Stack direction="row" alignItems="center" spacing={0.5} sx={{ flexWrap: 'wrap', gap: 0.3 }}>
+                      {user.employeeType && (
+                        <Chip
+                          label={user.employeeType}
+                          size="small"
+                          sx={{ 
+                            height: { xs: 16, sm: 18 }, 
+                            fontSize: { xs: '0.5rem', sm: '0.55rem' },
+                            fontWeight: 600,
+                            background: 'linear-gradient(135deg, #ff9800 0%, #ed6c02 100%)',
+                            color: 'white',
+                            '& .MuiChip-label': { px: 0.6 }
+                          }}
+                        />
+                      )}
+                      <Chip
+                        label={user.department || 'No Dept'}
+                        size="small"
+                        sx={{ 
+                          height: { xs: 16, sm: 18 }, 
+                          fontSize: { xs: '0.5rem', sm: '0.55rem' },
+                          fontWeight: 600,
+                          bgcolor: alpha(theme.palette.primary.main, 0.1),
+                          color: 'primary.main',
+                          '& .MuiChip-label': { px: 0.6 }
+                        }}
+                      />
+                    </Stack>
+                  }
+                />
+                
+                <Tooltip title="Edit User" arrow placement="left">
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<Edit sx={{ fontSize: { xs: 12, sm: 14 } }} />}
+                    onClick={() => handleEditUser(user)}
+                    sx={{
+                      ml: 1,
+                      borderRadius: 1.5,
+                      borderColor: 'primary.main',
+                      color: 'primary.main',
+                      minWidth: { xs: 32, sm: 36, md: 40 },
+                      fontSize: { xs: '0.55rem', sm: '0.6rem', md: '0.65rem' },
+                      py: { xs: 0.2, sm: 0.3, md: 0.4 },
+                      px: { xs: 0.6, sm: 0.8, md: 1 },
+                      '&:hover': {
+                        background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
+                        color: 'white',
+                        borderColor: 'transparent',
+                      },
+                      transition: 'all 0.2s ease',
+                      flexShrink: 0
+                    }}
+                  >
+                    {isMobile ? '' : 'Edit'}
+                  </Button>
+                </Tooltip>
+              </ListItem>
+            ))}
+          </List>
+        ) : (
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            py: { xs: 4, sm: 5, md: 6 },
+            px: 2,
+            height: '100%',
+            minHeight: { xs: '200px', sm: '250px' }
+          }}>
+            <Box sx={{
+              width: { xs: 50, sm: 60, md: 70 },
+              height: { xs: 50, sm: 60, md: 70 },
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              mb: 2,
+            }}>
+              <People sx={{ fontSize: { xs: 24, sm: 28, md: 32 }, color: '#1976d2' }} />
+            </Box>
+            <Typography variant="body2" fontWeight={700} gutterBottom sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem', md: '1rem' } }}>
+              No Users Found
+            </Typography>
+            <Typography variant="caption" color="text.secondary" align="center" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' }, mb: 2 }}>
+              Get started by adding users
+            </Typography>
+            <Button
+              variant="contained"
+              onClick={handleAddNewUser}
+              startIcon={<Add sx={{ fontSize: 14 }} />}
+              size="small"
+              sx={{
+                background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
+                color: 'white',
+                fontWeight: 600,
+                px: 2,
+                py: 0.5,
+                borderRadius: 1.5,
+                fontSize: { xs: '0.65rem', sm: '0.7rem' },
+              }}
+            >
+              Add First User
+            </Button>
+          </Box>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+// Main Component
 const CompanyDetails = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
+  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [company, setCompany] = useState(null);
@@ -825,7 +2114,7 @@ const CompanyDetails = () => {
     return { color: 'error', text: 'Expired', bg: 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)' };
   };
 
-  // Handle manual refresh - FIXED: Now preserves data
+  // Handle manual refresh
   const handleRefresh = () => {
     toast.info("Refreshing data...");
     fetchCurrentUserCompany();
@@ -973,7 +2262,7 @@ const CompanyDetails = () => {
     }
   };
 
-  // Handle user edit - COMPLETE FORM WITH ALL FIELDS
+  // Handle user edit
   const handleEditUser = (user) => {
     console.log("Editing user:", user);
     
@@ -982,7 +2271,6 @@ const CompanyDetails = () => {
     if (user.department && typeof user.department === 'object') {
       departmentName = user.department.name || user.department._id;
     } else if (user.department) {
-      // Try to find department name from departments list
       const dept = departments.find(d => d.id === user.department || d.value === user.department);
       departmentName = dept?.name || user.department;
     }
@@ -1444,7 +2732,7 @@ const CompanyDetails = () => {
           elevation={24}
           sx={{
             p: { xs: 3, sm: 5 },
-            borderRadius: 4,
+            borderRadius: { xs: 3, sm: 4 },
             bgcolor: 'rgba(255,255,255,0.95)',
             backdropFilter: 'blur(20px)',
             boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
@@ -1468,7 +2756,8 @@ const CompanyDetails = () => {
               background: 'linear-gradient(145deg, #667eea 0%, #764ba2 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
-              mb: 1
+              mb: 1,
+              fontSize: { xs: '1.5rem', sm: '2rem' }
             }}
           >
             Loading...
@@ -1476,7 +2765,7 @@ const CompanyDetails = () => {
           <Typography 
             variant="body1" 
             color="text.secondary"
-            sx={{ fontWeight: 500 }}
+            sx={{ fontWeight: 500, fontSize: { xs: '0.9rem', sm: '1rem' } }}
           >
             Fetching company details
           </Typography>
@@ -1500,7 +2789,7 @@ const CompanyDetails = () => {
           elevation={24}
           sx={{
             p: { xs: 4, sm: 6 },
-            borderRadius: 4,
+            borderRadius: { xs: 3, sm: 4 },
             bgcolor: 'rgba(255,255,255,0.95)',
             backdropFilter: 'blur(20px)',
             boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
@@ -1524,13 +2813,13 @@ const CompanyDetails = () => {
           }}>
             <Business sx={{ fontSize: { xs: 40, sm: 60 }, color: 'error.main' }} />
           </Box>
-          <Typography variant={isMobile ? "h4" : "h3"} fontWeight={800} color="error.main" gutterBottom>
+          <Typography variant={isMobile ? "h4" : "h3"} fontWeight={800} color="error.main" gutterBottom sx={{ fontSize: { xs: '1.8rem', sm: '2.5rem' } }}>
             Oops!
           </Typography>
-          <Typography variant={isMobile ? "h6" : "h5"} fontWeight={700} gutterBottom>
+          <Typography variant={isMobile ? "h6" : "h5"} fontWeight={700} gutterBottom sx={{ fontSize: { xs: '1.1rem', sm: '1.5rem' } }}>
             Company Not Found
           </Typography>
-          <Typography variant="body1" color="text.secondary" paragraph sx={{ mb: 4, fontSize: isMobile ? '0.95rem' : '1.1rem' }}>
+          <Typography variant="body1" color="text.secondary" paragraph sx={{ mb: 4, fontSize: isMobile ? '0.9rem' : '1rem' }}>
             Unable to load company details. Please try again or contact support.
           </Typography>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="center">
@@ -1540,12 +2829,12 @@ const CompanyDetails = () => {
               onClick={() => navigate("/Ciis-network/SuperAdminDashboard")}
               startIcon={<ArrowBack />}
               sx={{
-                borderRadius: 3,
+                borderRadius: 2,
                 px: { xs: 3, sm: 4 },
                 py: { xs: 1, sm: 1.5 },
                 fontWeight: 700,
+                fontSize: { xs: '0.85rem', sm: '1rem' },
                 background: 'linear-gradient(145deg, #2196f3 0%, #1976d2 100%)',
-                boxShadow: '0 8px 16px rgba(33, 150, 243, 0.3)',
                 '&:hover': {
                   boxShadow: '0 12px 24px rgba(33, 150, 243, 0.4)',
                   transform: 'translateY(-2px)'
@@ -1560,10 +2849,11 @@ const CompanyDetails = () => {
               onClick={handleRefresh}
               startIcon={<Refresh />}
               sx={{
-                borderRadius: 3,
+                borderRadius: 2,
                 px: { xs: 3, sm: 4 },
                 py: { xs: 1, sm: 1.5 },
                 fontWeight: 700,
+                fontSize: { xs: '0.85rem', sm: '1rem' },
                 borderWidth: 2,
                 '&:hover': {
                   borderWidth: 2
@@ -1600,14 +2890,11 @@ const CompanyDetails = () => {
     departmentName: role.departmentName
   }));
 
-  // Default logo
-  const defaultLogo = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
-
   return (
     <Box sx={{ 
       minHeight: '100vh',
       background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
-      pb: 6,
+      pb: { xs: 8, sm: 6 },
       position: 'relative'
     }}>
       {/* Animated Background */}
@@ -1625,8 +2912,8 @@ const CompanyDetails = () => {
           position: 'absolute',
           top: '10%',
           left: '5%',
-          width: 300,
-          height: 300,
+          width: { xs: 200, sm: 250, md: 300 },
+          height: { xs: 200, sm: 250, md: 300 },
           borderRadius: '50%',
           background: 'radial-gradient(circle, rgba(37, 99, 235, 0.03) 0%, transparent 70%)',
           animation: 'float 20s infinite',
@@ -1635,8 +2922,8 @@ const CompanyDetails = () => {
           position: 'absolute',
           bottom: '20%',
           right: '10%',
-          width: 400,
-          height: 400,
+          width: { xs: 250, sm: 300, md: 400 },
+          height: { xs: 250, sm: 300, md: 400 },
           borderRadius: '50%',
           background: 'radial-gradient(circle, rgba(124, 58, 237, 0.03) 0%, transparent 70%)',
           animation: 'float 25s infinite reverse',
@@ -1653,2329 +2940,1148 @@ const CompanyDetails = () => {
         </style>
       </Box>
 
-      <Container maxWidth="xl" sx={{ position: 'relative', zIndex: 1, px: { xs: 1.5, sm: 2, md: 3, lg: 4 } }}>
-        {/* Hero Header Section with Enhanced Design */}
-        <GradientCard 
-          gradient="linear-gradient(145deg, #1a237e 0%, #0d47a1 50%, #01579b 100%)"
-          sx={{
-            mt: { xs: 2, sm: 3, md: 4 },
-            mb: { xs: 3, sm: 4 },
-            p: { xs: 2, sm: 3, md: 4 },
-            borderRadius: { xs: 3, sm: 4, md: 5 },
-            boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
-          }}
-        >
-          <Stack 
-            direction={{ xs: 'column', md: 'row' }} 
-            alignItems="center" 
-            justifyContent="space-between"
-            spacing={{ xs: 3, md: 4 }}
-            position="relative"
-          >
-            <Stack 
-              direction={{ xs: 'column', sm: 'row' }} 
-              alignItems="center" 
-              spacing={{ xs: 2, sm: 3 }}
-              sx={{ width: { xs: '100%', sm: 'auto' } }}
-            >
-              {/* <Tooltip title="Go Back" arrow placement="top">
-                <IconButton
-                  onClick={() => navigate(-1)}
-                  sx={{ 
-                    color: 'white',
-                    bgcolor: 'rgba(255,255,255,0.15)',
-                    backdropFilter: 'blur(10px)',
-                    width: { xs: 40, sm: 48 },
-                    height: { xs: 40, sm: 48 },
-                    '&:hover': { 
-                      bgcolor: 'rgba(255,255,255,0.25)',
-                      transform: 'scale(1.1) rotate(-10deg)'
-                    },
-                    transition: 'all 0.3s ease',
-                  }}
-                >
-                  <ArrowBack fontSize={isMobile ? "medium" : "small"} />
-                </IconButton>
-              </Tooltip> */}
-              
-              {/* Logo Section with Animation */}
-              <Box sx={{ 
-                position: 'relative',
+      <ResponsiveContainer maxWidth="xl">
+        {/* Responsive Header */}
+        <ResponsiveCompanyHeader
+          company={company}
+          handleEditCompany={handleEditCompany}
+          handleRefresh={handleRefresh}
+          handleAddNewUser={handleAddNewUser}
+          handleCopy={handleCopy}
+          copied={copied}
+        />
+
+        {/* Responsive Stats Grid */}
+        <ResponsiveStatsGrid stats={stats} />
+
+        {/* Conditional Rendering based on tab for mobile */}
+        {isMobile ? (
+          <>
+            {activeTab === 0 && (
+              <>
+                <ResponsiveCompanyInfoCard company={company} />
+                <ResponsiveSubscriptionCard company={company} />
+              </>
+            )}
+            {activeTab === 1 && (
+              <ResponsiveRecentUsersCard
+                recentUsers={recentUsers}
+                handleEditUser={handleEditUser}
+                handleAddNewUser={handleAddNewUser}
+                isMobile={isMobile}
+              />
+            )}
+          </>
+        ) : (
+          /* Desktop/Tablet Layout */
+          <Grid container spacing={{ sm: 2, md: 3 }}>
+            {/* Left Column - Company Info & Subscription */}
+            <Grid item xs={12} lg={8}>
+              <ResponsiveCompanyInfoCard company={company} />
+              <ResponsiveSubscriptionCard company={company} />
+            </Grid>
+            
+            {/* Right Column - Recent Users */}
+            <Grid item xs={12} lg={4}>
+              <ResponsiveRecentUsersCard
+                recentUsers={recentUsers}
+                handleEditUser={handleEditUser}
+                handleAddNewUser={handleAddNewUser}
+                isMobile={isMobile}
+              />
+            </Grid>
+          </Grid>
+        )}
+      </ResponsiveContainer>
+
+      {/* Mobile Bottom Navigation */}
+      <MobileBottomNav
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        handleAddNewUser={handleAddNewUser}
+        company={company}
+      />
+
+      {/* Company Edit Modal */}
+      <Dialog 
+        open={companyEditModalOpen} 
+        onClose={() => !companyEditLoading && setCompanyEditModalOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        fullScreen={isMobile}
+        TransitionComponent={Transition}
+        keepMounted
+        PaperProps={{
+          sx: { 
+            borderRadius: isMobile ? 0 : { sm: 3, md: 4 },
+            overflow: 'hidden',
+            background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+            border: '1px solid rgba(226, 232, 240, 0.6)',
+            margin: isMobile ? 0 : 2
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          background: 'linear-gradient(135deg, #1a237e 0%, #0d47a1 100%)',
+          color: 'white',
+          py: { xs: 2, sm: 2.5, md: 3 },
+          px: { xs: 2, sm: 2.5, md: 4 },
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          <Box sx={{
+            position: 'absolute',
+            top: -50,
+            right: -50,
+            width: { xs: 100, sm: 120, md: 150 },
+            height: { xs: 100, sm: 120, md: 150 },
+            borderRadius: '50%',
+            background: 'rgba(255,255,255,0.1)',
+            animation: 'float 8s ease-in-out infinite'
+          }} />
+          
+          <Stack direction="row" alignItems="center" justifyContent="space-between" position="relative">
+            <Stack direction="row" alignItems="center" spacing={{ xs: 1, sm: 2 }}>
+              <Box sx={{
+                width: { xs: 40, sm: 45, md: 55 },
+                height: { xs: 40, sm: 45, md: 55 },
+                borderRadius: '50%',
+                bgcolor: 'white',
                 display: 'flex',
+                alignItems: 'center',
                 justifyContent: 'center',
-                width: { xs: '100%', sm: 'auto' }
+                boxShadow: '0 8px 16px rgba(0,0,0,0.2)'
               }}>
-                <Avatar
-                  src={company.logo || defaultLogo}
-                  sx={{
-                    width: { xs: 90, sm: 100, md: 120 },
-                    height: { xs: 90, sm: 100, md: 120 },
-                    border: '4px solid white',
-                    boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
-                    // animation: 'float 6s ease-in-out infinite',
-                    bgcolor: 'white',
-                    mx: { xs: 'auto', sm: 0 },
-                    '& img': {
-                      objectFit: 'contain'
-                    }
-                  }}
-                >
-                  {!company.logo && (company.companyName?.charAt(0) || 'C')}
-                </Avatar>
-                {company.isActive && (
-                  <Box sx={{
-                    position: 'absolute',
-                    bottom: { xs: 0, sm: 5 },
-                    right: { xs: 'calc(50% - 45px)', sm: 5 },
-                    width: { xs: 28, sm: 32 },
-                    height: { xs: 28, sm: 32 },
-                    borderRadius: '50%',
-                    background: 'linear-gradient(135deg, #4caf50 0%, #388e3c 100%)',
-                    border: '3px solid white',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
-                    animation: 'pulse 2s infinite'
-                  }}>
-                    <CheckCircle sx={{ fontSize: { xs: 16, sm: 20 }, color: 'white' }} />
-                  </Box>
-                )}
+                <Business sx={{ color: '#0d47a1', fontSize: { xs: 20, sm: 24, md: 30 } }} />
               </Box>
-              
-              {/* Company Name Section */}
-              <Box sx={{ 
-                textAlign: { xs: 'center', sm: 'left' },
-                width: { xs: '100%', sm: 'auto' }
-              }}>
-                <Stack 
-                  direction="row" 
-                  alignItems="center" 
-                  spacing={1} 
-                  sx={{ 
-                    mb: 1,
-                    justifyContent: { xs: 'center', sm: 'flex-start' },
-                    flexWrap: 'wrap'
-                  }}
-                >
-                  <Typography 
-                    variant={isMobile ? "h4" : isTablet ? "h4" : "h3"} 
-                    sx={{ 
-                      fontWeight: 800, 
-                      fontSize: { xs: '1.6rem', sm: '1.9rem', md: '2.2rem', lg: '2.8rem' },
-                      textShadow: '2px 2px 4px rgba(0,0,0,0.2)',
-                      background: 'linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                    }}
-                  >
-                    {company.companyName}
-                  </Typography>
-                  <Tooltip title="Edit Company" arrow placement="top">
-                    <IconButton 
-                      onClick={handleEditCompany}
-                      sx={{ 
-                        color: 'white',
-                        bgcolor: 'rgba(255,255,255,0.15)',
-                        backdropFilter: 'blur(10px)',
-                        width: { xs: 36, sm: 40 },
-                        height: { xs: 36, sm: 40 },
-                        '&:hover': { 
-                          bgcolor: 'rgba(255,255,255,0.25)',
-                          transform: 'scale(1.1) rotate(15deg)'
-                        },
-                        transition: 'all 0.3s ease'
-                      }}
-                    >
-                      <Edit fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                </Stack>
-                
-                <Stack 
-                  direction="row" 
-                  alignItems="center" 
-                  spacing={1} 
-                  justifyContent={{ xs: 'center', sm: 'flex-start' }}
-                  flexWrap="wrap"
-                  sx={{ gap: 1, mb: 2 }}
-                >
-                  <Chip
-                    icon={company.isActive ? <CheckCircle /> : <Cancel />}
-                    label={company.isActive ? "Active" : "Inactive"}
-                    size="small"
-                    sx={{
-                      background: company.isActive 
-                        ? 'linear-gradient(135deg, #4caf50 0%, #388e3c 100%)' 
-                        : 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)',
-                      color: 'white',
-                      fontWeight: 700,
-                      boxShadow: company.isActive 
-                        ? '0 4px 10px rgba(76, 175, 80, 0.3)' 
-                        : '0 4px 10px rgba(244, 67, 54, 0.3)',
-                      '& .MuiChip-icon': { color: 'white' },
-                      fontSize: { xs: '0.7rem', sm: '0.8rem' },
-                      px: 0.5
-                    }}
-                  />
-                  {company.companyCode && (
-                    <Chip
-                      icon={<Code />}
-                      label={`Code: ${company.companyCode}`}
-                      size="small"
-                      sx={{
-                        bgcolor: 'rgba(255,255,255,0.15)',
-                        color: 'white',
-                        fontWeight: 600,
-                        backdropFilter: 'blur(10px)',
-                        border: '1px solid rgba(255,255,255,0.3)',
-                        '& .MuiChip-icon': { color: 'white' },
-                        fontSize: { xs: '0.7rem', sm: '0.8rem' },
-                        '&:hover': {
-                          bgcolor: 'rgba(255,255,255,0.25)',
-                          transform: 'scale(1.05)'
-                        },
-                        transition: 'all 0.2s ease'
-                      }}
-                    />
-                  )}
-                  <Chip
-                    icon={<CalendarToday />}
-                    label={`Member since ${formatRelativeTime(company.createdAt)}`}
-                    size="small"
-                    sx={{
-                      bgcolor: 'rgba(255,255,255,0.15)',
-                      color: 'white',
-                      fontWeight: 500,
-                      backdropFilter: 'blur(10px)',
-                      border: '1px solid rgba(255,255,255,0.3)',
-                      '& .MuiChip-icon': { color: 'white' },
-                      fontSize: { xs: '0.7rem', sm: '0.8rem' },
-                      '&:hover': {
-                        bgcolor: 'rgba(255,255,255,0.25)',
-                        transform: 'scale(1.05)'
-                      },
-                      transition: 'all 0.2s ease'
-                    }}
-                  />
-                </Stack>
+              <Box>
+                <Typography variant={isMobile ? "subtitle1" : "h6"} fontWeight={700} sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                  Edit Company Details
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)', fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.875rem' } }}>
+                  Update company information
+                </Typography>
               </Box>
             </Stack>
-            
-            <Stack 
-              direction="row" 
-              spacing={2}
+            <IconButton
+              onClick={() => setCompanyEditModalOpen(false)}
+              disabled={companyEditLoading}
               sx={{ 
-                width: { xs: '100%', sm: 'auto' },
-                justifyContent: { xs: 'center', sm: 'flex-end' }
+                color: 'white',
+                bgcolor: 'rgba(255,255,255,0.2)',
+                '&:hover': { 
+                  bgcolor: 'rgba(255,255,255,0.3)',
+                  transform: 'rotate(90deg)'
+                },
+                transition: 'all 0.3s ease',
+                width: { xs: 32, sm: 36, md: 40 },
+                height: { xs: 32, sm: 36, md: 40 }
               }}
             >
-              <Tooltip title="Refresh Data" arrow placement="bottom">
-                <IconButton
-                  onClick={handleRefresh}
-                  sx={{
-                    color: 'white',
-                    bgcolor: 'rgba(255,255,255,0.15)',
-                    backdropFilter: 'blur(10px)',
-                    width: { xs: 44, sm: 50 },
-                    height: { xs: 44, sm: 50 },
-                    '&:hover': { 
-                      bgcolor: 'rgba(255,255,255,0.25)',
-                      transform: 'rotate(180deg)'
-                    },
-                    transition: 'all 0.5s ease'
-                  }}
-                >
-                  <Refresh />
-                </IconButton>
-              </Tooltip>
-              
-              <Tooltip title="Add New User" arrow placement="bottom">
-                <Button
-                  variant="contained"
-                  onClick={handleAddNewUser}
-                  startIcon={<Add />}
-                  disabled={!company?._id}
-                  size={isMobile ? "small" : "medium"}
-                  sx={{
-                    background: 'linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%)',
-                    color: '#0d47a1',
-                    fontWeight: 700,
-                    px: { xs: 3, sm: 4 },
-                    py: { xs: 1.2, sm: 1.5 },
-                    borderRadius: 3,
-                    fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                    boxShadow: '0 8px 16px rgba(0,0,0,0.2)',
-                    '&:hover': {
-                      background: 'white',
-                      boxShadow: '0 12px 24px rgba(0,0,0,0.3)',
-                      transform: 'translateY(-2px)'
-                    },
-                    transition: 'all 0.3s ease'
-                  }}
-                >
-                  {isMobile ? 'Add User' : 'Add New User'}
-                </Button>
-              </Tooltip>
-            </Stack>
+              <Close sx={{ fontSize: { xs: 18, sm: 20, md: 24 } }} />
+            </IconButton>
           </Stack>
-        </GradientCard>
-
-        {/* Main Content */}
-        <Grid container spacing={{ xs: 2, sm: 3 }}>
-          {/* Left Column - Company Overview */}
-          <Grid item xs={12} lg={8}>
-            {/* Stats Cards - Enhanced Design */}
-            <Box sx={{ width: '100%', marginBottom: '24px' }}>
-              <Box sx={{ 
-                display: 'grid', 
-                gridTemplateColumns: { xs: '1fr 1fr', md: '1fr 1fr 1fr 1fr' },
-                gap: '16px',
-                width: '100%'
-              }}>
-                {/* Total Users */}
-                <StatBox>
-                  <Box sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    textAlign: 'center'
-                  }}>
-                    <Box sx={{
-                      width: '48px',
-                      height: '48px',
-                      borderRadius: '16px',
-                      background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      margin: '0 auto 12px auto',
-                      boxShadow: '0 8px 16px rgba(33, 150, 243, 0.3)'
-                    }}>
-                      <People sx={{ fontSize: '28px', color: 'white' }} />
-                    </Box>
-                    <AnimatedNumber sx={{ 
-                      fontWeight: 800, 
-                      color: '#2196f3', 
-                      fontSize: { xs: '24px', sm: '28px', md: '32px' },
-                      lineHeight: 1.2,
-                      mb: 0.5
-                    }}>
-                      {stats.totalUsers}
-                    </AnimatedNumber>
-                    <Typography sx={{ 
-                      fontSize: '12px', 
-                      color: '#64748b', 
-                      fontWeight: 600, 
-                      textTransform: 'uppercase', 
-                      letterSpacing: '0.5px' 
-                    }}>
-                      TOTAL USERS
-                    </Typography>
-                  </Box>
-                </StatBox>
-
-                {/* Active Users */}
-                <StatBox>
-                  <Box sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    textAlign: 'center'
-                  }}>
-                    <Box sx={{
-                      width: '48px',
-                      height: '48px',
-                      borderRadius: '16px',
-                      background: 'linear-gradient(135deg, #4caf50 0%, #388e3c 100%)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      margin: '0 auto 12px auto',
-                      boxShadow: '0 8px 16px rgba(76, 175, 80, 0.3)'
-                    }}>
-                      <CheckCircle sx={{ fontSize: '28px', color: 'white' }} />
-                    </Box>
-                    <AnimatedNumber sx={{ 
-                      fontWeight: 800, 
-                      color: '#4caf50', 
-                      fontSize: { xs: '24px', sm: '28px', md: '32px' },
-                      lineHeight: 1.2,
-                      mb: 0.5
-                    }}>
-                      {stats.activeUsers}
-                    </AnimatedNumber>
-                    <Typography sx={{ 
-                      fontSize: '12px', 
-                      color: '#64748b', 
-                      fontWeight: 600, 
-                      textTransform: 'uppercase', 
-                      letterSpacing: '0.5px' 
-                    }}>
-                      ACTIVE USERS
-                    </Typography>
-                    <Chip 
-                      size="small"
-                      label={`${stats.totalUsers > 0 ? Math.round((stats.activeUsers / stats.totalUsers) * 100) : 0}% active`}
-                      sx={{ 
-                        mt: 1,
-                        height: 20,
-                        fontSize: '0.6rem',
-                        bgcolor: alpha('#4caf50', 0.1),
-                        color: '#388e3c',
-                        fontWeight: 600
-                      }}
-                    />
-                  </Box>
-                </StatBox>
-
-                {/* Departments */}
-                <StatBox>
-                  <Box sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    textAlign: 'center'
-                  }}>
-                    <Box sx={{
-                      width: '48px',
-                      height: '48px',
-                      borderRadius: '16px',
-                      background: 'linear-gradient(135deg, #ff9800 0%, #ed6c02 100%)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      margin: '0 auto 12px auto',
-                      boxShadow: '0 8px 16px rgba(255, 152, 0, 0.3)'
-                    }}>
-                      <CorporateFare sx={{ fontSize: '28px', color: 'white' }} />
-                    </Box>
-                    <AnimatedNumber sx={{ 
-                      fontWeight: 800, 
-                      color: '#ff9800', 
-                      fontSize: { xs: '24px', sm: '28px', md: '32px' },
-                      lineHeight: 1.2,
-                      mb: 0.5
-                    }}>
-                      {stats.departments}
-                    </AnimatedNumber>
-                    <Typography sx={{ 
-                      fontSize: '12px', 
-                      color: '#64748b', 
-                      fontWeight: 600, 
-                      textTransform: 'uppercase', 
-                      letterSpacing: '0.5px' 
-                    }}>
-                      DEPARTMENTS
-                    </Typography>
-                    {/* <Button 
-                      size="small" 
-                      onClick={handleAddNewDepartment}
-                      sx={{ 
-                        mt: 1,
-                        fontSize: '0.6rem',
-                        color: '#ff9800',
-                        textTransform: 'none',
-                        '&:hover': {
-                          bgcolor: alpha('#ff9800', 0.1)
-                        }
-                      }}
-                    >
-                      + Add Department
-                    </Button> */}
-                  </Box>
-                </StatBox>
-
-                {/* Today's Logins */}
-                <StatBox>
-                  <Box sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    textAlign: 'center'
-                  }}>
-                    <Box sx={{
-                      width: '48px',
-                      height: '48px',
-                      borderRadius: '16px',
-                      background: 'linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      margin: '0 auto 12px auto',
-                      boxShadow: '0 8px 16px rgba(156, 39, 176, 0.3)'
-                    }}>
-                      <Today sx={{ fontSize: '28px', color: 'white' }} />
-                    </Box>
-                    <AnimatedNumber sx={{ 
-                      fontWeight: 800, 
-                      color: '#9c27b0', 
-                      fontSize: { xs: '24px', sm: '28px', md: '32px' },
-                      lineHeight: 1.2,
-                      mb: 0.5
-                    }}>
-                      {stats.todayLogins}
-                    </AnimatedNumber>
-                    <Typography sx={{ 
-                      fontSize: '12px', 
-                      color: '#64748b', 
-                      fontWeight: 600, 
-                      textTransform: 'uppercase', 
-                      letterSpacing: '0.5px' 
-                    }}>
-                      TODAY'S LOGINS
-                    </Typography>
-                  </Box>
-                </StatBox>
-              </Box>
-            </Box>
-
-            {/* Company Details Card - Enhanced */}
-            <Card sx={{ 
-              borderRadius: { xs: 3, sm: 4 },
-              bgcolor: 'white',
-              boxShadow: '0 12px 32px rgba(0,0,0,0.08)',
-              mb: { xs: 2, sm: 3 },
-              overflow: 'hidden',
-              border: '1px solid rgba(226, 232, 240, 0.6)',
-              position: 'relative'
-            }}>
-              <Box sx={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: 4,
-                background: 'linear-gradient(90deg, #2196f3, #9c27b0, #ff9800)'
-              }} />
-              
-              <CardHeader
-                title={
-                  <Stack direction="row" alignItems="center" spacing={1}>
-                    <Box sx={{
-                      p: 1,
-                      borderRadius: 2,
-                      bgcolor: alpha(theme.palette.primary.main, 0.1),
-                      display: 'flex'
-                    }}>
-                      <Business sx={{ color: 'primary.main', fontSize: { xs: 20, sm: 24 } }} />
-                    </Box>
-                    <Typography variant={isMobile ? "body1" : "h6"} fontWeight={700}>
-                      Company Information
-                    </Typography>
-                  </Stack>
-                }
-                sx={{ 
-                  borderBottom: '1px solid', 
-                  borderColor: 'grey.100', 
-                  py: { xs: 1.5, sm: 2.5 },
-                  px: { xs: 2, sm: 3 },
-                  bgcolor: 'grey.50'
-                }}
-                action={
-                  <Stack direction="row" spacing={1}>
-                    <Chip 
-                      icon={<VerifiedUser />} 
-                      label="Verified" 
-                      size="small"
-                      sx={{ 
-                        background: 'linear-gradient(135deg, #4caf50 0%, #388e3c 100%)',
-                        color: 'white',
-                        fontWeight: 600,
-                        fontSize: { xs: '0.65rem', sm: '0.75rem' },
-                        boxShadow: '0 4px 8px rgba(76, 175, 80, 0.3)',
-                        '& .MuiChip-icon': { color: 'white' }
-                      }}
-                    />
-                    <Tooltip title="Edit Company" arrow>
-                      <IconButton 
-                        onClick={handleEditCompany}
-                        size="small"
-                        sx={{
-                          bgcolor: alpha(theme.palette.primary.main, 0.1),
-                          color: 'primary.main',
-                          '&:hover': { 
-                            bgcolor: alpha(theme.palette.primary.main, 0.2),
-                            transform: 'scale(1.1)'
-                          },
-                          transition: 'all 0.2s ease'
-                        }}
-                      >
-                        <Edit fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </Stack>
-                }
-              />
-              
-              <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-                <Stack spacing={{ xs: 2, sm: 2.5 }}>
-                  {/* Company Code */}
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, sm: 2 } }}>
-                    <Box sx={{ 
-                      width: { xs: 40, sm: 50 },
-                      height: { xs: 40, sm: 50 },
-                      borderRadius: 2,
-                      background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                      boxShadow: '0 4px 8px rgba(33, 150, 243, 0.3)'
-                    }}>
-                      <Fingerprint sx={{ fontSize: { xs: 22, sm: 26 }, color: 'white' }} />
-                    </Box>
-                    <Box sx={{ minWidth: 0, flex: 1 }}>
-                      <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ fontSize: { xs: '0.7rem', sm: '0.8rem' }, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                        Company Code
-                      </Typography>
-                      <Typography variant="body1" fontWeight={700} sx={{ fontSize: { xs: '0.9rem', sm: '1.1rem' }, wordBreak: 'break-word', color: '#0f172a' }}>
-                        {company.companyCode || "N/A"}
-                      </Typography>
-                    </Box>
-                  </Box>
-
-                  {/* Created On */}
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, sm: 2 } }}>
-                    <Box sx={{ 
-                      width: { xs: 40, sm: 50 },
-                      height: { xs: 40, sm: 50 },
-                      borderRadius: 2,
-                      background: 'linear-gradient(135deg, #ff9800 0%, #ed6c02 100%)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                      boxShadow: '0 4px 8px rgba(255, 152, 0, 0.3)'
-                    }}>
-                      <Event sx={{ fontSize: { xs: 22, sm: 26 }, color: 'white' }} />
-                    </Box>
-                    <Box sx={{ minWidth: 0, flex: 1 }}>
-                      <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ fontSize: { xs: '0.7rem', sm: '0.8rem' }, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                        Created On
-                      </Typography>
-                      <Typography variant="body1" fontWeight={600} sx={{ fontSize: { xs: '0.9rem', sm: '1.1rem' }, wordBreak: 'break-word', color: '#0f172a' }}>
-                        {formatDate(company.createdAt)}
-                      </Typography>
-                    </Box>
-                  </Box>
-
-                  {/* Login URL with Copy */}
-                  <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: { xs: 1.5, sm: 2 } }}>
-                    <Box sx={{ 
-                      width: { xs: 40, sm: 50 },
-                      height: { xs: 40, sm: 50 },
-                      borderRadius: 2,
-                      background: 'linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                      mt: { xs: 0.5, sm: 0 },
-                      boxShadow: '0 4px 8px rgba(156, 39, 176, 0.3)'
-                    }}>
-                      <Link sx={{ fontSize: { xs: 22, sm: 26 }, color: 'white' }} />
-                    </Box>
-                    
-                    <Box sx={{ 
-                      minWidth: 0, 
-                      flex: 1,
-                      width: '100%'
-                    }}>
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        fontWeight={600}
-                        sx={{ 
-                          fontSize: { xs: '0.7rem', sm: '0.8rem' },
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.5px',
-                          mb: 0.5,
-                          display: 'block'
-                        }}
-                      >
-                        Login URL
-                      </Typography>
-
-                      <Box sx={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: 1,
-                        width: '100%'
-                      }}>
-                        <Box sx={{
-                          flex: 1,
-                          minWidth: 0,
-                          bgcolor: alpha(theme.palette.primary.main, 0.04),
-                          border: '1px solid',
-                          borderColor: alpha(theme.palette.primary.main, 0.2),
-                          borderRadius: 2,
-                          overflowX: 'auto',
-                          overflowY: 'hidden',
-                          maxWidth: '100%',
-                          '&::-webkit-scrollbar': {
-                            height: '4px',
-                          },
-                          '&::-webkit-scrollbar-track': {
-                            background: 'transparent',
-                          },
-                          '&::-webkit-scrollbar-thumb': {
-                            background: '#9e9e9e',
-                            borderRadius: '4px',
-                          },
-                        }}>
-                          <Typography
-                            component="div"
-                            sx={{
-                              fontFamily: 'monospace',
-                              fontSize: { xs: '0.8rem', sm: '0.9rem', md: '1rem' },
-                              fontWeight: 500,
-                              color: 'primary.main',
-                              py: { xs: 1, sm: 1.2 },
-                              px: { xs: 1.5, sm: 2 },
-                              whiteSpace: 'nowrap',
-                              width: 'max-content',
-                              minWidth: '100%',
-                            }}
-                          >
-                            {window.location.origin}{company.loginUrl}
-                          </Typography>
-                        </Box>
-
-                        <Tooltip title={copied ? "Copied!" : "Copy URL"} arrow placement="top">
-                          <IconButton
-                            size="small"
-                            onClick={handleCopy}
-                            sx={{
-                              background: copied 
-                                ? 'linear-gradient(135deg, #4caf50 0%, #388e3c 100%)'
-                                : 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
-                              color: 'white',
-                              width: { xs: 40, sm: 44 },
-                              height: { xs: 40, sm: 44 },
-                              borderRadius: 2,
-                              boxShadow: copied 
-                                ? '0 4px 12px rgba(76, 175, 80, 0.4)'
-                                : '0 4px 12px rgba(33, 150, 243, 0.4)',
-                              flexShrink: 0,
-                              '&:hover': { 
-                                transform: 'scale(1.1)',
-                                boxShadow: copied 
-                                  ? '0 6px 16px rgba(76, 175, 80, 0.5)'
-                                  : '0 6px 16px rgba(33, 150, 243, 0.5)',
-                              },
-                              transition: 'all 0.2s ease'
-                            }}
-                          >
-                            {copied ? <CheckCircle fontSize="small" /> : <ContentCopyIcon fontSize="small" />}
-                          </IconButton>
-                        </Tooltip>
-                      </Box>
-                      
-                      {copied && (
-                        <Fade in={copied}>
-                          <Typography 
-                            variant="caption" 
-                            color="success.main" 
-                            sx={{ 
-                              mt: 0.5, 
-                              display: 'block',
-                              fontSize: '0.7rem',
-                              fontWeight: 600,
-                              textAlign: 'right'
-                            }}
-                          >
-                            ✓ Copied to clipboard!
-                          </Typography>
-                        </Fade>
-                      )}
-                    </Box>
-                  </Box>
-                </Stack>
-              </CardContent>
-            </Card>
-
-            {/* Subscription Status Card - Enhanced */}
-            <Card sx={{ 
-              borderRadius: { xs: 3, sm: 4 },
-              boxShadow: '0 12px 32px rgba(0,0,0,0.08)',
-              background: `linear-gradient(145deg, ${
-                subscriptionStatus.color === 'success' ? '#e8f5e9' :
-                subscriptionStatus.color === 'warning' ? '#fff3e0' :
-                '#ffebee'
-              } 0%, ${
-                subscriptionStatus.color === 'success' ? '#c8e6c9' :
-                subscriptionStatus.color === 'warning' ? '#ffe0b2' :
-                '#ffcdd2'
-              } 100%)`,
-              overflow: 'hidden',
-              position: 'relative',
-              border: '1px solid rgba(226, 232, 240, 0.6)'
-            }}>
-              <Box sx={{
-                position: 'absolute',
-                top: -30,
-                right: -30,
-                width: 200,
-                height: 200,
-                borderRadius: '50%',
-                background: `radial-gradient(circle, ${
-                  subscriptionStatus.color === 'success' ? 'rgba(76, 175, 80, 0.2)' :
-                  subscriptionStatus.color === 'warning' ? 'rgba(255, 152, 0, 0.2)' :
-                  'rgba(244, 67, 54, 0.2)'
-                } 0%, transparent 70%)`,
-              }} />
-              
-              <CardContent sx={{ p: { xs: 2, sm: 3, md: 4 }, position: 'relative' }}>
-                <Stack 
-                  direction={{ xs: 'column', sm: 'row' }} 
-                  alignItems="center" 
-                  justifyContent="space-between" 
-                  spacing={{ xs: 3, sm: 4 }}
-                >
-                  <Box sx={{ width: '100%' }}>
-                    <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2, flexWrap: 'wrap' }}>
-                      <Box sx={{
-                        p: 1,
-                        borderRadius: 2,
-                        background: subscriptionStatus.bg,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        boxShadow: `0 4px 12px ${alpha(
-                          subscriptionStatus.color === 'success' ? '#4caf50' :
-                          subscriptionStatus.color === 'warning' ? '#ff9800' :
-                          '#f44336', 0.3
-                        )}`
-                      }}>
-                        <CardMembership sx={{ 
-                          color: 'white',
-                          fontSize: { xs: 24, sm: 28 }
-                        }} />
-                      </Box>
-                      <Typography variant={isMobile ? "body1" : "h6"} fontWeight={700} color={`${subscriptionStatus.color}.dark`}>
-                        Subscription Status
-                      </Typography>
-                      <Chip
-                        label={subscriptionStatus.text}
-                        size="small"
-                        sx={{
-                          background: subscriptionStatus.bg,
-                          color: 'white',
-                          fontWeight: 700,
-                          boxShadow: `0 4px 8px ${alpha(
-                            subscriptionStatus.color === 'success' ? '#4caf50' :
-                            subscriptionStatus.color === 'warning' ? '#ff9800' :
-                            '#f44336', 0.3
-                          )}`,
-                          ml: { xs: 0, sm: 'auto' },
-                          fontSize: { xs: '0.7rem', sm: '0.8rem' },
-                          px: 1
-                        }}
-                      />
-                    </Stack>
-                    
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontSize: { xs: '0.8rem', sm: '0.9rem' } }}>
-                      <strong>Expires on:</strong> {formatDate(company.subscriptionExpiry)}
-                    </Typography>
-                    
-                    <Box sx={{ mb: 2 }}>
-                      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
-                        <Typography variant="body2" fontWeight={600} color="text.secondary" sx={{ fontSize: { xs: '0.8rem', sm: '0.9rem' } }}>
-                          Days Remaining
-                        </Typography>
-                        <Typography 
-                          variant={isMobile ? "h5" : "h4"} 
-                          fontWeight={800} 
-                          sx={{
-                            background: subscriptionStatus.bg,
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
-                            fontSize: { xs: '1.5rem', sm: '1.8rem', md: '2.2rem' }
-                          }}
-                        >
-                          {daysRemaining} days
-                        </Typography>
-                      </Stack>
-                      <LinearProgress 
-                        variant="determinate" 
-                        value={subscriptionProgress}
-                        sx={{ 
-                          height: { xs: 10, sm: 12, md: 14 },
-                          borderRadius: 7,
-                          bgcolor: 'rgba(0,0,0,0.08)',
-                          '& .MuiLinearProgress-bar': {
-                            borderRadius: 7,
-                            background: subscriptionStatus.bg,
-                            boxShadow: `0 2px 8px ${alpha(
-                              subscriptionStatus.color === 'success' ? '#4caf50' :
-                              subscriptionStatus.color === 'warning' ? '#ff9800' :
-                              '#f44336', 0.4
-                            )}`
-                          }
-                        }}
-                      />
-                    </Box>
-                    
-                    <Alert 
-                      severity={subscriptionStatus.color}
-                      iconMapping={{
-                        success: <CheckCircle fontSize="inherit" />,
-                        warning: <WarningAmber fontSize="inherit" />,
-                        error: <ErrorOutline fontSize="inherit" />
-                      }}
-                      sx={{ 
-                        mt: 2, 
-                        borderRadius: 2,
-                        border: '1px solid',
-                        borderColor: `${subscriptionStatus.color}.main`,
-                        '& .MuiAlert-icon': {
-                          color: `${subscriptionStatus.color}.main`
-                        },
-                        '& .MuiAlert-message': {
-                          fontSize: { xs: '0.8rem', sm: '0.9rem' }
-                        }
-                      }}
-                    >
-                      <Typography variant="body2" fontWeight={500} sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                        {daysRemaining > 0 
-                          ? `Your subscription will expire in ${daysRemaining} days. Renew now to continue enjoying our services.`
-                          : 'Your subscription has expired. Please renew to access all features.'}
-                      </Typography>
-                    </Alert>
-                  </Box>
-                  
-                  <Box sx={{ 
-                    width: { xs: 100, sm: 120, md: 140, lg: 160 },
-                    height: { xs: 100, sm: 120, md: 140, lg: 160 },
-                    borderRadius: '50%',
-                    background: 'white',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                    boxShadow: '0 16px 32px rgba(0,0,0,0.15)',
-                    border: '4px solid',
-                    borderColor: `${subscriptionStatus.color}.main`,
-                    animation: 'pulse 2s infinite',
-                    mt: { xs: 2, sm: 0 },
-                    position: 'relative',
-                    '&::after': {
-                      content: '""',
-                      position: 'absolute',
-                      top: -4,
-                      left: -4,
-                      right: -4,
-                      bottom: -4,
-                      borderRadius: '50%',
-                      background: `linear-gradient(135deg, ${subscriptionStatus.color}.main 0%, transparent 70%)`,
-                      opacity: 0.2,
-                      zIndex: -1,
-                    }
-                  }}>
-                    <Typography 
-                      fontWeight={800}
-                      sx={{
-                        background: subscriptionStatus.bg,
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        fontSize: { xs: '2.2rem', sm: '2.5rem', md: '3rem', lg: '3.5rem' },
-                        lineHeight: 1
-                      }}
-                    >
-                      {daysRemaining}
-                    </Typography>
-                    <Typography 
-                      variant="body2" 
-                      fontWeight={700}
-                      sx={{
-                        background: subscriptionStatus.bg,
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        fontSize: { xs: '0.7rem', sm: '0.8rem', md: '0.9rem' },
-                        textTransform: 'uppercase',
-                        letterSpacing: '1px'
-                      }}
-                    >
-                      Days Left
-                    </Typography>
-                  </Box>
-                </Stack>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          {/* Right Column - Recent Users */}
-          <Grid item xs={12} lg={4}>
-            <Card sx={{ 
-              borderRadius: { xs: 3, sm: 4 },
-              bgcolor: 'white',
-              boxShadow: '0 12px 32px rgba(0,0,0,0.08)',
-              height: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              maxHeight: { lg: '700px' },
-              border: '1px solid rgba(226, 232, 240, 0.6)',
-              position: 'relative',
-              overflow: 'hidden'
-            }}>
-              <Box sx={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: 4,
-                background: 'linear-gradient(90deg, #4caf50, #2196f3, #9c27b0)'
-              }} />
-              
-              <CardHeader
-                title={
-                  <Stack direction="row" alignItems="center" justifyContent="space-between">
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                      <Box sx={{
-                        p: 1,
-                        borderRadius: 2,
-                        bgcolor: alpha(theme.palette.primary.main, 0.1),
-                        display: 'flex'
-                      }}>
-                        <People sx={{ color: 'primary.main', fontSize: { xs: 20, sm: 24 } }} />
-                      </Box>
-                      <Typography variant={isMobile ? "body1" : "h6"} fontWeight={700}>
-                        Recent Users
-                      </Typography>
-                    </Stack>
-                    <MuiBadge 
-                      badgeContent={recentUsers.length} 
-                      color="primary"
-                      sx={{ 
-                        '& .MuiBadge-badge': { 
-                          fontWeight: 700,
-                          fontSize: { xs: '0.7rem', sm: '0.8rem' },
-                          height: { xs: 20, sm: 22, md: 24 },
-                          minWidth: { xs: 20, sm: 22, md: 24 },
-                          background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
-                          boxShadow: '0 2px 4px rgba(33, 150, 243, 0.3)'
-                        } 
-                      }}
-                    />
-                  </Stack>
-                }
-                sx={{ 
-                  borderBottom: '1px solid', 
-                  borderColor: 'grey.100', 
-                  py: { xs: 1.5, sm: 2 },
-                  px: { xs: 2, sm: 3 },
-                  bgcolor: 'grey.50'
-                }}
-              />
-              
-              {/* Scrollable Content Area */}
-              <CardContent 
-                sx={{ 
-                  p: 0, 
-                  flexGrow: 1,
-                  overflowY: 'auto',
-                  maxHeight: { lg: '600px' },
-                  '&::-webkit-scrollbar': {
-                    width: '8px',
-                  },
-                  '&::-webkit-scrollbar-track': {
-                    background: '#f1f1f1',
-                    borderRadius: '4px',
-                  },
-                  '&::-webkit-scrollbar-thumb': {
-                    background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
-                    borderRadius: '4px',
-                    '&:hover': {
-                      background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
-                    },
-                  },
-                }}
-              >
-                {recentUsers.length > 0 ? (
-                  <List sx={{ p: 0 }}>
-                    {recentUsers.map((user, index) => (
-                      <ListItem
-                        key={user.id || user._id || index}
-                        sx={{
-                          px: { xs: 2, sm: 3 },
-                          py: { xs: 1.5, sm: 2 },
-                          borderBottom: index < recentUsers.length - 1 ? '1px solid' : 'none',
-                          borderColor: 'grey.100',
-                          transition: 'all 0.3s ease',
-                          '&:hover': {
-                            bgcolor: alpha(theme.palette.primary.main, 0.04),
-                            transform: 'translateX(4px)',
-                            '& .MuiListItemAvatar-root': {
-                              transform: 'scale(1.05)'
-                            }
-                          },
-                        }}
-                      >
-                        <ListItemAvatar>
-                          <MuiBadge
-                            overlap="circular"
-                            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                            badgeContent={
-                              <Box
-                                sx={{
-                                  width: { xs: 12, sm: 14 },
-                                  height: { xs: 12, sm: 14 },
-                                  borderRadius: '50%',
-                                  background: user.isActive 
-                                    ? 'linear-gradient(135deg, #4caf50 0%, #388e3c 100%)'
-                                    : 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)',
-                                  border: '2px solid white',
-                                  boxShadow: user.isActive 
-                                    ? '0 0 8px #4caf50'
-                                    : '0 0 8px #f44336',
-                                  animation: user.isActive ? 'pulse 2s infinite' : 'none'
-                                }}
-                              />
-                            }
-                          >
-                            <Avatar
-                              sx={{
-                                width: { xs: 44, sm: 48, md: 52 },
-                                height: { xs: 44, sm: 48, md: 52 },
-                                background: user.isActive 
-                                  ? 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)'
-                                  : 'linear-gradient(135deg, #9e9e9e 0%, #757575 100%)',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                                fontSize: { xs: '1rem', sm: '1.2rem' },
-                                transition: 'transform 0.3s ease'
-                              }}
-                            >
-                              {user.name?.charAt(0) || 'U'}
-                            </Avatar>
-                          </MuiBadge>
-                        </ListItemAvatar>
-                        <ListItemText
-                          primary={
-                            <Typography 
-                              variant="body1" 
-                              fontWeight={700} 
-                              noWrap
-                              sx={{ 
-                                fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' },
-                                color: '#0f172a',
-                                mb: 0.5
-                              }}
-                            >
-                              {user.name || 'Unknown User'}
-                            </Typography>
-                          }
-                          secondary={
-                            <Stack direction="row" alignItems="center" spacing={0.5} sx={{ flexWrap: 'wrap', gap: 0.5 }}>
-                              {user.employeeType && (
-                                <Chip
-                                  label={user.employeeType}
-                                  size="small"
-                                  sx={{ 
-                                    height: { xs: 20, sm: 22 }, 
-                                    fontSize: { xs: '0.6rem', sm: '0.65rem' },
-                                    fontWeight: 600,
-                                    background: 'linear-gradient(135deg, #ff9800 0%, #ed6c02 100%)',
-                                    color: 'white',
-                                    boxShadow: '0 2px 4px rgba(255, 152, 0, 0.3)',
-                                    '& .MuiChip-label': { px: 1 }
-                                  }}
-                                />
-                              )}
-                              <Chip
-                                label={user.department || 'No Dept'}
-                                size="small"
-                                sx={{ 
-                                  height: { xs: 20, sm: 22 }, 
-                                  fontSize: { xs: '0.6rem', sm: '0.65rem' },
-                                  fontWeight: 600,
-                                  bgcolor: alpha(theme.palette.primary.main, 0.1),
-                                  color: 'primary.main',
-                                  '& .MuiChip-label': { px: 1 }
-                                }}
-                              />
-                            </Stack>
-                          }
-                        />
-                        <Tooltip title="Edit User" arrow placement="left">
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            startIcon={<Edit fontSize="small" />}
-                            onClick={() => handleEditUser(user)}
-                            sx={{
-                              ml: 1,
-                              borderRadius: 2,
-                              borderColor: 'primary.main',
-                              color: 'primary.main',
-                              minWidth: { xs: 50, sm: 60 },
-                              fontSize: { xs: '0.65rem', sm: '0.75rem' },
-                              py: { xs: 0.5, sm: 0.75 },
-                              '&:hover': {
-                                background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
-                                color: 'white',
-                                borderColor: 'transparent',
-                                transform: 'scale(1.05)',
-                                boxShadow: '0 4px 12px rgba(33, 150, 243, 0.4)'
-                              },
-                              transition: 'all 0.3s ease',
-                              flexShrink: 0
-                            }}
-                          >
-                            {isMobile ? '' : 'Edit'}
-                          </Button>
-                        </Tooltip>
-                      </ListItem>
-                    ))}
-                  </List>
-                ) : (
-                  <Box sx={{ 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    alignItems: 'center', 
-                    justifyContent: 'center',
-                    py: { xs: 8, sm: 10 },
-                    px: { xs: 2, sm: 3 },
-                    height: '100%',
-                    minHeight: '400px'
-                  }}>
-                    <Box sx={{
-                      width: { xs: 80, sm: 90, md: 100 },
-                      height: { xs: 80, sm: 90, md: 100 },
-                      borderRadius: '50%',
-                      background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      mb: 3,
-                      boxShadow: '0 8px 16px rgba(33, 150, 243, 0.2)',
-                      animation: 'pulse 2s infinite'
-                    }}>
-                      <People sx={{ fontSize: { xs: 40, sm: 45, md: 50 }, color: '#1976d2' }} />
-                    </Box>
-                    <Typography variant="h6" fontWeight={700} gutterBottom sx={{ color: '#0f172a', fontSize: { xs: '1rem', sm: '1.1rem' } }}>
-                      No Users Found
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" align="center" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' }, mb: 3 }}>
-                      Get started by adding users to your company
-                    </Typography>
-                    <Button
-                      variant="contained"
-                      onClick={handleAddNewUser}
-                      startIcon={<Add />}
-                      size={isMobile ? "small" : "medium"}
-                      sx={{
-                        background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
-                        color: 'white',
-                        fontWeight: 700,
-                        px: { xs: 3, sm: 4 },
-                        py: { xs: 1, sm: 1.2 },
-                        borderRadius: 3,
-                        boxShadow: '0 8px 16px rgba(33, 150, 243, 0.3)',
-                        fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                        '&:hover': {
-                          background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
-                          boxShadow: '0 12px 24px rgba(33, 150, 243, 0.4)',
-                          transform: 'translateY(-2px)'
-                        },
-                        transition: 'all 0.3s ease'
-                      }}
-                    >
-                      Add First User
-                    </Button>
-                  </Box>
-                )}
-              </CardContent>
-              
-              {recentUsers.length > 0 && (
-                <Box 
-                  sx={{ 
-                    p: 2, 
-                    borderTop: '1px solid', 
-                    borderColor: 'grey.200',
-                    bgcolor: 'grey.50',
-                    textAlign: 'center'
-                  }}
-                >
-                  {/* <Button
-                    onClick={handleViewAllUsers}
-                    endIcon={<ArrowForward />}
-                    sx={{
-                      color: 'primary.main',
-                      fontWeight: 600,
-                      fontSize: '0.85rem',
-                      textTransform: 'none',
-                      '&:hover': {
-                        bgcolor: alpha(theme.palette.primary.main, 0.05)
+        </DialogTitle>
+        
+        <DialogContent sx={{ p: { xs: 2, sm: 2.5, md: 4 } }}>
+          <Fade in={!companyEditSuccess} timeout={600}>
+            <Box>
+              {!companyEditSuccess ? (
+                <Stack spacing={3}>
+                  <Alert 
+                    severity="info" 
+                    icon={<InfoOutlined />}
+                    sx={{ 
+                      borderRadius: { xs: 1.5, sm: 2 },
+                      py: { xs: 0.5, sm: 0.75 },
+                      '& .MuiAlert-icon': {
+                        fontSize: { xs: '1.2rem', sm: '1.4rem' }
+                      },
+                      '& .MuiAlert-message': {
+                        fontSize: { xs: '0.8rem', sm: '0.85rem', md: '0.9rem' }
                       }
                     }}
                   >
-                    View All Users
-                  </Button> */}
-                </Box>
-              )}
-            </Card>
-          </Grid>
-        </Grid>
+                    Editing: <strong>{company.companyName}</strong>
+                  </Alert>
+                  
+                  <Grid container spacing={2}>
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        label="Company Name"
+                        name="companyName"
+                        value={companyEditFormData.companyName}
+                        onChange={handleCompanyInputChange}
+                        variant="outlined"
+                        size={isMobile ? "small" : "medium"}
+                        required
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <Business sx={{ color: 'primary.main', fontSize: { xs: 18, sm: 20 } }} />
+                            </InputAdornment>
+                          )
+                        }}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: { xs: 1.5, sm: 2 },
+                            fontSize: { xs: '0.9rem', sm: '1rem' }
+                          }
+                        }}
+                      />
+                    </Grid>
+                    
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        fullWidth
+                        label="Email Address"
+                        name="companyEmail"
+                        type="email"
+                        value={companyEditFormData.companyEmail}
+                        onChange={handleCompanyInputChange}
+                        variant="outlined"
+                        size={isMobile ? "small" : "medium"}
+                        placeholder="Enter company email"
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <Email sx={{ color: 'primary.main', fontSize: { xs: 18, sm: 20 } }} />
+                            </InputAdornment>
+                          )
+                        }}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: { xs: 1.5, sm: 2 },
+                            fontSize: { xs: '0.9rem', sm: '1rem' }
+                          }
+                        }}
+                      />
+                    </Grid>
+                    
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        fullWidth
+                        label="Phone Number"
+                        name="companyPhone"
+                        value={companyEditFormData.companyPhone}
+                        onChange={handleCompanyInputChange}
+                        variant="outlined"
+                        size={isMobile ? "small" : "medium"}
+                        placeholder="Enter company phone"
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <Phone sx={{ color: 'primary.main', fontSize: { xs: 18, sm: 20 } }} />
+                            </InputAdornment>
+                          )
+                        }}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: { xs: 1.5, sm: 2 },
+                            fontSize: { xs: '0.9rem', sm: '1rem' }
+                          }
+                        }}
+                      />
+                    </Grid>
+                    
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        label="Logo URL"
+                        name="logo"
+                        value={companyEditFormData.logo}
+                        onChange={handleCompanyInputChange}
+                        variant="outlined"
+                        size={isMobile ? "small" : "medium"}
+                        placeholder="https://example.com/logo.png"
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <Image sx={{ color: 'primary.main', fontSize: { xs: 18, sm: 20 } }} />
+                            </InputAdornment>
+                          )
+                        }}
+                        helperText="Leave empty for default logo"
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: { xs: 1.5, sm: 2 },
+                            fontSize: { xs: '0.9rem', sm: '1rem' }
+                          },
+                          '& .MuiFormHelperText-root': {
+                            fontSize: { xs: '0.7rem', sm: '0.75rem' }
+                          }
+                        }}
+                      />
+                    </Grid>
+                    
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        label="Address"
+                        name="companyAddress"
+                        value={companyEditFormData.companyAddress}
+                        onChange={handleCompanyInputChange}
+                        variant="outlined"
+                        size={isMobile ? "small" : "medium"}
+                        placeholder="Enter company address"
+                        multiline
+                        rows={isMobile ? 2 : 3}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <LocationOn sx={{ color: 'primary.main', fontSize: { xs: 18, sm: 20 } }} />
+                            </InputAdornment>
+                          )
+                        }}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: { xs: 1.5, sm: 2 },
+                            fontSize: { xs: '0.9rem', sm: '1rem' }
+                          }
+                        }}
+                      />
+                    </Grid>
+                  </Grid>
 
-        {/* Company Edit Modal - Enhanced */}
-        <Dialog 
-          open={companyEditModalOpen} 
-          onClose={() => !companyEditLoading && setCompanyEditModalOpen(false)}
-          maxWidth="sm"
-          fullWidth
-          fullScreen={isMobile}
-          TransitionComponent={Transition}
-          keepMounted
-          PaperProps={{
-            sx: { 
-              borderRadius: isMobile ? 0 : 4,
-              overflow: 'hidden',
-              background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
-              border: '1px solid rgba(226, 232, 240, 0.6)'
-            }
-          }}
-        >
-          <DialogTitle sx={{ 
-            background: 'linear-gradient(135deg, #1a237e 0%, #0d47a1 100%)',
-            color: 'white',
-            py: { xs: 2, sm: 3 },
-            px: { xs: 2.5, sm: 4 },
-            position: 'relative',
-            overflow: 'hidden'
+                  {companyEditFormData.logo && (
+                    <Paper 
+                      variant="outlined" 
+                      sx={{ 
+                        p: { xs: 1.5, sm: 2 }, 
+                        borderRadius: { xs: 1.5, sm: 2 },
+                        bgcolor: 'grey.50',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 2,
+                        border: '1px solid',
+                        borderColor: 'grey.200'
+                      }}
+                    >
+                      <Avatar
+                        src={companyEditFormData.logo}
+                        sx={{ 
+                          width: { xs: 50, sm: 55, md: 60 }, 
+                          height: { xs: 50, sm: 55, md: 60 }, 
+                          border: '2px solid',
+                          borderColor: 'primary.main',
+                        }}
+                      >
+                        {companyEditFormData.companyName?.charAt(0)}
+                      </Avatar>
+                      <Box sx={{ overflow: 'hidden' }}>
+                        <Typography variant="body2" fontWeight={600} sx={{ fontSize: { xs: '0.8rem', sm: '0.9rem' } }}>
+                          Logo Preview
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ 
+                          display: 'block', 
+                          wordBreak: 'break-all',
+                          fontSize: { xs: '0.65rem', sm: '0.7rem' }
+                        }}>
+                          {companyEditFormData.logo.substring(0, 40)}...
+                        </Typography>
+                      </Box>
+                    </Paper>
+                  )}
+                </Stack>
+              ) : (
+                <Zoom in={companyEditSuccess}>
+                  <Box sx={{ 
+                    py: { xs: 4, sm: 6, md: 8 }, 
+                    px: { xs: 2, sm: 3, md: 4 }, 
+                    textAlign: 'center'
+                  }}>
+                    <Box sx={{
+                      width: { xs: 80, sm: 100, md: 120 },
+                      height: { xs: 80, sm: 100, md: 120 },
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      mx: 'auto',
+                      mb: { xs: 2, sm: 3, md: 4 },
+                      border: '3px solid white'
+                    }}>
+                      <CheckCircle sx={{ fontSize: { xs: 40, sm: 50, md: 60 }, color: 'success.main' }} />
+                    </Box>
+                    <Typography variant={isMobile ? "h5" : "h4"} fontWeight={800} gutterBottom sx={{ fontSize: { xs: '1.3rem', sm: '1.6rem', md: '2rem' } }}>
+                      Company Updated!
+                    </Typography>
+                    <Typography variant="body1" color="text.secondary" sx={{ 
+                      mb: { xs: 2, sm: 3 }, 
+                      fontSize: { xs: '0.85rem', sm: '0.95rem', md: '1rem' } 
+                    }}>
+                      <strong style={{ color: theme.palette.primary.main }}>{companyEditFormData.companyName}</strong> has been updated successfully.
+                    </Typography>
+                    <CircularProgress 
+                      size={isMobile ? 24 : 30} 
+                      sx={{ color: 'success.main' }} 
+                    />
+                  </Box>
+                </Zoom>
+              )}
+            </Box>
+          </Fade>
+        </DialogContent>
+        
+        {!companyEditSuccess && (
+          <DialogActions sx={{ 
+            p: { xs: 2, sm: 2.5, md: 4 }, 
+            pt: { xs: 1, sm: 0 },
+            borderTop: '1px solid',
+            borderColor: 'grey.200',
+            bgcolor: 'grey.50',
+            flexDirection: { xs: 'column', sm: 'row' },
+            gap: { xs: 1, sm: 0 }
           }}>
-            <Box sx={{
-              position: 'absolute',
-              top: -50,
-              right: -50,
-              width: 150,
-              height: 150,
-              borderRadius: '50%',
-              background: 'rgba(255,255,255,0.1)',
-              animation: 'float 8s ease-in-out infinite'
-            }} />
-            <Box sx={{
-              position: 'absolute',
-              bottom: -50,
-              left: -50,
-              width: 150,
-              height: 150,
-              borderRadius: '50%',
-              background: 'rgba(255,255,255,0.1)',
-              animation: 'float 10s ease-in-out infinite reverse'
-            }} />
-            
-            <Stack direction="row" alignItems="center" justifyContent="space-between" position="relative">
-              <Stack direction="row" alignItems="center" spacing={2}>
-                <Box sx={{
-                  width: { xs: 45, sm: 55 },
-                  height: { xs: 45, sm: 55 },
-                  borderRadius: '50%',
-                  bgcolor: 'white',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 8px 16px rgba(0,0,0,0.2)'
-                }}>
-                  <Business sx={{ color: '#0d47a1', fontSize: { xs: 24, sm: 30 } }} />
-                </Box>
-                <Box>
-                  <Typography variant={isMobile ? "h6" : "h5"} fontWeight={700}>
-                    Edit Company Details
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)', fontSize: { xs: '0.7rem', sm: '0.875rem' } }}>
-                    Update company information
-                  </Typography>
-                </Box>
-              </Stack>
-              <IconButton
+            <Stack 
+              direction={{ xs: 'column', sm: 'row' }} 
+              spacing={{ xs: 1, sm: 2 }} 
+              justifyContent="flex-end" 
+              width="100%"
+            >
+              <Button
                 onClick={() => setCompanyEditModalOpen(false)}
+                color="inherit"
                 disabled={companyEditLoading}
+                variant="outlined"
+                fullWidth={isMobile}
+                size={isMobile ? "small" : "medium"}
                 sx={{ 
-                  color: 'white',
-                  bgcolor: 'rgba(255,255,255,0.2)',
-                  '&:hover': { 
-                    bgcolor: 'rgba(255,255,255,0.3)',
-                    transform: 'rotate(90deg)'
-                  },
-                  transition: 'all 0.3s ease'
+                  borderRadius: { xs: 1.5, sm: 2 },
+                  px: { xs: 2, sm: 3, md: 4 },
+                  py: { xs: 0.6, sm: 0.8, md: 1.2 },
+                  fontWeight: 600,
+                  fontSize: { xs: '0.8rem', sm: '0.85rem', md: '0.9rem' },
                 }}
               >
-                <Close />
-              </IconButton>
+                Cancel
+              </Button>
+              
+              <Button
+                onClick={handleSaveCompany}
+                variant="contained"
+                startIcon={companyEditLoading ? <CircularProgress size={16} color="inherit" /> : <Save />}
+                disabled={companyEditLoading}
+                fullWidth={isMobile}
+                size={isMobile ? "small" : "medium"}
+                sx={{ 
+                  px: { xs: 3, sm: 4, md: 5 },
+                  py: { xs: 0.6, sm: 0.8, md: 1.2 },
+                  fontWeight: 700,
+                  fontSize: { xs: '0.8rem', sm: '0.85rem', md: '0.9rem' },
+                  borderRadius: { xs: 1.5, sm: 2 },
+                  background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+                  },
+                }}
+              >
+                {companyEditLoading ? 'Saving...' : 'Save Changes'}
+              </Button>
             </Stack>
-          </DialogTitle>
+          </DialogActions>
+        )}
+      </Dialog>
+
+      {/* Edit User Modal */}
+      <Dialog 
+        open={editModalOpen} 
+        onClose={() => !saveLoading && setEditModalOpen(false)}
+        maxWidth="lg"
+        fullWidth
+        fullScreen={isMobile}
+        TransitionComponent={Transition}
+        keepMounted
+        PaperProps={{
+          sx: { 
+            borderRadius: isMobile ? 0 : { sm: 3, md: 4 },
+            overflow: 'hidden',
+            background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+            border: '1px solid rgba(226, 232, 240, 0.6)',
+            margin: isMobile ? 0 : 2
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          background: 'linear-gradient(135deg, #1a237e 0%, #0d47a1 100%)',
+          color: 'white',
+          py: { xs: 2, sm: 2.5, md: 3 },
+          px: { xs: 2, sm: 2.5, md: 4 },
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          <Box sx={{
+            position: 'absolute',
+            top: -50,
+            right: -50,
+            width: { xs: 100, sm: 120, md: 150 },
+            height: { xs: 100, sm: 120, md: 150 },
+            borderRadius: '50%',
+            background: 'rgba(255,255,255,0.1)',
+            animation: 'float 8s ease-in-out infinite'
+          }} />
           
-          <DialogContent sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
-            <Fade in={!companyEditSuccess} timeout={600}>
+          <Stack direction="row" alignItems="center" justifyContent="space-between" position="relative">
+            <Stack direction="row" alignItems="center" spacing={{ xs: 1, sm: 2 }}>
+              <Box sx={{
+                width: { xs: 40, sm: 45, md: 55 },
+                height: { xs: 40, sm: 45, md: 55 },
+                borderRadius: '50%',
+                bgcolor: 'white',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 8px 16px rgba(0,0,0,0.2)'
+              }}>
+                <Person sx={{ color: '#0d47a1', fontSize: { xs: 20, sm: 24, md: 30 } }} />
+              </Box>
               <Box>
-                {!companyEditSuccess ? (
-                  <Stack spacing={3}>
+                <Typography variant={isMobile ? "subtitle1" : "h6"} fontWeight={700} sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                  Edit User Details
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)', fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.875rem' } }}>
+                  Complete user profile management
+                </Typography>
+              </Box>
+            </Stack>
+            <IconButton
+              onClick={() => setEditModalOpen(false)}
+              disabled={saveLoading}
+              sx={{ 
+                color: 'white',
+                bgcolor: 'rgba(255,255,255,0.2)',
+                '&:hover': { 
+                  bgcolor: 'rgba(255,255,255,0.3)',
+                  transform: 'rotate(90deg)'
+                },
+                transition: 'all 0.3s ease',
+                width: { xs: 32, sm: 36, md: 40 },
+                height: { xs: 32, sm: 36, md: 40 }
+              }}
+            >
+              <Close sx={{ fontSize: { xs: 18, sm: 20, md: 24 } }} />
+            </IconButton>
+          </Stack>
+        </DialogTitle>
+        
+        <DialogContent sx={{ p: { xs: 2, sm: 2.5, md: 4 } }}>
+          {selectedUser && (
+            <Fade in={!editSuccess} timeout={600}>
+              <Box>
+                {!editSuccess ? (
+                  <Stack spacing={{ xs: 2, sm: 3, md: 4 }}>
                     <Alert 
                       severity="info" 
                       icon={<InfoOutlined />}
                       sx={{ 
-                        borderRadius: 2,
-                        bgcolor: alpha(theme.palette.info.main, 0.1),
-                        border: '1px solid',
-                        borderColor: 'info.100',
+                        borderRadius: { xs: 1.5, sm: 2 },
+                        py: { xs: 0.5, sm: 0.75 },
                         '& .MuiAlert-icon': {
-                          color: 'info.main'
+                          fontSize: { xs: '1.2rem', sm: '1.4rem' }
                         },
                         '& .MuiAlert-message': {
-                          fontSize: { xs: '0.8rem', sm: '0.9rem' }
+                          fontSize: { xs: '0.8rem', sm: '0.85rem', md: '0.9rem' }
                         }
                       }}
                     >
-                      <Typography variant="body2" fontWeight={500} sx={{ fontSize: { xs: '0.8rem', sm: '0.9rem' } }}>
-                        Editing: <strong>{company.companyName}</strong>
-                      </Typography>
+                      Editing: <strong>{selectedUser.name}</strong> ({selectedUser.email})
                     </Alert>
                     
-                    <Grid container spacing={2}>
-                      {/* Company Name - Required */}
-                      <Grid item xs={12}>
-                        <TextField
-                          fullWidth
-                          label="Company Name"
-                          name="companyName"
-                          value={companyEditFormData.companyName}
-                          onChange={handleCompanyInputChange}
-                          variant="outlined"
-                          size={isMobile ? "small" : "medium"}
-                          required
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <Business sx={{ color: 'primary.main' }} />
-                              </InputAdornment>
-                            )
-                          }}
-                          sx={{
-                            '& .MuiOutlinedInput-root': {
-                              borderRadius: 2,
-                              '&:hover fieldset': {
-                                borderColor: 'primary.main',
-                              },
-                              '&.Mui-focused fieldset': {
-                                borderColor: 'primary.main',
-                                borderWidth: 2
-                              }
-                            }
-                          }}
-                        />
-                      </Grid>
-                      
-                      {/* Email Address */}
-                      <Grid item xs={12} md={6}>
-                        <TextField
-                          fullWidth
-                          label="Email Address"
-                          name="companyEmail"
-                          type="email"
-                          value={companyEditFormData.companyEmail}
-                          onChange={handleCompanyInputChange}
-                          variant="outlined"
-                          size={isMobile ? "small" : "medium"}
-                          placeholder="Enter company email"
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <Email sx={{ color: 'primary.main' }} />
-                              </InputAdornment>
-                            )
-                          }}
-                          sx={{
-                            '& .MuiOutlinedInput-root': {
-                              borderRadius: 2,
-                            }
-                          }}
-                        />
-                      </Grid>
-                      
-                      {/* Phone Number */}
-                      <Grid item xs={12} md={6}>
-                        <TextField
-                          fullWidth
-                          label="Phone Number"
-                          name="companyPhone"
-                          value={companyEditFormData.companyPhone}
-                          onChange={handleCompanyInputChange}
-                          variant="outlined"
-                          size={isMobile ? "small" : "medium"}
-                          placeholder="Enter company phone"
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <Phone sx={{ color: 'primary.main' }} />
-                              </InputAdornment>
-                            )
-                          }}
-                          sx={{
-                            '& .MuiOutlinedInput-root': {
-                              borderRadius: 2,
-                            }
-                          }}
-                        />
-                      </Grid>
-                      
-                      {/* Logo URL */}
-                      <Grid item xs={12}>
-                        <TextField
-                          fullWidth
-                          label="Logo URL"
-                          name="logo"
-                          value={companyEditFormData.logo}
-                          onChange={handleCompanyInputChange}
-                          variant="outlined"
-                          size={isMobile ? "small" : "medium"}
-                          placeholder="https://example.com/logo.png"
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <Image sx={{ color: 'primary.main' }} />
-                              </InputAdornment>
-                            )
-                          }}
-                          helperText="Leave empty for default logo"
-                          sx={{
-                            '& .MuiOutlinedInput-root': {
-                              borderRadius: 2,
-                            }
-                          }}
-                        />
-                      </Grid>
-                      
-                      {/* Address */}
-                      <Grid item xs={12}>
-                        <TextField
-                          fullWidth
-                          label="Address"
-                          name="companyAddress"
-                          value={companyEditFormData.companyAddress}
-                          onChange={handleCompanyInputChange}
-                          variant="outlined"
-                          size={isMobile ? "small" : "medium"}
-                          placeholder="Enter company address"
-                          multiline
-                          rows={isMobile ? 2 : 3}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <LocationOn sx={{ color: 'primary.main' }} />
-                              </InputAdornment>
-                            )
-                          }}
-                          sx={{
-                            '& .MuiOutlinedInput-root': {
-                              borderRadius: 2,
-                            }
-                          }}
-                        />
-                      </Grid>
-                    </Grid>
-
-                    {/* Preview of current logo */}
-                    {companyEditFormData.logo && (
-                      <Paper 
-                        variant="outlined" 
-                        sx={{ 
-                          p: 2, 
-                          borderRadius: 2,
-                          bgcolor: 'grey.50',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 2,
-                          border: '1px solid',
-                          borderColor: 'grey.200'
-                        }}
-                      >
-                        <Avatar
-                          src={companyEditFormData.logo}
-                          sx={{ 
-                            width: 60, 
-                            height: 60, 
-                            border: '2px solid',
-                            borderColor: 'primary.main',
-                            boxShadow: '0 4px 8px rgba(33, 150, 243, 0.3)'
-                          }}
-                        >
-                          {companyEditFormData.companyName?.charAt(0)}
-                        </Avatar>
-                        <Box sx={{ overflow: 'hidden' }}>
-                          <Typography variant="body2" fontWeight={600}>
-                            Logo Preview
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', wordBreak: 'break-all' }}>
-                            {companyEditFormData.logo.substring(0, 50)}...
-                          </Typography>
+                    {/* SECTION 1: BASIC INFORMATION */}
+                    <Paper elevation={0} sx={{ 
+                      p: { xs: 1.5, sm: 2, md: 3 }, 
+                      bgcolor: 'grey.50', 
+                      borderRadius: { xs: 1.5, sm: 2 },
+                      border: '1px solid',
+                      borderColor: 'grey.200'
+                    }}>
+                      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: { xs: 2, sm: 2.5, md: 3 } }}>
+                        <Box sx={{
+                          p: { xs: 0.5, sm: 0.75, md: 1 },
+                          borderRadius: { xs: 1.5, sm: 2 },
+                          background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
+                          color: 'white',
+                          display: 'flex'
+                        }}>
+                          <AccountCircle sx={{ fontSize: { xs: 16, sm: 18, md: 20 } }} />
                         </Box>
-                      </Paper>
-                    )}
+                        <Typography variant={isMobile ? "body2" : "h6"} fontWeight={700} sx={{ fontSize: { xs: '0.95rem', sm: '1.1rem', md: '1.25rem' } }}>
+                          Basic Information
+                        </Typography>
+                      </Stack>
+                      
+                      <Grid container spacing={2}>
+                        <Grid item xs={12} md={6}>
+                          <TextField
+                            fullWidth
+                            label="Full Name"
+                            name="name"
+                            value={editFormData.name}
+                            onChange={handleInputChange}
+                            variant="outlined"
+                            size={isMobile ? "small" : "medium"}
+                            required
+                            error={!!formErrors.name}
+                            helperText={formErrors.name}
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <Person sx={{ fontSize: { xs: 16, sm: 18 } }} />
+                                </InputAdornment>
+                              )
+                            }}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: { xs: 1.5, sm: 2 },
+                                fontSize: { xs: '0.85rem', sm: '0.9rem' }
+                              },
+                              '& .MuiFormHelperText-root': {
+                                fontSize: { xs: '0.65rem', sm: '0.7rem' }
+                              }
+                            }}
+                          />
+                        </Grid>
+                        
+                        <Grid item xs={12} md={6}>
+                          <TextField
+                            fullWidth
+                            label="Email Address"
+                            name="email"
+                            type="email"
+                            value={editFormData.email}
+                            onChange={handleInputChange}
+                            variant="outlined"
+                            size={isMobile ? "small" : "medium"}
+                            error={!!formErrors.email}
+                            helperText={formErrors.email}
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <Email sx={{ fontSize: { xs: 16, sm: 18 } }} />
+                                </InputAdornment>
+                              )
+                            }}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: { xs: 1.5, sm: 2 },
+                                fontSize: { xs: '0.85rem', sm: '0.9rem' }
+                              },
+                              '& .MuiFormHelperText-root': {
+                                fontSize: { xs: '0.65rem', sm: '0.7rem' }
+                              }
+                            }}
+                          />
+                        </Grid>
+                        
+                        <Grid item xs={12} md={6}>
+                          <TextField
+                            fullWidth
+                            label="Phone Number"
+                            name="phone"
+                            value={editFormData.phone}
+                            onChange={handleInputChange}
+                            variant="outlined"
+                            size={isMobile ? "small" : "medium"}
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <Phone sx={{ fontSize: { xs: 16, sm: 18 } }} />
+                                </InputAdornment>
+                              )
+                            }}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: { xs: 1.5, sm: 2 },
+                                fontSize: { xs: '0.85rem', sm: '0.9rem' }
+                              }
+                            }}
+                          />
+                        </Grid>
+                        
+                        <Grid item xs={12} md={6}>
+                          <TextField
+                            fullWidth
+                            label="Date of Birth"
+                            name="dob"
+                            type="date"
+                            value={editFormData.dob}
+                            onChange={handleInputChange}
+                            variant="outlined"
+                            size={isMobile ? "small" : "medium"}
+                            InputLabelProps={{ shrink: true }}
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <CalendarToday sx={{ fontSize: { xs: 16, sm: 18 } }} />
+                                </InputAdornment>
+                              )
+                            }}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: { xs: 1.5, sm: 2 },
+                                fontSize: { xs: '0.85rem', sm: '0.9rem' }
+                              }
+                            }}
+                          />
+                        </Grid>
+                        
+                        <Grid item xs={12} md={6}>
+                          <FormControl fullWidth variant="outlined" size={isMobile ? "small" : "medium"}>
+                            <InputLabel sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>Gender</InputLabel>
+                            <Select
+                              name="gender"
+                              value={editFormData.gender}
+                              onChange={handleSelectChange}
+                              label="Gender"
+                              startAdornment={
+                                <InputAdornment position="start">
+                                  <Wc sx={{ fontSize: { xs: 16, sm: 18 } }} />
+                                </InputAdornment>
+                              }
+                              sx={{ 
+                                borderRadius: { xs: 1.5, sm: 2 },
+                                fontSize: { xs: '0.85rem', sm: '0.9rem' }
+                              }}
+                            >
+                              <SelectMenuItem value="">
+                                <em>None</em>
+                              </SelectMenuItem>
+                              {genderOptions.map(option => (
+                                <SelectMenuItem key={option} value={option}>
+                                  {option.charAt(0).toUpperCase() + option.slice(1)}
+                                </SelectMenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        </Grid>
+                        
+                        <Grid item xs={12} md={6}>
+                          <FormControl fullWidth variant="outlined" size={isMobile ? "small" : "medium"}>
+                            <InputLabel sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>Marital Status</InputLabel>
+                            <Select
+                              name="maritalStatus"
+                              value={editFormData.maritalStatus}
+                              onChange={handleSelectChange}
+                              label="Marital Status"
+                              startAdornment={
+                                <InputAdornment position="start">
+                                  <Favorite sx={{ fontSize: { xs: 16, sm: 18 } }} />
+                                </InputAdornment>
+                              }
+                              sx={{ 
+                                borderRadius: { xs: 1.5, sm: 2 },
+                                fontSize: { xs: '0.85rem', sm: '0.9rem' }
+                              }}
+                            >
+                              <SelectMenuItem value="">
+                                <em>None</em>
+                              </SelectMenuItem>
+                              {maritalStatusOptions.map(option => (
+                                <SelectMenuItem key={option} value={option}>
+                                  {option.charAt(0).toUpperCase() + option.slice(1)}
+                                </SelectMenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        </Grid>
+                        
+                        <Grid item xs={12}>
+                          <TextField
+                            fullWidth
+                            label="Address"
+                            name="address"
+                            value={editFormData.address}
+                            onChange={handleInputChange}
+                            variant="outlined"
+                            size={isMobile ? "small" : "medium"}
+                            multiline
+                            rows={isMobile ? 1 : 2}
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <LocationOn sx={{ fontSize: { xs: 16, sm: 18 } }} />
+                                </InputAdornment>
+                              )
+                            }}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: { xs: 1.5, sm: 2 },
+                                fontSize: { xs: '0.85rem', sm: '0.9rem' }
+                              }
+                            }}
+                          />
+                        </Grid>
+                      </Grid>
+                    </Paper>
+                    
+                    {/* SECTION 2: EMPLOYMENT INFORMATION */}
+                    <Paper elevation={0} sx={{ 
+                      p: { xs: 1.5, sm: 2, md: 3 }, 
+                      bgcolor: 'grey.50', 
+                      borderRadius: { xs: 1.5, sm: 2 },
+                      border: '1px solid',
+                      borderColor: 'grey.200'
+                    }}>
+                      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: { xs: 2, sm: 2.5, md: 3 } }}>
+                        <Box sx={{
+                          p: { xs: 0.5, sm: 0.75, md: 1 },
+                          borderRadius: { xs: 1.5, sm: 2 },
+                          background: 'linear-gradient(135deg, #ff9800 0%, #ed6c02 100%)',
+                          color: 'white',
+                          display: 'flex'
+                        }}>
+                          <Work sx={{ fontSize: { xs: 16, sm: 18, md: 20 } }} />
+                        </Box>
+                        <Typography variant={isMobile ? "body2" : "h6"} fontWeight={700} sx={{ fontSize: { xs: '0.95rem', sm: '1.1rem', md: '1.25rem' } }}>
+                          Employment Information
+                        </Typography>
+                      </Stack>
+                      
+                      <Grid container spacing={2}>
+                        <Grid item xs={12} md={6}>
+                          <Autocomplete
+                            freeSolo
+                            options={jobRoleOptions}
+                            value={editFormData.jobRole}
+                            onChange={handleRoleChange}
+                            getOptionLabel={(option) => {
+                              if (typeof option === 'string') return option;
+                              return option.label || option.name || '';
+                            }}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                label="Job Role"
+                                variant="outlined"
+                                size={isMobile ? "small" : "medium"}
+                                fullWidth
+                                InputProps={{
+                                  ...params.InputProps,
+                                  startAdornment: (
+                                    <>
+                                      <InputAdornment position="start">
+                                        <Badge sx={{ fontSize: { xs: 16, sm: 18 } }} />
+                                      </InputAdornment>
+                                      {params.InputProps.startAdornment}
+                                    </>
+                                  )
+                                }}
+                                sx={{
+                                  '& .MuiOutlinedInput-root': {
+                                    borderRadius: { xs: 1.5, sm: 2 },
+                                    fontSize: { xs: '0.85rem', sm: '0.9rem' }
+                                  }
+                                }}
+                              />
+                            )}
+                            renderOption={(props, option) => (
+                              <li {...props}>
+                                <Stack direction="row" alignItems="center" spacing={1}>
+                                  <Work sx={{ fontSize: 14, color: 'action.active' }} />
+                                  <Typography sx={{ fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.85rem' } }}>
+                                    {option.label || option.name}
+                                  </Typography>
+                                  {option.departmentName && (
+                                    <Chip 
+                                      label={option.departmentName} 
+                                      size="small" 
+                                      sx={{ 
+                                        height: 18, 
+                                        fontSize: '0.55rem',
+                                      }}
+                                    />
+                                  )}
+                                </Stack>
+                              </li>
+                            )}
+                            loading={loadingJobRoles}
+                            loadingText="Loading job roles..."
+                          />
+                        </Grid>
+                        
+                        <Grid item xs={12} md={6}>
+                          <Autocomplete
+                            freeSolo
+                            options={departmentOptions}
+                            value={editFormData.department}
+                            onChange={handleDepartmentChange}
+                            getOptionLabel={(option) => {
+                              if (typeof option === 'string') return option;
+                              return option.label || option.name || '';
+                            }}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                label="Department"
+                                variant="outlined"
+                                size={isMobile ? "small" : "medium"}
+                                fullWidth
+                                InputProps={{
+                                  ...params.InputProps,
+                                  startAdornment: (
+                                    <>
+                                      <InputAdornment position="start">
+                                        <Business sx={{ fontSize: { xs: 16, sm: 18 } }} />
+                                      </InputAdornment>
+                                      {params.InputProps.startAdornment}
+                                    </>
+                                  )
+                                }}
+                                sx={{
+                                  '& .MuiOutlinedInput-root': {
+                                    borderRadius: { xs: 1.5, sm: 2 },
+                                    fontSize: { xs: '0.85rem', sm: '0.9rem' }
+                                  }
+                                }}
+                              />
+                            )}
+                            renderOption={(props, option) => (
+                              <li {...props}>
+                                <Stack direction="row" alignItems="center" spacing={1}>
+                                  <CorporateFare sx={{ fontSize: 14, color: 'action.active' }} />
+                                  <Typography sx={{ fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.85rem' } }}>
+                                    {option.label || option.name}
+                                  </Typography>
+                                </Stack>
+                              </li>
+                            )}
+                            loading={loadingDepartments}
+                            loadingText="Loading departments..."
+                          />
+                        </Grid>
+                        
+                        <Grid item xs={12} md={6}>
+                          <FormControl fullWidth variant="outlined" size={isMobile ? "small" : "medium"}>
+                            <InputLabel sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>Employee Type</InputLabel>
+                            <Select
+                              name="employeeType"
+                              value={editFormData.employeeType}
+                              onChange={handleSelectChange}
+                              label="Employee Type"
+                              startAdornment={
+                                <InputAdornment position="start">
+                                  <WorkHistory sx={{ fontSize: { xs: 16, sm: 18 } }} />
+                                </InputAdornment>
+                              }
+                              sx={{ 
+                                borderRadius: { xs: 1.5, sm: 2 },
+                                fontSize: { xs: '0.85rem', sm: '0.9rem' }
+                              }}
+                            >
+                              <SelectMenuItem value="">
+                                <em>None</em>
+                              </SelectMenuItem>
+                              {employeeTypeOptions.map(option => (
+                                <SelectMenuItem key={option} value={option}>
+                                  {option.charAt(0).toUpperCase() + option.slice(1)}
+                                </SelectMenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        </Grid>
+                        
+                        <Grid item xs={12} md={6}>
+                          <TextField
+                            fullWidth
+                            label="Designation"
+                            name="designation"
+                            value={editFormData.designation}
+                            onChange={handleInputChange}
+                            variant="outlined"
+                            size={isMobile ? "small" : "medium"}
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <Badge sx={{ fontSize: { xs: 16, sm: 18 } }} />
+                                </InputAdornment>
+                              )
+                            }}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: { xs: 1.5, sm: 2 },
+                                fontSize: { xs: '0.85rem', sm: '0.9rem' }
+                              }
+                            }}
+                          />
+                        </Grid>
+                        
+                        <Grid item xs={12} md={6}>
+                          <TextField
+                            fullWidth
+                            label="Salary"
+                            name="salary"
+                            value={editFormData.salary}
+                            onChange={handleInputChange}
+                            variant="outlined"
+                            size={isMobile ? "small" : "medium"}
+                            type="number"
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <AttachMoney sx={{ fontSize: { xs: 16, sm: 18 } }} />
+                                </InputAdornment>
+                              )
+                            }}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: { xs: 1.5, sm: 2 },
+                                fontSize: { xs: '0.85rem', sm: '0.9rem' }
+                              }
+                            }}
+                          />
+                        </Grid>
+                        
+                        <Grid item xs={12} md={6}>
+                          <FormControlLabel
+                            control={
+                              <Switch
+                                checked={editFormData.isActive}
+                                onChange={handleInputChange}
+                                name="isActive"
+                                color="success"
+                                size={isMobile ? "small" : "medium"}
+                              />
+                            }
+                            label={
+                              <Typography sx={{ fontSize: { xs: '0.8rem', sm: '0.85rem', md: '0.9rem' } }}>
+                                Active Status
+                              </Typography>
+                            }
+                          />
+                        </Grid>
+                      </Grid>
+                    </Paper>
                   </Stack>
                 ) : (
-                  <Zoom in={companyEditSuccess}>
+                  <Zoom in={editSuccess}>
                     <Box sx={{ 
-                      py: { xs: 6, sm: 8 }, 
-                      px: { xs: 2, sm: 4 }, 
+                      py: { xs: 4, sm: 6, md: 8 }, 
+                      px: { xs: 2, sm: 3, md: 4 }, 
                       textAlign: 'center'
                     }}>
                       <Box sx={{
-                        width: { xs: 100, sm: 120, md: 140 },
-                        height: { xs: 100, sm: 120, md: 140 },
+                        width: { xs: 80, sm: 100, md: 120 },
+                        height: { xs: 80, sm: 100, md: 120 },
                         borderRadius: '50%',
                         background: 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         mx: 'auto',
-                        mb: 4,
-                        animation: 'pulse 2s infinite',
-                        boxShadow: '0 12px 24px rgba(76, 175, 80, 0.3)',
-                        border: '4px solid white'
+                        mb: { xs: 2, sm: 3, md: 4 },
+                        border: '3px solid white'
                       }}>
-                        <CheckCircle sx={{ fontSize: { xs: 60, sm: 70, md: 80 }, color: 'success.main' }} />
+                        <CheckCircle sx={{ fontSize: { xs: 40, sm: 50, md: 60 }, color: 'success.main' }} />
                       </Box>
-                      <Typography variant={isMobile ? "h4" : "h3"} fontWeight={800} gutterBottom sx={{ color: '#0f172a' }}>
-                        Company Updated!
+                      <Typography variant={isMobile ? "h5" : "h4"} fontWeight={800} gutterBottom sx={{ fontSize: { xs: '1.3rem', sm: '1.6rem', md: '2rem' } }}>
+                        Update Successful!
                       </Typography>
-                      <Typography variant="body1" color="text.secondary" sx={{ mb: 3, fontSize: { xs: '0.95rem', sm: '1.1rem' } }}>
-                        <strong style={{ color: theme.palette.primary.main }}>{companyEditFormData.companyName}</strong> has been updated successfully.
+                      <Typography variant="body1" color="text.secondary" sx={{ 
+                        mb: { xs: 2, sm: 3 }, 
+                        fontSize: { xs: '0.85rem', sm: '0.95rem', md: '1rem' } 
+                      }}>
+                        User <strong style={{ color: theme.palette.primary.main }}>{editFormData.name}</strong> has been updated successfully.
                       </Typography>
                       <CircularProgress 
-                        size={isMobile ? 30 : 40} 
-                        sx={{ 
-                          color: 'success.main',
-                          mt: 2
-                        }} 
+                        size={isMobile ? 24 : 30} 
+                        sx={{ color: 'success.main' }} 
                       />
                     </Box>
                   </Zoom>
                 )}
               </Box>
             </Fade>
-          </DialogContent>
-          
-          {!companyEditSuccess && (
-            <DialogActions sx={{ 
-              p: { xs: 2, sm: 3, md: 4 }, 
-              pt: { xs: 1, sm: 0 },
-              borderTop: '1px solid',
-              borderColor: 'grey.200',
-              bgcolor: 'grey.50'
-            }}>
-              <Stack 
-                direction="row" 
-                spacing={2} 
-                justifyContent="flex-end" 
-                width="100%"
-                sx={{ flexWrap: 'wrap' }}
-              >
-                <Button
-                  onClick={() => setCompanyEditModalOpen(false)}
-                  color="inherit"
-                  disabled={companyEditLoading}
-                  variant="outlined"
-                  size={isMobile ? "small" : "medium"}
-                  sx={{ 
-                    borderRadius: 2,
-                    px: { xs: 3, sm: 4 },
-                    py: { xs: 0.75, sm: 1.2 },
-                    fontWeight: 600,
-                    fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                    borderColor: 'grey.400',
-                    color: 'text.primary',
-                    '&:hover': {
-                      borderColor: 'grey.600',
-                      bgcolor: 'grey.100'
-                    }
-                  }}
-                >
-                  Cancel
-                </Button>
-                
-                <Button
-                  onClick={handleSaveCompany}
-                  variant="contained"
-                  startIcon={companyEditLoading ? <CircularProgress size={16} color="inherit" /> : <Save />}
-                  disabled={companyEditLoading}
-                  size={isMobile ? "small" : "medium"}
-                  sx={{ 
-                    px: { xs: 4, sm: 5 },
-                    py: { xs: 0.75, sm: 1.2 },
-                    fontWeight: 700,
-                    fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                    borderRadius: 2,
-                    background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
-                    boxShadow: '0 8px 16px rgba(33, 150, 243, 0.3)',
-                    '&:hover': {
-                      background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
-                      boxShadow: '0 12px 24px rgba(33, 150, 243, 0.4)',
-                      transform: 'translateY(-2px)'
-                    },
-                    transition: 'all 0.3s ease'
-                  }}
-                >
-                  {companyEditLoading ? 'Saving...' : 'Save Changes'}
-                </Button>
-              </Stack>
-            </DialogActions>
           )}
-        </Dialog>
-
-        {/* Edit User Modal - Enhanced with All Fields */}
-        <Dialog 
-          open={editModalOpen} 
-          onClose={() => !saveLoading && setEditModalOpen(false)}
-          maxWidth="lg"
-          fullWidth
-          fullScreen={isMobile}
-          TransitionComponent={Transition}
-          keepMounted
-          PaperProps={{
-            sx: { 
-              borderRadius: isMobile ? 0 : 4,
-              overflow: 'hidden',
-              background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
-              border: '1px solid rgba(226, 232, 240, 0.6)'
-            }
-          }}
-        >
-          <DialogTitle sx={{ 
-            background: 'linear-gradient(135deg, #1a237e 0%, #0d47a1 100%)',
-            color: 'white',
-            py: { xs: 2, sm: 3 },
-            px: { xs: 2.5, sm: 4 },
-            position: 'relative',
-            overflow: 'hidden'
+        </DialogContent>
+        
+        {!editSuccess && (
+          <DialogActions sx={{ 
+            p: { xs: 2, sm: 2.5, md: 4 }, 
+            pt: { xs: 1, sm: 0 },
+            borderTop: '1px solid',
+            borderColor: 'grey.200',
+            bgcolor: 'grey.50',
+            flexDirection: { xs: 'column', sm: 'row' },
+            gap: { xs: 1, sm: 0 }
           }}>
-            <Box sx={{
-              position: 'absolute',
-              top: -50,
-              right: -50,
-              width: 150,
-              height: 150,
-              borderRadius: '50%',
-              background: 'rgba(255,255,255,0.1)',
-              animation: 'float 8s ease-in-out infinite'
-            }} />
-            <Box sx={{
-              position: 'absolute',
-              bottom: -50,
-              left: -50,
-              width: 150,
-              height: 150,
-              borderRadius: '50%',
-              background: 'rgba(255,255,255,0.1)',
-              animation: 'float 10s ease-in-out infinite reverse'
-            }} />
-            
-            <Stack direction="row" alignItems="center" justifyContent="space-between" position="relative">
-              <Stack direction="row" alignItems="center" spacing={2}>
-                <Box sx={{
-                  width: { xs: 45, sm: 55 },
-                  height: { xs: 45, sm: 55 },
-                  borderRadius: '50%',
-                  bgcolor: 'white',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 8px 16px rgba(0,0,0,0.2)'
-                }}>
-                  <Person sx={{ color: '#0d47a1', fontSize: { xs: 24, sm: 30 } }} />
-                </Box>
-                <Box>
-                  <Typography variant={isMobile ? "h6" : "h5"} fontWeight={700}>
-                    Edit User Details
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)', fontSize: { xs: '0.7rem', sm: '0.875rem' } }}>
-                    Complete user profile management
-                  </Typography>
-                </Box>
-              </Stack>
-              <IconButton
+            <Stack 
+              direction={{ xs: 'column', sm: 'row' }} 
+              spacing={{ xs: 1, sm: 2 }} 
+              justifyContent="flex-end" 
+              width="100%"
+            >
+              <Button
                 onClick={() => setEditModalOpen(false)}
+                color="inherit"
                 disabled={saveLoading}
+                variant="outlined"
+                fullWidth={isMobile}
+                size={isMobile ? "small" : "medium"}
                 sx={{ 
-                  color: 'white',
-                  bgcolor: 'rgba(255,255,255,0.2)',
-                  '&:hover': { 
-                    bgcolor: 'rgba(255,255,255,0.3)',
-                    transform: 'rotate(90deg)'
-                  },
-                  transition: 'all 0.3s ease'
+                  borderRadius: { xs: 1.5, sm: 2 },
+                  px: { xs: 2, sm: 3, md: 4 },
+                  py: { xs: 0.6, sm: 0.8, md: 1.2 },
+                  fontWeight: 600,
+                  fontSize: { xs: '0.8rem', sm: '0.85rem', md: '0.9rem' },
                 }}
               >
-                <Close />
-              </IconButton>
-            </Stack>
-          </DialogTitle>
-          
-          <DialogContent sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
-            {selectedUser && (
-              <Fade in={!editSuccess} timeout={600}>
-                <Box>
-                  {!editSuccess ? (
-                    <Stack spacing={4}>
-                      <Alert 
-                        severity="info" 
-                        icon={<InfoOutlined />}
-                        sx={{ 
-                          borderRadius: 2,
-                          bgcolor: alpha(theme.palette.info.main, 0.1),
-                          border: '1px solid',
-                          borderColor: 'info.100',
-                          '& .MuiAlert-icon': {
-                            color: 'info.main'
-                          },
-                          '& .MuiAlert-message': {
-                            fontSize: { xs: '0.8rem', sm: '0.9rem' }
-                          }
-                        }}
-                      >
-                        <Typography variant="body2" fontWeight={500} sx={{ fontSize: { xs: '0.8rem', sm: '0.9rem' } }}>
-                          Editing: <strong>{selectedUser.name}</strong> ({selectedUser.email})
-                        </Typography>
-                      </Alert>
-                      
-                      {/* SECTION 1: BASIC INFORMATION */}
-                      <Paper elevation={0} sx={{ 
-                        p: { xs: 2, sm: 3 }, 
-                        bgcolor: 'grey.50', 
-                        borderRadius: 2,
-                        border: '1px solid',
-                        borderColor: 'grey.200'
-                      }}>
-                        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3 }}>
-                          <Box sx={{
-                            p: 1,
-                            borderRadius: 2,
-                            background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
-                            color: 'white',
-                            display: 'flex'
-                          }}>
-                            <AccountCircle sx={{ fontSize: { xs: 20, sm: 24 } }} />
-                          </Box>
-                          <Typography variant={isMobile ? "subtitle1" : "h6"} fontWeight={700} sx={{ color: '#0f172a' }}>
-                            Basic Information
-                          </Typography>
-                        </Stack>
-                        
-                        <Grid container spacing={2}>
-                          <Grid item xs={12} md={6}>
-                            <TextField
-                              fullWidth
-                              label="Full Name"
-                              name="name"
-                              value={editFormData.name}
-                              onChange={handleInputChange}
-                              variant="outlined"
-                              size={isMobile ? "small" : "medium"}
-                              required
-                              error={!!formErrors.name}
-                              helperText={formErrors.name}
-                              InputProps={{
-                                startAdornment: (
-                                  <InputAdornment position="start">
-                                    <Person sx={{ color: 'action.active' }} />
-                                  </InputAdornment>
-                                )
-                              }}
-                              sx={{
-                                '& .MuiOutlinedInput-root': {
-                                  borderRadius: 2,
-                                }
-                              }}
-                            />
-                          </Grid>
-                          
-                          <Grid item xs={12} md={6}>
-                            <TextField
-                              fullWidth
-                              label="Email Address"
-                              name="email"
-                              type="email"
-                              value={editFormData.email}
-                              onChange={handleInputChange}
-                              variant="outlined"
-                              size={isMobile ? "small" : "medium"}
-                              error={!!formErrors.email}
-                              helperText={formErrors.email}
-                              InputProps={{
-                                startAdornment: (
-                                  <InputAdornment position="start">
-                                    <Email sx={{ color: 'action.active' }} />
-                                  </InputAdornment>
-                                )
-                              }}
-                              sx={{
-                                '& .MuiOutlinedInput-root': {
-                                  borderRadius: 2,
-                                }
-                              }}
-                            />
-                          </Grid>
-                          
-                          <Grid item xs={12} md={6}>
-                            <TextField
-                              fullWidth
-                              label="Phone Number"
-                              name="phone"
-                              value={editFormData.phone}
-                              onChange={handleInputChange}
-                              variant="outlined"
-                              size={isMobile ? "small" : "medium"}
-                              InputProps={{
-                                startAdornment: (
-                                  <InputAdornment position="start">
-                                    <Phone sx={{ color: 'action.active' }} />
-                                  </InputAdornment>
-                                )
-                              }}
-                              sx={{
-                                '& .MuiOutlinedInput-root': {
-                                  borderRadius: 2,
-                                }
-                              }}
-                            />
-                          </Grid>
-                          
-                          <Grid item xs={12} md={6}>
-                            <TextField
-                              fullWidth
-                              label="Date of Birth"
-                              name="dob"
-                              type="date"
-                              value={editFormData.dob}
-                              onChange={handleInputChange}
-                              variant="outlined"
-                              size={isMobile ? "small" : "medium"}
-                              InputLabelProps={{ shrink: true }}
-                              InputProps={{
-                                startAdornment: (
-                                  <InputAdornment position="start">
-                                    <CalendarToday sx={{ color: 'action.active' }} />
-                                  </InputAdornment>
-                                )
-                              }}
-                              sx={{
-                                '& .MuiOutlinedInput-root': {
-                                  borderRadius: 2,
-                                }
-                              }}
-                            />
-                          </Grid>
-                          
-                          <Grid item xs={12} md={6}>
-                            <FormControl fullWidth variant="outlined" size={isMobile ? "small" : "medium"}>
-                              <InputLabel>Gender</InputLabel>
-                              <Select
-                                name="gender"
-                                value={editFormData.gender}
-                                onChange={handleSelectChange}
-                                label="Gender"
-                                startAdornment={
-                                  <InputAdornment position="start">
-                                    <Wc sx={{ color: 'action.active' }} />
-                                  </InputAdornment>
-                                }
-                                sx={{ borderRadius: 2 }}
-                              >
-                                <SelectMenuItem value="">
-                                  <em>None</em>
-                                </SelectMenuItem>
-                                {genderOptions.map(option => (
-                                  <SelectMenuItem key={option} value={option}>
-                                    {option.charAt(0).toUpperCase() + option.slice(1)}
-                                  </SelectMenuItem>
-                                ))}
-                              </Select>
-                            </FormControl>
-                          </Grid>
-                          
-                          <Grid item xs={12} md={6}>
-                            <FormControl fullWidth variant="outlined" size={isMobile ? "small" : "medium"}>
-                              <InputLabel>Marital Status</InputLabel>
-                              <Select
-                                name="maritalStatus"
-                                value={editFormData.maritalStatus}
-                                onChange={handleSelectChange}
-                                label="Marital Status"
-                                startAdornment={
-                                  <InputAdornment position="start">
-                                    <Favorite sx={{ color: 'action.active' }} />
-                                  </InputAdornment>
-                                }
-                                sx={{ borderRadius: 2 }}
-                              >
-                                <SelectMenuItem value="">
-                                  <em>None</em>
-                                </SelectMenuItem>
-                                {maritalStatusOptions.map(option => (
-                                  <SelectMenuItem key={option} value={option}>
-                                    {option.charAt(0).toUpperCase() + option.slice(1)}
-                                  </SelectMenuItem>
-                                ))}
-                              </Select>
-                            </FormControl>
-                          </Grid>
-                          
-                          <Grid item xs={12}>
-                            <TextField
-                              fullWidth
-                              label="Address"
-                              name="address"
-                              value={editFormData.address}
-                              onChange={handleInputChange}
-                              variant="outlined"
-                              size={isMobile ? "small" : "medium"}
-                              multiline
-                              rows={isMobile ? 1 : 2}
-                              InputProps={{
-                                startAdornment: (
-                                  <InputAdornment position="start">
-                                    <LocationOn sx={{ color: 'action.active' }} />
-                                  </InputAdornment>
-                                )
-                              }}
-                              sx={{
-                                '& .MuiOutlinedInput-root': {
-                                  borderRadius: 2,
-                                }
-                              }}
-                            />
-                          </Grid>
-                        </Grid>
-                      </Paper>
-                      
-                      {/* SECTION 2: EMPLOYMENT INFORMATION */}
-                      <Paper elevation={0} sx={{ 
-                        p: { xs: 2, sm: 3 }, 
-                        bgcolor: 'grey.50', 
-                        borderRadius: 2,
-                        border: '1px solid',
-                        borderColor: 'grey.200'
-                      }}>
-                        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3 }}>
-                          <Box sx={{
-                            p: 1,
-                            borderRadius: 2,
-                            background: 'linear-gradient(135deg, #ff9800 0%, #ed6c02 100%)',
-                            color: 'white',
-                            display: 'flex'
-                          }}>
-                            <Work sx={{ fontSize: { xs: 20, sm: 24 } }} />
-                          </Box>
-                          <Typography variant={isMobile ? "subtitle1" : "h6"} fontWeight={700} sx={{ color: '#0f172a' }}>
-                            Employment Information
-                          </Typography>
-                        </Stack>
-                        
-                        <Grid container spacing={2}>
-                          <Grid item xs={12} md={6}>
-                            <Autocomplete
-                              freeSolo
-                              options={jobRoleOptions}
-                              value={editFormData.jobRole}
-                              onChange={handleRoleChange}
-                              getOptionLabel={(option) => {
-                                if (typeof option === 'string') return option;
-                                return option.label || option.name || '';
-                              }}
-                              renderInput={(params) => (
-                                <TextField
-                                  {...params}
-                                  label="Job Role"
-                                  variant="outlined"
-                                  size={isMobile ? "small" : "medium"}
-                                  fullWidth
-                                  InputProps={{
-                                    ...params.InputProps,
-                                    startAdornment: (
-                                      <>
-                                        <InputAdornment position="start">
-                                          <Badge sx={{ color: 'action.active' }} />
-                                        </InputAdornment>
-                                        {params.InputProps.startAdornment}
-                                      </>
-                                    )
-                                  }}
-                                  sx={{
-                                    '& .MuiOutlinedInput-root': {
-                                      borderRadius: 2,
-                                    }
-                                  }}
-                                />
-                              )}
-                              renderOption={(props, option) => (
-                                <li {...props}>
-                                  <Stack direction="row" alignItems="center" spacing={1}>
-                                    <Work sx={{ fontSize: 18, color: 'action.active' }} />
-                                    <Typography sx={{ fontSize: { xs: '0.8rem', sm: '0.9rem' } }}>
-                                      {option.label || option.name}
-                                    </Typography>
-                                    {option.departmentName && (
-                                      <Chip 
-                                        label={option.departmentName} 
-                                        size="small" 
-                                        sx={{ 
-                                          ml: 1, 
-                                          height: 20, 
-                                          fontSize: '0.6rem',
-                                          bgcolor: alpha(theme.palette.primary.main, 0.1),
-                                          color: 'primary.main'
-                                        }}
-                                      />
-                                    )}
-                                  </Stack>
-                                </li>
-                              )}
-                              loading={loadingJobRoles}
-                              loadingText="Loading job roles..."
-                            />
-                          </Grid>
-                          
-                          <Grid item xs={12} md={6}>
-                            <Autocomplete
-                              freeSolo
-                              options={departmentOptions}
-                              value={editFormData.department}
-                              onChange={handleDepartmentChange}
-                              getOptionLabel={(option) => {
-                                if (typeof option === 'string') return option;
-                                return option.label || option.name || '';
-                              }}
-                              renderInput={(params) => (
-                                <TextField
-                                  {...params}
-                                  label="Department"
-                                  variant="outlined"
-                                  size={isMobile ? "small" : "medium"}
-                                  fullWidth
-                                  InputProps={{
-                                    ...params.InputProps,
-                                    startAdornment: (
-                                      <>
-                                        <InputAdornment position="start">
-                                          <Business sx={{ color: 'action.active' }} />
-                                        </InputAdornment>
-                                        {params.InputProps.startAdornment}
-                                      </>
-                                    )
-                                  }}
-                                  sx={{
-                                    '& .MuiOutlinedInput-root': {
-                                      borderRadius: 2,
-                                    }
-                                  }}
-                                />
-                              )}
-                              renderOption={(props, option) => (
-                                <li {...props}>
-                                  <Stack direction="row" alignItems="center" spacing={1}>
-                                    <CorporateFare sx={{ fontSize: 18, color: 'action.active' }} />
-                                    <Typography sx={{ fontSize: { xs: '0.8rem', sm: '0.9rem' } }}>
-                                      {option.label || option.name}
-                                    </Typography>
-                                  </Stack>
-                                </li>
-                              )}
-                              loading={loadingDepartments}
-                              loadingText="Loading departments..."
-                            />
-                          </Grid>
-                          
-                          <Grid item xs={12} md={6}>
-                            <FormControl fullWidth variant="outlined" size={isMobile ? "small" : "medium"}>
-                              <InputLabel>Employee Type</InputLabel>
-                              <Select
-                                name="employeeType"
-                                value={editFormData.employeeType}
-                                onChange={handleSelectChange}
-                                label="Employee Type"
-                                startAdornment={
-                                  <InputAdornment position="start">
-                                    <WorkHistory sx={{ color: 'action.active' }} />
-                                  </InputAdornment>
-                                }
-                                sx={{ borderRadius: 2 }}
-                              >
-                                <SelectMenuItem value="">
-                                  <em>None</em>
-                                </SelectMenuItem>
-                                {employeeTypeOptions.map(option => (
-                                  <SelectMenuItem key={option} value={option}>
-                                    {option.charAt(0).toUpperCase() + option.slice(1)}
-                                  </SelectMenuItem>
-                                ))}
-                              </Select>
-                            </FormControl>
-                          </Grid>
-                          
-                          <Grid item xs={12} md={6}>
-                            <TextField
-                              fullWidth
-                              label="Designation"
-                              name="designation"
-                              value={editFormData.designation}
-                              onChange={handleInputChange}
-                              variant="outlined"
-                              size={isMobile ? "small" : "medium"}
-                              InputProps={{
-                                startAdornment: (
-                                  <InputAdornment position="start">
-                                    <Badge sx={{ color: 'action.active' }} />
-                                  </InputAdornment>
-                                )
-                              }}
-                              sx={{
-                                '& .MuiOutlinedInput-root': {
-                                  borderRadius: 2,
-                                }
-                              }}
-                            />
-                          </Grid>
-                        </Grid>
-                      </Paper>
-                    </Stack>
-                  ) : (
-                    <Zoom in={editSuccess}>
-                      <Box sx={{ 
-                        py: { xs: 8, sm: 10 }, 
-                        px: { xs: 2, sm: 4 }, 
-                        textAlign: 'center'
-                      }}>
-                        <Box sx={{
-                          width: { xs: 120, sm: 140, md: 160 },
-                          height: { xs: 120, sm: 140, md: 160 },
-                          borderRadius: '50%',
-                          background: 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          mx: 'auto',
-                          mb: 4,
-                          animation: 'pulse 2s infinite',
-                          boxShadow: '0 16px 32px rgba(76, 175, 80, 0.3)',
-                          border: '4px solid white'
-                        }}>
-                          <CheckCircle sx={{ fontSize: { xs: 70, sm: 80, md: 90 }, color: 'success.main' }} />
-                        </Box>
-                        <Typography variant={isMobile ? "h3" : "h2"} fontWeight={800} gutterBottom sx={{ color: '#0f172a' }}>
-                          Update Successful!
-                        </Typography>
-                        <Typography variant="h6" color="text.secondary" sx={{ mb: 3, fontSize: { xs: '1rem', sm: '1.2rem' } }}>
-                          User <strong style={{ color: theme.palette.primary.main }}>{editFormData.name}</strong> has been updated successfully.
-                        </Typography>
-                        <CircularProgress 
-                          size={isMobile ? 40 : 50} 
-                          sx={{ 
-                            color: 'success.main',
-                            mt: 2
-                          }} 
-                        />
-                      </Box>
-                    </Zoom>
-                  )}
-                </Box>
-              </Fade>
-            )}
-          </DialogContent>
-          
-          {!editSuccess && (
-            <DialogActions sx={{ 
-              p: { xs: 2, sm: 3, md: 4 }, 
-              pt: { xs: 1, sm: 0 },
-              borderTop: '1px solid',
-              borderColor: 'grey.200',
-              bgcolor: 'grey.50'
-            }}>
-              <Stack 
-                direction="row" 
-                spacing={2} 
-                justifyContent="flex-end" 
-                width="100%"
-                sx={{ flexWrap: 'wrap' }}
+                Cancel
+              </Button>
+              
+              <Button
+                onClick={handleDeleteUser}
+                color="error"
+                startIcon={<Delete />}
+                disabled={saveLoading}
+                variant="outlined"
+                fullWidth={isMobile}
+                size={isMobile ? "small" : "medium"}
+                sx={{ 
+                  borderRadius: { xs: 1.5, sm: 2 },
+                  px: { xs: 2, sm: 3, md: 4 },
+                  py: { xs: 0.6, sm: 0.8, md: 1.2 },
+                  fontWeight: 600,
+                  fontSize: { xs: '0.8rem', sm: '0.85rem', md: '0.9rem' },
+                  borderColor: 'error.main',
+                  color: 'error.main',
+                  '&:hover': {
+                    borderColor: 'error.dark',
+                    bgcolor: 'error.50'
+                  }
+                }}
               >
-                <Button
-                  onClick={() => setEditModalOpen(false)}
-                  color="inherit"
-                  disabled={saveLoading}
-                  variant="outlined"
-                  size={isMobile ? "small" : "medium"}
-                  sx={{ 
-                    borderRadius: 2,
-                    px: { xs: 2, sm: 4 },
-                    py: { xs: 0.75, sm: 1.2 },
-                    fontWeight: 600,
-                    fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                    borderColor: 'grey.400',
-                    color: 'text.primary',
-                    '&:hover': {
-                      borderColor: 'grey.600',
-                      bgcolor: 'grey.100'
-                    }
-                  }}
-                >
-                  Cancel
-                </Button>
-                
-                <Button
-                  onClick={handleDeleteUser}
-                  color="error"
-                  startIcon={<Delete />}
-                  disabled={saveLoading}
-                  variant="outlined"
-                  size={isMobile ? "small" : "medium"}
-                  sx={{ 
-                    borderRadius: 2,
-                    px: { xs: 2, sm: 4 },
-                    py: { xs: 0.75, sm: 1.2 },
-                    fontWeight: 600,
-                    fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                    borderColor: 'error.main',
-                    color: 'error.main',
-                    '&:hover': {
-                      borderColor: 'error.dark',
-                      bgcolor: 'error.50'
-                    }
-                  }}
-                >
-                  Delete
-                </Button>
-                
-                <Button
-                  onClick={handleSaveUser}
-                  variant="contained"
-                  startIcon={saveLoading ? <CircularProgress size={16} color="inherit" /> : <Save />}
-                  disabled={saveLoading || !editFormData.name.trim()}
-                  size={isMobile ? "small" : "medium"}
-                  sx={{ 
-                    px: { xs: 3, sm: 5 },
-                    py: { xs: 0.75, sm: 1.2 },
-                    fontWeight: 700,
-                    fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                    borderRadius: 2,
-                    background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
-                    boxShadow: '0 8px 16px rgba(33, 150, 243, 0.3)',
-                    '&:hover': {
-                      background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
-                      boxShadow: '0 12px 24px rgba(33, 150, 243, 0.4)',
-                      transform: 'translateY(-2px)'
-                    },
-                    transition: 'all 0.3s ease'
-                  }}
-                >
-                  {saveLoading ? 'Saving...' : 'Save Changes'}
-                </Button>
-              </Stack>
-            </DialogActions>
-          )}
-        </Dialog>
-      </Container>
+                Delete
+              </Button>
+              
+              <Button
+                onClick={handleSaveUser}
+                variant="contained"
+                startIcon={saveLoading ? <CircularProgress size={16} color="inherit" /> : <Save />}
+                disabled={saveLoading || !editFormData.name.trim()}
+                fullWidth={isMobile}
+                size={isMobile ? "small" : "medium"}
+                sx={{ 
+                  px: { xs: 3, sm: 4, md: 5 },
+                  py: { xs: 0.6, sm: 0.8, md: 1.2 },
+                  fontWeight: 700,
+                  fontSize: { xs: '0.8rem', sm: '0.85rem', md: '0.9rem' },
+                  borderRadius: { xs: 1.5, sm: 2 },
+                  background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+                  },
+                }}
+              >
+                {saveLoading ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </Stack>
+          </DialogActions>
+        )}
+      </Dialog>
     </Box>
   );
 };
