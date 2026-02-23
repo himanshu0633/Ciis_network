@@ -62,7 +62,9 @@ const useUser = () => {
       // Combine user data with company details
       const combinedUser = {
         ...parsedUser,
-        companyDetails
+        companyDetails,
+        // Ensure companyRole is available
+        companyRole: parsedUser.companyRole || parsedUser.role || 'employee'
       };
       
       console.log("👤 Current user from localStorage:", {
@@ -70,6 +72,7 @@ const useUser = () => {
         email: combinedUser.email,
         company: combinedUser.company,
         companyId: combinedUser.companyId,
+        companyRole: combinedUser.companyRole,
         department: combinedUser.department,
         departmentId: combinedUser.departmentId,
         jobRole: combinedUser.jobRole || combinedUser.role,
@@ -126,6 +129,13 @@ const useUser = () => {
     return deptId;
   }, [getCurrentUser]);
   
+  const getCurrentUserCompanyRole = useCallback(() => {
+    const user = getCurrentUser();
+    const companyRole = user?.companyRole || user?.role || 'employee';
+    console.log("👑 Current user company role:", companyRole);
+    return companyRole.toLowerCase();
+  }, [getCurrentUser]);
+  
   const isCurrentUserAdmin = useMemo(() => {
     const jobRole = getCurrentUserJobRole();
     const isAdmin = ['admin', 'superadmin'].includes(jobRole);
@@ -139,6 +149,13 @@ const useUser = () => {
     console.log("👥 Is current user manager/HR?", isManagerOrHR);
     return isManagerOrHR;
   }, [getCurrentUserJobRole]);
+  
+  const isCurrentUserOwner = useMemo(() => {
+    const companyRole = getCurrentUserCompanyRole();
+    const isOwner = companyRole === 'owner';
+    console.log("👑 Is current user owner?", isOwner);
+    return isOwner;
+  }, [getCurrentUserCompanyRole]);
   
   const getAuthToken = useCallback(() => {
     const token = localStorage.getItem('token');
@@ -154,8 +171,10 @@ const useUser = () => {
     getCurrentUserCompanyCode,
     getCurrentUserCompanyName,
     getCurrentUserDepartmentId,
+    getCurrentUserCompanyRole,
     isCurrentUserAdmin,
     isCurrentUserManagerOrHR,
+    isCurrentUserOwner,
     getAuthToken
   };
 };
@@ -567,8 +586,10 @@ const EmployeeDirectory = () => {
   const currentUserDepartmentId = user.getCurrentUserDepartmentId();
   const currentUserCompanyCode = user.getCurrentUserCompanyCode();
   const currentUserCompanyName = user.getCurrentUserCompanyName();
+  const currentUserCompanyRole = user.getCurrentUserCompanyRole();
   const isCurrentUserAdmin = user.isCurrentUserAdmin;
   const isCurrentUserManagerOrHR = user.isCurrentUserManagerOrHR;
+  const isCurrentUserOwner = user.isCurrentUserOwner;
   
   console.log("👤 Current user info:", {
     currentUserId,
@@ -576,8 +597,10 @@ const EmployeeDirectory = () => {
     currentUserDepartmentId,
     currentUserCompanyCode,
     currentUserCompanyName,
+    currentUserCompanyRole,
     isCurrentUserAdmin,
-    isCurrentUserManagerOrHR
+    isCurrentUserManagerOrHR,
+    isCurrentUserOwner
   });
   
   // Snackbar helper
@@ -761,9 +784,25 @@ const EmployeeDirectory = () => {
         }
       };
       
-      console.log("🌐 Making API request to: /users/company-users");
+      console.log("🌐 Making API request to get users");
+      console.log("Current user company role:", currentUserCompanyRole);
       
-      const usersRes = await axios.get("/users/company-users", config);
+      let usersRes;
+      
+      // FIXED: Use the correct variable name - currentUserCompanyRole instead of undefined companyRole
+      if (isCurrentUserOwner) {
+        // Owner can see all users in the company
+        console.log("👑 User is owner - fetching all company users");
+        usersRes = await axios.get(`/users/company-users?companyId=${currentUserCompanyId}`, config);
+      } else {
+        // Employee sees only their department users
+        console.log("👤 User is employee - fetching department users");
+        usersRes = await axios.get(
+          `/users/department-users?department=${currentUserDepartmentId}`,
+          config
+        );
+      }
+      
       console.log("✅ API Response received:", {
         status: usersRes.status,
         statusText: usersRes.statusText,
@@ -837,7 +876,7 @@ const EmployeeDirectory = () => {
   }, [
     currentUserCompanyId, 
     currentUserDepartmentId, 
-    isCurrentUserAdmin, 
+    isCurrentUserOwner,
     showSnackbar, 
     user.getAuthToken,
     fetchJobRoles
@@ -1261,6 +1300,11 @@ const EmployeeDirectory = () => {
               {!isCurrentUserAdmin && currentUserDepartmentId && (
                 <span className="EmployeeDirectory-department-badge">
                   • {getDepartmentName(currentUserDepartmentId)} Department
+                </span>
+              )}
+              {isCurrentUserOwner && (
+                <span className="EmployeeDirectory-owner-badge">
+                  • Company Owner
                 </span>
               )}
             </p>
