@@ -420,13 +420,6 @@ const CreateUser = () => {
     return 'USER';
   };
 
-  // Filter departments based on search
-  const filteredDepartments = departments.filter(dept => {
-    const searchTerm = departmentSearch.toLowerCase();
-    const deptName = (dept.name || dept.departmentName || dept.title || '').toLowerCase();
-    return deptName.includes(searchTerm);
-  });
-
   // Filter job roles based on search
   const filteredJobRoles = jobRoles.filter(role => {
     const searchTerm = jobRoleSearch.toLowerCase();
@@ -598,14 +591,8 @@ const CreateUser = () => {
                       id="department"
                       className="CreateUser-input"
                       placeholder={loadingDepartments ? "Loading departments..." : "Select department"}
-                      value={selectedDepartment ? (selectedDepartment.name || selectedDepartment.departmentName || selectedDepartment.title || '') : departmentSearch}
-                      onChange={(e) => {
-                        setDepartmentSearch(e.target.value);
-                        if (!showDepartmentDropdown) setShowDepartmentDropdown(true);
-                        if (form.department) {
-                          setForm(prev => ({ ...prev, department: '', jobRole: '' }));
-                        }
-                      }}
+                      value={selectedDepartment ? (selectedDepartment.name || selectedDepartment.departmentName || selectedDepartment.title || '') : ''}
+                      readOnly   // 👈 YE ADD KARO
                       onClick={() => setShowDepartmentDropdown(!showDepartmentDropdown)}
                       onFocus={() => setShowDepartmentDropdown(true)}
                       disabled={loadingDepartments}
@@ -621,12 +608,12 @@ const CreateUser = () => {
                           <div className="CreateUser-spinner-small"></div>
                           Loading departments...
                         </div>
-                      ) : filteredDepartments.length === 0 ? (
+                      ) : departments.length === 0 ? (
                         <div className="CreateUser-dropdown-item CreateUser-dropdown-empty">
                           {departments.length === 0 ? 'No departments found' : 'No matching departments'}
                         </div>
                       ) : (
-                        filteredDepartments.map((dept) => (
+                        departments.map((dept) => (
                           <div
                             key={dept._id || dept.id}
                             className={`CreateUser-dropdown-item ${(dept._id === form.department || dept.id === form.department) ? 'CreateUser-dropdown-item-selected' : ''}`}
