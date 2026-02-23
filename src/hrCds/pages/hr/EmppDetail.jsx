@@ -160,13 +160,14 @@ const useUser = () => {
   };
 };
 
-// Employee Card Component
+// Employee Card Component - UPDATED with better department handling
 const EmployeeDirectoryEmployeeCard = React.memo(({ 
   emp, 
   onView, 
   onMenuOpen,
   currentUserId,
-  jobRoles // Add jobRoles prop
+  jobRoles,
+  departments // Add departments prop
 }) => {
   const getInitials = (name) => {
     if (!name) return 'U';
@@ -193,10 +194,8 @@ const EmployeeDirectoryEmployeeCard = React.memo(({
       return typeof emp.jobRole === 'string' ? emp.jobRole.charAt(0).toUpperCase() + emp.jobRole.slice(1) : 'N/A';
     }
     
-    // Check if jobRoleId is a string or object
     const roleId = typeof jobRoleId === 'object' ? jobRoleId._id || jobRoleId.id : jobRoleId;
     
-    // Find matching job role
     const jobRole = jobRoles.find(role => 
       role._id === roleId || 
       role.id === roleId ||
@@ -204,6 +203,22 @@ const EmployeeDirectoryEmployeeCard = React.memo(({
     );
     
     return jobRole ? jobRole.roleName : (typeof emp.jobRole === 'string' ? emp.jobRole : 'N/A');
+  };
+  
+  // Helper function to get department name
+  const getDepartmentName = (dept) => {
+    if (!dept) return 'Not assigned';
+    
+    if (typeof dept === 'object') {
+      return dept.name || dept.departmentName || 'Department';
+    }
+    
+    if (typeof dept === 'string') {
+      const department = departments.find(d => d._id === dept || d.id === dept);
+      return department ? department.name : 'Department';
+    }
+    
+    return 'Department';
   };
   
   const isCurrentUserEmp = currentUserId === (emp._id || emp.id);
@@ -272,7 +287,7 @@ const EmployeeDirectoryEmployeeCard = React.memo(({
                 <FiBriefcase size={12} />
               </div>
               <div className="EmployeeDirectory-detail-text">
-                {typeof emp.department === 'object' ? emp.department.name : 'Department'}
+                {getDepartmentName(emp.department)}
               </div>
             </div>
           )}
@@ -303,13 +318,13 @@ const EmployeeDirectoryEmployeeCard = React.memo(({
   );
 });
 
-// Edit Form Component - UPDATED
+// Edit Form Component
 const EditEmployeeForm = React.memo(({ 
   editingUser, 
   formData, 
   onInputChange, 
   departments, 
-  jobRoles, // Add jobRoles prop
+  jobRoles,
   isCurrentUserAdmin,
   isSelfEdit,
   currentUserId
@@ -519,10 +534,10 @@ const EmployeeDirectory = () => {
   // Custom hooks
   const user = useUser();
   
-  // State - Add jobRoles state
+  // State
   const [employees, setEmployees] = useState([]);
   const [departments, setDepartments] = useState([]);
-  const [jobRoles, setJobRoles] = useState([]); // New state for job roles
+  const [jobRoles, setJobRoles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -580,7 +595,7 @@ const EmployeeDirectory = () => {
     }, 3000);
   }, []);
   
-  // NEW FUNCTION: Fetch Job Roles from API
+  // Fetch Job Roles from API
   const fetchJobRoles = useCallback(async () => {
     console.log("🌐 Fetching job roles from API");
     
@@ -598,13 +613,11 @@ const EmployeeDirectory = () => {
         }
       };
       
-      // API call to fetch job roles with company ID
       const response = await axios.get(`/job-roles?company=${currentUserCompanyId}`, config);
       
       console.log("📊 Job roles API response:", response.data);
       
       if (response.data && response.data.success) {
-        // Extract job roles from response
         let jobRolesData = [];
         
         if (Array.isArray(response.data.jobRoles)) {
@@ -617,7 +630,6 @@ const EmployeeDirectory = () => {
         
         console.log(`✅ Fetched ${jobRolesData.length} job roles`);
         
-        // Transform data if needed
         const formattedJobRoles = jobRolesData.map(role => ({
           _id: role._id || role.id,
           roleName: role.roleName || role.name || 'Unnamed Role',
@@ -647,10 +659,8 @@ const EmployeeDirectory = () => {
       return 'N/A';
     }
     
-    // Check if jobRoleId is a string or object
     const roleId = typeof jobRoleId === 'object' ? jobRoleId._id || jobRoleId.id : jobRoleId;
     
-    // Find matching job role
     const jobRole = jobRoles.find(role => 
       role._id === roleId || 
       role.id === roleId ||
@@ -671,7 +681,7 @@ const EmployeeDirectory = () => {
     const jobRole = jobRoles.find(role => 
       role._id === roleId || 
       role.id === roleId ||
-      role.roleNumber === roleId
+      role.Number === roleId
     );
     
     return jobRole;
@@ -728,7 +738,7 @@ const EmployeeDirectory = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
   
-  // Fetch data - UPDATED to include job roles
+  // Fetch data - UPDATED with better department handling
   const fetchData = useCallback(async () => {
     console.log("🔍 Starting fetchData");
     
@@ -751,10 +761,9 @@ const EmployeeDirectory = () => {
         }
       };
       
-      console.log("🌐 Making API request to: /users/department-users");
+      console.log("🌐 Making API request to: /users/company-users");
       
-      // Use the correct endpoint from the controller
-      const usersRes = await axios.get("/users/department-users", config);
+      const usersRes = await axios.get("/users/company-users", config);
       console.log("✅ API Response received:", {
         status: usersRes.status,
         statusText: usersRes.statusText,
@@ -779,17 +788,19 @@ const EmployeeDirectory = () => {
         
         console.log(`📊 Total users fetched: ${employeesData.length}`);
         
-        // Filter by company
-        const filteredEmployees = employeesData.filter(emp => {
-          if (!emp) return false;
-          
-          // Check company
-          const empCompanyId = emp.company?._id || emp.company || emp.companyId;
-          return empCompanyId === currentUserCompanyId;
+        // Log department info for debugging
+        employeesData.forEach(emp => {
+          console.log(`👤 Employee: ${emp.name}, Department:`, {
+            department: emp.department,
+            departmentType: typeof emp.department,
+            departmentId: emp.department?._id || emp.department,
+            departmentName: emp.department?.name,
+            company: emp.company
+          });
         });
         
-        console.log(`✅ After filtering: ${filteredEmployees.length} employees`);
-        setEmployees(filteredEmployees);
+        // Set employees directly - the API should already return only users from the current user's company
+        setEmployees(employeesData);
         
       } else {
         console.log("❌ Failed to fetch users");
@@ -813,7 +824,7 @@ const EmployeeDirectory = () => {
         setDepartments([]);
       }
       
-      // Fetch job roles - NEW
+      // Fetch job roles
       await fetchJobRoles();
       
     } catch (err) {
@@ -829,7 +840,7 @@ const EmployeeDirectory = () => {
     isCurrentUserAdmin, 
     showSnackbar, 
     user.getAuthToken,
-    fetchJobRoles // Add to dependencies
+    fetchJobRoles
   ]);
   
   // Initial data fetch
@@ -888,7 +899,7 @@ const EmployeeDirectory = () => {
     resetEditForm({});
   }, [resetEditForm]);
   
-  // Handle save - UPDATED for job roles
+  // Handle save
   const handleSaveEdit = useCallback(async () => {
     console.log("💾 Saving edit");
     
@@ -1098,7 +1109,7 @@ const EmployeeDirectory = () => {
     }
   }, [userToDelete, selectedUser, handleCloseUser, showSnackbar, fetchData, user.getAuthToken]);
   
-  // Helper functions
+  // Helper functions - UPDATED with better department handling
   const formatPhoneNumber = useCallback((phone) => {
     if (!phone) return 'Not provided';
     const phoneStr = phone.toString();
@@ -1110,9 +1121,19 @@ const EmployeeDirectory = () => {
   
   const getDepartmentName = useCallback((dept) => {
     if (!dept) return 'Not assigned';
-    if (typeof dept === 'object') return dept.name || 'Department';
-    const department = departments.find(d => d._id === dept);
-    return department ? department.name : 'Not assigned';
+    
+    // If department is an object with name property
+    if (typeof dept === 'object') {
+      return dept.name || dept.departmentName || 'Department';
+    }
+    
+    // If department is an ID, try to find in departments list
+    if (typeof dept === 'string') {
+      const department = departments.find(d => d._id === dept || d.id === dept);
+      return department ? department.name : 'Not assigned';
+    }
+    
+    return 'Not assigned';
   }, [departments]);
   
   const formatDate = useCallback((dateString) => {
@@ -1166,6 +1187,7 @@ const EmployeeDirectory = () => {
       const search = searchTerm.toLowerCase();
       filtered = filtered.filter((emp) => {
         const jobRoleName = getJobRoleName(emp.jobRole).toLowerCase();
+        const departmentName = getDepartmentName(emp.department).toLowerCase();
         
         return (
           (emp.name && emp.name.toLowerCase().includes(search)) ||
@@ -1173,14 +1195,13 @@ const EmployeeDirectory = () => {
           (emp.employeeId && emp.employeeId.toLowerCase().includes(search)) ||
           (emp.phone && emp.phone.toString().includes(search)) ||
           (emp.jobRole && jobRoleName.includes(search)) ||
-          (emp.department && typeof emp.department === 'object' && 
-           emp.department.name && emp.department.name.toLowerCase().includes(search))
+          departmentName.includes(search)
         );
       });
     }
     
     return filtered;
-  }, [employees, selectedFilter, searchTerm, getJobRoleName]);
+  }, [employees, selectedFilter, searchTerm, getJobRoleName, getDepartmentName]);
   
   // Loading state
   if (loading) {
@@ -1413,13 +1434,14 @@ const EmployeeDirectory = () => {
               onView={handleOpenUser}
               onMenuOpen={handleMenuOpen}
               currentUserId={currentUserId}
-              jobRoles={jobRoles} // Pass jobRoles to card component
+              jobRoles={jobRoles}
+              departments={departments} // Pass departments to card component
             />
           ))}
         </div>
       )}
 
-      {/* User Detail Modal - UPDATED */}
+      {/* User Detail Modal */}
       {selectedUser && (
         <div className="EmployeeDirectory-modal-overlay" onClick={handleCloseUser}>
           <div className="EmployeeDirectory-modal EmployeeDirectory-user-detail-modal" onClick={e => e.stopPropagation()}>
@@ -1558,7 +1580,7 @@ const EmployeeDirectory = () => {
         </div>
       )}
 
-      {/* Edit Modal - UPDATED */}
+      {/* Edit Modal */}
       {editingUser && (
         <div className="EmployeeDirectory-modal-overlay" onClick={handleCancelEdit}>
           <div className="EmployeeDirectory-modal EmployeeDirectory-edit-modal" onClick={e => e.stopPropagation()}>
@@ -1580,7 +1602,7 @@ const EmployeeDirectory = () => {
                 formData={editFormData}
                 onInputChange={handleInputChange}
                 departments={departments}
-                jobRoles={jobRoles} // Pass jobRoles to edit form
+                jobRoles={jobRoles}
                 isCurrentUserAdmin={isCurrentUserAdmin}
                 isSelfEdit={currentUserId === (editingUser._id || editingUser.id)}
                 currentUserId={currentUserId}

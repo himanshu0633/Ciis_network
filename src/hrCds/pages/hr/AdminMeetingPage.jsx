@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "../../../utils/axiosConfig";
 import API_URL from "../../../config";
 import { toast } from "react-toastify";
-import "./AdminMeetingPage.css"; // Import CSS file
+import "./AdminMeetingPage.css"; 
 
 export default function AdminMeetingPage() {
   const [users, setUsers] = useState([]);
@@ -27,7 +27,7 @@ export default function AdminMeetingPage() {
   // 🟢 Fetch all users
   const fetchUsers = async () => {
     try {
-      const res = await axios.get(`${API_URL}/users/department-users`);
+      const res = await axios.get(`${API_URL}/users/company-users`);
       if (res.data?.success && res.data.message?.users) {
         setUsers(res.data.message.users || []);
       } else {

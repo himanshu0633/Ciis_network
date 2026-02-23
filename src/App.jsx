@@ -59,7 +59,8 @@ import CompanyManagement from "./page/CompanyManagement.jsx";
 import JobRoleManagement from "./admin/page/JobRoleManagement.jsx";
 import SidebarManagement from "./admin/components/SidebarManagement.jsx";
 import CompanyDetails from "./admin/components/CompanyDetails.jsx";
-import AllCompany from "./page/AllCompany.jsx"
+import AllCompany from "./page/AllCompany.jsx";
+import AssetManagement from './page/AssetManagement.jsx'
 function App() {
   const user = JSON.parse(localStorage.getItem("user"));
   const userRole = user?.role;
@@ -91,6 +92,8 @@ function App() {
           <Route path="SuperAdminDashboard" element={<SuperAdminDashboard />} />
           <Route path="JobRoleManagement" element={<JobRoleManagement />} />
           <Route path="all-company" element={<AllCompany />} />
+          <Route path="assets" element={<AssetManagement />} />
+          
           <Route path="CompanyManagement" element={<CompanyManagement />} />
           <Route path="SidebarManagement" element={<SidebarManagement />} />
         </Route>
@@ -133,6 +136,7 @@ function App() {
           <Route path="employee-meeting" element={<EmployeeMeetingPage />} />
           <Route path="client-meeting" element={<ClientMeeting />} />
            <Route path="test" element={<Text />} />
+           
         </Route>
 
         {/* ✅ Catch-all */}

@@ -3,7 +3,7 @@ import axios from '../../../utils/axiosConfig';
 import {
   FiEdit, FiTrash2, FiPackage, FiCheckCircle,
   FiXCircle, FiClock, FiMessageCircle, FiSearch, 
-  FiUsers,  FiBriefcase
+  FiUsers, FiBriefcase, FiFilter
 } from 'react-icons/fi';
 import './EmpAssets.css';
 
@@ -18,18 +18,71 @@ const EmpAssets = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [stats, setStats] = useState({ total: 0, pending: 0, approved: 0, rejected: 0 });
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState('all'); // 'all', 'company', 'department'
   const [selectedCompany, setSelectedCompany] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('');
   const [departments, setDepartments] = useState([]);
+  const [showFilters, setShowFilters] = useState(false);
 
   // Get company code from localStorage
   const companyCode = localStorage.getItem('companyCode') || 'Mohit';
 
+  // Fetch data when filters change
   useEffect(() => { 
-    fetchRequests(); 
-    extractDepartments();
+    fetchRequests();
   }, [statusFilter, selectedCompany, selectedDepartment]);
+
+  // Load departments on component mount
+  useEffect(() => {
+    fetchDepartments();
+  }, []);
+
+  const fetchDepartments = async () => {
+    try {
+      let url = '/departments';
+      const params = [];
+      
+      if (selectedCompany) {
+        params.push(`companyCode=${selectedCompany}`);
+      }
+      
+      if (params.length > 0) {
+        url += `?${params.join('&')}`;
+      }
+      
+      const { data } = await axios.get(url);
+      
+      // Handle different response structures
+      if (data.success && data.departments) {
+        if (Array.isArray(data.departments) && data.departments.length > 0) {
+          if (typeof data.departments[0] === 'object' && data.departments[0].name) {
+            const deptNames = data.departments.map(dept => dept.name);
+            setDepartments(deptNames);
+          } else {
+            setDepartments(data.departments);
+          }
+        } else {
+          setDepartments(data.departments);
+        }
+      } else {
+        extractDepartmentsFromRequests(requests);
+      }
+    } catch (err) {
+      console.error('Failed to fetch departments:', err);
+      extractDepartmentsFromRequests(requests);
+    }
+  };
+
+  const extractDepartmentsFromRequests = (requestsData) => {
+    const deptSet = new Set();
+    requestsData.forEach(req => {
+      if (req.department && typeof req.department === 'string') {
+        deptSet.add(req.department);
+      } else if (req.department && req.department.name) {
+        deptSet.add(req.department.name);
+      }
+    });
+    setDepartments(Array.from(deptSet).sort());
+  };
 
   const fetchRequests = async () => {
     setLoading(true);
@@ -48,21 +101,15 @@ const EmpAssets = () => {
       const { data } = await axios.get(url);
       setRequests(data.requests);
       calculateStats(data.requests);
+      
+      // Update departments based on fetched requests
+      extractDepartmentsFromRequests(data.requests);
     } catch (err) {
       setNotification({ message: 'Failed to fetch requests', severity: 'error' });
+      console.error('Fetch requests error:', err);
     } finally {
       setLoading(false);
     }
-  };
-
-  const extractDepartments = () => {
-    const deptSet = new Set();
-    requests.forEach(req => {
-      if (req.department) {
-        deptSet.add(req.department);
-      }
-    });
-    setDepartments(Array.from(deptSet));
   };
 
   const calculateStats = (data) => {
@@ -73,9 +120,14 @@ const EmpAssets = () => {
   };
 
   const handleStatFilter = (type) => {
-    const newSelected = selectedStat === type ? 'All' : type;
-    setSelectedStat(newSelected);
-    setStatusFilter(newSelected === 'All' ? '' : newSelected.toLowerCase());
+    if (selectedStat === type) {
+      // If clicking the same filter, clear it
+      setSelectedStat('All');
+      setStatusFilter('');
+    } else {
+      setSelectedStat(type);
+      setStatusFilter(type.toLowerCase());
+    }
   };
 
   const handleDelete = async (id) => {
@@ -85,9 +137,12 @@ const EmpAssets = () => {
       await axios.delete(`/assets/delete/${id}`);
       setNotification({ message: 'Request deleted successfully', severity: 'success' });
       fetchRequests();
-    } catch {
+    } catch (err) {
       setNotification({ message: 'Failed to delete request', severity: 'error' });
-    } finally { setActionLoading(false); }
+      console.error('Delete error:', err);
+    } finally { 
+      setActionLoading(false); 
+    }
   };
 
   const handleStatusChange = async (reqId, newStatus) => {
@@ -96,9 +151,12 @@ const EmpAssets = () => {
       await axios.patch(`/assets/update/${reqId}`, { status: newStatus });
       setNotification({ message: 'Status updated successfully', severity: 'success' });
       fetchRequests();
-    } catch {
+    } catch (err) {
       setNotification({ message: 'Failed to update status', severity: 'error' });
-    } finally { setActionLoading(false); }
+      console.error('Status update error:', err);
+    } finally { 
+      setActionLoading(false); 
+    }
   };
 
   const handleCommentEditOpen = (req) => {
@@ -110,27 +168,44 @@ const EmpAssets = () => {
     setActionLoading(true);
     try {
       await axios.patch(`/assets/update/${editingCommentReq._id}`, {
-        comment: commentText,
+        adminComment: commentText,
         status: editingCommentReq.status
       });
       setNotification({ message: 'Comment updated successfully', severity: 'success' });
       setEditingCommentReq(null);
       fetchRequests();
-    } catch {
+    } catch (err) {
       setNotification({ message: 'Failed to update comment', severity: 'error' });
-    } finally { setActionLoading(false); }
+      console.error('Comment update error:', err);
+    } finally { 
+      setActionLoading(false); 
+    }
   };
 
   const getInitials = (name) => name ? name.split(' ').map(w => w[0]).join('').toUpperCase() : 'U';
 
-  const filteredRequests = requests.filter(req =>
-    req.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    req.user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    req.assetName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    req.adminComment?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    req.department?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    req.companyCode?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredRequests = requests.filter(req => {
+    const searchLower = searchTerm.toLowerCase();
+    
+    // Handle department search properly
+    let departmentMatch = false;
+    if (req.department) {
+      if (typeof req.department === 'string') {
+        departmentMatch = req.department.toLowerCase().includes(searchLower);
+      } else if (req.department.name) {
+        departmentMatch = req.department.name.toLowerCase().includes(searchLower);
+      }
+    }
+    
+    return (
+      req.user?.name?.toLowerCase().includes(searchLower) ||
+      req.user?.email?.toLowerCase().includes(searchLower) ||
+      req.assetName?.toLowerCase().includes(searchLower) ||
+      req.adminComment?.toLowerCase().includes(searchLower) ||
+      departmentMatch ||
+      req.companyCode?.toLowerCase().includes(searchLower)
+    );
+  });
 
   const getStatusClass = (status) => {
     switch(status) {
@@ -183,8 +258,14 @@ const EmpAssets = () => {
   };
 
   const handleCompanyFilter = () => {
-    setSelectedCompany(companyCode);
-    setSelectedDepartment('');
+    if (selectedCompany === companyCode) {
+      // If already filtering by this company, clear the filter
+      setSelectedCompany('');
+    } else {
+      setSelectedCompany(companyCode);
+    }
+    // Don't clear department when toggling company
+    fetchDepartments();
   };
 
   const handleClearFilters = () => {
@@ -192,12 +273,48 @@ const EmpAssets = () => {
     setSelectedDepartment('');
     setStatusFilter('');
     setSelectedStat('All');
+    setSearchTerm('');
+    fetchDepartments();
+  };
+
+  const handleDepartmentChange = (e) => {
+    setSelectedDepartment(e.target.value);
+    // Don't clear other filters, just update department
+  };
+
+  // Get active filter count
+  const getActiveFilterCount = () => {
+    let count = 0;
+    if (selectedCompany) count++;
+    if (selectedDepartment) count++;
+    if (statusFilter) count++;
+    if (searchTerm) count++;
+    return count;
+  };
+
+  // Auto-hide notification after 3 seconds
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => {
+        setNotification(null);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
+
+  // Helper function to display department name
+  const getDepartmentName = (dept) => {
+    if (!dept) return 'N/A';
+    if (typeof dept === 'string') return dept;
+    if (dept.name) return dept.name;
+    return 'N/A';
   };
 
   if (loading && !requests.length) {
     return (
       <div className="EmpAssets-loading-container">
-        <div className="EmpAssets-loading-bar"></div>
+        <div className="EmpAssets-loading-spinner"></div>
+        <p>Loading asset requests...</p>
       </div>
     );
   }
@@ -212,34 +329,45 @@ const EmpAssets = () => {
 
       {/* Company Info Bar */}
       <div className="EmpAssets-company-bar">
-        {/* <FiBuilding /> */}
-        <span>Company: <strong>{companyCode}</strong></span>
-        <button 
-          className="EmpAssets-filter-btn"
-          onClick={handleCompanyFilter}
-          title={`Show only ${companyCode} requests`}
-        >
-         My Company Only
-        </button>
-        {(selectedCompany || selectedDepartment || statusFilter) && (
+        <div className="EmpAssets-company-info">
+          <span>Company: <strong>{companyCode}</strong></span>
           <button 
-            className="EmpAssets-clear-btn"
-            onClick={handleClearFilters}
+            className={`EmpAssets-filter-btn ${selectedCompany === companyCode ? 'active' : ''}`}
+            onClick={handleCompanyFilter}
+            title={selectedCompany === companyCode ? "Show all companies" : `Show only ${companyCode} requests`}
           >
-            Clear Filters
+            <FiUsers /> {selectedCompany === companyCode ? 'All Companies' : 'My Company Only'}
           </button>
-        )}
+        </div>
+        
+        <div className="EmpAssets-filter-actions">
+          <button 
+            className="EmpAssets-toggle-filters-btn"
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <FiFilter /> 
+            Filters {getActiveFilterCount() > 0 && `(${getActiveFilterCount()})`}
+          </button>
+          
+          {getActiveFilterCount() > 0 && (
+            <button 
+              className="EmpAssets-clear-btn"
+              onClick={handleClearFilters}
+            >
+              Clear All Filters
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Stats Cards */}
       <div className="EmpAssets-stats-grid">
         {[
-          { label: 'Total Requests', count: stats.total, color: 'primary', type: 'All', icon: <FiUsers /> },
+          { label: 'Total Requests', count: stats.total, color: 'primary', type: 'All', icon: <FiPackage /> },
           { label: 'Pending', count: stats.pending, color: 'warning', type: 'Pending', icon: <FiClock /> },
           { label: 'Approved', count: stats.approved, color: 'success', type: 'Approved', icon: <FiCheckCircle /> },
           { label: 'Rejected', count: stats.rejected, color: 'error', type: 'Rejected', icon: <FiXCircle /> },
-        ]  
-        .map((item) => (
+        ].map((item) => (
           <div 
             key={item.type}
             className={`EmpAssets-stat-card ${getActiveClass(item.type, selectedStat)}`}
@@ -259,7 +387,7 @@ const EmpAssets = () => {
       </div>
 
       {/* Filters Section */}
-      <div className="EmpAssets-filters-container">
+      <div className={`EmpAssets-filters-container ${showFilters ? 'expanded' : ''}`}>
         <div className="EmpAssets-search-container">
           <div className="EmpAssets-search-input">
             <FiSearch />
@@ -277,16 +405,53 @@ const EmpAssets = () => {
             <FiBriefcase />
             <select 
               value={selectedDepartment} 
-              onChange={(e) => setSelectedDepartment(e.target.value)}
+              onChange={handleDepartmentChange}
             >
               <option value="">All Departments</option>
-              {departments.map((dept, index) => (
-                <option key={index} value={dept}>{dept}</option>
-              ))}
+              {departments.length > 0 ? (
+                departments.map((dept, index) => {
+                  const deptValue = typeof dept === 'string' ? dept : dept?.name || dept?.toString() || `Department-${index}`;
+                  return (
+                    <option key={index} value={deptValue}>
+                      {deptValue}
+                    </option>
+                  );
+                })
+              ) : (
+                <option value="" disabled>No departments found</option>
+              )}
             </select>
           </div>
         </div>
       </div>
+
+      {/* Active Filters Display */}
+      {(selectedCompany || selectedDepartment || statusFilter) && (
+        <div className="EmpAssets-active-filters">
+          <span className="EmpAssets-active-filters-label">Active Filters:</span>
+          {selectedCompany && (
+            <span className="EmpAssets-filter-tag">
+              Company: {selectedCompany}
+              <button onClick={() => setSelectedCompany('')}>×</button>
+            </span>
+          )}
+          {selectedDepartment && (
+            <span className="EmpAssets-filter-tag">
+              Department: {selectedDepartment}
+              <button onClick={() => setSelectedDepartment('')}>×</button>
+            </span>
+          )}
+          {statusFilter && (
+            <span className="EmpAssets-filter-tag">
+              Status: {statusFilter}
+              <button onClick={() => {
+                setStatusFilter('');
+                setSelectedStat('All');
+              }}>×</button>
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Table Section */}
       <div className="EmpAssets-table-container">
@@ -311,34 +476,37 @@ const EmpAssets = () => {
                         {getInitials(req.user?.name)}
                       </div>
                       <div className="EmpAssets-employee-info">
-                        <h4>{req.user?.name}</h4>
-                        <p>{req.user?.email}</p>
+                        <h4>{req.user?.name || 'Unknown User'}</h4>
+                        <p>{req.user?.email || 'No email'}</p>
                       </div>
                     </div>
                   </td>
                   <td>
                     <span className="EmpAssets-department-badge">
-                      {req.department || 'N/A'}
+                      {getDepartmentName(req.department)}
                     </span>
                   </td>
                   <td>
                     <span className={`EmpAssets-chip ${getAssetClass(req.assetName)}`}>
-                      {req.assetName}
+                      {req.assetName || 'Unknown Asset'}
                     </span>
                   </td>
                   <td>
                     <span className={`EmpAssets-chip ${getStatusClass(req.status)}`}>
-                      {req.status?.toUpperCase()}
+                      {req.status?.toUpperCase() || 'UNKNOWN'}
                     </span>
                   </td>
                   <td>
                     <div 
                       className={`EmpAssets-comment-badge ${req.adminComment ? 'EmpAssets-has-comment' : 'EmpAssets-no-comment'}`}
-                      title={req.adminComment || "No comment"}
+                      title={req.adminComment || "Click to add comment"}
                       onClick={() => handleCommentEditOpen(req)}
                     >
                       <FiMessageCircle size={12} />
-                      <span>{req.adminComment || 'Add Comment'}</span>
+                      <span>{req.adminComment ? 
+                        (req.adminComment.length > 20 ? req.adminComment.substring(0, 20) + '...' : req.adminComment) 
+                        : 'Add Comment'}
+                      </span>
                     </div>
                   </td>
                   <td className="EmpAssets-actions-cell">
@@ -365,6 +533,7 @@ const EmpAssets = () => {
                         className="EmpAssets-icon-button EmpAssets-edit"
                         title="Edit Comment"
                         onClick={() => handleCommentEditOpen(req)}
+                        disabled={actionLoading}
                       >
                         <FiEdit />
                       </button>
@@ -372,6 +541,7 @@ const EmpAssets = () => {
                         className="EmpAssets-icon-button EmpAssets-delete"
                         title="Delete Request"
                         onClick={() => handleDelete(req._id)}
+                        disabled={actionLoading}
                       >
                         <FiTrash2 />
                       </button>
@@ -382,7 +552,17 @@ const EmpAssets = () => {
             ) : (
               <tr>
                 <td colSpan="6" className="EmpAssets-empty-state">
-                  No Asset Requests Found
+                  <FiPackage size={40} />
+                  <h3>No Asset Requests Found</h3>
+                  <p>Try adjusting your filters or search criteria</p>
+                  {getActiveFilterCount() > 0 && (
+                    <button 
+                      className="EmpAssets-clear-filters-btn"
+                      onClick={handleClearFilters}
+                    >
+                      Clear All Filters
+                    </button>
+                  )}
                 </td>
               </tr>
             )}
@@ -396,7 +576,7 @@ const EmpAssets = () => {
           <div className="EmpAssets-dialog">
             <div className="EmpAssets-dialog-header">
               <h2>Edit Admin Comment</h2>
-              <p>Request from: {editingCommentReq.user?.name} | Department: {editingCommentReq.department}</p>
+              <p>Request from: {editingCommentReq.user?.name} | Department: {getDepartmentName(editingCommentReq.department)}</p>
             </div>
             <div className="EmpAssets-dialog-body">
               <textarea
@@ -405,12 +585,14 @@ const EmpAssets = () => {
                 onChange={(e) => setCommentText(e.target.value)}
                 placeholder="Add your comment..."
                 rows={5}
+                autoFocus
               />
             </div>
             <div className="EmpAssets-dialog-footer">
               <button 
                 className="EmpAssets-btn EmpAssets-btn-cancel"
                 onClick={() => setEditingCommentReq(null)}
+                disabled={actionLoading}
               >
                 Cancel
               </button>
@@ -428,7 +610,7 @@ const EmpAssets = () => {
 
       {/* Snackbar Notification */}
       {notification && (
-        <div className="EmpAssets-snackbar">
+        <div className="EmpAssets-snackbar" onClick={() => setNotification(null)}>
           <div className={`EmpAssets-snackbar-content ${notification.severity}`}>
             {notification.severity === 'error' ? <FiXCircle /> : <FiCheckCircle />}
             <span>{notification.message}</span>

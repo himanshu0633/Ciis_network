@@ -1,0 +1,714 @@
+/* Login.css - Mobile Optimized Version */
+
+/* Container */
+.login-page-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+}
+
+/* Main Paper */
+.login-paper {
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  background: white;
+  max-width: 1000px;
+  width: 100%;
+  min-height: 600px;
+  display: flex;
+}
+
+/* Left Section */
+.login-left-section {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  position: relative;
+  overflow: hidden;
+  flex: 0 0 45%;
+}
+
+.left-pattern {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 1px, transparent 1px);
+  background-size: 40px 40px;
+  opacity: 0.3;
+}
+
+.left-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  color: white;
+  width: 100%;
+}
+
+/* Logo */
+.logo-container {
+  width: 320px;
+  height: 120px;
+  border-radius: 12px;
+  background-color: white;
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 32px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  overflow: hidden;
+  padding: 10px;
+}
+
+.company-logo {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+.business-icon {
+  width: 48px;
+  height: 48px;
+}
+
+/* Company Name */
+.company-name {
+  font-family: 'Oswald', sans-serif;
+  font-size: 2.125rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  letter-spacing: -0.5px;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  color: white;
+}
+
+.company-subtitle {
+  opacity: 0.9;
+  letter-spacing: 0.5px;
+  font-size: 0.875rem;
+  color: white;
+  margin-bottom: 24px;
+}
+
+/* Features Card (Optional - agar aap chahein to add kar sakte hain) */
+.features-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+  width: 100%;
+  text-align: left;
+  margin-top: 16px;
+}
+
+.features-title {
+  color: white;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.feature-icon {
+  width: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.feature-text {
+  color: white;
+  font-size: 0.9rem;
+}
+
+.feature-item:hover .feature-text {
+  transform: translateX(2px);
+  transition: transform 0.3s ease;
+}
+
+/* Right Section */
+.login-right-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 40px 48px;
+}
+
+.form-container {
+  max-width: 400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Mobile Logo - Yeh sirf mobile par dikhega */
+.mobile-logo-container {
+  display: none;
+}
+
+/* Form Header */
+.form-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.form-title {
+  font-size: 2.125rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #333;
+  letter-spacing: -0.5px;
+}
+
+.form-subtitle {
+  color: #666;
+  margin-bottom: 24px;
+  font-size: 1rem;
+}
+
+/* Error Alert */
+.error-alert {
+  background-color: #fdeded;
+  color: #5f2120;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  border: 1px solid #f5c6cb;
+  display: flex;
+  align-items: center;
+}
+
+.error-icon {
+  margin-right: 12px;
+  display: flex;
+  align-items: center;
+}
+
+.error-message {
+  color: #f44336;
+  font-size: 0.875rem;
+  margin-bottom: 12px;
+}
+
+/* Input Group */
+.input-group {
+  margin-bottom: 16px;
+}
+
+.input-label {
+  display: block;
+  margin-bottom: 6px;
+  color: #333;
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.login-input {
+  width: 100%;
+  padding: 12px 16px;
+  padding-left: 40px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.login-input:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+.input-error {
+  border-color: #f44336;
+}
+
+.input-error:focus {
+  border-color: #f44336;
+  box-shadow: 0 0 0 2px rgba(244, 67, 54, 0.2);
+}
+
+.input-icon {
+  position: absolute;
+  left: 12px;
+  color: #777;
+  display: flex;
+  align-items: center;
+}
+
+.input-adornment {
+  position: absolute;
+  right: 12px;
+  cursor: pointer;
+  color: #777;
+  display: flex;
+  align-items: center;
+}
+
+.input-adornment:hover {
+  color: #333;
+}
+
+.error-text {
+  color: #f44336;
+  font-size: 0.75rem;
+  margin-top: 4px;
+  display: block;
+}
+
+/* Forgot Password Link */
+.forgot-password-link {
+  text-align: right;
+  margin-top: 6px;
+}
+
+.forgot-password-link span {
+  font-size: 0.85rem;
+  color: #667eea;
+  cursor: pointer;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.forgot-password-link span:hover {
+  color: #5a6fd8;
+  text-decoration: underline;
+}
+
+/* Buttons */
+.login-button {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px 0 rgba(102, 126, 234, 0.4);
+}
+
+.login-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #5a6fd8 0%, #6a3a9a 100%);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+  transform: translateY(-1px);
+}
+
+.login-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.button-icon {
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
+}
+
+/* Primary Button */
+.primary-button {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 14px 0 rgba(102, 126, 234, 0.4);
+  margin-top: 16px;
+}
+
+.primary-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #5a6fd8 0%, #6a3a9a 100%);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+}
+
+.primary-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Secondary Button */
+.secondary-button {
+  flex: 1;
+  padding: 12px;
+  background: transparent;
+  border: 1px solid #667eea;
+  color: #667eea;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.secondary-button:hover:not(:disabled) {
+  background-color: rgba(102, 126, 234, 0.1);
+}
+
+.secondary-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Two Factor */
+.two-factor-form {
+  width: 100%;
+}
+
+.two-factor-buttons {
+  display: flex;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.resend-link {
+  margin-top: 16px;
+  text-align: center;
+  color: #666;
+}
+
+.resend-link-text {
+  color: #667eea;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.resend-link-text:hover {
+  color: #5a6fd8;
+  text-decoration: underline;
+}
+
+/* Forgot Password Form */
+.forgot-password-form {
+  width: 100%;
+}
+
+.back-button-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.back-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #667eea;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  transition: background-color 0.3s ease;
+}
+
+.back-button:hover {
+  background-color: rgba(102, 126, 234, 0.1);
+}
+
+.forgot-password-title {
+  font-size: 1.5rem;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.forgot-password-subtitle {
+  color: #666;
+  margin-bottom: 24px;
+  font-size: 0.9rem;
+}
+
+/* Terms & Privacy */
+.terms-privacy {
+  margin-top: 32px;
+  text-align: center;
+  color: #999;
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.terms-link {
+  color: #999;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.terms-link:hover {
+  color: #667eea;
+  text-decoration: underline;
+}
+
+/* Loading Spinner */
+.spinner {
+  animation: spin 1s linear infinite;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+}
+
+.spinner.small {
+  width: 20px;
+  height: 20px;
+}
+
+.loading-spinner-container {
+  color: white;
+  display: flex;
+  align-items: center;
+}
+
+/* Animations */
+.fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Icons */
+.login-icon {
+  width: 20px;
+  height: 20px;
+}
+
+/* Focus styles for accessibility */
+.login-button:focus-visible,
+.terms-link:focus-visible,
+.forgot-password-link span:focus-visible,
+.back-button:focus-visible,
+.resend-link-text:focus-visible,
+.input-adornment:focus-visible {
+  outline: 2px solid #667eea;
+  outline-offset: 2px;
+}
+
+/* Desktop styles */
+@media (min-width: 901px) {
+  .mobile-logo-container {
+    display: none;
+  }
+}
+
+/* ========== MOBILE RESPONSIVE STYLES (900px and below) ========== */
+@media (max-width: 900px) {
+  .login-paper {
+    flex-direction: column;
+    min-height: auto;
+    max-width: 500px;
+  }
+
+  /* Hide left section on mobile - exactly like SuperAdminLogin.css */
+  .login-left-section {
+    display: none;
+  }
+
+  /* Show mobile logo */
+  .mobile-logo-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+
+  .mobile-logo-wrapper {
+    width: 100px;
+    height: 100px;
+    border-radius: 12px;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    padding: 8px;
+    margin-bottom: 16px;
+  }
+
+  .mobile-logo-img {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+  }
+
+  .mobile-company-name {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 4px;
+    text-align: center;
+  }
+
+  .mobile-company-subtitle {
+    color: #666;
+    font-size: 0.875rem;
+    text-align: center;
+    opacity: 0.9;
+  }
+
+  /* Right section adjustments */
+  .login-right-section {
+    padding: 32px 24px;
+  }
+
+  .form-header {
+    margin-bottom: 24px;
+  }
+
+  .form-title {
+    font-size: 1.75rem;
+    margin-bottom: 4px;
+  }
+
+  .form-subtitle {
+    font-size: 0.95rem;
+    margin-bottom: 16px;
+  }
+}
+
+/* Small mobile devices (480px and below) */
+@media (max-width: 480px) {
+  .login-page-container {
+    padding: 8px;
+  }
+
+  .login-right-section {
+    padding: 24px 20px;
+  }
+
+  .mobile-logo-wrapper {
+    width: 80px;
+    height: 80px;
+  }
+
+  .mobile-company-name {
+    font-size: 1.5rem;
+  }
+
+  .mobile-company-subtitle {
+    font-size: 0.8rem;
+  }
+
+  .form-title {
+    font-size: 1.5rem;
+  }
+
+  .form-subtitle {
+    font-size: 0.875rem;
+  }
+
+  .login-input {
+    padding: 10px 16px;
+    padding-left: 40px;
+    font-size: 0.95rem;
+  }
+
+  .login-button,
+  .primary-button {
+    padding: 12px;
+    font-size: 0.95rem;
+  }
+
+  .two-factor-buttons {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .secondary-button {
+    width: 100%;
+  }
+
+  .terms-privacy {
+    margin-top: 24px;
+  }
+}
+
+/* Extra small devices (360px and below) */
+@media (max-width: 360px) {
+  .login-right-section {
+    padding: 20px 16px;
+  }
+
+  .mobile-logo-wrapper {
+    width: 70px;
+    height: 70px;
+  }
+
+  .mobile-company-name {
+    font-size: 1.35rem;
+  }
+
+  .form-title {
+    font-size: 1.35rem;
+  }
+}
+
+/* Smooth transitions for all interactive elements */
+.login-button,
+.primary-button,
+.secondary-button,
+.terms-link,
+.forgot-password-link span,
+.back-button,
+.resend-link-text,
+.login-input,
+.input-adornment {
+  transition: all 0.3s ease;
+}

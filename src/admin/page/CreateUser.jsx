@@ -1,15 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Box, Button, TextField, Typography, Paper, MenuItem,
-  CircularProgress, IconButton, InputAdornment,
-  Autocomplete, FormControl, InputLabel, Select, Divider
-} from '@mui/material';
-import { 
-  Visibility, VisibilityOff, Add, Business, Person, 
-  Work, Lock, Email, Phone, Home, Cake, Badge, 
-  AccountBalance, Emergency, FamilyRestroom 
-} from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import axios from '../../utils/axiosConfig';
 import './CreateUser.css';
@@ -39,6 +29,10 @@ const CreateUser = () => {
   const [jobRoles, setJobRoles] = useState([]);
   const [loadingDepartments, setLoadingDepartments] = useState(false);
   const [loadingJobRoles, setLoadingJobRoles] = useState(false);
+  const [showDepartmentDropdown, setShowDepartmentDropdown] = useState(false);
+  const [showJobRoleDropdown, setShowJobRoleDropdown] = useState(false);
+  const [departmentSearch, setDepartmentSearch] = useState('');
+  const [jobRoleSearch, setJobRoleSearch] = useState('');
   const navigate = useNavigate();
 
   // LocalStorage se company data
@@ -303,30 +297,37 @@ const CreateUser = () => {
     }
   };
 
-  const handleDepartmentChange = (event, newValue) => {
-    if (newValue) {
-      const departmentId = newValue._id || newValue.id;
-      console.log("✅ Department selected:", departmentId, newValue.name || newValue.departmentName);
+  const handleDepartmentChange = (department) => {
+    if (department) {
+      const departmentId = department._id || department.id;
+      console.log("✅ Department selected:", departmentId, department.name || department.departmentName);
       
       setForm(prev => ({
         ...prev,
         department: departmentId,
         jobRole: ''
       }));
+      setDepartmentSearch(department.name || department.departmentName || '');
     } else {
       setForm(prev => ({
         ...prev,
         department: '',
         jobRole: ''
       }));
+      setDepartmentSearch('');
       setJobRoles([]);
     }
+    setShowDepartmentDropdown(false);
   };
 
-  const handleJobRoleChange = (e) => {
-    const { value } = e.target;
-    console.log("✅ Job Role selected:", value);
-    setForm(prev => ({ ...prev, jobRole: value }));
+  const handleJobRoleChange = (role) => {
+    if (role) {
+      const roleId = role._id || role.id;
+      console.log("✅ Job Role selected:", roleId);
+      setForm(prev => ({ ...prev, jobRole: roleId }));
+      setJobRoleSearch(role.name || role.title || role.roleName || '');
+    }
+    setShowJobRoleDropdown(false);
   };
 
   const validateForm = () => {
@@ -406,6 +407,11 @@ const CreateUser = () => {
     dept => (dept._id === form.department || dept.id === form.department)
   ) || null;
 
+  // Get selected job role object
+  const selectedJobRole = jobRoles.find(
+    role => (role._id === form.jobRole || role.id === form.jobRole)
+  ) || null;
+
   // Get user display name
   const getUserDisplayName = () => {
     if (currentUser?.name) {
@@ -414,415 +420,472 @@ const CreateUser = () => {
     return 'USER';
   };
 
+  // Filter departments based on search
+  const filteredDepartments = departments.filter(dept => {
+    const searchTerm = departmentSearch.toLowerCase();
+    const deptName = (dept.name || dept.departmentName || dept.title || '').toLowerCase();
+    return deptName.includes(searchTerm);
+  });
+
+  // Filter job roles based on search
+  const filteredJobRoles = jobRoles.filter(role => {
+    const searchTerm = jobRoleSearch.toLowerCase();
+    const roleName = (role.name || role.title || role.roleName || '').toLowerCase();
+    return roleName.includes(searchTerm);
+  });
+
   // 🔥 DEBUG: Show current state
   console.log("🏢 Current departments state:", departments);
   console.log("📋 Selected department:", selectedDepartment);
   console.log("🎯 Form department ID:", form.department);
 
   return (
-    <Box className="create-user-container">
-      <Paper className="user-paper" elevation={6}>
+    <div className="CreateUser-container">
+      <div className="CreateUser-paper">
         {/* Header Section */}
-        <Box className="form-header">
-          <Box>
-            <Typography className="header-title">
+        <div className="CreateUser-header">
+          <div>
+            <h2 className="CreateUser-header-title">
               Create New User
-            </Typography>
-            <Typography className="header-subtitle">
-              <Badge fontSize="small" />
+            </h2>
+            <p className="CreateUser-header-subtitle">
               Add a new team member to your organization
-            </Typography>
-          </Box>
-        </Box>
+            </p>
+          </div>
+        </div>
 
         {/* Company Info Box */}
         {currentUser && (
-          <Box className="company-info-box">
-            <Typography className="company-name">
-              <Business sx={{ fontSize: 24 }} /> 
+          <div className="CreateUser-company-info-box">
+            <h3 className="CreateUser-company-name">
               {getUserDisplayName()}
-            </Typography>
-            <Typography className="company-details">
-              <Person fontSize="small" /> Created by: {currentUser.name} ({currentUser.jobRole || 'super_admin'})
-            </Typography>
-            <Typography className="company-details">
-              <Work fontSize="small" /> Company ID: {companyId?.substring(0, 8)}...
-            </Typography>
-            <Typography className="company-details" sx={{ color: '#1976d2', fontWeight: 500 }}>
-              <Badge fontSize="small" /> Departments: {departments.length} loaded
-            </Typography>
-          </Box>
+            </h3>
+            <p className="CreateUser-company-details">
+              Created by: {currentUser.name} ({currentUser.jobRole || 'super_admin'})
+            </p>
+            <p className="CreateUser-company-details">
+              Company ID: {companyId?.substring(0, 8)}...
+            </p>
+            <p className="CreateUser-company-details CreateUser-company-details-highlight">
+              Departments: {departments.length} loaded
+            </p>
+          </div>
         )}
 
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          <span className="required-star">*</span> All marked fields are required
-        </Typography>
+        <p className="CreateUser-required-text">
+          <span className="CreateUser-required-star">*</span> All marked fields are required
+        </p>
 
-        <Divider className="custom-divider" />
+        <hr className="CreateUser-divider" />
 
         <form onSubmit={handleSubmit}>
           {/* Personal Information Section */}
-          <Typography className="section-title">
-            <Person className="section-icon" /> Personal Information
-          </Typography>
+          <h3 className="CreateUser-section-title">
+            Personal Information
+          </h3>
 
-          <Box className="form-grid">
+          <div className="CreateUser-form-grid">
             {/* ROW 1: Name & Email */}
-            <Box className="form-row">
-              <TextField
-                label="Full Name"
-                name="name"
-                fullWidth
-                required
-                value={form.name}
-                onChange={handleTextChange}
-                className="custom-textfield"
-                helperText="Only letters and spaces"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Person color="primary" fontSize="small" />
-                    </InputAdornment>
-                  ),
-                }}
-              />
+            <div className="CreateUser-form-row">
+              <div className="CreateUser-form-group">
+                <label htmlFor="name" className="CreateUser-label">
+                  Full Name <span className="CreateUser-required-star">*</span>
+                </label>
+                <div className="CreateUser-input-wrapper">
+                  <span className="CreateUser-input-icon">👤</span>
+                  <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    value={form.name}
+                    onChange={handleTextChange}
+                    className="CreateUser-input"
+                    placeholder="Enter full name"
+                    required
+                  />
+                </div>
+                <small className="CreateUser-helper-text">Only letters and spaces</small>
+              </div>
 
-              <TextField
-                label="Email Address"
-                name="email"
-                type="email"
-                fullWidth
-                required
-                value={form.email}
-                onChange={handleTextChange}
-                className="custom-textfield"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Email color="primary" fontSize="small" />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            </Box>
+              <div className="CreateUser-form-group">
+                <label htmlFor="email" className="CreateUser-label">
+                  Email Address <span className="CreateUser-required-star">*</span>
+                </label>
+                <div className="CreateUser-input-wrapper">
+                  <span className="CreateUser-input-icon">✉️</span>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={form.email}
+                    onChange={handleTextChange}
+                    className="CreateUser-input"
+                    placeholder="Enter email address"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
 
             {/* ROW 2: Password & Confirm Password */}
-            <Box className="form-row">
-              <TextField
-                label="Password"
-                name="password"
-                type={showPassword ? 'text' : 'password'}
-                fullWidth
-                required
-                value={form.password}
-                onChange={handleTextChange}
-                className="custom-textfield password-field"
-                helperText="Minimum 8 characters"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Lock color="primary" fontSize="small" />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton onClick={() => setShowPassword(prev => !prev)}>
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  )
-                }}
-              />
-
-              <TextField
-                label="Confirm Password"
-                name="confirmPassword"
-                type={showConfirmPassword ? 'text' : 'password'}
-                fullWidth
-                required
-                value={form.confirmPassword}
-                onChange={handleTextChange}
-                className="custom-textfield password-field"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Lock color="primary" fontSize="small" />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton onClick={() => setShowConfirmPassword(prev => !prev)}>
-                        {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  )
-                }}
-              />
-            </Box>
-
-            {/* ROW 3: Department & Job Role - FIXED */}
-            <Box className="form-row">
-              {/* Department - Autocomplete */}
-              <Autocomplete
-                options={departments}
-                getOptionLabel={(option) => {
-                  if (!option) return '';
-                  return option.name || option.departmentName || option.title || 'Unnamed';
-                }}
-                value={selectedDepartment}
-                onChange={handleDepartmentChange}
-                loading={loadingDepartments}
-                isOptionEqualToValue={(option, value) => {
-                  if (!option || !value) return false;
-                  return (option._id === value._id) || (option.id === value.id);
-                }}
-                noOptionsText={
-                  loadingDepartments 
-                    ? "Loading departments..." 
-                    : "No departments found"
-                }
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Department"
+            <div className="CreateUser-form-row">
+              <div className="CreateUser-form-group">
+                <label htmlFor="password" className="CreateUser-label">
+                  Password <span className="CreateUser-required-star">*</span>
+                </label>
+                <div className="CreateUser-input-wrapper">
+                  <span className="CreateUser-input-icon">🔒</span>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    id="password"
+                    name="password"
+                    value={form.password}
+                    onChange={handleTextChange}
+                    className="CreateUser-input"
+                    placeholder="Enter password"
                     required
-                    fullWidth
-                    className="custom-textfield"
-                    helperText={
-                      loadingDepartments
-                        ? "Loading departments..."
-                        : departments.length === 0
-                          ? "No departments available. Please create departments first."
-                          : `${departments.length} department(s) available`
-                    }
-                    error={departments.length === 0 && !loadingDepartments}
-                    InputProps={{
-                      ...params.InputProps,
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <Business color={departments.length === 0 ? "disabled" : "primary"} fontSize="small" />
-                        </InputAdornment>
-                      ),
-                    }}
                   />
-                )}
-              />
+                  <button
+                    type="button"
+                    className="CreateUser-password-toggle"
+                    onClick={() => setShowPassword(prev => !prev)}
+                  >
+                    {showPassword ? '👁️' : '👁️‍🗨️'}
+                  </button>
+                </div>
+                <small className="CreateUser-helper-text">Minimum 8 characters</small>
+              </div>
 
-              {/* Job Role - Select */}
-              <FormControl 
-                fullWidth 
-                required 
-                className="custom-textfield"
-                error={jobRoles.length === 0 && form.department && !loadingJobRoles}
-              >
-                <InputLabel>Job Role</InputLabel>
-                <Select
-                  label="Job Role"
-                  name="jobRole"
-                  value={form.jobRole || ''}
-                  onChange={handleJobRoleChange}
-                  disabled={!form.department || loadingJobRoles || jobRoles.length === 0}
-                  startAdornment={
-                    <InputAdornment position="start">
-                      <Work 
-                        color={
-                          !form.department ? "disabled" : 
-                          loadingJobRoles ? "action" : 
-                          jobRoles.length === 0 ? "disabled" : "primary"
-                        } 
-                        fontSize="small" 
-                      />
-                    </InputAdornment>
-                  }
-                >
-                  {loadingJobRoles ? (
-                    <MenuItem disabled>
-                      <CircularProgress size={20} sx={{ mr: 1 }} />
-                      Loading job roles...
-                    </MenuItem>
-                  ) : jobRoles.length === 0 ? (
-                    <MenuItem disabled>
-                      {form.department ? "No job roles found for this department" : "Select a department first"}
-                    </MenuItem>
-                  ) : (
-                    jobRoles.map((role) => (
-                      <MenuItem key={role._id || role.id} value={role._id || role.id}>
-                        {role.name || role.title || role.roleName}
-                        {role.description && ` - ${role.description}`}
-                      </MenuItem>
-                    ))
+              <div className="CreateUser-form-group">
+                <label htmlFor="confirmPassword" className="CreateUser-label">
+                  Confirm Password <span className="CreateUser-required-star">*</span>
+                </label>
+                <div className="CreateUser-input-wrapper">
+                  <span className="CreateUser-input-icon">🔒</span>
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    value={form.confirmPassword}
+                    onChange={handleTextChange}
+                    className="CreateUser-input"
+                    placeholder="Confirm password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="CreateUser-password-toggle"
+                    onClick={() => setShowConfirmPassword(prev => !prev)}
+                  >
+                    {showConfirmPassword ? '👁️' : '👁️‍🗨️'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* ROW 3: Department & Job Role */}
+            <div className="CreateUser-form-row">
+              {/* Department - Custom Dropdown */}
+              <div className="CreateUser-form-group">
+                <label htmlFor="department" className="CreateUser-label">
+                  Department <span className="CreateUser-required-star">*</span>
+                </label>
+                <div className="CreateUser-dropdown-container">
+                  <div className="CreateUser-input-wrapper">
+                    <span className="CreateUser-input-icon">🏢</span>
+                    <input
+                      type="text"
+                      id="department"
+                      className="CreateUser-input"
+                      placeholder={loadingDepartments ? "Loading departments..." : "Select department"}
+                      value={selectedDepartment ? (selectedDepartment.name || selectedDepartment.departmentName || selectedDepartment.title || '') : departmentSearch}
+                      onChange={(e) => {
+                        setDepartmentSearch(e.target.value);
+                        if (!showDepartmentDropdown) setShowDepartmentDropdown(true);
+                        if (form.department) {
+                          setForm(prev => ({ ...prev, department: '', jobRole: '' }));
+                        }
+                      }}
+                      onClick={() => setShowDepartmentDropdown(!showDepartmentDropdown)}
+                      onFocus={() => setShowDepartmentDropdown(true)}
+                      disabled={loadingDepartments}
+                      required
+                    />
+                    <span className="CreateUser-dropdown-arrow">▼</span>
+                  </div>
+                  
+                  {showDepartmentDropdown && (
+                    <div className="CreateUser-dropdown-menu">
+                      {loadingDepartments ? (
+                        <div className="CreateUser-dropdown-item CreateUser-dropdown-loading">
+                          <div className="CreateUser-spinner-small"></div>
+                          Loading departments...
+                        </div>
+                      ) : filteredDepartments.length === 0 ? (
+                        <div className="CreateUser-dropdown-item CreateUser-dropdown-empty">
+                          {departments.length === 0 ? 'No departments found' : 'No matching departments'}
+                        </div>
+                      ) : (
+                        filteredDepartments.map((dept) => (
+                          <div
+                            key={dept._id || dept.id}
+                            className={`CreateUser-dropdown-item ${(dept._id === form.department || dept.id === form.department) ? 'CreateUser-dropdown-item-selected' : ''}`}
+                            onClick={() => handleDepartmentChange(dept)}
+                          >
+                            {dept.name || dept.departmentName || dept.title}
+                          </div>
+                        ))
+                      )}
+                    </div>
                   )}
-                </Select>
+                </div>
+                <small className={`CreateUser-helper-text ${departments.length === 0 && !loadingDepartments ? 'CreateUser-helper-text-error' : ''}`}>
+                  {loadingDepartments
+                    ? "Loading departments..."
+                    : departments.length === 0
+                      ? "No departments available. Please create departments first."
+                      : `${departments.length} department(s) available`}
+                </small>
+              </div>
+
+              {/* Job Role - Custom Dropdown */}
+              <div className="CreateUser-form-group">
+                <label htmlFor="jobRole" className="CreateUser-label">
+                  Job Role <span className="CreateUser-required-star">*</span>
+                </label>
+                <div className="CreateUser-dropdown-container">
+                  <div className="CreateUser-input-wrapper">
+                    <span className="CreateUser-input-icon">💼</span>
+                    <input
+                      type="text"
+                      id="jobRole"
+                      className="CreateUser-input"
+                      placeholder={
+                        !form.department 
+                          ? "Select a department first" 
+                          : loadingJobRoles 
+                            ? "Loading job roles..." 
+                            : "Select job role"
+                      }
+                      value={selectedJobRole ? (selectedJobRole.name || selectedJobRole.title || selectedJobRole.roleName || '') : jobRoleSearch}
+                      onChange={(e) => {
+                        setJobRoleSearch(e.target.value);
+                        if (!showJobRoleDropdown) setShowJobRoleDropdown(true);
+                      }}
+                      onClick={() => form.department && setShowJobRoleDropdown(!showJobRoleDropdown)}
+                      onFocus={() => form.department && setShowJobRoleDropdown(true)}
+                      disabled={!form.department || loadingJobRoles || jobRoles.length === 0}
+                      required
+                    />
+                    {form.department && !loadingJobRoles && jobRoles.length > 0 && (
+                      <span className="CreateUser-dropdown-arrow">▼</span>
+                    )}
+                  </div>
+                  
+                  {showJobRoleDropdown && form.department && (
+                    <div className="CreateUser-dropdown-menu">
+                      {loadingJobRoles ? (
+                        <div className="CreateUser-dropdown-item CreateUser-dropdown-loading">
+                          <div className="CreateUser-spinner-small"></div>
+                          Loading job roles...
+                        </div>
+                      ) : filteredJobRoles.length === 0 ? (
+                        <div className="CreateUser-dropdown-item CreateUser-dropdown-empty">
+                          {jobRoles.length === 0 ? 'No job roles found' : 'No matching job roles'}
+                        </div>
+                      ) : (
+                        filteredJobRoles.map((role) => (
+                          <div
+                            key={role._id || role.id}
+                            className={`CreateUser-dropdown-item ${(role._id === form.jobRole || role.id === form.jobRole) ? 'CreateUser-dropdown-item-selected' : ''}`}
+                            onClick={() => handleJobRoleChange(role)}
+                          >
+                            {role.name || role.title || role.roleName}
+                            {role.description && <small className="CreateUser-role-description"> - {role.description}</small>}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
                 {form.department && jobRoles.length === 0 && !loadingJobRoles && (
-                  <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.5 }}>
+                  <small className="CreateUser-helper-text CreateUser-helper-text-error">
                     No job roles defined for this department
-                  </Typography>
+                  </small>
                 )}
-              </FormControl>
-            </Box>
+              </div>
+            </div>
 
-            {/* ROW 4: Phone Number & Employee Type */}
-         
+            {/* ROW 4: Gender & Marital Status */}
+            <div className="CreateUser-form-row">
+              <div className="CreateUser-form-group">
+                <label htmlFor="gender" className="CreateUser-label">
+                  Gender <span className="CreateUser-required-star">*</span>
+                </label>
+                <div className="CreateUser-select-wrapper">
+                  <span className="CreateUser-select-icon">⚥</span>
+                  <select
+                    id="gender"
+                    name="gender"
+                    value={form.gender}
+                    onChange={handleTextChange}
+                    className="CreateUser-select"
+                    required
+                  >
+                    <option value="">Select Gender</option>
+                    {genderOptions.map(option => (
+                      <option key={option} value={option}>
+                        {option.charAt(0).toUpperCase() + option.slice(1)}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="CreateUser-select-arrow">▼</span>
+                </div>
+              </div>
 
-       
+              <div className="CreateUser-form-group">
+                <label htmlFor="maritalStatus" className="CreateUser-label">
+                  Marital Status <span className="CreateUser-required-star">*</span>
+                </label>
+                <div className="CreateUser-select-wrapper">
+                  <span className="CreateUser-select-icon">💍</span>
+                  <select
+                    id="maritalStatus"
+                    name="maritalStatus"
+                    value={form.maritalStatus}
+                    onChange={handleTextChange}
+                    className="CreateUser-select"
+                    required
+                  >
+                    <option value="">Select Marital Status</option>
+                    {maritalStatusOptions.map(option => (
+                      <option key={option} value={option}>
+                        {option.charAt(0).toUpperCase() + option.slice(1)}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="CreateUser-select-arrow">▼</span>
+                </div>
+              </div>
+            </div>
 
-            {/* ROW 6: Gender & Marital Status */}
-            <Box className="form-row">
-              <FormControl fullWidth className="custom-textfield">
-                <InputLabel>Gender</InputLabel>
-                <Select
-                  label="Gender"
-                  required
-                  name="gender"
-                  value={form.gender}
-                  onChange={handleTextChange}
-                >
-                  <MenuItem value="">Select</MenuItem>
-                  {genderOptions.map(option => (
-                    <MenuItem key={option} value={option}>
-                      {option.charAt(0).toUpperCase() + option.slice(1)}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+            {/* ROW 5: Date of Birth & Phone */}
+            <div className="CreateUser-form-row">
+              <div className="CreateUser-form-group">
+                <label htmlFor="dob" className="CreateUser-label">
+                  Date of Birth <span className="CreateUser-required-star">*</span>
+                </label>
+                <div className="CreateUser-input-wrapper">
+                  <span className="CreateUser-input-icon">🎂</span>
+                  <input
+                    type="date"
+                    id="dob"
+                    name="dob"
+                    value={form.dob}
+                    onChange={handleTextChange}
+                    className="CreateUser-input"
+                    required
+                  />
+                </div>
+              </div>
 
-              <FormControl fullWidth className="custom-textfield">
-                <InputLabel>Marital Status</InputLabel>
-                <Select
-                  label="Marital Status"
-                  name="maritalStatus"
-                  required
-                  value={form.maritalStatus}
-                  onChange={handleTextChange}
-                >
-                  <MenuItem value="">Select</MenuItem>
-                  {maritalStatusOptions.map(option => (
-                    <MenuItem key={option} value={option}>
-                      {option.charAt(0).toUpperCase() + option.slice(1)}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Box>
+              <div className="CreateUser-form-group">
+                <label htmlFor="phone" className="CreateUser-label">
+                  Phone Number <span className="CreateUser-required-star">*</span>
+                </label>
+                <div className="CreateUser-input-wrapper">
+                  <span className="CreateUser-input-icon">📞</span>
+                  <input
+                    type="tel"
+                    id="phone"
+                    name="phone"
+                    value={form.phone}
+                    onChange={handleTextChange}
+                    className="CreateUser-input"
+                    placeholder="Enter 10 digit number"
+                    maxLength="10"
+                    required
+                  />
+                </div>
+                <small className="CreateUser-helper-text">10 digits only</small>
+              </div>
+            </div>
+          </div>
 
-                 {/* ROW 5: Date of Birth & Salary */}
-            <Box className="form-row">
-              <TextField
-                label="Date of Birth"
-                name="dob"
-                type="date"
-                required
-                fullWidth
-                InputLabelProps={{ shrink: true }}
-                value={form.dob}
-                onChange={handleTextChange}
-                className="custom-textfield"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Cake color="primary" fontSize="small" />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-
-             
-            </Box>
-
-               <Box className="form-row">
-              <TextField
-                label="Phone Number"
-                name="phone"
-                required
-                fullWidth
-                value={form.phone}
-                onChange={handleTextChange}
-                className="custom-textfield"
-                inputProps={{ maxLength: 10 }}
-                helperText="10 digits only"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Phone color="primary" fontSize="small" />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-
-            
-            </Box>
-          </Box>
-
-
-          <Divider className="custom-divider" />
+          <hr className="CreateUser-divider" />
 
           {/* Address Information */}
-          <Typography className="section-title">
-            <Home className="section-icon" /> Address Information
-          </Typography>
+          <h3 className="CreateUser-section-title">
+            Address Information
+          </h3>
 
-          <Box className="form-grid">
-            <TextField
-              label="Address"
-              name="address"
-              required
-              fullWidth
-              value={form.address}
-              onChange={handleTextChange}
-              multiline
-              rows={2}
-              className="custom-textfield"
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Home color="primary" fontSize="small" />
-                  </InputAdornment>
-                ),
-              }}
-            />
-          </Box>
+          <div className="CreateUser-form-grid">
+            <div className="CreateUser-form-group CreateUser-full-width">
+              <label htmlFor="address" className="CreateUser-label">
+                Address <span className="CreateUser-required-star">*</span>
+              </label>
+              <div className="CreateUser-input-wrapper">
+                <span className="CreateUser-input-icon CreateUser-textarea-icon">🏠</span>
+                <textarea
+                  id="address"
+                  name="address"
+                  value={form.address}
+                  onChange={handleTextChange}
+                  className="CreateUser-textarea"
+                  placeholder="Enter full address"
+                  rows="3"
+                  required
+                ></textarea>
+              </div>
+            </div>
+          </div>
 
-          {/* Rest of the form sections remain same */}
-          <Divider className="custom-divider" />
+          <hr className="CreateUser-divider" />
           
           {/* Submit Button */}
-          <Button
+          <button
             type="submit"
-            fullWidth
-            variant="contained"
-            size="large"
-            className="submit-button"
+            className="CreateUser-submit-button"
             disabled={loading || !companyId || !companyCode || departments.length === 0 || !form.jobRole}
-            startIcon={loading ? <CircularProgress size={20} className="loading-spinner" /> : <Add />}
           >
-            {loading ? 'Creating User...' : 'Create New User'}
-          </Button>
+            {loading ? (
+              <>
+                <span className="CreateUser-spinner"></span>
+                Creating User...
+              </>
+            ) : (
+              <>
+                <span className="CreateUser-button-icon">+</span>
+                Create New User
+              </>
+            )}
+          </button>
 
           {/* Debug Info - Remove in production */}
           {process.env.NODE_ENV === 'development' && (
-            <Box sx={{ mt: 2, p: 2, bgcolor: '#f5f5f5', borderRadius: 2 }}>
-              <Typography variant="caption" display="block" color="text.secondary">
+            <div className="CreateUser-debug-info">
+              <small>
                 🔍 Debug: Company ID: {companyId || 'Not set'} | Departments: {departments.length} | 
                 Selected Dept: {form.department || 'None'} | Job Roles: {jobRoles.length}
-              </Typography>
-            </Box>
+              </small>
+            </div>
           )}
 
           {/* Warning Messages */}
           {(!companyId || !companyCode) && (
-            <Typography className="info-message error-message">
+            <div className="CreateUser-info-message CreateUser-error-message">
               ⚠️ Company information is missing. Please login again or contact support.
-            </Typography>
+            </div>
           )}
 
           {departments.length === 0 && companyId && !loadingDepartments && (
-            <Typography className="info-message warning-message">
+            <div className="CreateUser-info-message CreateUser-warning-message">
               ⚠️ No departments found. Please create departments first before adding users.
-            </Typography>
+            </div>
           )}
         </form>
-      </Paper>
-    </Box>
+      </div>
+    </div>
   );
 };
 

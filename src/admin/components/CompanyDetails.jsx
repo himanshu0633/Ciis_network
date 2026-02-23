@@ -1,174 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { toast } from "react-toastify";
 import API_URL from "../../config";
-
-import {
-  Business,
-  LocationOn,
-  Person,
-  CalendarToday,
-  CheckCircle,
-  Cancel,
-  Edit,
-  Refresh,
-  ArrowBack,
-  Security,
-  Domain,
-  Link,
-  Image,
-  Storage,
-  Settings,
-  People,
-  ListAlt,
-  Close,
-  Save,
-  Delete,
-  Code,
-  Work,
-  Email,
-  Phone,
-  Language,
-  AccessTime,
-  Today,
-  Group,
-  School,
-  Login,
-  CardMembership,
-  MoreVert,
-  Dashboard,
-  AdminPanelSettings,
-  VerifiedUser,
-  CorporateFare,
-  Badge,
-  Web,
-  Description,
-  Speed,
-  TrendingUp,
-  Apartment,
-  AccountBalance,
-  Build,
-  Assessment,
-  Timeline,
-  Event,
-  Fingerprint,
-  Public,
-  Mail,
-  ContactPhone,
-  AccountCircle,
-  WorkOutline,
-  Category,
-  CheckCircleOutline,
-  CancelOutlined,
-  ErrorOutline,
-  InfoOutlined,
-  WarningAmber,
-  Add,
-  ViewList,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Save as SaveIcon,
-  Close as CloseIcon,
-  Refresh as RefreshIcon,
-  ArrowBack as ArrowBackIcon,
-  MoreVert as MoreVertIcon,
-  Face,
-  Wc,
-  Favorite,
-  ChildCare,
-  AttachMoney,
-  AccountBalance as AccountBalanceIcon,
-  CreditCard,
-  Emergency,
-  FamilyRestroom,
-  Home,
-  Notes,
-  DateRange,
-  WorkHistory,
-  LocalAtm,
-  Badge as BadgeIcon,
-  Assignment,
-  MedicalServices,
-  School as SchoolIcon,
-  MilitaryTech,
-  EmojiEvents
-} from "@mui/icons-material";
-
-import {
-  Card,
-  CardContent,
-  Typography,
-  Grid,
-  Chip,
-  Button,
-  Divider,
-  Box,
-  LinearProgress,
-  Avatar,
-  CircularProgress,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  IconButton,
-  Switch,
-  FormControlLabel,
-  Alert,
-  Autocomplete,
-  Paper,
-  Stack,
-  Tooltip,
-  Badge as MuiBadge,
-  Tabs,
-  Tab,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  ListItemAvatar,
-  Menu,
-  MenuItem,
-  alpha,
-  CardHeader,
-  CardActions,
-  Fade,
-  Grow,
-  Slide,
-  Zoom,
-  Skeleton,
-  Container,
-  useTheme,
-  useMediaQuery,
-  Fab,
-  SpeedDial,
-  SpeedDialAction,
-  SpeedDialIcon,
-  Backdrop,
-  Modal,
-  Typography as MuiTypography,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  InputAdornment,
-  MenuItem as SelectMenuItem,
-  FormControl,
-  InputLabel,
-  Select,
-  FormHelperText
-} from "@mui/material";
-
-// Transition for dialog
-const Transition = React.forwardRef(function Transition(props, ref) {
-  return <Slide direction="up" ref={ref} {...props} />;
-});
+import "./CompanyDetails.css";
 
 const CompanyDetails = () => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [company, setCompany] = useState(null);
@@ -182,12 +19,13 @@ const CompanyDetails = () => {
   const [userRole, setUserRole] = useState("");
   const [activeTab, setActiveTab] = useState(0);
   const [apiDebug, setApiDebug] = useState({});
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isTablet, setIsTablet] = useState(window.innerWidth >= 768 && window.innerWidth < 1024);
   
   // Modal States
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [editFormData, setEditFormData] = useState({
-    // Basic Info
     name: "",
     email: "",
     phone: "",
@@ -195,32 +33,22 @@ const CompanyDetails = () => {
     gender: "",
     maritalStatus: "",
     dob: "",
-    
-    // Employment Info
     department: "",
     jobRole: "",
     role: "",
     employeeType: "",
     designation: "",
     salary: "",
-    
-    // Bank Details
     accountNumber: "",
     ifsc: "",
     bankName: "",
     bankHolderName: "",
-    
-    // Family Details
     fatherName: "",
     motherName: "",
-    
-    // Emergency Contact
     emergencyName: "",
     emergencyPhone: "",
     emergencyRelation: "",
     emergencyAddress: "",
-    
-    // Additional
     isActive: true,
     properties: [],
     propertyOwned: "",
@@ -251,18 +79,23 @@ const CompanyDetails = () => {
   const [jobRoles, setJobRoles] = useState([]);
   const [loadingDepartments, setLoadingDepartments] = useState(false);
   const [loadingJobRoles, setLoadingJobRoles] = useState(false);
-
-  // Copy URL state
   const [copied, setCopied] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Gender options
   const genderOptions = ["male", "female", "other"];
-  
-  // Marital status options
   const maritalStatusOptions = ["single", "married", "divorced", "widowed"];
-  
-  // Employee type options
   const employeeTypeOptions = ["permanent", "contract", "intern", "trainee", "consultant", "part-time", "freelance"];
+
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+      setIsTablet(window.innerWidth >= 768 && window.innerWidth < 1024);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Handle copy URL
   const handleCopy = () => {
@@ -501,7 +334,7 @@ const CompanyDetails = () => {
           
           const users = data.users || [];
           console.log("Users fetched:", users);
-          setRecentUsers(users.slice(0, 5));
+          setRecentUsers(users);
           
           const activeUsers = users.filter(user => user.isActive).length;
           
@@ -727,13 +560,13 @@ const CompanyDetails = () => {
 
   // Get subscription status color
   const getSubscriptionStatus = (daysRemaining) => {
-    if (daysRemaining > 15) return { color: 'success', text: 'Active' };
-    if (daysRemaining > 7) return { color: 'warning', text: 'Expiring Soon' };
-    if (daysRemaining > 0) return { color: 'error', text: 'Critical' };
-    return { color: 'error', text: 'Expired' };
+    if (daysRemaining > 15) return { color: 'success', text: 'Active', bg: 'linear-gradient(135deg, #4caf50 0%, #388e3c 100%)' };
+    if (daysRemaining > 7) return { color: 'warning', text: 'Expiring Soon', bg: 'linear-gradient(135deg, #ff9800 0%, #ed6c02 100%)' };
+    if (daysRemaining > 0) return { color: 'error', text: 'Critical', bg: 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)' };
+    return { color: 'error', text: 'Expired', bg: 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)' };
   };
 
-  // Handle manual refresh - FIXED: Now preserves data
+  // Handle manual refresh
   const handleRefresh = () => {
     toast.info("Refreshing data...");
     fetchCurrentUserCompany();
@@ -854,17 +687,15 @@ const CompanyDetails = () => {
       setCompanyEditSuccess(true);
       
       toast.success(
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <CheckCircle sx={{ color: '#4caf50', fontSize: 24 }} />
-          <Box>
-            <Typography variant="body1" fontWeight={600}>
-              Company Updated Successfully!
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {companyEditFormData.companyName} has been updated
-            </Typography>
-          </Box>
-        </Box>,
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <svg style={{ color: '#4caf50', width: '24px', height: '24px' }} viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+          </svg>
+          <div>
+            <div style={{ fontWeight: 600 }}>Company Updated Successfully!</div>
+            <div style={{ fontSize: '0.75rem', color: '#666' }}>{companyEditFormData.companyName} has been updated</div>
+          </div>
+        </div>,
         { icon: false, autoClose: 4000 }
       );
       
@@ -881,7 +712,7 @@ const CompanyDetails = () => {
     }
   };
 
-  // Handle user edit - COMPLETE FORM WITH ALL FIELDS
+  // Handle user edit
   const handleEditUser = (user) => {
     console.log("Editing user:", user);
     
@@ -890,7 +721,6 @@ const CompanyDetails = () => {
     if (user.department && typeof user.department === 'object') {
       departmentName = user.department.name || user.department._id;
     } else if (user.department) {
-      // Try to find department name from departments list
       const dept = departments.find(d => d.id === user.department || d.value === user.department);
       departmentName = dept?.name || user.department;
     }
@@ -952,10 +782,10 @@ const CompanyDetails = () => {
 
   // Handle form input changes
   const handleInputChange = (e) => {
-    const { name, value, checked } = e.target;
+    const { name, value, type, checked } = e.target;
     setEditFormData(prev => ({
       ...prev,
-      [name]: name === 'isActive' ? checked : value
+      [name]: type === 'checkbox' ? checked : value
     }));
     
     if (formErrors[name]) {
@@ -976,35 +806,20 @@ const CompanyDetails = () => {
   };
 
   // Handle department change
-  const handleDepartmentChange = (event, newValue) => {
-    if (newValue && typeof newValue === 'object') {
-      setEditFormData(prev => ({
-        ...prev,
-        department: newValue.name || newValue.value || newValue
-      }));
-    } else {
-      setEditFormData(prev => ({
-        ...prev,
-        department: newValue || ""
-      }));
-    }
+  const handleDepartmentChange = (value) => {
+    setEditFormData(prev => ({
+      ...prev,
+      department: value
+    }));
   };
 
   // Handle job role change
-  const handleRoleChange = (event, newValue) => {
-    if (newValue && typeof newValue === 'object') {
-      setEditFormData(prev => ({
-        ...prev,
-        jobRole: newValue.name || newValue.value || newValue,
-        role: newValue.name || newValue.value || newValue
-      }));
-    } else {
-      setEditFormData(prev => ({
-        ...prev,
-        jobRole: newValue || "",
-        role: newValue || ""
-      }));
-    }
+  const handleRoleChange = (value) => {
+    setEditFormData(prev => ({
+      ...prev,
+      jobRole: value,
+      role: value
+    }));
   };
 
   // Validate form
@@ -1140,17 +955,15 @@ const CompanyDetails = () => {
         }));
         
         toast.success(
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <CheckCircle sx={{ color: '#4caf50', fontSize: 24 }} />
-            <Box>
-              <Typography variant="body1" fontWeight={600}>
-                User Updated Successfully!
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {editFormData.name} has been updated
-              </Typography>
-            </Box>
-          </Box>,
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <svg style={{ color: '#4caf50', width: '24px', height: '24px' }} viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            </svg>
+            <div>
+              <div style={{ fontWeight: 600 }}>User Updated Successfully!</div>
+              <div style={{ fontSize: '0.75rem', color: '#666' }}>{editFormData.name} has been updated</div>
+            </div>
+          </div>,
           { icon: false, autoClose: 4000 }
         );
         
@@ -1170,17 +983,15 @@ const CompanyDetails = () => {
     setEditSuccess(true);
     
     toast.success(
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-        <CheckCircle sx={{ color: '#4caf50', fontSize: 24 }} />
-        <Box>
-          <Typography variant="body1" fontWeight={600}>
-            User Updated Successfully!
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {editFormData.name} has been updated
-          </Typography>
-        </Box>
-      </Box>,
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <svg style={{ color: '#4caf50', width: '24px', height: '24px' }} viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+        </svg>
+        <div>
+          <div style={{ fontWeight: 600 }}>User Updated Successfully!</div>
+          <div style={{ fontSize: '0.75rem', color: '#666' }}>{editFormData.name} has been updated</div>
+        </div>
+      </div>,
       { icon: false, autoClose: 4000 }
     );
     
@@ -1245,17 +1056,15 @@ const CompanyDetails = () => {
       }
       
       toast.success(
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Delete sx={{ color: '#f44336', fontSize: 24 }} />
-          <Box>
-            <Typography variant="body1" fontWeight={600}>
-              User Deleted Successfully!
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {selectedUser.name} has been removed
-            </Typography>
-          </Box>
-        </Box>,
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <svg style={{ color: '#f44336', width: '24px', height: '24px' }} viewBox="0 0 24 24" fill="currentColor">
+            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+          </svg>
+          <div>
+            <div style={{ fontWeight: 600 }}>User Deleted Successfully!</div>
+            <div style={{ fontSize: '0.75rem', color: '#666' }}>{selectedUser.name} has been removed</div>
+          </div>
+        </div>,
         { icon: false, autoClose: 4000 }
       );
       
@@ -1328,8 +1137,8 @@ const CompanyDetails = () => {
   };
 
   // Handle tab change
-  const handleTabChange = (event, newValue) => {
-    setActiveTab(newValue);
+  const handleTabChange = (tabIndex) => {
+    setActiveTab(tabIndex);
   };
 
   // Initial load
@@ -1337,2152 +1146,1203 @@ const CompanyDetails = () => {
     fetchCurrentUserCompany();
   }, []);
 
+  const defaultLogo = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
+  const daysRemaining = getDaysRemaining(company?.subscriptionExpiry);
+  const subscriptionStatus = getSubscriptionStatus(daysRemaining);
+  const subscriptionProgress = Math.min((daysRemaining / 30) * 100, 100);
+
   if (loading) {
     return (
-      <Box sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100vh',
-        background: 'linear-gradient(145deg, #667eea 0%, #764ba2 100%)',
-        px: 2
-      }}>
-        <Paper
-          elevation={24}
-          sx={{
-            p: { xs: 3, sm: 5 },
-            borderRadius: 4,
-            bgcolor: 'rgba(255,255,255,0.95)',
-            backdropFilter: 'blur(20px)',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-            textAlign: 'center',
-            maxWidth: 400,
-            width: '100%'
-          }}
-        >
-          <CircularProgress 
-            size={isMobile ? 50 : 70} 
-            thickness={4} 
-            sx={{ 
-              mb: 3,
-              color: 'primary.main'
-            }} 
-          />
-          <Typography 
-            variant={isMobile ? "h5" : "h4"} 
-            sx={{ 
-              fontWeight: 800,
-              background: 'linear-gradient(145deg, #667eea 0%, #764ba2 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              mb: 1
-            }}
-          >
-            Loading...
-          </Typography>
-          <Typography 
-            variant="body1" 
-            color="text.secondary"
-            sx={{ fontWeight: 500 }}
-          >
-            Fetching company details
-          </Typography>
-        </Paper>
-      </Box>
+      <div className="CompanyDetails-loading-container">
+        <div className="CompanyDetails-loading-card">
+          <div className="CompanyDetails-loading-spinner"></div>
+          <h2 className="CompanyDetails-loading-title">Loading...</h2>
+          <p className="CompanyDetails-loading-text">Fetching company details</p>
+        </div>
+      </div>
     );
   }
 
   if (!company) {
     return (
-      <Box sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100vh',
-        p: 3,
-        background: 'linear-gradient(145deg, #f6f9fc 0%, #edf2f7 100%)'
-      }}>
-        <Paper
-          elevation={24}
-          sx={{
-            p: { xs: 4, sm: 6 },
-            borderRadius: 4,
-            bgcolor: 'rgba(255,255,255,0.95)',
-            backdropFilter: 'blur(20px)',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
-            textAlign: 'center',
-            maxWidth: 500,
-            width: '100%'
-          }}
-        >
-          <Box sx={{
-            width: { xs: 80, sm: 120 },
-            height: { xs: 80, sm: 120 },
-            borderRadius: '50%',
-            bgcolor: 'error.50',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            mx: 'auto',
-            mb: 3,
-            border: '4px solid',
-            borderColor: 'error.100'
-          }}>
-            <Business sx={{ fontSize: { xs: 40, sm: 60 }, color: 'error.main' }} />
-          </Box>
-          <Typography variant={isMobile ? "h4" : "h3"} fontWeight={800} color="error.main" gutterBottom>
-            Oops!
-          </Typography>
-          <Typography variant={isMobile ? "h6" : "h5"} fontWeight={700} gutterBottom>
-            Company Not Found
-          </Typography>
-          <Typography variant="body1" color="text.secondary" paragraph sx={{ mb: 4, fontSize: isMobile ? '0.95rem' : '1.1rem' }}>
-            Unable to load company details. Please try again or contact support.
-          </Typography>
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="center">
-            <Button
-              variant="contained"
-              size={isMobile ? "medium" : "large"}
-              onClick={() => navigate("/Ciis-network/SuperAdminDashboard")}
-              startIcon={<ArrowBack />}
-              sx={{
-                borderRadius: 3,
-                px: { xs: 3, sm: 4 },
-                py: { xs: 1, sm: 1.5 },
-                fontWeight: 700,
-                background: 'linear-gradient(145deg, #2196f3 0%, #1976d2 100%)',
-                boxShadow: '0 8px 16px rgba(33, 150, 243, 0.3)',
-                '&:hover': {
-                  boxShadow: '0 12px 24px rgba(33, 150, 243, 0.4)',
-                  transform: 'translateY(-2px)'
-                }
-              }}
-            >
+      <div className="CompanyDetails-error-container">
+        <div className="CompanyDetails-error-card">
+          <div className="CompanyDetails-error-icon">
+            <svg width="60" height="60" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+            </svg>
+          </div>
+          <h2 className="CompanyDetails-error-title">Oops!</h2>
+          <h3 className="CompanyDetails-error-subtitle">Company Not Found</h3>
+          <p className="CompanyDetails-error-message">Unable to load company details. Please try again or contact support.</p>
+          <div className="CompanyDetails-error-actions">
+            <button className="CompanyDetails-btn CompanyDetails-btn-primary" onClick={() => navigate("/Ciis-network/SuperAdminDashboard")}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style={{ marginRight: '8px' }}>
+                <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+              </svg>
               Back to Dashboard
-            </Button>
-            <Button
-              variant="outlined"
-              size={isMobile ? "medium" : "large"}
-              onClick={handleRefresh}
-              startIcon={<Refresh />}
-              sx={{
-                borderRadius: 3,
-                px: { xs: 3, sm: 4 },
-                py: { xs: 1, sm: 1.5 },
-                fontWeight: 700,
-                borderWidth: 2,
-                '&:hover': {
-                  borderWidth: 2
-                }
-              }}
-            >
+            </button>
+            <button className="CompanyDetails-btn CompanyDetails-btn-outline" onClick={handleRefresh}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style={{ marginRight: '8px' }}>
+                <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+              </svg>
               Retry
-            </Button>
-          </Stack>
-        </Paper>
-      </Box>
+            </button>
+          </div>
+        </div>
+      </div>
     );
   }
 
-  const daysRemaining = getDaysRemaining(company.subscriptionExpiry);
-  const subscriptionStatus = getSubscriptionStatus(daysRemaining);
-  const subscriptionProgress = Math.min((daysRemaining / 30) * 100, 100);
+  const statsData = [
+    {
+      icon: 'people',
+      value: stats.totalUsers,
+      label: 'TOTAL USERS',
+      color: '#2196f3',
+      gradient: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)'
+    },
+    {
+      icon: 'check',
+      value: stats.activeUsers,
+      label: 'ACTIVE USERS',
+      color: '#4caf50',
+      gradient: 'linear-gradient(135deg, #4caf50 0%, #388e3c 100%)'
+    },
+    {
+      icon: 'building',
+      value: stats.departments,
+      label: 'DEPARTMENTS',
+      color: '#ff9800',
+      gradient: 'linear-gradient(135deg, #ff9800 0%, #ed6c02 100%)'
+    },
+    {
+      icon: 'calendar',
+      value: stats.todayLogins,
+      label: "TODAY'S LOGINS",
+      color: '#9c27b0',
+      gradient: 'linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%)'
+    }
+  ];
 
-  // Prepare department options for Autocomplete
-  const departmentOptions = departments.map(dept => ({
-    id: dept.id,
-    name: dept.name,
-    label: dept.name,
-    value: dept.id
-  }));
+  const infoItems = [
+    {
+      icon: 'fingerprint',
+      label: 'Company Code',
+      value: company.companyCode || "N/A",
+      gradient: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)'
+    },
+    {
+      icon: 'event',
+      label: 'Created On',
+      value: formatDate(company.createdAt),
+      gradient: 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)'
+    },
+    {
+      icon: 'person',
+      label: 'Owner',
+      value: company.ownerName || "Administrator",
+      gradient: 'linear-gradient(135deg, #607d8b 0%, #455a64 100%)'
+    }
+  ];
 
-  // Prepare job role options for Autocomplete
-  const jobRoleOptions = jobRoles.map(role => ({
-    id: role.id,
-    name: role.name,
-    label: role.name,
-    value: role.id,
-    departmentId: role.departmentId,
-    departmentName: role.departmentName
-  }));
-
-  // Default logo
-  const defaultLogo = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
+  const getIconSvg = (iconName) => {
+    switch(iconName) {
+      case 'people':
+        return <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-1 .05 1.16.84 2 1.87 2 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>;
+      case 'check':
+        return <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>;
+      case 'building':
+        return <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/></svg>;
+      case 'calendar':
+        return <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z"/></svg>;
+      case 'fingerprint':
+        return <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.81 4.47c-.08 0-.16-.02-.23-.06C15.66 3.42 14 3 12.01 3c-1.98 0-3.86.47-5.57 1.41-.24.13-.54.04-.68-.2-.13-.24-.04-.54.2-.68C7.82 2.52 9.86 2 12.01 2c2.13 0 4.13.51 5.98 1.52.23.13.32.43.2.66-.09.18-.26.29-.45.29zM4.12 5.66c-.13 0-.26-.05-.35-.15-.2-.2-.2-.51 0-.71.5-.5 1.06-.94 1.67-1.28.22-.13.5-.05.62.18.13.22.05.5-.18.62-.54.31-1.03.68-1.48 1.12-.09.1-.22.15-.35.15z"/></svg>;
+      case 'event':
+        return <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z"/></svg>;
+      case 'person':
+        return <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>;
+      case 'business':
+        return <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/></svg>;
+      case 'email':
+        return <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>;
+      case 'phone':
+        return <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>;
+      case 'location':
+        return <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>;
+      case 'work':
+        return <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg>;
+      default:
+        return null;
+    }
+  };
 
   return (
-    <Box sx={{ 
-      minHeight: '100vh',
-      bgcolor: '#f8fafc',
-      pb: 6
-    }}>
-      {/* Custom CSS for animations */}
-      <style>
-        {`
-          @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-            100% { transform: translateY(0px); }
-          }
-          
-          @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.4); }
-            70% { box-shadow: 0 0 0 20px rgba(76, 175, 80, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
-          }
-          
-          .hover-lift {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-          }
-          
-          .hover-lift:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.12) !important;
-          }
-        `}
-      </style>
+    <div className="CompanyDetails">
+      {/* Animated Background */}
+      <div className="CompanyDetails-animated-bg">
+        <div className="CompanyDetails-bg-blob CompanyDetails-blob-1"></div>
+        <div className="CompanyDetails-bg-blob CompanyDetails-blob-2"></div>
+      </div>
 
-      <Container maxWidth="xl" sx={{ px: { xs: 1.5, sm: 2, md: 3, lg: 4 } }}>
-        {/* Hero Header Section with Centered Logo on Mobile */}
-        <Paper 
-          elevation={0}
-          sx={{
-            mt: { xs: 2, sm: 3, md: 4 },
-            mb: { xs: 3, sm: 4 },
-            p: { xs: 2, sm: 3, md: 4 },
-            borderRadius: { xs: 2, sm: 3, md: 4 },
-            background: 'linear-gradient(145deg, #1a237e 0%, #0d47a1 50%, #01579b 100%)',
-            color: 'white',
-            position: 'relative',
-            overflow: 'hidden',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
-          }}
-        >
-          {/* Animated background circles */}
-          <Box sx={{ 
-            position: 'absolute',
-            top: -100,
-            right: -100,
-            width: 300,
-            height: 300,
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 70%)',
-            animation: 'float 8s ease-in-out infinite'
-          }} />
-          <Box sx={{ 
-            position: 'absolute',
-            bottom: -100,
-            left: -100,
-            width: 350,
-            height: 350,
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 70%)',
-            animation: 'float 10s ease-in-out infinite reverse'
-          }} />
-          
-          <Stack 
-            direction={{ xs: 'column', md: 'row' }} 
-            alignItems="center" 
-            justifyContent="space-between"
-            spacing={{ xs: 3, md: 4 }}
-            position="relative"
-          >
-            <Stack 
-              direction={{ xs: 'column', sm: 'row' }} 
-              alignItems="center" 
-              spacing={{ xs: 2, sm: 3 }}
-              sx={{ width: { xs: '100%', sm: 'auto' } }}
-            >
-              <IconButton
-                onClick={() => navigate(-1)}
-                sx={{ 
-                  color: 'white',
-                  bgcolor: 'rgba(255,255,255,0.15)',
-                  backdropFilter: 'blur(10px)',
-                  width: { xs: 40, sm: 48 },
-                  height: { xs: 40, sm: 48 },
-                  '&:hover': { 
-                    bgcolor: 'rgba(255,255,255,0.25)',
-                    transform: 'scale(1.1)'
-                  },
-                  transition: 'all 0.3s ease',
-                  display: { xs: isMobile ? 'flex' : 'flex', sm: 'flex' }
-                }}
-              >
-                <ArrowBack fontSize={isMobile ? "medium" : "small"} />
-              </IconButton>
-              
-              {/* Logo Section - Centered on Mobile */}
-              <Box sx={{ 
-                position: 'relative',
-                display: 'flex',
-                justifyContent: 'center',
-                width: { xs: '100%', sm: 'auto' }
-              }}>
-                <Avatar
-                  src={company.logo || defaultLogo}
-                  sx={{
-                    width: { xs: 80, sm: 90, md: 110 },
-                    height: { xs: 80, sm: 90, md: 110 },
-                    border: '4px solid white',
-                    boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
-                    animation: 'float 6s ease-in-out infinite',
-                    bgcolor: 'white',
-                    mx: { xs: 'auto', sm: 0 },
-                    '& img': {
-                      objectFit: 'contain'
-                    }
-                  }}
-                >
-                  {!company.logo && (company.companyName?.charAt(0) || 'C')}
-                </Avatar>
-                {company.isActive && (
-                  <Box sx={{
-                    position: 'absolute',
-                    bottom: { xs: 0, sm: 5 },
-                    right: { xs: 'calc(50% - 45px)', sm: 5 },
-                    width: { xs: 24, sm: 28 },
-                    height: { xs: 24, sm: 28 },
-                    borderRadius: '50%',
-                    bgcolor: 'success.main',
-                    border: '3px solid white',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
-                  }}>
-                    <CheckCircle sx={{ fontSize: { xs: 14, sm: 18 }, color: 'white' }} />
-                  </Box>
-                )}
-              </Box>
-              
-              {/* Company Name Section - Centered on Mobile */}
-              <Box sx={{ 
-                textAlign: { xs: 'center', sm: 'left' },
-                width: { xs: '100%', sm: 'auto' }
-              }}>
-                <Stack 
-                  direction="row" 
-                  alignItems="center" 
-                  spacing={1} 
-                  sx={{ 
-                    mb: 1,
-                    justifyContent: { xs: 'center', sm: 'flex-start' }
-                  }}
-                >
-                  <Typography 
-                    variant={isMobile ? "h4" : isTablet ? "h4" : "h3"} 
-                    sx={{ 
-                      fontWeight: 800, 
-                      fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem', lg: '2.5rem' },
-                      textShadow: '2px 2px 4px rgba(0,0,0,0.2)'
-                    }}
-                  >
-                    {company.companyName}
-                  </Typography>
-                  <Tooltip title="Edit Company">
-                    <IconButton 
-                      onClick={handleEditCompany}
-                      sx={{ 
-                        color: 'white',
-                        bgcolor: 'rgba(255,255,255,0.15)',
-                        backdropFilter: 'blur(10px)',
-                        width: { xs: 36, sm: 40 },
-                        height: { xs: 36, sm: 40 },
-                        '&:hover': { 
-                          bgcolor: 'rgba(255,255,255,0.25)',
-                          transform: 'scale(1.1)'
-                        },
-                        transition: 'all 0.3s ease'
-                      }}
-                    >
-                      <Edit fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                </Stack>
-                
-                <Stack 
-                  direction="row" 
-                  alignItems="center" 
-                  spacing={1} 
-                  justifyContent={{ xs: 'center', sm: 'flex-start' }}
-                  flexWrap="wrap"
-                  sx={{ gap: 1, mb: 2 }}
-                >
-                  <Chip
-                    icon={company.isActive ? <CheckCircle /> : <Cancel />}
-                    label={company.isActive ? "Active" : "Inactive"}
-                    size="small"
-                    sx={{
-                      bgcolor: company.isActive ? 'rgba(76, 175, 80, 0.2)' : 'rgba(244, 67, 54, 0.2)',
-                      color: 'white',
-                      fontWeight: 600,
-                      backdropFilter: 'blur(10px)',
-                      border: '1px solid rgba(255,255,255,0.3)',
-                      '& .MuiChip-icon': { color: 'white' },
-                      fontSize: { xs: '0.7rem', sm: '0.75rem' }
-                    }}
+      <div className="CompanyDetails-container">
+        {/* Responsive Header */}
+        <div className="CompanyDetails-header">
+          <div className="CompanyDetails-header-gradient">
+            <div className="CompanyDetails-header-content">
+              {/* Logo and Company Info */}
+              <div className="CompanyDetails-header-left">
+                <div className="CompanyDetails-logo-wrapper">
+                  <img 
+                    src={company.logo || defaultLogo}
+                    alt={company.companyName}
+                    className="CompanyDetails-company-logo"
+                    onError={(e) => { e.target.src = defaultLogo; }}
                   />
-                  {company.companyCode && (
-                    <Chip
-                      icon={<Code />}
-                      label={`Code: ${company.companyCode}`}
-                      size="small"
-                      sx={{
-                        bgcolor: 'rgba(255,255,255,0.15)',
-                        color: 'white',
-                        fontWeight: 600,
-                        backdropFilter: 'blur(10px)',
-                        border: '1px solid rgba(255,255,255,0.3)',
-                        '& .MuiChip-icon': { color: 'white' },
-                        fontSize: { xs: '0.7rem', sm: '0.75rem' }
-                      }}
-                    />
+                  {company.isActive && (
+                    <div className="CompanyDetails-active-badge">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                      </svg>
+                    </div>
                   )}
-                  <Chip
-                    icon={<CalendarToday />}
-                    label={`Member since ${formatRelativeTime(company.createdAt)}`}
-                    size="small"
-                    sx={{
-                      bgcolor: 'rgba(255,255,255,0.15)',
-                      color: 'white',
-                      fontWeight: 500,
-                      backdropFilter: 'blur(10px)',
-                      border: '1px solid rgba(255,255,255,0.3)',
-                      '& .MuiChip-icon': { color: 'white' },
-                      fontSize: { xs: '0.7rem', sm: '0.75rem' }
-                    }}
-                  />
-                </Stack>
-              </Box>
-            </Stack>
-            
-            <Stack 
-              direction="row" 
-              spacing={2}
-              sx={{ 
-                width: { xs: '100%', sm: 'auto' },
-                justifyContent: { xs: 'center', sm: 'flex-end' }
-              }}
-            >
-              <Tooltip title="Refresh Data" arrow>
-                <IconButton
-                  onClick={handleRefresh}
-                  sx={{
-                    color: 'white',
-                    bgcolor: 'rgba(255,255,255,0.15)',
-                    backdropFilter: 'blur(10px)',
-                    width: { xs: 42, sm: 48 },
-                    height: { xs: 42, sm: 48 },
-                    '&:hover': { 
-                      bgcolor: 'rgba(255,255,255,0.25)',
-                      transform: 'rotate(180deg)'
-                    },
-                    transition: 'all 0.5s ease'
-                  }}
-                >
-                  <Refresh />
-                </IconButton>
-              </Tooltip>
-              
-              {/* ADD NEW USER BUTTON - AT TOP */}
-              <Tooltip title="Add New User" arrow>
-                <Button
-                  variant="contained"
-                  onClick={handleAddNewUser}
-                  startIcon={<Add />}
-                  disabled={!company?._id}
-                  size={isMobile ? "small" : "medium"}
-                  sx={{
-                    bgcolor: 'white',
-                    color: '#0d47a1',
-                    fontWeight: 700,
-                    px: { xs: 2, sm: 3 },
-                    py: { xs: 1, sm: 1.2 },
-                    borderRadius: 3,
-                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                    boxShadow: '0 8px 16px rgba(0,0,0,0.2)',
-                    '&:hover': {
-                      bgcolor: 'rgba(255,255,255,0.95)',
-                      boxShadow: '0 12px 24px rgba(0,0,0,0.3)',
-                      transform: 'translateY(-2px)'
-                    },
-                    transition: 'all 0.3s ease'
-                  }}
-                >
-                  {isMobile ? 'Add' : 'Add New User'}
-                </Button>
-              </Tooltip>
-            </Stack>
-          </Stack>
-        </Paper>
+                </div>
 
-        {/* Main Content */}
-        <Grid container spacing={{ xs: 2, sm: 3 }}>
-          {/* Left Column - Company Overview */}
-          <Grid item xs={12} lg={8}>
-            {/* Stats Cards - All 4 in one row */}
-            <Box sx={{ width: '100%', marginBottom: '24px' }}>
-              <Box sx={{ 
-                display: 'grid', 
-                gridTemplateColumns: { xs: '1fr 1fr', md: '1fr 1fr 1fr 1fr' },
-                gap: '12px',
-                width: '100%'
-              }}>
-                {/* Total Users */}
-                <Box sx={{
-                  backgroundColor: '#ffffff',
-                  borderRadius: '12px',
-                  padding: '14px 8px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                  border: '1px solid #f0f0f0',
-                  textAlign: 'center'
-                }}>
-                  <Box sx={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '10px',
-                    backgroundColor: '#e3f2fd',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    margin: '0 auto 8px auto'
-                  }}>
-                    <People sx={{ fontSize: '20px', color: '#2196f3' }} />
-                  </Box>
-                  <Typography sx={{ fontWeight: 700, color: '#2196f3', fontSize: '20px', lineHeight: 1.2 }}>
-                    {stats.totalUsers}
-                  </Typography>
-                  <Typography sx={{ fontSize: '11px', color: '#757575', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    TOTAL USERS
-                  </Typography>
-                </Box>
+                <div className="CompanyDetails-company-info">
+                  <div className="CompanyDetails-company-name-wrapper">
+                    <h1 className="CompanyDetails-company-name">{company.companyName}</h1>
+                    {/* <button className="CompanyDetails-icon-btn CompanyDetails-edit-btn" onClick={handleEditCompany} title="Edit Company">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                      </svg>
+                    </button> */}
+                  </div>
 
-                {/* Active Users */}
-                <Box sx={{
-                  backgroundColor: '#ffffff',
-                  borderRadius: '12px',
-                  padding: '14px 8px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                  border: '1px solid #f0f0f0',
-                  textAlign: 'center'
-                }}>
-                  <Box sx={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '10px',
-                    backgroundColor: '#e8f5e9',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    margin: '0 auto 8px auto'
-                  }}>
-                    <CheckCircle sx={{ fontSize: '20px', color: '#4caf50' }} />
-                  </Box>
-                  <Typography sx={{ fontWeight: 700, color: '#4caf50', fontSize: '20px', lineHeight: 1.2 }}>
-                    {stats.activeUsers}
-                  </Typography>
-                  <Typography sx={{ fontSize: '11px', color: '#757575', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    ACTIVE USERS
-                  </Typography>
-                </Box>
+                  <div className="CompanyDetails-company-chips">
+                    <span className={`CompanyDetails-chip ${company.isActive ? 'CompanyDetails-chip-active' : 'CompanyDetails-chip-inactive'}`}>
+                      {company.isActive ? (
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                      ) : (
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z"/>
+                        </svg>
+                      )}
+                      {company.isActive ? "Active" : "Inactive"}
+                    </span>
 
-                {/* Departments */}
-                <Box sx={{
-                  backgroundColor: '#ffffff',
-                  borderRadius: '12px',
-                  padding: '14px 8px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                  border: '1px solid #f0f0f0',
-                  textAlign: 'center'
-                }}>
-                  <Box sx={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '10px',
-                    backgroundColor: '#fff3e0',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    margin: '0 auto 8px auto'
-                  }}>
-                    <CorporateFare sx={{ fontSize: '20px', color: '#ff9800' }} />
-                  </Box>
-                  <Typography sx={{ fontWeight: 700, color: '#ff9800', fontSize: '20px', lineHeight: 1.2 }}>
-                    {stats.departments}
-                  </Typography>
-                  <Typography sx={{ fontSize: '11px', color: '#757575', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    DEPARTMENTS
-                  </Typography>
-                </Box>
+                    {company.companyCode && (
+                      <span className="CompanyDetails-chip CompanyDetails-chip-code">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/>
+                        </svg>
+                        Code: {company.companyCode}
+                      </span>
+                    )}
 
-                {/* Today's Logins */}
-                <Box sx={{
-                  backgroundColor: '#ffffff',
-                  borderRadius: '12px',
-                  padding: '14px 8px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                  border: '1px solid #f0f0f0',
-                  textAlign: 'center'
-                }}>
-                  <Box sx={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '10px',
-                    backgroundColor: '#f3e5f5',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    margin: '0 auto 8px auto'
-                  }}>
-                    <Today sx={{ fontSize: '20px', color: '#9c27b0' }} />
-                  </Box>
-                  <Typography sx={{ fontWeight: 700, color: '#9c27b0', fontSize: '20px', lineHeight: 1.2 }}>
-                    {stats.todayLogins}
-                  </Typography>
-                  <Typography sx={{ fontSize: '11px', color: '#757575', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    TODAY'S LOGINS
-                  </Typography>
-                </Box>
-              </Box>
-            </Box>
+                    <span className="CompanyDetails-chip CompanyDetails-chip-date">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z"/>
+                      </svg>
+                      Joined {formatRelativeTime(company.createdAt)}
+                    </span>
+                  </div>
+                </div>
+              </div>
 
-            {/* Company Details Card - Enhanced with Edit Button */}
-            <Card sx={{ 
-  borderRadius: { xs: 2, sm: 3 },
-  bgcolor: 'white',
-  boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
-  mb: { xs: 2, sm: 3 },
-  overflow: 'hidden'
-}}>
-  <CardHeader
-    title={
-      <Stack direction="row" alignItems="center" spacing={1}>
-        <Business sx={{ color: 'primary.main', fontSize: { xs: 20, sm: 24 } }} />
-        <Typography variant={isMobile ? "body1" : "h6"} fontWeight={700}>
-          Company Information
-        </Typography>
-      </Stack>
-    }
-    sx={{ 
-      borderBottom: '1px solid', 
-      borderColor: 'grey.100', 
-      py: { xs: 1.5, sm: 2.5 },
-      px: { xs: 2, sm: 3 },
-      bgcolor: 'grey.50'
-    }}
-    action={
-      <Stack direction="row" spacing={1}>
-        <Chip 
-          icon={<VerifiedUser />} 
-          label="Verified" 
-          color="primary" 
-          size="small"
-          sx={{ 
-            fontWeight: 600,
-            fontSize: { xs: '0.65rem', sm: '0.75rem' }
-          }}
-        />
-        <Tooltip title="Edit Company">
-          <IconButton 
-            onClick={handleEditCompany}
-            size="small"
-            sx={{
-              bgcolor: 'primary.50',
-              color: 'primary.main',
-              '&:hover': { bgcolor: 'primary.100' }
-            }}
-          >
-            <Edit fontSize="small" />
-          </IconButton>
-        </Tooltip>
-      </Stack>
-    }
-  />
-  
-  <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-    <Stack spacing={{ xs: 2, sm: 2.5 }}>
-      {/* Company Code */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, sm: 2 } }}>
-        <Box sx={{ 
-          width: { xs: 35, sm: 45 },
-          height: { xs: 35, sm: 45 },
-          borderRadius: 2,
-          bgcolor: 'primary.50',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0
-        }}>
-          <Fingerprint sx={{ fontSize: { xs: 20, sm: 24 }, color: 'primary.main' }} />
-        </Box>
-        <Box sx={{ minWidth: 0, flex: 1 }}>
-          <Typography variant="caption" color="text.secondary" fontWeight={500} sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
-            Company Code
-          </Typography>
-          <Typography variant="body1" fontWeight={700} sx={{ fontSize: { xs: '0.85rem', sm: '1rem' }, wordBreak: 'break-word' }}>
-            {company.companyCode || "N/A"}
-          </Typography>
-        </Box>
-      </Box>
+              {/* Action Buttons - Desktop/Tablet */}
+              <div className="CompanyDetails-header-actions">
+                <button className="CompanyDetails-icon-btn CompanyDetails-refresh-btn" onClick={handleRefresh} title="Refresh Data">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                  </svg>
+                </button>
 
-      {/* Created On */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, sm: 2 } }}>
-        <Box sx={{ 
-          width: { xs: 35, sm: 45 },
-          height: { xs: 35, sm: 45 },
-          borderRadius: 2,
-          bgcolor: 'info.50',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0
-        }}>
-          <Event sx={{ fontSize: { xs: 20, sm: 24 }, color: 'info.main' }} />
-        </Box>
-        <Box sx={{ minWidth: 0, flex: 1 }}>
-          <Typography variant="caption" color="text.secondary" fontWeight={500} sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
-            Created On
-          </Typography>
-          <Typography variant="body1" fontWeight={600} sx={{ fontSize: { xs: '0.85rem', sm: '1rem' }, wordBreak: 'break-word' }}>
-            {formatDate(company.createdAt)}
-          </Typography>
-        </Box>
-      </Box>
+                <button className="CompanyDetails-btn CompanyDetails-btn-primary" onClick={handleAddNewUser} disabled={!company?._id}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                  </svg>
+                  Add User
+                </button>
+              </div>
 
-      {/* Login URL */}
-      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: { xs: 1.5, sm: 2 } }}>
-        <Box sx={{ 
-          width: { xs: 35, sm: 45 },
-          height: { xs: 35, sm: 45 },
-          borderRadius: 2,
-          bgcolor: 'secondary.50',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-          mt: { xs: 0.5, sm: 0 }
-        }}>
-          <Link sx={{ fontSize: { xs: 20, sm: 24 }, color: 'secondary.main' }} />
-        </Box>
-        
-        <Box sx={{ 
-          minWidth: 0, 
-          flex: 1,
-          width: '100%'
-        }}>
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            fontWeight={500}
-            sx={{ 
-              fontSize: { xs: '0.65rem', sm: '0.75rem' },
-              mb: 0.5,
-              display: 'block'
-            }}
-          >
-            Login URL
-          </Typography>
+              {/* Mobile Menu Button */}
+              <button className="CompanyDetails-mobile-menu-btn" onClick={() => setMobileMenuOpen(true)}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+                </svg>
+              </button>
+            </div>
 
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: 1,
-            width: '100%'
-          }}>
-            {/* URL Display - Full width with scroll on mobile */}
-            <Box sx={{
-              flex: 1,
-              minWidth: 0,
-              bgcolor: 'grey.50',
-              border: '1px solid',
-              borderColor: 'grey.200',
-              borderRadius: 2,
-              overflowX: 'auto',
-              overflowY: 'hidden',
-              maxWidth: '100%',
-              '&::-webkit-scrollbar': {
-                height: '4px',
-              },
-              '&::-webkit-scrollbar-track': {
-                background: 'transparent',
-              },
-              '&::-webkit-scrollbar-thumb': {
-                background: 'grey.400',
-                borderRadius: '4px',
-              },
-              '&::-webkit-scrollbar-thumb:hover': {
-                background: 'grey.600',
-              },
-              scrollbarWidth: 'thin',
-              scrollbarColor: '#9e9e9e transparent',
-            }}>
-              <Typography
-                component="div"
-                sx={{
-                  fontFamily: 'monospace',
-                  fontSize: { xs: '0.75rem', sm: '0.85rem', md: '0.9rem' },
-                  fontWeight: 500,
-                  color: 'text.primary',
-                  py: { xs: 1, sm: 1.2 },
-                  px: { xs: 1.5, sm: 2 },
-                  whiteSpace: 'nowrap',
-                  width: 'max-content',
-                  minWidth: '100%',
-                }}
-              >
-                {window.location.origin}{company.loginUrl}
-              </Typography>
-            </Box>
-
-            {/* Copy Button - Always at the end */}
-            <Tooltip title="Copy URL" arrow placement="top">
-              <IconButton
-                size="small"
-                onClick={handleCopy}
-                sx={{
-                  bgcolor: copied ? 'success.50' : 'primary.50',
-                  color: copied ? 'success.main' : 'primary.main',
-                  width: { xs: 36, sm: 40 },
-                  height: { xs: 36, sm: 40 },
-                  borderRadius: 2,
-                  border: '1px solid',
-                  borderColor: copied ? 'success.200' : 'primary.200',
-                  flexShrink: 0,
-                  '&:hover': { 
-                    bgcolor: copied ? 'success.100' : 'primary.100',
-                    transform: 'scale(1.05)'
-                  },
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                <ContentCopyIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          </Box>
-          
-          {/* Copied Feedback */}
-          {copied && (
-            <Typography 
-              variant="caption" 
-              color="success.main" 
-              sx={{ 
-                mt: 0.5, 
-                display: 'block',
-                fontSize: '0.7rem',
-                fontWeight: 500,
-                textAlign: 'right'
-              }}
-            >
-              ✓ Copied to clipboard!
-            </Typography>
-          )}
-        </Box>
-      </Box>
-    </Stack>
-  </CardContent>
-</Card>
-            {/* Subscription Status Card */}
-            <Card sx={{ 
-              borderRadius: { xs: 2, sm: 3 },
-              boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
-              background: `linear-gradient(145deg, ${
-                subscriptionStatus.color === 'success' ? '#e8f5e9, #c8e6c9' :
-                subscriptionStatus.color === 'warning' ? '#fff3e0, #ffe0b2' :
-                '#ffebee, #ffcdd2'
-              })`,
-              overflow: 'hidden',
-              position: 'relative'
-            }}>
-              <Box sx={{
-                position: 'absolute',
-                top: -20,
-                right: -20,
-                width: 150,
-                height: 150,
-                borderRadius: '50%',
-                background: `radial-gradient(circle, ${
-                  subscriptionStatus.color === 'success' ? 'rgba(76, 175, 80, 0.2)' :
-                  subscriptionStatus.color === 'warning' ? 'rgba(255, 152, 0, 0.2)' :
-                  'rgba(244, 67, 54, 0.2)'
-                } 0%, transparent 70%)`,
-              }} />
-              
-              <CardContent sx={{ p: { xs: 2, sm: 3, md: 4 }, position: 'relative' }}>
-                <Stack 
-                  direction={{ xs: 'column', sm: 'row' }} 
-                  alignItems="center" 
-                  justifyContent="space-between" 
-                  spacing={{ xs: 2, sm: 3 }}
-                >
-                  <Box sx={{ width: '100%' }}>
-                    <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2, flexWrap: 'wrap' }}>
-                      <CardMembership sx={{ 
-                        color: `${subscriptionStatus.color}.main`,
-                        fontSize: { xs: 24, sm: 32 }
-                      }} />
-                      <Typography variant={isMobile ? "body1" : "h6"} fontWeight={700} color={`${subscriptionStatus.color}.dark`}>
-                        Subscription Status
-                      </Typography>
-                      <Chip
-                        label={subscriptionStatus.text}
-                        size="small"
-                        color={subscriptionStatus.color}
-                        sx={{ 
-                          fontWeight: 600,
-                          ml: { xs: 0, sm: 'auto' },
-                          fontSize: { xs: '0.65rem', sm: '0.75rem' }
-                        }}
-                      />
-                    </Stack>
-                    
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                      <strong>Expires on:</strong> {formatDate(company.subscriptionExpiry)}
-                    </Typography>
-                    
-                    <Box sx={{ mb: 2 }}>
-                      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
-                        <Typography variant="body2" fontWeight={600} color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                          Days Remaining
-                        </Typography>
-                        <Typography 
-                          variant={isMobile ? "h6" : "h5"} 
-                          fontWeight={800} 
-                          color={`${subscriptionStatus.color}.main`}
-                          sx={{ 
-                            textShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                            fontSize: { xs: '1.25rem', sm: '1.5rem', md: '1.75rem' }
-                          }}
-                        >
-                          {daysRemaining} days
-                        </Typography>
-                      </Stack>
-                      <LinearProgress 
-                        variant="determinate" 
-                        value={subscriptionProgress}
-                        sx={{ 
-                          height: { xs: 8, sm: 10, md: 12 },
-                          borderRadius: 6,
-                          bgcolor: 'rgba(0,0,0,0.08)',
-                          '& .MuiLinearProgress-bar': {
-                            borderRadius: 6,
-                            background: `linear-gradient(90deg, ${
-                              subscriptionStatus.color === 'success' ? '#4caf50, #388e3c' :
-                              subscriptionStatus.color === 'warning' ? '#ff9800, #ed6c02' :
-                              '#f44336, #d32f2f'
-                            })`,
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                          }
-                        }}
-                      />
-                    </Box>
-                    
-                    <Alert 
-                      severity={subscriptionStatus.color}
-                      sx={{ 
-                        mt: 2, 
-                        borderRadius: 2,
-                        '& .MuiAlert-icon': {
-                          color: `${subscriptionStatus.color}.main`
-                        },
-                        '& .MuiAlert-message': {
-                          fontSize: { xs: '0.75rem', sm: '0.875rem' }
-                        }
-                      }}
-                    >
-                      <Typography variant="body2" fontWeight={500} sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' } }}>
-                        {daysRemaining > 0 
-                          ? `Your subscription will expire in ${daysRemaining} days. Renew now to continue enjoying our services.`
-                          : 'Your subscription has expired. Please renew to access all features.'}
-                      </Typography>
-                    </Alert>
-                  </Box>
-                  
-                  <Box sx={{ 
-                    width: { xs: 80, sm: 100, md: 120, lg: 150 },
-                    height: { xs: 80, sm: 100, md: 120, lg: 150 },
-                    borderRadius: '50%',
-                    bgcolor: 'white',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                    boxShadow: '0 12px 24px rgba(0,0,0,0.15)',
-                    border: '4px solid',
-                    borderColor: `${subscriptionStatus.color}.main`,
-                    animation: 'pulse 2s infinite',
-                    mt: { xs: 2, sm: 0 }
-                  }}>
-                    <Typography 
-                      fontWeight={800}
-                      color={`${subscriptionStatus.color}.main`}
-                      sx={{ fontSize: { xs: '1.75rem', sm: '2rem', md: '2.5rem', lg: '3rem' } }}
-                    >
-                      {daysRemaining}
-                    </Typography>
-                    <Typography 
-                      variant="body2" 
-                      fontWeight={600}
-                      color="text.secondary"
-                      sx={{ fontSize: { xs: '0.6rem', sm: '0.7rem', md: '0.875rem' } }}
-                    >
-                      Days Left
-                    </Typography>
-                  </Box>
-                </Stack>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          {/* Right Column - Recent Users */}
-          <Grid item xs={12} lg={4}>
-            <Card sx={{ 
-              borderRadius: { xs: 2, sm: 3 },
-              bgcolor: 'white',
-              boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
-              height: '100%',
-              display: 'flex',
-              flexDirection: 'column'
-            }}>
-              <CardHeader
-                title={
-                  <Stack direction="row" alignItems="center" justifyContent="space-between">
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                      <People sx={{ color: 'primary.main', fontSize: { xs: 20, sm: 24 } }} />
-                      <Typography variant={isMobile ? "body1" : "h6"} fontWeight={700}>
-                        Recent Users
-                      </Typography>
-                    </Stack>
-                    <MuiBadge 
-                      badgeContent={recentUsers.length} 
-                      color="primary"
-                      sx={{ 
-                        '& .MuiBadge-badge': { 
-                          fontWeight: 600,
-                          fontSize: { xs: '0.65rem', sm: '0.75rem' },
-                          height: { xs: 18, sm: 20, md: 22 },
-                          minWidth: { xs: 18, sm: 20, md: 22 }
-                        } 
-                      }}
-                    />
-                  </Stack>
-                }
-                sx={{ 
-                  borderBottom: '1px solid', 
-                  borderColor: 'grey.100', 
-                  py: { xs: 1.5, sm: 2 },
-                  px: { xs: 2, sm: 3 }
-                }}
-              />
-              
-              <CardContent sx={{ p: 0, flexGrow: 1 }}>
-                {recentUsers.length > 0 ? (
-                  <List sx={{ p: 0 }}>
-                    {recentUsers.map((user, index) => (
-                      <ListItem
-                        key={user.id || user._id || index}
-                        sx={{
-                          px: { xs: 2, sm: 3 },
-                          py: { xs: 1.5, sm: 2 },
-                          borderBottom: index < recentUsers.length - 1 ? '1px solid' : 'none',
-                          borderColor: 'grey.100',
-                          transition: 'all 0.2s ease',
-                          '&:hover': {
-                            bgcolor: alpha(theme.palette.primary.main, 0.04),
-                          }
-                        }}
-                      >
-                        <ListItemAvatar>
-                          <MuiBadge
-                            overlap="circular"
-                            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                            badgeContent={
-                              <Box
-                                sx={{
-                                  width: { xs: 10, sm: 12 },
-                                  height: { xs: 10, sm: 12 },
-                                  borderRadius: '50%',
-                                  bgcolor: user.isActive ? 'success.main' : 'error.main',
-                                  border: '2px solid white',
-                                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                                }}
-                              />
-                            }
-                          >
-                            <Avatar
-                              sx={{
-                                width: { xs: 40, sm: 44, md: 48 },
-                                height: { xs: 40, sm: 44, md: 48 },
-                                bgcolor: user.isActive ? 'primary.main' : 'grey.400',
-                                boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-                                fontSize: { xs: '1rem', sm: '1.1rem' }
-                              }}
-                            >
-                              {user.name?.charAt(0) || 'U'}
-                            </Avatar>
-                          </MuiBadge>
-                        </ListItemAvatar>
-                        <ListItemText
-                          primary={
-                            <Typography 
-                              variant="body1" 
-                              fontWeight={600} 
-                              noWrap
-                              sx={{ 
-                                fontSize: { xs: '0.85rem', sm: '0.95rem', md: '1rem' } 
-                              }}
-                            >
-                              {user.name || 'Unknown User'}
-                            </Typography>
-                          }
-                          secondary={
-                            <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 0.5, flexWrap: 'wrap' }}>
-                              {user.employeeType && (
-                                <Chip
-                                  label={user.employeeType}
-                                  size="small"
-                                  sx={{ 
-                                    height: { xs: 18, sm: 20 }, 
-                                    fontSize: { xs: '0.55rem', sm: '0.65rem' },
-                                    fontWeight: 600,
-                                    bgcolor: 'info.50',
-                                    color: 'info.main'
-                                  }}
-                                />
-                              )}
-                              <Chip
-                                label={user.department || 'No Dept'}
-                                size="small"
-                                sx={{ 
-                                  height: { xs: 18, sm: 20 }, 
-                                  fontSize: { xs: '0.55rem', sm: '0.65rem' },
-                                  fontWeight: 500,
-                                  bgcolor: 'grey.100',
-                                  color: 'text.secondary'
-                                }}
-                              />
-                            </Stack>
-                          }
-                        />
-                        <Tooltip title="Edit User" arrow>
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            startIcon={<Edit fontSize="small" />}
-                            onClick={() => handleEditUser(user)}
-                            sx={{
-                              ml: 1,
-                              borderRadius: 2,
-                              borderColor: 'primary.main',
-                              color: 'primary.main',
-                              minWidth: { xs: 50, sm: 60 },
-                              fontSize: { xs: '0.65rem', sm: '0.75rem' },
-                              py: { xs: 0.5, sm: 0.75 },
-                              '&:hover': {
-                                bgcolor: 'primary.main',
-                                color: 'white',
-                                borderColor: 'primary.main'
-                              },
-                              transition: 'all 0.2s ease'
-                            }}
-                          >
-                            {isMobile ? '' : 'Edit'}
-                          </Button>
-                        </Tooltip>
-                      </ListItem>
-                    ))}
-                  </List>
-                ) : (
-                  <Box sx={{ 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    alignItems: 'center', 
-                    justifyContent: 'center',
-                    py: { xs: 6, sm: 8 },
-                    px: { xs: 2, sm: 3 }
-                  }}>
-                    <Box sx={{
-                      width: { xs: 60, sm: 70, md: 80 },
-                      height: { xs: 60, sm: 70, md: 80 },
-                      borderRadius: '50%',
-                      bgcolor: 'grey.100',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      mb: 2
-                    }}>
-                      <People sx={{ fontSize: { xs: 30, sm: 35, md: 40 }, color: 'grey.400' }} />
-                    </Box>
-                    <Typography variant="body1" fontWeight={600} gutterBottom sx={{ fontSize: { xs: '0.95rem', sm: '1rem' } }}>
-                      No Users Found
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" align="center" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
-                      Get started by adding users to your company
-                    </Typography>
-                    <Button
-                      variant="contained"
-                      onClick={handleAddNewUser}
-                      startIcon={<Add />}
-                      size={isMobile ? "small" : "medium"}
-                      sx={{ mt: 3, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                    >
-                      Add First User
-                    </Button>
-                  </Box>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-
-        {/* Company Edit Modal */}
-       <Dialog 
-  open={companyEditModalOpen} 
-  onClose={() => !companyEditLoading && setCompanyEditModalOpen(false)}
-  maxWidth="sm"
-  fullWidth
-  fullScreen={isMobile}
-  TransitionComponent={Transition}
-  keepMounted
-  PaperProps={{
-    sx: { 
-      borderRadius: isMobile ? 0 : 4,
-      overflow: 'hidden',
-      background: 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
-      boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)'
-    }
-  }}
->
-  <DialogTitle sx={{ 
-    bgcolor: 'primary.main',
-    color: 'white',
-    py: { xs: 2, sm: 3 },
-    px: { xs: 2.5, sm: 4 },
-    position: 'relative',
-    overflow: 'hidden'
-  }}>
-    <Box sx={{
-      position: 'absolute',
-      top: -50,
-      right: -50,
-      width: 150,
-      height: 150,
-      borderRadius: '50%',
-      background: 'rgba(255,255,255,0.1)',
-      animation: 'float 8s ease-in-out infinite'
-    }} />
-    <Box sx={{
-      position: 'absolute',
-      bottom: -50,
-      left: -50,
-      width: 150,
-      height: 150,
-      borderRadius: '50%',
-      background: 'rgba(255,255,255,0.1)',
-      animation: 'float 10s ease-in-out infinite reverse'
-    }} />
-    
-    <Stack direction="row" alignItems="center" justifyContent="space-between" position="relative">
-      <Stack direction="row" alignItems="center" spacing={2}>
-        <Box sx={{
-          width: { xs: 40, sm: 50 },
-          height: { xs: 40, sm: 50 },
-          borderRadius: '50%',
-          bgcolor: 'white',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxShadow: '0 8px 16px rgba(0,0,0,0.2)'
-        }}>
-          <Business sx={{ color: 'primary.main', fontSize: { xs: 22, sm: 28 } }} />
-        </Box>
-        <Box>
-          <Typography variant={isMobile ? "h6" : "h5"} fontWeight={700}>
-            Edit Company Details
-          </Typography>
-          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)', fontSize: { xs: '0.7rem', sm: '0.875rem' } }}>
-            Update company information
-          </Typography>
-        </Box>
-      </Stack>
-      <IconButton
-        onClick={() => setCompanyEditModalOpen(false)}
-        disabled={companyEditLoading}
-        sx={{ 
-          color: 'white',
-          bgcolor: 'rgba(255,255,255,0.2)',
-          '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' },
-          transition: 'all 0.2s ease'
-        }}
-      >
-        <Close />
-      </IconButton>
-    </Stack>
-  </DialogTitle>
-  
-  <DialogContent sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
-    <Fade in={!companyEditSuccess} timeout={600}>
-      <Box>
-        {!companyEditSuccess ? (
-          <Stack spacing={3}>
-            <Alert 
-              severity="info" 
-              sx={{ 
-                borderRadius: 2,
-                bgcolor: 'info.50',
-                border: '1px solid',
-                borderColor: 'info.100',
-                '& .MuiAlert-icon': {
-                  color: 'info.main'
-                },
-                '& .MuiAlert-message': {
-                  fontSize: { xs: '0.75rem', sm: '0.875rem' }
-                }
-              }}
-            >
-              <Typography variant="body2" fontWeight={500} sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                Editing: <strong>{company.companyName}</strong>
-              </Typography>
-            </Alert>
-            
-            <Grid container spacing={2}>
-              {/* Company Name - Required */}
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Company Name"
-                  name="companyName"
-                  value={companyEditFormData.companyName}
-                  onChange={handleCompanyInputChange}
-                  variant="outlined"
-                  size={isMobile ? "small" : "medium"}
-                  required
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Business sx={{ color: 'primary.main' }} />
-                      </InputAdornment>
-                    )
-                  }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                      '&:hover fieldset': {
-                        borderColor: 'primary.main',
-                      }
-                    }
-                  }}
-                />
-              </Grid>
-              
-              {/* Email Address */}
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Email Address"
-                  name="companyEmail"
-                  type="email"
-                  value={companyEditFormData.companyEmail}
-                  onChange={handleCompanyInputChange}
-                  variant="outlined"
-                  size={isMobile ? "small" : "medium"}
-                  placeholder="Enter company email"
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Email sx={{ color: 'primary.main' }} />
-                      </InputAdornment>
-                    )
-                  }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                    }
-                  }}
-                />
-              </Grid>
-              
-              {/* Phone Number */}
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Phone Number"
-                  name="companyPhone"
-                  value={companyEditFormData.companyPhone}
-                  onChange={handleCompanyInputChange}
-                  variant="outlined"
-                  size={isMobile ? "small" : "medium"}
-                  placeholder="Enter company phone"
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Phone sx={{ color: 'primary.main' }} />
-                      </InputAdornment>
-                    )
-                  }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                    }
-                  }}
-                />
-              </Grid>
-              
-              {/* Logo URL */}
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Logo URL"
-                  name="logo"
-                  value={companyEditFormData.logo}
-                  onChange={handleCompanyInputChange}
-                  variant="outlined"
-                  size={isMobile ? "small" : "medium"}
-                  placeholder="https://example.com/logo.png"
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Image sx={{ color: 'primary.main' }} />
-                      </InputAdornment>
-                    )
-                  }}
-                  helperText="Leave empty for default logo"
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                    }
-                  }}
-                />
-              </Grid>
-              
-              {/* Address */}
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Address"
-                  name="companyAddress"
-                  value={companyEditFormData.companyAddress}
-                  onChange={handleCompanyInputChange}
-                  variant="outlined"
-                  size={isMobile ? "small" : "medium"}
-                  placeholder="Enter company address"
-                  multiline
-                  rows={isMobile ? 2 : 3}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <LocationOn sx={{ color: 'primary.main' }} />
-                      </InputAdornment>
-                    )
-                  }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                    }
-                  }}
-                />
-              </Grid>
-            </Grid>
-
-            {/* Preview of current logo */}
-            {companyEditFormData.logo && (
-              <Paper 
-                variant="outlined" 
-                sx={{ 
-                  p: 2, 
-                  borderRadius: 2,
-                  bgcolor: 'grey.50',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 2
-                }}
-              >
-                <Avatar
-                  src={companyEditFormData.logo}
-                  sx={{ 
-                    width: 60, 
-                    height: 60, 
-                    border: '2px solid',
-                    borderColor: 'primary.main'
-                  }}
-                >
-                  {companyEditFormData.companyName?.charAt(0)}
-                </Avatar>
-                <Box>
-                  <Typography variant="body2" fontWeight={600}>
-                    Logo Preview
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {companyEditFormData.logo.substring(0, 50)}...
-                  </Typography>
-                </Box>
-              </Paper>
-            )}
-          </Stack>
-        ) : (
-          <Zoom in={companyEditSuccess}>
-            <Box sx={{ 
-              py: { xs: 6, sm: 8 }, 
-              px: { xs: 2, sm: 4 }, 
-              textAlign: 'center'
-            }}>
-              <Box sx={{
-                width: { xs: 80, sm: 100, md: 120 },
-                height: { xs: 80, sm: 100, md: 120 },
-                borderRadius: '50%',
-                background: 'linear-gradient(145deg, #e8f5e9 0%, #c8e6c9 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                mx: 'auto',
-                mb: 4,
-                animation: 'pulse 2s infinite',
-                boxShadow: '0 12px 24px rgba(76, 175, 80, 0.3)'
-              }}>
-                <CheckCircle sx={{ fontSize: { xs: 50, sm: 60, md: 70 }, color: 'success.main' }} />
-              </Box>
-              <Typography variant={isMobile ? "h5" : "h4"} fontWeight={800} gutterBottom>
-                Company Updated!
-              </Typography>
-              <Typography variant="body1" color="text.secondary" sx={{ mb: 3, fontSize: { xs: '0.9rem', sm: '1.1rem' } }}>
-                <strong>{companyEditFormData.companyName}</strong> has been updated successfully.
-              </Typography>
-              <CircularProgress 
-                size={isMobile ? 24 : 30} 
-                sx={{ 
-                  color: 'success.main',
-                  mt: 2
-                }} 
-              />
-            </Box>
-          </Zoom>
-        )}
-      </Box>
-    </Fade>
-  </DialogContent>
-  
-  {!companyEditSuccess && (
-    <DialogActions sx={{ 
-      p: { xs: 2, sm: 3, md: 4 }, 
-      pt: { xs: 1, sm: 0 },
-      borderTop: '1px solid',
-      borderColor: 'grey.200',
-      bgcolor: 'grey.50'
-    }}>
-      <Stack 
-        direction="row" 
-        spacing={2} 
-        justifyContent="flex-end" 
-        width="100%"
-        sx={{ flexWrap: 'wrap' }}
-      >
-        <Button
-          onClick={() => setCompanyEditModalOpen(false)}
-          color="inherit"
-          disabled={companyEditLoading}
-          variant="outlined"
-          size={isMobile ? "small" : "medium"}
-          sx={{ 
-            borderRadius: 2,
-            px: { xs: 3, sm: 4 },
-            py: { xs: 0.75, sm: 1.2 },
-            fontWeight: 600,
-            fontSize: { xs: '0.75rem', sm: '0.875rem' },
-            borderColor: 'grey.400',
-            color: 'text.primary',
-            '&:hover': {
-              borderColor: 'grey.600',
-              bgcolor: 'grey.100'
-            }
-          }}
-        >
-          Cancel
-        </Button>
-        
-        <Button
-          onClick={handleSaveCompany}
-          variant="contained"
-          startIcon={companyEditLoading ? <CircularProgress size={16} color="inherit" /> : <Save />}
-          disabled={companyEditLoading}
-          size={isMobile ? "small" : "medium"}
-          sx={{ 
-            px: { xs: 4, sm: 5 },
-            py: { xs: 0.75, sm: 1.2 },
-            fontWeight: 700,
-            fontSize: { xs: '0.75rem', sm: '0.875rem' },
-            borderRadius: 2,
-            background: 'linear-gradient(145deg, #2196f3 0%, #1976d2 100%)',
-            boxShadow: '0 8px 16px rgba(33, 150, 243, 0.3)',
-            '&:hover': {
-              background: 'linear-gradient(145deg, #1976d2 0%, #1565c0 100%)',
-              boxShadow: '0 12px 24px rgba(33, 150, 243, 0.4)',
-              transform: 'translateY(-2px)'
-            },
-            transition: 'all 0.3s ease'
-          }}
-        >
-          {companyEditLoading ? 'Saving...' : 'Save Changes'}
-        </Button>
-      </Stack>
-    </DialogActions>
-  )}
-</Dialog>
-
-        {/* Edit User Modal - COMPLETE WITH ALL FIELDS */}
-        <Dialog 
-          open={editModalOpen} 
-          onClose={() => !saveLoading && setEditModalOpen(false)}
-          maxWidth="lg"
-          fullWidth
-          fullScreen={isMobile}
-          TransitionComponent={Transition}
-          keepMounted
-          PaperProps={{
-            sx: { 
-              borderRadius: isMobile ? 0 : 4,
-              overflow: 'hidden',
-              background: 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
-              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)'
-            }
-          }}
-        >
-          <DialogTitle sx={{ 
-            bgcolor: 'primary.main',
-            color: 'white',
-            py: { xs: 2, sm: 3 },
-            px: { xs: 2.5, sm: 4 },
-            position: 'relative',
-            overflow: 'hidden'
-          }}>
-            <Box sx={{
-              position: 'absolute',
-              top: -50,
-              right: -50,
-              width: 150,
-              height: 150,
-              borderRadius: '50%',
-              background: 'rgba(255,255,255,0.1)',
-              animation: 'float 8s ease-in-out infinite'
-            }} />
-            <Box sx={{
-              position: 'absolute',
-              bottom: -50,
-              left: -50,
-              width: 150,
-              height: 150,
-              borderRadius: '50%',
-              background: 'rgba(255,255,255,0.1)',
-              animation: 'float 10s ease-in-out infinite reverse'
-            }} />
-            
-            <Stack direction="row" alignItems="center" justifyContent="space-between" position="relative">
-              <Stack direction="row" alignItems="center" spacing={2}>
-                <Box sx={{
-                  width: { xs: 40, sm: 50 },
-                  height: { xs: 40, sm: 50 },
-                  borderRadius: '50%',
-                  bgcolor: 'white',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 8px 16px rgba(0,0,0,0.2)'
-                }}>
-                  <Edit sx={{ color: 'primary.main', fontSize: { xs: 22, sm: 28 } }} />
-                </Box>
-                <Box>
-                  <Typography variant={isMobile ? "h6" : "h5"} fontWeight={700}>
-                    Edit User Details
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)', fontSize: { xs: '0.7rem', sm: '0.875rem' } }}>
-                    Complete user profile management
-                  </Typography>
-                </Box>
-              </Stack>
-              <IconButton
-                onClick={() => setEditModalOpen(false)}
-                disabled={saveLoading}
-                sx={{ 
-                  color: 'white',
-                  bgcolor: 'rgba(255,255,255,0.2)',
-                  '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' },
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                <Close />
-              </IconButton>
-            </Stack>
-          </DialogTitle>
-          
-          <DialogContent sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
-            {selectedUser && (
-              <Fade in={!editSuccess} timeout={600}>
-                <Box>
-                  {!editSuccess ? (
-                    <Stack spacing={4}>
-                      <Alert 
-                        severity="info" 
-                        sx={{ 
-                          borderRadius: 2,
-                          bgcolor: 'info.50',
-                          border: '1px solid',
-                          borderColor: 'info.100',
-                          '& .MuiAlert-icon': {
-                            color: 'info.main'
-                          },
-                          '& .MuiAlert-message': {
-                            fontSize: { xs: '0.75rem', sm: '0.875rem' }
-                          }
-                        }}
-                      >
-                        <Typography variant="body2" fontWeight={500} sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                          Editing: <strong>{selectedUser.name}</strong> ({selectedUser.email})
-                        </Typography>
-                      </Alert>
-                      
-                      {/* SECTION 1: BASIC INFORMATION */}
-                      <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, bgcolor: 'grey.50', borderRadius: 2 }}>
-                        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3 }}>
-                          <AccountCircle color="primary" sx={{ fontSize: { xs: 20, sm: 24 } }} />
-                          <Typography variant={isMobile ? "subtitle1" : "h6"} fontWeight={700}>
-                            Basic Information
-                          </Typography>
-                        </Stack>
-                        
-                        <Grid container spacing={2}>
-                          <Grid item xs={12} md={6}>
-                            <TextField
-                              fullWidth
-                              label="Full Name"
-                              name="name"
-                              value={editFormData.name}
-                              onChange={handleInputChange}
-                              variant="outlined"
-                              size={isMobile ? "small" : "medium"}
-                              required
-                              error={!!formErrors.name}
-                              helperText={formErrors.name}
-                              InputProps={{
-                                startAdornment: (
-                                  <Person sx={{ mr: 1, color: 'action.active', fontSize: { xs: 18, sm: 22 } }} />
-                                )
-                              }}
-                            />
-                          </Grid>
-                          
-                          <Grid item xs={12} md={6}>
-                            <TextField
-                              fullWidth
-                              label="Email Address"
-                              name="email"
-                              type="email"
-                              value={editFormData.email}
-                              onChange={handleInputChange}
-                              variant="outlined"
-                              size={isMobile ? "small" : "medium"}
-                              error={!!formErrors.email}
-                              helperText={formErrors.email}
-                              InputProps={{
-                                startAdornment: (
-                                  <Email sx={{ mr: 1, color: 'action.active', fontSize: { xs: 18, sm: 22 } }} />
-                                )
-                              }}
-                            />
-                          </Grid>
-                          
-                          <Grid item xs={12} md={6}>
-                            <TextField
-                              fullWidth
-                              label="Phone Number"
-                              name="phone"
-                              value={editFormData.phone}
-                              onChange={handleInputChange}
-                              variant="outlined"
-                              size={isMobile ? "small" : "medium"}
-                              InputProps={{
-                                startAdornment: (
-                                  <Phone sx={{ mr: 1, color: 'action.active', fontSize: { xs: 18, sm: 22 } }} />
-                                )
-                              }}
-                            />
-                          </Grid>
-                          
-                          <Grid item xs={12} md={6}>
-                            <TextField
-                              fullWidth
-                              label="Date of Birth"
-                              name="dob"
-                              type="date"
-                              value={editFormData.dob}
-                              onChange={handleInputChange}
-                              variant="outlined"
-                              size={isMobile ? "small" : "medium"}
-                              InputLabelProps={{ shrink: true }}
-                              InputProps={{
-                                startAdornment: (
-                                  <CalendarToday sx={{ mr: 1, color: 'action.active', fontSize: { xs: 18, sm: 22 } }} />
-                                )
-                              }}
-                            />
-                          </Grid>
-                          
-                          <Grid item xs={12} md={6}>
-                            <FormControl fullWidth variant="outlined" size={isMobile ? "small" : "medium"}>
-                              <InputLabel>Gender</InputLabel>
-                              <Select
-                                name="gender"
-                                value={editFormData.gender}
-                                onChange={handleSelectChange}
-                                label="Gender"
-                                startAdornment={
-                                  <InputAdornment position="start">
-                                    <Wc sx={{ color: 'action.active', fontSize: { xs: 18, sm: 22 } }} />
-                                  </InputAdornment>
-                                }
-                              >
-                                <SelectMenuItem value="">
-                                  <em>None</em>
-                                </SelectMenuItem>
-                                {genderOptions.map(option => (
-                                  <SelectMenuItem key={option} value={option}>
-                                    {option.charAt(0).toUpperCase() + option.slice(1)}
-                                  </SelectMenuItem>
-                                ))}
-                              </Select>
-                            </FormControl>
-                          </Grid>
-                          
-                          <Grid item xs={12} md={6}>
-                            <FormControl fullWidth variant="outlined" size={isMobile ? "small" : "medium"}>
-                              <InputLabel>Marital Status</InputLabel>
-                              <Select
-                                name="maritalStatus"
-                                value={editFormData.maritalStatus}
-                                onChange={handleSelectChange}
-                                label="Marital Status"
-                                startAdornment={
-                                  <InputAdornment position="start">
-                                    <Favorite sx={{ color: 'action.active', fontSize: { xs: 18, sm: 22 } }} />
-                                  </InputAdornment>
-                                }
-                              >
-                                <SelectMenuItem value="">
-                                  <em>None</em>
-                                </SelectMenuItem>
-                                {maritalStatusOptions.map(option => (
-                                  <SelectMenuItem key={option} value={option}>
-                                    {option.charAt(0).toUpperCase() + option.slice(1)}
-                                  </SelectMenuItem>
-                                ))}
-                              </Select>
-                            </FormControl>
-                          </Grid>
-                          
-                          <Grid item xs={12}>
-                            <TextField
-                              fullWidth
-                              label="Address"
-                              name="address"
-                              value={editFormData.address}
-                              onChange={handleInputChange}
-                              variant="outlined"
-                              size={isMobile ? "small" : "medium"}
-                              multiline
-                              rows={isMobile ? 1 : 2}
-                              InputProps={{
-                                startAdornment: (
-                                  <LocationOn sx={{ mr: 1, color: 'action.active', fontSize: { xs: 18, sm: 22 } }} />
-                                )
-                              }}
-                            />
-                          </Grid>
-                        </Grid>
-                      </Paper>
-                      
-                      {/* SECTION 2: EMPLOYMENT INFORMATION */}
-                      <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, bgcolor: 'grey.50', borderRadius: 2 }}>
-                        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3 }}>
-                          <Work color="primary" sx={{ fontSize: { xs: 20, sm: 24 } }} />
-                          <Typography variant={isMobile ? "subtitle1" : "h6"} fontWeight={700}>
-                            Employment Information
-                          </Typography>
-                        </Stack>
-                        
-                        <Grid container spacing={2}>
-                          <Grid item xs={12} md={6}>
-                            <Autocomplete
-                              freeSolo
-                              options={jobRoleOptions}
-                              value={editFormData.jobRole}
-                              onChange={handleRoleChange}
-                              getOptionLabel={(option) => {
-                                if (typeof option === 'string') return option;
-                                return option.label || option.name || '';
-                              }}
-                              renderInput={(params) => (
-                                <TextField
-                                  {...params}
-                                  label="Job Role"
-                                  variant="outlined"
-                                  size={isMobile ? "small" : "medium"}
-                                  fullWidth
-                                  InputProps={{
-                                    ...params.InputProps,
-                                    startAdornment: (
-                                      <>
-                                        <Badge sx={{ mr: 1, color: 'action.active', fontSize: { xs: 18, sm: 22 } }} />
-                                        {params.InputProps.startAdornment}
-                                      </>
-                                    )
-                                  }}
-                                />
-                              )}
-                              renderOption={(props, option) => (
-                                <li {...props}>
-                                  <Stack direction="row" alignItems="center" spacing={1}>
-                                    <Work sx={{ fontSize: 18, color: 'action.active' }} />
-                                    <Typography sx={{ fontSize: { xs: '0.8rem', sm: '0.9rem' } }}>
-                                      {option.label || option.name}
-                                    </Typography>
-                                    {option.departmentName && (
-                                      <Chip 
-                                        label={option.departmentName} 
-                                        size="small" 
-                                        sx={{ ml: 1, height: 20, fontSize: '0.7rem' }}
-                                      />
-                                    )}
-                                  </Stack>
-                                </li>
-                              )}
-                              loading={loadingJobRoles}
-                              loadingText="Loading job roles..."
-                            />
-                          </Grid>
-                          
-                          <Grid item xs={12} md={6}>
-                            <Autocomplete
-                              freeSolo
-                              options={departmentOptions}
-                              value={editFormData.department}
-                              onChange={handleDepartmentChange}
-                              getOptionLabel={(option) => {
-                                if (typeof option === 'string') return option;
-                                return option.label || option.name || '';
-                              }}
-                              renderInput={(params) => (
-                                <TextField
-                                  {...params}
-                                  label="Department"
-                                  variant="outlined"
-                                  size={isMobile ? "small" : "medium"}
-                                  fullWidth
-                                  InputProps={{
-                                    ...params.InputProps,
-                                    startAdornment: (
-                                      <>
-                                        <Business sx={{ mr: 1, color: 'action.active', fontSize: { xs: 18, sm: 22 } }} />
-                                        {params.InputProps.startAdornment}
-                                      </>
-                                    )
-                                  }}
-                                />
-                              )}
-                              renderOption={(props, option) => (
-                                <li {...props}>
-                                  <Stack direction="row" alignItems="center" spacing={1}>
-                                    <CorporateFare sx={{ fontSize: 18, color: 'action.active' }} />
-                                    <Typography sx={{ fontSize: { xs: '0.8rem', sm: '0.9rem' } }}>
-                                      {option.label || option.name}
-                                    </Typography>
-                                  </Stack>
-                                </li>
-                              )}
-                              loading={loadingDepartments}
-                              loadingText="Loading departments..."
-                            />
-                          </Grid>
-                          
-                          <Grid item xs={12} md={6}>
-                            <FormControl fullWidth variant="outlined" size={isMobile ? "small" : "medium"}>
-                              <InputLabel>Employee Type</InputLabel>
-                              <Select
-                                name="employeeType"
-                                value={editFormData.employeeType}
-                                onChange={handleSelectChange}
-                                label="Employee Type"
-                                startAdornment={
-                                  <InputAdornment position="start">
-                                    <WorkHistory sx={{ color: 'action.active', fontSize: { xs: 18, sm: 22 } }} />
-                                  </InputAdornment>
-                                }
-                              >
-                                <SelectMenuItem value="">
-                                  <em>None</em>
-                                </SelectMenuItem>
-                                {employeeTypeOptions.map(option => (
-                                  <SelectMenuItem key={option} value={option}>
-                                    {option.charAt(0).toUpperCase() + option.slice(1)}
-                                  </SelectMenuItem>
-                                ))}
-                              </Select>
-                            </FormControl>
-                          </Grid>
-                          
-                          <Grid item xs={12} md={6}>
-                            <TextField
-                              fullWidth
-                              label="Designation"
-                              name="designation"
-                              value={editFormData.designation}
-                              onChange={handleInputChange}
-                              variant="outlined"
-                              size={isMobile ? "small" : "medium"}
-                              InputProps={{
-                                startAdornment: (
-                                  <Badge sx={{ mr: 1, color: 'action.active', fontSize: { xs: 18, sm: 22 } }} />
-                                )
-                              }}
-                            />
-                          </Grid>
-                        </Grid>
-                      </Paper>
-                    </Stack>
+            {/* Mobile Login URL */}
+            <div className="CompanyDetails-mobile-login-url">
+              <span className="CompanyDetails-url-label">Login URL:</span>
+              <div className="CompanyDetails-url-container">
+                <div className="CompanyDetails-url-display">
+                  <span className="CompanyDetails-url-text">
+                    {window.location.origin}{company.loginUrl}
+                  </span>
+                </div>
+                <button className={`CompanyDetails-copy-btn ${copied ? 'CompanyDetails-copied' : ''}`} onClick={handleCopy}>
+                  {copied ? (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
                   ) : (
-                    <Zoom in={editSuccess}>
-                      <Box sx={{ 
-                        py: { xs: 6, sm: 8 }, 
-                        px: { xs: 2, sm: 4 }, 
-                        textAlign: 'center'
-                      }}>
-                        <Box sx={{
-                          width: { xs: 80, sm: 100, md: 120 },
-                          height: { xs: 80, sm: 100, md: 120 },
-                          borderRadius: '50%',
-                          background: 'linear-gradient(145deg, #e8f5e9 0%, #c8e6c9 100%)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          mx: 'auto',
-                          mb: 4,
-                          animation: 'pulse 2s infinite',
-                          boxShadow: '0 12px 24px rgba(76, 175, 80, 0.3)'
-                        }}>
-                          <CheckCircle sx={{ fontSize: { xs: 50, sm: 60, md: 70 }, color: 'success.main' }} />
-                        </Box>
-                        <Typography variant={isMobile ? "h5" : "h4"} fontWeight={800} gutterBottom>
-                          Update Successful!
-                        </Typography>
-                        <Typography variant="body1" color="text.secondary" sx={{ mb: 3, fontSize: { xs: '0.9rem', sm: '1.1rem' } }}>
-                          User <strong style={{ color: theme.palette.primary.main }}>{editFormData.name}</strong> has been updated successfully.
-                        </Typography>
-                        <CircularProgress 
-                          size={isMobile ? 24 : 30} 
-                          sx={{ 
-                            color: 'success.main',
-                            mt: 2
-                          }} 
-                        />
-                      </Box>
-                    </Zoom>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                    </svg>
                   )}
-                </Box>
-              </Fade>
+                </button>
+              </div>
+              {copied && <span className="CompanyDetails-copy-success">✓ Copied to clipboard!</span>}
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Menu Drawer */}
+        {mobileMenuOpen && (
+          <div className="CompanyDetails-mobile-menu-drawer">
+            <div className="CompanyDetails-drawer-header">
+              <h3 className="CompanyDetails-drawer-title">Menu Options</h3>
+              <button className="CompanyDetails-close-btn" onClick={() => setMobileMenuOpen(false)}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                </svg>
+              </button>
+            </div>
+            <div className="CompanyDetails-drawer-menu">
+              <button className="CompanyDetails-menu-item" onClick={() => { handleEditCompany(); setMobileMenuOpen(false); }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                </svg>
+                <div className="CompanyDetails-menu-item-content">
+                  <span className="CompanyDetails-menu-item-title">Edit Company</span>
+                  <span className="CompanyDetails-menu-item-subtitle">Update company details</span>
+                </div>
+              </button>
+
+              <button className="CompanyDetails-menu-item" onClick={() => { handleRefresh(); setMobileMenuOpen(false); }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                </svg>
+                <div className="CompanyDetails-menu-item-content">
+                  <span className="CompanyDetails-menu-item-title">Refresh Data</span>
+                  <span className="CompanyDetails-menu-item-subtitle">Reload company information</span>
+                </div>
+              </button>
+
+              <button className="CompanyDetails-menu-item" onClick={() => { handleAddNewUser(); setMobileMenuOpen(false); }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                </svg>
+                <div className="CompanyDetails-menu-item-content">
+                  <span className="CompanyDetails-menu-item-title">Add New User</span>
+                  <span className="CompanyDetails-menu-item-subtitle">Create a new user account</span>
+                </div>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Stats Grid */}
+        <div className="CompanyDetails-stats-grid">
+          {statsData.map((stat, index) => (
+            <div key={index} className="CompanyDetails-stat-card">
+              <div className="CompanyDetails-stat-icon" style={{ background: stat.gradient }}>
+                {getIconSvg(stat.icon)}
+              </div>
+              <div className="CompanyDetails-stat-value" style={{ color: stat.color }}>
+                {stat.value}
+              </div>
+              <div className="CompanyDetails-stat-label">{stat.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Conditional Rendering based on tab for mobile */}
+        {isMobile ? (
+          <>
+            {activeTab === 0 && (
+              <>
+                {/* Company Information Card */}
+                <div className="CompanyDetails-info-card">
+                  <div className="CompanyDetails-card-header">
+                    <div className="CompanyDetails-header-icon CompanyDetails-primary-bg">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/>
+                      </svg>
+                    </div>
+                    <h3 className="CompanyDetails-card-title">Company Information</h3>
+                  </div>
+
+                  <div className="CompanyDetails-info-grid">
+                    {infoItems.map((item, index) => (
+                      <div key={index} className="CompanyDetails-info-item">
+                        <div className="CompanyDetails-info-icon" style={{ background: item.gradient }}>
+                          {getIconSvg(item.icon)}
+                        </div>
+                        <div className="CompanyDetails-info-content">
+                          <span className="CompanyDetails-info-label">{item.label}</span>
+                          <span className="CompanyDetails-info-value">{item.value}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Subscription Card */}
+                <div className={`CompanyDetails-subscription-card CompanyDetails-status-${subscriptionStatus.color}`}>
+                  <div className="CompanyDetails-subscription-bg"></div>
+                  <div className="CompanyDetails-subscription-content">
+                    <div className="CompanyDetails-subscription-header">
+                      <div className="CompanyDetails-header-icon" style={{ background: subscriptionStatus.bg }}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/>
+                        </svg>
+                      </div>
+                      <h3 className="CompanyDetails-card-title">Subscription Status</h3>
+                      <span className="CompanyDetails-status-badge" style={{ background: subscriptionStatus.bg }}>
+                        {subscriptionStatus.text}
+                      </span>
+                    </div>
+
+                    <p className="CompanyDetails-expiry-text">
+                      <strong>Expires on:</strong> {formatDate(company.subscriptionExpiry)}
+                    </p>
+
+                    <div className="CompanyDetails-progress-container">
+                      <div className="CompanyDetails-progress-header">
+                        <span className="CompanyDetails-progress-label">Days Remaining</span>
+                        <span className="CompanyDetails-progress-value" style={{ background: subscriptionStatus.bg, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                          {daysRemaining} days
+                        </span>
+                      </div>
+                      <div className="CompanyDetails-progress-bar">
+                        <div className="CompanyDetails-progress-fill" style={{ width: `${subscriptionProgress}%`, background: subscriptionStatus.bg }}></div>
+                      </div>
+                    </div>
+
+                    <div className={`CompanyDetails-alert CompanyDetails-alert-${subscriptionStatus.color}`}>
+                      {daysRemaining > 0 
+                        ? `Your subscription will expire in ${daysRemaining} days.`
+                        : 'Your subscription has expired.'}
+                    </div>
+                  </div>
+                </div>
+              </>
             )}
-          </DialogContent>
-          
-          {!editSuccess && (
-            <DialogActions sx={{ 
-              p: { xs: 2, sm: 3, md: 4 }, 
-              pt: { xs: 1, sm: 0 },
-              borderTop: '1px solid',
-              borderColor: 'grey.200',
-              bgcolor: 'grey.50'
-            }}>
-              <Stack 
-                direction="row" 
-                spacing={2} 
-                justifyContent="flex-end" 
-                width="100%"
-                sx={{ flexWrap: 'wrap' }}
-              >
-                <Button
-                  onClick={() => setEditModalOpen(false)}
-                  color="inherit"
-                  disabled={saveLoading}
-                  variant="outlined"
-                  size={isMobile ? "small" : "medium"}
-                  sx={{ 
-                    borderRadius: 2,
-                    px: { xs: 2, sm: 4 },
-                    py: { xs: 0.75, sm: 1.2 },
-                    fontWeight: 600,
-                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                    borderColor: 'grey.400',
-                    color: 'text.primary',
-                    '&:hover': {
-                      borderColor: 'grey.600',
-                      bgcolor: 'grey.100'
-                    }
-                  }}
-                >
+
+            {activeTab === 1 && (
+              <div className="CompanyDetails-recent-users-card">
+                <div className="CompanyDetails-card-header">
+                  <div className="CompanyDetails-header-icon CompanyDetails-primary-bg">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-1 .05 1.16.84 2 1.87 2 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                    </svg>
+                  </div>
+                  <h3 className="CompanyDetails-card-title">Recent Users</h3>
+                  <span className="CompanyDetails-badge">{recentUsers.length}</span>
+                </div>
+
+                <div className="CompanyDetails-users-list">
+                  {recentUsers.length > 0 ? (
+                    recentUsers.map((user, index) => (
+                      <div key={user.id || user._id || index} className="CompanyDetails-user-item">
+                        <div className="CompanyDetails-user-avatar-wrapper">
+                          <div className={`CompanyDetails-user-avatar ${user.isActive ? 'CompanyDetails-active' : 'CompanyDetails-inactive'}`}>
+                            {user.name?.charAt(0) || 'U'}
+                          </div>
+                          <div className={`CompanyDetails-status-dot ${user.isActive ? 'CompanyDetails-active' : 'CompanyDetails-inactive'}`}></div>
+                        </div>
+
+                        <div className="CompanyDetails-user-info">
+                          <div className="CompanyDetails-user-name">{user.name || 'Unknown User'}</div>
+                          <div className="CompanyDetails-user-tags">
+                            {user.employeeType && (
+                              <span className="CompanyDetails-tag CompanyDetails-employee-type">{user.employeeType}</span>
+                            )}
+                            <span className="CompanyDetails-tag CompanyDetails-department">{user.department || 'No Dept'}</span>
+                          </div>
+                        </div>
+
+                        <button className="CompanyDetails-edit-user-btn" onClick={() => handleEditUser(user)} title="Edit User">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                          </svg>
+                          {!isMobile && 'Edit'}
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="CompanyDetails-empty-state">
+                      <div className="CompanyDetails-empty-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-1 .05 1.16.84 2 1.87 2 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                        </svg>
+                      </div>
+                      <p className="CompanyDetails-empty-title">No Users Found</p>
+                      <p className="CompanyDetails-empty-subtitle">Get started by adding users</p>
+                      <button className="CompanyDetails-btn CompanyDetails-btn-primary CompanyDetails-btn-sm" onClick={handleAddNewUser}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                        </svg>
+                        Add First User
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          /* Desktop/Tablet Layout */
+          <div className="CompanyDetails-desktop-grid">
+            <div className="CompanyDetails-left-column">
+              {/* Company Information Card */}
+              <div className="CompanyDetails-info-card">
+                <div className="CompanyDetails-card-header">
+                  <div className="CompanyDetails-header-icon CompanyDetails-primary-bg">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/>
+                    </svg>
+                  </div>
+                  <h3 className="CompanyDetails-card-title">Company Information</h3>
+                </div>
+
+                <div className="CompanyDetails-info-grid">
+                  {infoItems.map((item, index) => (
+                    <div key={index} className="CompanyDetails-info-item">
+                      <div className="CompanyDetails-info-icon" style={{ background: item.gradient }}>
+                        {getIconSvg(item.icon)}
+                      </div>
+                      <div className="CompanyDetails-info-content">
+                        <span className="CompanyDetails-info-label">{item.label}</span>
+                        <span className="CompanyDetails-info-value">{item.value}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Subscription Card */}
+              <div className={`CompanyDetails-subscription-card CompanyDetails-status-${subscriptionStatus.color}`}>
+                <div className="CompanyDetails-subscription-bg"></div>
+                <div className="CompanyDetails-subscription-content">
+                  <div className="CompanyDetails-subscription-header">
+                    <div className="CompanyDetails-header-icon" style={{ background: subscriptionStatus.bg }}>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/>
+                      </svg>
+                    </div>
+                    <h3 className="CompanyDetails-card-title">Subscription Status</h3>
+                    <span className="CompanyDetails-status-badge" style={{ background: subscriptionStatus.bg }}>
+                      {subscriptionStatus.text}
+                    </span>
+                  </div>
+
+                  <p className="CompanyDetails-expiry-text">
+                    <strong>Expires on:</strong> {formatDate(company.subscriptionExpiry)}
+                  </p>
+
+                  <div className="CompanyDetails-progress-container">
+                    <div className="CompanyDetails-progress-header">
+                      <span className="CompanyDetails-progress-label">Days Remaining</span>
+                      <span className="CompanyDetails-progress-value" style={{ background: subscriptionStatus.bg, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                        {daysRemaining} days
+                      </span>
+                    </div>
+                    <div className="CompanyDetails-progress-bar">
+                      <div className="CompanyDetails-progress-fill" style={{ width: `${subscriptionProgress}%`, background: subscriptionStatus.bg }}></div>
+                    </div>
+                  </div>
+
+                  <div className={`CompanyDetails-alert CompanyDetails-alert-${subscriptionStatus.color}`}>
+                    {daysRemaining > 0 
+                      ? `Your subscription will expire in ${daysRemaining} days.`
+                      : 'Your subscription has expired.'}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="CompanyDetails-right-column">
+              <div className="CompanyDetails-recent-users-card">
+                <div className="CompanyDetails-card-header">
+                  <div className="CompanyDetails-header-icon CompanyDetails-primary-bg">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-1 .05 1.16.84 2 1.87 2 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                    </svg>
+                  </div>
+                  <h3 className="CompanyDetails-card-title">Recent Users</h3>
+                  <span className="CompanyDetails-badge">{recentUsers.length}</span>
+                </div>
+
+                <div className="CompanyDetails-users-list">
+                  {recentUsers.length > 0 ? (
+                    recentUsers.map((user, index) => (
+                      <div key={user.id || user._id || index} className="CompanyDetails-user-item">
+                        <div className="CompanyDetails-user-avatar-wrapper">
+                          <div className={`CompanyDetails-user-avatar ${user.isActive ? 'CompanyDetails-active' : 'CompanyDetails-inactive'}`}>
+                            {user.name?.charAt(0) || 'U'}
+                          </div>
+                          <div className={`CompanyDetails-status-dot ${user.isActive ? 'CompanyDetails-active' : 'CompanyDetails-inactive'}`}></div>
+                        </div>
+
+                        <div className="CompanyDetails-user-info">
+                          <div className="CompanyDetails-user-name">{user.name || 'Unknown User'}</div>
+                          <div className="CompanyDetails-user-tags">
+                            {user.employeeType && (
+                              <span className="CompanyDetails-tag CompanyDetails-employee-type">{user.employeeType}</span>
+                            )}
+                            <span className="CompanyDetails-tag CompanyDetails-department">{user.department || 'No Dept'}</span>
+                          </div>
+                        </div>
+
+                        <button className="CompanyDetails-edit-user-btn" onClick={() => handleEditUser(user)} title="Edit User">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                          </svg>
+                          {!isMobile && 'Edit'}
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="CompanyDetails-empty-state">
+                      <div className="CompanyDetails-empty-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-1 .05 1.16.84 2 1.87 2 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                        </svg>
+                      </div>
+                      <p className="CompanyDetails-empty-title">No Users Found</p>
+                      <p className="CompanyDetails-empty-subtitle">Get started by adding users</p>
+                      <button className="CompanyDetails-btn CompanyDetails-btn-primary CompanyDetails-btn-sm" onClick={handleAddNewUser}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                        </svg>
+                        Add First User
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Mobile Bottom Navigation */}
+      <div className="CompanyDetails-mobile-bottom-nav">
+        <button 
+          className={`CompanyDetails-nav-item ${activeTab === 0 ? 'CompanyDetails-active' : ''}`} 
+          onClick={() => handleTabChange(0)}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/>
+          </svg>
+          <span>Overview</span>
+        </button>
+        <button 
+          className={`CompanyDetails-nav-item ${activeTab === 1 ? 'CompanyDetails-active' : ''}`} 
+          onClick={() => handleTabChange(1)}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-1 .05 1.16.84 2 1.87 2 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+          </svg>
+          <span>Users</span>
+        </button>
+        <button 
+          className="CompanyDetails-nav-item CompanyDetails-add" 
+          onClick={(e) => {
+            e.stopPropagation();
+            handleAddNewUser();
+          }}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+          </svg>
+        </button>
+      </div>
+
+      {/* Company Edit Modal */}
+      {companyEditModalOpen && (
+        <div className="CompanyDetails-modal-overlay" onClick={() => !companyEditLoading && setCompanyEditModalOpen(false)}>
+          <div className={`CompanyDetails-modal-content ${isMobile ? 'CompanyDetails-fullscreen' : ''}`} onClick={e => e.stopPropagation()}>
+            <div className="CompanyDetails-modal-header CompanyDetails-primary-header">
+              <div className="CompanyDetails-modal-header-left">
+                <div className="CompanyDetails-modal-header-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/>
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="CompanyDetails-modal-title">Edit Company Details</h2>
+                  <p className="CompanyDetails-modal-subtitle">Update company information</p>
+                </div>
+              </div>
+              <button className="CompanyDetails-modal-close" onClick={() => setCompanyEditModalOpen(false)} disabled={companyEditLoading}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                </svg>
+              </button>
+            </div>
+
+            <div className="CompanyDetails-modal-body">
+              {!companyEditSuccess ? (
+                <div className="CompanyDetails-form-container">
+                  <div className="CompanyDetails-alert-info">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                    </svg>
+                    <span>Editing: <strong>{company.companyName}</strong></span>
+                  </div>
+
+                  <div className="CompanyDetails-form-grid">
+                    <div className="CompanyDetails-form-group CompanyDetails-full-width">
+                      <label className="CompanyDetails-form-label">Company Name *</label>
+                      <div className="CompanyDetails-input-wrapper">
+                        <span className="CompanyDetails-input-icon">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10z"/>
+                          </svg>
+                        </span>
+                        <input
+                          type="text"
+                          name="companyName"
+                          value={companyEditFormData.companyName}
+                          onChange={handleCompanyInputChange}
+                          className="CompanyDetails-form-input"
+                          placeholder="Enter company name"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="CompanyDetails-form-group">
+                      <label className="CompanyDetails-form-label">Email Address</label>
+                      <div className="CompanyDetails-input-wrapper">
+                        <span className="CompanyDetails-input-icon">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                          </svg>
+                        </span>
+                        <input
+                          type="email"
+                          name="companyEmail"
+                          value={companyEditFormData.companyEmail}
+                          onChange={handleCompanyInputChange}
+                          className="CompanyDetails-form-input"
+                          placeholder="Enter company email"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="CompanyDetails-form-group">
+                      <label className="CompanyDetails-form-label">Phone Number</label>
+                      <div className="CompanyDetails-input-wrapper">
+                        <span className="CompanyDetails-input-icon">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
+                          </svg>
+                        </span>
+                        <input
+                          type="text"
+                          name="companyPhone"
+                          value={companyEditFormData.companyPhone}
+                          onChange={handleCompanyInputChange}
+                          className="CompanyDetails-form-input"
+                          placeholder="Enter company phone"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="CompanyDetails-form-group CompanyDetails-full-width">
+                      <label className="CompanyDetails-form-label">Logo URL</label>
+                      <div className="CompanyDetails-input-wrapper">
+                        <span className="CompanyDetails-input-icon">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+                          </svg>
+                        </span>
+                        <input
+                          type="text"
+                          name="logo"
+                          value={companyEditFormData.logo}
+                          onChange={handleCompanyInputChange}
+                          className="CompanyDetails-form-input"
+                          placeholder="https://example.com/logo.png"
+                        />
+                      </div>
+                      <span className="CompanyDetails-input-hint">Leave empty for default logo</span>
+                    </div>
+
+                    <div className="CompanyDetails-form-group CompanyDetails-full-width">
+                      <label className="CompanyDetails-form-label">Address</label>
+                      <div className="CompanyDetails-input-wrapper">
+                        <span className="CompanyDetails-input-icon">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                          </svg>
+                        </span>
+                        <textarea
+                          name="companyAddress"
+                          value={companyEditFormData.companyAddress}
+                          onChange={handleCompanyInputChange}
+                          className="CompanyDetails-form-input"
+                          placeholder="Enter company address"
+                          rows={isMobile ? 2 : 3}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {companyEditFormData.logo && (
+                    <div className="CompanyDetails-logo-preview">
+                      <img 
+                        src={companyEditFormData.logo} 
+                        alt="Logo preview"
+                        className="CompanyDetails-preview-img"
+                        onError={(e) => { e.target.src = defaultLogo; }}
+                      />
+                      <div className="CompanyDetails-preview-text">
+                        <span className="CompanyDetails-preview-label">Logo Preview</span>
+                        <span className="CompanyDetails-preview-url">{companyEditFormData.logo.substring(0, 40)}...</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="CompanyDetails-success-state">
+                  <div className="CompanyDetails-success-icon">
+                    <svg width="60" height="60" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
+                  </div>
+                  <h3 className="CompanyDetails-success-title">Company Updated!</h3>
+                  <p className="CompanyDetails-success-message">
+                    <span className="CompanyDetails-highlight">{companyEditFormData.companyName}</span> has been updated successfully.
+                  </p>
+                  <div className="CompanyDetails-success-spinner"></div>
+                </div>
+              )}
+            </div>
+
+            {!companyEditSuccess && (
+              <div className="CompanyDetails-modal-footer">
+                <button className="CompanyDetails-btn CompanyDetails-btn-secondary" onClick={() => setCompanyEditModalOpen(false)} disabled={companyEditLoading}>
                   Cancel
-                </Button>
-                
-                <Button
-                  onClick={handleDeleteUser}
-                  color="error"
-                  startIcon={<Delete />}
+                </button>
+                <button 
+                  className="CompanyDetails-btn CompanyDetails-btn-primary" 
+                  onClick={handleSaveCompany} 
+                  disabled={companyEditLoading}
+                >
+                  {companyEditLoading ? (
+                    <>
+                      <span className="CompanyDetails-spinner"></span>
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm4-10H5V5h11v4z"/>
+                      </svg>
+                      Save Changes
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Edit User Modal */}
+      {editModalOpen && selectedUser && (
+        <div className="CompanyDetails-modal-overlay" onClick={() => !saveLoading && setEditModalOpen(false)}>
+          <div className={`CompanyDetails-modal-content CompanyDetails-large ${isMobile ? 'CompanyDetails-fullscreen' : ''}`} onClick={e => e.stopPropagation()}>
+            <div className="CompanyDetails-modal-header CompanyDetails-primary-header">
+              <div className="CompanyDetails-modal-header-left">
+                <div className="CompanyDetails-modal-header-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="CompanyDetails-modal-title">Edit User Details</h2>
+                  <p className="CompanyDetails-modal-subtitle">Complete user profile management</p>
+                </div>
+              </div>
+              <button className="CompanyDetails-modal-close" onClick={() => setEditModalOpen(false)} disabled={saveLoading}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                </svg>
+              </button>
+            </div>
+
+            <div className="CompanyDetails-modal-body">
+              {!editSuccess ? (
+                <div className="CompanyDetails-form-container">
+                  <div className="CompanyDetails-alert-info">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                    </svg>
+                    <span>Editing: <strong>{selectedUser.name}</strong> ({selectedUser.email})</span>
+                  </div>
+
+                  {/* SECTION 1: BASIC INFORMATION */}
+                  <div className="CompanyDetails-form-section">
+                    <div className="CompanyDetails-section-header">
+                      <div className="CompanyDetails-section-icon CompanyDetails-blue-bg">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                        </svg>
+                      </div>
+                      <h3 className="CompanyDetails-section-title">Basic Information</h3>
+                    </div>
+
+                    <div className="CompanyDetails-form-grid">
+                      <div className="CompanyDetails-form-group">
+                        <label className="CompanyDetails-form-label">Full Name *</label>
+                        <div className="CompanyDetails-input-wrapper">
+                          <span className="CompanyDetails-input-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                            </svg>
+                          </span>
+                          <input
+                            type="text"
+                            name="name"
+                            value={editFormData.name}
+                            onChange={handleInputChange}
+                            className={`CompanyDetails-form-input ${formErrors.name ? 'CompanyDetails-error' : ''}`}
+                            placeholder="Enter full name"
+                          />
+                        </div>
+                        {formErrors.name && <span className="CompanyDetails-error-message">{formErrors.name}</span>}
+                      </div>
+
+                      <div className="CompanyDetails-form-group">
+                        <label className="CompanyDetails-form-label">Email Address</label>
+                        <div className="CompanyDetails-input-wrapper">
+                          <span className="CompanyDetails-input-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                            </svg>
+                          </span>
+                          <input
+                            type="email"
+                            name="email"
+                            value={editFormData.email}
+                            onChange={handleInputChange}
+                            className={`CompanyDetails-form-input ${formErrors.email ? 'CompanyDetails-error' : ''}`}
+                            placeholder="Enter email"
+                          />
+                        </div>
+                        {formErrors.email && <span className="CompanyDetails-error-message">{formErrors.email}</span>}
+                      </div>
+
+                      <div className="CompanyDetails-form-group">
+                        <label className="CompanyDetails-form-label">Phone Number</label>
+                        <div className="CompanyDetails-input-wrapper">
+                          <span className="CompanyDetails-input-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
+                            </svg>
+                          </span>
+                          <input
+                            type="text"
+                            name="phone"
+                            value={editFormData.phone}
+                            onChange={handleInputChange}
+                            className="CompanyDetails-form-input"
+                            placeholder="Enter phone number"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="CompanyDetails-form-group">
+                        <label className="CompanyDetails-form-label">Date of Birth</label>
+                        <div className="CompanyDetails-input-wrapper">
+                          <span className="CompanyDetails-input-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z"/>
+                            </svg>
+                          </span>
+                          <input
+                            type="date"
+                            name="dob"
+                            value={editFormData.dob}
+                            onChange={handleInputChange}
+                            className="CompanyDetails-form-input"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="CompanyDetails-form-group">
+                        <label className="CompanyDetails-form-label">Gender</label>
+                        <div className="CompanyDetails-input-wrapper">
+                          <span className="CompanyDetails-input-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 4c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2z"/>
+                            </svg>
+                          </span>
+                          <select
+                            name="gender"
+                            value={editFormData.gender}
+                            onChange={handleSelectChange}
+                            className="CompanyDetails-form-input"
+                          >
+                            <option value="">None</option>
+                            {genderOptions.map(option => (
+                              <option key={option} value={option}>
+                                {option.charAt(0).toUpperCase() + option.slice(1)}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="CompanyDetails-form-group">
+                        <label className="CompanyDetails-form-label">Marital Status</label>
+                        <div className="CompanyDetails-input-wrapper">
+                          <span className="CompanyDetails-input-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                            </svg>
+                          </span>
+                          <select
+                            name="maritalStatus"
+                            value={editFormData.maritalStatus}
+                            onChange={handleSelectChange}
+                            className="CompanyDetails-form-input"
+                          >
+                            <option value="">None</option>
+                            {maritalStatusOptions.map(option => (
+                              <option key={option} value={option}>
+                                {option.charAt(0).toUpperCase() + option.slice(1)}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="CompanyDetails-form-group CompanyDetails-full-width">
+                        <label className="CompanyDetails-form-label">Address</label>
+                        <div className="CompanyDetails-input-wrapper">
+                          <span className="CompanyDetails-input-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                            </svg>
+                          </span>
+                          <textarea
+                            name="address"
+                            value={editFormData.address}
+                            onChange={handleInputChange}
+                            className="CompanyDetails-form-input"
+                            placeholder="Enter address"
+                            rows={isMobile ? 1 : 2}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* SECTION 2: EMPLOYMENT INFORMATION */}
+                  <div className="CompanyDetails-form-section">
+                    <div className="CompanyDetails-section-header">
+                      <div className="CompanyDetails-section-icon CompanyDetails-orange-bg">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/>
+                        </svg>
+                      </div>
+                      <h3 className="CompanyDetails-section-title">Employment Information</h3>
+                    </div>
+
+                    <div className="CompanyDetails-form-grid">
+                      <div className="CompanyDetails-form-group">
+                        <label className="CompanyDetails-form-label">Job Role</label>
+                        <div className="CompanyDetails-input-wrapper">
+                          <span className="CompanyDetails-input-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2z"/>
+                            </svg>
+                          </span>
+                          <input
+                            type="text"
+                            name="jobRole"
+                            value={editFormData.jobRole}
+                            onChange={handleInputChange}
+                            className="CompanyDetails-form-input"
+                            placeholder="Enter job role"
+                            list="CompanyDetails-job-roles"
+                          />
+                          <datalist id="CompanyDetails-job-roles">
+                            {jobRoles.map(role => (
+                              <option key={role.id} value={role.name} />
+                            ))}
+                          </datalist>
+                        </div>
+                      </div>
+
+                      <div className="CompanyDetails-form-group">
+                        <label className="CompanyDetails-form-label">Department</label>
+                        <div className="CompanyDetails-input-wrapper">
+                          <span className="CompanyDetails-input-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10z"/>
+                            </svg>
+                          </span>
+                          <input
+                            type="text"
+                            name="department"
+                            value={editFormData.department}
+                            onChange={handleInputChange}
+                            className="CompanyDetails-form-input"
+                            placeholder="Enter department"
+                            list="CompanyDetails-departments"
+                          />
+                          <datalist id="CompanyDetails-departments">
+                            {departments.map(dept => (
+                              <option key={dept.id} value={dept.name} />
+                            ))}
+                          </datalist>
+                        </div>
+                      </div>
+
+                      <div className="CompanyDetails-form-group">
+                        <label className="CompanyDetails-form-label">Employee Type</label>
+                        <div className="CompanyDetails-input-wrapper">
+                          <span className="CompanyDetails-input-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2z"/>
+                            </svg>
+                          </span>
+                          <select
+                            name="employeeType"
+                            value={editFormData.employeeType}
+                            onChange={handleSelectChange}
+                            className="CompanyDetails-form-input"
+                          >
+                            <option value="">None</option>
+                            {employeeTypeOptions.map(option => (
+                              <option key={option} value={option}>
+                                {option.charAt(0).toUpperCase() + option.slice(1)}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="CompanyDetails-form-group">
+                        <label className="CompanyDetails-form-label">Designation</label>
+                        <div className="CompanyDetails-input-wrapper">
+                          <span className="CompanyDetails-input-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                            </svg>
+                          </span>
+                          <input
+                            type="text"
+                            name="designation"
+                            value={editFormData.designation}
+                            onChange={handleInputChange}
+                            className="CompanyDetails-form-input"
+                            placeholder="Enter designation"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="CompanyDetails-form-group">
+                        <label className="CompanyDetails-form-label">Salary</label>
+                        <div className="CompanyDetails-input-wrapper">
+                          <span className="CompanyDetails-input-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M11.5 1L8 7h7l-3.5-6zm0 22L8 17h7l-3.5 6zM12 10.5l-3.5 6h7l-3.5-6z"/>
+                            </svg>
+                          </span>
+                          <input
+                            type="number"
+                            name="salary"
+                            value={editFormData.salary}
+                            onChange={handleInputChange}
+                            className="CompanyDetails-form-input"
+                            placeholder="Enter salary"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="CompanyDetails-form-group CompanyDetails-checkbox-group">
+                        <label className="CompanyDetails-checkbox-label">
+                          <input
+                            type="checkbox"
+                            name="isActive"
+                            checked={editFormData.isActive}
+                            onChange={handleInputChange}
+                            className="CompanyDetails-checkbox-input"
+                          />
+                          <span className="CompanyDetails-checkbox-text">Active Status</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="CompanyDetails-success-state">
+                  <div className="CompanyDetails-success-icon">
+                    <svg width="60" height="60" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
+                  </div>
+                  <h3 className="CompanyDetails-success-title">Update Successful!</h3>
+                  <p className="CompanyDetails-success-message">
+                    User <span className="CompanyDetails-highlight">{editFormData.name}</span> has been updated successfully.
+                  </p>
+                  <div className="CompanyDetails-success-spinner"></div>
+                </div>
+              )}
+            </div>
+
+            {!editSuccess && (
+              <div className="CompanyDetails-modal-footer">
+                <button className="CompanyDetails-btn CompanyDetails-btn-secondary" onClick={() => setEditModalOpen(false)} disabled={saveLoading}>
+                  Cancel
+                </button>
+                <button 
+                  className="CompanyDetails-btn CompanyDetails-btn-danger" 
+                  onClick={handleDeleteUser} 
                   disabled={saveLoading}
-                  variant="outlined"
-                  size={isMobile ? "small" : "medium"}
-                  sx={{ 
-                    borderRadius: 2,
-                    px: { xs: 2, sm: 4 },
-                    py: { xs: 0.75, sm: 1.2 },
-                    fontWeight: 600,
-                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                    borderColor: 'error.main',
-                    color: 'error.main',
-                    '&:hover': {
-                      borderColor: 'error.dark',
-                      bgcolor: 'error.50'
-                    }
-                  }}
                 >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                  </svg>
                   Delete
-                </Button>
-                
-                <Button
-                  onClick={handleSaveUser}
-                  variant="contained"
-                  startIcon={saveLoading ? <CircularProgress size={16} color="inherit" /> : <Save />}
+                </button>
+                <button 
+                  className="CompanyDetails-btn CompanyDetails-btn-primary" 
+                  onClick={handleSaveUser} 
                   disabled={saveLoading || !editFormData.name.trim()}
-                  size={isMobile ? "small" : "medium"}
-                  sx={{ 
-                    px: { xs: 3, sm: 5 },
-                    py: { xs: 0.75, sm: 1.2 },
-                    fontWeight: 700,
-                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                    borderRadius: 2,
-                    background: 'linear-gradient(145deg, #2196f3 0%, #1976d2 100%)',
-                    boxShadow: '0 8px 16px rgba(33, 150, 243, 0.3)',
-                    '&:hover': {
-                      background: 'linear-gradient(145deg, #1976d2 0%, #1565c0 100%)',
-                      boxShadow: '0 12px 24px rgba(33, 150, 243, 0.4)',
-                      transform: 'translateY(-2px)'
-                    },
-                    transition: 'all 0.3s ease'
-                  }}
                 >
-                  {saveLoading ? 'Saving...' : 'Save Changes'}
-                </Button>
-              </Stack>
-            </DialogActions>
-          )}
-        </Dialog>
-      </Container>
-    </Box>
+                  {saveLoading ? (
+                    <>
+                      <span className="CompanyDetails-spinner"></span>
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm4-10H5V5h11v4z"/>
+                      </svg>
+                      Save Changes
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 
