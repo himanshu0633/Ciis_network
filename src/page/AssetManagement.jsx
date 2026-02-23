@@ -349,14 +349,7 @@ const AssetManagement = () => {
       toast.error('Asset name is required');
       return;
     }
-    if (!formData.category) {
-      toast.error('Asset category is required');
-      return;
-    }
-    if (!formData.serialNumber) {
-      toast.error('Serial number is required');
-      return;
-    }
+    
 
     setLoading(true);
     try {
@@ -1622,7 +1615,7 @@ const AssetManagement = () => {
                 </div>
 
                 <div className="AssetManagement-form-group">
-                  <label className="AssetManagement-form-label">Category *</label>
+                  <label className="AssetManagement-form-label">Category </label>
                   <select
                     className="AssetManagement-form-select"
                     value={formData.category}
@@ -1647,7 +1640,7 @@ const AssetManagement = () => {
                 </div>
 
                 <div className="AssetManagement-form-group">
-                  <label className="AssetManagement-form-label">Serial Number *</label>
+                  <label className="AssetManagement-form-label">Serial Number </label>
                   <input
                     type="text"
                     className="AssetManagement-form-input"
@@ -1818,7 +1811,7 @@ const AssetManagement = () => {
               <button 
                 className="AssetManagement-btn AssetManagement-btn-primary"
                 onClick={handleSubmit}
-                disabled={loading || !formData.name || !formData.category || !formData.serialNumber}
+                disabled={loading || !formData.name }
               >
                 {loading ? (
                   <>

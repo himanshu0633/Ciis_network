@@ -99,7 +99,7 @@ const CompanyDetails = () => {
 
   // Handle copy URL
   const handleCopy = () => {
-    const url = `${window.location.origin}${company?.loginUrl || ''}`;
+    const url = `${window.location.origin}${company?.loginUrl || `/company/${company?.companyCode}/login`}`;
     navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -1311,11 +1311,6 @@ const CompanyDetails = () => {
                 <div className="CompanyDetails-company-info">
                   <div className="CompanyDetails-company-name-wrapper">
                     <h1 className="CompanyDetails-company-name">{company.companyName}</h1>
-                    {/* <button className="CompanyDetails-icon-btn CompanyDetails-edit-btn" onClick={handleEditCompany} title="Edit Company">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-                      </svg>
-                    </button> */}
                   </div>
 
                   <div className="CompanyDetails-company-chips">
@@ -1351,6 +1346,32 @@ const CompanyDetails = () => {
                 </div>
               </div>
 
+              {/* Desktop Login URL - Visible only on desktop */}
+              <div className="CompanyDetails-desktop-login-url">
+                <div className="CompanyDetails-url-wrapper">
+                  <span className="CompanyDetails-url-label-desktop">Login URL:</span>
+                  <div className="CompanyDetails-url-container-desktop">
+                    <div className="CompanyDetails-url-display-desktop">
+                      <span className="CompanyDetails-url-text-desktop">
+                        {window.location.origin}{company.loginUrl || `/company/${company.companyCode}/login`}
+                      </span>
+                    </div>
+                    <button className={`CompanyDetails-copy-btn-desktop ${copied ? 'CompanyDetails-copied' : ''}`} onClick={handleCopy}>
+                      {copied ? (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                      ) : (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                  {copied && <span className="CompanyDetails-copy-success-desktop">✓ Copied!</span>}
+                </div>
+              </div>
+
               {/* Action Buttons - Desktop/Tablet */}
               <div className="CompanyDetails-header-actions">
                 <button className="CompanyDetails-icon-btn CompanyDetails-refresh-btn" onClick={handleRefresh} title="Refresh Data">
@@ -1375,13 +1396,13 @@ const CompanyDetails = () => {
               </button>
             </div>
 
-            {/* Mobile Login URL */}
+            {/* Mobile Login URL (only visible on mobile) */}
             <div className="CompanyDetails-mobile-login-url">
               <span className="CompanyDetails-url-label">Login URL:</span>
               <div className="CompanyDetails-url-container">
                 <div className="CompanyDetails-url-display">
                   <span className="CompanyDetails-url-text">
-                    {window.location.origin}{company.loginUrl}
+                    {window.location.origin}{company.loginUrl || `/company/${company.companyCode}/login`}
                   </span>
                 </div>
                 <button className={`CompanyDetails-copy-btn ${copied ? 'CompanyDetails-copied' : ''}`} onClick={handleCopy}>
