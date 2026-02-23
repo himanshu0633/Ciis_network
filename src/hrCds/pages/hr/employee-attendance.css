@@ -728,6 +728,7 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
+    display: none;
   }
   
   .stat-content {
@@ -1451,10 +1452,115 @@ select.form-input option {
   margin: 4px 0;
 }
 
-/* Responsive Design */
+
+/* Tablet Landscape (1024px and below) */
+@media (max-width: 1024px) {
+  .employee-attendance {
+    padding: 20px;
+  }
+  
+  .attendance-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 20px;
+  }
+  
+  .header-actions {
+    justify-content: flex-start;
+  }
+  
+  .stats-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .attendance-table {
+    min-width: 1000px;
+  }
+  
+  .filter-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Tablet Portrait (768px and below) */
 @media (max-width: 768px) {
+
+  
+
+  .col-type,
+  .col-date,
+  .col-checkin,
+  .col-checkout,
+  .col-hours,
+  .col-login,
+  .col-late,
+  .col-department,
+  .col-actions {
+    display: none;
+  }
+
+.type-chip, .time-chip, .date-chip, .late-chip{
+  display: none;
+}
+
+  .employee-attendance {
+    padding: 16px;
+  }
+  
+  .attendance-title {
+    font-size: 26px;
+  }
+  
+  .filter-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .filter-actions {
+    flex-direction: column;
+  }
+  
+  .btn {
+    width: 100%;
+  }
+  
+  .stats-container {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  
+  .stat-card {
+    padding: 16px;
+  }
+  
+  .stat-icon {
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+  }
+  
+  .stat-value {
+    font-size: 22px;
+  }
+  
+  .stat-label {
+    font-size: 12px;
+  }
+  
+  .stat-description {
+    display: none;
+  }
+  
+  .table-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .attendance-table {
+    min-width: 200px;
+  }
+  
   .modal-content {
-    width: 95%;
+    max-width: 95%;
     margin: 10px;
   }
   
@@ -1464,7 +1570,6 @@ select.form-input option {
   
   .modal-footer {
     flex-direction: column;
-    gap: 12px;
   }
   
   .footer-left, .footer-right {
@@ -1475,86 +1580,366 @@ select.form-input option {
   .bulk-action-buttons {
     flex-wrap: wrap;
   }
+  
+  .bulk-actions-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .bulk-action-buttons {
+    width: 100%;
+  }
+  
+  .bulk-action-buttons .btn {
+    flex: 1;
+  }
+  
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .snackbar {
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+  }
+  
+  .snackbar-content {
+    min-width: auto;
+    width: 100%;
+  }
 }
-/* =========================================================
-   MOBILE VIEW: Attendance Table
-   Show ONLY Employee + Status (No Horizontal Scroll)
-========================================================= */
-@media (max-width: 768px) {
 
-  /* Remove horizontal scroll */
-  .attendance-table-container {
-    overflow-x: hidden !important;
+/* Mobile Landscape (480px and below) */
+@media (max-width: 480px) {
+  .employee-attendance {
+    padding: 12px;
   }
-
-  .attendance-table {
-    width: 100% !important;
-    min-width: 100% !important;
-    table-layout: fixed;
+  
+  .attendance-header {
+    padding: 18px;
   }
-
-  /* Hide ALL table headers */
-  .attendance-table thead th {
-    display: none;
+  
+  .attendance-title {
+    font-size: 24px;
   }
-
-  /* Show ONLY Employee & Status headers */
-  .attendance-table thead th:nth-child(1),
-  .attendance-table thead th:nth-last-child(3) {
-    display: table-cell;
+  
+  .timing-rules {
+    flex-direction: column;
+    gap: 6px;
   }
-
-  /* Hide ALL td cells */
-  .attendance-table tbody td {
-    display: none;
+  
+  .rule-item {
+    width: 100%;
+    justify-content: center;
   }
-
-  /* Show ONLY Employee column */
-  .attendance-table tbody td:nth-child(1) {
-    display: table-cell;
-    width: 70%;
+  
+  .header-actions {
+    flex-direction: column;
+    width: 100%;
   }
-
-  /* Show ONLY Status column */
-  .attendance-table tbody td:nth-last-child(3) {
-    display: table-cell;
-    width: 30%;
-    text-align: right;
+  
+  .date-chip, .export-container {
+    width: 100%;
   }
-
-  /* Employee name styling */
-  .employee-info {
-    gap: 8px;
+  
+  .export-trigger {
+    width: 100%;
   }
-
-  .employee-avatar {
-    width: 34px;
-    height: 34px;
+  
+  .export-dropdown {
+    width: 100%;
+    right: auto;
+    left: 0;
+  }
+/*   
+  .stats-container {
+    grid-template-columns: 1fr;
+  } */
+  
+  .stat-card {
+    padding: 14px;
+  }
+  
+  .stat-content {
+    gap: 12px;
+  }
+  
+  .stat-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+  }
+  
+  .stat-value {
+    font-size: 20px;
+  }
+  
+  .filter-section {
+    padding: 16px;
+  }
+  
+  .filter-input {
+    padding: 12px 14px;
+  }
+  
+  .btn {
+    padding: 12px 16px;
+    font-size: 14px;
+  }
+  
+  .table-header {
+    padding: 16px;
+  }
+  
+  .table-title {
+    font-size: 18px;
+  }
+  
+  .table-count {
     font-size: 12px;
   }
-
+  
+  .attendance-table th,
+  .attendance-table td {
+    padding: 12px 10px;
+    font-size: 12px;
+  }
+  
+  .employee-avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+  }
+  
   .employee-name {
     font-size: 13px;
-    font-weight: 600;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
-
+  
   .employee-email {
-    display: none; /* hide email on mobile */
+    display: none;
   }
-
-  /* Status chip smaller */
-  .status-chip {
-    font-size: 10px;
+  
+  .type-chip,
+  .department-chip,
+  .status-chip,
+  .time-chip {
     padding: 4px 8px;
+    font-size: 10px;
   }
+  
+  .login-time-info {
+    font-size: 10px;
+    padding: 4px 6px;
+  }
+  
+  .action-buttons {
+    gap: 4px;
+  }
+  
+  .btn-icon {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .bulk-select-all {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .bulk-action-buttons {
+    flex-direction: column;
+  }
+  
+  .bulk-action-buttons .btn {
+    width: 100%;
+  }
+  
+  .empty-state {
+    padding: 40px 16px;
+  }
+  
+  .empty-state-icon {
+    width: 70px;
+    height: 70px;
+    font-size: 30px;
+  }
+  
+  .empty-state-title {
+    font-size: 18px;
+  }
+  
+  .empty-state-text {
+    font-size: 13px;
+  }
+  
+  .summary-section {
+    padding: 16px;
+  }
+  
+  .summary-section h4 {
+    font-size: 16px;
+  }
+  
+  .summary-item {
+    padding: 10px 12px;
+  }
+  
+  .summary-label {
+    font-size: 12px;
+  }
+  
+  .summary-value {
+    font-size: 14px;
+  }
+  
+  .modal-header {
+    padding: 18px 20px;
+  }
+  
+  .modal-header h3 {
+    font-size: 18px;
+  }
+  
+  .modal-body {
+    padding: 20px;
+  }
+  
+  .modal-footer {
+    padding: 18px 20px;
+  }
+  
+  .employee-info-summary {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .status-options {
+    grid-template-columns: 1fr;
+  }
+}
 
-  /* Remove hover background glitch */
-  .attendance-table tbody tr:hover {
-    background: none;
+/* Very Small Devices (360px and below) */
+@media (max-width: 360px) {
+  .attendance-title {
+    font-size: 22px;
   }
+  
+  .stat-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+  
+  .stat-value {
+    font-size: 18px;
+  }
+  
+  .stat-label {
+    font-size: 11px;
+  }
+  
+  .filter-label {
+    font-size: 11px;
+  }
+  
+  .filter-input {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+  
+  .btn {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+  
+  .attendance-table th,
+  .attendance-table td {
+    padding: 10px 6px;
+    font-size: 11px;
+  }
+  
+  .employee-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 12px;
+  }
+  
+  .employee-name {
+    font-size: 12px;
+  }
+}
+
+/* Landscape Mode */
+@media (orientation: landscape) and (max-height: 600px) {
+  .modal-content {
+    max-height: 90vh;
+  }
+  
+  .modal-body {
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+  
+  .employee-info-summary {
+    padding: 12px;
+  }
+  
+  .form-grid {
+    gap: 12px;
+  }
+  
+  .form-input {
+    padding: 12px 14px;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .employee-attendance {
+    background: white;
+    padding: 0;
+  }
+  
+  .filter-section,
+  .export-container,
+  .bulk-actions-bar,
+  .btn,
+  .btn-icon,
+  .snackbar,
+  .modal-overlay,
+  .action-buttons {
+    display: none !important;
+  }
+  
+  .attendance-header,
+  .attendance-table-container,
+  .summary-section {
+    box-shadow: none;
+    border: 1px solid #000;
+    break-inside: avoid;
+  }
+  
+  .stat-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    border: 1px solid #000;
+  }
+  
+  .attendance-table th {
+    background: #f0f0f0 !important;
+    color: #000 !important;
+  }
+  
+  .attendance-table td {
+    color: #000 !important;
+  }
+}
+
+/* Selection Styles */
+::selection {
+  background: var(--primary-color);
+  color: white;
 }
 /* Department Grouping Styles */
 .department-header {

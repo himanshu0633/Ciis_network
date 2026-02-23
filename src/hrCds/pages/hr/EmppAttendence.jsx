@@ -2046,169 +2046,191 @@ const EmployeeAttendance = () => {
             </div>
           )}
         </div>
+<div style={{ overflowX: 'auto' }}>
+  <table className="attendance-table">
+    <thead>
+      <tr>
+        {bulkEditMode && <th style={{ width: '50px' }}></th>}
 
-        <div style={{ overflowX: 'auto' }}>
-          <table className="attendance-table">
-            <thead>
-              <tr>
-                {bulkEditMode && <th style={{ width: '50px' }}></th>}
-                <th>Employee</th>
-                <th>Department</th>
-                <th>Type</th>
-                <th>Date</th>
-                <th>Check In</th>
-                <th>Check Out</th>
-                <th>Hours Worked</th>
-                <th>Login Time</th>
-                <th>Status</th>
-                <th>Late By</th>
-                {!bulkEditMode && <th>Actions</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {filteredRecords.length ? (
-                // Group records by department
-                Object.entries(
-                  filteredRecords.reduce((acc, rec) => {
-                    const dept = rec.user?.department || 'Unassigned';
-                    if (!acc[dept]) acc[dept] = [];
-                    acc[dept].push(rec);
-                    return acc;
-                  }, {})
-                ).map(([department, deptRecords]) => (
-                  <React.Fragment key={department}>
-                    {/* Department Header Row */}
-                    <tr className="department-header">
-                      <td colSpan={bulkEditMode ? 12 : 11}>
-                        <div className="department-title">
-                          <FiUsers size={18} />
-                          <strong>{department} Department</strong>
-                          <span className="department-count">
-                            ({deptRecords.length} employees)
-                          </span>
-                        </div>
-                      </td>
-                    </tr>
-                    
-                    {/* Department Records */}
-                    {deptRecords.map((rec) => (
-                      <tr key={rec._id} className={getRowClass(rec.status)}>
-                        {bulkEditMode && (
-                          <td>
-                            <input
-                              type="checkbox"
-                              checked={selectedRecords.includes(rec._id)}
-                              onChange={() => toggleRecordSelection(rec._id)}
-                            />
-                          </td>
-                        )}
-                        <td>
-                          <div className="employee-info">
-                            <div className="employee-avatar">
-                              {getInitials(rec.user?.name)}
-                            </div>
-                            <div className="employee-details">
-                              <div className="employee-name">
-                                {rec.user?.name || "N/A"}
-                              </div>
-                              <div className="employee-email">
-                                {rec.user?.email || "N/A"}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td>
-                          <span className="department-chip">
-                            {rec.user?.department || 'Unassigned'}
-                          </span>
-                        </td>
-                        <td>
-                          <span className={`type-chip ${getEmployeeTypeClass(rec.user?.employeeType)}`}>
-                            {rec.user?.employeeType?.toUpperCase() || "N/A"}
-                          </span>
-                        </td>
-                        <td>
-                          <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>
-                            {formatDate(rec.date)}
-                          </div>
-                        </td>
-                        <td>
-                          <div style={{ fontWeight: 500 }}>
-                            {formatTime(rec.inTime)}
-                          </div>
-                        </td>
-                        <td>
-                          <div style={{ fontWeight: 500 }}>
-                            {formatTime(rec.outTime)}
-                          </div>
-                        </td>
-                        <td>
-                          <span className={`time-chip ${rec.totalHours >= 9 ? 'time-full' : rec.totalHours >= 5 ? 'time-half' : 'time-low'}`}>
-                            {rec.hoursWorked || "00:00:00"}
-                          </span>
-                        </td>
-                        <td>
-                          <div className="login-time-info">
-                            {getLoginTimeCategory(rec.inTime)}
-                          </div>
-                        </td>
-                        <td>
-                          <span className={`status-chip ${getStatusClass(rec.status)}`}>
-                            {rec.status.toUpperCase()}
-                          </span>
-                          <div className="status-explanation">
-                            {rec.status === 'present' && 'Arrived before 9:10 AM'}
-                            {rec.status === 'late' && 'Arrived between 9:10-9:30 AM'}
-                            {rec.status === 'halfday' && 'Arrived after 9:30 AM'}
-                            {rec.status === 'absent' && 'No attendance recorded'}
-                          </div>
-                        </td>
-                        <td>
-                          <span className="late-chip">
-                            {rec.lateBy || "00:00:00"}
-                          </span>
-                        </td>
-                        {!bulkEditMode && (
-                          <td>
-                            <div className="action-buttons">
-                              <button
-                                className="btn-icon edit-btn"
-                                onClick={() => handleEditRecord(rec)}
-                                title="Edit Attendance"
-                              >
-                                <FiEdit size={16} />
-                              </button>
-                            </div>
-                          </td>
-                        )}
-                      </tr>
-                    ))}
-                  </React.Fragment>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={bulkEditMode ? 12 : 11}>
-                    <div className="empty-state">
-                      <div className="empty-state-icon">
-                        <FiCalendar size={48} />
+        <th className="col-employee">Employee</th>
+        <th className="col-department">Department</th>
+        <th className="col-type">Type</th>
+        <th className="col-date">Date</th>
+        <th className="col-checkin">Check In</th>
+        <th className="col-checkout">Check Out</th>
+        <th className="col-hours">Hours</th>
+        <th className="col-login">Login Time</th>
+        <th className="col-status">Status</th>
+        <th className="col-late">Late By</th>
+
+        {!bulkEditMode && <th className="col-actions">Actions</th>}
+      </tr>
+    </thead>
+
+    <tbody>
+      {filteredRecords.length ? (
+        Object.entries(
+          filteredRecords.reduce((acc, rec) => {
+            const dept = rec.user?.department || 'Unassigned';
+            if (!acc[dept]) acc[dept] = [];
+            acc[dept].push(rec);
+            return acc;
+          }, {})
+        ).map(([department, deptRecords]) => (
+          <React.Fragment key={department}>
+
+            {/* Department Header */}
+            <tr className="department-header">
+              <td colSpan={bulkEditMode ? 12 : 11}>
+                <div className="department-title">
+                  <FiUsers size={18} />
+                  <strong>{department} Department</strong>
+                  <span className="department-count">
+                    ({deptRecords.length} employees)
+                  </span>
+                </div>
+              </td>
+            </tr>
+
+            {/* Records */}
+            {deptRecords.map((rec) => (
+              <tr key={rec._id} className={getRowClass(rec.status)}>
+
+                {bulkEditMode && (
+                  <td>
+                    <input
+                      type="checkbox"
+                      checked={selectedRecords.includes(rec._id)}
+                      onChange={() => toggleRecordSelection(rec._id)}
+                    />
+                  </td>
+                )}
+
+                <td className="col-employee">
+                  <div className="employee-info">
+                    <div className="employee-avatar">
+                      {getInitials(rec.user?.name)}
+                    </div>
+                    <div className="employee-details">
+                      <div className="employee-name">
+                        {rec.user?.name || "N/A"}
                       </div>
-                      <h4 className="empty-state-title">No Records Found</h4>
-                      <p className="empty-state-text">
-                        Try adjusting your filters or add a new attendance record
-                      </p>
-                      <button 
-                        className="btn btn-contained"
-                        onClick={handleAddRecord}
+                      <div className="employee-email">
+                        {rec.user?.email || "N/A"}
+                      </div>
+                    </div>
+                  </div>
+                </td>
+
+                <td className="col-department">
+                  <span className="department-chip">
+                    {rec.user?.department || 'Unassigned'}
+                  </span>
+                </td>
+
+                <td className="col-type">
+                  <span className={`type-chip ${getEmployeeTypeClass(rec.user?.employeeType)}`}>
+                    {rec.user?.employeeType?.toUpperCase() || "N/A"}
+                  </span>
+                </td>
+
+                <td className="col-date">
+                  <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>
+                    {formatDate(rec.date)}
+                  </div>
+                </td>
+
+                <td className="col-checkin">
+                  <div style={{ fontWeight: 500 }}>
+                    {formatTime(rec.inTime)}
+                  </div>
+                </td>
+
+                <td className="col-checkout">
+                  <div style={{ fontWeight: 500 }}>
+                    {formatTime(rec.outTime)}
+                  </div>
+                </td>
+
+                <td className="col-hours">
+                  <span className={`time-chip ${
+                    rec.totalHours >= 9
+                      ? 'time-full'
+                      : rec.totalHours >= 5
+                      ? 'time-half'
+                      : 'time-low'
+                  }`}>
+                    {rec.hoursWorked || "00:00:00"}
+                  </span>
+                </td>
+
+                <td className="col-login">
+                  <div className="login-time-info">
+                    {getLoginTimeCategory(rec.inTime)}
+                  </div>
+                </td>
+
+                <td className="col-status">
+                  <span className={`status-chip ${getStatusClass(rec.status)}`}>
+                    {rec.status.toUpperCase()}
+                  </span>
+                  <div className="status-explanation">
+                    {rec.status === 'present' && 'Arrived before 9:10 AM'}
+                    {rec.status === 'late' && 'Arrived between 9:10-9:30 AM'}
+                    {rec.status === 'halfday' && 'Arrived after 9:30 AM'}
+                    {rec.status === 'absent' && 'No attendance recorded'}
+                  </div>
+                </td>
+
+                <td className="col-late">
+                  <span className="late-chip">
+                    {rec.lateBy || "00:00:00"}
+                  </span>
+                </td>
+
+                {!bulkEditMode && (
+                  <td className="col-actions">
+                    <div className="action-buttons">
+                      <button
+                        className="btn-icon edit-btn"
+                        onClick={() => handleEditRecord(rec)}
+                        title="Edit Attendance"
                       >
-                        Add Attendance
+                        <FiEdit size={16} />
                       </button>
                     </div>
                   </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                )}
+
+              </tr>
+            ))}
+
+          </React.Fragment>
+        ))
+      ) : (
+        <tr>
+          <td colSpan={bulkEditMode ? 12 : 11}>
+            <div className="empty-state">
+              <div className="empty-state-icon">
+                <FiCalendar size={48} />
+              </div>
+              <h4 className="empty-state-title">No Records Found</h4>
+              <p className="empty-state-text">
+                Try adjusting your filters or add a new attendance record
+              </p>
+              <button
+                className="btn btn-contained"
+                onClick={handleAddRecord}
+              >
+                Add Attendance
+              </button>
+            </div>
+          </td>
+        </tr>
+      )}
+    </tbody>
+  </table>
+</div>
       </div>
 
       {/* Summary Section */}
