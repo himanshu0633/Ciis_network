@@ -29,10 +29,6 @@ const CreateUser = () => {
   const [jobRoles, setJobRoles] = useState([]);
   const [loadingDepartments, setLoadingDepartments] = useState(false);
   const [loadingJobRoles, setLoadingJobRoles] = useState(false);
-  const [showDepartmentDropdown, setShowDepartmentDropdown] = useState(false);
-  const [showJobRoleDropdown, setShowJobRoleDropdown] = useState(false);
-  const [departmentSearch, setDepartmentSearch] = useState('');
-  const [jobRoleSearch, setJobRoleSearch] = useState('');
   const navigate = useNavigate();
 
   // LocalStorage se company data
@@ -257,15 +253,6 @@ const CreateUser = () => {
       console.log("✅ Processed job roles:", jobRolesData);
       setJobRoles(jobRolesData);
 
-      // Auto-select first job role
-      if (jobRolesData.length > 0) {
-        const firstRoleId = jobRolesData[0]._id || jobRolesData[0].id;
-        setForm(prev => ({ ...prev, jobRole: firstRoleId }));
-        toast.info(`${jobRolesData.length} job role(s) available`);
-      } else {
-        toast.warning('No job roles found for this department');
-      }
-
     } catch (err) {
       console.error("❌ Failed to load job roles:", err);
       toast.error('Failed to load job roles');
@@ -297,37 +284,14 @@ const CreateUser = () => {
     }
   };
 
-  const handleDepartmentChange = (department) => {
-    if (department) {
-      const departmentId = department._id || department.id;
-      console.log("✅ Department selected:", departmentId, department.name || department.departmentName);
-      
-      setForm(prev => ({
-        ...prev,
-        department: departmentId,
-        jobRole: ''
-      }));
-      setDepartmentSearch(department.name || department.departmentName || '');
-    } else {
-      setForm(prev => ({
-        ...prev,
-        department: '',
-        jobRole: ''
-      }));
-      setDepartmentSearch('');
-      setJobRoles([]);
+  const handleSelectChange = (e) => {
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
+    
+    // Agar department change ho raha hai to job role reset karo
+    if (name === 'department') {
+      setForm(prev => ({ ...prev, jobRole: '' }));
     }
-    setShowDepartmentDropdown(false);
-  };
-
-  const handleJobRoleChange = (role) => {
-    if (role) {
-      const roleId = role._id || role.id;
-      console.log("✅ Job Role selected:", roleId);
-      setForm(prev => ({ ...prev, jobRole: roleId }));
-      setJobRoleSearch(role.name || role.title || role.roleName || '');
-    }
-    setShowJobRoleDropdown(false);
   };
 
   const validateForm = () => {
@@ -402,16 +366,6 @@ const CreateUser = () => {
     }
   };
 
-  // Get selected department object
-  const selectedDepartment = departments.find(
-    dept => (dept._id === form.department || dept.id === form.department)
-  ) || null;
-
-  // Get selected job role object
-  const selectedJobRole = jobRoles.find(
-    role => (role._id === form.jobRole || role.id === form.jobRole)
-  ) || null;
-
   // Get user display name
   const getUserDisplayName = () => {
     if (currentUser?.name) {
@@ -420,17 +374,10 @@ const CreateUser = () => {
     return 'USER';
   };
 
-  // Filter job roles based on search
-  const filteredJobRoles = jobRoles.filter(role => {
-    const searchTerm = jobRoleSearch.toLowerCase();
-    const roleName = (role.name || role.title || role.roleName || '').toLowerCase();
-    return roleName.includes(searchTerm);
-  });
-
   // 🔥 DEBUG: Show current state
   console.log("🏢 Current departments state:", departments);
-  console.log("📋 Selected department:", selectedDepartment);
-  console.log("🎯 Form department ID:", form.department);
+  console.log("📋 Selected department ID:", form.department);
+  console.log("🎯 Job Roles:", jobRoles);
 
   return (
     <div className="CreateUser-container">
@@ -578,122 +525,76 @@ const CreateUser = () => {
 
             {/* ROW 3: Department & Job Role */}
             <div className="CreateUser-form-row">
-              {/* Department - Custom Dropdown */}
+              {/* Department - Simple Select like Gender */}
               <div className="CreateUser-form-group">
                 <label htmlFor="department" className="CreateUser-label">
                   Department <span className="CreateUser-required-star">*</span>
                 </label>
-                <div className="CreateUser-dropdown-container">
-                  <div className="CreateUser-input-wrapper">
-                    <span className="CreateUser-input-icon">🏢</span>
-                    <input
-                      type="text"
-                      id="department"
-                      className="CreateUser-input"
-                      placeholder={loadingDepartments ? "Loading departments..." : "Select department"}
-                      value={selectedDepartment ? (selectedDepartment.name || selectedDepartment.departmentName || selectedDepartment.title || '') : ''}
-                      readOnly   // 👈 YE ADD KARO
-                      onClick={() => setShowDepartmentDropdown(!showDepartmentDropdown)}
-                      onFocus={() => setShowDepartmentDropdown(true)}
-                      disabled={loadingDepartments}
-                      required
-                    />
-                    <span className="CreateUser-dropdown-arrow">▼</span>
-                  </div>
-                  
-                  {showDepartmentDropdown && (
-                    <div className="CreateUser-dropdown-menu">
-                      {loadingDepartments ? (
-                        <div className="CreateUser-dropdown-item CreateUser-dropdown-loading">
-                          <div className="CreateUser-spinner-small"></div>
-                          Loading departments...
-                        </div>
-                      ) : departments.length === 0 ? (
-                        <div className="CreateUser-dropdown-item CreateUser-dropdown-empty">
-                          {departments.length === 0 ? 'No departments found' : 'No matching departments'}
-                        </div>
-                      ) : (
-                        departments.map((dept) => (
-                          <div
-                            key={dept._id || dept.id}
-                            className={`CreateUser-dropdown-item ${(dept._id === form.department || dept.id === form.department) ? 'CreateUser-dropdown-item-selected' : ''}`}
-                            onClick={() => handleDepartmentChange(dept)}
-                          >
-                            {dept.name || dept.departmentName || dept.title}
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  )}
+                <div className="CreateUser-select-wrapper">
+                  <span className="CreateUser-select-icon">🏢</span>
+                  <select
+                    id="department"
+                    name="department"
+                    value={form.department}
+                    onChange={handleSelectChange}
+                    className="CreateUser-select"
+                    disabled={loadingDepartments || departments.length === 0}
+                    required
+                  >
+                    <option value="">
+                      {loadingDepartments 
+                        ? "Loading departments..." 
+                        : departments.length === 0 
+                          ? "No departments available" 
+                          : "Select Department"}
+                    </option>
+                    {departments.map(dept => (
+                      <option key={dept._id || dept.id} value={dept._id || dept.id}>
+                        {dept.name || dept.departmentName || dept.title}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="CreateUser-select-arrow">▼</span>
                 </div>
-                <small className={`CreateUser-helper-text ${departments.length === 0 && !loadingDepartments ? 'CreateUser-helper-text-error' : ''}`}>
-                  {loadingDepartments
-                    ? "Loading departments..."
-                    : departments.length === 0
-                      ? "No departments available. Please create departments first."
-                      : `${departments.length} department(s) available`}
-                </small>
+                {departments.length === 0 && !loadingDepartments && (
+                  <small className="CreateUser-helper-text CreateUser-helper-text-error">
+                    No departments available. Please create departments first.
+                  </small>
+                )}
               </div>
 
-              {/* Job Role - Custom Dropdown */}
+              {/* Job Role - Simple Select like Gender */}
               <div className="CreateUser-form-group">
                 <label htmlFor="jobRole" className="CreateUser-label">
                   Job Role <span className="CreateUser-required-star">*</span>
                 </label>
-                <div className="CreateUser-dropdown-container">
-                  <div className="CreateUser-input-wrapper">
-                    <span className="CreateUser-input-icon">💼</span>
-                    <input
-                      type="text"
-                      id="jobRole"
-                      className="CreateUser-input"
-                      placeholder={
-                        !form.department 
-                          ? "Select a department first" 
-                          : loadingJobRoles 
-                            ? "Loading job roles..." 
-                            : "Select job role"
-                      }
-                      value={selectedJobRole ? (selectedJobRole.name || selectedJobRole.title || selectedJobRole.roleName || '') : jobRoleSearch}
-                      onChange={(e) => {
-                        setJobRoleSearch(e.target.value);
-                        if (!showJobRoleDropdown) setShowJobRoleDropdown(true);
-                      }}
-                      onClick={() => form.department && setShowJobRoleDropdown(!showJobRoleDropdown)}
-                      onFocus={() => form.department && setShowJobRoleDropdown(true)}
-                      disabled={!form.department || loadingJobRoles || jobRoles.length === 0}
-                      required
-                    />
-                    {form.department && !loadingJobRoles && jobRoles.length > 0 && (
-                      <span className="CreateUser-dropdown-arrow">▼</span>
-                    )}
-                  </div>
-                  
-                  {showJobRoleDropdown && form.department && (
-                    <div className="CreateUser-dropdown-menu">
-                      {loadingJobRoles ? (
-                        <div className="CreateUser-dropdown-item CreateUser-dropdown-loading">
-                          <div className="CreateUser-spinner-small"></div>
-                          Loading job roles...
-                        </div>
-                      ) : filteredJobRoles.length === 0 ? (
-                        <div className="CreateUser-dropdown-item CreateUser-dropdown-empty">
-                          {jobRoles.length === 0 ? 'No job roles found' : 'No matching job roles'}
-                        </div>
-                      ) : (
-                        filteredJobRoles.map((role) => (
-                          <div
-                            key={role._id || role.id}
-                            className={`CreateUser-dropdown-item ${(role._id === form.jobRole || role.id === form.jobRole) ? 'CreateUser-dropdown-item-selected' : ''}`}
-                            onClick={() => handleJobRoleChange(role)}
-                          >
-                            {role.name || role.title || role.roleName}
-                            {role.description && <small className="CreateUser-role-description"> - {role.description}</small>}
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  )}
+                <div className="CreateUser-select-wrapper">
+                  <span className="CreateUser-select-icon">💼</span>
+                  <select
+                    id="jobRole"
+                    name="jobRole"
+                    value={form.jobRole}
+                    onChange={handleSelectChange}
+                    className="CreateUser-select"
+                    disabled={!form.department || loadingJobRoles || jobRoles.length === 0}
+                    required
+                  >
+                    <option value="">
+                      {!form.department 
+                        ? "Select a department first" 
+                        : loadingJobRoles 
+                          ? "Loading job roles..." 
+                          : jobRoles.length === 0 
+                            ? "No job roles available" 
+                            : "Select Job Role"}
+                    </option>
+                    {jobRoles.map(role => (
+                      <option key={role._id || role.id} value={role._id || role.id}>
+                        {role.name || role.title || role.roleName}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="CreateUser-select-arrow">▼</span>
                 </div>
                 {form.department && jobRoles.length === 0 && !loadingJobRoles && (
                   <small className="CreateUser-helper-text CreateUser-helper-text-error">
@@ -715,7 +616,7 @@ const CreateUser = () => {
                     id="gender"
                     name="gender"
                     value={form.gender}
-                    onChange={handleTextChange}
+                    onChange={handleSelectChange}
                     className="CreateUser-select"
                     required
                   >
@@ -740,7 +641,7 @@ const CreateUser = () => {
                     id="maritalStatus"
                     name="maritalStatus"
                     value={form.maritalStatus}
-                    onChange={handleTextChange}
+                    onChange={handleSelectChange}
                     className="CreateUser-select"
                     required
                   >
