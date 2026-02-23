@@ -434,10 +434,14 @@ const EmployeeLeaves = () => {
   const fetchCompanyUsers = async () => {
     try {
       let endpoint = '';
-      if (isOwner || isAdmin || isHR) {
-        endpoint = '/users/company-users';
+      
+      // FIXED: Use the correct endpoint based on user role
+      if (isOwner) {
+        // Owner can see all company users
+        endpoint = `/users/company-users?companyId=${currentUserCompanyId}`;
       } else {
-        endpoint = '/users/department-users';
+        // Employees see only their department users
+        endpoint = `/users/department-users?department=${currentUserDepartment}`;
       }
       
       const res = await axios.get(endpoint);
@@ -483,7 +487,7 @@ const EmployeeLeaves = () => {
   };
 
   // ============================================
-  // LEAVE MANAGEMENT FUNCTIONS
+  // LEAVE MANAGEMENT FUNCTIONS - FIXED ROLE-BASED DATA CONTROL
   // ============================================
   const fetchLeaves = async () => {
     if (!currentUserCompanyId) {
@@ -492,24 +496,52 @@ const EmployeeLeaves = () => {
     
     setLoading(true);
     try {
-      let url = '/leaves/all';
+      // FIXED: Use the correct endpoint based on user role
+      let endpoint = '';
+      
+      if (isOwner) {
+        // Owner can see all leaves in the company
+        endpoint = '/leaves/all';
+        console.log("👑 Owner - fetching all company leaves");
+      } else {
+        // Employees see leaves from their department only
+        // Using department filter endpoint or adding department param
+        endpoint = '/leaves/all'; // Keep same endpoint but add department filter
+        console.log("👤 Employee - fetching department leaves only");
+      }
+      
       const params = new URLSearchParams();
       
+      // Always add company ID to all requests
       params.append('company', currentUserCompanyId);
       
+      // FIXED: For non-owners, force filter by their department
+      if (!isOwner) {
+        if (currentUserDepartment) {
+          console.log("📊 Filtering leaves by department:", currentUserDepartment);
+          params.append('department', currentUserDepartment);
+        } else {
+          console.warn("⚠️ No department found for non-owner user");
+          showSnackbar("Department information missing", "warning");
+          setLoading(false);
+          return;
+        }
+      } else {
+        // For owners, apply department filter only if selected
+        if (departmentFilter && departmentFilter !== 'all') {
+          params.append('department', departmentFilter);
+        }
+      }
+      
+      // Add other filters
       if (filterDate) params.append('date', filterDate);
       if (statusFilter !== 'All') params.append('status', statusFilter);
       if (leaveTypeFilter !== 'all') params.append('type', leaveTypeFilter);
       
-      if (!isOwner && !isAdmin && !isHR && currentUserDepartment) {
-        params.append('department', currentUserDepartment);
-      } else if (departmentFilter && departmentFilter !== 'all') {
-        params.append('department', departmentFilter);
-      }
+      if (params.toString()) endpoint += `?${params}`;
       
-      if (params.toString()) url += `?${params}`;
-      
-      const res = await axios.get(url);
+      console.log("🌐 Fetching leaves from:", endpoint);
+      const res = await axios.get(endpoint);
       
       let data = [];
       if (res.data && res.data.data && res.data.data.leaves) {
@@ -518,6 +550,23 @@ const EmployeeLeaves = () => {
         data = res.data.leaves;
       } else if (res.data && Array.isArray(res.data)) {
         data = res.data;
+      } else if (res.data && res.data.success && res.data.message && Array.isArray(res.data.message)) {
+        data = res.data.message;
+      }
+      
+      console.log(`✅ Fetched ${data.length} leaves`);
+      
+      // FIXED: For non-owners, double-check filtering by department (safety net)
+      if (!isOwner && currentUserDepartment) {
+        const beforeFilter = data.length;
+        data = data.filter(leave => {
+          const leaveDept = leave.user?.department?._id || leave.user?.department || leave.department;
+          return leaveDept === currentUserDepartment;
+        });
+        
+        if (data.length !== beforeFilter) {
+          console.log(`🔒 Filtered out ${beforeFilter - data.length} leaves from other departments`);
+        }
       }
       
       setLeaves(data);
@@ -552,7 +601,7 @@ const EmployeeLeaves = () => {
   };
 
   // ============================================
-  // PERMISSION CHECK FUNCTIONS
+  // PERMISSION CHECK FUNCTIONS - UPDATED
   // ============================================
   const canModifyLeave = (leaveUserId, leaveStatus) => {
     return isOwner === true;
@@ -591,9 +640,16 @@ const EmployeeLeaves = () => {
       
       const params = new URLSearchParams();
       params.append('company', currentUserCompanyId);
+      
+      // FIXED: For non-owners, force department filter
+      if (!isOwner && currentUserDepartment) {
+        params.append('department', currentUserDepartment);
+      } else if (departmentFilter !== 'all') {
+        params.append('department', departmentFilter);
+      }
+      
       if (filterDate) params.append('date', filterDate);
       if (statusFilter !== 'All') params.append('status', statusFilter);
-      if (departmentFilter !== 'all') params.append('department', departmentFilter);
       
       const response = await axios.get(`/leaves/export?${params}`, {
         responseType: 'blob'
@@ -1547,7 +1603,20 @@ const EmployeeLeaves = () => {
             <FiLock size={20} />
             <div className="warning-text">
               <strong>🔒 View Only Mode</strong>
-              <p>You are viewing leave requests. Only the Company Owner can approve, reject, or delete leaves.</p>
+              <p>You are viewing leaves from your department only. Only the Company Owner can view all leaves and approve/reject requests.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Department Info Banner - Show for non-owners */}
+      {!isOwner && currentUserDepartment && (
+        <div className="department-info-banner">
+          <div className="info-content">
+            <FiHome size={20} />
+            <div className="info-text">
+              <strong>🏢 Your Department: {getDepartmentName(currentUserDepartment)}</strong>
+              <p>Showing leave requests only from your department</p>
             </div>
           </div>
         </div>
@@ -1558,7 +1627,7 @@ const EmployeeLeaves = () => {
         <div className="filter-header">
           <FiFilter size={20} color="#1976d2" />
           <h3>Filters & Search</h3>
-          {(isOwner || isAdmin || isHR) && departmentFilter !== 'all' && (
+          {isOwner && departmentFilter !== 'all' && (
             <span className="owner-filter-badge">
               <FiEye size={14} />
               Filtering: {departments.find(d => (d._id || d.id) === departmentFilter)?.name || departmentFilter}
@@ -1594,7 +1663,8 @@ const EmployeeLeaves = () => {
             />
           </div>
           
-          {(isOwner || isAdmin || isHR) && (
+          {/* FIXED: Only show department filter for owners */}
+          {isOwner && (
             <div className="filter-group">
               <label className="filter-label">Department</label>
               <DepartmentFilter

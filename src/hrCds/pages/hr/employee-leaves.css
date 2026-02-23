@@ -2005,31 +2005,7 @@ font-size: 12px;
   }
 }
 
-/* Scrollbar Styling */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
 
-::-webkit-scrollbar-track {
-  background: #f1f3f5;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #cbd5e0;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #a0aec0;
-}
-
-/* Focus Styles */
-*:focus {
-  outline: 2px solid rgba(66, 153, 225, 0.6);
-  outline-offset: 2px;
-}
 
 /* Print Styles */
 @media print {
