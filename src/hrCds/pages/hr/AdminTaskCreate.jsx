@@ -23,6 +23,7 @@ const AdminTaskManagement = () => {
   const [groups, setGroups] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [userRole, setUserRole] = useState('');
+  const [companyRole, setCompanyRole] = useState('');
   const [jobRole, setJobRole] = useState('');
   const [userId, setUserId] = useState('');
   const [authError, setAuthError] = useState(false);
@@ -32,9 +33,10 @@ const AdminTaskManagement = () => {
   const [currentUser, setCurrentUser] = useState({
     id: '',
     name: '',
-    company: '',
-    department: '',
-    role: ''
+    company: null,
+    department: null,
+    role: '',
+    companyRole: ''
   });
   
   // Pagination States
@@ -142,6 +144,29 @@ const AdminTaskManagement = () => {
 
   const navigate = useNavigate();
 
+  // Helper function to check if user is Owner
+  const isOwner = () => {
+    return companyRole === 'Owner' || userRole === 'Owner' || userRole === 'CAREER INFOWIS Admin';
+  };
+
+  // Helper function to get company name from company object
+  const getCompanyName = (company) => {
+    if (!company) return 'N/A';
+    if (typeof company === 'object') {
+      return company.companyName || company.name || company._id || 'N/A';
+    }
+    return company;
+  };
+
+  // Helper function to get department name from department object
+  const getDepartmentName = (department) => {
+    if (!department) return 'N/A';
+    if (typeof department === 'object') {
+      return department.name || department._id || 'N/A';
+    }
+    return department;
+  };
+
   // 🆕 FUNCTION: Check if user belongs to same company and department
   const checkSameCompanyDepartment = (targetUser) => {
     if (!currentUser || !targetUser) return false;
@@ -184,13 +209,23 @@ const AdminTaskManagement = () => {
     return currentCompany?.toString() === targetCompany?.toString();
   };
 
-  // 🆕 Filter users based on search AND same company
+  // 🆕 Filter users based on search AND company role
   const filteredUsers = users.filter(user => {
     // First check if user is from same company
     const isSameCompany = checkSameCompany(user);
     const isSelf = (user.id || user._id) === currentUser.id;
     
     if (!isSameCompany || isSelf) return false;
+    
+    // For employees: only show users from same department
+    if (!isOwner()) {
+      const userDept = user.department?._id || user.department;
+      const currentDept = currentUser.department?._id || currentUser.department;
+      
+      if (userDept?.toString() !== currentDept?.toString()) {
+        return false;
+      }
+    }
     
     // Then apply search filter
     return user.name?.toLowerCase().includes(userSearch.toLowerCase()) ||
@@ -242,49 +277,60 @@ const AdminTaskManagement = () => {
         return;
       }
       
-      // Find user ID
+      // Find user ID and role with proper object structure
       let foundUserId = null;
       let userRole = 'user';
+      let companyRole = 'employee';
       let userName = '';
       let userJobRole = '';
-      let userCompany = '';
-      let userDepartment = '';
+      let userCompany = null;
+      let userDepartment = null;
       
+      // Handle different user object structures
       if (user.id && typeof user.id === 'string') {
+        // Direct user object
         foundUserId = user.id;
         userRole = user.role || 'user';
+        companyRole = user.companyRole || user.role || 'employee';
         userName = user.name || 'Unknown User';
         userJobRole = user.jobRole || '';
-        userCompany = user.company || '';
-        userDepartment = user.department || '';
+        userCompany = user.company || null;
+        userDepartment = user.department || null;
       }
       else if (user.user && user.user.id) {
+        // Nested user object
         foundUserId = user.user.id;
         userRole = user.user.role || 'user';
+        companyRole = user.user.companyRole || user.user.role || 'employee';
         userName = user.user.name || 'Unknown User';
         userJobRole = user.user.jobRole || '';
-        userCompany = user.user.company || '';
-        userDepartment = user.user.department || '';
+        userCompany = user.user.company || null;
+        userDepartment = user.user.department || null;
       }
       else if (user._id) {
+        // MongoDB _id format
         foundUserId = user._id;
         userRole = user.role || 'user';
+        companyRole = user.companyRole || user.role || 'employee';
         userName = user.name || 'Unknown User';
         userJobRole = user.jobRole || '';
-        userCompany = user.company || '';
-        userDepartment = user.department || '';
+        userCompany = user.company || null;
+        userDepartment = user.department || null;
       }
       else if (user.userId) {
+        // userId field
         foundUserId = user.userId;
         userRole = user.role || 'user';
+        companyRole = user.companyRole || user.role || 'employee';
         userName = user.name || 'Unknown User';
         userJobRole = user.jobRole || '';
-        userCompany = user.company || '';
-        userDepartment = user.department || '';
+        userCompany = user.company || null;
+        userDepartment = user.department || null;
       }
       else if (typeof user === 'string') {
         foundUserId = user;
         userRole = 'user';
+        companyRole = 'employee';
       }
       
       if (!foundUserId) {
@@ -303,22 +349,25 @@ const AdminTaskManagement = () => {
         userId: foundUserId, 
         name: userName,
         role: userRole,
+        companyRole: companyRole,
         jobRole: userJobRole,
         company: userCompany,
         department: userDepartment
       });
 
       setUserRole(userRole);
+      setCompanyRole(companyRole);
       setJobRole(userJobRole);
       setUserId(foundUserId);
       
-      // Set current user details for filtering
+      // Set current user details for filtering with proper objects
       setCurrentUser({
         id: foundUserId,
         name: userName,
         company: userCompany,
         department: userDepartment,
-        role: userRole
+        role: userRole,
+        companyRole: companyRole
       });
       
       setAuthError(false);
@@ -555,8 +604,16 @@ const AdminTaskManagement = () => {
       
       // First fetch departments
       try {
-        const deptRes = await apiCall('get', '/departments');
-        console.log('✅ Departments API response:', deptRes.data);
+        // Use the department filter API with company ID
+        const companyId = currentUser.company?._id || currentUser.company;
+        let deptUrl = '/departments';
+        
+        if (companyId) {
+          deptUrl = `/departments?company=${companyId}`;
+        }
+        
+        const deptRes = await apiCall('get', deptUrl);
+        console.log('✅ Departments API response:', deptRes);
         
         let departmentsData = [];
         if (deptRes.data && deptRes.data.success) {
@@ -567,14 +624,35 @@ const AdminTaskManagement = () => {
           } else if (Array.isArray(deptRes.data)) {
             departmentsData = deptRes.data;
           }
+        } else if (Array.isArray(deptRes)) {
+          departmentsData = deptRes;
         }
         setDepartments(departmentsData);
       } catch (deptErr) {
         console.error('❌ Failed to load departments', deptErr);
       }
       
-      // Fetch company users (all users from same company)
-      const usersResult = await apiCall('get', '/users/company-users');
+      // Fetch users based on company role
+      let usersUrl;
+      
+      if (isOwner()) {
+        // Owner: Get all company users
+        const companyId = currentUser.company?._id || currentUser.company;
+        usersUrl = `/users/company-users?companyId=${companyId}`;
+        console.log('👑 Owner: Fetching all company users from:', usersUrl);
+      } else {
+        // Employee: Get department users
+        const deptId = currentUser.department?._id || currentUser.department;
+        if (deptId) {
+          usersUrl = `/users/department-users?department=${deptId}`;
+          console.log('👤 Employee: Fetching department users from:', usersUrl);
+        } else {
+          usersUrl = '/users/company-users';
+          console.log('⚠️ No department ID found, falling back to company users');
+        }
+      }
+      
+      const usersResult = await apiCall('get', usersUrl);
       
       console.log('👥 Raw users API response:', usersResult);
       
@@ -595,11 +673,11 @@ const AdminTaskManagement = () => {
       
       console.log('👥 Total users found:', usersArray.length);
       
-      // Filter users to only show same company users
+      // Additional filtering to ensure only same company users
       if (currentUser.company) {
         usersArray = usersArray.filter(user => {
           const userCompany = user.company?._id || user.company;
-          const sameCompany = userCompany?.toString() === currentUser.company?.toString();
+          const sameCompany = userCompany?.toString() === (currentUser.company?._id || currentUser.company)?.toString();
           return sameCompany;
         });
         console.log('👥 Filtered users (same company):', usersArray.length);
@@ -642,6 +720,27 @@ const AdminTaskManagement = () => {
     if (newTask.assignedUsers.length === 0 && newTask.assignedGroups.length === 0) {
       setSnackbar({ open: true, message: 'Please assign to at least one user or group', severity: 'error' });
       return;
+    }
+
+    // Validate that employees are only assigning to users in their department
+    if (!isOwner() && newTask.assignedUsers.length > 0) {
+      const currentDept = currentUser.department?._id || currentUser.department;
+      
+      for (const assignedUserId of newTask.assignedUsers) {
+        const assignedUser = users.find(u => (u.id || u._id) === assignedUserId);
+        if (assignedUser) {
+          const userDept = assignedUser.department?._id || assignedUser.department;
+          
+          if (userDept?.toString() !== currentDept?.toString()) {
+            setSnackbar({ 
+              open: true, 
+              message: `Cannot assign task to ${assignedUser.name} - they are in a different department. Employees can only assign tasks within their own department.`, 
+              severity: 'error' 
+            });
+            return;
+          }
+        }
+      }
     }
 
     setIsCreatingTask(true);
@@ -1283,34 +1382,6 @@ const AdminTaskManagement = () => {
 
   // User Info Chip Component
   const AdminTaskManagementUserInfoChip = ({ user }) => {
-    const getCompanyName = () => {
-      if (!user?.company) return 'No Company';
-      
-      if (typeof user.company === 'object' && user.company.companyName) {
-        return user.company.companyName;
-      }
-      
-      if (typeof user.company === 'string') {
-        return user.company;
-      }
-      
-      return 'No Company';
-    };
-
-    const getDepartmentName = () => {
-      if (!user?.department) return 'No Department';
-      
-      if (typeof user.department === 'object' && user.department.name) {
-        return user.department.name;
-      }
-      
-      if (typeof user.department === 'string') {
-        return user.department;
-      }
-      
-      return 'No Department';
-    };
-
     return (
       <div className="AdminTaskManagement-user-info-chip">
         <div className="AdminTaskManagement-user-info-avatar">
@@ -1319,8 +1390,8 @@ const AdminTaskManagement = () => {
         <div className="AdminTaskManagement-user-info-details">
           <div className="AdminTaskManagement-user-info-name">{user?.name || 'Unknown'}</div>
           <div className="AdminTaskManagement-user-info-meta">
-            <span>Company: {getCompanyName()}</span>
-            <span>Dept: {getDepartmentName()}</span>
+            <span>Company: {getCompanyName(user?.company)}</span>
+            <span>Dept: {getDepartmentName(user?.department)}</span>
           </div>
         </div>
       </div>
@@ -1519,7 +1590,7 @@ const AdminTaskManagement = () => {
               <option value="">All Users</option>
               {filteredUsers.map(user => (
                 <option key={user.id || user._id} value={user.id || user._id}>
-                  {user.name} - {user.department?.name || 'No Dept'}
+                  {user.name} - {getDepartmentName(user.department)}
                 </option>
               ))}
             </select>
@@ -2013,7 +2084,7 @@ const AdminTaskManagement = () => {
     }
   }, [openCreateDialog]);
 
-  // Create Task Dialog - Shows all company users
+  // Create Task Dialog - Shows filtered users based on company role
   const renderCreateTaskDialog = () => (
     <div className={`AdminTaskManagement-modal ${openCreateDialog ? 'AdminTaskManagement-modal-open' : ''}`}>
       <div className="AdminTaskManagement-modal-content AdminTaskManagement-modal-large">
@@ -2030,6 +2101,21 @@ const AdminTaskManagement = () => {
         </div>
         <div className="AdminTaskManagement-modal-body">
           <div className="AdminTaskManagement-form-container">
+            {/* Role-based access hint */}
+            <div className="AdminTaskManagement-form-group">
+              <div className="AdminTaskManagement-role-hint">
+                {isOwner() ? (
+                  <span className="AdminTaskManagement-role-hint-admin">
+                    <FiUserCheck /> Owner: You can assign tasks to any user in the company
+                  </span>
+                ) : (
+                  <span className="AdminTaskManagement-role-hint-employee">
+                    <FiUsers /> Employee: You can only assign tasks to users in your department
+                  </span>
+                )}
+              </div>
+            </div>
+
             <div className="AdminTaskManagement-form-group">
               <label>Task Title *</label>
               <input
@@ -2096,9 +2182,16 @@ const AdminTaskManagement = () => {
               </div>
             </div>
 
-            {/* Assign to Users - Shows all company users */}
+            {/* Assign to Users - Shows filtered users based on company role */}
             <div className="AdminTaskManagement-form-group">
-              <label>Assign to Users (All Company Users)</label>
+              <label>
+                Assign to Users 
+                {isOwner() ? (
+                  <span className="AdminTaskManagement-role-badge">(All Company Users)</span>
+                ) : (
+                  <span className="AdminTaskManagement-role-badge">(Same Department Only)</span>
+                )}
+              </label>
               <div className="AdminTaskManagement-multi-select-container">
                 <div className="AdminTaskManagement-select-search-bar">
                   <FiSearch className="AdminTaskManagement-select-search-icon" />
@@ -2147,7 +2240,11 @@ const AdminTaskManagement = () => {
                       <div className="AdminTaskManagement-empty-state">
                         <FiUsers size={32} className="AdminTaskManagement-empty-icon" />
                         <h5>No users available</h5>
-                        <p>No other users found in your company</p>
+                        <p>
+                          {isOwner() 
+                            ? 'No other users found in your company' 
+                            : 'No other users found in your department'}
+                        </p>
                       </div>
                     </div>
                   )}
@@ -2159,7 +2256,7 @@ const AdminTaskManagement = () => {
                     const user = users.find(u => u.id === value || u._id === value);
                     return user ? (
                       <span key={value} className="AdminTaskManagement-selected-chip">
-                        {user.name}
+                        {user.name} {!isOwner() && getDepartmentName(user.department) && `(${getDepartmentName(user.department)})`}
                       </span>
                     ) : null;
                   })}
@@ -2289,7 +2386,7 @@ const AdminTaskManagement = () => {
     </div>
   );
 
-  // Edit Task Dialog - Shows all company users
+  // Edit Task Dialog - Shows filtered users based on company role
   const renderEditTaskDialog = () => (
     <div className={`AdminTaskManagement-modal ${openEditDialog ? 'AdminTaskManagement-modal-open' : ''}`}>
       <div className="AdminTaskManagement-modal-content AdminTaskManagement-modal-large">
@@ -2368,9 +2465,16 @@ const AdminTaskManagement = () => {
               </div>
             </div>
 
-            {/* Assign to Users (Edit mode) - Shows all company users */}
+            {/* Assign to Users (Edit mode) - Shows filtered users based on company role */}
             <div className="AdminTaskManagement-form-group">
-              <label>Assign to Users (All Company Users)</label>
+              <label>
+                Assign to Users 
+                {isOwner() ? (
+                  <span className="AdminTaskManagement-role-badge">(All Company Users)</span>
+                ) : (
+                  <span className="AdminTaskManagement-role-badge">(Same Department Only)</span>
+                )}
+              </label>
               <div className="AdminTaskManagement-multi-select-container">
                 {filteredUsers.length > 0 ? (
                   filteredUsers.map((user) => (
@@ -2402,7 +2506,11 @@ const AdminTaskManagement = () => {
                   <div className="AdminTaskManagement-empty-state">
                     <FiUsers size={32} className="AdminTaskManagement-empty-icon" />
                     <h5>No users available</h5>
-                    <p>No other users found in your company</p>
+                    <p>
+                      {isOwner() 
+                        ? 'No other users found in your company' 
+                        : 'No other users found in your department'}
+                    </p>
                   </div>
                 )}
               </div>
@@ -2504,7 +2612,7 @@ const AdminTaskManagement = () => {
             </div>
 
             <div className="AdminTaskManagement-form-group">
-              <label>Select Members (All Company Users) *</label>
+              <label>Select Members *</label>
               <div className="AdminTaskManagement-multi-select-container">
                 {filteredUsers.length > 0 ? (
                   filteredUsers.map((user) => (
@@ -2536,7 +2644,7 @@ const AdminTaskManagement = () => {
                   <div className="AdminTaskManagement-empty-state">
                     <FiUsers size={32} className="AdminTaskManagement-empty-icon" />
                     <h5>No users available</h5>
-                    <p>No other users found in your company</p>
+                    <p>No users found to add to group</p>
                   </div>
                 )}
               </div>
@@ -2806,19 +2914,19 @@ const AdminTaskManagement = () => {
               Manage and assign tasks to users and groups
               {currentUser.company && (
                 <div className="AdminTaskManagement-header-info">
-                  <span><FiBriefcase /> Company: {currentUser.company?.companyName || currentUser.company}</span>
+                  <span><FiBriefcase /> Company: {getCompanyName(currentUser.company)}</span>
                   {currentUser.department && (
-                    <span><FiBriefcase /> Department: {currentUser.department?.name || currentUser.department}</span>
+                    <span><FiBriefcase /> Department: {getDepartmentName(currentUser.department)}</span>
                   )}
                 </div>
               )}
             </div>
           </div>
           <div className="AdminTaskManagement-header-actions">
-            {userRole && (
+            {companyRole && (
               <div className="AdminTaskManagement-user-info">
-                <div className="AdminTaskManagement-user-role-badge">
-                  {userRole}
+                <div className={`AdminTaskManagement-user-role-badge ${isOwner() ? 'AdminTaskManagement-role-owner' : 'AdminTaskManagement-role-employee'}`}>
+                  {companyRole}
                 </div>
                 {jobRole && (
                   <div className="AdminTaskManagement-user-jobrole">
