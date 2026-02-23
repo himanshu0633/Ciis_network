@@ -25,6 +25,7 @@ const APP_ROUTES = [
   { path: 'task-management', name: 'Create Task', icon: 'Task', category: 'tasks' },
   { path: 'employee-meeting', name: 'Employee Meeting', icon: 'VideoCall', category: 'meetings' },
   { path: 'client-meeting', name: 'Client Meeting', icon: 'VideoCall', category: 'meetings' },
+  { path: 'change-password', name: 'Change Password', icon: 'Key', category: 'main' },
 ];
 
 // Helper function to get icon component as HTML string

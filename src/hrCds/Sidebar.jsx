@@ -764,65 +764,8 @@ const Sidebar = ({ isMobile = false }) => {
         ))}
       </Box>
 
-      {/* ===== 🔥 YAHAN SE CHANGE PASSWORD SECTION START 🔥 ===== */}
-      {/* Sirf USER role wale ko dikhega */}
-      {userData && userData.jobRole === 'User' && (
-        <Box sx={{ 
-          px: 2, 
-          py: 1, 
-          borderTop: `1px solid ${theme.palette.divider}`,
-          borderBottom: `1px solid ${theme.palette.divider}`,
-          backgroundColor: theme.palette.action.hover + '20'
-        }}>
-          {isSidebarOpen ? (
-            <StyledListItemButton
-              onClick={() => handleNavigate('/ciisUser/change-password')}
-              sx={{
-                color: 'info.main',
-                '&:hover': { 
-                  backgroundColor: 'info.light',
-                  color: 'info.dark',
-                  transform: 'translateX(2px)',
-                  transition: 'all 0.2s ease'
-                }
-              }}
-            >
-              <StyledListItemIcon>
-                <SettingsIcon />
-              </StyledListItemIcon>
-              <ListItemText
-                primary="Change Password"
-                primaryTypographyProps={{ 
-                  variant: 'body2', 
-                  fontWeight: 600 
-                }}
-              />
-            </StyledListItemButton>
-          ) : (
-            <Tooltip title="Change Password" placement="right">
-              <IconButton
-                onClick={() => handleNavigate('/ciisUser/change-password')}
-                sx={{
-                  width: '100%',
-                  justifyContent: 'center',
-                  color: 'info.main',
-                  padding: '8px',
-                  borderRadius: 2,
-                  '&:hover': { 
-                    color: 'info.dark',
-                    backgroundColor: 'info.light'
-                  }
-                }}
-              >
-                <SettingsIcon />
-              </IconButton>
-            </Tooltip>
-          )}
-        </Box>
-      )}
-      {/* ===== 🔚 CHANGE PASSWORD SECTION END 🔚 ===== */}
 
-      {/* Logout Section - ab borderTop nahi hai kyunki upar laga diya */}
+      
       <Box sx={{ px: 2, py: 2 }}>
         {isSidebarOpen ? (
           <StyledListItemButton

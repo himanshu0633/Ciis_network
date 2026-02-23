@@ -93,7 +93,6 @@ function App() {
           <Route path="JobRoleManagement" element={<JobRoleManagement />} />
           <Route path="all-company" element={<AllCompany />} />
           <Route path="assets" element={<AssetManagement />} />
-          
           <Route path="CompanyManagement" element={<CompanyManagement />} />
           <Route path="SidebarManagement" element={<SidebarManagement />} />
         </Route>
