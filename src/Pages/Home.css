@@ -604,8 +604,9 @@ body * {
 
 /* Dashboard Preview */
 .dashboard-content {
-  position: relative;
-  right: -100px;
+ display: inline;
+ gap:60px;
+  
 }
 @media (max-width: 480px) {
   .dashboard-content {
@@ -1043,7 +1044,8 @@ body * {
 
   .dashboard-stats {
     grid-template-columns: repeat(4, 1fr);
-    gap: 1.5rem;
+        gap: 2.5rem;
+       
   }
 
   .stat-card {

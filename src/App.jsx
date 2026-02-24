@@ -1,14 +1,14 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import Login from "./page/Login";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
+import CIISLoader from "../src/Loader/CIISLoader.jsx";
 
 // Layouts
 import Layout from "./admin/components/Layout";
 import Layout2 from "./hrCds/UserLayout";
 import SuperLayout from "./admin/components/SuperAdminLayout";
-// Protected Route
 import ProtectedRoute from "./admin/components/ProtectedRoute";
 import ThemeContextProvider from "./Theme/ThemeContext";
 
@@ -17,7 +17,7 @@ import CreateUser from "./admin/page/CreateUser";
 import Department from "./admin/page/DepartmentManagement";
 import ChangePassword from "./admin/page/ChangePassword";
 
-// HR/Admin Pages (CDS)
+// HR Pages
 import EmppTask from "./hrCds/pages/hr/EmmpTask";
 import AdminTaskCreate from "./hrCds/pages/hr/AdminTaskCreate";
 import AdminMeetingPage from "./hrCds/pages/hr/AdminMeetingPage";
@@ -31,13 +31,11 @@ import EmpDepartmentAllTask from "./hrCds/pages/hr/EmpDepartmentAllTask.jsx";
 import AdminProject from "./hrCds/pages/AdminProject";
 import Client from "./hrCds/pages/hr/Client";
 
-// User Pages (CDS)
+// User Pages
 import Alerts from "./hrCds/pages/Alerts";
 import Attendance from "./hrCds/pages/Attendance";
 import MyAssets from "./hrCds/pages/MyAssets";
 import MyLeaves from "./hrCds/pages/MyLeaves";
-
-import MyTaskManagement from "./hrCds/pages/MyTaskManagement";
 import Profile from "./hrCds/pages/Profile";
 import UserDashboard from "./hrCds/pages/UserDashboard";
 import TaskManagement from "./hrCds/pages/TaskManagement";
@@ -46,12 +44,12 @@ import EmployeeProject from "./hrCds/pages/EmployeeProject";
 import ClientMeeting from "./hrCds/pages/ClientMeeting";
 import Text from "../src/Pages/text.jsx";
 
-
 // Website Pages
 import Home from "./Pages/Home";
 import AboutUs from "./Pages/AboutUs";
 import ContactUs from "./Pages/ContactUs";
 import RegisterCompany from "./admin/components/CompanyRegister.jsx";
+
 // Super Admin
 import SuperAdminLogin from "./page/SuperAdminLogin";
 import SuperAdminDashboard from "./page/SuperAdminDashboard.jsx";
@@ -61,21 +59,35 @@ import SidebarManagement from "./admin/components/SidebarManagement.jsx";
 import CompanyDetails from "./admin/components/CompanyDetails.jsx";
 import AllCompany from "./page/AllCompany.jsx";
 import AssetManagement from './page/AssetManagement.jsx'
+
 function App() {
-  const user = JSON.parse(localStorage.getItem("user"));
-  const userRole = user?.role;
+
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 500); // 2.5 sec loader
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (loading) {
+    return <CIISLoader />;
+  }
 
   return (
     <>
       <Routes>
-       
+
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<AboutUs />} />
         <Route path="/contact" element={<ContactUs />} />
         <Route path="/SuperAdminLogin" element={<SuperAdminLogin />} />
         <Route path="company/:companyCode/login" element={<Login />} />
         <Route path="/RegisterCompany" element={<RegisterCompany />} />
-        
+
+        {/* Super Admin Routes */}
         <Route
           path="/Ciis-network/*"
           element={
@@ -97,8 +109,7 @@ function App() {
           <Route path="SidebarManagement" element={<SidebarManagement />} />
         </Route>
 
-
-        {/* ✅ CDS USER Routes */}
+        {/* CDS User Routes */}
         <Route
           path="/ciisUser/*"
           element={
@@ -109,13 +120,11 @@ function App() {
             </ThemeContextProvider>
           }
         >
-          
           <Route path="change-password" element={<ChangePassword />} />
           <Route path="emp-details" element={<EmppDetail />} />
           <Route path="emp-leaves" element={<EmppLeave />} />
           <Route path="emp-assets" element={<EmppAsset />} />
           <Route path="emp-attendance" element={<EmppAttendence />} />
-          {/* <Route path="emp-task-management" element={<EmppTask />} /> */}
           <Route path="emp-task-details" element={<TaskDeatils />} />
           <Route path="admin-task-create" element={<AdminTaskCreate />} />
           <Route path="admin-meeting" element={<AdminMeetingPage />} />
@@ -127,18 +136,15 @@ function App() {
           <Route path="attendance" element={<Attendance />} />
           <Route path="my-assets" element={<MyAssets />} />
           <Route path="my-leaves" element={<MyLeaves />} />
-          {/* <Route path="my-task-management" element={<MyTaskManagement />} /> */}
           <Route path="profile" element={<Profile />} />
           <Route path="user-dashboard" element={<UserDashboard />} />
           <Route path="project" element={<EmployeeProject />} />
           <Route path="task-management" element={<TaskManagement />} />
           <Route path="employee-meeting" element={<EmployeeMeetingPage />} />
           <Route path="client-meeting" element={<ClientMeeting />} />
-           <Route path="test" element={<Text />} />
-           
+          <Route path="test" element={<Text />} />
         </Route>
 
-        {/* ✅ Catch-all */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 

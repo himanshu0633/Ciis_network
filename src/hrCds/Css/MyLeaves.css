@@ -1645,3 +1645,414 @@
     min-width: auto;
   }
 }
+
+
+
+/* loader */
+
+
+/* ===== LOADER STYLES ===== */
+
+/* Page Loader */
+.MyLeaves-page-loader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.MyLeaves-loader-content {
+  text-align: center;
+  color: white;
+}
+
+.MyLeaves-loader-spinner {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 30px;
+}
+
+.MyLeaves-spinner-ring {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 4px solid transparent;
+  border-top-color: white;
+  animation: spin 1.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+}
+
+.MyLeaves-spinner-ring:nth-child(2) {
+  animation-delay: 0.2s;
+  border-top-color: rgba(255, 255, 255, 0.7);
+}
+
+.MyLeaves-spinner-ring:nth-child(3) {
+  animation-delay: 0.4s;
+  border-top-color: rgba(255, 255, 255, 0.4);
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.MyLeaves-loader-title {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  animation: fadeInOut 2s ease-in-out infinite;
+}
+
+.MyLeaves-loader-subtitle {
+  font-size: 14px;
+  opacity: 0.9;
+  margin-bottom: 30px;
+}
+
+.MyLeaves-loader-progress {
+  width: 200px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  overflow: hidden;
+  margin: 0 auto;
+}
+
+.MyLeaves-progress-bar {
+  width: 60%;
+  height: 100%;
+  background: white;
+  border-radius: 2px;
+  animation: loading 2s ease-in-out infinite;
+}
+
+@keyframes loading {
+  0%, 100% { transform: translateX(-100%); }
+  50% { transform: translateX(300%); }
+}
+
+/* Stats Loader */
+.MyLeaves-stats-loader {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.MyLeaves-stat-skeleton {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  animation: skeletonPulse 1.5s ease-in-out infinite;
+}
+
+.MyLeaves-stat-skeleton-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.MyLeaves-skeleton-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.MyLeaves-skeleton-title {
+  width: 100px;
+  height: 14px;
+  background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 7px;
+}
+
+.MyLeaves-skeleton-value {
+  width: 80px;
+  height: 32px;
+  background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.MyLeaves-skeleton-footer {
+  width: 120px;
+  height: 12px;
+  background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+
+/* Table Loader */
+.MyLeaves-table-loader {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  border: 1px solid #e2e8f0;
+}
+
+.MyLeaves-loader-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.MyLeaves-loader-filter {
+  width: 200px;
+  height: 40px;
+  background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 20px;
+}
+
+.MyLeaves-loader-search {
+  width: 250px;
+  height: 40px;
+  background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 20px;
+}
+
+.MyLeaves-loader-table {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.MyLeaves-loader-thead {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.MyLeaves-loader-th {
+  height: 20px;
+  background: linear-gradient(90deg, #d0d0d0 25%, #e0e0e0 50%, #d0d0d0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+.MyLeaves-loader-tr {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+}
+
+.MyLeaves-loader-td {
+  height: 30px;
+  background: linear-gradient(90deg, #e8e8e8 25%, #f8f8f8 50%, #e8e8e8 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+/* Mobile Cards Loader */
+.MyLeaves-mobile-loader {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.MyLeaves-card-skeleton {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+  animation: skeletonPulse 1.5s ease-in-out infinite;
+}
+
+.MyLeaves-card-skeleton-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.MyLeaves-skeleton-badge {
+  width: 80px;
+  height: 24px;
+  background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 12px;
+}
+
+.MyLeaves-skeleton-status {
+  width: 60px;
+  height: 24px;
+  background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 12px;
+}
+
+.MyLeaves-card-skeleton-body {
+  margin-bottom: 16px;
+}
+
+.MyLeaves-skeleton-line {
+  height: 16px;
+  background: linear-gradient(90deg, #e8e8e8 25%, #f8f8f8 50%, #e8e8e8 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.MyLeaves-skeleton-line:last-child {
+  width: 70%;
+}
+
+.MyLeaves-card-skeleton-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.MyLeaves-skeleton-button {
+  width: 100px;
+  height: 36px;
+  background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+
+/* Refresh Overlay */
+.MyLeaves-refresh-overlay {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: white;
+  border-radius: 50px;
+  padding: 12px 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 1000;
+  animation: slideDown 0.3s ease;
+  border: 1px solid #667eea;
+}
+
+.MyLeaves-refresh-spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid #e2e8f0;
+  border-top: 3px solid #667eea;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.MyLeaves-refresh-overlay span {
+  font-size: 14px;
+  font-weight: 500;
+  color: #667eea;
+}
+
+/* Loader Dots */
+.MyLeaves-loader-dots {
+  display: inline-flex;
+  gap: 2px;
+  margin-left: 4px;
+}
+
+.MyLeaves-loader-dots span {
+  width: 4px;
+  height: 4px;
+  background: #667eea;
+  border-radius: 50%;
+  animation: dotPulse 1.5s ease-in-out infinite;
+}
+
+.MyLeaves-loader-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.MyLeaves-loader-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes dotPulse {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.5); opacity: 1; }
+}
+
+/* Button Spinner */
+.MyLeaves-button-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  margin-right: 8px;
+}
+
+/* Animation Keyframes */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes skeletonPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes fadeInOut {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive Loaders */
+@media (max-width: 768px) {
+  .MyLeaves-stats-loader {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .MyLeaves-loader-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .MyLeaves-loader-filter,
+  .MyLeaves-loader-search {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .MyLeaves-stats-loader {
+    grid-template-columns: 1fr;
+  }
+}
