@@ -1,4 +1,4 @@
-/* EmpAssets.css */
+/* EmpAssets.css - Merged & Optimized */
 
 /* ===== VARIABLES ===== */
 :root {
@@ -51,14 +51,13 @@
 }
 
 @keyframes slideDown {
-  from {
-    transform: translate(-50%, -100%);
-    opacity: 0;
-  }
-  to {
-    transform: translate(-50%, 0);
-    opacity: 1;
-  }
+  from { transform: translate(-50%, -100%); opacity: 0; }
+  to { transform: translate(-50%, 0); opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
 /* ===== MAIN CONTAINER ===== */
@@ -1118,14 +1117,28 @@
   font-size: 18px;
 }
 
-/* ===== RESPONSIVE DESIGN ===== */
-@media (max-width: 1200px) {
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+/* Tablet Landscape (1024px and below) */
+@media (max-width: 1024px) {
   .EmpAssets-stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+  
+  .EmpAssets-table {
+    min-width: 900px;
+  }
+  
+  .EmpAssets-table-container {
+    overflow-x: auto;
+  }
 }
 
+/* Tablet Portrait (768px and below) - ALL 768px styles merged here */
 @media (max-width: 768px) {
+  /* General Layout */
   .EmpAssets-container {
     padding: 16px;
   }
@@ -1140,9 +1153,11 @@
     font-size: 24px;
   }
 
+  /* Stats Grid - 2 Columns on Mobile */
   .EmpAssets-stats-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
     gap: 12px;
+    margin-bottom: 20px;
   }
 
   .EmpAssets-stat-card {
@@ -1159,11 +1174,44 @@
     font-size: 24px;
   }
 
+  .EmpAssets-stat-info h3 {
+    font-size: 12px;
+  }
+
+  /* Company Bar */
   .EmpAssets-company-bar {
     flex-direction: column;
     align-items: flex-start;
+    padding: 16px;
   }
 
+  .EmpAssets-company-info {
+    width: 100%;
+  }
+
+  .EmpAssets-company-info span {
+    width: 100%;
+    text-align: center;
+  }
+
+  .EmpAssets-filter-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Filter Actions */
+  .EmpAssets-filter-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .EmpAssets-toggle-filters-btn,
+  .EmpAssets-clear-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Filter Options */
   .EmpAssets-filter-options {
     flex-direction: column;
   }
@@ -1172,47 +1220,78 @@
     width: 100%;
   }
 
-  .EmpAssets-table thead {
-    display: none;
-  }
-
-  .EmpAssets-table tr {
-    display: block;
-    margin-bottom: 16px;
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow);
-    border: 1px solid var(--gray-200);
-  }
-
-  .EmpAssets-table td {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 14px 16px;
-    border-bottom: 1px solid var(--gray-200);
-  }
-
-  .EmpAssets-table td:last-child {
-    border-bottom: none;
-  }
-
-  .EmpAssets-table td::before {
-    content: attr(data-label);
-    font-weight: 600;
-    color: var(--gray-600);
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  .EmpAssets-employee-cell {
+  .EmpAssets-department-readonly {
     width: 100%;
+    justify-content: center;
   }
 
+  /* Active Filters */
+  .EmpAssets-active-filters {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .EmpAssets-filter-tag {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  /* Table - Convert to Cards */
+  .EmpAssets-table-container {
+    overflow-x: auto;
+    border-radius: var(--radius-lg);
+  }
+
+  .EmpAssets-table {
+    min-width: 700px;
+  }
+
+  /* Employee Cell */
+  .EmpAssets-employee-cell {
+    gap: 10px;
+  }
+
+  .EmpAssets-employee-avatar {
+    width: 38px;
+    height: 38px;
+    font-size: 13px;
+  }
+
+  .EmpAssets-employee-info h4 {
+    font-size: 13px;
+  }
+
+  .EmpAssets-employee-info p {
+    font-size: 11px;
+  }
+
+  /* Chips */
+  .EmpAssets-chip {
+    padding: 4px 10px;
+    font-size: 11px;
+  }
+
+  .EmpAssets-comment-badge {
+    max-width: 150px;
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+
+  /* Actions */
   .EmpAssets-actions-container {
-    justify-content: flex-end;
+    gap: 4px;
   }
 
+  .EmpAssets-status-btn {
+    padding: 6px 10px;
+    font-size: 10px;
+  }
+
+  .EmpAssets-icon-button {
+    padding: 6px;
+  }
+
+  /* Dialog */
   .EmpAssets-dialog {
     width: 95%;
     margin: 16px;
@@ -1221,17 +1300,56 @@
   .EmpAssets-dialog-header,
   .EmpAssets-dialog-body,
   .EmpAssets-dialog-footer {
-    padding: 20px;
+    padding: 16px;
+  }
+
+  .EmpAssets-dialog-header h2 {
+    font-size: 18px;
+  }
+
+  .EmpAssets-dialog-header p {
+    font-size: 12px;
+  }
+
+  /* Empty State */
+  .EmpAssets-empty-state {
+    padding: 40px 16px;
+  }
+
+  .EmpAssets-empty-state svg {
+    font-size: 40px;
+  }
+
+  .EmpAssets-empty-state h3 {
+    font-size: 18px;
   }
 }
 
+/* Mobile (480px and below) - Better Mobile Experience */
 @media (max-width: 480px) {
   .EmpAssets-container {
     padding: 12px;
   }
 
+  .EmpAssets-header {
+    padding: 16px;
+  }
+
   .EmpAssets-header h1 {
     font-size: 20px;
+  }
+
+  .EmpAssets-header p {
+    font-size: 12px;
+  }
+
+  /* Stats Grid - Still 2 Columns but smaller */
+  .EmpAssets-stats-grid {
+    gap: 8px;
+  }
+
+  .EmpAssets-stat-card {
+    padding: 12px;
   }
 
   .EmpAssets-stat-avatar {
@@ -1245,11 +1363,12 @@
   }
 
   .EmpAssets-stat-info h3 {
-    font-size: 12px;
+    font-size: 11px;
   }
 
+  /* Search Input */
   .EmpAssets-search-input {
-    padding: 0 12px;
+    padding: 0 10px;
   }
 
   .EmpAssets-search-input input {
@@ -1257,63 +1376,250 @@
     font-size: 13px;
   }
 
-  .EmpAssets-filter-btn,
-  .EmpAssets-toggle-filters-btn,
-  .EmpAssets-clear-btn {
+  .EmpAssets-search-input svg {
+    font-size: 16px;
+  }
+
+  /* Table */
+  .EmpAssets-table {
+    min-width: 600px;
+  }
+
+  .EmpAssets-table th {
+    padding: 12px 10px;
+    font-size: 11px;
+  }
+
+  .EmpAssets-table td {
+    padding: 12px 10px;
+    font-size: 12px;
+  }
+
+  /* Employee Cell */
+  .EmpAssets-employee-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 12px;
+  }
+
+  .EmpAssets-employee-info h4 {
+    font-size: 12px;
+  }
+
+  .EmpAssets-employee-info p {
+    font-size: 10px;
+  }
+
+  /* Chips */
+  .EmpAssets-chip {
+    padding: 3px 8px;
+    font-size: 10px;
+  }
+
+  .EmpAssets-comment-badge {
+    max-width: 120px;
+    font-size: 10px;
+    padding: 3px 6px;
+  }
+
+  .EmpAssets-comment-badge svg {
+    width: 10px;
+    height: 10px;
+  }
+
+  /* Actions */
+  .EmpAssets-actions-container {
+    flex-direction: column;
+  }
+
+  .EmpAssets-status-btn {
+    width: 100%;
+    padding: 8px 6px;
+    font-size: 10px;
+  }
+
+  .EmpAssets-icon-button {
+    width: 100%;
+    padding: 8px;
+  }
+
+  .EmpAssets-actions-cell {
+    min-width: auto;
+  }
+
+  /* No Permission */
+  .EmpAssets-no-permission {
+    width: 28px;
+    height: 28px;
+  }
+
+  .EmpAssets-no-permission svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  /* Dialog */
+  .EmpAssets-dialog {
+    width: 98%;
+  }
+
+  .EmpAssets-dialog-header {
+    padding: 14px;
+  }
+
+  .EmpAssets-dialog-header h2 {
+    font-size: 16px;
+  }
+
+  .EmpAssets-dialog-header p {
+    font-size: 11px;
+  }
+
+  .EmpAssets-dialog-body {
+    padding: 14px;
+  }
+
+  .EmpAssets-dialog-footer {
+    padding: 14px;
+    flex-direction: column;
+  }
+
+  .EmpAssets-dialog-footer .EmpAssets-btn {
     width: 100%;
     justify-content: center;
   }
 
-  .EmpAssets-actions-container {
-    flex-wrap: wrap;
-  }
-
-  .EmpAssets-status-btn {
-    flex: 1;
-    text-align: center;
-    font-size: 11px;
-    padding: 8px 12px;
-  }
-
-  .EmpAssets-icon-button {
-    padding: 8px;
-  }
-
-  .EmpAssets-employee-avatar {
-    width: 36px;
-    height: 36px;
+  .EmpAssets-textarea-field {
+    padding: 10px 12px;
     font-size: 13px;
+    min-height: 100px;
   }
 
-  .EmpAssets-employee-info h4 {
-    font-size: 13px;
-  }
-
-  .EmpAssets-chip {
-    padding: 4px 10px;
-    font-size: 11px;
-  }
-
-  .EmpAssets-dialog-header h2 {
-    font-size: 18px;
-  }
-
-  .EmpAssets-dialog-header p {
-    font-size: 12px;
-  }
-
-  .EmpAssets-btn {
-    padding: 8px 16px;
-    font-size: 13px;
+  /* Snackbar */
+  .EmpAssets-snackbar {
+    top: 16px;
+    width: 90%;
   }
 
   .EmpAssets-snackbar-content {
-    padding: 12px 20px;
-    font-size: 13px;
+    padding: 10px 16px;
+    font-size: 12px;
+  }
+
+  .EmpAssets-snackbar-content svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* Empty State */
+  .EmpAssets-empty-state {
+    padding: 30px 12px;
+  }
+
+  .EmpAssets-empty-state svg {
+    font-size: 32px;
+    margin-bottom: 12px;
+  }
+
+  .EmpAssets-empty-state h3 {
+    font-size: 16px;
+  }
+
+  .EmpAssets-empty-state p {
+    font-size: 12px;
+  }
+
+  .EmpAssets-clear-filters-btn {
+    padding: 8px 16px;
+    font-size: 12px;
   }
 }
 
-/* Print styles */
+/* Small Mobile (360px and below) */
+@media (max-width: 360px) {
+  .EmpAssets-container {
+    padding: 8px;
+  }
+
+  .EmpAssets-header {
+    padding: 12px;
+  }
+
+  .EmpAssets-header h1 {
+    font-size: 18px;
+  }
+
+  .EmpAssets-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+
+  .EmpAssets-stat-card {
+    padding: 10px;
+  }
+
+  .EmpAssets-stat-avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+
+  .EmpAssets-stat-info h2 {
+    font-size: 18px;
+  }
+
+  .EmpAssets-stat-info h3 {
+    font-size: 10px;
+  }
+
+  .EmpAssets-stat-content {
+    gap: 8px;
+  }
+
+  .EmpAssets-table {
+    min-width: 500px;
+  }
+
+  .EmpAssets-employee-avatar {
+    width: 28px;
+    height: 28px;
+    font-size: 11px;
+  }
+
+  .EmpAssets-chip {
+    padding: 2px 6px;
+    font-size: 9px;
+  }
+
+  .EmpAssets-comment-badge {
+    max-width: 100px;
+    font-size: 9px;
+    padding: 2px 4px;
+  }
+
+  .EmpAssets-status-btn {
+    font-size: 9px;
+    padding: 6px 4px;
+  }
+}
+
+/* Landscape Mode */
+@media (orientation: landscape) and (max-height: 600px) {
+  .EmpAssets-dialog {
+    max-height: 80vh;
+  }
+  
+  .EmpAssets-dialog-body {
+    max-height: 50vh;
+    overflow-y: auto;
+  }
+  
+  .EmpAssets-loading-container {
+    min-height: 40vh;
+  }
+}
+
+/* Print Styles */
 @media print {
   .EmpAssets-container {
     padding: 0;
@@ -1345,5 +1651,33 @@
 
   .EmpAssets-table td {
     border-bottom: 1px solid var(--gray-300);
+  }
+
+  .EmpAssets-table tbody tr:hover {
+    background: none;
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+/* Dark Mode Support (Optional) */
+@media (prefers-color-scheme: dark) {
+  .EmpAssets-container.dark-mode {
+    background: var(--gray-900);
+  }
+  
+  .EmpAssets-container.dark-mode .EmpAssets-header,
+  .EmpAssets-container.dark-mode .EmpAssets-company-bar,
+  .EmpAssets-container.dark-mode .EmpAssets-stat-card,
+  .EmpAssets-container.dark-mode .EmpAssets-filters-container,
+  .EmpAssets-container.dark-mode .EmpAssets-table-container {
+    background: var(--gray-800);
+    border-color: var(--gray-700);
+  }
+  
+  .EmpAssets-container.dark-mode .EmpAssets-header h1 {
+    background: linear-gradient(135deg, white, var(--gray-300));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
 }
