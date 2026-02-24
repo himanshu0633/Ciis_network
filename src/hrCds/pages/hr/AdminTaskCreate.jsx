@@ -167,6 +167,24 @@ const AdminTaskManagement = () => {
     return department;
   };
 
+  // Helper function to get user's company display
+  const getUserCompanyDisplay = (user) => {
+    if (!user?.company) return 'No Company';
+    if (typeof user.company === 'object') {
+      return user.company.companyName || user.company.name || 'N/A';
+    }
+    return user.company;
+  };
+
+  // Helper function to get user's department display
+  const getUserDepartmentDisplay = (user) => {
+    if (!user?.department) return 'No Department';
+    if (typeof user.department === 'object') {
+      return user.department.name || 'N/A';
+    }
+    return user.department;
+  };
+
   // 🆕 FUNCTION: Check if user belongs to same company and department
   const checkSameCompanyDepartment = (targetUser) => {
     if (!currentUser || !targetUser) return false;
@@ -294,8 +312,20 @@ const AdminTaskManagement = () => {
         companyRole = user.companyRole || user.role || 'employee';
         userName = user.name || 'Unknown User';
         userJobRole = user.jobRole || '';
-        userCompany = user.company || null;
-        userDepartment = user.department || null;
+        
+        // Store full company object if available, otherwise just the ID
+        if (user.company && typeof user.company === 'object') {
+          userCompany = user.company;
+        } else {
+          userCompany = user.company || null;
+        }
+        
+        // Store full department object if available, otherwise just the ID
+        if (user.department && typeof user.department === 'object') {
+          userDepartment = user.department;
+        } else {
+          userDepartment = user.department || null;
+        }
       }
       else if (user.user && user.user.id) {
         // Nested user object
@@ -304,8 +334,20 @@ const AdminTaskManagement = () => {
         companyRole = user.user.companyRole || user.user.role || 'employee';
         userName = user.user.name || 'Unknown User';
         userJobRole = user.user.jobRole || '';
-        userCompany = user.user.company || null;
-        userDepartment = user.user.department || null;
+        
+        // Store full company object if available
+        if (user.user.company && typeof user.user.company === 'object') {
+          userCompany = user.user.company;
+        } else {
+          userCompany = user.user.company || null;
+        }
+        
+        // Store full department object if available
+        if (user.user.department && typeof user.user.department === 'object') {
+          userDepartment = user.user.department;
+        } else {
+          userDepartment = user.user.department || null;
+        }
       }
       else if (user._id) {
         // MongoDB _id format
@@ -314,8 +356,20 @@ const AdminTaskManagement = () => {
         companyRole = user.companyRole || user.role || 'employee';
         userName = user.name || 'Unknown User';
         userJobRole = user.jobRole || '';
-        userCompany = user.company || null;
-        userDepartment = user.department || null;
+        
+        // Store full company object if available
+        if (user.company && typeof user.company === 'object') {
+          userCompany = user.company;
+        } else {
+          userCompany = user.company || null;
+        }
+        
+        // Store full department object if available
+        if (user.department && typeof user.department === 'object') {
+          userDepartment = user.department;
+        } else {
+          userDepartment = user.department || null;
+        }
       }
       else if (user.userId) {
         // userId field
@@ -324,8 +378,20 @@ const AdminTaskManagement = () => {
         companyRole = user.companyRole || user.role || 'employee';
         userName = user.name || 'Unknown User';
         userJobRole = user.jobRole || '';
-        userCompany = user.company || null;
-        userDepartment = user.department || null;
+        
+        // Store full company object if available
+        if (user.company && typeof user.company === 'object') {
+          userCompany = user.company;
+        } else {
+          userCompany = user.company || null;
+        }
+        
+        // Store full department object if available
+        if (user.department && typeof user.department === 'object') {
+          userDepartment = user.department;
+        } else {
+          userDepartment = user.department || null;
+        }
       }
       else if (typeof user === 'string') {
         foundUserId = user;
@@ -1390,8 +1456,8 @@ const AdminTaskManagement = () => {
         <div className="AdminTaskManagement-user-info-details">
           <div className="AdminTaskManagement-user-info-name">{user?.name || 'Unknown'}</div>
           <div className="AdminTaskManagement-user-info-meta">
-            <span>Company: {getCompanyName(user?.company)}</span>
-            <span>Dept: {getDepartmentName(user?.department)}</span>
+            <span>Company: {getUserCompanyDisplay(user)}</span>
+            <span>Dept: {getUserDepartmentDisplay(user)}</span>
           </div>
         </div>
       </div>
@@ -1590,7 +1656,7 @@ const AdminTaskManagement = () => {
               <option value="">All Users</option>
               {filteredUsers.map(user => (
                 <option key={user.id || user._id} value={user.id || user._id}>
-                  {user.name} - {getDepartmentName(user.department)}
+                  {user.name} - {getUserDepartmentDisplay(user)}
                 </option>
               ))}
             </select>
@@ -2256,7 +2322,7 @@ const AdminTaskManagement = () => {
                     const user = users.find(u => u.id === value || u._id === value);
                     return user ? (
                       <span key={value} className="AdminTaskManagement-selected-chip">
-                        {user.name} {!isOwner() && getDepartmentName(user.department) && `(${getDepartmentName(user.department)})`}
+                        {user.name} {!isOwner() && getUserDepartmentDisplay(user) && `(${getUserDepartmentDisplay(user)})`}
                       </span>
                     ) : null;
                   })}

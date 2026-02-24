@@ -2354,7 +2354,7 @@ const EmployeeAttendance = () => {
                 )}
 
                 <td className="col-employee">
-                  <div className="employee-info">
+                  <div className="employee-infoo">
                     <div className="employee-avatar">
                       {getInitials(rec.user?.name)}
                     </div>
