@@ -21,10 +21,12 @@ import {
   FiCalendar,
 } from "react-icons/fi";
 import "../Css/MyAssets.css";
+import CIISLoader from '../../Loader/CIISLoader'; // ✅ Import CIISLoader
 
 const MyAssets = () => {
   const [newAsset, setNewAsset] = useState("");
   const [notification, setNotification] = useState(null);
+  const [pageLoading, setPageLoading] = useState(true); // ✅ Page loading state
   const [loading, setLoading] = useState(false);
   const [requests, setRequests] = useState([]);
   const [properties, setProperties] = useState([]);
@@ -99,14 +101,29 @@ const MyAssets = () => {
     });
   };
 
+  // ✅ Load data with page loader
   useEffect(() => {
-    fetchRequests();
-    const userData = localStorage.getItem("user");
-    if (userData) {
+    const loadData = async () => {
+      setPageLoading(true);
       try {
-        setProperties(JSON.parse(userData).properties || []);
-      } catch {}
-    }
+        const userData = localStorage.getItem("user");
+        if (userData) {
+          try {
+            setProperties(JSON.parse(userData).properties || []);
+          } catch {}
+        }
+        await fetchRequests();
+      } catch (error) {
+        console.error('Error loading asset data:', error);
+      } finally {
+        // Minimum 500ms loader show karega
+        setTimeout(() => {
+          setPageLoading(false);
+        }, 500);
+      }
+    };
+    
+    loadData();
   }, []);
 
   const handleRequest = async () => {
@@ -168,6 +185,11 @@ const MyAssets = () => {
     const asset = allowedAssets.find(a => a.value === assetType);
     return asset ? asset.color : 'primary';
   };
+
+  // ✅ Show CIISLoader while page is loading
+  if (pageLoading) {
+    return <CIISLoader />;
+  }
 
   return (
     <div className="MyAssets-container">

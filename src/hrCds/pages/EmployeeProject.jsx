@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "../../utils/axiosConfig";
 import "../Css/EmployeeProject.css";
+import CIISLoader from '../../Loader/CIISLoader'; // ✅ Import CIISLoader
 
 const EmployeeProject = () => {
   const [projects, setProjects] = useState([]);
@@ -9,6 +10,7 @@ const EmployeeProject = () => {
   const [projectDetails, setProjectDetails] = useState(null);
   const [projectUsers, setProjectUsers] = useState([]);
   const [tasks, setTasks] = useState([]);
+  const [pageLoading, setPageLoading] = useState(true); // ✅ Page loading state
   const [loading, setLoading] = useState({ projects: false, tasks: false });
   const [file, setFile] = useState(null);
   const [fileName, setFileName] = useState("");
@@ -89,10 +91,25 @@ const EmployeeProject = () => {
     Bolt: () => <span className="EmployeeProject-icon">⚡</span>
   };
 
-  // Load all projects
+  // ✅ Load all projects with page loader
   useEffect(() => {
-    loadProjects();
-    loadNotifications();
+    const loadData = async () => {
+      setPageLoading(true);
+      try {
+        await loadProjects();
+        await loadNotifications();
+      } catch (error) {
+        console.error("Error loading data:", error);
+        showSnackbar("Error loading data", "error");
+      } finally {
+        // Minimum 500ms loader show karega
+        setTimeout(() => {
+          setPageLoading(false);
+        }, 500);
+      }
+    };
+    
+    loadData();
   }, []);
 
   useEffect(() => {
@@ -485,6 +502,11 @@ const EmployeeProject = () => {
       </svg>
     </div>
   );
+
+  // ✅ Show CIISLoader while page is loading
+  if (pageLoading) {
+    return <CIISLoader />;
+  }
 
   return (
     <div className="EmployeeProject-container">

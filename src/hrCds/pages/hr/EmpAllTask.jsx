@@ -12,7 +12,8 @@ import {
   FiCheckSquare, FiArchive, FiTarget, FiPercent,
   FiAlertTriangle, FiActivity, FiTrendingDown, FiTrendingUp as FiTrendUp,
   FiChevronDown, FiChevronUp, FiStar, FiAward, FiBarChart,
-  FiEdit3, FiExternalLink, FiMoreVertical, FiShare2, FiInfo, FiHash
+  FiEdit3, FiExternalLink, FiMoreVertical, FiShare2, FiInfo, FiHash,
+  FiPlay, FiPause, FiStopCircle, FiUserCheck, FiUserX, FiClock as FiTime
 } from "react-icons/fi";
 
 // Status Options
@@ -37,10 +38,17 @@ const TaskDetails = () => {
   const [loading, setLoading] = useState(false);
   const [usersLoading, setUsersLoading] = useState(false);
   const [error, setError] = useState("");
+  
+  // Activity Log states
+  const [activityLogs, setActivityLogs] = useState([]);
+  const [loadingActivity, setLoadingActivity] = useState(false);
+  const [showActivityLog, setShowActivityLog] = useState(false);
+  const [selectedTaskForActivity, setSelectedTaskForActivity] = useState(null);
 
   // User states
   const [currentUser, setCurrentUser] = useState(null);
   const [currentUserRole, setCurrentUserRole] = useState("");
+  const [currentUserCompanyRole, setCurrentUserCompanyRole] = useState("");
 
   const [openDialog, setOpenDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -50,8 +58,32 @@ const TaskDetails = () => {
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const today = new Date();
+
+  // Helper function to check if user is Owner
+  const isOwner = () => {
+    return currentUserCompanyRole === 'Owner' || currentUserRole === 'Owner' || currentUserRole === 'CAREER INFOWIS Admin';
+  };
+
+  // Helper function to get company name
+  const getCompanyName = (company) => {
+    if (!company) return 'N/A';
+    if (typeof company === 'object') {
+      return company.companyName || company.name || company._id || 'N/A';
+    }
+    return company;
+  };
+
+  // Helper function to get department name
+  const getDepartmentName = (department) => {
+    if (!department) return 'N/A';
+    if (typeof department === 'object') {
+      return department.name || department._id || 'N/A';
+    }
+    return department;
+  };
 
   const isSameDay = (d1, d2) => {
     const a = new Date(d1);
@@ -108,7 +140,7 @@ const TaskDetails = () => {
     activeEmployees: 0
   });
 
-  // ✅ FIXED: User authentication function - NO ACCESS RESTRICTIONS
+  // ✅ FIXED: User authentication function with proper error handling
   useEffect(() => {
     const fetchUserData = () => {
       try {
@@ -119,14 +151,58 @@ const TaskDetails = () => {
         }
 
         const user = JSON.parse(userStr);
-        setCurrentUser(user);
+        console.log("👤 Current user data:", user);
         
-        // Check if user has a name field or use email
-        if (!user.name && user.email) {
-          user.name = user.email.split('@')[0];
+        // Extract user details
+        let foundUser = null;
+        let userRole = 'user';
+        let companyRole = 'employee';
+        let userName = '';
+        let userCompany = null;
+        let userDepartment = null;
+        
+        // Handle different user object structures
+        if (user.id && typeof user.id === 'string') {
+          foundUser = user;
+          userRole = user.role || 'user';
+          companyRole = user.companyRole || user.role || 'employee';
+          userName = user.name || 'Unknown User';
+          userCompany = user.company || null;
+          userDepartment = user.department || null;
+        }
+        else if (user.user && user.user.id) {
+          foundUser = user.user;
+          userRole = user.user.role || 'user';
+          companyRole = user.user.companyRole || user.user.role || 'employee';
+          userName = user.user.name || 'Unknown User';
+          userCompany = user.user.company || null;
+          userDepartment = user.user.department || null;
+        }
+        else if (user._id) {
+          foundUser = user;
+          userRole = user.role || 'user';
+          companyRole = user.companyRole || user.role || 'employee';
+          userName = user.name || 'Unknown User';
+          userCompany = user.company || null;
+          userDepartment = user.department || null;
+        }
+        
+        // If no name, try to extract from email
+        if (!userName && user.email) {
+          userName = user.email.split('@')[0];
         }
 
-        setCurrentUserRole('user'); // Set default role for all users
+        setCurrentUser(foundUser || user);
+        setCurrentUserRole(userRole);
+        setCurrentUserCompanyRole(companyRole);
+
+        console.log("✅ User authenticated:", {
+          name: userName,
+          role: userRole,
+          companyRole: companyRole,
+          company: userCompany,
+          department: userDepartment
+        });
         
       } catch (error) {
         console.error("Error parsing user data:", error);
@@ -136,9 +212,6 @@ const TaskDetails = () => {
 
     fetchUserData();
   }, []);
-
-  // ✅ REMOVED: Role-based access control - ALL USERS CAN ACCESS
-  const canManage = true;
 
   // Calculate overall stats from all users
   const calculateOverallStats = (usersData) => {
@@ -202,12 +275,12 @@ const TaskDetails = () => {
     });
   };
 
-  // ✅ FIXED: Fetch Users Function - NO RESTRICTIONS
+  // ✅ FIXED: Fetch Users Function with role-based filtering
   const fetchUsersWithTasks = async () => {
     setUsersLoading(true);
     setError("");
     try {
-      console.log("📤 Fetching all users with tasks...");
+      console.log("📤 Fetching users with role-based access...");
 
       // Get token from localStorage
       const token = localStorage.getItem('token');
@@ -225,65 +298,83 @@ const TaskDetails = () => {
         }
       };
 
-      // Try different endpoints
+      // Try different endpoints based on role
       let response = null;
+      let usersData = [];
 
-      // Try general users endpoint first
-      try {
-        console.log("🔍 Trying general endpoint...");
-        response = await axios.get('/task/users-with-counts', config);
-      } catch (generalError) {
-        console.log("General endpoint failed, trying fallback...");
+      if (currentUser) {
+        // Determine which API to call based on user role
+        let apiUrl = '';
+        
+        if (isOwner()) {
+          // Owner: Get all company users
+          const companyId = currentUser?.company?._id || currentUser?.company;
+          if (companyId) {
+            apiUrl = `/users/company-users?companyId=${companyId}`;
+            console.log("👑 Owner: Fetching all company users from:", apiUrl);
+          } else {
+            apiUrl = '/users/company-users';
+            console.log("⚠️ No company ID found, using default endpoint");
+          }
+        } else {
+          // Employee: Get department users
+          const deptId = currentUser?.department?._id || currentUser?.department;
+          if (deptId) {
+            apiUrl = `/users/department-users?department=${deptId}`;
+            console.log("👤 Employee: Fetching department users from:", apiUrl);
+          } else {
+            // Fallback to company users if no department
+            const companyId = currentUser?.company?._id || currentUser?.company;
+            if (companyId) {
+              apiUrl = `/users/company-users?companyId=${companyId}`;
+              console.log("⚠️ No department ID, falling back to company users");
+            } else {
+              apiUrl = '/users/company-users';
+            }
+          }
+        }
+
         try {
-          // Fallback: Get all users
+          response = await axios.get(apiUrl, config);
+        } catch (apiError) {
+          console.log("Primary endpoint failed, trying fallback...");
+          throw apiError;
+        }
+      } else {
+        // If no current user, try general endpoint
+        try {
+          response = await axios.get('/task/users-with-counts', config);
+        } catch (generalError) {
+          console.log("General endpoint failed, trying users list...");
           const usersResponse = await axios.get('/auth/users', config);
           if (usersResponse.data?.users) {
-            const usersWithEmptyStats = usersResponse.data.users.map(user => ({
-              ...user,
-              taskStats: {
-                total: 0,
-                pending: 0,
-                completed: 0,
-                completionRate: 0,
-                inProgress: 0,
-                approved: 0,
-                rejected: 0,
-                overdue: 0,
-                onhold: 0,
-                reopen: 0,
-                cancelled: 0
-              }
-            }));
-            setUsers(usersWithEmptyStats);
-            calculateOverallStats(usersWithEmptyStats);
-            setUsersLoading(false);
-            return;
+            usersData = usersResponse.data.users;
           }
-          throw new Error("Unable to fetch users");
-        } catch (fallbackError) {
-          console.error("Fallback also failed:", fallbackError);
-          throw fallbackError;
         }
       }
 
       // Handle different response formats
-      let usersData = [];
-
-      if (response.data?.users && Array.isArray(response.data.users)) {
+      if (response?.data?.users && Array.isArray(response.data.users)) {
         usersData = response.data.users;
-      } else if (response.data?.data && Array.isArray(response.data.data)) {
+      } else if (response?.data?.data && Array.isArray(response.data.data)) {
         usersData = response.data.data;
-      } else if (Array.isArray(response.data)) {
+      } else if (response?.data && Array.isArray(response.data)) {
         usersData = response.data;
+      } else if (response?.data?.message?.users && Array.isArray(response.data.message.users)) {
+        usersData = response.data.message.users;
       }
 
       console.log("✅ Users data received:", usersData.length);
 
-      // Ensure each user has taskStats
+      // Ensure each user has taskStats and proper fields
       const usersWithStats = usersData.map(user => ({
         ...user,
-        name: user.name || user.email?.split('@')[0] || 'Unknown User',
-        role: user.role || 'Employee',
+        _id: user._id || user.id, // Ensure _id exists
+        name: user.name || user.fullName || user.email?.split('@')[0] || 'Unknown User',
+        role: user.role || user.designation || 'Employee',
+        email: user.email || '',
+        company: user.company || null,
+        department: user.department || null,
         taskStats: user.taskStats || {
           total: 0,
           pending: 0,
@@ -299,13 +390,33 @@ const TaskDetails = () => {
         }
       }));
 
-      setUsers(usersWithStats);
-      calculateOverallStats(usersWithStats);
+      // Filter to ensure only same company users
+      let filteredUsers = usersWithStats;
+      if (currentUser?.company) {
+        const currentCompanyId = currentUser.company._id || currentUser.company;
+        filteredUsers = usersWithStats.filter(user => {
+          const userCompanyId = user.company?._id || user.company;
+          return userCompanyId?.toString() === currentCompanyId?.toString();
+        });
+        console.log("👥 Filtered to same company:", filteredUsers.length);
+      }
+
+      // For employees, filter to same department
+      if (!isOwner() && currentUser?.department) {
+        const currentDeptId = currentUser.department._id || currentUser.department;
+        filteredUsers = filteredUsers.filter(user => {
+          const userDeptId = user.department?._id || user.department;
+          return userDeptId?.toString() === currentDeptId?.toString();
+        });
+        console.log("👥 Filtered to same department:", filteredUsers.length);
+      }
+
+      setUsers(filteredUsers);
+      calculateOverallStats(filteredUsers);
 
     } catch (err) {
       console.error("❌ Error fetching users with tasks:", err);
 
-      // Better error handling
       if (err.response?.status === 401) {
         setError("Your session has expired. Please log in again.");
         localStorage.removeItem('user');
@@ -329,7 +440,7 @@ const TaskDetails = () => {
     }
   };
 
-  // Filtered users based on search query
+  // Filtered users based on search query and role
   const filteredUsers = useMemo(() => {
     let filtered = users;
 
@@ -458,14 +569,21 @@ const TaskDetails = () => {
     if (fromDate || toDate) setDateFilter("all");
   }, [fromDate, toDate]);
 
-  // Fetch all users with task counts from backend
+  // Fetch all users with task counts from backend when currentUser is loaded
   useEffect(() => {
-    fetchUsersWithTasks();
-  }, []);
+    if (currentUser) {
+      fetchUsersWithTasks();
+    }
+  }, [currentUser]);
 
   // Fetch task status counts for specific user
   const fetchTaskStatusCounts = async (userId) => {
     try {
+      if (!userId) {
+        console.error("❌ No userId provided to fetchTaskStatusCounts");
+        return;
+      }
+      
       const response = await axios.get(`/task/user/${userId}/stats`);
 
       if (response.data.success && response.data.statusCounts) {
@@ -587,27 +705,38 @@ const TaskDetails = () => {
     });
   };
 
-  // Fetch user tasks
+  // ✅ FIXED: Fetch user tasks with proper error handling
   const fetchUserTasks = async (userId) => {
+    if (!userId) {
+      setError("Invalid user ID");
+      return;
+    }
+
     setLoading(true);
     setError("");
+    
     try {
-      const user = users.find((x) => x._id === userId);
+      const user = users.find((x) => x._id === userId || x.id === userId);
       if (!user) {
         setError("User not found");
+        setLoading(false);
         return;
       }
 
       setSelectedUser(user);
       setSelectedUserId(userId);
 
+      // Build query params
       const params = new URLSearchParams();
-
       if (searchQuery) {
         params.append('search', searchQuery);
       }
 
-      const url = `/task/user/${userId}/tasks?${params.toString()}`;
+      const queryString = params.toString();
+      const url = `/task/user/${userId}/tasks${queryString ? `?${queryString}` : ''}`;
+      
+      console.log("📤 Fetching tasks for user:", userId, "URL:", url);
+      
       const res = await axios.get(url);
 
       if (res.data.success) {
@@ -618,19 +747,57 @@ const TaskDetails = () => {
         await fetchTaskStatusCounts(userId);
         setOpenDialog(true);
       } else {
-        setError("Failed to fetch user tasks");
+        setError(res.data.message || "Failed to fetch user tasks");
       }
 
     } catch (err) {
-      console.error("Error fetching user tasks:", err);
+      console.error("❌ Error fetching user tasks:", err);
       setError(
         err?.response?.data?.error ||
+        err?.response?.data?.message ||
         err?.message ||
         "Error fetching tasks. Please try again."
       );
     } finally {
       setLoading(false);
     }
+  };
+
+  // Fetch activity logs for a specific task
+  const fetchActivityLogs = async (taskId) => {
+    if (!taskId) return;
+    
+    setLoadingActivity(true);
+    try {
+      console.log("📤 Fetching activity logs for task:", taskId);
+      const response = await axios.get(`/task/${taskId}/activity-logs`);
+      
+      if (response.data.success) {
+        setActivityLogs(response.data.logs || []);
+      } else {
+        setActivityLogs([]);
+      }
+    } catch (err) {
+      console.error("❌ Error fetching activity logs:", err);
+      setActivityLogs([]);
+    } finally {
+      setLoadingActivity(false);
+    }
+  };
+
+  // Handle view activity logs
+  const handleViewActivityLogs = (task, e) => {
+    e.stopPropagation(); // Prevent card click
+    setSelectedTaskForActivity(task);
+    fetchActivityLogs(task._id);
+    setShowActivityLog(true);
+  };
+
+  // Close activity log modal
+  const handleCloseActivityLog = () => {
+    setShowActivityLog(false);
+    setSelectedTaskForActivity(null);
+    setActivityLogs([]);
   };
 
   // Reset filters
@@ -649,6 +816,35 @@ const TaskDetails = () => {
     try {
       const date = new Date(dateStr);
       return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+    } catch (error) {
+      return "Invalid date";
+    }
+  };
+
+  // Format time
+  const formatTime = (dateStr) => {
+    if (!dateStr) return "";
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    } catch (error) {
+      return "";
+    }
+  };
+
+  // Format date and time together
+  const formatDateTime = (dateStr) => {
+    if (!dateStr) return "N/A";
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleString('en-US', { 
+        day: 'numeric', 
+        month: 'short', 
+        year: 'numeric',
+        hour: '2-digit', 
+        minute: '2-digit',
+        second: '2-digit'
+      });
     } catch (error) {
       return "Invalid date";
     }
@@ -688,8 +884,47 @@ const TaskDetails = () => {
       total: 0,
       pending: 0,
       completed: 0,
-      completionRate: 0
+      completionRate: 0,
+      inProgress: 0,
+      approved: 0,
+      rejected: 0,
+      overdue: 0,
+      onhold: 0,
+      reopen: 0,
+      cancelled: 0
     };
+  };
+
+  // Get activity log icon based on action type
+  const getActivityIcon = (action) => {
+    const actionLower = action?.toLowerCase() || '';
+    if (actionLower.includes('create')) return <FiPlus size={14} />;
+    if (actionLower.includes('update') || actionLower.includes('edit')) return <FiEdit3 size={14} />;
+    if (actionLower.includes('status')) return <FiRefreshCw size={14} />;
+    if (actionLower.includes('complete')) return <FiCheckCircle size={14} />;
+    if (actionLower.includes('pending')) return <FiClock size={14} />;
+    if (actionLower.includes('progress')) return <FiPlay size={14} />;
+    if (actionLower.includes('hold')) return <FiPause size={14} />;
+    if (actionLower.includes('cancel')) return <FiStopCircle size={14} />;
+    if (actionLower.includes('approve')) return <FiCheckSquare size={14} />;
+    if (actionLower.includes('reject')) return <FiXCircle size={14} />;
+    if (actionLower.includes('assign')) return <FiUserCheck size={14} />;
+    if (actionLower.includes('unassign')) return <FiUserX size={14} />;
+    return <FiActivity size={14} />;
+  };
+
+  // Get activity log color based on action type
+  const getActivityColor = (action) => {
+    const actionLower = action?.toLowerCase() || '';
+    if (actionLower.includes('create')) return '#10b981';
+    if (actionLower.includes('complete')) return '#059669';
+    if (actionLower.includes('pending')) return '#f59e0b';
+    if (actionLower.includes('progress')) return '#0ea5e9';
+    if (actionLower.includes('hold')) return '#8b5cf6';
+    if (actionLower.includes('cancel')) return '#dc2626';
+    if (actionLower.includes('reject')) return '#dc2626';
+    if (actionLower.includes('approve')) return '#20c997';
+    return '#6b7280';
   };
 
   // Render overall statistics
@@ -708,30 +943,35 @@ const TaskDetails = () => {
     const getStatusGradient = (status) => statusGradients[status] || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
 
     return (
-      <div className="emp-all-task-overall-stats">
-        <div className="emp-all-task-overall-stats-header">
-          <div className="emp-all-task-overall-stats-icon">
+      <div className="TaskDetails-overall-stats">
+        <div className="TaskDetails-overall-stats-header">
+          <div className="TaskDetails-overall-stats-icon">
             <FiBarChart />
           </div>
           <h4>System-wide Task Statistics</h4>
+          {!isOwner() && (
+            <span className="TaskDetails-role-badge" style={{ marginLeft: '1rem', fontSize: '0.8rem', color: '#6b7280' }}>
+              (Your Department Only)
+            </span>
+          )}
         </div>
 
-        <div className="emp-all-task-overall-stats-grid">
+        <div className="TaskDetails-overall-stats-grid">
           {/* Total Tasks Card */}
-          <div className="emp-all-task-overall-stat-card">
-            <div className="emp-all-task-overall-stat-content">
+          <div className="TaskDetails-overall-stat-card">
+            <div className="TaskDetails-overall-stat-content">
               <div
-                className="emp-all-task-overall-stat-icon"
+                className="TaskDetails-overall-stat-icon"
                 style={{
                   background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
                 }}
               >
                 <FiList color="white" />
               </div>
-              <div className="emp-all-task-overall-stat-number">
+              <div className="TaskDetails-overall-stat-number">
                 {overallStats.total}
               </div>
-              <div className="emp-all-task-overall-stat-label">
+              <div className="TaskDetails-overall-stat-label">
                 Total Tasks
               </div>
             </div>
@@ -748,7 +988,7 @@ const TaskDetails = () => {
               return (
                 <div
                   key={status.value}
-                  className="emp-all-task-overall-stat-card"
+                  className="TaskDetails-overall-stat-card"
                   style={{
                     borderColor: `${status.color}30`,
                     background: overallStats[status.value] > 0 ?
@@ -756,9 +996,9 @@ const TaskDetails = () => {
                       'rgba(255, 255, 255, 0.7)'
                   }}
                 >
-                  <div className="emp-all-task-overall-stat-content">
+                  <div className="TaskDetails-overall-stat-content">
                     <div
-                      className="emp-all-task-overall-stat-icon"
+                      className="TaskDetails-overall-stat-icon"
                       style={{
                         background: getStatusGradient(status.value)
                       }}
@@ -768,14 +1008,14 @@ const TaskDetails = () => {
                       })}
                     </div>
                     <div
-                      className="emp-all-task-overall-stat-number"
+                      className="TaskDetails-overall-stat-number"
                       style={{
                         background: getStatusGradient(status.value)
                       }}
                     >
                       {overallStats[status.value]}
                     </div>
-                    <div className="emp-all-task-overall-stat-label">
+                    <div className="TaskDetails-overall-stat-label">
                       {status.label}
                     </div>
                   </div>
@@ -807,10 +1047,10 @@ const TaskDetails = () => {
     });
 
     return (
-      <div className="emp-all-task-status-cards">
-        <div className="emp-all-task-status-header">
+      <div className="TaskDetails-status-cards">
+        <div className="TaskDetails-status-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <div className="emp-all-task-status-icon">
+            <div className="TaskDetails-status-icon">
               <FiActivity />
             </div>
             <div>
@@ -841,7 +1081,7 @@ const TaskDetails = () => {
         </div>
 
         {showStatusFilters && (
-          <div className="emp-all-task-status-grid">
+          <div className="TaskDetails-status-grid">
             {nonZeroStatuses.map((status) => {
               const count = status.value === 'all' ? userTaskStats.total : getStatusCount(status.value);
               const isActive = activeStatusFilters.includes(status.value);
@@ -851,16 +1091,16 @@ const TaskDetails = () => {
               return (
                 <div
                   key={status.value}
-                  className={`emp-all-task-status-card ${isActive ? 'emp-all-task-status-card-active' : ''}`}
+                  className={`TaskDetails-status-card ${isActive ? 'TaskDetails-status-card-active' : ''}`}
                   onClick={() => handleStatusFilterToggle(status.value)}
                   style={{
                     borderColor: isActive ? status.color : 'rgba(102, 126, 234, 0.15)',
                     background: isActive ? `${status.color}15` : 'rgba(255, 255, 255, 0.7)'
                   }}
                 >
-                  <div className="emp-all-task-status-content">
+                  <div className="TaskDetails-status-content">
                     <div
-                      className="emp-all-task-status-card-icon"
+                      className="TaskDetails-status-card-icon"
                       style={{
                         background: gradient
                       }}
@@ -870,7 +1110,7 @@ const TaskDetails = () => {
                       })}
                     </div>
                     <div
-                      className="emp-all-task-status-card-number"
+                      className="TaskDetails-status-card-number"
                       style={{
                         background: gradient,
                         WebkitBackgroundClip: 'text',
@@ -879,7 +1119,7 @@ const TaskDetails = () => {
                     >
                       {count}
                     </div>
-                    <div className="emp-all-task-status-card-label">
+                    <div className="TaskDetails-status-card-label">
                       {status.label}
                     </div>
 
@@ -946,61 +1186,70 @@ const TaskDetails = () => {
 
   // Render enhanced user card
   const renderEnhancedUserCard = (user) => {
-    const isSelected = selectedUserId === user._id;
+    const isSelected = selectedUserId === (user._id || user.id);
     const userStats = getUserTaskStats(user);
     const completionRate = userStats.completionRate || 0;
-    const badgeClass = completionRate >= 80 ? 'emp-all-task-user-avatar-badge-high' :
-      completionRate >= 50 ? 'emp-all-task-user-avatar-badge-medium' :
-        'emp-all-task-user-avatar-badge-low';
-    const progressClass = completionRate >= 80 ? 'emp-all-task-progress-fill-high' :
-      completionRate >= 50 ? 'emp-all-task-progress-fill-medium' :
-        'emp-all-task-progress-fill-low';
+    const badgeClass = completionRate >= 80 ? 'TaskDetails-user-avatar-badge-high' :
+      completionRate >= 50 ? 'TaskDetails-user-avatar-badge-medium' :
+        'TaskDetails-user-avatar-badge-low';
+    const progressClass = completionRate >= 80 ? 'TaskDetails-progress-fill-high' :
+      completionRate >= 50 ? 'TaskDetails-progress-fill-medium' :
+        'TaskDetails-progress-fill-low';
+
+    const userId = user._id || user.id;
 
     return (
       <div
-        className={`emp-all-task-user-card ${isSelected ? 'emp-all-task-user-card-selected' : ''}`}
+        className={`TaskDetails-user-card ${isSelected ? 'TaskDetails-user-card-selected' : ''}`}
         onClick={() => {
-          setSelectedUserId(user._id);
-          fetchUserTasks(user._id);
+          if (userId) {
+            setSelectedUserId(userId);
+            fetchUserTasks(userId);
+          }
         }}
       >
-        <div className="emp-all-task-user-card-content">
-          <div className="emp-all-task-user-header">
-            <div className="emp-all-task-user-avatar">
+        <div className="TaskDetails-user-card-content">
+          <div className="TaskDetails-user-header">
+            <div className="TaskDetails-user-avatar">
               {getInitials(user.name)}
-              <div className={`emp-all-task-user-avatar-badge ${badgeClass}`}></div>
+              <div className={`TaskDetails-user-avatar-badge ${badgeClass}`}></div>
             </div>
-            <div className="emp-all-task-user-info">
-              <div className="emp-all-task-user-name">
+            <div className="TaskDetails-user-info">
+              <div className="TaskDetails-user-name">
                 {user.name || "Unknown"}
               </div>
-              <div className="emp-all-task-user-role">
+              <div className="TaskDetails-user-role">
                 <FiBriefcase size={12} />
                 {user.role || "No Role"}
               </div>
-              <div className="emp-all-task-user-email">
+              <div className="TaskDetails-user-email">
                 {user.email || "No Email"}
               </div>
+              {!isOwner() && user.department && (
+                <div className="TaskDetails-user-department" style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.2rem' }}>
+                  Dept: {getDepartmentName(user.department)}
+                </div>
+              )}
             </div>
           </div>
 
-          <div className="emp-all-task-stats-box">
-            <div className="emp-all-task-stats-row">
+          <div className="TaskDetails-stats-box">
+            <div className="TaskDetails-stats-row">
               <div>
-                <div className="emp-all-task-stat-number emp-all-task-total-stat">
+                <div className="TaskDetails-stat-number TaskDetails-total-stat">
                   {userStats.total || 0}
                 </div>
-                <div className="emp-all-task-stat-label">TOTAL</div>
+                <div className="TaskDetails-stat-label">TOTAL</div>
               </div>
               <div>
-                <div className="emp-all-task-stat-number emp-all-task-completed-stat">
+                <div className="TaskDetails-stat-number TaskDetails-completed-stat">
                   {userStats.completed || 0}
                 </div>
-                <div className="emp-all-task-stat-label">DONE</div>
+                <div className="TaskDetails-stat-label">DONE</div>
               </div>
               <div>
                 <div
-                  className="emp-all-task-stat-number emp-all-task-rate-stat"
+                  className="TaskDetails-stat-number TaskDetails-rate-stat"
                   style={{
                     color: completionRate >= 80 ? "#28a745" :
                       completionRate >= 50 ? "#FFC107" : "#F44336"
@@ -1008,18 +1257,18 @@ const TaskDetails = () => {
                 >
                   {completionRate}%
                 </div>
-                <div className="emp-all-task-stat-label">RATE</div>
+                <div className="TaskDetails-stat-label">RATE</div>
               </div>
             </div>
 
-            <div className="emp-all-task-progress-container">
-              <div className="emp-all-task-progress-header">
-                <div className="emp-all-task-progress-label">Progress</div>
-                <div className="emp-all-task-progress-percentage">{completionRate}%</div>
+            <div className="TaskDetails-progress-container">
+              <div className="TaskDetails-progress-header">
+                <div className="TaskDetails-progress-label">Progress</div>
+                <div className="TaskDetails-progress-percentage">{completionRate}%</div>
               </div>
-              <div className="emp-all-task-progress-bar">
+              <div className="TaskDetails-progress-bar">
                 <div
-                  className={`emp-all-task-progress-fill ${progressClass}`}
+                  className={`TaskDetails-progress-fill ${progressClass}`}
                   style={{ width: `${completionRate}%` }}
                 ></div>
               </div>
@@ -1027,11 +1276,13 @@ const TaskDetails = () => {
           </div>
 
           <button
-            className={`emp-all-task-action-button ${isSelected ? 'emp-all-task-action-button-primary' : 'emp-all-task-action-button-outlined'}`}
+            className={`TaskDetails-action-button ${isSelected ? 'TaskDetails-action-button-primary' : 'TaskDetails-action-button-outlined'}`}
             onClick={(e) => {
               e.stopPropagation();
-              setSelectedUserId(user._id);
-              fetchUserTasks(user._id);
+              if (userId) {
+                setSelectedUserId(userId);
+                fetchUserTasks(userId);
+              }
             }}
           >
             View Tasks
@@ -1042,388 +1293,530 @@ const TaskDetails = () => {
     );
   };
 
-  // Render enhanced dialog
- // Replace the renderEnhancedDialog function with this enhanced version
+  // Render activity log modal
+  const renderActivityLogModal = () => {
+    if (!showActivityLog || !selectedTaskForActivity) return null;
 
-const renderEnhancedDialog = () => {
-  if (!openDialog) return null;
-
-  return (
-    <div className="emp-all-task-modal-overlay" onClick={() => setOpenDialog(false)}>
-      <div className="emp-all-task-modal" onClick={(e) => e.stopPropagation()}>
-        {/* Modal Header */}
-        <div className="emp-all-task-modal-header">
-          <div className="emp-all-task-modal-header-content">
-            <div className="emp-all-task-modal-user-badge">
-              <div className="emp-all-task-modal-avatar-wrapper">
-                <div className="emp-all-task-modal-avatar">
-                  {getInitials(selectedUser?.name)}
+    return (
+      <div className="TaskDetails-activity-modal-overlay" onClick={handleCloseActivityLog}>
+        <div className="TaskDetails-activity-modal" onClick={(e) => e.stopPropagation()}>
+          {/* Activity Modal Header */}
+          <div className="TaskDetails-activity-modal-header">
+            <div className="TaskDetails-activity-modal-header-content">
+              <div className="TaskDetails-activity-modal-title">
+                <div className="TaskDetails-activity-modal-icon">
+                  <FiActivity size={20} />
                 </div>
-                <div className={`emp-all-task-modal-status-badge ${
-                  selectedUser?.isActive ? 'active' : 'inactive'
-                }`} />
-              </div>
-              <div className="emp-all-task-modal-user-details">
-                <h2 className="emp-all-task-modal-user-name">
-                  {selectedUser?.name}
-                </h2>
-                <div className="emp-all-task-modal-user-meta">
-                  <span className="emp-all-task-modal-user-role">
-                    <FiBriefcase size={14} />
-                    {selectedUser?.role || 'Employee'}
-                  </span>
-                  <span className="emp-all-task-modal-user-email">
-                    <FiMail size={14} />
-                    {selectedUser?.email}
-                  </span>
+                <div>
+                  <h3>Activity Log</h3>
+                  <p className="TaskDetails-activity-modal-task-title">
+                    {selectedTaskForActivity.title || 'Untitled Task'} 
+                    {selectedTaskForActivity.serialNo && ` (#${selectedTaskForActivity.serialNo})`}
+                  </p>
                 </div>
-              </div>
-            </div>
-            <button
-              className="emp-all-task-modal-close-btn"
-              onClick={() => setOpenDialog(false)}
-              aria-label="Close modal"
-            >
-              <FiX size={20} />
-            </button>
-          </div>
-          
-          {/* Quick Stats Pills */}
-          <div className="emp-all-task-modal-quick-stats">
-            <div className="emp-all-task-modal-stat-pill">
-              <FiList size={14} />
-              <span>Total: {userTaskStats.total}</span>
-            </div>
-            <div className="emp-all-task-modal-stat-pill">
-              <FiCheckCircle size={14} />
-              <span>Completed: {userTaskStats.completed?.count || 0}</span>
-            </div>
-            <div className="emp-all-task-modal-stat-pill">
-              <FiClock size={14} />
-              <span>Pending: {userTaskStats.pending?.count || 0}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Modal Content */}
-        <div className="emp-all-task-modal-body">
-          {/* Status Filters Section */}
-          <div className="emp-all-task-modal-section">
-            <div className="emp-all-task-modal-section-header">
-              <div className="emp-all-task-modal-section-title">
-                <FiPieChart size={18} />
-                <h3>Task Status Overview</h3>
               </div>
               <button
-                className="emp-all-task-modal-toggle-filters"
-                onClick={() => setShowStatusFilters(!showStatusFilters)}
+                className="TaskDetails-activity-modal-close"
+                onClick={handleCloseActivityLog}
               >
-                {showStatusFilters ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
-                <span>{showStatusFilters ? 'Hide Filters' : 'Show Filters'}</span>
+                <FiX size={20} />
               </button>
             </div>
+          </div>
 
-            {showStatusFilters && (
-              <div className="emp-all-task-modal-status-grid">
-                {STATUS_OPTIONS.filter(s => s.value !== 'all').map((status) => {
-                  const count = getStatusCount(status.value);
-                  if (count === 0) return null;
-                  
-                  const isActive = activeStatusFilters.includes(status.value);
-                  const percentage = userTaskStats[status.value]?.percentage || 0;
-
-                  return (
-                    <button
-                      key={status.value}
-                      className={`emp-all-task-modal-status-chip ${
-                        isActive ? 'active' : ''
-                      }`}
-                      onClick={() => handleStatusFilterToggle(status.value)}
-                      style={{
-                        '--status-color': status.color,
-                        '--status-bg': status.bgColor
-                      }}
-                    >
-                      <div className="emp-all-task-modal-status-chip-content">
-                        <div className="emp-all-task-modal-status-chip-icon">
-                          {React.createElement(status.icon, { size: 14 })}
-                        </div>
-                        <div className="emp-all-task-modal-status-chip-info">
-                          <span className="emp-all-task-modal-status-chip-label">
-                            {status.label}
-                          </span>
-                          <span className="emp-all-task-modal-status-chip-count">
-                            {count}
-                          </span>
-                        </div>
-                        <div className="emp-all-task-modal-status-chip-progress">
-                          <div 
-                            className="emp-all-task-modal-status-chip-progress-bar"
-                            style={{ width: `${percentage}%` }}
-                          />
-                        </div>
+          {/* Activity Modal Body */}
+          <div className="TaskDetails-activity-modal-body">
+            {loadingActivity ? (
+              <div className="TaskDetails-activity-loading">
+                <div className="TaskDetails-activity-spinner" />
+                <p>Loading activity logs...</p>
+              </div>
+            ) : activityLogs.length === 0 ? (
+              <div className="TaskDetails-activity-empty">
+                <div className="TaskDetails-activity-empty-icon">
+                  <FiClock size={32} />
+                </div>
+                <h4>No Activity Logs</h4>
+                <p>No activity recorded for this task yet</p>
+              </div>
+            ) : (
+              <div className="TaskDetails-activity-timeline">
+                {activityLogs.map((log, index) => (
+                  <div key={log._id || index} className="TaskDetails-activity-item">
+                    <div className="TaskDetails-activity-timeline-line">
+                      <div 
+                        className="TaskDetails-activity-dot"
+                        style={{ backgroundColor: getActivityColor(log.action) }}
+                      >
+                        {getActivityIcon(log.action)}
                       </div>
-                      {isActive && (
-                        <div className="emp-all-task-modal-status-chip-check">
-                          <FiCheckCircle size={12} />
+                      {index < activityLogs.length - 1 && (
+                        <div className="TaskDetails-activity-line" />
+                      )}
+                    </div>
+                    <div className="TaskDetails-activity-content">
+                      <div className="TaskDetails-activity-header">
+                        <span 
+                          className="TaskDetails-activity-action"
+                          style={{ color: getActivityColor(log.action) }}
+                        >
+                          {log.action || 'Action'}
+                        </span>
+                        <span className="TaskDetails-activity-time">
+                          <FiTime size={12} />
+                          {formatDateTime(log.createdAt)}
+                        </span>
+                      </div>
+                      {log.description && (
+                        <p className="TaskDetails-activity-description">
+                          {log.description}
+                        </p>
+                      )}
+                      {log.user && (
+                        <div className="TaskDetails-activity-user">
+                          <FiUser size={10} />
+                          <span>by {log.user.name || log.user.email || 'Unknown User'}</span>
                         </div>
                       )}
-                    </button>
-                  );
-                })}
+                      {log.changes && Object.keys(log.changes).length > 0 && (
+                        <div className="TaskDetails-activity-changes">
+                          {Object.entries(log.changes).map(([key, value]) => (
+                            <div key={key} className="TaskDetails-activity-change">
+                              <span className="TaskDetails-activity-change-field">{key}:</span>
+                              <span className="TaskDetails-activity-change-value">
+                                {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
 
-          {/* Search and Filters Section */}
-          <div className="emp-all-task-modal-section">
-            <div className="emp-all-task-modal-search-filters">
-              <div className="emp-all-task-modal-search-wrapper">
-                <FiSearch size={16} className="emp-all-task-modal-search-icon" />
-                <input
-                  type="text"
-                  className="emp-all-task-modal-search-input"
-                  placeholder="Search tasks by title, description, or ID..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                {searchQuery && (
-                  <button
-                    className="emp-all-task-modal-search-clear"
-                    onClick={() => setSearchQuery('')}
-                  >
-                    <FiX size={14} />
-                  </button>
-                )}
-              </div>
+          {/* Activity Modal Footer */}
+          <div className="TaskDetails-activity-modal-footer">
+            <button
+              className="TaskDetails-activity-modal-close-btn"
+              onClick={handleCloseActivityLog}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
-              <div className="emp-all-task-modal-filter-group">
-                <select
-                  className="emp-all-task-modal-filter-select"
-                  value={dateFilter}
-                  onChange={(e) => setDateFilter(e.target.value)}
-                >
-                  <option value="all">All Dates</option>
-                  <option value="today">Today</option>
-                  <option value="tomorrow">Tomorrow</option>
-                  <option value="week">This Week</option>
-                  <option value="overdue">Overdue</option>
-                </select>
+  // Render enhanced dialog
+  const renderEnhancedDialog = () => {
+    if (!openDialog) return null;
 
-                <select
-                  className="emp-all-task-modal-filter-select"
-                  value={priorityFilter}
-                  onChange={(e) => setPriorityFilter(e.target.value)}
-                >
-                  <option value="all">All Priorities</option>
-                  <option value="high">High Priority</option>
-                  <option value="medium">Medium Priority</option>
-                  <option value="low">Low Priority</option>
-                </select>
-              </div>
-
-              {/* Date Range Picker */}
-              <div className="emp-all-task-modal-date-range">
-                <div className="emp-all-task-modal-date-input">
-                  <FiCalendar size={14} />
-                  <input
-                    type="date"
-                    value={fromDate}
-                    onChange={(e) => setFromDate(e.target.value)}
-                    placeholder="From"
-                  />
+    return (
+      <div className="TaskDetails-modal-overlay" onClick={() => setOpenDialog(false)}>
+        <div className="TaskDetails-modal" onClick={(e) => e.stopPropagation()}>
+          {/* Modal Header */}
+          <div className="TaskDetails-modal-header">
+            <div className="TaskDetails-modal-header-content">
+              <div className="TaskDetails-modal-user-badge">
+                <div className="TaskDetails-modal-avatar-wrapper">
+                  <div className="TaskDetails-modal-avatar">
+                    {getInitials(selectedUser?.name)}
+                  </div>
+                  <div className={`TaskDetails-modal-status-badge ${
+                    selectedUser?.isActive ? 'active' : 'inactive'
+                  }`} />
                 </div>
-                <span className="emp-all-task-modal-date-separator">→</span>
-                <div className="emp-all-task-modal-date-input">
-                  <FiCalendar size={14} />
-                  <input
-                    type="date"
-                    value={toDate}
-                    onChange={(e) => setToDate(e.target.value)}
-                    placeholder="To"
-                  />
-                </div>
-                {(fromDate || toDate) && (
-                  <button
-                    className="emp-all-task-modal-date-clear"
-                    onClick={() => {
-                      setFromDate('');
-                      setToDate('');
-                    }}
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
-
-              {/* Active Filters Display */}
-              {(activeStatusFilters.length > 0 && !activeStatusFilters.includes('all')) && (
-                <div className="emp-all-task-modal-active-filters">
-                  <span className="emp-all-task-modal-active-filters-label">
-                    Active filters:
-                  </span>
-                  {activeStatusFilters.map(status => {
-                    const statusOption = STATUS_OPTIONS.find(s => s.value === status);
-                    return (
-                      <span
-                        key={status}
-                        className="emp-all-task-modal-active-filter-tag"
-                        style={{ backgroundColor: statusOption?.bgColor }}
-                      >
-                        {statusOption?.label}
-                        <button onClick={() => handleStatusFilterToggle(status)}>
-                          <FiX size={12} />
-                        </button>
+                <div className="TaskDetails-modal-user-details">
+                  <h2 className="TaskDetails-modal-user-name">
+                    {selectedUser?.name}
+                  </h2>
+                  <div className="TaskDetails-modal-user-meta">
+                    <span className="TaskDetails-modal-user-role">
+                      <FiBriefcase size={14} />
+                      {selectedUser?.role || 'Employee'}
+                    </span>
+                    <span className="TaskDetails-modal-user-email">
+                      <FiMail size={14} />
+                      {selectedUser?.email}
+                    </span>
+                    {selectedUser?.department && (
+                      <span className="TaskDetails-modal-user-department">
+                        <FiUsers size={14} />
+                        {getDepartmentName(selectedUser.department)}
                       </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <button
+                className="TaskDetails-modal-close-btn"
+                onClick={() => setOpenDialog(false)}
+                aria-label="Close modal"
+              >
+                <FiX size={20} />
+              </button>
+            </div>
+            
+            {/* Quick Stats Pills */}
+            <div className="TaskDetails-modal-quick-stats">
+              <div className="TaskDetails-modal-stat-pill">
+                <FiList size={14} />
+                <span>Total: {userTaskStats.total}</span>
+              </div>
+              <div className="TaskDetails-modal-stat-pill">
+                <FiCheckCircle size={14} />
+                <span>Completed: {userTaskStats.completed?.count || 0}</span>
+              </div>
+              <div className="TaskDetails-modal-stat-pill">
+                <FiClock size={14} />
+                <span>Pending: {userTaskStats.pending?.count || 0}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Modal Content */}
+          <div className="TaskDetails-modal-body">
+            {/* Status Filters Section */}
+            <div className="TaskDetails-modal-section">
+              <div className="TaskDetails-modal-section-header">
+                <div className="TaskDetails-modal-section-title">
+                  <FiPieChart size={18} />
+                  <h3>Task Status Overview</h3>
+                </div>
+                <button
+                  className="TaskDetails-modal-toggle-filters"
+                  onClick={() => setShowStatusFilters(!showStatusFilters)}
+                >
+                  {showStatusFilters ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
+                  <span>{showStatusFilters ? 'Hide Filters' : 'Show Filters'}</span>
+                </button>
+              </div>
+
+              {showStatusFilters && (
+                <div className="TaskDetails-modal-status-grid">
+                  {STATUS_OPTIONS.filter(s => s.value !== 'all').map((status) => {
+                    const count = getStatusCount(status.value);
+                    if (count === 0) return null;
+                    
+                    const isActive = activeStatusFilters.includes(status.value);
+                    const percentage = userTaskStats[status.value]?.percentage || 0;
+
+                    return (
+                      <button
+                        key={status.value}
+                        className={`TaskDetails-modal-status-chip ${
+                          isActive ? 'active' : ''
+                        }`}
+                        onClick={() => handleStatusFilterToggle(status.value)}
+                        style={{
+                          '--status-color': status.color,
+                          '--status-bg': status.bgColor
+                        }}
+                      >
+                        <div className="TaskDetails-modal-status-chip-content">
+                          <div className="TaskDetails-modal-status-chip-icon">
+                            {React.createElement(status.icon, { size: 14 })}
+                          </div>
+                          <div className="TaskDetails-modal-status-chip-info">
+                            <span className="TaskDetails-modal-status-chip-label">
+                              {status.label}
+                            </span>
+                            <span className="TaskDetails-modal-status-chip-count">
+                              {count}
+                            </span>
+                          </div>
+                          <div className="TaskDetails-modal-status-chip-progress">
+                            <div 
+                              className="TaskDetails-modal-status-chip-progress-bar"
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+                        </div>
+                        {isActive && (
+                          <div className="TaskDetails-modal-status-chip-check">
+                            <FiCheckCircle size={12} />
+                          </div>
+                        )}
+                      </button>
                     );
                   })}
+                </div>
+              )}
+            </div>
+
+            {/* Search and Filters Section */}
+            <div className="TaskDetails-modal-section">
+              <div className="TaskDetails-modal-search-filters">
+                <div className="TaskDetails-modal-search-wrapper">
+                  <FiSearch size={16} className="TaskDetails-modal-search-icon" />
+                  <input
+                    type="text"
+                    className="TaskDetails-modal-search-input"
+                    placeholder="Search tasks by title, description, or ID..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  {searchQuery && (
+                    <button
+                      className="TaskDetails-modal-search-clear"
+                      onClick={() => setSearchQuery('')}
+                    >
+                      <FiX size={14} />
+                    </button>
+                  )}
+                </div>
+
+                <div className="TaskDetails-modal-filter-group">
+                  <select
+                    className="TaskDetails-modal-filter-select"
+                    value={dateFilter}
+                    onChange={(e) => setDateFilter(e.target.value)}
+                  >
+                    <option value="all">All Dates</option>
+                    <option value="today">Today</option>
+                    <option value="tomorrow">Tomorrow</option>
+                    <option value="week">This Week</option>
+                    <option value="overdue">Overdue</option>
+                  </select>
+
+                  <select
+                    className="TaskDetails-modal-filter-select"
+                    value={priorityFilter}
+                    onChange={(e) => setPriorityFilter(e.target.value)}
+                  >
+                    <option value="all">All Priorities</option>
+                    <option value="high">High Priority</option>
+                    <option value="medium">Medium Priority</option>
+                    <option value="low">Low Priority</option>
+                  </select>
+                </div>
+
+                {/* Date Range Picker */}
+                <div className="TaskDetails-modal-date-range">
+                  <div className="TaskDetails-modal-date-input">
+                    <FiCalendar size={14} />
+                    <input
+                      type="date"
+                      value={fromDate}
+                      onChange={(e) => setFromDate(e.target.value)}
+                      placeholder="From"
+                    />
+                  </div>
+                  <span className="TaskDetails-modal-date-separator">→</span>
+                  <div className="TaskDetails-modal-date-input">
+                    <FiCalendar size={14} />
+                    <input
+                      type="date"
+                      value={toDate}
+                      onChange={(e) => setToDate(e.target.value)}
+                      placeholder="To"
+                    />
+                  </div>
+                  {(fromDate || toDate) && (
+                    <button
+                      className="TaskDetails-modal-date-clear"
+                      onClick={() => {
+                        setFromDate('');
+                        setToDate('');
+                      }}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+
+                {/* Active Filters Display */}
+                {(activeStatusFilters.length > 0 && !activeStatusFilters.includes('all')) && (
+                  <div className="TaskDetails-modal-active-filters">
+                    <span className="TaskDetails-modal-active-filters-label">
+                      Active filters:
+                    </span>
+                    {activeStatusFilters.map(status => {
+                      const statusOption = STATUS_OPTIONS.find(s => s.value === status);
+                      return (
+                        <span
+                          key={status}
+                          className="TaskDetails-modal-active-filter-tag"
+                          style={{ backgroundColor: statusOption?.bgColor }}
+                        >
+                          {statusOption?.label}
+                          <button onClick={() => handleStatusFilterToggle(status)}>
+                            <FiX size={12} />
+                          </button>
+                        </span>
+                      );
+                    })}
+                    <button
+                      className="TaskDetails-modal-clear-filters"
+                      onClick={resetFilters}
+                    >
+                      <FiRefreshCw size={12} />
+                      Clear all
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Tasks List Section */}
+            <div className="TaskDetails-modal-section TaskDetails-modal-tasks-section">
+              <div className="TaskDetails-modal-tasks-header">
+                <div className="TaskDetails-modal-tasks-title">
+                  <FiList size={18} />
+                  <h3>Tasks</h3>
+                  <span className="TaskDetails-modal-tasks-count">
+                    {filteredTasks.length} of {tasks.length}
+                  </span>
+                </div>
+                <div className="TaskDetails-modal-tasks-sort">
+                  <span>Sort by: Latest</span>
+                  <FiChevronDown size={14} />
+                </div>
+              </div>
+
+              {/* Loading State */}
+              {loading ? (
+                <div className="TaskDetails-modal-loading">
+                  <div className="TaskDetails-modal-loading-spinner" />
+                  <p>Loading tasks...</p>
+                </div>
+              ) : filteredTasks.length === 0 ? (
+                <div className="TaskDetails-modal-empty">
+                  <div className="TaskDetails-modal-empty-icon">
+                    <FiArchive size={32} />
+                  </div>
+                  <h4>No tasks found</h4>
+                  <p>Try adjusting your search or filters</p>
                   <button
-                    className="emp-all-task-modal-clear-filters"
+                    className="TaskDetails-modal-empty-reset"
                     onClick={resetFilters}
                   >
-                    <FiRefreshCw size={12} />
-                    Clear all
+                    <FiRefreshCw size={14} />
+                    Reset Filters
                   </button>
+                </div>
+              ) : (
+                <div className="TaskDetails-modal-tasks-list">
+                  {filteredTasks.map((task) => {
+                    const status = task.userStatus || task.status || task.overallStatus;
+                    const statusOption = STATUS_OPTIONS.find(s => s.value === status) || STATUS_OPTIONS[0];
+                    const isToday = isSameDay(task.dueDateTime || task.createdAt, today);
+                    const isOverdue = task.dueDateTime && new Date(task.dueDateTime) < today;
+
+                    return (
+                      <div
+                        key={task._id}
+                        className={`TaskDetails-modal-task-card ${
+                          isToday ? 'today' : ''
+                        } ${isOverdue ? 'overdue' : ''}`}
+                        style={{ '--status-color': statusOption.color }}
+                      >
+                        <div className="TaskDetails-modal-task-card-header">
+                          <div className="TaskDetails-modal-task-title-section">
+                            <h4 className="TaskDetails-modal-task-title">
+                              {task.title || 'Untitled Task'}
+                            </h4>
+                            <span 
+                              className="TaskDetails-modal-task-status"
+                              style={{ 
+                                backgroundColor: `${statusOption.color}15`,
+                                color: statusOption.color
+                              }}
+                            >
+                              {statusOption.label}
+                            </span>
+                          </div>
+                          <span className={`TaskDetails-modal-task-priority ${task.priority || 'medium'}`}>
+                            {task.priority || 'medium'}
+                          </span>
+                        </div>
+
+                        {task.description && (
+                          <p className="TaskDetails-modal-task-description">
+                            {task.description}
+                          </p>
+                        )}
+
+                        {/* Time Information Section */}
+                        <div className="TaskDetails-modal-task-time-info">
+                          <div className="TaskDetails-modal-task-time-item">
+                            <FiClock size={12} />
+                            <span className="TaskDetails-modal-task-time-label">Created:</span>
+                            <span className="TaskDetails-modal-task-time-value">
+                              {formatDateTime(task.createdAt)}
+                            </span>
+                          </div>
+                          {task.updatedAt && task.updatedAt !== task.createdAt && (
+                            <div className="TaskDetails-modal-task-time-item">
+                              <FiRefreshCw size={12} />
+                              <span className="TaskDetails-modal-task-time-label">Updated:</span>
+                              <span className="TaskDetails-modal-task-time-value">
+                                {formatDateTime(task.updatedAt)}
+                              </span>
+                            </div>
+                          )}
+                          {task.dueDateTime && (
+                            <div className="TaskDetails-modal-task-time-item">
+                              <FiCalendar size={12} />
+                              <span className="TaskDetails-modal-task-time-label">Due:</span>
+                              <span className="TaskDetails-modal-task-time-value">
+                                {formatDateTime(task.dueDateTime)}
+                                {isToday && <span className="TaskDetails-modal-task-time-badge today">Today</span>}
+                                {isOverdue && <span className="TaskDetails-modal-task-time-badge overdue">Overdue</span>}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Activity Log Button */}
+                        <div className="TaskDetails-modal-task-actions">
+                          <button
+                            className="TaskDetails-modal-task-activity-btn"
+                            onClick={(e) => handleViewActivityLogs(task, e)}
+                          >
+                            <FiActivity size={14} />
+                            <span>View Activity Log</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
           </div>
 
-          {/* Tasks List Section */}
-          <div className="emp-all-task-modal-section emp-all-task-modal-tasks-section">
-            <div className="emp-all-task-modal-tasks-header">
-              <div className="emp-all-task-modal-tasks-title">
-                <FiList size={18} />
-                <h3>Tasks</h3>
-                <span className="emp-all-task-modal-tasks-count">
-                  {filteredTasks.length} of {tasks.length}
-                </span>
-              </div>
-              <div className="emp-all-task-modal-tasks-sort">
-                <span>Sort by: Latest</span>
-                <FiChevronDown size={14} />
-              </div>
+          {/* Modal Footer */}
+          <div className="TaskDetails-modal-footer">
+            <div className="TaskDetails-modal-footer-stats">
+              <span>Total: {filteredTasks.length} tasks</span>
+              <span>•</span>
+              <span>Completed: {filteredTasks.filter(t => 
+                (t.userStatus || t.status) === 'completed'
+              ).length}</span>
             </div>
-
-            {/* Loading State */}
-            {loading ? (
-              <div className="emp-all-task-modal-loading">
-                <div className="emp-all-task-modal-loading-spinner" />
-                <p>Loading tasks...</p>
-              </div>
-            ) : filteredTasks.length === 0 ? (
-              <div className="emp-all-task-modal-empty">
-                <div className="emp-all-task-modal-empty-icon">
-                  <FiArchive size={32} />
-                </div>
-                <h4>No tasks found</h4>
-                <p>Try adjusting your search or filters</p>
-                <button
-                  className="emp-all-task-modal-empty-reset"
-                  onClick={resetFilters}
-                >
-                  <FiRefreshCw size={14} />
-                  Reset Filters
-                </button>
-              </div>
-            ) : (
-              <div className="emp-all-task-modal-tasks-list">
-                {filteredTasks.map((task) => {
-                  const status = task.userStatus || task.status || task.overallStatus;
-                  const statusOption = STATUS_OPTIONS.find(s => s.value === status) || STATUS_OPTIONS[0];
-                  const isToday = isSameDay(task.dueDateTime || task.createdAt, today);
-
-                  return (
-                    <div
-                      key={task._id}
-                      className={`emp-all-task-modal-task-card ${
-                        isToday ? 'today' : ''
-                      }`}
-                      style={{ '--status-color': statusOption.color }}
-                    >
-                      <div className="emp-all-task-modal-task-card-header">
-                        <div className="emp-all-task-modal-task-title-section">
-                          <h4 className="emp-all-task-modal-task-title">
-                            {task.title || 'Untitled Task'}
-                          </h4>
-                          <span 
-                            className="emp-all-task-modal-task-status"
-                            style={{ 
-                              backgroundColor: `${statusOption.color}15`,
-                              color: statusOption.color
-                            }}
-                          >
-                            {statusOption.label}
-                          </span>
-                        </div>
-                        <span className={`emp-all-task-modal-task-priority ${task.priority || 'medium'}`}>
-                          {task.priority || 'medium'}
-                        </span>
-                      </div>
-
-                      {task.description && (
-                        <p className="emp-all-task-modal-task-description">
-                          {task.description}
-                        </p>
-                      )}
-
-                      <div className="emp-all-task-modal-task-meta">
-                        <div className="emp-all-task-modal-task-meta-item">
-                          <FiHash size={12} />
-                          <span>ID: {task.serialNo || 'N/A'}</span>
-                        </div>
-                        <div className="emp-all-task-modal-task-meta-item">
-                          <FiCalendar size={12} />
-                          <span>Created: {formatDate(task.createdAt)}</span>
-                        </div>
-                        {task.dueDateTime && (
-                          <div className="emp-all-task-modal-task-meta-item">
-                            <FiClock size={12} />
-                            <span>Due: {formatDate(task.dueDateTime)}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {isToday && (
-                        <div className="emp-all-task-modal-task-badge">
-                          Due Today
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+            <button
+              className="TaskDetails-modal-close-footer-btn"
+              onClick={() => setOpenDialog(false)}
+            >
+              Close
+            </button>
           </div>
-        </div>
-
-        {/* Modal Footer */}
-        <div className="emp-all-task-modal-footer">
-          <div className="emp-all-task-modal-footer-stats">
-            <span>Total: {filteredTasks.length} tasks</span>
-            <span>•</span>
-            <span>Completed: {filteredTasks.filter(t => 
-              (t.userStatus || t.status) === 'completed'
-            ).length}</span>
-          </div>
-          <button
-            className="emp-all-task-modal-close-footer-btn"
-            onClick={() => setOpenDialog(false)}
-          >
-            Close
-          </button>
         </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
   // ✅ Add error display component
   const renderError = () => {
     if (!error) return null;
 
     return (
-      <div className="emp-all-task-error-alert">
+      <div className="TaskDetails-error-alert">
         <div style={{
           display: 'flex',
           alignItems: 'center',
@@ -1457,29 +1850,49 @@ const renderEnhancedDialog = () => {
   };
 
   return (
-    <div className="emp-all-task-section">
+    <div className="TaskDetails-section">
       {renderError()}
 
       {/* Header */}
-      <div className="emp-all-task-header">
-        <div className="emp-all-task-header-content">
-          <div className="emp-all-task-header-top">
-            <div className="emp-all-task-header-title">
+      <div className="TaskDetails-header">
+        <div className="TaskDetails-header-content">
+          <div className="TaskDetails-header-top">
+            <div className="TaskDetails-header-title">
               <h1>📊 Company Employee Task Management</h1>
-              <p className="emp-all-task-header-subtitle">
+              <p className="TaskDetails-header-subtitle">
                 Comprehensive dashboard with advanced filtering and analytics
               </p>
-              <p style={{ fontSize: '0.9rem', color: '#6b7280', marginTop: '0.5rem' }}>
-                Logged in as: {currentUser?.name} ({currentUserRole})
-              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.5rem' }}>
+                <p style={{ fontSize: '0.9rem', color: '#6b7280' }}>
+                  Logged in as: {currentUser?.name} 
+                  <span style={{ 
+                    marginLeft: '0.5rem',
+                    padding: '0.2rem 0.5rem',
+                    borderRadius: '0.25rem',
+                    backgroundColor: isOwner() ? '#e3f2fd' : '#fff3e0',
+                    color: isOwner() ? '#1976d2' : '#f57c00',
+                    fontSize: '0.8rem',
+                    fontWeight: 600
+                  }}>
+                    {isOwner() ? '👑 Owner' : '👤 Employee'}
+                  </span>
+                </p>
+                {!isOwner() && currentUser?.department && (
+                  <p style={{ fontSize: '0.9rem', color: '#6b7280' }}>
+                    <FiUsers size={14} /> Department: {getDepartmentName(currentUser.department)}
+                  </p>
+                )}
+              </div>
             </div>
-            <div className="emp-all-task-header-stats">
-              <div className="emp-all-task-stats-icon">
+            <div className="TaskDetails-header-stats">
+              <div className="TaskDetails-stats-icon">
                 <FiUsers />
               </div>
-              <div className="emp-all-task-stats-text">
+              <div className="TaskDetails-stats-text">
                 <h2>{filteredUsers.length}</h2>
-                <p>ACTIVE EMPLOYEES</p>
+                <p>
+                  {isOwner() ? 'COMPANY EMPLOYEES' : 'DEPARTMENT EMPLOYEES'}
+                </p>
               </div>
             </div>
           </div>
@@ -1489,34 +1902,38 @@ const renderEnhancedDialog = () => {
       </div>
 
       {/* Main Card */}
-      <div className="emp-all-task-card">
-        <div className="emp-all-task-card-content">
+      <div className="TaskDetails-card">
+        <div className="TaskDetails-card-content">
           {/* Card Header */}
-          <div className="emp-all-task-card-header">
-            <div className="emp-all-task-card-title-section">
-              <div className="emp-all-task-card-icon">
+          <div className="TaskDetails-card-header">
+            <div className="TaskDetails-card-title-section">
+              <div className="TaskDetails-card-icon">
                 <FiUsers />
               </div>
               <div>
-                <h3 className="emp-all-task-card-title">Employee Directory</h3>
-                <p className="emp-all-task-card-subtitle">
+                <h3 className="TaskDetails-card-title">
+                  {isOwner() ? 'Company Employee Directory' : 'Department Employee Directory'}
+                </h3>
+                <p className="TaskDetails-card-subtitle">
                   <FiInfo size={14} />
-                  Click on any employee to view their task details
+                  {isOwner() 
+                    ? 'Viewing all employees across the company' 
+                    : `Viewing employees in your department only`}
                 </p>
               </div>
             </div>
 
             {/* Filters */}
-            <div className="emp-all-task-filter-section">
+            <div className="TaskDetails-filter-section">
               <input
                 type="text"
-                className="emp-all-task-search-input"
-                placeholder="Search employees by name, email or ID..."
+                className="TaskDetails-search-input"
+                placeholder={`Search ${isOwner() ? 'company' : 'department'} employees by name, email or ID...`}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
               <button
-                className="emp-all-task-reset-filter-button"
+                className="TaskDetails-reset-filter-button"
                 onClick={resetFilters}
                 disabled={!searchQuery && activeStatusFilters.length === 1 && activeStatusFilters[0] === 'all'}
               >
@@ -1527,46 +1944,46 @@ const renderEnhancedDialog = () => {
           </div>
 
           {/* Stats Grid */}
-          <div className="emp-all-task-stats-grid">
-            <div className="emp-all-task-stat-item">
-              <div className="emp-all-task-stat-content">
-                <div className="emp-all-task-stat-icon-box">
+          <div className="TaskDetails-stats-grid">
+            <div className="TaskDetails-stat-item">
+              <div className="TaskDetails-stat-content">
+                <div className="TaskDetails-stat-icon-box">
                   <FiUsers />
                 </div>
-                <div className="emp-all-task-stat-text">
+                <div className="TaskDetails-stat-text">
                   <h4>{systemStats.totalEmployees}</h4>
-                  <p>Total Employees</p>
+                  <p>{isOwner() ? 'Total Employees' : 'Dept Employees'}</p>
                 </div>
               </div>
             </div>
-            <div className="emp-all-task-stat-item">
-              <div className="emp-all-task-stat-content">
-                <div className="emp-all-task-stat-icon-box" style={{ background: 'rgba(14, 165, 233, 0.1)' }}>
+            <div className="TaskDetails-stat-item">
+              <div className="TaskDetails-stat-content">
+                <div className="TaskDetails-stat-icon-box" style={{ background: 'rgba(14, 165, 233, 0.1)' }}>
                   <FiList style={{ color: '#0ea5e9' }} />
                 </div>
-                <div className="emp-all-task-stat-text">
+                <div className="TaskDetails-stat-text">
                   <h4>{systemStats.totalTasks}</h4>
                   <p>Total Tasks</p>
                 </div>
               </div>
             </div>
-            <div className="emp-all-task-stat-item">
-              <div className="emp-all-task-stat-content">
-                <div className="emp-all-task-stat-icon-box" style={{ background: 'rgba(16, 185, 129, 0.1)' }}>
+            <div className="TaskDetails-stat-item">
+              <div className="TaskDetails-stat-content">
+                <div className="TaskDetails-stat-icon-box" style={{ background: 'rgba(16, 185, 129, 0.1)' }}>
                   <FiCheckCircle style={{ color: '#10b981' }} />
                 </div>
-                <div className="emp-all-task-stat-text">
+                <div className="TaskDetails-stat-text">
                   <h4>{systemStats.avgCompletion}%</h4>
                   <p>Avg Completion</p>
                 </div>
               </div>
             </div>
-            <div className="emp-all-task-stat-item">
-              <div className="emp-all-task-stat-content">
-                <div className="emp-all-task-stat-icon-box" style={{ background: 'rgba(139, 92, 246, 0.1)' }}>
+            <div className="TaskDetails-stat-item">
+              <div className="TaskDetails-stat-content">
+                <div className="TaskDetails-stat-icon-box" style={{ background: 'rgba(139, 92, 246, 0.1)' }}>
                   <FiUsers style={{ color: '#8b5cf6' }} />
                 </div>
-                <div className="emp-all-task-stat-text">
+                <div className="TaskDetails-stat-text">
                   <h4>{systemStats.activeEmployees}</h4>
                   <p>Active Employees</p>
                 </div>
@@ -1576,22 +1993,26 @@ const renderEnhancedDialog = () => {
 
           {/* Loading State */}
           {usersLoading ? (
-            <div className="emp-all-task-loading-container">
-              <div className="emp-all-task-loading-spinner"></div>
-              <div className="emp-all-task-loading-text">
+            <div className="TaskDetails-loading-container">
+              <div className="TaskDetails-loading-spinner"></div>
+              <div className="TaskDetails-loading-text">
                 <h4>Loading Employee Data...</h4>
                 <p>Please wait while we fetch the latest information</p>
               </div>
             </div>
           ) : filteredUsers.length === 0 ? (
-            <div className="emp-all-task-empty-state">
-              <div className="emp-all-task-empty-icon">
+            <div className="TaskDetails-empty-state">
+              <div className="TaskDetails-empty-icon">
                 <FiUsers />
               </div>
               <h3>No Employees Found</h3>
-              <p>Try checking your search terms</p>
+              <p>
+                {isOwner() 
+                  ? 'No employees found in your company' 
+                  : 'No employees found in your department'}
+              </p>
               <button
-                className="emp-all-task-reset-button"
+                className="TaskDetails-reset-button"
                 onClick={resetFilters}
               >
                 <FiRefreshCw size={16} />
@@ -1599,7 +2020,7 @@ const renderEnhancedDialog = () => {
               </button>
             </div>
           ) : (
-            <div className="emp-all-task-users-grid">
+            <div className="TaskDetails-users-grid">
               {filteredUsers.map((user) => renderEnhancedUserCard(user))}
             </div>
           )}
@@ -1608,6 +2029,9 @@ const renderEnhancedDialog = () => {
 
       {/* Modal/Dialog */}
       {renderEnhancedDialog()}
+      
+      {/* Activity Log Modal */}
+      {renderActivityLogModal()}
     </div>
   );
 };

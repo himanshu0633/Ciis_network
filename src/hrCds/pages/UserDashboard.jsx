@@ -1,4 +1,4 @@
-// UserDashboard.jsx - COMPLETE FIXED VERSION
+// UserDashboard.jsx - COMPLETE FIXED VERSION WITH ALL LOADERS
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from '../../utils/axiosConfig';
@@ -6,6 +6,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './UserDashboard.css';
 import useIsMobile from '../../hooks/useIsMobile';
+import CIISLoader from '../../Loader/CIISLoader';
 
 import {
   FiClock, FiCalendar, FiChevronLeft, FiChevronRight,
@@ -50,8 +51,53 @@ const getCalendarGrid = (year, month) => {
   return grid;
 };
 
+// ✅ Loader Components
+const StatsLoader = () => (
+  <div className="stats-loader-container">
+    {[1, 2, 3, 4].map((i) => (
+      <div key={i} className="stat-skeleton-card">
+        <div className="stat-skeleton-header">
+          <div className="skeleton-icon-large"></div>
+          <div className="skeleton-badge"></div>
+        </div>
+        <div className="skeleton-value"></div>
+        <div className="skeleton-label"></div>
+        <div className="skeleton-footer"></div>
+      </div>
+    ))}
+  </div>
+);
+
+const CalendarLoader = () => (
+  <div className="calendar-loader">
+    <div className="calendar-spinner"></div>
+    <p>Loading calendar data...</p>
+  </div>
+);
+
+const ActivityLoader = () => (
+  <div className="activity-loader-container">
+    <div className="activity-loader-wrapper">
+      <div className="activity-spinner"></div>
+      <div className="activity-loader-text">
+        <span className="loader-main-text">Fetching attendance records...</span>
+        <span className="loader-sub-text">Please wait while we load your data</span>
+      </div>
+    </div>
+  </div>
+);
+
+const RefreshOverlay = () => (
+  <div className="activity-refresh-overlay">
+    <div className="refresh-spinner-small"></div>
+    <span>Updating...</span>
+  </div>
+);
+
 const UserDashboard = () => {
   const navigate = useNavigate();
+  
+  const [pageLoading, setPageLoading] = useState(true);
   
   const [timer, setTimer] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
@@ -362,29 +408,39 @@ const UserDashboard = () => {
 
   }, [token, isUserInCurrentCompany]);
 
-  // Load initial data - ONLY ONCE
+  // Load initial data with page loader
   useEffect(() => {
     if (initialLoadRef.current) return;
-    if (!isUserInCurrentCompany) return;
+    if (!isUserInCurrentCompany) {
+      setPageLoading(false);
+      return;
+    }
     
     initialLoadRef.current = true;
+    setPageLoading(true);
     
     const loadData = async () => {
       cancelPendingRequests();
-      await fetchJobRoles();
       
-      setTimeout(() => fetchAttendanceData(true), 100);
-      setTimeout(() => fetchLeaveData(), 200);
-      setTimeout(() => {
-        fetchCurrentStatus();
-        setInitialLoadDone(true);
-      }, 300);
+      try {
+        await fetchJobRoles();
+        await fetchAttendanceData(true);
+        await fetchLeaveData();
+        await fetchCurrentStatus();
+      } catch (error) {
+        console.error('Error loading dashboard data:', error);
+      } finally {
+        setTimeout(() => {
+          setPageLoading(false);
+          setInitialLoadDone(true);
+        }, 500);
+      }
     };
     
     loadData();
     
     return () => cancelPendingRequests();
-  }, []); // Empty dependency array - runs once
+  }, []);
 
   // Timer effect
   useEffect(() => {
@@ -651,6 +707,11 @@ const UserDashboard = () => {
   const isMobile = useIsMobile();
   const userJobRoleDisplay = getJobRoleDisplayName();
 
+  // Show page loader while page is loading
+  if (pageLoading) {
+    return <CIISLoader />;
+  }
+
   // Don't render if not authenticated
   if (!user || !token) {
     navigate('/login');
@@ -747,12 +808,6 @@ const UserDashboard = () => {
               <MdToday size={14} />
               {currentDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
             </div>
-            {/* {userJoinDate && (
-              <div className="dashboard-join-info">
-                <FiClock size={14} />
-                <span>Joined on: {formattedJoinDate}</span>
-              </div>
-            )} */}
           </div>
           
           <div className="dashboard-clock-section">
@@ -783,129 +838,140 @@ const UserDashboard = () => {
         </div>
       </div>
 
-      <div className="dashboard-stats-grid">
-        <div className="dashboard-stat-card stat-card-present">
-          <div className="stat-card-header">
-            <div className="stat-icon-container icon-present"><MdWork className="stat-icon" /></div>
-            <div className="stat-current-month">Current Month</div>
+      {/* Stats Section with Loader */}
+      {loading.attendance ? (
+        <StatsLoader />
+      ) : (
+        <div className="dashboard-stats-grid">
+          <div className="dashboard-stat-card stat-card-present">
+            <div className="stat-card-header">
+              <div className="stat-icon-container icon-present"><MdWork className="stat-icon" /></div>
+              <div className="stat-current-month">Current Month</div>
+            </div>
+            <div className="stat-value">{monthlyStats.presentDays}</div>
+            <div className="stat-label">Days Present</div>
+            <div className="stat-footer">
+              <FiTrendingUp className="stat-trend-icon" />
+              <span className="stat-month-text">Tracked in {monthNames[currentMonth]}</span>
+            </div>
           </div>
-          <div className="stat-value">{monthlyStats.presentDays}</div>
-          <div className="stat-label">Days Present</div>
-          <div className="stat-footer">
-            <FiTrendingUp className="stat-trend-icon" />
-            <span className="stat-month-text">Tracked in {monthNames[currentMonth]}</span>
-          </div>
-        </div>
 
-        <div className="dashboard-stat-card stat-card-late">
-          <div className="stat-card-header">
-            <div className="stat-icon-container icon-late"><MdOutlineAlarm className="stat-icon" /></div>
-            <div className="stat-current-month">Current Month</div>
+          <div className="dashboard-stat-card stat-card-late">
+            <div className="stat-card-header">
+              <div className="stat-icon-container icon-late"><MdOutlineAlarm className="stat-icon" /></div>
+              <div className="stat-current-month">Current Month</div>
+            </div>
+            <div className="stat-value">{monthlyStats.lateDays}</div>
+            <div className="stat-label">Late Days</div>
+            <div className="stat-footer">
+              <FiAlertTriangle className="stat-trend-icon" />
+              <span className="stat-month-text">Tracked in {monthNames[currentMonth]}</span>
+            </div>
           </div>
-          <div className="stat-value">{monthlyStats.lateDays}</div>
-          <div className="stat-label">Late Days</div>
-          <div className="stat-footer">
-            <FiAlertTriangle className="stat-trend-icon" />
-            <span className="stat-month-text">Tracked in {monthNames[currentMonth]}</span>
-          </div>
-        </div>
 
-        <div className="dashboard-stat-card stat-card-halfday">
-          <div className="stat-card-header">
-            <div className="stat-icon-container icon-halfday"><MdOutlineCrop54 className="stat-icon" /></div>
-            <div className="stat-current-month">Current Month</div>
+          <div className="dashboard-stat-card stat-card-halfday">
+            <div className="stat-card-header">
+              <div className="stat-icon-container icon-halfday"><MdOutlineCrop54 className="stat-icon" /></div>
+              <div className="stat-current-month">Current Month</div>
+            </div>
+            <div className="stat-value">{monthlyStats.halfDays}</div>
+            <div className="stat-label">Half Days</div>
+            <div className="stat-footer">
+              <FiActivity className="stat-trend-icon" />
+              <span className="stat-month-text">Tracked in {monthNames[currentMonth]}</span>
+            </div>
           </div>
-          <div className="stat-value">{monthlyStats.halfDays}</div>
-          <div className="stat-label">Half Days</div>
-          <div className="stat-footer">
-            <FiActivity className="stat-trend-icon" />
-            <span className="stat-month-text">Tracked in {monthNames[currentMonth]}</span>
-          </div>
-        </div>
 
-        <div className="dashboard-stat-card stat-card-leave">
-          <div className="stat-card-header">
-            <div className="stat-icon-container icon-leave"><MdBeachAccess className="stat-icon" /></div>
-            <div className="stat-current-month">Current Month</div>
-          </div>
-          <div className="stat-value">{monthlyStats.leavesTaken}</div>
-          <div className="stat-label">Leaves Taken</div>
-          <div className="stat-footer">
-            <FiCheckCircle className="stat-trend-icon" />
-            <span className="stat-month-text">Approved in {monthNames[currentMonth]}</span>
+          <div className="dashboard-stat-card stat-card-leave">
+            <div className="stat-card-header">
+              <div className="stat-icon-container icon-leave"><MdBeachAccess className="stat-icon" /></div>
+              <div className="stat-current-month">Current Month</div>
+            </div>
+            <div className="stat-value">{monthlyStats.leavesTaken}</div>
+            <div className="stat-label">Leaves Taken</div>
+            <div className="stat-footer">
+              <FiCheckCircle className="stat-trend-icon" />
+              <span className="stat-month-text">Approved in {monthNames[currentMonth]}</span>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <div className="dashboard-content-grid">
-        <div className="dashboard-calendar-card">
-          <div className="calendar-header">
-            <div className="calendar-title-section">
-              <div className="calendar-icon-container"><FiCalendar className="calendar-icon" /></div>
-              <div>
-                <h2 className="calendar-title">{monthNames[calendarMonth]} {calendarYear}</h2>
-                <p className="calendar-subtitle">Attendance Calendar</p>
+        {/* Calendar Section with Loader */}
+        {loading.attendance ? (
+          <CalendarLoader />
+        ) : (
+          <div className="dashboard-calendar-card">
+            <div className="calendar-header">
+              <div className="calendar-title-section">
+                <div className="calendar-icon-container"><FiCalendar className="calendar-icon" /></div>
+                <div>
+                  <h2 className="calendar-title">{monthNames[calendarMonth]} {calendarYear}</h2>
+                  <p className="calendar-subtitle">Attendance Calendar</p>
+                </div>
+              </div>
+              <div className="calendar-controls">
+                <button onClick={handlePrevMonth} className="calendar-nav-btn" disabled={isMonthBeforeJoin(calendarYear, calendarMonth)}>
+                  <FiChevronLeft className="nav-icon" />
+                </button>
+                <button onClick={resetToCurrentMonth} className="calendar-today-btn">Today</button>
+                <button onClick={handleNextMonth} className="calendar-nav-btn">
+                  <FiChevronRight className="nav-icon" />
+                </button>
               </div>
             </div>
-            <div className="calendar-controls">
-              <button onClick={handlePrevMonth} className="calendar-nav-btn" disabled={isMonthBeforeJoin(calendarYear, calendarMonth)}>
-                <FiChevronLeft className="nav-icon" />
-              </button>
-              <button onClick={resetToCurrentMonth} className="calendar-today-btn">Today</button>
-              <button onClick={handleNextMonth} className="calendar-nav-btn">
-                <FiChevronRight className="nav-icon" />
-              </button>
-            </div>
-          </div>
 
-          {isMonthBeforeJoin(calendarYear, calendarMonth) && (
-            <div className="calendar-before-join-message">
-              <FiClock size={16} />
-              <span>You joined on {formattedJoinDate}. No attendance records before this date.</span>
-            </div>
-          )}
+            {isMonthBeforeJoin(calendarYear, calendarMonth) && (
+              <div className="calendar-before-join-message">
+                <FiClock size={16} />
+                <span>You joined on {formattedJoinDate}. No attendance records before this date.</span>
+              </div>
+            )}
 
-          <div className="calendar-body">
-            <div className="calendar-week-header">
-              {daysOfWeek.map(day => <div key={day} className="calendar-day-header">{day}</div>)}
-            </div>
-            <div className="calendar-grid">
-              {calendarDays.map((week, weekIndex) => (
-                <div key={weekIndex} className="calendar-week">
-                  {week.map((day, dayIndex) => (
-                    <div key={dayIndex} className="calendar-day-wrapper">
-                      {day ? (
-                        <div className="calendar-day-container">
-                          <div
-                            className={`calendar-day ${getDayStatus(day) || 'empty'} ${isToday(day) ? 'day-today' : ''}`}
-                            title={isBeforeJoinDate(new Date(calendarYear, calendarMonth, day)) 
-                              ? 'Before joining date' 
-                              : getDayStatus(day)?.charAt(0).toUpperCase() + getDayStatus(day)?.slice(1) || 'No Record'}
-                          >
-                            <span className="day-number">{day}</span>
-                            {getDayIcon(day) && <span className="day-status-icon">{getDayIcon(day)}</span>}
+            <div className="calendar-body">
+              <div className="calendar-week-header">
+                {daysOfWeek.map(day => <div key={day} className="calendar-day-header">{day}</div>)}
+              </div>
+              <div className="calendar-grid">
+                {calendarDays.map((week, weekIndex) => (
+                  <div key={weekIndex} className="calendar-week">
+                    {week.map((day, dayIndex) => (
+                      <div key={dayIndex} className="calendar-day-wrapper">
+                        {day ? (
+                          <div className="calendar-day-container">
+                            <div
+                              className={`calendar-day ${getDayStatus(day) || 'empty'} ${isToday(day) ? 'day-today' : ''}`}
+                              title={isBeforeJoinDate(new Date(calendarYear, calendarMonth, day)) 
+                                ? 'Before joining date' 
+                                : getDayStatus(day)?.charAt(0).toUpperCase() + getDayStatus(day)?.slice(1) || 'No Record'}
+                            >
+                              <span className="day-number">{day}</span>
+                              {getDayIcon(day) && <span className="day-status-icon">{getDayIcon(day)}</span>}
+                            </div>
+                            {isToday(day) && <div className="today-indicator"></div>}
                           </div>
-                          {isToday(day) && <div className="today-indicator"></div>}
-                        </div>
-                      ) : <div className="calendar-empty-day"></div>}
-                    </div>
-                  ))}
-                </div>
-              ))}
+                        ) : <div className="calendar-empty-day"></div>}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="calendar-legend">
+              <div className="legend-item"><div className="legend-color color-present"></div><span>Present</span></div>
+              <div className="legend-item"><div className="legend-color color-late"></div><span>Late</span></div>
+              <div className="legend-item"><div className="legend-color color-halfday"></div><span>Half Day</span></div>
+              <div className="legend-item"><div className="legend-color color-leave"></div><span>Leave</span></div>
+              <div className="legend-item"><div className="legend-color color-absent"></div><span>Absent</span></div>
+              <div className="legend-item"><div className="legend-color color-weekend"></div><span>Weekend</span></div>
+              <div className="legend-item"><div className="legend-color color-before-join"></div><span>Before Joining</span></div>
             </div>
           </div>
+        )}
 
-          <div className="calendar-legend">
-            <div className="legend-item"><div className="legend-color color-present"></div><span>Present</span></div>
-            <div className="legend-item"><div className="legend-color color-late"></div><span>Late</span></div>
-            <div className="legend-item"><div className="legend-color color-halfday"></div><span>Half Day</span></div>
-            <div className="legend-item"><div className="legend-color color-leave"></div><span>Leave</span></div>
-            <div className="legend-item"><div className="legend-color color-absent"></div><span>Absent</span></div>
-            <div className="legend-item"><div className="legend-color color-weekend"></div><span>Weekend</span></div>
-            <div className="legend-item"><div className="legend-color color-before-join"></div><span>Before Joining</span></div>
-          </div>
-        </div>
-
+        {/* Activity Section with Loader */}
         <div className="dashboard-activity-card">
           <div className="activity-header">
             <div className="activity-title-section">
@@ -921,7 +987,14 @@ const UserDashboard = () => {
           </div>
 
           <div className="activity-list">
-            {recentActivity.map((record, index) => {
+            {/* Show refresh overlay when loading but data exists */}
+            {loading.attendance && recentActivity.length > 0 && <RefreshOverlay />}
+            
+            {/* Show main loader when loading and no data */}
+            {loading.attendance && !recentActivity.length && <ActivityLoader />}
+            
+            {/* Show actual data when not loading */}
+            {!loading.attendance && recentActivity.map((record, index) => {
               const date = new Date(record.date);
               const isCurrentMonth = date.getMonth() === currentMonth && date.getFullYear() === currentYear;
               return (
@@ -949,20 +1022,14 @@ const UserDashboard = () => {
               );
             })}
             
-            {!recentActivity.length && !loading.attendance && (
+            {/* Empty State */}
+            {!loading.attendance && !recentActivity.length && (
               <div className="activity-empty-state">
                 <div className="empty-icon-container"><FiClock className="empty-icon" /></div>
                 <p className="empty-title">No attendance records found</p>
                 <p className="empty-subtitle">
                   {userJoinDate ? `You joined on ${formattedJoinDate}. Records will appear after this date.` : 'Your attendance records will appear here'}
                 </p>
-              </div>
-            )}
-            
-            {loading.attendance && (
-              <div className="activity-loading-state">
-                <div className="loading-spinner"></div>
-                <span className="loading-text">Loading records...</span>
               </div>
             )}
           </div>

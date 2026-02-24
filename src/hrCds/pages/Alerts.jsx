@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import axios from "../../utils/axiosConfig";
 import "../Css/Alerts.css";
+import CIISLoader from '../../Loader/CIISLoader'; // ✅ Import CIISLoader
 
 // Icons as React components
 const FiAlertCircle = () => <span className="Alerts-icon">⚠️</span>;
@@ -107,7 +108,8 @@ const Checkbox = ({ checked, onChange }) => (
 ------------------------------------ */
 const Alerts = () => {
   const [alerts, setAlerts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [pageLoading, setPageLoading] = useState(true); // ✅ Page loading state
+  const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     type: "info",
     message: "",
@@ -169,6 +171,7 @@ const Alerts = () => {
     } finally {
       setLoading(false);
       setRefreshing(false);
+      setPageLoading(false); // ✅ Stop page loading after data fetch
     }
   };
 
@@ -187,20 +190,26 @@ const Alerts = () => {
     });
   };
 
+  // ✅ Load data with page loader
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      try {
-        const parsed = JSON.parse(storedUser);
-        const userRole = parsed.role || parsed.user?.role || "";
-        setRole(userRole.toLowerCase());
-        const userId = parsed._id || parsed.user?._id || "";
-        if (userId) localStorage.setItem("userId", userId);
-      } catch (error) {
-        console.error("Error parsing user:", error);
+    const loadData = async () => {
+      setPageLoading(true);
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        try {
+          const parsed = JSON.parse(storedUser);
+          const userRole = parsed.role || parsed.user?.role || "";
+          setRole(userRole.toLowerCase());
+          const userId = parsed._id || parsed.user?._id || "";
+          if (userId) localStorage.setItem("userId", userId);
+        } catch (error) {
+          console.error("Error parsing user:", error);
+        }
       }
-    }
-    fetchData();
+      await fetchData();
+    };
+    
+    loadData();
   }, []);
 
   /* -----------------------------------
@@ -450,13 +459,9 @@ const Alerts = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="Alerts-loading-container">
-        <CircularProgress />
-        <p className="Alerts-loading-text">Loading alerts...</p>
-      </div>
-    );
+  // ✅ Show CIISLoader while page is loading
+  if (pageLoading) {
+    return <CIISLoader />;
   }
 
   return (
@@ -552,6 +557,7 @@ const Alerts = () => {
               label: "Total Alerts", 
               color: "#667eea", 
               icon: <FiBell />,
+              value: stats.total,
               active: filterType === "all" && viewMode === "all"
             },
             { 
@@ -559,6 +565,7 @@ const Alerts = () => {
               label: "Information", 
               color: "#29B6F6", 
               icon: <FiInfo />,
+              value: stats.info,
               active: filterType === "info"
             },
             { 
@@ -566,6 +573,7 @@ const Alerts = () => {
               label: "Warnings", 
               color: "#FFA726", 
               icon: <FiAlertTriangle />,
+              value: stats.warning,
               active: filterType === "warning"
             },
             { 
@@ -573,10 +581,10 @@ const Alerts = () => {
               label: "Errors", 
               color: "#EF5350", 
               icon: <FiAlertCircle />,
+              value: stats.error,
               active: filterType === "error"
             },
           ]
-          .filter(stat => stat.value > 0)
           .map((s) => (
             <div 
               key={s.key} 
@@ -590,7 +598,7 @@ const Alerts = () => {
               <div className="Alerts-stat-content">
                 <div className="Alerts-stat-text">
                   <span className="Alerts-stat-label">{s.label}</span>
-                  <h3 className="Alerts-stat-value">{stats[s.key]}</h3>
+                  <h3 className="Alerts-stat-value">{s.value}</h3>
                 </div>
                 <Avatar color={s.color}>
                   {s.icon}

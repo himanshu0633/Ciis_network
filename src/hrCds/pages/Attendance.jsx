@@ -22,6 +22,7 @@ import {
   FiWatch
 } from "react-icons/fi";
 import '../Css/Attendance.css';
+import CIISLoader from '../../Loader/CIISLoader'; // ✅ Import CIISLoader
 
 const Attendance = () => {
   const [attendance, setAttendance] = useState([]);
@@ -29,7 +30,8 @@ const Attendance = () => {
   const [selectedDate, setSelectedDate] = useState(null);
   const [openModal, setOpenModal] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [pageLoading, setPageLoading] = useState(true); // ✅ Page loading state
+  const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [timeRange, setTimeRange] = useState("ALL");
@@ -153,7 +155,7 @@ const Attendance = () => {
     }
   }, [userJoinDate, isBeforeJoinDate]);
 
-  // Load data on mount - only once
+  // ✅ Load data on mount - with page loader
   const initialLoadRef = useRef(false);
   
   useEffect(() => {
@@ -161,7 +163,22 @@ const Attendance = () => {
     if (!userJoinDate) return;
     
     initialLoadRef.current = true;
-    fetchAttendance();
+    setPageLoading(true);
+    
+    const loadData = async () => {
+      try {
+        await fetchAttendance();
+      } catch (error) {
+        console.error('Error loading attendance data:', error);
+      } finally {
+        // Minimum 500ms loader show karega
+        setTimeout(() => {
+          setPageLoading(false);
+        }, 500);
+      }
+    };
+    
+    loadData();
   }, [userJoinDate, fetchAttendance]);
 
   const calculateStats = (data) => {
@@ -374,22 +391,9 @@ const Attendance = () => {
 
   const statusOptions = ["ALL", "PRESENT", "LATE", "HALF DAY", "ABSENT"];
 
-  if (loading && !refreshing) {
-    return (
-      <div className="Attendance-loading">
-        <div className="Attendance-loading-content">
-          <div className="Attendance-loading-bar">
-            <div className="Attendance-loading-progress"></div>
-          </div>
-          <h2 className="Attendance-loading-text">Loading your attendance records...</h2>
-          {userJoinDate && (
-            <p className="Attendance-loading-subtext">
-              Showing records from {formattedJoinDate}
-            </p>
-          )}
-        </div>
-      </div>
-    );
+  // ✅ Show CIISLoader while page is loading
+  if (pageLoading) {
+    return <CIISLoader />;
   }
 
   return (
@@ -930,5 +934,4 @@ const Attendance = () => {
   );
 };
 
-// ✅ THIS IS CRITICAL - MUST BE DEFAULT EXPORT
 export default Attendance;
