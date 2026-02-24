@@ -1613,7 +1613,7 @@ const EmployeeLeaves = () => {
       {!isOwner && currentUserDepartment && (
         <div className="department-info-banner">
           <div className="info-content">
-            <FiHome size={20} />
+            {/* <FiHome size={20} /> */}
             <div className="info-text">
               <strong>🏢 Your Department: {getDepartmentName(currentUserDepartment)}</strong>
               <p>Showing leave requests only from your department</p>
