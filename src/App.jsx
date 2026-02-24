@@ -43,6 +43,7 @@ import EmployeeMeetingPage from "./hrCds/pages/EmployeeMeetingPage";
 import EmployeeProject from "./hrCds/pages/EmployeeProject";
 import ClientMeeting from "./hrCds/pages/ClientMeeting";
 import Text from "../src/Pages/text.jsx";
+import CreateAlerts from "./hrCds/pages/CreateAlerts.jsx";
 
 // Website Pages
 import Home from "./Pages/Home";
@@ -59,6 +60,7 @@ import SidebarManagement from "./admin/components/SidebarManagement.jsx";
 import CompanyDetails from "./admin/components/CompanyDetails.jsx";
 import AllCompany from "./page/AllCompany.jsx";
 import AssetManagement from './page/AssetManagement.jsx'
+
 
 function App() {
 
@@ -143,6 +145,7 @@ function App() {
           <Route path="employee-meeting" element={<EmployeeMeetingPage />} />
           <Route path="client-meeting" element={<ClientMeeting />} />
           <Route path="test" element={<Text />} />
+          <Route path="create-alert" element={<CreateAlerts />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

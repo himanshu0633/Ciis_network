@@ -603,6 +603,21 @@ body * {
 }
 
 /* Dashboard Preview */
+.dashboard-content {
+  position: relative;
+  right: -100px;
+}
+@media (max-width: 480px) {
+  .dashboard-content {
+    box-sizing: 30px;
+    position: relative;
+    right: -5px;
+  }
+}
+
+
+
+
 .ciis-dashboard-preview {
   padding: 3rem 0;
   background: var(--ciis-lighter);
