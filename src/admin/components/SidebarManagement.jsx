@@ -3,6 +3,7 @@ import axios from "../../utils/axiosConfig";
 import axiosInstance from "../../utils/axiosConfig";
 import Swal from 'sweetalert2';
 import './SidebarManagement.css';
+import CIISLoader from '../../Loader/CIISLoader';
 
 // Your routes configuration
 const APP_ROUTES = [
@@ -26,6 +27,7 @@ const APP_ROUTES = [
   { path: 'employee-meeting', name: 'Employee Meeting', icon: 'VideoCall', category: 'meetings' },
   { path: 'client-meeting', name: 'Client Meeting', icon: 'VideoCall', category: 'meetings' },
   { path: 'change-password', name: 'Change Password', icon: 'Key', category: 'main' },
+  { path: 'create-alert' , name: 'Create Alert', icon: 'Notifications', category: 'communication' },
 ];
 
 // Helper function to get icon component as HTML string
@@ -82,66 +84,7 @@ const SidebarManagement = () => {
   // State for responsive design
   const [isMobile, setIsMobile] = useState(window.innerWidth < 600);
   const [isTablet, setIsTablet] = useState(window.innerWidth < 960);
-
-  // Handle window resize
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 600);
-      setIsTablet(window.innerWidth < 960);
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // Get company from localStorage - MULTIPLE FORMAT SUPPORT
-  const getCompanyFromLocalStorage = () => {
-    try {
-      // Try multiple possible storage formats
-      const possibleKeys = ['user', 'currentUser', 'companyData', 'selectedCompany', 'currentCompany'];
-      
-      for (const key of possibleKeys) {
-        const data = localStorage.getItem(key);
-        if (data) {
-          const parsedData = JSON.parse(data);
-          
-          // Check different possible structures
-          if (parsedData.company) {
-            // Format: {user: {company: {...}}}
-            return parsedData.company;
-          } else if (parsedData._id && parsedData.companyName) {
-            // Format: direct company object
-            return parsedData;
-          } else if (parsedData.companyId && parsedData.companyName) {
-            // Format: {companyId: "...", companyName: "..."}
-            return parsedData;
-          } else if (parsedData.companyDetails) {
-            // Format: {companyDetails: {...}}
-            return parsedData.companyDetails;
-          }
-        }
-      }
-      
-      // Try to find any object that looks like a company
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key.includes('company') || key.includes('Company')) {
-          try {
-            const data = JSON.parse(localStorage.getItem(key));
-            if (data && data._id && data.companyName) {
-              return data;
-            }
-          } catch (e) {
-            // Not JSON, skip
-          }
-        }
-      }
-      
-      return null;
-    } catch (error) {
-      console.error('Error getting company from localStorage:', error);
-      return null;
-    }
-  };
+  const [pageLoading, setPageLoading] = useState(true);
 
   const [company, setCompany] = useState(null);
   const [departments, setDepartments] = useState([]);
@@ -171,7 +114,51 @@ const SidebarManagement = () => {
   const [departmentSearch, setDepartmentSearch] = useState('');
   const [roleSearch, setRoleSearch] = useState('');
 
-  // Initialize with your routes and get company from localStorage
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 600);
+      setIsTablet(window.innerWidth < 960);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Get company from localStorage
+  const getCompanyFromLocalStorage = () => {
+    try {
+      const companyDetailsStr = localStorage.getItem('companyDetails');
+      
+      if (companyDetailsStr) {
+        const companyData = JSON.parse(companyDetailsStr);
+        console.log('✅ Company details found:', companyData);
+        
+        return {
+          _id: companyData._id,
+          companyName: companyData.companyName,
+          companyCode: companyData.companyCode,
+          companyEmail: companyData.companyEmail,
+          companyPhone: companyData.companyPhone,
+          companyAddress: companyData.companyAddress,
+          isActive: companyData.isActive,
+          logo: companyData.logo,
+          ownerName: companyData.ownerName,
+          subscriptionExpiry: companyData.subscriptionExpiry,
+          createdAt: companyData.createdAt,
+          updatedAt: companyData.updatedAt,
+          dbIdentifier: companyData.dbIdentifier,
+          loginUrl: companyData.loginUrl
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error getting company from localStorage:', error);
+      return null;
+    }
+  };
+
+  // Initialize pages
   useEffect(() => {
     initializePages();
     initializeCompanyFromLocalStorage();
@@ -189,13 +176,16 @@ const SidebarManagement = () => {
     setAvailablePages(pages);
   };
 
-  // Get company from localStorage
+  // Initialize company from localStorage
   const initializeCompanyFromLocalStorage = async () => {
     try {
+      setPageLoading(true);
       const companyFromStorage = getCompanyFromLocalStorage();
       
       if (companyFromStorage && companyFromStorage._id) {
+        console.log('🎯 Company ID found:', companyFromStorage._id);
         setCompany(companyFromStorage);
+        
         await fetchDepartments(companyFromStorage._id);
         await fetchExistingConfigs(companyFromStorage._id);
         
@@ -204,151 +194,21 @@ const SidebarManagement = () => {
           message: `Loaded company: ${companyFromStorage.companyName}`,
           severity: 'success'
         });
+        
+        setTimeout(() => {
+          setPageLoading(false);
+        }, 500);
       } else {
-        // Try to get company from API using token
-        await tryGetCompanyFromAPI();
+        console.log('❌ No company found in localStorage');
+        setPageLoading(false);
       }
     } catch (error) {
       console.error('Error initializing company:', error);
-      setSnackbar({
-        open: true,
-        message: 'Error loading company information',
-        severity: 'error'
-      });
+      setPageLoading(false);
     }
   };
 
-  // Try to get company from API
-  const tryGetCompanyFromAPI = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('No token found');
-      }
-
-      // Try different API endpoints
-      const endpoints = [
-        '/auth/me',
-        '/user/profile',
-        '/company/current',
-        '/company/my-company'
-      ];
-
-      for (const endpoint of endpoints) {
-        try {
-          const response = await axiosInstance.get(endpoint, {
-            headers: { 
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          });
-          
-          if (response.data) {
-            let companyData = null;
-            
-            // Check different response formats
-            if (response.data.company) {
-              companyData = response.data.company;
-            } else if (response.data.data && response.data.data.company) {
-              companyData = response.data.data.company;
-            } else if (response.data._id && response.data.companyName) {
-              companyData = response.data;
-            } else if (response.data.user && response.data.user.company) {
-              companyData = response.data.user.company;
-            }
-            
-            if (companyData && companyData._id) {
-              setCompany(companyData);
-              await fetchDepartments(companyData._id);
-              await fetchExistingConfigs(companyData._id);
-              
-              // Save to localStorage for future
-              localStorage.setItem('currentCompany', JSON.stringify(companyData));
-              
-              setSnackbar({
-                open: true,
-                message: `Loaded company from API: ${companyData.companyName}`,
-                severity: 'success'
-              });
-              return;
-            }
-          }
-        } catch (apiError) {
-          console.log(`API endpoint ${endpoint} failed:`, apiError.message);
-          continue;
-        }
-      }
-      
-      // If all API calls fail
-      setSnackbar({
-        open: true,
-        message: 'Unable to load company information. Please check your connection.',
-        severity: 'error'
-      });
-      
-    } catch (error) {
-      console.error('Error getting company from API:', error);
-    }
-  };
-
-  // Manual company input fallback
-  const handleManualCompanyInput = () => {
-    Swal.fire({
-      title: 'Enter Company ID',
-      input: 'text',
-      inputLabel: 'Company ID',
-      inputPlaceholder: 'Enter your company ID (e.g., 698977b6159a098f2160342b)',
-      showCancelButton: true,
-      confirmButtonText: 'Load Company',
-      cancelButtonText: 'Cancel',
-      inputValidator: (value) => {
-        if (!value) {
-          return 'Company ID is required!';
-        }
-      }
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        const companyId = result.value;
-        try {
-          const token = localStorage.getItem('token');
-          const response = await axiosInstance.get(`/company/${companyId}`, {
-            headers: { 
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          });
-          
-          if (response.data && response.data.company) {
-            setCompany(response.data.company);
-            await fetchDepartments(companyId);
-            await fetchExistingConfigs(companyId);
-            
-            setSnackbar({
-              open: true,
-              message: `Loaded company: ${response.data.company.companyName}`,
-              severity: 'success'
-            });
-          } else {
-            throw new Error('Company not found');
-          }
-        } catch (error) {
-          setSnackbar({
-            open: true,
-            message: 'Failed to load company from ID',
-            severity: 'error'
-          });
-        }
-      }
-    });
-  };
-
-  // Fetch departments when company is available
-  useEffect(() => {
-    if (company && company._id) {
-      fetchDepartments(company._id);
-    }
-  }, [company]);
-
+  // Fetch departments
   const fetchDepartments = async (companyId) => {
     try {
       setLoading(prev => ({ ...prev, departments: true }));
@@ -372,11 +232,6 @@ const SidebarManagement = () => {
       }
     } catch (error) {
       console.error('Error fetching departments:', error);
-      setSnackbar({
-        open: true,
-        message: 'Failed to load departments',
-        severity: 'error'
-      });
       setDepartments([]);
     } finally {
       setLoading(prev => ({ ...prev, departments: false }));
@@ -407,8 +262,6 @@ const SidebarManagement = () => {
 
       const token = localStorage.getItem('token');
       
-      console.log('Fetching job roles for department:', deptId);
-      
       try {
         const response = await axiosInstance.get(`/job-roles/department/${deptId}`, {
           headers: { 
@@ -419,8 +272,8 @@ const SidebarManagement = () => {
         
         if (response.data && response.data.success && response.data.jobRoles) {
           const formattedRoles = response.data.jobRoles.map(role => ({
-            _id: role._id, // ID
-            name: role.name, // Name
+            _id: role._id,
+            name: role.name,
             description: role.description || role.name
           }));
           setJobRoles(formattedRoles);
@@ -440,11 +293,14 @@ const SidebarManagement = () => {
     }
   };
 
-  // Fetch existing configurations
+  // ✅ FIXED: Fetch existing configurations with null handling
   const fetchExistingConfigs = async (companyId) => {
     try {
       setLoading(prev => ({ ...prev, fetching: true }));
       const token = localStorage.getItem('token');
+      
+      console.log('🔍 Fetching existing configs for company:', companyId);
+      
       const response = await axiosInstance.get(`/sidebar`, {
         params: { companyId },
         headers: { 
@@ -453,31 +309,75 @@ const SidebarManagement = () => {
         }
       });
       
+      console.log('📦 Sidebar API Response:', response.data);
+      
       if (response.data && response.data.success) {
-        const formattedConfigs = (response.data.data || []).map(config => {
-          let departmentId = config.departmentId;
-          if (typeof departmentId === 'object') {
-            departmentId = departmentId._id || departmentId.id;
-          }
-          
-          return {
-            ...config,
-            departmentId,
-            companyId,
-            _id: config._id || config.id
-          };
-        });
+        let configs = [];
         
-        setExistingConfigs(formattedConfigs);
+        if (response.data.data && Array.isArray(response.data.data)) {
+          configs = response.data.data;
+        } else if (Array.isArray(response.data)) {
+          configs = response.data;
+        }
+        
+        console.log(`✅ Found ${configs.length} configurations`);
+        setExistingConfigs(configs);
       } else {
         setExistingConfigs([]);
       }
     } catch (error) {
-      console.error('Error fetching configs:', error);
+      console.error('❌ Error fetching configs:', error);
       setExistingConfigs([]);
     } finally {
       setLoading(prev => ({ ...prev, fetching: false }));
     }
+  };
+
+  // ✅ FIXED: Get department name with null check
+  const getDepartmentName = (departmentId) => {
+    if (!departmentId) return 'No Department';
+    
+    // Agar departmentId object hai
+    if (typeof departmentId === 'object' && departmentId !== null) {
+      return departmentId.name || departmentId.departmentName || 'Department';
+    }
+    
+    // Agar departmentId string hai
+    const department = departments.find(d => d._id === departmentId);
+    if (department) return department.name;
+    
+    return 'Department';
+  };
+
+  // ✅ FIXED: Get role name by ID with null check
+  const getRoleNameById = (roleId) => {
+    if (!roleId) return 'No Role';
+    
+    // Agar roleId object hai
+    if (typeof roleId === 'object' && roleId !== null) {
+      if (roleId.name) return roleId.name;
+      if (roleId.roleName) return roleId.roleName;
+      if (roleId.role) return roleId.role;
+    }
+    
+    // Pehle jobRoles mein search karo
+    const jobRole = jobRoles.find(r => r._id === roleId);
+    if (jobRole) return jobRole.name;
+    
+    // Phir customRoles mein search karo
+    const customRole = customRoles.find(r => r._id === roleId);
+    if (customRole) return customRole.name;
+    
+    // Agar existing configs mein roleName ho
+    const config = existingConfigs.find(c => c.role === roleId);
+    if (config && config.roleName) return config.roleName;
+    
+    // Agar roleId string hai to use hi return karo
+    if (typeof roleId === 'string') {
+      return roleId;
+    }
+    
+    return 'Role';
   };
 
   // Handle department selection
@@ -489,7 +389,6 @@ const SidebarManagement = () => {
     setActiveStep(1);
     setShowDepartmentDropdown(false);
     
-    // Find department name for search
     const dept = departments.find(d => d._id === departmentId);
     if (dept) {
       setDepartmentSearch(dept.name);
@@ -506,14 +405,12 @@ const SidebarManagement = () => {
     setActiveStep(2);
     setShowRoleDropdown(false);
     
-    // Find role name for search
     const allRoles = getAllAvailableRoles();
     const role = allRoles.find(r => r._id === roleId);
     if (role) {
       setRoleSearch(role.name);
     }
     
-    // Load existing config for this combination
     if (company && company._id && selectedDepartment && roleId) {
       loadExistingConfig(company._id, selectedDepartment, roleId);
     } else {
@@ -524,8 +421,6 @@ const SidebarManagement = () => {
   // Load existing configuration
   const loadExistingConfig = async (companyId, departmentId, roleId) => {
     try {
-      console.log('Loading config for:', { companyId, departmentId, roleId });
-      
       const token = localStorage.getItem('token');
       const response = await axiosInstance.get(`/sidebar/config`, {
         params: { 
@@ -553,24 +448,24 @@ const SidebarManagement = () => {
   // Edit existing configuration
   const handleEdit = async (config) => {
     try {
-      const departmentId = typeof config.departmentId === 'object' ? config.departmentId._id : config.departmentId;
-      const roleId = config.role; // Backend से role में ID आती है
+      const departmentId = typeof config.departmentId === 'object' 
+        ? config.departmentId._id 
+        : config.departmentId;
       
-      // Set the values
+      const roleId = config.role;
+      
       setSelectedDepartment(departmentId);
       setSelectedRole(roleId);
       setSelectedItems(config.menuItems.map(item => item.id));
       setActiveTab(0);
       setActiveStep(2);
       
-      // Show success message
       setSnackbar({
         open: true,
         message: 'Loaded configuration for role',
         severity: 'success'
       });
       
-      // Wait a bit for state to update, then fetch roles
       setTimeout(() => {
         if (departmentId) {
           fetchJobRoles(departmentId);
@@ -657,7 +552,7 @@ const SidebarManagement = () => {
       const configData = {
         companyId: company._id,
         departmentId: selectedDepartment,
-        role: selectedRole, // ✅ Backend में role field में ID भेजें
+        role: selectedRole,
         menuItems: selectedItems.map(id => {
           const page = availablePages.find(p => p.id === id);
           return {
@@ -672,7 +567,6 @@ const SidebarManagement = () => {
 
       console.log('Saving config data:', configData);
 
-      // Check if config exists
       const checkResponse = await axiosInstance.get(`/sidebar/config`, {
         params: { 
           companyId: company._id, 
@@ -687,7 +581,6 @@ const SidebarManagement = () => {
 
       let response;
       if (checkResponse.data && checkResponse.data.success && checkResponse.data.data) {
-        // Update existing config
         response = await axiosInstance.put(`/sidebar/${checkResponse.data.data._id}`, configData, {
           headers: { 
             Authorization: `Bearer ${token}`,
@@ -695,7 +588,6 @@ const SidebarManagement = () => {
           }
         });
       } else {
-        // Create new config
         response = await axios.post('/sidebar', configData, {
           headers: { 
             Authorization: `Bearer ${token}`,
@@ -754,7 +646,7 @@ const SidebarManagement = () => {
     if (result.isConfirmed) {
       try {
         const token = localStorage.getItem('token');
-        const response = await axiosInstance.delete(`/api/sidebar/${configId}`, {
+        const response = await axiosInstance.delete(`/sidebar/${configId}`, {
           headers: { 
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -762,7 +654,7 @@ const SidebarManagement = () => {
         });
 
         if (response.data.success) {
-          setExistingConfigs(prev => prev.filter(config => config._id !== configId));
+          await fetchExistingConfigs(company._id);
           
           setSnackbar({
             open: true,
@@ -835,7 +727,6 @@ const SidebarManagement = () => {
         
         setCustomRoles(prev => [...prev, newRole]);
         
-        // Auto-select the new role
         setSelectedRole(newRole._id);
         setActiveStep(2);
         
@@ -854,21 +745,19 @@ const SidebarManagement = () => {
     return allRolesList.sort((a, b) => a.name.localeCompare(b.name));
   };
 
-  // Get role name by ID
-  const getRoleNameById = (roleId) => {
-    if (!roleId) return 'Unknown Role';
-    
-    const allRoles = getAllAvailableRoles();
-    const role = allRoles.find(r => r._id === roleId);
-    
-    if (role) return role.name;
-    
-    // Check in existing configs
-    const config = existingConfigs.find(c => c.role === roleId);
-    if (config && config.roleName) return config.roleName;
-    
-    return roleId; // Return ID if name not found
-  };
+  // Filter departments based on search
+  const filteredDepartments = departments.filter(dept => {
+    const searchLower = departmentSearch.toLowerCase();
+    return dept.name.toLowerCase().includes(searchLower) ||
+           (dept.description && dept.description.toLowerCase().includes(searchLower));
+  });
+
+  // Filter roles based on search
+  const filteredRoles = getAllAvailableRoles().filter(role => {
+    const searchLower = roleSearch.toLowerCase();
+    return role.name.toLowerCase().includes(searchLower) ||
+           (role.description && role.description.toLowerCase().includes(searchLower));
+  });
 
   // Get category display name
   const getCategoryDisplayName = (category) => {
@@ -884,20 +773,6 @@ const SidebarManagement = () => {
       'supperAdmin': 'Super Admin',
     };
     return categoryNames[category] || category;
-  };
-
-  // Get department name
-  const getDepartmentName = (departmentId) => {
-    if (!departmentId) return 'Unknown Department';
-    
-    const department = departments.find(d => d._id === departmentId);
-    if (department) return department.name;
-    
-    if (typeof departmentId === 'object') {
-      return departmentId.name || departmentId.departmentName || 'Unknown Department';
-    }
-    
-    return 'Unknown Department';
   };
 
   // Format date
@@ -921,29 +796,10 @@ const SidebarManagement = () => {
     return (steps / 4) * 100;
   };
 
-  // Handle next step
-  const handleNext = () => {
-    setActiveStep((prevActiveStep) => prevActiveStep + 1);
-  };
-
-  // Handle back step
-  const handleBack = () => {
-    setActiveStep((prevActiveStep) => prevActiveStep - 1);
-  };
-
-  // Filter departments based on search
-  const filteredDepartments = departments.filter(dept => {
-    const searchLower = departmentSearch.toLowerCase();
-    return dept.name.toLowerCase().includes(searchLower) ||
-           (dept.description && dept.description.toLowerCase().includes(searchLower));
-  });
-
-  // Filter roles based on search
-  const filteredRoles = getAllAvailableRoles().filter(role => {
-    const searchLower = roleSearch.toLowerCase();
-    return role.name.toLowerCase().includes(searchLower) ||
-           (role.description && role.description.toLowerCase().includes(searchLower));
-  });
+  // Show CIISLoader while page is loading
+  if (pageLoading) {
+    return <CIISLoader />;
+  }
 
   return (
     <div className={`SidebarManagement-container ${isMobile ? 'SidebarManagement-mobile' : ''}`}>
@@ -1019,14 +875,8 @@ const SidebarManagement = () => {
         <div className="SidebarManagement-alert SidebarManagement-alert-warning">
           <span className="SidebarManagement-alert-icon">⚠️</span>
           <span className="SidebarManagement-alert-message">
-            Company information not found. Please login again or enter company ID manually.
+            Company information not found. Please login again.
           </span>
-          <button 
-            className="SidebarManagement-alert-button"
-            onClick={handleManualCompanyInput}
-          >
-            Enter Manually
-          </button>
         </div>
       )}
 
@@ -1428,7 +1278,7 @@ const SidebarManagement = () => {
             </>
           )}
 
-          {/* Tab 2: Existing Configurations */}
+          {/* ✅ FIXED: Tab 2 - Existing Configurations */}
           {activeTab === 1 && (
             <div className="SidebarManagement-configs-card">
               <div className="SidebarManagement-configs-header">
@@ -1465,11 +1315,15 @@ const SidebarManagement = () => {
                         <div className="SidebarManagement-config-item-info">
                           <div className="SidebarManagement-config-item-dept">
                             <span className="SidebarManagement-config-item-icon">🏛️</span>
-                            <span className="SidebarManagement-config-item-dept-name">{getDepartmentName(config.departmentId)}</span>
+                            <span className="SidebarManagement-config-item-dept-name">
+                              {getDepartmentName(config.departmentId)}
+                            </span>
                           </div>
                           <div className="SidebarManagement-config-item-role">
                             <span className="SidebarManagement-config-item-icon">🔒</span>
-                            <span className="SidebarManagement-config-item-role-chip">{getRoleNameById(config.role)}</span>
+                            <span className="SidebarManagement-config-item-role-chip">
+                              {getRoleNameById(config.role)}
+                            </span>
                           </div>
                           <span className="SidebarManagement-config-item-meta">
                             {config.menuItems.length} menu items • Updated: {formatDate(config.updatedAt || config.createdAt)}
@@ -1521,10 +1375,9 @@ const SidebarManagement = () => {
           )}
         </>
       ) : (
-        // Show message when no company
         <div className="SidebarManagement-alert SidebarManagement-alert-info">
           <span className="SidebarManagement-alert-icon">ℹ️</span>
-          Please login or enter company information to configure sidebar menus.
+          Please login to configure sidebar menus.
         </div>
       )}
 

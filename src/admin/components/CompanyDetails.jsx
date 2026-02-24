@@ -4,10 +4,12 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import API_URL from "../../config";
 import "./CompanyDetails.css";
+import CIISLoader from '../../Loader/CIISLoader'; // ✅ Import CIISLoader
 
 const CompanyDetails = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
+  const [pageLoading, setPageLoading] = useState(true); // ✅ Page loading state
+  const [loading, setLoading] = useState(false);
   const [company, setCompany] = useState(null);
   const [stats, setStats] = useState({
     totalUsers: 0,
@@ -380,6 +382,7 @@ const CompanyDetails = () => {
       toast.error("Failed to load company details");
     } finally {
       setLoading(false);
+      setPageLoading(false); // ✅ Stop page loading
     }
   };
 
@@ -1141,9 +1144,24 @@ const CompanyDetails = () => {
     setActiveTab(tabIndex);
   };
 
-  // Initial load
+  // ✅ Load data with page loader
   useEffect(() => {
-    fetchCurrentUserCompany();
+    const loadData = async () => {
+      setPageLoading(true);
+      try {
+        await fetchCurrentUserCompany();
+      } catch (error) {
+        console.error("Error loading company details:", error);
+        toast.error("Failed to load company details");
+      } finally {
+        // Minimum 500ms loader show karega
+        setTimeout(() => {
+          setPageLoading(false);
+        }, 500);
+      }
+    };
+    
+    loadData();
   }, []);
 
   const defaultLogo = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
@@ -1151,16 +1169,9 @@ const CompanyDetails = () => {
   const subscriptionStatus = getSubscriptionStatus(daysRemaining);
   const subscriptionProgress = Math.min((daysRemaining / 30) * 100, 100);
 
-  if (loading) {
-    return (
-      <div className="CompanyDetails-loading-container">
-        <div className="CompanyDetails-loading-card">
-          <div className="CompanyDetails-loading-spinner"></div>
-          <h2 className="CompanyDetails-loading-title">Loading...</h2>
-          <p className="CompanyDetails-loading-text">Fetching company details</p>
-        </div>
-      </div>
-    );
+  // ✅ Show CIISLoader while page is loading
+  if (pageLoading) {
+    return <CIISLoader />;
   }
 
   if (!company) {

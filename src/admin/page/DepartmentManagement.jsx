@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import axios from '../../utils/axiosConfig';
 import './DepartmentManagement.css';
+import CIISLoader from '../../Loader/CIISLoader'; // ✅ Import CIISLoader
 
 const DepartmentManagement = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [isTablet, setIsTablet] = useState(window.innerWidth >= 768 && window.innerWidth < 1024);
+  const [pageLoading, setPageLoading] = useState(true); // ✅ Page loading state
   
   const [departments, setDepartments] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
@@ -79,25 +81,41 @@ const DepartmentManagement = () => {
            (user.role === 'super-admin' && user.department === 'Management');
   };
 
+  // ✅ Load initial data with page loader
   useEffect(() => {
-    const user = getUserFromStorage();
-    if (user) {
-      setUserInfo(user);
-      const isSuper = checkSuperAdminStatus(user);
-      setIsSuperAdmin(isSuper);
-      
-      if (user.company && user.companyCode) {
-        setFormData(prev => ({
-          ...prev,
-          company: user.company,
-          companyCode: user.companyCode
-        }));
+    const loadData = async () => {
+      setPageLoading(true);
+      try {
+        const user = getUserFromStorage();
+        if (user) {
+          setUserInfo(user);
+          const isSuper = checkSuperAdminStatus(user);
+          setIsSuperAdmin(isSuper);
+          
+          if (user.company && user.companyCode) {
+            setFormData(prev => ({
+              ...prev,
+              company: user.company,
+              companyCode: user.companyCode
+            }));
+          }
+          
+          await fetchDepartments(user, isSuper);
+        } else {
+          toast.error('Please login to continue');
+        }
+      } catch (error) {
+        console.error('Error loading departments:', error);
+        toast.error('Failed to load departments');
+      } finally {
+        // Minimum 500ms loader show karega
+        setTimeout(() => {
+          setPageLoading(false);
+        }, 500);
       }
-      
-      fetchDepartments(user, isSuper);
-    } else {
-      toast.error('Please login to continue');
-    }
+    };
+    
+    loadData();
   }, [refreshKey, showAllCompanies]);
 
   const fetchDepartments = async (user = null, isSuper = false) => {
@@ -554,6 +572,11 @@ const DepartmentManagement = () => {
         return null;
     }
   };
+
+  // ✅ Show CIISLoader while page is loading
+  if (pageLoading) {
+    return <CIISLoader />;
+  }
 
   if (!userInfo) {
     return (

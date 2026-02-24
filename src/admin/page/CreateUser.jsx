@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import axios from '../../utils/axiosConfig';
 import './CreateUser.css';
+import CIISLoader from '../../Loader/CIISLoader'; // ✅ Import CIISLoader
 
 // Constants
 const genderOptions = ['male', 'female', 'other'];
@@ -24,6 +25,7 @@ const CreateUser = () => {
   const [form, setForm] = useState(initialFormState);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true); // ✅ Page loading state
   const [loading, setLoading] = useState(false);
   const [departments, setDepartments] = useState([]);
   const [jobRoles, setJobRoles] = useState([]);
@@ -86,6 +88,16 @@ const CreateUser = () => {
       setForm(prev => ({ ...prev, jobRole: '' }));
     }
   }, [form.department]);
+
+  // ✅ Page loading complete
+  useEffect(() => {
+    // Jab saara data load ho jaye to page loading off kar do
+    if (companyId && departments.length > 0 && !loadingDepartments) {
+      setTimeout(() => {
+        setPageLoading(false);
+      }, 500);
+    }
+  }, [companyId, departments, loadingDepartments]);
 
   // ✅ FIXED: Fetch Departments - All possible endpoints try karo
   const fetchDepartments = async () => {
@@ -378,6 +390,11 @@ const CreateUser = () => {
   console.log("🏢 Current departments state:", departments);
   console.log("📋 Selected department ID:", form.department);
   console.log("🎯 Job Roles:", jobRoles);
+
+  // ✅ Show CIISLoader while page is loading
+  if (pageLoading) {
+    return <CIISLoader />;
+  }
 
   return (
     <div className="CreateUser-container">

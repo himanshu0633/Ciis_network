@@ -4,6 +4,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import API_URL from "../config";
 import "./AllCompany.css"; // Import the CSS file
+import CIISLoader from '../Loader/CIISLoader'; // ✅ Import CIISLoader
 
 const AllCompany = () => {
   const navigate = useNavigate();
@@ -18,7 +19,8 @@ const AllCompany = () => {
   const [bottomNavValue, setBottomNavValue] = useState(0);
 
   // State variables
-  const [loading, setLoading] = useState(true);
+  const [pageLoading, setPageLoading] = useState(true); // ✅ Page loading state
+  const [loading, setLoading] = useState(false);
   const [companies, setCompanies] = useState([]);
   const [filteredCompanies, setFilteredCompanies] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -241,6 +243,7 @@ const AllCompany = () => {
       toast.error("Failed to load data. Please try again.");
     } finally {
       setLoading(false);
+      setPageLoading(false); // ✅ Stop page loading
     }
   };
 
@@ -286,9 +289,24 @@ const AllCompany = () => {
     setFilteredCompanies(results);
   }, [searchTerm, filter, sortBy, sortOrder, companies]);
 
-  // Initial load
+  // ✅ Load data with page loader
   useEffect(() => {
-    fetchCompaniesWithUsers();
+    const loadData = async () => {
+      setPageLoading(true);
+      try {
+        await fetchCompaniesWithUsers();
+      } catch (error) {
+        console.error("Error loading companies:", error);
+        toast.error("Failed to load companies");
+      } finally {
+        // Minimum 500ms loader show karega
+        setTimeout(() => {
+          setPageLoading(false);
+        }, 500);
+      }
+    };
+    
+    loadData();
   }, []);
 
   // Fetch users for popup
@@ -594,49 +612,9 @@ const AllCompany = () => {
     }
   };
 
-  // Loading state
-  if (loading) {
-    return (
-      <div className="AllCompany-loading-container">
-        <div className="AllCompany-responsive-container">
-          {isMobile && (
-            <div className="AllCompany-mobile-app-bar-skeleton">
-              <div className="AllCompany-skeleton-circle"></div>
-              <div className="AllCompany-skeleton-text"></div>
-              <div className="AllCompany-skeleton-circle"></div>
-            </div>
-          )}
-
-          {!isMobile && (
-            <div className="AllCompany-desktop-header-skeleton">
-              <div>
-                <div className="AllCompany-skeleton-title"></div>
-                <div className="AllCompany-skeleton-subtitle"></div>
-              </div>
-              <div className="AllCompany-skeleton-actions">
-                <div className="AllCompany-skeleton-button"></div>
-                <div className="AllCompany-skeleton-button"></div>
-                <div className="AllCompany-skeleton-circle"></div>
-              </div>
-            </div>
-          )}
-
-          <div className="AllCompany-stats-grid">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="AllCompany-stat-card-skeleton"></div>
-            ))}
-          </div>
-
-          <div className="AllCompany-search-skeleton"></div>
-
-          <div className="AllCompany-company-list-skeleton">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="AllCompany-company-card-skeleton"></div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
+  // ✅ Show CIISLoader while page is loading
+  if (pageLoading) {
+    return <CIISLoader />;
   }
 
   return (
@@ -667,107 +645,8 @@ const AllCompany = () => {
         </div>
       )}
 
-      {/* Mobile Drawer */}
-      {/* {mobileDrawerOpen && (
-        <div className="AllCompany-mobile-drawer-overlay" onClick={toggleMobileDrawer}>
-          <div className="AllCompany-mobile-drawer" onClick={e => e.stopPropagation()}>
-            <div className="AllCompany-drawer-content">
-              <div className="AllCompany-drawer-header">
-                <div className="AllCompany-drawer-avatar">SA</div>
-                <h6 className="AllCompany-drawer-title">Super Admin</h6>
-                <p className="AllCompany-drawer-subtitle">admin@company.com</p>
-              </div>
-              
-              <hr className="AllCompany-drawer-divider" />
-              
-              <p className="AllCompany-drawer-section-title">Navigation</p>
-              
-              <button className="AllCompany-drawer-item" onClick={() => {
-                toggleMobileDrawer();
-              }}>
-                <span className="material-icons AllCompany-drawer-icon" style={{color: '#2563eb'}}>corporate_fare</span>
-                Companies
-              </button>
-              
-              <button className="AllCompany-drawer-item" onClick={() => {
-                toggleMobileDrawer();
-                handleNavigateToCreateCompany();
-              }}>
-                <span className="material-icons AllCompany-drawer-icon" style={{color: '#10b981'}}>add</span>
-                Add Company
-              </button>
-              
-              <button className="AllCompany-drawer-item" onClick={() => {
-                toggleMobileDrawer();
-                fetchCompaniesWithUsers();
-              }}>
-                <span className="material-icons AllCompany-drawer-icon" style={{color: '#8b5cf6'}}>refresh</span>
-                Refresh
-              </button>
-              
-              <button className="AllCompany-drawer-item" onClick={() => {
-                toggleMobileDrawer();
-                handleExportCSV();
-              }}>
-                <span className="material-icons AllCompany-drawer-icon" style={{color: '#f59e0b'}}>download</span>
-                Export
-              </button>
-              
-              <hr className="AllCompany-drawer-divider" />
-              
-              <p className="AllCompany-drawer-section-title">Analytics</p>
-              
-              <div className="AllCompany-drawer-stats">
-                <div className="AllCompany-stat-item">
-                  <div className="AllCompany-stat-header">
-                    <span className="AllCompany-stat-label">Total Companies</span>
-                    <span className="AllCompany-stat-value">{totalCompanies}</span>
-                  </div>
-                  <div className="AllCompany-progress-bar">
-                    <div className="AllCompany-progress-fill" style={{width: '100%', backgroundColor: '#2563eb'}}></div>
-                  </div>
-                </div>
-                <div className="AllCompany-stat-item">
-                  <div className="AllCompany-stat-header">
-                    <span className="AllCompany-stat-label">Active Companies</span>
-                    <span className="AllCompany-stat-value">{activeCompanies}</span>
-                  </div>
-                  <div className="AllCompany-progress-bar">
-                    <div className="AllCompany-progress-fill" style={{width: `${activePercentage}%`, backgroundColor: '#10b981'}}></div>
-                  </div>
-                </div>
-                <div className="AllCompany-stat-item">
-                  <div className="AllCompany-stat-header">
-                    <span className="AllCompany-stat-label">Total Users</span>
-                    <span className="AllCompany-stat-value">{totalUsers}</span>
-                  </div>
-                  <div className="AllCompany-progress-bar">
-                    <div className="AllCompany-progress-fill" style={{width: `${Math.min((totalUsers / 1000) * 100, 100)}%`, backgroundColor: '#8b5cf6'}}></div>
-                  </div>
-                </div>
-              </div>
-              
-              <hr className="AllCompany-drawer-divider" />
-              
-              <button className="AllCompany-drawer-item" onClick={() => {
-                toggleMobileDrawer();
-                navigate('/dashboard');
-              }}>
-                <span className="material-icons AllCompany-drawer-icon">dashboard</span>
-                Dashboard
-              </button>
-              
-              <button className="AllCompany-drawer-item" onClick={() => {
-                toggleMobileDrawer();
-                navigate('/settings');
-              }}>
-                <span className="material-icons AllCompany-drawer-icon">settings</span>
-                Settings
-              </button>
-            </div>
-          </div>
-        </div>
-      )} */}
+      {/* Mobile Drawer - Commented out as in original */}
+      {/* ... (mobile drawer code) ... */}
 
       <div className="AllCompany-responsive-container">
         {/* Desktop Header */}
