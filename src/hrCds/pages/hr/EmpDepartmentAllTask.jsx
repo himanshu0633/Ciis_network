@@ -41,6 +41,7 @@ const TaskDetails = () => {
   // User states
   const [currentUser, setCurrentUser] = useState(null);
   const [currentUserRole, setCurrentUserRole] = useState("");
+  const [currentUserCompanyRole, setCurrentUserCompanyRole] = useState("employee");
 
   const [openDialog, setOpenDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -52,6 +53,20 @@ const TaskDetails = () => {
   const [toDate, setToDate] = useState("");
 
   const today = new Date();
+
+  // Helper function to check if user is Owner
+  const isOwner = () => {
+    return currentUserCompanyRole === 'Owner' || currentUserRole === 'Owner';
+  };
+
+  // Helper function to get department name
+  const getDepartmentName = (department) => {
+    if (!department) return 'N/A';
+    if (typeof department === 'object') {
+      return department.name || department.departmentName || 'N/A';
+    }
+    return department; // Return ID if string
+  };
 
   const isSameDay = (d1, d2) => {
     const a = new Date(d1);
@@ -108,7 +123,7 @@ const TaskDetails = () => {
     activeEmployees: 0
   });
 
-  // ✅ FIXED: User authentication function - NO ACCESS RESTRICTIONS
+  // ✅ FIXED: User authentication function with company role detection
   useEffect(() => {
     const fetchUserData = () => {
       try {
@@ -119,14 +134,58 @@ const TaskDetails = () => {
         }
 
         const user = JSON.parse(userStr);
-        setCurrentUser(user);
+        console.log("👤 Current user data:", user);
         
-        // Check if user has a name field or use email
-        if (!user.name && user.email) {
-          user.name = user.email.split('@')[0];
+        // Extract user details
+        let foundUser = null;
+        let userRole = 'user';
+        let companyRole = 'employee';
+        let userName = '';
+        let userCompany = null;
+        let userDepartment = null;
+        
+        // Handle different user object structures
+        if (user.id && typeof user.id === 'string') {
+          foundUser = user;
+          userRole = user.role || 'user';
+          companyRole = user.companyRole || user.role || 'employee';
+          userName = user.name || 'Unknown User';
+          userCompany = user.company || null;
+          userDepartment = user.department || null;
+        }
+        else if (user.user && user.user.id) {
+          foundUser = user.user;
+          userRole = user.user.role || 'user';
+          companyRole = user.user.companyRole || user.user.role || 'employee';
+          userName = user.user.name || 'Unknown User';
+          userCompany = user.user.company || null;
+          userDepartment = user.user.department || null;
+        }
+        else if (user._id) {
+          foundUser = user;
+          userRole = user.role || 'user';
+          companyRole = user.companyRole || user.role || 'employee';
+          userName = user.name || 'Unknown User';
+          userCompany = user.company || null;
+          userDepartment = user.department || null;
+        }
+        
+        // If no name, try to extract from email
+        if (!userName && user.email) {
+          userName = user.email.split('@')[0];
         }
 
-        setCurrentUserRole('user'); // Set default role for all users
+        setCurrentUser(foundUser || user);
+        setCurrentUserRole(userRole);
+        setCurrentUserCompanyRole(companyRole);
+
+        console.log("✅ User authenticated:", {
+          name: userName,
+          role: userRole,
+          companyRole: companyRole,
+          company: userCompany,
+          department: userDepartment
+        });
         
       } catch (error) {
         console.error("Error parsing user data:", error);
@@ -136,9 +195,6 @@ const TaskDetails = () => {
 
     fetchUserData();
   }, []);
-
-  // ✅ REMOVED: Role-based access control - ALL USERS CAN ACCESS
-  const canManage = true;
 
   // Calculate overall stats from all users
   const calculateOverallStats = (usersData) => {
@@ -202,12 +258,12 @@ const TaskDetails = () => {
     });
   };
 
-  // ✅ FIXED: Fetch Users Function - NO RESTRICTIONS
+  // ✅ FIXED: Fetch Users Function with role-based filtering
   const fetchUsersWithTasks = async () => {
     setUsersLoading(true);
     setError("");
     try {
-      console.log("📤 Fetching all users with tasks...");
+      console.log("📤 Fetching users with role-based access...");
 
       // Get token from localStorage
       const token = localStorage.getItem('token');
@@ -225,17 +281,50 @@ const TaskDetails = () => {
         }
       };
 
-      // Try different endpoints
+      let apiUrl = '';
       let response = null;
 
-      // Try general users endpoint first
+      // ✅ ROLE-BASED API SELECTION
+      if (isOwner()) {
+        // OWNER: Get all company users
+        const companyId = currentUser?.company?._id || currentUser?.company;
+        if (companyId) {
+          apiUrl = `/users/company-users?companyId=${companyId}`;
+          console.log("👑 Owner: Fetching all company users from:", apiUrl);
+        } else {
+          apiUrl = '/users/company-users';
+          console.log("⚠️ No company ID found, using default endpoint");
+        }
+      } else {
+        // EMPLOYEE: Get department users
+        const deptId = currentUser?.department?._id || currentUser?.department;
+        if (deptId) {
+          apiUrl = `/users/department-users?department=${deptId}`;
+          console.log("👤 Employee: Fetching department users from:", apiUrl);
+        } else {
+          // Fallback to company users if no department
+          const companyId = currentUser?.company?._id || currentUser?.company;
+          if (companyId) {
+            apiUrl = `/users/company-users?companyId=${companyId}`;
+            console.log("⚠️ No department ID, falling back to company users");
+          } else {
+            apiUrl = '/users/company-users';
+          }
+        }
+      }
+
+      // Make the API call
       try {
-        console.log("🔍 Trying general endpoint...");
-        response = await axios.get('/task/department-users-with-counts', config);
-      } catch (generalError) {
-        console.log("General endpoint failed, trying fallback...");
+        response = await axios.get(apiUrl, config);
+        console.log("✅ API Response:", response.data);
+      } catch (apiError) {
+        console.log("Primary endpoint failed, trying fallback...");
+        
+        // Fallback to general endpoint
         try {
-          // Fallback: Get all users
+          response = await axios.get('/task/department-users-with-counts', config);
+        } catch (fallbackError) {
+          console.log("Fallback also failed, trying users list...");
           const usersResponse = await axios.get('/auth/users', config);
           if (usersResponse.data?.users) {
             const usersWithEmptyStats = usersResponse.data.users.map(user => ({
@@ -254,27 +343,46 @@ const TaskDetails = () => {
                 cancelled: 0
               }
             }));
-            setUsers(usersWithEmptyStats);
-            calculateOverallStats(usersWithEmptyStats);
+            
+            // Filter to ensure only same company users
+            let filteredUsers = usersWithEmptyStats;
+            if (currentUser?.company) {
+              const currentCompanyId = currentUser.company._id || currentUser.company;
+              filteredUsers = usersWithEmptyStats.filter(user => {
+                const userCompanyId = user.company?._id || user.company;
+                return userCompanyId?.toString() === currentCompanyId?.toString();
+              });
+            }
+            
+            // For employees, filter to same department
+            if (!isOwner() && currentUser?.department) {
+              const currentDeptId = currentUser.department._id || currentUser.department;
+              filteredUsers = filteredUsers.filter(user => {
+                const userDeptId = user.department?._id || user.department;
+                return userDeptId?.toString() === currentDeptId?.toString();
+              });
+            }
+            
+            setUsers(filteredUsers);
+            calculateOverallStats(filteredUsers);
             setUsersLoading(false);
             return;
           }
           throw new Error("Unable to fetch users");
-        } catch (fallbackError) {
-          console.error("Fallback also failed:", fallbackError);
-          throw fallbackError;
         }
       }
 
       // Handle different response formats
       let usersData = [];
 
-      if (response.data?.users && Array.isArray(response.data.users)) {
+      if (response?.data?.users && Array.isArray(response.data.users)) {
         usersData = response.data.users;
-      } else if (response.data?.data && Array.isArray(response.data.data)) {
+      } else if (response?.data?.data && Array.isArray(response.data.data)) {
         usersData = response.data.data;
-      } else if (Array.isArray(response.data)) {
+      } else if (response?.data && Array.isArray(response.data)) {
         usersData = response.data;
+      } else if (response?.data?.message?.users && Array.isArray(response.data.message.users)) {
+        usersData = response.data.message.users;
       }
 
       console.log("✅ Users data received:", usersData.length);
@@ -282,6 +390,7 @@ const TaskDetails = () => {
       // Ensure each user has taskStats
       const usersWithStats = usersData.map(user => ({
         ...user,
+        _id: user._id || user.id, // Ensure _id exists
         name: user.name || user.email?.split('@')[0] || 'Unknown User',
         role: user.role || 'Employee',
         taskStats: user.taskStats || {
@@ -305,7 +414,6 @@ const TaskDetails = () => {
     } catch (err) {
       console.error("❌ Error fetching users with tasks:", err);
 
-      // Better error handling
       if (err.response?.status === 401) {
         setError("Your session has expired. Please log in again.");
         localStorage.removeItem('user');
@@ -458,14 +566,21 @@ const TaskDetails = () => {
     if (fromDate || toDate) setDateFilter("all");
   }, [fromDate, toDate]);
 
-  // Fetch all users with task counts from backend
+  // Fetch all users with task counts from backend when currentUser is loaded
   useEffect(() => {
-    fetchUsersWithTasks();
-  }, []);
+    if (currentUser) {
+      fetchUsersWithTasks();
+    }
+  }, [currentUser]);
 
   // Fetch task status counts for specific user
   const fetchTaskStatusCounts = async (userId) => {
     try {
+      if (!userId) {
+        console.error("❌ No userId provided to fetchTaskStatusCounts");
+        return;
+      }
+      
       const response = await axios.get(`/task/user/${userId}/stats`);
 
       if (response.data.success && response.data.statusCounts) {
@@ -587,27 +702,43 @@ const TaskDetails = () => {
     });
   };
 
-  // Fetch user tasks
+  // ✅ FIXED: Fetch user tasks with proper error handling and ID formats
   const fetchUserTasks = async (userId) => {
+    // 🛡️ SAFETY CHECK: Agar userId nahi hai to return kar jao
+    if (!userId) {
+      console.error("❌ No userId provided to fetchUserTasks");
+      setError("Invalid user ID");
+      return;
+    }
+
     setLoading(true);
     setError("");
+    
     try {
-      const user = users.find((x) => x._id === userId);
+      // ✅ FIXED: dono id formats check karo - _id ya id
+      const user = users.find((x) => x._id === userId || x.id === userId);
       if (!user) {
         setError("User not found");
+        setLoading(false);
         return;
       }
 
       setSelectedUser(user);
       setSelectedUserId(userId);
 
+      // Build query params
       const params = new URLSearchParams();
-
       if (searchQuery) {
         params.append('search', searchQuery);
       }
 
-      const url = `/task/user/${userId}/tasks?${params.toString()}`;
+      // ✅ FIXED: URL properly build karo - bilkul vaise jaisa aapne bataya
+      const queryString = params.toString();
+      const url = `/task/user/${userId}/tasks${queryString ? `?${queryString}` : ''}`;
+      
+      console.log("📤 Fetching tasks from:", url);
+      console.log("✅ Correct API should be:", `/task/user/${userId}/tasks`);
+      
       const res = await axios.get(url);
 
       if (res.data.success) {
@@ -618,13 +749,14 @@ const TaskDetails = () => {
         await fetchTaskStatusCounts(userId);
         setOpenDialog(true);
       } else {
-        setError("Failed to fetch user tasks");
+        setError(res.data.message || "Failed to fetch user tasks");
       }
 
     } catch (err) {
-      console.error("Error fetching user tasks:", err);
+      console.error("❌ Error fetching user tasks:", err);
       setError(
         err?.response?.data?.error ||
+        err?.response?.data?.message ||
         err?.message ||
         "Error fetching tasks. Please try again."
       );
@@ -688,7 +820,14 @@ const TaskDetails = () => {
       total: 0,
       pending: 0,
       completed: 0,
-      completionRate: 0
+      completionRate: 0,
+      inProgress: 0,
+      approved: 0,
+      rejected: 0,
+      overdue: 0,
+      onhold: 0,
+      reopen: 0,
+      cancelled: 0
     };
   };
 
@@ -713,7 +852,14 @@ const TaskDetails = () => {
           <div className="emp-all-task-overall-stats-icon">
             <FiBarChart />
           </div>
-          <h4>System-wide Task Statistics</h4>
+          <h4>
+            {isOwner() ? 'Company-wide Task Statistics' : 'Department Task Statistics'}
+            {!isOwner() && (
+              <span style={{ marginLeft: '1rem', fontSize: '0.8rem', color: '#6b7280' }}>
+                (Your Department Only)
+              </span>
+            )}
+          </h4>
         </div>
 
         <div className="emp-all-task-overall-stats-grid">
@@ -944,9 +1090,12 @@ const TaskDetails = () => {
     );
   };
 
-  // Render enhanced user card
+  // ✅ FIXED: Render enhanced user card with proper ID handling
   const renderEnhancedUserCard = (user) => {
-    const isSelected = selectedUserId === user._id;
+    // ✅ FIXED: dono id formats handle karo
+    const userId = user._id || user.id;
+    const isSelected = selectedUserId === userId;
+    
     const userStats = getUserTaskStats(user);
     const completionRate = userStats.completionRate || 0;
     const badgeClass = completionRate >= 80 ? 'emp-all-task-user-avatar-badge-high' :
@@ -960,8 +1109,11 @@ const TaskDetails = () => {
       <div
         className={`emp-all-task-user-card ${isSelected ? 'emp-all-task-user-card-selected' : ''}`}
         onClick={() => {
-          setSelectedUserId(user._id);
-          fetchUserTasks(user._id);
+          // ✅ FIXED: userId check karke hi call karo
+          if (userId) {
+            setSelectedUserId(userId);
+            fetchUserTasks(userId);
+          }
         }}
       >
         <div className="emp-all-task-user-card-content">
@@ -981,6 +1133,11 @@ const TaskDetails = () => {
               <div className="emp-all-task-user-email">
                 {user.email || "No Email"}
               </div>
+              {!isOwner() && user.department && (
+                <div className="emp-all-task-user-department" style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.2rem' }}>
+                  Dept: {getDepartmentName(user.department)}
+                </div>
+              )}
             </div>
           </div>
 
@@ -1030,8 +1187,10 @@ const TaskDetails = () => {
             className={`emp-all-task-action-button ${isSelected ? 'emp-all-task-action-button-primary' : 'emp-all-task-action-button-outlined'}`}
             onClick={(e) => {
               e.stopPropagation();
-              setSelectedUserId(user._id);
-              fetchUserTasks(user._id);
+              if (userId) {
+                setSelectedUserId(userId);
+                fetchUserTasks(userId);
+              }
             }}
           >
             View Tasks
@@ -1042,7 +1201,7 @@ const TaskDetails = () => {
     );
   };
 
-  // Render enhanced dialog
+  // ✅ FIXED: Render enhanced dialog with department name
   const renderEnhancedDialog = () => {
     if (!openDialog) return null;
 
@@ -1075,6 +1234,12 @@ const TaskDetails = () => {
                       <FiMail size={14} />
                       {selectedUser?.email || 'No Email'}
                     </span>
+                    {selectedUser?.department && (
+                      <span className="emp-all-task-modal-user-badge">
+                        <FiUsers size={14} />
+                        {getDepartmentName(selectedUser.department)}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1479,7 +1644,7 @@ const TaskDetails = () => {
                             {/* Quick Actions */}
                             <div className="emp-all-task-modal-task-quick-actions">
                               <button className="emp-all-task-modal-task-quick-action" title="Edit">
-                                <FiEdit2 size={14} />
+                                <FiEdit3 size={14} />
                               </button>
                               <button className="emp-all-task-modal-task-quick-action" title="More">
                                 <FiMoreVertical size={14} />
@@ -1677,13 +1842,35 @@ const TaskDetails = () => {
         <div className="emp-all-task-header-content">
           <div className="emp-all-task-header-top">
             <div className="emp-all-task-header-title">
-              <h1>📊 Department Employee Task Management</h1>
+              <h1>
+                {isOwner() ? '📊 Company Employee Task Management' : '📊 Department Employee Task Management'}
+              </h1>
               <p className="emp-all-task-header-subtitle">
-                Comprehensive dashboard with advanced filtering and analytics
+                {isOwner() 
+                  ? 'View and manage tasks for all employees across the company' 
+                  : 'View and manage tasks for employees in your department'}
               </p>
-              <p style={{ fontSize: '0.9rem', color: '#6b7280', marginTop: '0.5rem' }}>
-                Logged in as: {currentUser?.name} ({currentUserRole})
-              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
+                <p style={{ fontSize: '0.9rem', color: '#6b7280' }}>
+                  Logged in as: {currentUser?.name}
+                  <span style={{ 
+                    marginLeft: '0.5rem',
+                    padding: '0.2rem 0.5rem',
+                    borderRadius: '0.25rem',
+                    backgroundColor: isOwner() ? '#e3f2fd' : '#fff3e0',
+                    color: isOwner() ? '#1976d2' : '#f57c00',
+                    fontSize: '0.8rem',
+                    fontWeight: 600
+                  }}>
+                    {isOwner() ? '👑 Owner' : '👤 Employee'}
+                  </span>
+                </p>
+                {!isOwner() && currentUser?.department && (
+                  <p style={{ fontSize: '0.9rem', color: '#6b7280' }}>
+                    <FiUsers size={14} /> Department: {getDepartmentName(currentUser.department)}
+                  </p>
+                )}
+              </div>
             </div>
             <div className="emp-all-task-header-stats">
               <div className="emp-all-task-stats-icon">
@@ -1691,7 +1878,7 @@ const TaskDetails = () => {
               </div>
               <div className="emp-all-task-stats-text">
                 <h2>{filteredUsers.length}</h2>
-                <p>ACTIVE EMPLOYEES</p>
+                <p>{isOwner() ? 'COMPANY EMPLOYEES' : 'DEPARTMENT EMPLOYEES'}</p>
               </div>
             </div>
           </div>
@@ -1710,10 +1897,14 @@ const TaskDetails = () => {
                 <FiUsers />
               </div>
               <div>
-                <h3 className="emp-all-task-card-title">Employee Directory</h3>
+                <h3 className="emp-all-task-card-title">
+                  {isOwner() ? 'Company Employee Directory' : 'Department Employee Directory'}
+                </h3>
                 <p className="emp-all-task-card-subtitle">
                   <FiInfo size={14} />
-                  Click on any employee to view their task details
+                  {isOwner() 
+                    ? 'Viewing all employees across the company' 
+                    : 'Viewing employees in your department only'}
                 </p>
               </div>
             </div>
@@ -1723,7 +1914,7 @@ const TaskDetails = () => {
               <input
                 type="text"
                 className="emp-all-task-search-input"
-                placeholder="Search employees by name, email or ID..."
+                placeholder={`Search ${isOwner() ? 'company' : 'department'} employees by name, email or ID...`}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -1747,7 +1938,7 @@ const TaskDetails = () => {
                 </div>
                 <div className="emp-all-task-stat-text">
                   <h4>{systemStats.totalEmployees}</h4>
-                  <p>Total Employees</p>
+                  <p>{isOwner() ? 'Total Employees' : 'Dept Employees'}</p>
                 </div>
               </div>
             </div>
@@ -1801,7 +1992,11 @@ const TaskDetails = () => {
                 <FiUsers />
               </div>
               <h3>No Employees Found</h3>
-              <p>Try checking your search terms</p>
+              <p>
+                {isOwner() 
+                  ? 'No employees found in your company' 
+                  : 'No employees found in your department'}
+              </p>
               <button
                 className="emp-all-task-reset-button"
                 onClick={resetFilters}
