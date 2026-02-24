@@ -1327,169 +1327,222 @@ const EmployeeLeaves = () => {
                     : leave.reason
                   : "No reason provided";
                 
-                return (
-                  <tr key={leave._id} className={`${getRowClass(leave.status)} ${isOwnLeave ? 'own-leave-row' : ''}`}>
-                    <td>
-                      <div className="employee-info">
-                        <div className="employee-avatar">
-                          {getInitials(leave.user?.name)}
-                          {isOwnLeave && <span className="self-badge">You</span>}
-                        </div>
-                        <div className="employee-details">
-                          <div className="employee-name">
-                            {leave.user?.name || "N/A"}
-                          </div>
-                          <div className="employee-email">
-                            <FiMail size={12} />
-                            {leave.user?.email || "N/A"}
-                          </div>
-                          {leave.user?.phone && (
-                            <div className="employee-phone">
-                              <FiPhone size={12} />
-                              <a 
-                                href={getWhatsAppLink(
-                                  leave.user.phone, 
-                                  leave.user.name, 
-                                  leave.status, 
-                                  leave.remarks
-                                )}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                {leave.user.phone}
-                              </a>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      {departmentName ? (
-                        <div className="department-info">
-                          <FiHome size={14} />
-                          {departmentName}
-                        </div>
-                      ) : (
-                        <span className="text-muted">—</span>
-                      )}
-                    </td>
-                    <td>
-                      <div className="leave-details">
-                        <div className="leave-type-wrapper">
-                          <span className={`leave-type-chip ${getLeaveTypeClass(leave.type)}`}>
-                            {leave.type || "N/A"}
-                          </span>
-                        </div>
-                        <div className="leave-reason-preview" title={leave.reason || ""}>
-                          {reasonPreview}
-                        </div>
-                        <button 
-                          className="view-details-button"
-                          onClick={() => openDetailsModal(leave)}
-                        >
-                          <FiEye size={14} />
-                          View Full Details
-                        </button>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="duration-info">
-                        <div className="date-range">
-                          {formatDate(leave.startDate)}
-                        </div>
-                        <div className="date-separator">→</div>
-                        <div className="date-range">
-                          {formatDate(leave.endDate)}
-                        </div>
-                        <div className="days-badge">
-                          <FiClock size={12} />
-                          {days} {days > 1 ? 'days' : 'day'}
-                        </div>
-                      </div>
-                    </td>
-                    {showStatusColumn && (
-                      <td>
-                        <span className={`status-chip ${getStatusClass(leave.status)}`}>
-                          {leave.status || "Pending"}
-                        </span>
-                      </td>
-                    )}
-                    <td>
-                      <div className="approved-by">
-                        {leave.approvedBy?.name || leave.approvedBy || "-"}
-                        {leave.approvedBy?.role && (
-                          <span className="approver-role">
-                            ({normalizeRole(leave.approvedBy.role)})
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td>
-                      <div className="actions-container">
-                        <button 
-                          className="action-icon-button view-history"
-                          onClick={() => openHistoryDialog(leave)}
-                          title="View History"
-                        >
-                          <FiList size={16} />
-                        </button>
-                        
-                        {leave.status === 'Pending' && canApproveLeave(userId) ? (
-                          <>
-                            <button
-                              className={`action-icon-button approve ${!isOwner ? 'disabled' : ''}`}
-                              onClick={() => isOwner ? openStatusDialog(
-                                leave._id, 
-                                'Approved', 
-                                leave.user?.email,
-                                leave.user?.name,
-                                leave.user?.phone,
-                                userId,
-                                leave.status
-                              ) : null}
-                              title={isOwner ? "Approve Leave" : "Only Owner can approve"}
-                              disabled={!isOwner}
-                            >
-                              <FiCheckCircle size={16} />
-                            </button>
-                            <button
-                              className={`action-icon-button reject ${!isOwner ? 'disabled' : ''}`}
-                              onClick={() => isOwner ? openStatusDialog(
-                                leave._id, 
-                                'Rejected', 
-                                leave.user?.email,
-                                leave.user?.name,
-                                leave.user?.phone,
-                                userId,
-                                leave.status
-                              ) : null}
-                              title={isOwner ? "Reject Leave" : "Only Owner can reject"}
-                              disabled={!isOwner}
-                            >
-                              <FiXCircle size={16} />
-                            </button>
-                          </>
-                        ) : leave.status === 'Pending' ? (
-                          <span className="no-permission" title="Only Owner can approve/reject">
-                            <FiLock size={14} />
-                          </span>
-                        ) : null}
-                        
-                        {canDeleteLeave(userId, leave.status) && (
-                          <button 
-                            className={`action-icon-button delete ${!isOwner ? 'disabled' : ''}`}
-                            onClick={() => isOwner ? setDeleteDialog(leave._id) : null}
-                            title={isOwner ? "Delete Leave" : "Only Owner can delete"}
-                            disabled={!isOwner}
-                          >
-                            <FiTrash2 size={16} />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
+                // Update your renderLeaveTable function - modify the return statement
+
+return (
+  <tr key={leave._id} className={`${getRowClass(leave.status)} ${isOwnLeave ? 'own-leave-row' : ''}`}>
+    <td data-show-on-mobile="true">
+      <div className="employee-info">
+        <div className="employee-avatar">
+          {getInitials(leave.user?.name)}
+          {isOwnLeave && <span className="self-badge">You</span>}
+        </div>
+        <div className="employee-details">
+          <div className="employee-name">
+            {leave.user?.name || "N/A"}
+          </div>
+          <div className="employee-email">
+            <FiMail size={12} />
+            {leave.user?.email || "N/A"}
+          </div>
+          {leave.user?.phone && (
+            <div className="employee-phone">
+              <FiPhone size={12} />
+              <a 
+                href={getWhatsAppLink(
+                  leave.user.phone, 
+                  leave.user.name, 
+                  leave.status, 
+                  leave.remarks
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {leave.user.phone}
+              </a>
+            </div>
+          )}
+        </div>
+      </div>
+    </td>
+    <td data-show-on-mobile="false">
+      {/* Department column - hidden on mobile */}
+      {departmentName ? (
+        <div className="department-info">
+          <FiHome size={14} />
+          {departmentName}
+        </div>
+      ) : (
+        <span className="text-muted">—</span>
+      )}
+    </td>
+    <td data-show-on-mobile="true">
+      <div className="leave-details">
+        <div className="leave-type-wrapper">
+          <span className={`leave-type-chip ${getLeaveTypeClass(leave.type)}`}>
+            {leave.type || "N/A"}
+          </span>
+        </div>
+        
+        {/* HIDE REASON PREVIEW ON MOBILE - ADD HIDDEN CLASS */}
+        <div className="leave-reason-preview hide-mobile" title={leave.reason || ""}>
+          {reasonPreview}
+        </div>
+        
+        {/* STATUS CHIP FOR MOBILE - ONLY SHOW FOR PENDING */}
+        {leave.status === 'Pending' && (
+          <span className={`status-chip ${getStatusClass(leave.status)}`} style={{ marginTop: '8px', display: 'inline-block' }}>
+            {leave.status}
+          </span>
+        )}
+        
+        {/* VIEW DETAILS BUTTON - ALWAYS VISIBLE */}
+        <button 
+          className="view-details-button"
+          onClick={() => openDetailsModal(leave)}
+        >
+          <FiEye size={16} />
+          View Full Details
+        </button>
+
+        {/* QUICK ACTION BUTTONS FOR PENDING LEAVES - ONLY FOR OWNER */}
+        {leave.status === 'Pending' && isOwner && (
+          <div className="actions-container" style={{ marginTop: '12px' }}>
+            <button
+              className="action-icon-button approve"
+              onClick={() => openStatusDialog(
+                leave._id, 
+                'Approved', 
+                leave.user?.email,
+                leave.user?.name,
+                leave.user?.phone,
+                userId,
+                leave.status
+              )}
+              title="Approve Leave"
+            >
+              <FiCheckCircle size={16} />
+              Approve
+            </button>
+            <button
+              className="action-icon-button reject"
+              onClick={() => openStatusDialog(
+                leave._id, 
+                'Rejected', 
+                leave.user?.email,
+                leave.user?.name,
+                leave.user?.phone,
+                userId,
+                leave.status
+              )}
+              title="Reject Leave"
+            >
+              <FiXCircle size={16} />
+              Reject
+            </button>
+          </div>
+        )}
+      </div>
+    </td>
+    <td data-show-on-mobile="false">
+      {/* Duration column - hidden on mobile */}
+      <div className="duration-info">
+        <div className="date-range">
+          {formatDate(leave.startDate)}
+        </div>
+        <div className="date-separator">→</div>
+        <div className="date-range">
+          {formatDate(leave.endDate)}
+        </div>
+        <div className="days-badge">
+          <FiClock size={12} />
+          {days} {days > 1 ? 'days' : 'day'}
+        </div>
+      </div>
+    </td>
+    {showStatusColumn && (
+      <td data-show-on-mobile="false">
+        <span className={`status-chip ${getStatusClass(leave.status)}`}>
+          {leave.status || "Pending"}
+        </span>
+      </td>
+    )}
+    <td data-show-on-mobile="false">
+      <div className="approved-by">
+        {leave.approvedBy?.name || leave.approvedBy || "-"}
+        {leave.approvedBy?.role && (
+          <span className="approver-role">
+            ({normalizeRole(leave.approvedBy.role)})
+          </span>
+        )}
+      </div>
+    </td>
+    <td data-show-on-mobile="false">
+      <div className="actions-container">
+        <button 
+          className="action-icon-button view-history"
+          onClick={() => openHistoryDialog(leave)}
+          title="View History"
+        >
+          <FiList size={16} />
+        </button>
+        
+        {leave.status === 'Pending' && canApproveLeave(userId) ? (
+          <>
+            <button
+              className={`action-icon-button approve ${!isOwner ? 'disabled' : ''}`}
+              onClick={() => isOwner ? openStatusDialog(
+                leave._id, 
+                'Approved', 
+                leave.user?.email,
+                leave.user?.name,
+                leave.user?.phone,
+                userId,
+                leave.status
+              ) : null}
+              title={isOwner ? "Approve Leave" : "Only Owner can approve"}
+              disabled={!isOwner}
+            >
+              <FiCheckCircle size={16} />
+            </button>
+            <button
+              className={`action-icon-button reject ${!isOwner ? 'disabled' : ''}`}
+              onClick={() => isOwner ? openStatusDialog(
+                leave._id, 
+                'Rejected', 
+                leave.user?.email,
+                leave.user?.name,
+                leave.user?.phone,
+                userId,
+                leave.status
+              ) : null}
+              title={isOwner ? "Reject Leave" : "Only Owner can reject"}
+              disabled={!isOwner}
+            >
+              <FiXCircle size={16} />
+            </button>
+          </>
+        ) : leave.status === 'Pending' ? (
+          <span className="no-permission" title="Only Owner can approve/reject">
+            <FiLock size={14} />
+          </span>
+        ) : null}
+        
+        {canDeleteLeave(userId, leave.status) && (
+          <button 
+            className={`action-icon-button delete ${!isOwner ? 'disabled' : ''}`}
+            onClick={() => isOwner ? setDeleteDialog(leave._id) : null}
+            title={isOwner ? "Delete Leave" : "Only Owner can delete"}
+            disabled={!isOwner}
+          >
+            <FiTrash2 size={16} />
+          </button>
+        )}
+      </div>
+    </td>
+  </tr>
+);
               })
             ) : (
               <tr>
