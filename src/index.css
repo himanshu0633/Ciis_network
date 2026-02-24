@@ -214,7 +214,6 @@ body * {
 
 .ciis-logo-text {
   background: linear-gradient(135deg, var(--ciis-primary) 0%, var(--ciis-secondary) 100%);
-  -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   white-space: nowrap;
   font-weight: 700;
@@ -1653,7 +1652,7 @@ body {
 
 .ciis-logo-text {
   background: linear-gradient(135deg, var(--ciis-primary) 0%, var(--ciis-secondary) 100%);
-  -webkit-background-clip: text;
+  
   -webkit-text-fill-color: transparent;
   white-space: nowrap;
   font-weight: 700;
@@ -1695,4 +1694,83 @@ body {
   .ciis-logo-image {
     height: 32px;
   }
+}
+
+
+
+/* loader */
+
+.ciis-wrapper {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: radial-gradient(circle at top, #00111f, #000);
+}
+
+.ciis-card {
+  text-align: center;
+}
+
+.ciis-logo {
+  width: 320px;
+  animation: glow 2s ease-in-out infinite alternate;
+  margin-bottom: 30px;
+}
+
+/* Spinner Ring */
+.spinner {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto;
+  border-radius: 50%;
+  border: 4px solid rgba(0, 255, 255, 0.2);
+  border-top: 4px solid #00f7ff;
+  animation: spin 1s linear infinite;
+}
+
+/* Loading Text */
+.loading-text {
+  margin-top: 20px;
+  font-size: 16px;
+  color: #cfffff;
+  letter-spacing: 1px;
+}
+
+/* Animated Dots */
+.dots {
+  margin-top: 10px;
+}
+
+.dots span {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin: 0 5px;
+  background: #00f7ff;
+  border-radius: 50%;
+  animation: bounce 0.6s infinite alternate;
+}
+
+.dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* Animations */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes glow {
+  from { filter: drop-shadow(0 0 10px #00f7ff); }
+  to { filter: drop-shadow(0 0 25px #00f7ff); }
+}
+
+@keyframes bounce {
+  from { transform: translateY(0px); opacity: 0.6; }
+  to { transform: translateY(-8px); opacity: 1; }
 }

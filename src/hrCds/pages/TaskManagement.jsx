@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import axios from '../../utils/axiosConfig';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -13,6 +13,7 @@ import {
 
 import "../Css/TaskManagement.css";
 import API_URL from '../../config';
+import CIISLoader from '../../Loader/CIISLoader'; // ✅ Import CIISLoader
 
 const StatCard = ({ color = 'primary', clickable = true, active = false, children, onClick }) => {
   return (
@@ -79,7 +80,8 @@ const UserCreateTask = () => {
   const [userId, setUserId] = useState('');
   const [userName, setUserName] = useState('');
   const [authError, setAuthError] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [pageLoading, setPageLoading] = useState(true); // ✅ Page loading state
+  const [loading, setLoading] = useState(false);
 
   const [myTasksGrouped, setMyTasksGrouped] = useState({});
   const [statusFilter, setStatusFilter] = useState('');
@@ -896,6 +898,48 @@ const formatDateForBackend = (dateTimeString) => {
     navigate('/login');
   };
 
+  // ✅ Load initial data with page loader
+  useEffect(() => {
+    const loadData = async () => {
+      setPageLoading(true);
+      try {
+        fetchUserData();
+        if (!authError && userId) {
+          await fetchMyTasks();
+          await fetchOverdueTasks();
+          await fetchNotifications();
+        }
+      } catch (error) {
+        console.error('Error loading task data:', error);
+      } finally {
+        // Minimum 500ms loader show karega
+        setTimeout(() => {
+          setPageLoading(false);
+        }, 500);
+      }
+    };
+    
+    loadData();
+  }, []);
+
+  // Fetch tasks on filter change
+  useEffect(() => {
+    fetchMyTasks();
+  }, [statusFilter, searchTerm, timeFilter, fetchMyTasks]);
+
+  // Fetch user data on mount
+  useEffect(() => {
+    fetchUserData();
+  }, [fetchUserData]);
+
+  // Fetch data when user is authenticated
+  useEffect(() => {
+    if (!authError && userId) {
+      fetchMyTasks();
+      fetchOverdueTasks();
+      fetchNotifications();
+    }
+  }, [authError, userId, fetchMyTasks, fetchNotifications, fetchOverdueTasks]);
 
   const renderStatisticsCards = () => {
     const statsData = [
@@ -2362,30 +2406,9 @@ const formatDateForBackend = (dateTimeString) => {
     );
   }
 
-  // Loading screen
-  if (loading) {
-    return (
-      <div className="user-create-task-loading-container">
-        <div style={{ 
-          width: isMobile ? '30px' : '40px', 
-          height: isMobile ? '30px' : '40px', 
-          border: '3px solid #f3f3f3', 
-          borderTop: '3px solid #1976d2', 
-          borderRadius: '50%', 
-          animation: 'spin 1s linear infinite' 
-        }}></div>
-        <div style={{ fontSize: isMobile ? '16px' : '18px', color: '#666' }}>
-          Loading Tasks...
-        </div>
-        
-        <style jsx>{`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        `}</style>
-      </div>
-    );
+  // ✅ Show CIISLoader while page is loading
+  if (pageLoading) {
+    return <CIISLoader />;
   }
 
   // Main render

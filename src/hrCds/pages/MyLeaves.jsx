@@ -20,13 +20,15 @@ import {
   FiAlertTriangle
 } from "react-icons/fi";
 import '../Css/MyLeaves.css';
+import CIISLoader from '../../Loader/CIISLoader'; // ✅ Import CIISLoader
 
 const MyLeaves = () => {
   const [tab, setTab] = useState(0);
   const [leaves, setLeaves] = useState([]);
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [notification, setNotification] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [pageLoading, setPageLoading] = useState(true); // ✅ Page loading state
+  const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   
@@ -407,14 +409,25 @@ const MyLeaves = () => {
     setStats({ total: data.length, approved, pending, rejected });
   };
 
+  // ✅ Load initial data with page loader
   useEffect(() => {
     const loadData = async () => {
-      await loadUserInfo();
-      await fetchLeaves();
+      setPageLoading(true);
+      try {
+        await loadUserInfo();
+        await fetchLeaves();
+      } catch (error) {
+        console.error('Error loading data:', error);
+      } finally {
+        // Add minimum delay to show loader
+        setTimeout(() => {
+          setPageLoading(false);
+        }, 500);
+      }
     };
     
     loadData();
-  }, [fetchLeaves]);
+  }, []);
 
   const filteredLeaves = leaves.filter((l) => {
     const matchesStatus =
@@ -503,26 +516,15 @@ const MyLeaves = () => {
 
   // Force refresh user info
   const forceRefreshUserInfo = async () => {
+    setRefreshing(true);
     await loadUserInfo();
     await fetchLeaves(true);
+    setRefreshing(false);
   };
 
-  if (loading && !refreshing) {
-    return (
-      <div className="MyLeaves-loading">
-        <div className="MyLeaves-loading-content">
-          <div className="MyLeaves-loading-bar">
-            <div className="MyLeaves-loading-progress"></div>
-          </div>
-          <h2 className="MyLeaves-loading-text">
-            Loading your leave records...
-          </h2>
-          <p className="MyLeaves-loading-subtext">
-            Fetching job roles and department information
-          </p>
-        </div>
-      </div>
-    );
+  // ✅ Show CIISLoader while page is loading
+  if (pageLoading) {
+    return <CIISLoader />;
   }
 
   return (
@@ -536,7 +538,7 @@ const MyLeaves = () => {
               Manage and track all your leave requests
             </p>
             
-            {/* User Info Display - ALWAYS SHOW */}
+            {/* User Info Display */}
             <div className="MyLeaves-user-info">
               <div className="MyLeaves-user-info-tags">
                 <span className="MyLeaves-user-tag">
@@ -653,8 +655,6 @@ const MyLeaves = () => {
             </div>
           </div>
         </div>
-        
-   
       </div>
 
       {/* Tabs Section */}
@@ -864,8 +864,6 @@ const MyLeaves = () => {
               <p className="MyLeaves-form-subtitle">
                 Fill in the details to submit a leave request
               </p>
-              
- 
 
               {/* Leave Form */}
               <div className="MyLeaves-form">
@@ -886,7 +884,6 @@ const MyLeaves = () => {
                     <option value="Paid">Paid </option>
                     <option value="Unpaid">Unpaid</option>
                     <option value="Other">Other</option>
-                    
                   </select>
                 </div>
 
@@ -962,10 +959,14 @@ const MyLeaves = () => {
                     type="button"
                     className="MyLeaves-form-submit"
                     onClick={applyLeave}
-                    disabled={!form.startDate || !form.endDate || !form.reason.trim()}
+                    disabled={!form.startDate || !form.endDate || !form.reason.trim() || loading}
                   >
-                    <FiPlus size={16} />
-                    Apply for Leave
+                    {loading ? 'Applying...' : (
+                      <>
+                        <FiPlus size={16} />
+                        Apply for Leave
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
