@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import axios from "../../../utils/axiosConfig";
-import "./EmpAllTask.css";
+import "./EmpDepartmentAllTask.css";
 import {
   FiUsers, FiUser, FiCalendar, FiCheckCircle, FiClock,
   FiAlertCircle, FiXCircle, FiTrendingUp, FiList,
