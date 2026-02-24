@@ -32,8 +32,118 @@ import {
   FiLock,
   FiEyeOff,
   FiShield,
-  FiHome
+  FiHome,
+  FiCalendar as FiRangeCalendar
 } from "react-icons/fi";
+
+// ============================================
+// DATE RANGE FILTER COMPONENT
+// ============================================
+const DateRangeFilter = ({ startDate, endDate, onStartDateChange, onEndDateChange, onApply, onClear }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const presets = [
+    { label: "Today", days: 0 },
+    { label: "This Week", days: 7 },
+    { label: "Last 7 Days", days: 7 },
+    { label: "Last 15 Days", days: 15 },
+    { label: "This Month", days: 30 },
+    { label: "Last Month", days: 30, offset: 30 },
+    { label: "Last 30 Days", days: 30 },
+    { label: "Last 60 Days", days: 60 },
+    { label: "Last 90 Days", days: 90 },
+    { label: "This Quarter", days: 90 },
+    { label: "This Year", days: 365 },
+  ];
+
+  const applyPreset = (preset) => {
+    const end = new Date();
+    let start = new Date();
+    
+    if (preset.offset) {
+      start.setDate(start.getDate() - preset.days - preset.offset);
+      end.setDate(end.getDate() - preset.offset);
+    } else {
+      start.setDate(start.getDate() - preset.days);
+    }
+    
+    onStartDateChange(start.toISOString().split('T')[0]);
+    onEndDateChange(end.toISOString().split('T')[0]);
+    setIsOpen(false);
+  };
+
+  return (
+    <div className="date-range-filter" ref={dropdownRef}>
+      <div className="date-range-inputs">
+        <div className="date-input-group">
+          <label className="filter-label">From Date</label>
+          <input
+            type="date"
+            className="filter-input"
+            value={startDate}
+            onChange={(e) => onStartDateChange(e.target.value)}
+          />
+        </div>
+        <div className="date-input-group">
+          <label className="filter-label">To Date</label>
+          <input
+            type="date"
+            className="filter-input"
+            value={endDate}
+            onChange={(e) => onEndDateChange(e.target.value)}
+          />
+        </div>
+        <button 
+          className="btn btn-contained btn-sm"
+          onClick={onApply}
+          title="Apply Date Range"
+        >
+          <FiRangeCalendar size={16} />
+          <span>Apply</span>
+        </button>
+        <button 
+          className="btn btn-outlined btn-sm"
+          onClick={onClear}
+          title="Reset to Today"
+        >
+          <FiRefreshCw size={16} />
+        </button>
+        <button 
+          className="btn btn-outlined btn-sm"
+          onClick={() => setIsOpen(!isOpen)}
+          title="Quick Presets"
+        >
+          Quick Select ▼
+        </button>
+      </div>
+      
+      {isOpen && (
+        <div className="presets-dropdown">
+          {presets.map((preset, index) => (
+            <button
+              key={index}
+              className="preset-option"
+              onClick={() => applyPreset(preset)}
+            >
+              {preset.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 // Employee Type Filter Component
 const EmployeeTypeFilter = ({ selected, onChange }) => {
@@ -85,7 +195,7 @@ const DepartmentFilter = ({ selected, onChange, departments }) => {
   );
 };
 
-// Status Filter Component - UPDATED to include LATE
+// Status Filter Component
 const StatusFilter = ({ selected, onChange }) => {
   const options = [
     { value: 'all', label: 'All Status' },
@@ -130,7 +240,6 @@ const AddAttendanceModal = ({ onClose, onSave, users, selectedDate, currentUserD
   const filteredUsers = useMemo(() => {
     let availableUsers = users;
     
-    // If not owner/admin/HR, only show users from same department
     if (!isOwner && !isAdmin && !isHR && currentUserDepartment) {
       availableUsers = users.filter(user => 
         user.department === currentUserDepartment ||
@@ -149,7 +258,6 @@ const AddAttendanceModal = ({ onClose, onSave, users, selectedDate, currentUserD
     setLoading(true);
     
     try {
-      // Create full datetime strings
       const inDateTime = new Date(`${selectedDate}T${formData.inTime}`);
       const outDateTime = new Date(`${selectedDate}T${formData.outTime}`);
       
@@ -223,7 +331,6 @@ const AddAttendanceModal = ({ onClose, onSave, users, selectedDate, currentUserD
                 ))}
               </select>
               
-              {/* Display selected employee info if available */}
               {formData.user && (
                 <div className="selected-user-info">
                   {(() => {
@@ -417,7 +524,6 @@ const EditAttendanceModal = ({ record, onClose, onSave, onDelete, users, current
     
     setLoading(true);
     try {
-      // Create full datetime strings
       const inDateTime = new Date(`${editedRecord.date}T${editedRecord.inTime}`);
       const outDateTime = new Date(`${editedRecord.date}T${editedRecord.outTime}`);
       
@@ -824,7 +930,7 @@ const QuickEditModal = ({ records, onClose, onSave, isOwner, isAdmin, isHR }) =>
   );
 };
 
-// Helper functions (outside components)
+// Helper functions
 const getInitials = (name) => {
   if (!name) return 'U';
   return name
@@ -891,7 +997,13 @@ const EmployeeAttendance = () => {
   const [records, setRecords] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
   const [departments, setDepartments] = useState([]);
+  
+  // Date states
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedStartDate, setSelectedStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedEndDate, setSelectedEndDate] = useState(new Date().toISOString().split('T')[0]);
+  const [dateRangeMode, setDateRangeMode] = useState(false);
+  
   const [selectedEmployeeType, setSelectedEmployeeType] = useState("all");
   const [selectedDepartment, setSelectedDepartment] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -911,6 +1023,22 @@ const EmployeeAttendance = () => {
     late: 0,
     onTime: 0,
   });
+  
+  // Date range stats
+  const [dateRangeStats, setDateRangeStats] = useState({
+    totalDays: 1,
+    averagePresent: 0,
+    averageLate: 0,
+    averageHalfDay: 0,
+    averageAbsent: 0,
+    totalPresent: 0,
+    totalLate: 0,
+    totalHalfDay: 0,
+    totalAbsent: 0,
+    bestDay: null,
+    worstDay: null
+  });
+
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
@@ -944,7 +1072,7 @@ const EmployeeAttendance = () => {
   const exportMenuRef = useRef(null);
 
   // ============================================
-  // INITIALIZATION - FIXED LOADING ISSUE
+  // INITIALIZATION
   // ============================================
   useEffect(() => {
     const initializeData = async () => {
@@ -954,7 +1082,6 @@ const EmployeeAttendance = () => {
       } catch (error) {
         console.error("Error initializing data:", error);
       } finally {
-        // We'll set loading to false after a short timeout to ensure smooth transition
         setTimeout(() => {
           setLoading(false);
           setInitialLoadComplete(true);
@@ -975,9 +1102,13 @@ const EmployeeAttendance = () => {
   // Fetch attendance after users are loaded
   useEffect(() => {
     if (allUsers.length > 0 && currentUserCompanyId && initialLoadComplete) {
-      fetchAttendanceData(selectedDate);
+      if (dateRangeMode) {
+        fetchAttendanceDataRange(selectedStartDate, selectedEndDate);
+      } else {
+        fetchAttendanceData(selectedDate);
+      }
     }
-  }, [selectedDate, allUsers, currentUserCompanyId, initialLoadComplete]);
+  }, [selectedDate, selectedStartDate, selectedEndDate, dateRangeMode, allUsers, currentUserCompanyId, initialLoadComplete]);
 
   // Click outside handler for export menu
   useEffect(() => {
@@ -1085,18 +1216,14 @@ const EmployeeAttendance = () => {
     }
   };
 
-  // Updated fetchAllUsers function with role-based filtering
   const fetchAllUsers = async () => {
     try {
       console.log("🔄 Fetching all company users...");
       
-      // First fetch departments to get the mapping
       let departmentsMap = {};
       try {
         const deptRes = await axios.get('/departments');
-        console.log("✅ Departments API response:", deptRes.data);
         
-        // Handle different response structures
         let departmentsData = [];
         if (deptRes.data && deptRes.data.success) {
           if (deptRes.data.data && Array.isArray(deptRes.data.data)) {
@@ -1119,7 +1246,6 @@ const EmployeeAttendance = () => {
         console.error("❌ Failed to load departments", deptErr);
       }
       
-      // FIXED: Use correct endpoint based on user role
       let endpoint = '';
       if (isOwner || isAdmin || isHR) {
         endpoint = '/users/company-users';
@@ -1136,32 +1262,22 @@ const EmployeeAttendance = () => {
       if (res.data && res.data.success) {
         if (res.data.message && res.data.message.users && Array.isArray(res.data.message.users)) {
           usersData = res.data.message.users;
-          console.log(`✅ Found ${usersData.length} users in message.users`);
         }
         else if (res.data.users && Array.isArray(res.data.users)) {
           usersData = res.data.users;
-          console.log(`✅ Found ${usersData.length} users in data.users`);
         }
         else if (res.data.message && Array.isArray(res.data.message)) {
           usersData = res.data.message;
-          console.log(`✅ Found ${usersData.length} users in message array`);
         }
         else if (res.data.data && Array.isArray(res.data.data)) {
           usersData = res.data.data;
-          console.log(`✅ Found ${usersData.length} users in data.data`);
         }
         else if (Array.isArray(res.data)) {
           usersData = res.data;
-          console.log(`✅ Found ${usersData.length} users in data array`);
-        }
-        else {
-          console.log("⚠️ No users array found. Full response:", res.data);
         }
       }
       
-      // Process users with department information - resolve department name from ID
       const usersWithDepartment = usersData.map(user => {
-        // Get department ID from user object
         let deptId = null;
         let deptName = "Unassigned";
         
@@ -1171,7 +1287,6 @@ const EmployeeAttendance = () => {
             deptName = user.department.name || "Unassigned";
           } else {
             deptId = user.department;
-            // Try to get department name from the map
             deptName = departmentsMap[user.department] || user.departmentName || "Unassigned";
           }
         } else if (user.departmentId) {
@@ -1186,19 +1301,10 @@ const EmployeeAttendance = () => {
           email: user.email,
           employeeType: user.employeeType || 'full-time',
           departmentId: deptId,
-          department: deptName, // This will now show the name instead of ID
+          department: deptName,
           jobRole: user.jobRole
         };
       });
-      
-      console.log("👥 Users by department:", 
-        usersWithDepartment.reduce((acc, user) => {
-          const dept = user.department;
-          if (!acc[dept]) acc[dept] = [];
-          acc[dept].push(user.name);
-          return acc;
-        }, {})
-      );
       
       setAllUsers(usersWithDepartment);
       
@@ -1208,28 +1314,6 @@ const EmployeeAttendance = () => {
     }
   };
 
-  // Helper function to get department name
-  const getDepartmentName = (user) => {
-    if (!user) return 'Unassigned';
-    
-    // If department is already a string name, return it
-    if (typeof user.department === 'string') return user.department;
-    
-    // If department is an object with name property
-    if (user.department && typeof user.department === 'object' && user.department.name) {
-      return user.department.name;
-    }
-    
-    // If we have departments state and user has departmentId
-    if (user.departmentId && departments.length > 0) {
-      const dept = departments.find(d => d._id === user.departmentId);
-      if (dept) return dept.name;
-    }
-    
-    return 'Unassigned';
-  };
-
-  // Calculate status based on LATE rules (9:10 AM to 9:30 AM)
   const calculateStatusFromTime = (inTime) => {
     if (!inTime) return "absent";
     
@@ -1238,31 +1322,29 @@ const EmployeeAttendance = () => {
     const loginMinute = loginTime.getMinutes();
     const totalMinutes = (loginHour * 60) + loginMinute;
     
-    // 9:10 AM = 550 minutes, 9:30 AM = 570 minutes, 10:00 AM = 600 minutes
     if (totalMinutes >= 600) return "halfday";
     if (totalMinutes >= 550 && totalMinutes < 570) return "late";
     if (totalMinutes >= 570) return "halfday";
     return "present";
   };
 
+  // ============================================
+  // FETCH ATTENDANCE DATA (SINGLE DAY)
+  // ============================================
   const fetchAttendanceData = async (date) => {
     setLoading(true);
     try {
       const formatted = date;
       console.log("📅 Fetching attendance for date:", formatted);
       
-      // FIXED: Use correct endpoint based on user role
       let endpoint = `/attendance/all?date=${formatted}`;
       
-      // For non-owners, add department filter
       if (!isOwner && !isAdmin && !isHR && currentUserDepartment) {
         endpoint += `&department=${currentUserDepartment}`;
         console.log("📊 Filtering attendance by department:", currentUserDepartment);
       }
       
       const res = await axios.get(endpoint);
-      
-      console.log("✅ Attendance API response:", res.data);
       
       const attendanceMap = {};
       if (res.data && res.data.data && Array.isArray(res.data.data)) {
@@ -1276,17 +1358,13 @@ const EmployeeAttendance = () => {
           }
         });
       }
-      
-      console.log("📊 Attendance map:", attendanceMap);
 
-      // Filter users based on role
       let usersToProcess = allUsers;
       if (!isOwner && !isAdmin && !isHR && currentUserDepartment) {
         usersToProcess = allUsers.filter(user => 
           user.department === currentUserDepartment ||
           user.departmentId === currentUserDepartment
         );
-        console.log(`🔒 Filtered to ${usersToProcess.length} users from your department`);
       }
 
       const combinedRecords = usersToProcess.map(user => {
@@ -1308,7 +1386,6 @@ const EmployeeAttendance = () => {
           ) {
             finalStatus = hoursWorked.hours >= 5 ? 'halfday' : 'absent';
           }
-
           
           return {
             ...attendanceRecord,
@@ -1318,13 +1395,14 @@ const EmployeeAttendance = () => {
               name: user.name,
               email: user.email,
               employeeType: user.employeeType || 'full-time',
-              department: user.department, // This will now be the name, not ID
+              department: user.department,
               jobRole: user.jobRole
             },
             status: finalStatus,
             calculatedStatus: calculatedStatus,
             hoursWorked: hoursWorked.formatted,
-            totalHours: hoursWorked.hours
+            totalHours: hoursWorked.hours,
+            displayDate: formatted
           };
         } else {
           return {
@@ -1335,7 +1413,7 @@ const EmployeeAttendance = () => {
               name: user.name,
               email: user.email,
               employeeType: user.employeeType || 'full-time',
-              department: user.department, // This will now be the name, not ID
+              department: user.department,
               jobRole: user.jobRole
             },
             date: new Date(date),
@@ -1349,27 +1427,17 @@ const EmployeeAttendance = () => {
             status: "absent",
             calculatedStatus: "absent",
             isClockedIn: false,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
+            displayDate: formatted
           };
         }
       });
-
-      console.log("📋 Combined records by department:", 
-        combinedRecords.reduce((acc, rec) => {
-          const dept = rec.user.department;
-          if (!acc[dept]) acc[dept] = [];
-          acc[dept].push({ name: rec.user.name, status: rec.status });
-          return acc;
-        }, {})
-      );
       
       setRecords(combinedRecords);
       calculateStats(combinedRecords);
+      
     } catch (err) {
       console.error("❌ Failed to load attendance", err);
       showSnackbar("Error loading attendance data", "error");
-      
       setRecords([]);
       calculateStats([]);
     } finally {
@@ -1377,21 +1445,214 @@ const EmployeeAttendance = () => {
     }
   };
 
+  // ============================================
+  // FETCH ATTENDANCE DATA (DATE RANGE)
+  // ============================================
+  // ============================================
+// FETCH ATTENDANCE DATA (DATE RANGE) - FIXED VERSION
+// ============================================
+const fetchAttendanceDataRange = async (startDate, endDate) => {
+  setLoading(true);
+  try {
+    console.log("📅 Fetching attendance from", startDate, "to", endDate);
+    
+    // Create date range
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const dateRange = [];
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      dateRange.push(new Date(d).toISOString().split('T')[0]);
+    }
+    
+    // Fetch data for each date sequentially (or in parallel for better performance)
+    const allRecords = [];
+    const dailyStats = {};
+    
+    // Use Promise.all to fetch all dates in parallel (faster)
+    const fetchPromises = dateRange.map(async (date) => {
+      try {
+        let endpoint = `/attendance/all?date=${date}`;
+        
+        if (!isOwner && !isAdmin && !isHR && currentUserDepartment) {
+          endpoint += `&department=${currentUserDepartment}`;
+        }
+        
+        const res = await axios.get(endpoint);
+        return { date, data: res.data };
+      } catch (error) {
+        console.error(`Error fetching attendance for ${date}:`, error);
+        return { date, data: null };
+      }
+    });
+    
+    const results = await Promise.all(fetchPromises);
+    
+    // Process each date's data
+    results.forEach(({ date, data }) => {
+      const attendanceMap = {};
+      
+      if (data && data.data && Array.isArray(data.data)) {
+        data.data.forEach(record => {
+          if (record.user && (record.user._id || record.user.id)) {
+            const userId = record.user._id || record.user.id;
+            attendanceMap[userId] = {
+              ...record,
+              status: record.status ? record.status.toLowerCase() : 'absent'
+            };
+          }
+        });
+      }
+
+      let usersToProcess = allUsers;
+      if (!isOwner && !isAdmin && !isHR && currentUserDepartment) {
+        usersToProcess = allUsers.filter(user => 
+          user.department === currentUserDepartment ||
+          user.departmentId === currentUserDepartment
+        );
+      }
+
+      const dateCombinedRecords = usersToProcess.map(user => {
+        const userId = user.id || user._id;
+        const attendanceRecord = attendanceMap[userId];
+        
+        if (attendanceRecord) {
+          const calculatedStatus = calculateStatusFromTime(attendanceRecord.inTime);
+          const hoursWorked = calculateHoursWorked(attendanceRecord.inTime, attendanceRecord.outTime);
+          
+          let finalStatus = attendanceRecord.status 
+            ? attendanceRecord.status.toLowerCase() 
+            : calculatedStatus;
+
+          if (
+            finalStatus === 'present' &&
+            hoursWorked.hours > 0 &&
+            hoursWorked.hours < 9
+          ) {
+            finalStatus = hoursWorked.hours >= 5 ? 'halfday' : 'absent';
+          }
+          
+          return {
+            ...attendanceRecord,
+            user: {
+              id: user.id || user._id,
+              _id: user.id || user._id,
+              name: user.name,
+              email: user.email,
+              employeeType: user.employeeType || 'full-time',
+              department: user.department,
+              jobRole: user.jobRole
+            },
+            status: finalStatus,
+            calculatedStatus: calculatedStatus,
+            hoursWorked: hoursWorked.formatted,
+            totalHours: hoursWorked.hours,
+            displayDate: date
+          };
+        } else {
+          return {
+            _id: `absent_${userId}_${date}`,
+            user: {
+              id: user.id || user._id,
+              _id: user.id || user._id,
+              name: user.name,
+              email: user.email,
+              employeeType: user.employeeType || 'full-time',
+              department: user.department,
+              jobRole: user.jobRole
+            },
+            date: new Date(date),
+            inTime: null,
+            outTime: null,
+            hoursWorked: "00:00:00",
+            totalHours: 0,
+            lateBy: "00:00:00",
+            earlyLeave: "00:00:00",
+            overTime: "00:00:00",
+            status: "absent",
+            calculatedStatus: "absent",
+            isClockedIn: false,
+            displayDate: date
+          };
+        }
+      });
+      
+      allRecords.push(...dateCombinedRecords);
+      
+      const present = dateCombinedRecords.filter(r => r.status === "present").length;
+      const absent = dateCombinedRecords.filter(r => r.status === "absent").length;
+      const halfDay = dateCombinedRecords.filter(r => r.status === "halfday").length;
+      const late = dateCombinedRecords.filter(r => r.status === "late").length;
+      
+      dailyStats[date] = {
+        total: dateCombinedRecords.length,
+        present,
+        absent,
+        halfDay,
+        late,
+        attendanceRate: ((present + late + halfDay) / dateCombinedRecords.length * 100).toFixed(1)
+      };
+    });
+    
+    setRecords(allRecords);
+    
+    const totalDays = dateRange.length;
+    const totalPresent = allRecords.filter(r => r.status === "present").length;
+    const totalLate = allRecords.filter(r => r.status === "late").length;
+    const totalHalfDay = allRecords.filter(r => r.status === "halfday").length;
+    const totalAbsent = allRecords.filter(r => r.status === "absent").length;
+    
+    // Calculate average per day (based on total employees)
+    const avgEmployeesPerDay = allUsers.length || 1;
+    
+    let bestDay = null;
+    let worstDay = null;
+    let bestRate = 0;
+    let worstRate = 100;
+    
+    Object.entries(dailyStats).forEach(([date, stats]) => {
+      const rate = parseFloat(stats.attendanceRate);
+      if (rate > bestRate) {
+        bestRate = rate;
+        bestDay = date;
+      }
+      if (rate < worstRate) {
+        worstRate = rate;
+        worstDay = date;
+      }
+    });
+    
+    setDateRangeStats({
+      totalDays,
+      averagePresent: totalDays > 0 ? (totalPresent / totalDays / avgEmployeesPerDay * 100).toFixed(1) : 0,
+      averageLate: totalDays > 0 ? (totalLate / totalDays / avgEmployeesPerDay * 100).toFixed(1) : 0,
+      averageHalfDay: totalDays > 0 ? (totalHalfDay / totalDays / avgEmployeesPerDay * 100).toFixed(1) : 0,
+      averageAbsent: totalDays > 0 ? (totalAbsent / totalDays / avgEmployeesPerDay * 100).toFixed(1) : 0,
+      totalPresent,
+      totalLate,
+      totalHalfDay,
+      totalAbsent,
+      bestDay,
+      worstDay
+    });
+    
+    calculateStats(allRecords);
+    
+  } catch (err) {
+    console.error("❌ Failed to load attendance range", err);
+    showSnackbar("Error loading attendance data", "error");
+    setRecords([]);
+    calculateStats([]);
+  } finally {
+    setLoading(false);
+  }
+};
+
   const calculateStats = (attendanceData) => {
     const present = attendanceData.filter((r) => r.status === "present").length;
     const absent = attendanceData.filter((r) => r.status === "absent").length;
     const halfDay = attendanceData.filter((r) => r.status === "halfday").length;
     const late = attendanceData.filter((r) => r.status === "late").length;
     const onTime = attendanceData.filter((r) => r.calculatedStatus === "present").length;
-    
-    console.log("📊 Stats calculated:", {
-      total: attendanceData.length,
-      present,
-      absent,
-      halfDay,
-      late,
-      onTime
-    });
     
     setStats({
       total: attendanceData.length,
@@ -1403,11 +1664,35 @@ const EmployeeAttendance = () => {
     });
   };
 
+  // ============================================
+  // HANDLE DATE RANGE
+  // ============================================
+  const handleDateRangeApply = () => {
+    if (selectedStartDate && selectedEndDate) {
+      if (new Date(selectedStartDate) > new Date(selectedEndDate)) {
+        showSnackbar("Start date cannot be after end date", "error");
+        return;
+      }
+      setDateRangeMode(true);
+      fetchAttendanceDataRange(selectedStartDate, selectedEndDate);
+    }
+  };
+
+  const handleDateRangeClear = () => {
+    setDateRangeMode(false);
+    const today = new Date().toISOString().split('T')[0];
+    setSelectedDate(today);
+    setSelectedStartDate(today);
+    setSelectedEndDate(today);
+    fetchAttendanceData(today);
+  };
+
   const clearFilters = () => {
     setStatusFilter("all");
     setSelectedEmployeeType("all");
     setSelectedDepartment("all");
     setSearchTerm("");
+    handleDateRangeClear();
   };
 
   const showSnackbar = (message, type = "success") => {
@@ -1417,6 +1702,9 @@ const EmployeeAttendance = () => {
     }, 4000);
   };
 
+  // ============================================
+  // FILTERED RECORDS
+  // ============================================
   const filteredRecords = useMemo(() => {
     let filtered = records;
 
@@ -1449,8 +1737,12 @@ const EmployeeAttendance = () => {
       );
     }
 
-    // Sort by department then by name
     filtered.sort((a, b) => {
+      const dateA = a.displayDate || (a.date ? new Date(a.date).toISOString().split('T')[0] : '');
+      const dateB = b.displayDate || (b.date ? new Date(b.date).toISOString().split('T')[0] : '');
+      if (dateA < dateB) return -1;
+      if (dateA > dateB) return 1;
+      
       const deptA = a.user?.department || 'Unassigned';
       const deptB = b.user?.department || 'Unassigned';
       if (deptA < deptB) return -1;
@@ -1461,9 +1753,24 @@ const EmployeeAttendance = () => {
       return nameA.localeCompare(nameB);
     });
 
-    console.log("🔍 Filtered records:", filtered.length);
     return filtered;
   }, [records, selectedEmployeeType, selectedDepartment, searchTerm, statusFilter]);
+
+  // ============================================
+  // GROUP RECORDS BY DATE (for date range mode)
+  // ============================================
+  const groupedByDate = useMemo(() => {
+    if (!dateRangeMode) return null;
+    
+    return filteredRecords.reduce((acc, record) => {
+      const dateKey = record.displayDate || (record.date ? new Date(record.date).toISOString().split('T')[0] : 'unknown');
+      if (!acc[dateKey]) {
+        acc[dateKey] = [];
+      }
+      acc[dateKey].push(record);
+      return acc;
+    }, {});
+  }, [filteredRecords, dateRangeMode]);
 
   const formatTime = (timeStr) => {
     if (!timeStr) return "-";
@@ -1514,24 +1821,27 @@ const EmployeeAttendance = () => {
     try {
       setLoading(true);
       
-      let response;
-      
       if (recordId.startsWith('absent_')) {
         const parts = recordId.split('_');
         const userId = parts[1];
         const date = parts[2];
         
-        response = await axios.put(`/attendance/${userId}`, {
+        await axios.put(`/attendance/${userId}`, {
           ...updatedData,
           user: userId,
           date: date
         });
       } else {
-        response = await axios.put(`/attendance/${recordId}`, updatedData);
+        await axios.put(`/attendance/${recordId}`, updatedData);
       }
       
       showSnackbar("Attendance record saved successfully!", "success");
-      fetchAttendanceData(selectedDate);
+      
+      if (dateRangeMode) {
+        fetchAttendanceDataRange(selectedStartDate, selectedEndDate);
+      } else {
+        fetchAttendanceData(selectedDate);
+      }
     } catch (error) {
       console.error("Error saving attendance:", error);
       showSnackbar("Failed to save attendance record", "error");
@@ -1548,10 +1858,15 @@ const EmployeeAttendance = () => {
     
     try {
       setLoading(true);
-      const response = await axios.post('/attendance/manual', data);
+      await axios.post('/attendance/manual', data);
       
       showSnackbar("Attendance record added successfully!", "success");
-      fetchAttendanceData(selectedDate);
+      
+      if (dateRangeMode) {
+        fetchAttendanceDataRange(selectedStartDate, selectedEndDate);
+      } else {
+        fetchAttendanceData(selectedDate);
+      }
     } catch (error) {
       console.error("Error adding attendance:", error);
       showSnackbar("Failed to add attendance record", "error");
@@ -1578,7 +1893,13 @@ const EmployeeAttendance = () => {
       await axios.delete(`/attendance/${recordId}`);
       
       showSnackbar("Attendance record deleted successfully!", "success");
-      fetchAttendanceData(selectedDate);
+      
+      if (dateRangeMode) {
+        fetchAttendanceDataRange(selectedStartDate, selectedEndDate);
+      } else {
+        fetchAttendanceData(selectedDate);
+      }
+      
       setEditModalOpen(false);
     } catch (error) {
       console.error("Error deleting attendance:", error);
@@ -1606,8 +1927,6 @@ const EmployeeAttendance = () => {
       );
       
       await Promise.all(promises);
-      fetchAttendanceData(selectedDate);
-
       
       setRecords(prev => prev.map(record =>
         selectedRecords.includes(record._id)
@@ -1618,7 +1937,12 @@ const EmployeeAttendance = () => {
       showSnackbar(`Updated ${selectedRecords.length} record(s) to ${status}`, "success");
       setSelectedRecords([]);
       setBulkEditMode(false);
-      fetchAttendanceData(selectedDate);
+      
+      if (dateRangeMode) {
+        fetchAttendanceDataRange(selectedStartDate, selectedEndDate);
+      } else {
+        fetchAttendanceData(selectedDate);
+      }
     } catch (error) {
       console.error("Error in bulk update:", error);
       showSnackbar("Failed to update records", "error");
@@ -1653,9 +1977,14 @@ const EmployeeAttendance = () => {
 
   const handleQuickEditSave = () => {
     showSnackbar(`Updated ${selectedRecords.length} records`, "success");
-    fetchAttendanceData(selectedDate);
     setSelectedRecords([]);
     setBulkEditMode(false);
+    
+    if (dateRangeMode) {
+      fetchAttendanceDataRange(selectedStartDate, selectedEndDate);
+    } else {
+      fetchAttendanceData(selectedDate);
+    }
   };
 
   // Export functions
@@ -1696,7 +2025,9 @@ const EmployeeAttendance = () => {
 
       pdf.setFontSize(16);
       pdf.text(
-        `Attendance Report - ${formatExportDate(selectedDate)}`,
+        dateRangeMode 
+          ? `Attendance Report - ${new Date(selectedStartDate).toLocaleDateString()} to ${new Date(selectedEndDate).toLocaleDateString()}`
+          : `Attendance Report - ${formatExportDate(selectedDate)}`,
         pdfWidth / 2,
         8,
         { align: "center" }
@@ -1749,7 +2080,10 @@ const EmployeeAttendance = () => {
         );
       }
 
-      pdf.save(`attendance_report_${selectedDate}.pdf`);
+      pdf.save(dateRangeMode 
+        ? `attendance_report_${selectedStartDate}_to_${selectedEndDate}.pdf`
+        : `attendance_report_${selectedDate}.pdf`
+      );
       showSnackbar("Attendance PDF exported successfully!", "success");
     } catch (error) {
       console.error("PDF Export Error:", error);
@@ -1780,7 +2114,9 @@ const EmployeeAttendance = () => {
       
       const image = canvas.toDataURL('image/jpeg', 1.0);
       const link = document.createElement('a');
-      link.download = `attendance_report_${selectedDate}.jpg`;
+      link.download = dateRangeMode 
+        ? `attendance_report_${selectedStartDate}_to_${selectedEndDate}.jpg`
+        : `attendance_report_${selectedDate}.jpg`;
       link.href = image;
       link.click();
       
@@ -1797,12 +2133,12 @@ const EmployeeAttendance = () => {
     setExportMenuOpen(false);
     
     const excelData = filteredRecords.map(record => ({
+      'Date': record.displayDate || formatDate(record.date),
       'Department': record.user?.department || 'Unassigned',
       'Employee ID': record.user?.id || record.user?._id || 'N/A',
       'Name': record.user?.name || 'N/A',
       'Email': record.user?.email || 'N/A',
       'Employee Type': record.user?.employeeType?.toUpperCase() || 'N/A',
-      'Date': formatDate(record.date),
       'Check In': formatTime(record.inTime),
       'Check Out': formatTime(record.outTime),
       'Hours Worked': record.hoursWorked || '00:00:00',
@@ -1815,42 +2151,57 @@ const EmployeeAttendance = () => {
 
     const summaryRows = [
       {},
-      { 'Department': 'SUMMARY REPORT' },
-      { 'Department': 'Total Employees', 'Name': stats.total },
-      { 'Department': 'Present', 'Name': stats.present },
-      { 'Department': 'Late', 'Name': stats.late },
-      { 'Department': 'Half Day', 'Name': stats.halfDay },
-      { 'Department': 'Absent', 'Name': stats.absent },
-      { 'Department': 'On Time', 'Name': stats.onTime },
-      { 'Department': 'Report Date', 'Name': formatExportDate(selectedDate) }
+      { 'Date': 'SUMMARY REPORT' },
+      { 'Date': 'Total Employees', 'Name': stats.total },
+      { 'Date': 'Present', 'Name': stats.present },
+      { 'Date': 'Late', 'Name': stats.late },
+      { 'Date': 'Half Day', 'Name': stats.halfDay },
+      { 'Date': 'Absent', 'Name': stats.absent },
+      { 'Date': 'On Time', 'Name': stats.onTime },
+      { 'Date': dateRangeMode ? 'Period' : 'Report Date', 'Name': dateRangeMode 
+        ? `${new Date(selectedStartDate).toLocaleDateString()} - ${new Date(selectedEndDate).toLocaleDateString()}`
+        : formatExportDate(selectedDate) }
     ];
+
+    if (dateRangeMode) {
+      summaryRows.push(
+        { 'Date': 'Total Days', 'Name': dateRangeStats.totalDays },
+        { 'Date': 'Avg Present %', 'Name': `${dateRangeStats.averagePresent}%` },
+        { 'Date': 'Avg Late %', 'Name': `${dateRangeStats.averageLate}%` },
+        { 'Date': 'Best Day', 'Name': dateRangeStats.bestDay ? new Date(dateRangeStats.bestDay).toLocaleDateString() : 'N/A' },
+        { 'Date': 'Worst Day', 'Name': dateRangeStats.worstDay ? new Date(dateRangeStats.worstDay).toLocaleDateString() : 'N/A' }
+      );
+    }
 
     const allData = [...excelData, ...summaryRows];
     
     const worksheet = XLSX.utils.json_to_sheet(allData, {
-      header: ['Department', 'Employee ID', 'Name', 'Email', 'Employee Type', 'Date', 'Check In', 'Check Out', 
+      header: ['Date', 'Department', 'Employee ID', 'Name', 'Email', 'Employee Type', 'Check In', 'Check Out', 
                'Hours Worked', 'Status', 'Late By', 'Early Leave', 'Overtime', 'Total Hours']
     });
     
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Attendance');
     
-    XLSX.writeFile(workbook, `attendance_report_${selectedDate}.xlsx`);
+    XLSX.writeFile(workbook, dateRangeMode 
+      ? `attendance_report_${selectedStartDate}_to_${selectedEndDate}.xlsx`
+      : `attendance_report_${selectedDate}.xlsx`
+    );
     showSnackbar("Excel file exported successfully!", "success");
   };
 
   const exportToCSV = () => {
     setExportMenuOpen(false);
     
-    const headers = ['Department', 'Employee Name', 'Email', 'Employee Type', 'Date', 'Check In', 'Check Out', 
+    const headers = ['Date', 'Department', 'Employee Name', 'Email', 'Employee Type', 'Check In', 'Check Out', 
                      'Hours Worked', 'Status', 'Late By', 'Early Leave', 'Overtime'];
     
     const csvData = filteredRecords.map(record => [
+      record.displayDate || formatDate(record.date),
       record.user?.department || 'Unassigned',
       record.user?.name || 'N/A',
       record.user?.email || 'N/A',
       record.user?.employeeType?.toUpperCase() || 'N/A',
-      formatDate(record.date),
       formatTime(record.inTime),
       formatTime(record.outTime),
       record.hoursWorked || '00:00:00',
@@ -1868,7 +2219,17 @@ const EmployeeAttendance = () => {
     csvData.push(['Half Day', stats.halfDay]);
     csvData.push(['Absent', stats.absent]);
     csvData.push(['On Time', stats.onTime]);
-    csvData.push(['Report Date', formatExportDate(selectedDate)]);
+    csvData.push([dateRangeMode ? 'Period' : 'Report Date', dateRangeMode 
+      ? `${new Date(selectedStartDate).toLocaleDateString()} - ${new Date(selectedEndDate).toLocaleDateString()}`
+      : formatExportDate(selectedDate)]);
+    
+    if (dateRangeMode) {
+      csvData.push(['Total Days', dateRangeStats.totalDays]);
+      csvData.push(['Avg Present %', `${dateRangeStats.averagePresent}%`]);
+      csvData.push(['Avg Late %', `${dateRangeStats.averageLate}%`]);
+      csvData.push(['Best Day', dateRangeStats.bestDay ? new Date(dateRangeStats.bestDay).toLocaleDateString() : 'N/A']);
+      csvData.push(['Worst Day', dateRangeStats.worstDay ? new Date(dateRangeStats.worstDay).toLocaleDateString() : 'N/A']);
+    }
     
     const csvContent = [
       headers.join(','),
@@ -1879,7 +2240,10 @@ const EmployeeAttendance = () => {
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `attendance_report_${selectedDate}.csv`);
+    link.setAttribute('download', dateRangeMode 
+      ? `attendance_report_${selectedStartDate}_to_${selectedEndDate}.csv`
+      : `attendance_report_${selectedDate}.csv`
+    );
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -1923,7 +2287,6 @@ const EmployeeAttendance = () => {
     );
   };
 
-  // Loading State - FIXED to show properly and then hide
   if (loading && !initialLoadComplete) {
     return (
       <div className="loading-container">
@@ -1961,7 +2324,6 @@ const EmployeeAttendance = () => {
             <span className="rule-item"><FiUserX /> After 10:00 AM → HALF DAY / No Login → ABSENT</span>
           </div>
           
-          {/* Permission Warning for non-privileged users */}
           {!isOwner && !isAdmin && !isHR && (
             <div className="permission-warning-banner">
               <FiLock size={16} />
@@ -1969,11 +2331,20 @@ const EmployeeAttendance = () => {
             </div>
           )}
 
-          {/* Department Info Banner */}
           {!isOwner && !isAdmin && !isHR && currentUserDepartment && (
             <div className="department-info-banner">
               <FiHome size={16} />
               <span>Your Department: <strong>{typeof currentUserDepartment === 'string' ? currentUserDepartment : 'Your Department'}</strong></span>
+            </div>
+          )}
+          
+          {dateRangeMode && (
+            <div className="date-range-indicator">
+              <FiRangeCalendar size={16} />
+              <span>Viewing from <strong>{new Date(selectedStartDate).toLocaleDateString()}</strong> to <strong>{new Date(selectedEndDate).toLocaleDateString()}</strong></span>
+              <button className="btn-icon-small" onClick={handleDateRangeClear} title="Switch to single day view">
+                <FiX size={14} />
+              </button>
             </div>
           )}
           
@@ -2035,7 +2406,6 @@ const EmployeeAttendance = () => {
 
         {/* Action Bar */}
         <div className="header-actions">
-          {/* Add Attendance Button - Only for privileged users */}
           {(isOwner || isAdmin || isHR) && (
             <button
               className="date-chip"
@@ -2087,11 +2457,14 @@ const EmployeeAttendance = () => {
 
           <div className="date-chip">
             <FiCalendar size={16} />
-            {new Date(selectedDate).toLocaleDateString("en-US", {
-              month: "long",
-              day: "numeric",
-              year: "numeric",
-            })}
+            {dateRangeMode 
+              ? `${new Date(selectedStartDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })} - ${new Date(selectedEndDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`
+              : new Date(selectedDate).toLocaleDateString("en-US", {
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                })
+            }
           </div>
         </div>
       </div>
@@ -2104,13 +2477,16 @@ const EmployeeAttendance = () => {
         </div>
         
         <div className="filter-grid">
-          <div className="filter-group">
-            <label className="filter-label">Select Date</label>
-            <input
-              type="date"
-              className="filter-input"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
+          {/* Date Range Filter */}
+          <div className="filter-group full-width">
+            <label className="filter-label">Date Range</label>
+            <DateRangeFilter
+              startDate={selectedStartDate}
+              endDate={selectedEndDate}
+              onStartDateChange={setSelectedStartDate}
+              onEndDateChange={setSelectedEndDate}
+              onApply={handleDateRangeApply}
+              onClear={handleDateRangeClear}
             />
           </div>
           
@@ -2122,7 +2498,6 @@ const EmployeeAttendance = () => {
             />
           </div>
 
-          {/* Department filter - only show for privileged users */}
           {(isOwner || isAdmin || isHR) && (
             <div className="filter-group">
               <label className="filter-label">Department</label>
@@ -2176,7 +2551,10 @@ const EmployeeAttendance = () => {
             </button>
             <button 
               className="btn btn-contained"
-              onClick={() => fetchAttendanceData(selectedDate)}
+              onClick={() => dateRangeMode 
+                ? fetchAttendanceDataRange(selectedStartDate, selectedEndDate)
+                : fetchAttendanceData(selectedDate)
+              }
               disabled={loading}
             >
               {loading ? <FiRefreshCw className="spin" /> : 'Refresh'}
@@ -2192,7 +2570,7 @@ const EmployeeAttendance = () => {
             label: "Total Employees", 
             count: stats.total, 
             icon: <FiUsers />,
-            description: "Total tracked employees",
+            description: dateRangeMode ? `Across ${dateRangeStats.totalDays} days` : "Total tracked employees",
             statClass: "stat-card-primary",
             iconClass: "stat-icon-primary"
           },
@@ -2200,7 +2578,7 @@ const EmployeeAttendance = () => {
             label: "Present", 
             count: stats.present, 
             icon: <FiCheckCircle />,
-            description: "Before 9:10 AM",
+            description: dateRangeMode ? `Avg: ${dateRangeStats.averagePresent}%` : "Before 9:10 AM",
             statClass: "stat-card-success",
             iconClass: "stat-icon-success"
           },
@@ -2208,7 +2586,7 @@ const EmployeeAttendance = () => {
             label: "Late", 
             count: stats.late, 
             icon: <FiClock />,
-            description: "9:10 AM - 9:30 AM",
+            description: dateRangeMode ? `Avg: ${dateRangeStats.averageLate}%` : "9:10 AM - 9:30 AM",
             statClass: "stat-card-warning",
             iconClass: "stat-icon-warning"
           },
@@ -2216,7 +2594,7 @@ const EmployeeAttendance = () => {
             label: "Half Day", 
             count: stats.halfDay, 
             icon: <FiAlertCircle />,
-            description: "After 9:30 AM",
+            description: dateRangeMode ? `Avg: ${dateRangeStats.averageHalfDay}%` : "After 9:30 AM",
             statClass: "stat-card-info",
             iconClass: "stat-icon-info"
           },
@@ -2224,7 +2602,7 @@ const EmployeeAttendance = () => {
             label: "Absent", 
             count: stats.absent, 
             icon: <FiUserX />,
-            description: "No login recorded",
+            description: dateRangeMode ? `Avg: ${dateRangeStats.averageAbsent}%` : "No login recorded",
             statClass: "stat-card-error",
             iconClass: "stat-icon-error"
           },
@@ -2261,15 +2639,60 @@ const EmployeeAttendance = () => {
         ))}
       </div>
 
-      {/* Attendance Table with Department Grouping */}
+      {/* Date Range Summary */}
+      {dateRangeMode && (
+        <div className="date-range-summary">
+          <div className="summary-cards">
+            <div className="summary-card">
+              <div className="summary-card-icon">📊</div>
+              <div className="summary-card-content">
+                <span className="summary-card-label">Total Days</span>
+                <span className="summary-card-value">{dateRangeStats.totalDays}</span>
+              </div>
+            </div>
+            <div className="summary-card">
+              <div className="summary-card-icon">📈</div>
+              <div className="summary-card-content">
+                <span className="summary-card-label">Best Day</span>
+                <span className="summary-card-value">
+                  {dateRangeStats.bestDay ? new Date(dateRangeStats.bestDay).toLocaleDateString() : 'N/A'}
+                </span>
+              </div>
+            </div>
+            <div className="summary-card">
+              <div className="summary-card-icon">📉</div>
+              <div className="summary-card-content">
+                <span className="summary-card-label">Worst Day</span>
+                <span className="summary-card-value">
+                  {dateRangeStats.worstDay ? new Date(dateRangeStats.worstDay).toLocaleDateString() : 'N/A'}
+                </span>
+              </div>
+            </div>
+            <div className="summary-card">
+              <div className="summary-card-icon">✅</div>
+              <div className="summary-card-content">
+                <span className="summary-card-label">Total Present</span>
+                <span className="summary-card-value">{dateRangeStats.totalPresent}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Attendance Table */}
       <div className="attendance-table-container" ref={tableRef}>
         <div className="table-header">
           <div>
-            <h3 className="table-title">Attendance Records by Department</h3>
+            <h3 className="table-title">
+              {dateRangeMode ? 'Attendance Records by Date' : 'Attendance Records by Department'}
+            </h3>
             <div className="table-count">
               {filteredRecords.length} records found • 
               <span style={{ marginLeft: '8px', fontWeight: 'bold' }}>
-                Date: {formatExportDate(selectedDate)}
+                {dateRangeMode 
+                  ? `Period: ${new Date(selectedStartDate).toLocaleDateString()} - ${new Date(selectedEndDate).toLocaleDateString()}`
+                  : `Date: ${formatExportDate(selectedDate)}`
+                }
               </span>
               <span style={{ marginLeft: '16px', color: '#666' }}>
                 Showing: {statusFilter === 'all' ? 'All Status' : statusFilter.toUpperCase()}
@@ -2293,196 +2716,342 @@ const EmployeeAttendance = () => {
             </div>
           )}
         </div>
-<div style={{ overflowX: 'auto' }}>
-  <table className="attendance-table">
-    <thead>
-      <tr>
-        {bulkEditMode && <th style={{ width: '50px' }}></th>}
+        
+        <div style={{ overflowX: 'auto' }}>
+          <table className="attendance-table">
+            <thead>
+              <tr>
+                {bulkEditMode && <th style={{ width: '50px' }}></th>}
+                {dateRangeMode && <th className="col-date-header">Date</th>}
+                <th className="col-employee">Employee</th>
+                <th className="col-department">Department</th>
+                <th className="col-type">Type</th>
+                {!dateRangeMode && <th className="col-date">Date</th>}
+                <th className="col-checkin">Check In</th>
+                <th className="col-checkout">Check Out</th>
+                <th className="col-hours">Hours</th>
+                <th className="col-login">Login Time</th>
+                <th className="col-status">Status</th>
+                <th className="col-late">Late By</th>
+                {!bulkEditMode && <th className="col-actions">Actions</th>}
+              </tr>
+            </thead>
 
-        <th className="col-employee">Employee</th>
-        <th className="col-department">Department</th>
-        <th className="col-type">Type</th>
-        <th className="col-date">Date</th>
-        <th className="col-checkin">Check In</th>
-        <th className="col-checkout">Check Out</th>
-        <th className="col-hours">Hours</th>
-        <th className="col-login">Login Time</th>
-        <th className="col-status">Status</th>
-        <th className="col-late">Late By</th>
+            <tbody>
+              {filteredRecords.length ? (
+                dateRangeMode ? (
+                  // Group by date for range mode
+                  Object.entries(groupedByDate || {}).sort(([dateA], [dateB]) => dateA.localeCompare(dateB)).map(([date, dateRecords]) => (
+                    <React.Fragment key={date}>
+                      {/* Date Header */}
+                      <tr className="date-header">
+                        <td colSpan={bulkEditMode ? 12 : 11}>
+                          <div className="date-title">
+                            <FiCalendar size={18} />
+                            <strong>{new Date(date).toLocaleDateString("en-US", {
+                              weekday: "long",
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric"
+                            })}</strong>
+                            <span className="date-count">
+                              ({dateRecords.length} employees)
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                      
+                      {/* Records for this date */}
+                      {dateRecords.map((rec) => (
+                        <tr key={`${rec._id}_${date}`} className={getRowClass(rec.status)}>
+                          {bulkEditMode && (
+                            <td>
+                              <input
+                                type="checkbox"
+                                checked={selectedRecords.includes(rec._id)}
+                                onChange={() => toggleRecordSelection(rec._id)}
+                              />
+                            </td>
+                          )}
+                          
+                          {dateRangeMode && (
+                            <td className="col-date">
+                              <div className="date-badge">
+                                {new Date(date).toLocaleDateString("en-US", {
+                                  month: "short",
+                                  day: "numeric"
+                                })}
+                              </div>
+                            </td>
+                          )}
 
-        {!bulkEditMode && <th className="col-actions">Actions</th>}
-      </tr>
-    </thead>
+                          <td className="col-employee">
+                            <div className="employee-info">
+                              <div className="employee-avatar">
+                                {getInitials(rec.user?.name)}
+                              </div>
+                              <div className="employee-details">
+                                <div className="employee-name">
+                                  {rec.user?.name || "N/A"}
+                                </div>
+                                <div className="employee-email">
+                                  {rec.user?.email || "N/A"}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
 
-    <tbody>
-      {filteredRecords.length ? (
-        Object.entries(
-          filteredRecords.reduce((acc, rec) => {
-            const dept = rec.user?.department || 'Unassigned';
-            if (!acc[dept]) acc[dept] = [];
-            acc[dept].push(rec);
-            return acc;
-          }, {})
-        ).map(([department, deptRecords]) => (
-          <React.Fragment key={department}>
+                          <td className="col-department">
+                            <span className="department-chip">
+                              {rec.user?.department || 'Unassigned'}
+                            </span>
+                          </td>
 
-            {/* Department Header */}
-            <tr className="department-header">
-              <td colSpan={bulkEditMode ? 12 : 11}>
-                <div className="department-title">
-                  <FiUsers size={18} />
-                  <strong>{department} Department</strong>
-                  <span className="department-count">
-                    ({deptRecords.length} employees)
-                  </span>
-                </div>
-              </td>
-            </tr>
+                          <td className="col-type">
+                            <span className={`type-chip ${getEmployeeTypeClass(rec.user?.employeeType)}`}>
+                              {rec.user?.employeeType?.toUpperCase() || "N/A"}
+                            </span>
+                          </td>
 
-            {/* Records */}
-            {deptRecords.map((rec) => (
-              <tr key={rec._id} className={getRowClass(rec.status)}>
+                          {!dateRangeMode && (
+                            <td className="col-date">
+                              <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>
+                                {formatDate(rec.date)}
+                              </div>
+                            </td>
+                          )}
 
-                {bulkEditMode && (
-                  <td>
-                    <input
-                      type="checkbox"
-                      checked={selectedRecords.includes(rec._id)}
-                      onChange={() => toggleRecordSelection(rec._id)}
-                    />
-                  </td>
-                )}
+                          <td className="col-checkin">
+                            <div style={{ fontWeight: 500 }}>
+                              {formatTime(rec.inTime)}
+                            </div>
+                          </td>
 
-                <td className="col-employee">
-                  <div className="employee-infoo">
-                    <div className="employee-avatar">
-                      {getInitials(rec.user?.name)}
-                    </div>
-                    <div className="employee-details">
-                      <div className="employee-name">
-                        {rec.user?.name || "N/A"}
+                          <td className="col-checkout">
+                            <div style={{ fontWeight: 500 }}>
+                              {formatTime(rec.outTime)}
+                            </div>
+                          </td>
+
+                          <td className="col-hours">
+                            <span className={`time-chip ${
+                              rec.totalHours >= 9
+                                ? 'time-full'
+                                : rec.totalHours >= 5
+                                ? 'time-half'
+                                : 'time-low'
+                            }`}>
+                              {rec.hoursWorked || "00:00:00"}
+                            </span>
+                          </td>
+
+                          <td className="col-login">
+                            <div className="login-time-info">
+                              {getLoginTimeCategory(rec.inTime)}
+                            </div>
+                          </td>
+
+                          <td className="col-status">
+                            <span className={`status-chip ${getStatusClass(rec.status)}`}>
+                              {rec.status.toUpperCase()}
+                            </span>
+                            <div className="status-explanation">
+                              {rec.status === 'present' && 'Arrived before 9:10 AM'}
+                              {rec.status === 'late' && 'Arrived between 9:10-9:30 AM'}
+                              {rec.status === 'halfday' && 'Arrived after 9:30 AM'}
+                              {rec.status === 'absent' && 'No attendance recorded'}
+                            </div>
+                          </td>
+
+                          <td className="col-late">
+                            <span className="late-chip">
+                              {rec.lateBy || "00:00:00"}
+                            </span>
+                          </td>
+
+                          {!bulkEditMode && (
+                            <td className="col-actions">
+                              <div className="action-buttons">
+                                <button
+                                  className="btn-icon edit-btn"
+                                  onClick={() => handleEditRecord(rec)}
+                                  title="Edit Attendance"
+                                >
+                                  <FiEdit size={16} />
+                                </button>
+                              </div>
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                    </React.Fragment>
+                  ))
+                ) : (
+                  // Group by department for single day
+                  Object.entries(
+                    filteredRecords.reduce((acc, rec) => {
+                      const dept = rec.user?.department || 'Unassigned';
+                      if (!acc[dept]) acc[dept] = [];
+                      acc[dept].push(rec);
+                      return acc;
+                    }, {})
+                  ).map(([department, deptRecords]) => (
+                    <React.Fragment key={department}>
+                      {/* Department Header */}
+                      <tr className="department-header">
+                        <td colSpan={bulkEditMode ? 12 : 11}>
+                          <div className="department-title">
+                            <FiUsers size={18} />
+                            <strong>{department} Department</strong>
+                            <span className="department-count">
+                              ({deptRecords.length} employees)
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+
+                      {/* Records */}
+                      {deptRecords.map((rec) => (
+                        <tr key={rec._id} className={getRowClass(rec.status)}>
+                          {bulkEditMode && (
+                            <td>
+                              <input
+                                type="checkbox"
+                                checked={selectedRecords.includes(rec._id)}
+                                onChange={() => toggleRecordSelection(rec._id)}
+                              />
+                            </td>
+                          )}
+
+                          <td className="col-employee">
+                            <div className="employee-info">
+                              <div className="employee-avatar">
+                                {getInitials(rec.user?.name)}
+                              </div>
+                              <div className="employee-details">
+                                <div className="employee-name">
+                                  {rec.user?.name || "N/A"}
+                                </div>
+                                <div className="employee-email">
+                                  {rec.user?.email || "N/A"}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+
+                          <td className="col-department">
+                            <span className="department-chip">
+                              {rec.user?.department || 'Unassigned'}
+                            </span>
+                          </td>
+
+                          <td className="col-type">
+                            <span className={`type-chip ${getEmployeeTypeClass(rec.user?.employeeType)}`}>
+                              {rec.user?.employeeType?.toUpperCase() || "N/A"}
+                            </span>
+                          </td>
+
+                          <td className="col-date">
+                            <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>
+                              {formatDate(rec.date)}
+                            </div>
+                          </td>
+
+                          <td className="col-checkin">
+                            <div style={{ fontWeight: 500 }}>
+                              {formatTime(rec.inTime)}
+                            </div>
+                          </td>
+
+                          <td className="col-checkout">
+                            <div style={{ fontWeight: 500 }}>
+                              {formatTime(rec.outTime)}
+                            </div>
+                          </td>
+
+                          <td className="col-hours">
+                            <span className={`time-chip ${
+                              rec.totalHours >= 9
+                                ? 'time-full'
+                                : rec.totalHours >= 5
+                                ? 'time-half'
+                                : 'time-low'
+                            }`}>
+                              {rec.hoursWorked || "00:00:00"}
+                            </span>
+                          </td>
+
+                          <td className="col-login">
+                            <div className="login-time-info">
+                              {getLoginTimeCategory(rec.inTime)}
+                            </div>
+                          </td>
+
+                          <td className="col-status">
+                            <span className={`status-chip ${getStatusClass(rec.status)}`}>
+                              {rec.status.toUpperCase()}
+                            </span>
+                            <div className="status-explanation">
+                              {rec.status === 'present' && 'Arrived before 9:10 AM'}
+                              {rec.status === 'late' && 'Arrived between 9:10-9:30 AM'}
+                              {rec.status === 'halfday' && 'Arrived after 9:30 AM'}
+                              {rec.status === 'absent' && 'No attendance recorded'}
+                            </div>
+                          </td>
+
+                          <td className="col-late">
+                            <span className="late-chip">
+                              {rec.lateBy || "00:00:00"}
+                            </span>
+                          </td>
+
+                          {!bulkEditMode && (
+                            <td className="col-actions">
+                              <div className="action-buttons">
+                                <button
+                                  className="btn-icon edit-btn"
+                                  onClick={() => handleEditRecord(rec)}
+                                  title="Edit Attendance"
+                                >
+                                  <FiEdit size={16} />
+                                </button>
+                              </div>
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                    </React.Fragment>
+                  ))
+                )
+              ) : (
+                <tr>
+                  <td colSpan={bulkEditMode ? (dateRangeMode ? 12 : 11) : (dateRangeMode ? 11 : 10)}>
+                    <div className="empty-state">
+                      <div className="empty-state-icon">
+                        <FiCalendar size={48} />
                       </div>
-                      <div className="employee-email">
-                        {rec.user?.email || "N/A"}
-                      </div>
-                    </div>
-                  </div>
-                </td>
-
-                <td className="col-department">
-                  <span className="department-chip">
-                    {rec.user?.department || 'Unassigned'}
-                  </span>
-                </td>
-
-                <td className="col-type">
-                  <span className={`type-chip ${getEmployeeTypeClass(rec.user?.employeeType)}`}>
-                    {rec.user?.employeeType?.toUpperCase() || "N/A"}
-                  </span>
-                </td>
-
-                <td className="col-date">
-                  <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>
-                    {formatDate(rec.date)}
-                  </div>
-                </td>
-
-                <td className="col-checkin">
-                  <div style={{ fontWeight: 500 }}>
-                    {formatTime(rec.inTime)}
-                  </div>
-                </td>
-
-                <td className="col-checkout">
-                  <div style={{ fontWeight: 500 }}>
-                    {formatTime(rec.outTime)}
-                  </div>
-                </td>
-
-                <td className="col-hours">
-                  <span className={`time-chip ${
-                    rec.totalHours >= 9
-                      ? 'time-full'
-                      : rec.totalHours >= 5
-                      ? 'time-half'
-                      : 'time-low'
-                  }`}>
-                    {rec.hoursWorked || "00:00:00"}
-                  </span>
-                </td>
-
-                <td className="col-login">
-                  <div className="login-time-info">
-                    {getLoginTimeCategory(rec.inTime)}
-                  </div>
-                </td>
-
-                <td className="col-status">
-                  <span className={`status-chip ${getStatusClass(rec.status)}`}>
-                    {rec.status.toUpperCase()}
-                  </span>
-                  <div className="status-explanation">
-                    {rec.status === 'present' && 'Arrived before 9:10 AM'}
-                    {rec.status === 'late' && 'Arrived between 9:10-9:30 AM'}
-                    {rec.status === 'halfday' && 'Arrived after 9:30 AM'}
-                    {rec.status === 'absent' && 'No attendance recorded'}
-                  </div>
-                </td>
-
-                <td className="col-late">
-                  <span className="late-chip">
-                    {rec.lateBy || "00:00:00"}
-                  </span>
-                </td>
-
-                {!bulkEditMode && (
-                  <td className="col-actions">
-                    <div className="action-buttons">
+                      <h4 className="empty-state-title">No Records Found</h4>
+                      <p className="empty-state-text">
+                        Try adjusting your filters or add a new attendance record
+                      </p>
                       <button
-                        className="btn-icon edit-btn"
-                        onClick={() => handleEditRecord(rec)}
-                        title="Edit Attendance"
+                        className="btn btn-contained"
+                        onClick={handleAddRecord}
                       >
-                        <FiEdit size={16} />
+                        Add Attendance
                       </button>
                     </div>
                   </td>
-                )}
-
-              </tr>
-            ))}
-
-          </React.Fragment>
-        ))
-      ) : (
-        <tr>
-          <td colSpan={bulkEditMode ? 12 : 11}>
-            <div className="empty-state">
-              <div className="empty-state-icon">
-                <FiCalendar size={48} />
-              </div>
-              <h4 className="empty-state-title">No Records Found</h4>
-              <p className="empty-state-text">
-                Try adjusting your filters or add a new attendance record
-              </p>
-              <button
-                className="btn btn-contained"
-                onClick={handleAddRecord}
-              >
-                Add Attendance
-              </button>
-            </div>
-          </td>
-        </tr>
-      )}
-    </tbody>
-  </table>
-</div>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Summary Section */}
       <div className="summary-section">
-        <h4>Attendance Summary</h4>
+        <h4>Attendance Summary {dateRangeMode && `(Period Summary)`}</h4>
         <div className="summary-grid">
           <div className="summary-item">
             <span className="summary-label">Total Employees:</span>
@@ -2507,6 +3076,15 @@ const EmployeeAttendance = () => {
             </span>
           </div>
         </div>
+        {dateRangeMode && (
+          <div className="range-summary-details">
+            <p><strong>Period:</strong> {dateRangeStats.totalDays} days</p>
+            <p><strong>Total Present:</strong> {dateRangeStats.totalPresent}</p>
+            <p><strong>Total Late:</strong> {dateRangeStats.totalLate}</p>
+            <p><strong>Total Half Day:</strong> {dateRangeStats.totalHalfDay}</p>
+            <p><strong>Total Absent:</strong> {dateRangeStats.totalAbsent}</p>
+          </div>
+        )}
       </div>
 
       {/* Modals */}
