@@ -132,7 +132,7 @@ function App() {
           <Route path="admin-meeting" element={<AdminMeetingPage />} />
           <Route path="adminproject" element={<AdminProject />} />
           <Route path="company-all-task" element={<EmpAllTask />} />
-          <Route path="department-all-task" element={<EmpDepartmentAllTask />} />
+          {/* <Route path="department-all-task" element={<EmpDepartmentAllTask />} /> */}
           <Route path="emp-client" element={<Client />} />
           <Route path="alert" element={<Alerts />} />
           <Route path="attendance" element={<Attendance />} />

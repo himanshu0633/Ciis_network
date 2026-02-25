@@ -12,6 +12,8 @@ export default function AdminMeetingPage() {
   const [activeTab, setActiveTab] = useState("create");
   const [statusModal, setStatusModal] = useState({ open: false, data: [], meetingTitle: "" });
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, meetingId: null, meetingTitle: "" });
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [debugInfo, setDebugInfo] = useState({ show: false, message: "" });
 
   const [form, setForm] = useState({
     title: "",
@@ -47,14 +49,19 @@ export default function AdminMeetingPage() {
       setRefreshing(true);
       const res = await axios.get(`${API_URL}/meetings`);
       
-      if (Array.isArray(res.data)) setMeetings(res.data);
-      else if (res.data?.data) setMeetings(res.data.data);
-      else if (res.data?.meetings) setMeetings(res.data.meetings);
-      else if (res.data?.success && res.data.data) setMeetings(res.data.data);
-      else {
-        console.warn("Unexpected meetings API response:", res.data);
-        setMeetings([]);
+      let fetchedMeetings = [];
+      if (Array.isArray(res.data)) fetchedMeetings = res.data;
+      else if (res.data?.data) fetchedMeetings = res.data.data;
+      else if (res.data?.meetings) fetchedMeetings = res.data.meetings;
+      else if (res.data?.success && res.data.data) fetchedMeetings = res.data.data;
+      
+      // Log the first meeting to see its structure
+      if (fetchedMeetings.length > 0) {
+        console.log("Sample meeting structure:", fetchedMeetings[0]);
+        console.log("Meeting ID field:", fetchedMeetings[0]._id || fetchedMeetings[0].id);
       }
+      
+      setMeetings(fetchedMeetings);
     } catch (err) {
       console.error("Error fetching meetings:", err);
       toast.error("❌ Failed to fetch meetings");
@@ -146,22 +153,118 @@ export default function AdminMeetingPage() {
     }
   };
 
-  // 🟢 Delete meeting
+  // 🟢 Debug function to test different endpoints
+  const testDeleteEndpoints = async (meetingId) => {
+    const endpoints = [
+      { method: 'delete', url: `${API_URL}/task/${meetingId}`, name: 'Task endpoint' },
+      { method: 'delete', url: `${API_URL}/meetings/${meetingId}`, name: 'Meetings direct' },
+      { method: 'post', url: `${API_URL}/meetings/delete`, data: { meetingId }, name: 'Meetings delete post' },
+      { method: 'delete', url: `${API_URL}/meetings/delete/${meetingId}`, name: 'Meetings delete with ID' },
+      { method: 'put', url: `${API_URL}/meetings/${meetingId}`, data: { status: 'deleted' }, name: 'Meetings update status' },
+      { method: 'delete', url: `${API_URL}/api/task/${meetingId}`, name: 'API task endpoint' },
+      { method: 'delete', url: `${API_URL}/tasks/${meetingId}`, name: 'Tasks endpoint' },
+    ];
+
+    setDebugInfo({ show: true, message: "Testing endpoints...\n" });
+    
+    for (const endpoint of endpoints) {
+      try {
+        setDebugInfo(prev => ({ 
+          ...prev, 
+          message: prev.message + `\nTrying: ${endpoint.method.toUpperCase()} ${endpoint.url}` 
+        }));
+        
+        let response;
+        if (endpoint.method === 'delete') {
+          response = await axios.delete(endpoint.url);
+        } else if (endpoint.method === 'post') {
+          response = await axios.post(endpoint.url, endpoint.data);
+        } else if (endpoint.method === 'put') {
+          response = await axios.put(endpoint.url, endpoint.data);
+        }
+        
+        setDebugInfo(prev => ({ 
+          ...prev, 
+          message: prev.message + `\n✅ SUCCESS! Status: ${response.status}` 
+        }));
+        
+        // If successful, remove from UI
+        setMeetings(prevMeetings => 
+          prevMeetings.filter(m => (m._id || m.id) !== meetingId)
+        );
+        
+        toast.success(`✅ Meeting deleted via ${endpoint.name}`);
+        return true;
+      } catch (err) {
+        setDebugInfo(prev => ({ 
+          ...prev, 
+          message: prev.message + `\n❌ Failed: ${err.response?.status || err.message}` 
+        }));
+      }
+    }
+    
+    setDebugInfo(prev => ({ 
+      ...prev, 
+      message: prev.message + `\n\n❌ All endpoints failed. Please check API documentation.` 
+    }));
+    
+    return false;
+  };
+
+  // 🟢 Delete meeting with debugging
   const deleteMeeting = async () => {
     if (!deleteConfirm.meetingId) return;
     
+    setDeleteLoading(true);
     try {
-      const res = await axios.delete(`${API_URL}/meetings/${deleteConfirm.meetingId}`);
-      if (res.data.success) {
+      // First try the task endpoint
+      const response = await axios.delete(`${API_URL}/task/${deleteConfirm.meetingId}`);
+      
+      if (response.status === 200) {
+        setMeetings(prevMeetings => 
+          prevMeetings.filter(m => (m._id || m.id) !== deleteConfirm.meetingId)
+        );
         toast.success("✅ Meeting deleted successfully!");
-        fetchMeetings();
         setDeleteConfirm({ open: false, meetingId: null, meetingTitle: "" });
-      } else {
-        toast.error(res.data.message || "❌ Failed to delete meeting");
       }
     } catch (err) {
-      console.error(err);
-      toast.error("❌ Failed to delete meeting");
+      console.error("Delete error:", err);
+      
+      if (err.response?.status === 404) {
+        // Show debug options for 404
+        toast.warning(
+          <div>
+            <p>Endpoint not found. Would you like to:</p>
+            <button 
+              onClick={() => {
+                testDeleteEndpoints(deleteConfirm.meetingId);
+                setDeleteConfirm({ open: false, meetingId: null, meetingTitle: "" });
+              }}
+              className="toast-button"
+            >
+              Test All Endpoints
+            </button>
+            <button 
+              onClick={() => {
+                // Force remove from UI
+                setMeetings(prevMeetings => 
+                  prevMeetings.filter(m => (m._id || m.id) !== deleteConfirm.meetingId)
+                );
+                toast.info("Meeting removed from UI only");
+                setDeleteConfirm({ open: false, meetingId: null, meetingTitle: "" });
+              }}
+              className="toast-button"
+            >
+              Remove from UI Only
+            </button>
+          </div>,
+          { autoClose: false }
+        );
+      } else {
+        toast.error(err.response?.data?.message || "❌ Failed to delete meeting");
+      }
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -194,6 +297,52 @@ export default function AdminMeetingPage() {
 
   return (
     <div className="amp-container">
+      {/* Debug Info Modal */}
+      {debugInfo.show && (
+        <div className="amp-modal-overlay" onClick={() => setDebugInfo({ show: false, message: "" })}>
+          <div className="amp-modal amp-modal-lg" onClick={(e) => e.stopPropagation()}>
+            <div className="amp-modal-header">
+              <div className="amp-modal-title-wrapper">
+                <span className="amp-modal-icon">🔍</span>
+                <h3 className="amp-modal-title">API Debug Information</h3>
+              </div>
+              <button 
+                onClick={() => setDebugInfo({ show: false, message: "" })}
+                className="amp-modal-close"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="amp-modal-content">
+              <pre style={{ 
+                background: '#1e1e2e', 
+                color: '#fff', 
+                padding: '20px', 
+                borderRadius: '8px',
+                overflow: 'auto',
+                maxHeight: '400px',
+                fontFamily: 'monospace',
+                fontSize: '14px',
+                lineHeight: '1.6',
+                whiteSpace: 'pre-wrap'
+              }}>
+                {debugInfo.message}
+              </pre>
+            </div>
+
+            <div className="amp-modal-footer">
+              <button 
+                onClick={() => setDebugInfo({ show: false, message: "" })}
+                className="amp-btn amp-btn-primary"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header with Gradient */}
       <div className="amp-header">
         <div className="amp-header-content">
@@ -444,14 +593,16 @@ export default function AdminMeetingPage() {
                 {meetings.length} {meetings.length === 1 ? 'meeting' : 'meetings'} scheduled
               </p>
             </div>
-            <button 
-              onClick={fetchMeetings} 
-              disabled={refreshing}
-              className="amp-refresh-btn"
-            >
-              <span className={`amp-refresh-icon ${refreshing ? 'amp-spin' : ''}`}>🔄</span>
-              {refreshing ? 'Refreshing...' : 'Refresh'}
-            </button>
+            <div className="amp-manage-actions">
+              <button 
+                onClick={fetchMeetings} 
+                disabled={refreshing}
+                className="amp-refresh-btn"
+              >
+                <span className={`amp-refresh-icon ${refreshing ? 'amp-spin' : ''}`}>🔄</span>
+                {refreshing ? 'Refreshing...' : 'Refresh'}
+              </button>
+            </div>
           </div>
 
           {!meetings.length ? (
@@ -472,9 +623,10 @@ export default function AdminMeetingPage() {
               {meetings.map((meeting) => {
                 const datetime = formatDateTime(meeting.date, meeting.time);
                 const attendeeCount = Array.isArray(meeting.attendees) ? meeting.attendees.length : 0;
+                const meetingId = meeting._id || meeting.id;
                 
                 return (
-                  <div key={meeting._id || meeting.id} className="amp-meeting-card">
+                  <div key={meetingId} className="amp-meeting-card">
                     <div className="amp-meeting-status-bar" data-status={
                       datetime.isPast ? 'past' : datetime.isToday ? 'today' : 'upcoming'
                     } />
@@ -536,7 +688,7 @@ export default function AdminMeetingPage() {
                         
                         <div className="amp-meeting-actions">
                           <button 
-                            onClick={() => showStatus(meeting._id || meeting.id, meeting.title)}
+                            onClick={() => showStatus(meetingId, meeting.title)}
                             className="amp-action-btn amp-action-view"
                             title="View Attendance"
                           >
@@ -545,7 +697,7 @@ export default function AdminMeetingPage() {
                           <button 
                             onClick={() => setDeleteConfirm({
                               open: true,
-                              meetingId: meeting._id || meeting.id,
+                              meetingId: meetingId,
                               meetingTitle: meeting.title
                             })}
                             className="amp-action-btn amp-action-delete"
@@ -669,21 +821,35 @@ export default function AdminMeetingPage() {
               <p className="amp-delete-text">
                 Are you sure you want to delete <strong>"{deleteConfirm.meetingTitle}"</strong>?
               </p>
-              <p className="amp-delete-subtext">This action cannot be undone.</p>
+              <p className="amp-delete-subtext">
+                Meeting ID: <code style={{background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px'}}>{deleteConfirm.meetingId}</code>
+              </p>
+              <p className="amp-delete-subtext">
+                This action cannot be undone. All meeting data will be permanently removed.
+              </p>
             </div>
 
             <div className="amp-modal-footer amp-modal-footer-center">
               <button 
                 onClick={() => setDeleteConfirm({ open: false, meetingId: null, meetingTitle: "" })}
                 className="amp-btn amp-btn-secondary"
+                disabled={deleteLoading}
               >
                 Cancel
               </button>
               <button 
                 onClick={deleteMeeting}
                 className="amp-btn amp-btn-danger"
+                disabled={deleteLoading}
               >
-                Delete Meeting
+                {deleteLoading ? (
+                  <>
+                    <span className="amp-spinner"></span>
+                    Deleting...
+                  </>
+                ) : (
+                  'Delete Meeting'
+                )}
               </button>
             </div>
           </div>
@@ -691,4 +857,4 @@ export default function AdminMeetingPage() {
       )}
     </div>
   );
-} 
+}

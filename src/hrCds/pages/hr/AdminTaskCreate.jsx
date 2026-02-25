@@ -2978,27 +2978,27 @@ const AdminTaskManagement = () => {
             <h2>Admin Task Management</h2>
             <div className="AdminTaskManagement-header-subtitle">
               Manage and assign tasks to users and groups
-              {currentUser.company && (
+              {/* {currentUser.company && (
                 <div className="AdminTaskManagement-header-info">
                   <span><FiBriefcase /> Company: {getCompanyName(currentUser.company)}</span>
                   {currentUser.department && (
                     <span><FiBriefcase /> Department: {getDepartmentName(currentUser.department)}</span>
                   )}
                 </div>
-              )}
+              )} */}
             </div>
           </div>
           <div className="AdminTaskManagement-header-actions">
             {companyRole && (
               <div className="AdminTaskManagement-user-info">
-                <div className={`AdminTaskManagement-user-role-badge ${isOwner() ? 'AdminTaskManagement-role-owner' : 'AdminTaskManagement-role-employee'}`}>
+                {/* <div className={`AdminTaskManagement-user-role-badge ${isOwner() ? 'AdminTaskManagement-role-owner' : 'AdminTaskManagement-role-employee'}`}>
                   {companyRole}
                 </div>
                 {jobRole && (
                   <div className="AdminTaskManagement-user-jobrole">
                     {jobRole}
                   </div>
-                )}
+                )} */}
               </div>
             )}
             <button 

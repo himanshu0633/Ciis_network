@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import axios from '../../utils/axiosConfig';
 import './JobRoleManagement.css';
+import CIISLoader from '../../Loader/CIISLoader'; // ✅ Import CIISLoader
 
 // Transition for dialog
 const Transition = (props) => {
@@ -11,6 +12,7 @@ const Transition = (props) => {
 const JobRoleManagement = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [isTablet, setIsTablet] = useState(window.innerWidth >= 768 && window.innerWidth < 1024);
+  const [pageLoading, setPageLoading] = useState(true); // ✅ Page loading state
   
   const [jobRoles, setJobRoles] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -111,27 +113,43 @@ const JobRoleManagement = () => {
     return isSuper;
   };
 
+  // ✅ Load initial data with page loader
   useEffect(() => {
-    const user = getUserFromStorage();
-    
-    if (user) {
-      setUserInfo(user);
-      const isSuper = checkSuperAdminStatus(user);
-      setIsSuperAdmin(isSuper);
-      
-      if (user.company && user.companyCode) {
-        setFormData(prev => ({
-          ...prev,
-          company: user.company,
-          companyCode: user.companyCode
-        }));
+    const loadData = async () => {
+      setPageLoading(true);
+      try {
+        const user = getUserFromStorage();
+        
+        if (user) {
+          setUserInfo(user);
+          const isSuper = checkSuperAdminStatus(user);
+          setIsSuperAdmin(isSuper);
+          
+          if (user.company && user.companyCode) {
+            setFormData(prev => ({
+              ...prev,
+              company: user.company,
+              companyCode: user.companyCode
+            }));
+          }
+          
+          await fetchJobRoles(user, isSuper);
+          await fetchDepartments(user, isSuper);
+        } else {
+          toast.error('Please login to continue');
+        }
+      } catch (error) {
+        console.error('Error loading job roles:', error);
+        toast.error('Failed to load job roles');
+      } finally {
+        // Minimum 500ms loader show karega
+        setTimeout(() => {
+          setPageLoading(false);
+        }, 500);
       }
-      
-      fetchJobRoles(user, isSuper);
-      fetchDepartments(user, isSuper);
-    } else {
-      toast.error('Please login to continue');
-    }
+    };
+    
+    loadData();
   }, [refreshKey, showAllCompanies]);
 
   const fetchJobRoles = async (user = null, isSuper = false) => {
@@ -443,6 +461,11 @@ const JobRoleManagement = () => {
       </div>
     </div>
   );
+
+  // ✅ Show CIISLoader while page is loading
+  if (pageLoading) {
+    return <CIISLoader />;
+  }
 
   return (
     <div className="JobRoleManagement-container">

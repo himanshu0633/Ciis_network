@@ -1,4 +1,4 @@
-/* employee-attendance.css - FINAL MERGED VERSION */
+/* employee-attendance.css - FINAL FIXED VERSION */
 
 /* ===== VARIABLES & RESET ===== */
 :root {
@@ -14,7 +14,7 @@
   --danger-dark: #d43f63;
   --info: #118ab2;
   
-  /* Grays */
+  /* Grays - Darker for better contrast */
   --gray-50: #f8f9fa;
   --gray-100: #f1f3f5;
   --gray-200: #e9ecef;
@@ -41,7 +41,7 @@
   --radius-full: 9999px;
   
   /* Transition */
-  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition: all 0.3s ease;
 }
 
 * {
@@ -139,10 +139,6 @@
   color: var(--gray-900);
   margin: 0 0 10px 0;
   letter-spacing: -0.5px;
-  background: linear-gradient(135deg, var(--primary), var(--secondary));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 
 .attendance-subtitle {
@@ -170,25 +166,25 @@
 }
 
 .attendance-role-badge-owner {
-  background: linear-gradient(135deg, #ffd700 0%, #ffb700 100%);
+  background: #ffd700;
   color: #000;
   border-color: #daa520;
 }
 
 .attendance-role-badge-admin {
-  background: linear-gradient(135deg, var(--danger), #c9184a);
+  background: var(--danger);
   color: white;
   border-color: var(--danger-dark);
 }
 
 .attendance-role-badge-hr {
-  background: linear-gradient(135deg, var(--success), var(--success-dark));
+  background: var(--success);
   color: white;
   border-color: var(--success-dark);
 }
 
 .attendance-role-badge-manager {
-  background: linear-gradient(135deg, var(--info), #0a5e7a);
+  background: var(--info);
   color: white;
   border-color: #0a5e7a;
 }
@@ -769,6 +765,8 @@
   margin-bottom: 24px;
   box-shadow: var(--shadow-lg);
   border: 1px solid var(--gray-200);
+  overflow-x: auto;
+  width: 100%;
 }
 
 .table-header {
@@ -815,8 +813,7 @@
 /* ===== TABLE STYLES ===== */
 .attendance-table {
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
+  border-collapse: collapse;
   min-width: 1200px;
 }
 
@@ -829,6 +826,7 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   white-space: nowrap;
+  text-align: left;
 }
 
 .attendance-table thead th:first-child {
@@ -842,6 +840,7 @@
 .attendance-table tbody tr {
   transition: var(--transition);
   cursor: pointer;
+  border-bottom: 1px solid var(--gray-200);
 }
 
 .attendance-table tbody tr:hover {
@@ -850,27 +849,27 @@
 
 .attendance-table td {
   padding: 16px 12px;
-  border-bottom: 1px solid var(--gray-200);
   font-size: 14px;
   color: var(--gray-700);
   vertical-align: middle;
+  line-height: 1.4;
 }
 
-/* ===== ROW STATUS CLASSES ===== */
+/* ===== ROW STATUS CLASSES - Darker colors for better visibility ===== */
 .row-present {
-  background: linear-gradient(90deg, rgba(6, 214, 160, 0.05), transparent);
+  background-color: rgba(6, 214, 160, 0.15);
 }
 
 .row-late {
-  background: linear-gradient(90deg, rgba(255, 183, 3, 0.05), transparent);
+  background-color: rgba(255, 183, 3, 0.15);
 }
 
 .row-halfday {
-  background: linear-gradient(90deg, rgba(17, 138, 178, 0.05), transparent);
+  background-color: rgba(17, 138, 178, 0.15);
 }
 
 .row-absent {
-  background: linear-gradient(90deg, rgba(239, 71, 111, 0.05), transparent);
+  background-color: rgba(239, 71, 111, 0.15);
 }
 
 /* ===== DEPARTMENT HEADER ===== */
@@ -931,6 +930,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 200px;
 }
 
 .employee-avatar {
@@ -945,6 +945,7 @@
   font-weight: 600;
   font-size: 14px;
   box-shadow: var(--shadow-md);
+  flex-shrink: 0;
 }
 
 .employee-avatar.large {
@@ -991,6 +992,7 @@
   font-size: 12px;
   color: var(--gray-700);
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .type-chip {
@@ -1001,6 +1003,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.3px;
+  white-space: nowrap;
 }
 
 .type-full-time {
@@ -1029,6 +1032,7 @@
   border-radius: var(--radius-full);
   font-size: 12px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .time-full {
@@ -1046,33 +1050,41 @@
   color: white;
 }
 
+/* Status Chips - Darker colors for better visibility */
 .status-chip {
   display: inline-block;
-  padding: 4px 10px;
+  padding: 6px 12px;
   border-radius: var(--radius-full);
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
+  min-width: 70px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .status-present {
   background: var(--success);
   color: white;
+  font-weight: 700;
 }
 
 .status-late {
   background: var(--warning);
   color: white;
+  font-weight: 700;
 }
 
 .status-halfday {
   background: var(--info);
   color: white;
+  font-weight: 700;
 }
 
 .status-absent {
   background: var(--danger);
   color: white;
+  font-weight: 700;
 }
 
 .status-explanation {
@@ -1088,6 +1100,7 @@
   padding: 2px 8px;
   border-radius: var(--radius-full);
   display: inline-block;
+  white-space: nowrap;
 }
 
 .late-chip {
@@ -1098,12 +1111,14 @@
   font-size: 12px;
   color: var(--gray-700);
   font-weight: 500;
+  white-space: nowrap;
 }
 
 /* ===== ACTION BUTTONS ===== */
 .action-buttons {
   display: flex;
   gap: 8px;
+  white-space: nowrap;
 }
 
 .btn-icon {
@@ -1745,7 +1760,7 @@ textarea.form-input {
   background: var(--gray-400);
 }
 
-/* ===== MOBILE OPTIMIZATION - CRITICAL ===== */
+/* ===== MOBILE OPTIMIZATION - FIXED ===== */
 @media screen and (max-width: 768px) {
   /* General Mobile Styles */
   .employee-attendance {
@@ -1856,8 +1871,8 @@ textarea.form-input {
     align-items: flex-start;
   }
 
-  /* ===== CRITICAL MOBILE TABLE STYLES ===== */
-  /* Show ONLY Employee Name and Status on Mobile */
+  /* ===== FIXED MOBILE TABLE STYLES ===== */
+  /* Keep showing only Employee and Status as requested */
   
   .attendance-table {
     min-width: 100% !important;
@@ -1878,11 +1893,11 @@ textarea.form-input {
 
   /* Set header widths */
   .attendance-table thead th.col-employee {
-    width: 70%;
+    width: 65%;
   }
   
   .attendance-table thead th.col-status {
-    width: 30%;
+    width: 35%;
     text-align: right;
   }
 
@@ -1891,51 +1906,85 @@ textarea.form-input {
     display: none !important;
   }
 
-  /* Show ONLY Employee column (first data column) and Status column */
+  /* Show ONLY Employee column and Status column */
   .attendance-table tbody td.col-employee,
   .attendance-table tbody td.col-status {
     display: table-cell !important;
+    padding: 12px 8px;
+    vertical-align: middle;
   }
 
-  /* Employee column styling */
+  /* Employee column styling - FIXED for proper display */
   .attendance-table tbody td.col-employee {
-    width: 70%;
+    width: 65%;
   }
 
   /* Status column styling */
   .attendance-table tbody td.col-status {
-    width: 30%;
+    width: 35%;
     text-align: right;
   }
 
-  /* Hide email in employee details on mobile */
+  /* Employee info - FIXED to show properly */
+  .employee-info {
+    gap: 10px;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .employee-avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+
+  .employee-details {
+    min-width: 0;
+    width: auto;
+  }
+
+  .employee-name {
+    font-size: 14px;
+    font-weight: 600;
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.3;
+    margin-bottom: 2px;
+  }
+
+  /* Hide email on mobile - keeps it clean */
   .employee-email {
     display: none !important;
   }
 
-  /* Adjust employee info for mobile */
-  .employee-info {
-    gap: 8px;
-  }
-
-  .employee-avatar {
-    width: 32px;
-    height: 32px;
-    font-size: 12px;
-  }
-
-  .employee-name {
-    font-size: 13px;
-    white-space: normal;
-    word-break: break-word;
-  }
-
-  /* Status chip styling */
+  /* Status chip - FIXED to show properly */
   .status-chip {
     display: inline-block !important;
-    font-size: 11px;
-    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 12px;
+    min-width: 70px;
+    text-align: center;
     white-space: nowrap;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  /* Status colors - darker for better visibility */
+  .status-present {
+    background: var(--success);
+  }
+  
+  .status-late {
+    background: var(--warning);
+  }
+  
+  .status-halfday {
+    background: var(--info);
+  }
+  
+  .status-absent {
+    background: var(--danger);
   }
 
   /* Hide all other elements */
@@ -1962,7 +2011,7 @@ textarea.form-input {
 
   /* Department header on mobile */
   .department-header td {
-    padding: 10px 12px;
+    padding: 10px 8px;
   }
 
   .department-header td.col-employee,
@@ -1976,11 +2025,12 @@ textarea.form-input {
 
   .department-count {
     font-size: 12px;
+    margin-left: 5px;
   }
 
   /* Date header on mobile */
   .date-header td {
-    padding: 10px 12px;
+    padding: 10px 8px;
   }
 
   .date-header td.col-employee,
@@ -1994,6 +2044,7 @@ textarea.form-input {
 
   .date-count {
     font-size: 12px;
+    margin-left: 5px;
   }
 
   /* Bulk edit mode on mobile */
@@ -2128,6 +2179,33 @@ textarea.form-input {
 
   .modal-header h3 {
     font-size: 18px;
+  }
+  
+  /* Even smaller screens */
+  .attendance-table thead th.col-employee {
+    width: 60%;
+  }
+  
+  .attendance-table thead th.col-status {
+    width: 40%;
+  }
+  
+  .attendance-table tbody td.col-employee {
+    width: 60%;
+  }
+  
+  .attendance-table tbody td.col-status {
+    width: 40%;
+  }
+  
+  .employee-name {
+    font-size: 13px;
+  }
+  
+  .status-chip {
+    font-size: 11px;
+    padding: 5px 8px;
+    min-width: 60px;
   }
 }
 

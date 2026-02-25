@@ -815,7 +815,7 @@
   border-radius: 20px;
   font-size: 12px;
   font-weight: 600;
-  display: inline-block;
+  display: none;
   border: 1px solid;
 }
 

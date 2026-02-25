@@ -1,22 +1,105 @@
-/* AdminTaskManagement.css - ENHANCED MOBILE VIEW */
+/* AdminTaskManagement.css - ULTIMATE ENHANCED VERSION */
 
-/* Base Styles */
-.AdminTaskManagement-container {
-  background-color: #f8f9fa;
-  min-height: 100vh;
-  padding: 16px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: #333;
+/* ===== CSS VARIABLES ===== */
+:root {
+  --primary: #1976d2;
+  --primary-dark: #1565c0;
+  --primary-light: #e3f2fd;
+  --secondary: #7b1fa2;
+  --secondary-light: #f3e5f5;
+  --success: #388e3c;
+  --success-light: #e8f5e9;
+  --warning: #f57c00;
+  --warning-light: #fff3e0;
+  --danger: #d32f2f;
+  --danger-light: #ffebee;
+  --info: #0288d1;
+  --info-light: #e1f5fe;
+  --gray-100: #f8f9fa;
+  --gray-200: #e9ecef;
+  --gray-300: #dee2e6;
+  --gray-400: #ced4da;
+  --gray-500: #adb5bd;
+  --gray-600: #6c757d;
+  --gray-700: #495057;
+  --gray-800: #343a40;
+  --gray-900: #212529;
+  --white: #ffffff;
+  --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.07);
+  --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+  --shadow-xl: 0 20px 25px rgba(0,0,0,0.15);
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --border-radius: 12px;
+  --border-radius-sm: 8px;
+  --border-radius-lg: 16px;
+  --border-radius-xl: 24px;
 }
 
-/* Header - Enhanced for Mobile */
+/* ===== BASE STYLES ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.AdminTaskManagement-container {
+  background: linear-gradient(135deg, #667eea0d 0%, #764ba20d 100%);
+  min-height: 100vh;
+  padding: 12px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--gray-800);
+  width: 100%;
+  overflow-x: hidden;
+  animation: fadeIn 0.5s ease;
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { transform: translateX(-20px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+/* ===== HEADER SECTION ===== */
 .AdminTaskManagement-header {
-  background: white;
+  background: var(--white);
   padding: 20px;
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  border-radius: var(--border-radius-xl);
+  box-shadow: var(--shadow-lg);
   margin-bottom: 20px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--gray-200);
+  animation: slideIn 0.5s ease;
+  transition: var(--transition);
+}
+
+.AdminTaskManagement-header:hover {
+  box-shadow: var(--shadow-xl);
+  transform: translateY(-2px);
 }
 
 .AdminTaskManagement-header-content {
@@ -25,231 +108,334 @@
   gap: 16px;
 }
 
+@media (min-width: 768px) {
+  .AdminTaskManagement-header-content {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+
+.AdminTaskManagement-header-title {
+  position: relative;
+}
+
 .AdminTaskManagement-header-title h2 {
   font-size: 24px;
-  font-weight: 600;
-  color: #2c3e50;
+  font-weight: 700;
+  color: var(--gray-800);
   margin: 0 0 6px 0;
-  letter-spacing: -0.3px;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: inline-block;
 }
 
 .AdminTaskManagement-header-subtitle {
   font-size: 14px;
-  color: #666;
-  margin: 0;
+  color: var(--gray-600);
+  line-height: 1.5;
 }
 
 .AdminTaskManagement-header-info {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-top: 8px;
-}
-
-.AdminTaskManagement-header-info span {
-  font-size: 12px;
-  padding: 6px 10px;
-  background: #f0f2f5;
-  border-radius: 20px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: #555;
-  width: fit-content;
-}
-
-.AdminTaskManagement-header-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  margin-top: 12px;
+  animation: fadeIn 0.5s ease 0.2s both;
 }
 
 @media (min-width: 480px) {
-  .AdminTaskManagement-header-actions {
+  .AdminTaskManagement-header-info {
     flex-direction: row;
     flex-wrap: wrap;
   }
 }
 
-/* User Info */
+.AdminTaskManagement-header-info span {
+  font-size: 12px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, var(--gray-100), var(--white));
+  border-radius: 30px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--gray-700);
+  width: fit-content;
+  border: 1px solid var(--gray-200);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+  word-break: break-word;
+  max-width: 100%;
+}
+
+.AdminTaskManagement-header-info span:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary);
+}
+
+/* ===== USER INFO BADGES ===== */
 .AdminTaskManagement-user-info {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+  margin-bottom: 8px;
 }
 
 .AdminTaskManagement-user-role-badge,
 .AdminTaskManagement-user-jobrole {
   font-size: 11px;
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: 30px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  animation: scaleIn 0.3s ease;
+  transition: var(--transition);
+  box-shadow: var(--shadow-sm);
 }
 
 .AdminTaskManagement-user-role-badge {
-  background: #e3f2fd;
-  color: #1976d2;
-  border: 1px solid #bbdefb;
+  background: linear-gradient(135deg, var(--primary-light), var(--white));
+  color: var(--primary-dark);
+  border: 1px solid var(--primary);
 }
 
 .AdminTaskManagement-user-jobrole {
-  background: #f3e5f5;
-  color: #7b1fa2;
-  border: 1px solid #e1bee7;
+  background: linear-gradient(135deg, var(--secondary-light), var(--white));
+  color: var(--secondary);
+  border: 1px solid var(--secondary);
 }
 
-/* Button Styles - Enhanced for Mobile */
+.AdminTaskManagement-user-role-badge:hover,
+.AdminTaskManagement-user-jobrole:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* ===== HEADER ACTIONS ===== */
+.AdminTaskManagement-header-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  animation: fadeIn 0.5s ease 0.3s both;
+}
+
+@media (min-width: 480px) {
+  .AdminTaskManagement-header-actions {
+    flex-direction: row;
+    align-items: center;
+    width: auto;
+  }
+}
+
+/* ===== BUTTON STYLES ===== */
 .AdminTaskManagement-btn {
-  padding: 12px 16px;
-  border-radius: 10px;
+  padding: 12px 20px;
+  border-radius: 30px;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
-  border: 1px solid transparent;
+  transition: var(--transition);
+  border: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  white-space: nowrap;
   width: 100%;
-  min-height: 48px; /* Better touch target */
+  min-height: 48px;
+  position: relative;
+  overflow: hidden;
+  letter-spacing: 0.3px;
+  box-shadow: var(--shadow-sm);
 }
 
 @media (min-width: 480px) {
   .AdminTaskManagement-btn {
     width: auto;
-    min-height: 40px;
-    padding: 10px 20px;
+    min-height: 44px;
+    padding: 10px 24px;
   }
 }
 
-.AdminTaskManagement-btn-primary {
-  background: #1976d2;
-  color: white;
-  border-color: #1976d2;
+.AdminTaskManagement-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
 }
 
-.AdminTaskManagement-btn-primary:active {
-  background: #1565c0;
-  transform: scale(0.98);
+.AdminTaskManagement-btn:active::before {
+  width: 300px;
+  height: 300px;
+}
+
+.AdminTaskManagement-btn-primary {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: var(--white);
+}
+
+.AdminTaskManagement-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(25, 118, 210, 0.4);
 }
 
 .AdminTaskManagement-btn-outline {
-  background: white;
-  color: #555;
-  border-color: #ddd;
+  background: var(--white);
+  color: var(--gray-700);
+  border: 2px solid var(--gray-300);
 }
 
-.AdminTaskManagement-btn-outline:active {
-  background: #f5f5f5;
+.AdminTaskManagement-btn-outline:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.AdminTaskManagement-btn-danger {
+  background: linear-gradient(135deg, var(--danger), #c62828);
+  color: var(--white);
+}
+
+.AdminTaskManagement-btn-danger:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(211, 47, 47, 0.4);
 }
 
 .AdminTaskManagement-btn-sm {
-  padding: 8px 12px;
+  padding: 8px 16px;
   font-size: 13px;
-  min-height: 36px;
+  min-height: 38px;
 }
 
 .AdminTaskManagement-btn-block {
   width: 100%;
 }
 
-.AdminTaskManagement-btn-danger {
-  background: #dc3545;
-  color: white;
-  border-color: #dc3545;
-}
-
-.AdminTaskManagement-btn-danger:active {
-  background: #c82333;
-  transform: scale(0.98);
-}
-
 .AdminTaskManagement-btn:disabled {
   opacity: 0.5;
   pointer-events: none;
+  transform: none;
 }
 
-/* Icon Button - Enhanced Touch Target */
+/* ===== ICON BUTTON ===== */
 .AdminTaskManagement-icon-btn {
   width: 48px;
   height: 48px;
-  border-radius: 10px;
-  border: 1px solid #ddd;
-  background: white;
-  color: #555;
+  border-radius: 16px;
+  border: 1px solid var(--gray-200);
+  background: var(--white);
+  color: var(--gray-600);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
-  min-width: 48px;
-  min-height: 48px;
+  transition: var(--transition);
+  flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
 }
 
-@media (min-width: 480px) {
-  .AdminTaskManagement-icon-btn {
-    width: 40px;
-    height: 40px;
-    min-width: 40px;
-    min-height: 40px;
-  }
-}
-
-.AdminTaskManagement-icon-btn:active {
-  background: #f5f5f5;
-  transform: scale(0.95);
+.AdminTaskManagement-icon-btn:hover {
+  transform: translateY(-2px) rotate(5deg);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .AdminTaskManagement-btn-notifications {
   position: relative;
+  align-self: flex-start;
+}
+
+@media (min-width: 480px) {
+  .AdminTaskManagement-btn-notifications {
+    align-self: auto;
+  }
 }
 
 .AdminTaskManagement-notification-badge {
   position: absolute;
-  top: -2px;
-  right: -2px;
-  background: #dc3545;
-  color: white;
+  top: -4px;
+  right: -4px;
+  background: linear-gradient(135deg, var(--danger), #c62828);
+  color: var(--white);
   border-radius: 50%;
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   font-size: 11px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid white;
+  border: 2px solid var(--white);
+  font-weight: 700;
+  animation: pulse 2s infinite;
 }
 
-/* Stats Grid - Enhanced for Mobile */
+/* ===== STATS GRID ===== */
 .AdminTaskManagement-stats-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
   margin-bottom: 20px;
+  animation: fadeIn 0.5s ease 0.1s both;
 }
 
 @media (min-width: 640px) {
+  .AdminTaskManagement-stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
   .AdminTaskManagement-stats-grid {
     grid-template-columns: repeat(6, 1fr);
   }
 }
 
 .AdminTaskManagement-stat-card {
-  background: white;
+  background: var(--white);
   padding: 16px 12px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  border: 1px solid #e0e0e0;
-  border-left: 4px solid #1976d2;
-  transition: all 0.3s ease;
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--gray-200);
+  border-left: 4px solid var(--primary);
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+  animation: scaleIn 0.3s ease;
 }
 
-.AdminTaskManagement-stat-card:active {
-  transform: scale(0.98);
-  background: #f8f9fa;
+.AdminTaskManagement-stat-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100px;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.6s;
+}
+
+.AdminTaskManagement-stat-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: var(--shadow-lg);
+}
+
+.AdminTaskManagement-stat-card:hover::after {
+  transform: translateX(100%);
 }
 
 .AdminTaskManagement-stat-card-content {
@@ -259,16 +445,21 @@
 }
 
 .AdminTaskManagement-stat-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background: #e3f2fd;
-  color: #1976d2;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--primary-light), var(--white));
+  color: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 18px;
   flex-shrink: 0;
+  transition: var(--transition);
+}
+
+.AdminTaskManagement-stat-card:hover .AdminTaskManagement-stat-icon {
+  transform: rotate(6deg);
 }
 
 .AdminTaskManagement-stat-text {
@@ -278,88 +469,115 @@
 
 .AdminTaskManagement-stat-label {
   font-size: 11px;
-  color: #666;
-  font-weight: 500;
+  color: var(--gray-600);
+  font-weight: 600;
   margin-bottom: 4px;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .AdminTaskManagement-stat-value {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 700;
-  color: #333;
+  color: var(--gray-800);
   line-height: 1;
 }
 
-/* Filter Section - Enhanced for Mobile */
+/* ===== FILTER SECTION ===== */
 .AdminTaskManagement-filter-section {
-  background: white;
-  padding: 16px;
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  background: var(--white);
+  padding: 20px;
+  border-radius: var(--border-radius-xl);
+  box-shadow: var(--shadow-md);
   margin-bottom: 20px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--gray-200);
+  animation: slideIn 0.5s ease 0.2s both;
+  transition: var(--transition);
+}
+
+.AdminTaskManagement-filter-section:hover {
+  box-shadow: var(--shadow-lg);
 }
 
 .AdminTaskManagement-filter-stack {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
 }
 
 .AdminTaskManagement-filter-search-row {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
+  width: 100%;
 }
 
 @media (min-width: 640px) {
   .AdminTaskManagement-filter-search-row {
     flex-direction: row;
+    align-items: center;
   }
 }
 
 .AdminTaskManagement-search-input-container {
-  flex: 1;
   position: relative;
   width: 100%;
+  flex: 1;
 }
 
 .AdminTaskManagement-search-icon {
   position: absolute;
-  left: 14px;
+  left: 16px;
   top: 50%;
   transform: translateY(-50%);
-  color: #666;
+  color: var(--gray-500);
   font-size: 16px;
-  pointer-events: none;
+  z-index: 1;
+  transition: var(--transition);
 }
 
 .AdminTaskManagement-search-input {
   width: 100%;
-  padding: 14px 14px 14px 42px;
-  border: 1px solid #ddd;
-  border-radius: 10px;
+  padding: 14px 14px 14px 48px;
+  border: 2px solid var(--gray-200);
+  border-radius: 30px;
   font-size: 15px;
-  background: white;
-  color: #333;
-  transition: border-color 0.2s;
-  min-height: 48px;
-  -webkit-appearance: none;
+  background: var(--white);
+  min-height: 52px;
+  transition: var(--transition);
 }
 
 .AdminTaskManagement-search-input:focus {
   outline: none;
-  border-color: #1976d2;
-  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(25, 118, 210, 0.1);
+  transform: translateY(-2px);
 }
 
-/* Date Range Filters - Enhanced for Mobile */
+.AdminTaskManagement-search-input:focus + .AdminTaskManagement-search-icon {
+  color: var(--primary);
+  transform: translateY(-50%) scale(1.1);
+}
+
+/* ===== DATE RANGE FILTERS ===== */
 .AdminTaskManagement-date-range-filters {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  background: linear-gradient(135deg, var(--gray-100), var(--white));
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid var(--gray-200);
+  width: 100%;
+  transition: var(--transition);
+}
+
+.AdminTaskManagement-date-range-filters:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow-md);
 }
 
 @media (min-width: 640px) {
@@ -376,32 +594,43 @@
 }
 
 .AdminTaskManagement-date-input-container label {
-  font-size: 13px;
-  font-weight: 500;
-  color: #555;
-  margin-left: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-700);
+  margin-left: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
 .AdminTaskManagement-date-input {
-  padding: 12px 14px;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  font-size: 15px;
-  background: white;
+  padding: 12px 16px;
+  border: 2px solid var(--gray-200);
+  border-radius: 30px;
+  font-size: 14px;
+  background: var(--white);
   min-height: 48px;
   width: 100%;
-  -webkit-appearance: none;
+  transition: var(--transition);
 }
 
-/* Filter Grid - Enhanced for Mobile */
+.AdminTaskManagement-date-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(25, 118, 210, 0.1);
+  transform: translateY(-2px);
+}
+
+/* ===== FILTER GRID ===== */
 .AdminTaskManagement-filter-grid {
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
+  width: 100%;
 }
 
 @media (min-width: 640px) {
   .AdminTaskManagement-filter-grid {
+    display: grid;
     grid-template-columns: repeat(2, 1fr);
   }
 }
@@ -420,51 +649,59 @@
 }
 
 .AdminTaskManagement-filter-select-container label {
-  font-size: 13px;
-  font-weight: 500;
-  color: #555;
-  margin-left: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-700);
+  margin-left: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
 .AdminTaskManagement-filter-select {
-  padding: 12px 14px;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  font-size: 15px;
-  background: white;
-  color: #333;
-  cursor: pointer;
+  padding: 12px 16px;
+  border: 2px solid var(--gray-200);
+  border-radius: 30px;
+  font-size: 14px;
+  background: var(--white);
   min-height: 48px;
   width: 100%;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23555' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23495e6b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 14px center;
+  background-position: right 16px center;
   background-size: 16px;
-  padding-right: 44px;
-  -webkit-appearance: none;
+  padding-right: 48px;
   appearance: none;
+  transition: var(--transition);
 }
 
 .AdminTaskManagement-filter-select:focus {
   outline: none;
-  border-color: #1976d2;
-  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(25, 118, 210, 0.1);
+  transform: translateY(-2px);
 }
 
-/* Main Card - Enhanced for Mobile */
+/* ===== MAIN CARD ===== */
 .AdminTaskManagement-card {
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  background: var(--white);
+  border-radius: var(--border-radius-xl);
+  box-shadow: var(--shadow-md);
   margin-bottom: 20px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--gray-200);
   overflow: hidden;
+  width: 100%;
+  animation: slideIn 0.5s ease 0.3s both;
+  transition: var(--transition);
+}
+
+.AdminTaskManagement-card:hover {
+  box-shadow: var(--shadow-lg);
 }
 
 .AdminTaskManagement-card-header {
-  padding: 16px;
-  background: #f8f9fa;
-  border-bottom: 1px solid #e0e0e0;
+  padding: 18px 20px;
+  background: linear-gradient(135deg, var(--gray-100), var(--white));
+  border-bottom: 1px solid var(--gray-200);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -472,53 +709,88 @@
 
 .AdminTaskManagement-card-title {
   font-size: 16px;
-  font-weight: 600;
-  color: #333;
+  font-weight: 700;
+  color: var(--gray-800);
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-/* Table Styles - Enhanced for Mobile */
+.AdminTaskManagement-card-title svg {
+  color: var(--primary);
+  animation: pulse 2s infinite;
+}
+
+/* ===== TABLE STYLES ===== */
 .AdminTaskManagement-table-responsive {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  margin: 0 -1px; /* Prevent border cut-off */
+  width: 100%;
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary) var(--gray-200);
+}
+
+.AdminTaskManagement-table-responsive::-webkit-scrollbar {
+  height: 6px;
+}
+
+.AdminTaskManagement-table-responsive::-webkit-scrollbar-track {
+  background: var(--gray-200);
+  border-radius: 10px;
+}
+
+.AdminTaskManagement-table-responsive::-webkit-scrollbar-thumb {
+  background: var(--primary);
+  border-radius: 10px;
+}
+
+.AdminTaskManagement-table-responsive::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-dark);
 }
 
 .AdminTaskManagement-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
-  min-width: 800px; /* Force horizontal scroll on mobile */
+  font-size: 13px;
+  min-width: 800px;
 }
 
 .AdminTaskManagement-table thead {
-  background: #f8f9fa;
+  background: linear-gradient(135deg, var(--gray-100), var(--gray-200));
 }
 
 .AdminTaskManagement-table th {
   padding: 14px 12px;
   text-align: left;
-  font-weight: 600;
-  color: #555;
-  border-bottom: 2px solid #e0e0e0;
+  font-weight: 700;
+  color: var(--gray-700);
+  border-bottom: 2px solid var(--gray-300);
   white-space: nowrap;
-  font-size: 13px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .AdminTaskManagement-table td {
   padding: 14px 12px;
-  border-bottom: 1px solid #eee;
-  vertical-align: top;
+  border-bottom: 1px solid var(--gray-200);
+  vertical-align: middle;
+  transition: var(--transition);
 }
 
-.AdminTaskManagement-table tr:active {
-  background: #f5f5f5;
+.AdminTaskManagement-table tbody tr {
+  transition: var(--transition);
+  animation: fadeIn 0.3s ease;
+}
+
+.AdminTaskManagement-table tbody tr:hover {
+  background: linear-gradient(135deg, var(--gray-100), var(--white));
+  transform: scale(1.01);
+  box-shadow: var(--shadow-md);
 }
 
 .AdminTaskManagement-task-overdue {
-  background: #fff5f5;
+  background: linear-gradient(135deg, var(--danger-light), #fff5f5);
 }
 
 .AdminTaskManagement-task-title-cell {
@@ -529,89 +801,177 @@
 }
 
 .AdminTaskManagement-task-title {
-  font-weight: 600;
-  color: #333;
+  font-weight: 700;
+  color: var(--gray-800);
   font-size: 14px;
 }
 
 .AdminTaskManagement-task-description {
-  font-size: 12px;
-  color: #666;
-  line-height: 1.4;
+  font-size: 11px;
+  color: var(--gray-600);
+  line-height: 1.5;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-/* Status and Priority Chips - Enhanced for Mobile */
-.AdminTaskManagement-status-chip,
-.AdminTaskManagement-priority-chip {
-  display: inline-block;
-  padding: 6px 10px;
-  border-radius: 20px;
+/* ===== STATUS CHIPS ===== */
+.AdminTaskManagement-status-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 30px;
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
   white-space: nowrap;
+  border: 1px solid transparent;
+  transition: var(--transition);
+  animation: scaleIn 0.3s ease;
 }
 
-/* Date Cell - Enhanced for Mobile */
+.AdminTaskManagement-status-chip:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: var(--shadow-md);
+}
+
+.AdminTaskManagement-status-warning {
+  background: linear-gradient(135deg, var(--warning-light), #ffe0b2);
+  color: var(--warning);
+  border-color: var(--warning);
+}
+
+.AdminTaskManagement-status-info {
+  background: linear-gradient(135deg, var(--primary-light), #bbdefb);
+  color: var(--primary-dark);
+  border-color: var(--primary);
+}
+
+.AdminTaskManagement-status-success {
+  background: linear-gradient(135deg, var(--success-light), #c8e6c9);
+  color: var(--success);
+  border-color: var(--success);
+}
+
+.AdminTaskManagement-status-error {
+  background: linear-gradient(135deg, var(--danger-light), #ffcdd2);
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.AdminTaskManagement-priority-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 30px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  background: var(--white);
+  border: 1px solid var(--gray-300);
+  transition: var(--transition);
+}
+
+.AdminTaskManagement-priority-chip:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.AdminTaskManagement-priority-error {
+  color: var(--danger);
+  background: var(--danger-light);
+  border-color: var(--danger);
+}
+
+.AdminTaskManagement-priority-warning {
+  color: var(--warning);
+  background: var(--warning-light);
+  border-color: var(--warning);
+}
+
+.AdminTaskManagement-priority-success {
+  color: var(--success);
+  background: var(--success-light);
+  border-color: var(--success);
+}
+
+/* ===== DUE DATE CELL ===== */
 .AdminTaskManagement-due-date-cell {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  min-width: 100px;
+  min-width: 110px;
+}
+
+.AdminTaskManagement-due-date {
+  font-weight: 600;
+  color: var(--gray-700);
 }
 
 .AdminTaskManagement-due-time {
-  font-size: 11px;
-  color: #666;
+  font-size: 10px;
+  color: var(--gray-500);
+  font-weight: 500;
 }
 
 .AdminTaskManagement-overdue-badge {
-  font-size: 10px;
-  padding: 3px 6px;
-  background: #ffebee;
-  color: #f44336;
-  border-radius: 12px;
+  font-size: 9px;
+  padding: 3px 8px;
+  background: linear-gradient(135deg, var(--danger-light), #ffebee);
+  color: var(--danger);
+  border-radius: 30px;
   display: inline-flex;
   align-items: center;
   gap: 4px;
   white-space: nowrap;
+  font-weight: 700;
+  border: 1px solid var(--danger);
+  animation: pulse 2s infinite;
 }
 
-/* Assigned Users - Enhanced for Mobile */
+/* ===== ASSIGNED USERS ===== */
 .AdminTaskManagement-assigned-users {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  min-width: 180px;
+  min-width: 200px;
 }
 
 .AdminTaskManagement-user-badge {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 8px;
-  background: #f5f5f5;
-  border-radius: 8px;
-  border: 1px solid #eee;
+  gap: 10px;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, var(--gray-100), var(--white));
+  border-radius: 30px;
+  border: 1px solid var(--gray-200);
+  transition: var(--transition);
+  animation: fadeIn 0.3s ease;
+}
+
+.AdminTaskManagement-user-badge:hover {
+  transform: translateX(4px) scale(1.02);
+  border-color: var(--primary);
+  box-shadow: var(--shadow-md);
 }
 
 .AdminTaskManagement-user-initial {
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
-  background: #1976d2;
-  color: white;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: var(--white);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
 }
 
 .AdminTaskManagement-user-info {
@@ -624,22 +984,45 @@
 
 .AdminTaskManagement-user-name {
   font-size: 12px;
-  font-weight: 500;
-  color: #333;
+  font-weight: 700;
+  color: var(--gray-800);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .AdminTaskManagement-user-status {
-  font-size: 10px;
-  padding: 2px 6px;
-  border-radius: 10px;
+  font-size: 9px;
+  padding: 2px 8px;
+  border-radius: 30px;
   display: inline-block;
   width: fit-content;
+  font-weight: 700;
+  text-transform: uppercase;
+  animation: scaleIn 0.3s ease;
 }
 
-/* Action Buttons - Enhanced for Mobile */
+.AdminTaskManagement-user-status-pending {
+  background: var(--warning-light);
+  color: var(--warning);
+}
+
+.AdminTaskManagement-user-status-in-progress {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+}
+
+.AdminTaskManagement-user-status-completed {
+  background: var(--success-light);
+  color: var(--success);
+}
+
+.AdminTaskManagement-user-status-rejected {
+  background: var(--danger-light);
+  color: var(--danger);
+}
+
+/* ===== ACTION BUTTONS ===== */
 .AdminTaskManagement-action-buttons {
   display: flex;
   gap: 6px;
@@ -652,17 +1035,57 @@
   height: 36px;
   min-width: 36px;
   min-height: 36px;
-  border-radius: 8px;
+  border-radius: 10px;
+  background: var(--gray-100);
+  border: 1px solid var(--gray-200);
+  color: var(--gray-600);
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
 }
 
-/* Pagination - Enhanced for Mobile */
+.AdminTaskManagement-icon-btn-sm::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  transform: translate(-50%, -50%);
+  transition: width 0.4s, height 0.4s;
+}
+
+.AdminTaskManagement-icon-btn-sm:hover::before {
+  width: 70px;
+  height: 70px;
+}
+
+.AdminTaskManagement-icon-btn-sm:hover {
+  transform: translateY(-2px) rotate(5deg);
+  box-shadow: var(--shadow-md);
+}
+
+.AdminTaskManagement-icon-btn-sm:hover svg {
+  animation: pulse 1s infinite;
+}
+
+.AdminTaskManagement-btn-danger-sm:hover {
+  background: linear-gradient(135deg, var(--danger), #c62828);
+  color: var(--white);
+  border-color: var(--danger);
+}
+
+/* ===== PAGINATION ===== */
 .AdminTaskManagement-pagination {
-  padding: 16px;
-  border-top: 1px solid #e0e0e0;
-  background: #f8f9fa;
+  padding: 18px 20px;
+  border-top: 1px solid var(--gray-200);
+  background: linear-gradient(135deg, var(--gray-100), var(--white));
   display: flex;
   flex-direction: column;
   gap: 16px;
+  animation: fadeIn 0.5s ease;
 }
 
 @media (min-width: 640px) {
@@ -675,13 +1098,14 @@
 
 .AdminTaskManagement-pagination-info {
   font-size: 13px;
-  color: #666;
+  color: var(--gray-600);
   text-align: center;
+  font-weight: 500;
 }
 
 .AdminTaskManagement-pagination-controls {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   align-items: center;
   flex-wrap: wrap;
   justify-content: center;
@@ -689,29 +1113,87 @@
 
 .AdminTaskManagement-pagination-page {
   font-size: 13px;
-  color: #555;
+  color: var(--gray-700);
   margin: 0 8px;
+  font-weight: 600;
 }
 
 .AdminTaskManagement-pagination-select {
-  padding: 10px 12px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  padding: 10px 14px;
+  border: 2px solid var(--gray-200);
+  border-radius: 30px;
   font-size: 13px;
-  background: white;
-  color: #333;
+  background: var(--white);
+  color: var(--gray-700);
   cursor: pointer;
-  min-height: 40px;
+  min-height: 42px;
+  transition: var(--transition);
 }
 
-/* Modal Overlay - Enhanced for Mobile */
+.AdminTaskManagement-pagination-select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(25, 118, 210, 0.1);
+}
+
+/* ===== EMPTY STATE ===== */
+.AdminTaskManagement-empty-state {
+  text-align: center;
+  padding: 48px 20px;
+  width: 100%;
+  animation: scaleIn 0.5s ease;
+}
+
+.AdminTaskManagement-empty-icon {
+      color: var(--gray-400);
+    margin-bottom: 20px;
+    font-size: 56px;
+    animation: pulse 2s infinite;
+    align-items: center;
+    justify-content: center;
+    display: inline-block;
+}
+
+.AdminTaskManagement-empty-state h4 {
+  margin: 0 0 10px 0;
+  color: var(--gray-700);
+  font-weight: 700;
+  font-size: 20px;
+}
+
+.AdminTaskManagement-empty-state p {
+  margin: 0 0 24px 0;
+  color: var(--gray-500);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ===== LOADING STATE ===== */
+.AdminTaskManagement-loading-container {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.AdminTaskManagement-loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--gray-200);
+  border-top: 4px solid var(--primary);
+  border-right: 4px solid var(--primary);
+  border-radius: 50%;
+  animation: spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+  margin: 0 auto 20px;
+}
+
+/* ===== MODAL STYLES ===== */
 .AdminTaskManagement-modal {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(5px);
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -735,44 +1217,43 @@
 }
 
 .AdminTaskManagement-modal-content {
-  background: white;
-  border-radius: 20px 20px 0 0;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+  background: var(--white);
+  border-radius: 24px 24px 0 0;
   width: 100%;
-  max-width: 100%;
   max-height: 90vh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   transform: translateY(100%);
-  transition: transform 0.3s ease;
+  transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
 @media (min-width: 640px) {
   .AdminTaskManagement-modal-content {
-    border-radius: 16px;
-    max-width: 600px;
-    transform: translateY(0);
+    border-radius: 24px;
+    max-width: 500px;
+    transform: translateY(0) scale(0.9);
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   }
   
   .AdminTaskManagement-modal-large {
-    max-width: 900px;
+    max-width: 800px;
   }
   
   .AdminTaskManagement-modal-medium {
-    max-width: 500px;
+    max-width: 600px;
   }
 }
 
 .AdminTaskManagement-modal-open .AdminTaskManagement-modal-content {
-  transform: translateY(0);
+  transform: translateY(0) scale(1);
 }
 
-/* Modal Header - Enhanced for Mobile */
 .AdminTaskManagement-modal-header {
-  padding: 16px;
-  border-bottom: 1px solid #e0e0e0;
-  background: #f8f9fa;
+  padding: 20px;
+  border-bottom: 1px solid var(--gray-200);
+  background: linear-gradient(135deg, var(--white), var(--gray-100));
+  position: relative;
 }
 
 .AdminTaskManagement-modal-title-row {
@@ -792,38 +1273,38 @@
 
 .AdminTaskManagement-modal-title-icon h3 {
   margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: #333;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--gray-800);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.AdminTaskManagement-modal-subtitle {
-  font-size: 12px;
-  color: #666;
-  margin-top: 4px;
+.AdminTaskManagement-modal-title-icon svg {
+  color: var(--primary);
+  animation: pulse 2s infinite;
 }
 
-/* Modal Body - Enhanced for Mobile */
+.AdminTaskManagement-modal-subtitle {
+  font-size: 12px;
+  color: var(--gray-600);
+  margin-top: 4px;
+  font-weight: 500;
+}
+
 .AdminTaskManagement-modal-body {
-  padding: 16px;
+  padding: 20px;
   overflow-y: auto;
   flex: 1;
   max-height: 60vh;
   -webkit-overflow-scrolling: touch;
 }
 
-.AdminTaskManagement-modal-scroll {
-  max-height: 60vh;
-  overflow-y: auto;
-}
-
-/* Modal Footer - Enhanced for Mobile */
 .AdminTaskManagement-modal-footer {
-  padding: 16px;
-  border-top: 1px solid #e0e0e0;
+  padding: 20px;
+  border-top: 1px solid var(--gray-200);
+  background: var(--gray-100);
   display: flex;
   flex-direction: column-reverse;
   gap: 10px;
@@ -837,49 +1318,40 @@
   }
 }
 
-.AdminTaskManagement-modal-footer .AdminTaskManagement-btn {
-  margin: 0;
-  width: 100%;
-}
-
-@media (min-width: 640px) {
-  .AdminTaskManagement-modal-footer .AdminTaskManagement-btn {
-    width: auto;
-  }
-}
-
-/* Form Styles - Enhanced for Mobile */
+/* ===== FORM STYLES ===== */
 .AdminTaskManagement-form-container {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
 }
 
 .AdminTaskManagement-form-group {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  width: 100%;
 }
 
 .AdminTaskManagement-form-group label {
   font-size: 13px;
-  font-weight: 500;
-  color: #333;
+  font-weight: 600;
+  color: var(--gray-700);
   margin-left: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
 .AdminTaskManagement-form-input,
 .AdminTaskManagement-form-textarea,
 .AdminTaskManagement-form-select {
-  padding: 12px 14px;
-  border: 1px solid #ddd;
-  border-radius: 10px;
+  padding: 14px 16px;
+  border: 2px solid var(--gray-200);
+  border-radius: 16px;
   font-size: 15px;
-  background: white;
-  color: #333;
-  transition: border-color 0.2s;
-  min-height: 48px;
-  -webkit-appearance: none;
+  background: var(--white);
+  width: 100%;
+  min-height: 52px;
+  transition: var(--transition);
 }
 
 .AdminTaskManagement-form-textarea {
@@ -891,78 +1363,140 @@
 .AdminTaskManagement-form-textarea:focus,
 .AdminTaskManagement-form-select:focus {
   outline: none;
-  border-color: #1976d2;
-  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(25, 118, 210, 0.1);
+  transform: translateY(-2px);
 }
 
 .AdminTaskManagement-form-row {
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 16px;
+  width: 100%;
 }
 
 @media (min-width: 640px) {
   .AdminTaskManagement-form-row {
-    grid-template-columns: repeat(2, 1fr);
+    flex-direction: row;
   }
 }
 
 .AdminTaskManagement-form-hint {
   font-size: 11px;
-  color: #666;
+  color: var(--gray-600);
   margin-top: 4px;
 }
 
-/* Multi-Select - Enhanced for Mobile */
+/* ===== ROLE HINT ===== */
+.AdminTaskManagement-role-hint {
+  margin-bottom: 16px;
+}
+
+.AdminTaskManagement-role-hint-admin,
+.AdminTaskManagement-role-hint-employee {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  border-radius: 30px;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+  animation: scaleIn 0.3s ease;
+}
+
+.AdminTaskManagement-role-hint-admin {
+  background: linear-gradient(135deg, var(--primary-light), #bbdefb);
+  color: var(--primary-dark);
+  border: 1px solid var(--primary);
+}
+
+.AdminTaskManagement-role-hint-employee {
+  background: linear-gradient(135deg, var(--secondary-light), #e1bee7);
+  color: var(--secondary);
+  border: 1px solid var(--secondary);
+}
+
+.AdminTaskManagement-role-badge {
+  font-size: 10px;
+  padding: 3px 8px;
+  background: rgba(0,0,0,0.05);
+  border-radius: 20px;
+  margin-left: 6px;
+  font-weight: 500;
+}
+
+/* ===== MULTI-SELECT ===== */
 .AdminTaskManagement-multi-select-container {
-  border: 1px solid #ddd;
-  border-radius: 10px;
+  border: 2px solid var(--gray-200);
+  border-radius: 16px;
   overflow: hidden;
-  background: white;
+  background: var(--white);
+  width: 100%;
+  transition: var(--transition);
+}
+
+.AdminTaskManagement-multi-select-container:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(25, 118, 210, 0.1);
 }
 
 .AdminTaskManagement-select-search-bar {
   position: relative;
-  padding: 8px;
-  border-bottom: 1px solid #e0e0e0;
-  background: #f8f9fa;
+  padding: 12px;
+  border-bottom: 1px solid var(--gray-200);
+  background: var(--gray-100);
 }
 
 .AdminTaskManagement-select-search-icon {
   position: absolute;
-  left: 18px;
+  left: 24px;
   top: 50%;
   transform: translateY(-50%);
-  color: #666;
-  pointer-events: none;
+  color: var(--gray-500);
+  z-index: 1;
 }
 
 .AdminTaskManagement-select-search-input {
   width: 100%;
-  padding: 10px 12px 10px 40px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  padding: 10px 12px 10px 44px;
+  border: 2px solid var(--gray-200);
+  border-radius: 30px;
   font-size: 14px;
-  background: white;
-  min-height: 40px;
-  -webkit-appearance: none;
+  background: var(--white);
+  min-height: 44px;
+  transition: var(--transition);
+}
+
+.AdminTaskManagement-select-search-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
 }
 
 .AdminTaskManagement-select-search-clear {
   position: absolute;
-  right: 18px;
+  right: 22px;
   top: 50%;
   transform: translateY(-50%);
-  background: none;
+  background: var(--gray-300);
   border: none;
-  color: #666;
+  color: var(--gray-600);
   cursor: pointer;
-  padding: 8px;
+  padding: 6px;
   min-width: 32px;
   min-height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 50%;
+  transition: var(--transition);
+}
+
+.AdminTaskManagement-select-search-clear:hover {
+  background: var(--danger);
+  color: var(--white);
+  transform: translateY(-50%) rotate(90deg);
 }
 
 .AdminTaskManagement-multi-select-options {
@@ -973,51 +1507,80 @@
 
 .AdminTaskManagement-multi-select-option {
   padding: 14px 16px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--gray-200);
   display: flex;
   align-items: center;
   gap: 14px;
+  transition: var(--transition);
+  cursor: pointer;
+  animation: fadeIn 0.3s ease;
 }
 
-.AdminTaskManagement-multi-select-option:active {
-  background: #f5f5f5;
+.AdminTaskManagement-multi-select-option:hover {
+  background: linear-gradient(135deg, var(--primary-light), var(--white));
+  transform: translateX(4px);
 }
 
 .AdminTaskManagement-multi-select-option input[type="checkbox"] {
   width: 20px;
   height: 20px;
   flex-shrink: 0;
+  cursor: pointer;
+  accent-color: var(--primary);
+  transition: var(--transition);
+}
+
+.AdminTaskManagement-multi-select-option input[type="checkbox"]:hover {
+  transform: scale(1.1);
 }
 
 .AdminTaskManagement-multi-select-label {
   flex: 1;
   cursor: pointer;
   font-size: 14px;
+  font-weight: 500;
 }
 
-/* User Info Chip - Enhanced for Mobile */
+.AdminTaskManagement-multi-select-empty {
+  padding: 32px;
+  text-align: center;
+  color: var(--gray-500);
+  font-weight: 500;
+}
+
+/* ===== USER INFO CHIP ===== */
 .AdminTaskManagement-user-info-chip {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 8px;
-  background: #f8f9fa;
-  border-radius: 8px;
-  border: 1px solid #e0e0e0;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, var(--gray-100), var(--white));
+  border-radius: 30px;
+  border: 1px solid var(--gray-200);
+  width: 100%;
+  transition: var(--transition);
+  animation: fadeIn 0.3s ease;
+}
+
+.AdminTaskManagement-user-info-chip:hover {
+  transform: translateY(-2px) scale(1.02);
+  border-color: var(--primary);
+  box-shadow: var(--shadow-md);
 }
 
 .AdminTaskManagement-user-info-avatar {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: #1976d2;
-  color: white;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: var(--white);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
 }
 
 .AdminTaskManagement-user-info-details {
@@ -1026,60 +1589,60 @@
 }
 
 .AdminTaskManagement-user-info-name {
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 2px;
+  font-weight: 700;
+  color: var(--gray-800);
   font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .AdminTaskManagement-user-info-meta {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-}
-
-@media (min-width: 640px) {
-  .AdminTaskManagement-user-info-meta {
-    flex-direction: row;
-    gap: 8px;
-  }
-}
-
-.AdminTaskManagement-user-info-meta span {
+  gap: 2px;
   font-size: 10px;
-  color: #666;
-  background: white;
-  padding: 3px 6px;
-  border-radius: 12px;
-  border: 1px solid #e0e0e0;
-  display: inline-block;
-  width: fit-content;
+  color: var(--gray-600);
 }
 
-/* Selected Chips - Enhanced for Mobile */
+/* ===== SELECTED CHIPS ===== */
 .AdminTaskManagement-selected-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: 8px;
+  margin-top: 10px;
 }
 
 .AdminTaskManagement-selected-chip {
-  background: #e3f2fd;
-  color: #1976d2;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 500;
-  border: 1px solid #bbdefb;
+  background: linear-gradient(135deg, var(--primary-light), #bbdefb);
+  color: var(--primary-dark);
+  padding: 5px 12px;
+  border-radius: 30px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid var(--primary);
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  animation: scaleIn 0.3s ease;
+  transition: var(--transition);
 }
 
-/* File Upload - Enhanced for Mobile */
+.AdminTaskManagement-selected-chip:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: var(--shadow-sm);
+}
+
+.AdminTaskManagement-selected-label {
+  font-size: 12px;
+  color: var(--gray-600);
+  font-weight: 500;
+}
+
+/* ===== FILE UPLOAD ===== */
 .AdminTaskManagement-file-upload {
   position: relative;
+  width: 100%;
 }
 
 .AdminTaskManagement-file-upload input[type="file"] {
@@ -1095,250 +1658,55 @@
 
 .AdminTaskManagement-file-upload-hint {
   padding: 16px;
-  border: 2px dashed #ddd;
-  border-radius: 10px;
-  text-align: center;
-  color: #666;
-  font-size: 13px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: #f8f9fa;
-  min-height: 60px;
-}
-
-/* Empty State - Enhanced for Mobile */
-.AdminTaskManagement-empty-state {
-  text-align: center;
-  padding: 32px 16px;
-}
-
-.AdminTaskManagement-empty-icon {
-  color: #bdbdbd;
-  margin-bottom: 16px;
-  font-size: 48px;
-}
-
-.AdminTaskManagement-empty-state h4,
-.AdminTaskManagement-empty-state h5 {
-  margin: 0 0 8px 0;
-  color: #666;
-  font-weight: 600;
-  font-size: 18px;
-}
-
-.AdminTaskManagement-empty-state p {
-  margin: 0 0 20px 0;
-  color: #999;
-  font-size: 14px;
-}
-
-/* Loading State - Enhanced for Mobile */
-.AdminTaskManagement-loading-container {
-  text-align: center;
-  padding: 40px 16px;
-}
-
-.AdminTaskManagement-loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid #1976d2;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin: 0 auto 16px;
-}
-
-/* Auth Error - Enhanced for Mobile */
-.AdminTaskManagement-auth-error {
-  background: white;
+  border: 2px dashed var(--gray-300);
   border-radius: 16px;
-  padding: 24px 16px;
   text-align: center;
-  max-width: 400px;
-  margin: 40px auto;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-
-.AdminTaskManagement-auth-error-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-}
-
-.AdminTaskManagement-auth-error-content svg {
-  color: #f44336;
-}
-
-.AdminTaskManagement-auth-error-text h4 {
-  margin: 0 0 8px 0;
-  color: #f44336;
-  font-size: 18px;
-}
-
-.AdminTaskManagement-auth-error-text p {
-  margin: 0;
-  color: #666;
-  line-height: 1.5;
-  font-size: 14px;
-}
-
-/* Notifications - Enhanced for Mobile */
-.AdminTaskManagement-notifications-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.AdminTaskManagement-notification-item {
-  background: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 12px;
-  padding: 14px;
-  transition: all 0.2s ease;
-}
-
-.AdminTaskManagement-notification-item:active {
-  background: #f5f5f5;
-}
-
-.AdminTaskManagement-notification-unread {
-  background: #f0f8ff;
-  border-left: 4px solid #1976d2;
-}
-
-.AdminTaskManagement-notification-content {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.AdminTaskManagement-notification-title {
-  font-weight: 600;
-  color: #333;
-  font-size: 14px;
-}
-
-.AdminTaskManagement-notification-message {
-  color: #666;
+  color: var(--gray-600);
   font-size: 13px;
-  line-height: 1.4;
-}
-
-.AdminTaskManagement-notification-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 8px;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.AdminTaskManagement-notification-date {
-  font-size: 11px;
-  color: #999;
-}
-
-/* User Statuses - Enhanced for Mobile */
-.AdminTaskManagement-user-statuses {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.AdminTaskManagement-user-status-item {
-  background: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 12px;
-  padding: 14px;
-}
-
-.AdminTaskManagement-user-status-header {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-bottom: 8px;
-}
-
-@media (min-width: 640px) {
-  .AdminTaskManagement-user-status-header {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-  }
-}
-
-.AdminTaskManagement-user-status-user {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex: 1;
-  min-width: 0;
-}
-
-.AdminTaskManagement-user-status-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: #1976d2;
-  color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 15px;
-  font-weight: 600;
-  flex-shrink: 0;
+  gap: 8px;
+  background: linear-gradient(135deg, var(--gray-100), var(--white));
+  min-height: 60px;
+  width: 100%;
+  transition: var(--transition);
 }
 
-.AdminTaskManagement-user-status-info {
-  flex: 1;
-  min-width: 0;
+.AdminTaskManagement-file-upload:hover .AdminTaskManagement-file-upload-hint {
+  border-color: var(--primary);
+  background: linear-gradient(135deg, var(--primary-light), var(--white));
+  color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
-.AdminTaskManagement-user-status-name {
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 4px;
-  font-size: 14px;
-}
-
-.AdminTaskManagement-user-status-details {
-  font-size: 11px;
-  color: #666;
-  line-height: 1.4;
-}
-
-.AdminTaskManagement-user-status-updated {
-  font-size: 10px;
-  color: #999;
-  margin-top: 6px;
-}
-
-/* Image Upload - Enhanced for Mobile */
+/* ===== IMAGE UPLOAD ===== */
 .AdminTaskManagement-image-upload-section {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .AdminTaskManagement-image-upload-area {
-  border: 2px dashed #ddd;
-  border-radius: 12px;
+  border: 2px dashed var(--gray-300);
+  border-radius: 16px;
   padding: 24px 16px;
   text-align: center;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--transition);
   min-height: 120px;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: linear-gradient(135deg, var(--gray-100), var(--white));
 }
 
-.AdminTaskManagement-image-upload-area:active {
-  border-color: #1976d2;
-  background: #f8f9fa;
+.AdminTaskManagement-image-upload-area:hover {
+  border-color: var(--primary);
+  background: linear-gradient(135deg, var(--primary-light), var(--white));
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 .AdminTaskManagement-upload-content {
@@ -1349,63 +1717,80 @@
 }
 
 .AdminTaskManagement-upload-icon {
-  color: #1976d2;
-  font-size: 24px;
+  color: var(--primary);
+  font-size: 28px;
+  animation: pulse 2s infinite;
 }
 
 .AdminTaskManagement-upload-text {
-  font-weight: 500;
-  color: #333;
+  font-weight: 600;
+  color: var(--gray-700);
   font-size: 14px;
 }
 
 .AdminTaskManagement-upload-subtext {
   font-size: 11px;
-  color: #666;
+  color: var(--gray-500);
 }
 
 .AdminTaskManagement-image-preview-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 8px;
-  margin-top: 8px;
+  margin-top: 10px;
+}
+
+@media (min-width: 480px) {
+  .AdminTaskManagement-image-preview-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 .AdminTaskManagement-image-preview-item {
   position: relative;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
-  border: 1px solid #e0e0e0;
+  border: 2px solid var(--gray-200);
   aspect-ratio: 1;
+  transition: var(--transition);
+}
+
+.AdminTaskManagement-image-preview-item:hover {
+  transform: scale(1.05);
+  border-color: var(--primary);
+  box-shadow: var(--shadow-md);
 }
 
 .AdminTaskManagement-image-preview-item img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;
 }
 
 .AdminTaskManagement-remove-image-btn {
   position: absolute;
   top: 4px;
   right: 4px;
-  background: #f44336;
-  color: white;
+  background: linear-gradient(135deg, var(--danger), #c62828);
+  color: var(--white);
   border: none;
   border-radius: 50%;
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  padding: 0;
   font-size: 12px;
-  z-index: 2;
+  cursor: pointer;
+  transition: var(--transition);
+  border: 2px solid var(--white);
 }
 
-/* Remarks - Enhanced for Mobile */
+.AdminTaskManagement-remove-image-btn:hover {
+  transform: rotate(90deg) scale(1.1);
+}
+
+/* ===== REMARKS ===== */
 .AdminTaskManagement-remarks-container {
   display: flex;
   flex-direction: column;
@@ -1414,20 +1799,33 @@
 
 .AdminTaskManagement-remark-textarea {
   width: 100%;
-  padding: 14px;
-  border: 1px solid #ddd;
-  border-radius: 10px;
+  padding: 16px;
+  border: 2px solid var(--gray-200);
+  border-radius: 16px;
   font-size: 14px;
   margin-bottom: 12px;
   min-height: 100px;
   resize: vertical;
-  -webkit-appearance: none;
+  transition: var(--transition);
+}
+
+.AdminTaskManagement-remark-textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(25, 118, 210, 0.1);
 }
 
 .AdminTaskManagement-remarks-history {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
+}
+
+.AdminTaskManagement-remarks-history h4 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gray-700);
+  margin-bottom: 8px;
 }
 
 .AdminTaskManagement-remarks-list {
@@ -1437,10 +1835,18 @@
 }
 
 .AdminTaskManagement-remark-item {
-  background: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 12px;
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: 16px;
   padding: 16px;
+  transition: var(--transition);
+  animation: fadeIn 0.3s ease;
+}
+
+.AdminTaskManagement-remark-item:hover {
+  transform: translateY(-2px) scale(1.01);
+  border-color: var(--primary);
+  box-shadow: var(--shadow-md);
 }
 
 .AdminTaskManagement-remark-header {
@@ -1467,16 +1873,16 @@
 }
 
 .AdminTaskManagement-remark-avatar {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  background: #1976d2;
-  color: white;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: var(--white);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   flex-shrink: 0;
 }
 
@@ -1486,38 +1892,56 @@
 }
 
 .AdminTaskManagement-remark-user-name {
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 2px;
+  font-weight: 700;
+  color: var(--gray-800);
   font-size: 14px;
+  margin-bottom: 2px;
 }
 
 .AdminTaskManagement-remark-user-details {
-  font-size: 11px;
-  color: #666;
+  font-size: 10px;
+  color: var(--gray-600);
 }
 
 .AdminTaskManagement-remark-text {
-  color: #333;
-  font-size: 14px;
+  color: var(--gray-700);
+  font-size: 13px;
   line-height: 1.5;
   margin-bottom: 12px;
+}
+
+.AdminTaskManagement-remark-image-container {
+  margin-top: 8px;
+}
+
+.AdminTaskManagement-remark-image-container label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gray-600);
+  margin-bottom: 4px;
+  display: block;
 }
 
 .AdminTaskManagement-remark-image-preview {
   position: relative;
   max-width: 100%;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--gray-200);
   aspect-ratio: 16/9;
+  transition: var(--transition);
+}
+
+.AdminTaskManagement-remark-image-preview:hover {
+  transform: scale(1.02);
+  border-color: var(--primary);
+  box-shadow: var(--shadow-md);
 }
 
 .AdminTaskManagement-remark-image-preview img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;
 }
 
 .AdminTaskManagement-zoom-image-btn {
@@ -1525,43 +1949,38 @@
   bottom: 8px;
   right: 8px;
   background: rgba(0, 0, 0, 0.6);
-  color: white;
+  backdrop-filter: blur(4px);
+  color: var(--white);
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   width: 32px;
   height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  padding: 0;
-  font-size: 14px;
+  transition: var(--transition);
 }
 
-/* Zoom Modal - Enhanced for Mobile */
+.AdminTaskManagement-zoom-image-btn:hover {
+  background: var(--primary);
+  transform: scale(1.1);
+}
+
+/* ===== ZOOM MODAL ===== */
 .AdminTaskManagement-modal-zoom {
-  background: rgba(0, 0, 0, 0.9);
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(10px);
   align-items: center;
-  padding: 0;
-}
-
-.AdminTaskManagement-modal-zoom .AdminTaskManagement-modal-content {
-  background: transparent;
-  box-shadow: none;
-  max-width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 0;
 }
 
 .AdminTaskManagement-zoom-close-btn {
   position: absolute;
   top: 20px;
   right: 20px;
-  background: rgba(0, 0, 0, 0.6);
-  color: white;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(4px);
+  color: var(--white);
   border: none;
   border-radius: 50%;
   width: 48px;
@@ -1569,20 +1988,171 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  padding: 0;
-  z-index: 1001;
   font-size: 20px;
+  cursor: pointer;
+  z-index: 1001;
+  transition: var(--transition);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.AdminTaskManagement-zoom-close-btn:hover {
+  background: var(--danger);
+  transform: rotate(90deg) scale(1.1);
 }
 
 .AdminTaskManagement-zoomed-image {
-  max-width: 100%;
+  max-width: 95%;
   max-height: 90vh;
   object-fit: contain;
-  border-radius: 0;
+  border-radius: 16px;
+  animation: scaleIn 0.3s ease;
+  box-shadow: var(--shadow-xl);
 }
 
-/* Activity Logs - Enhanced for Mobile */
+/* ===== NOTIFICATIONS ===== */
+.AdminTaskManagement-notifications-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.AdminTaskManagement-notification-item {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: 16px;
+  padding: 16px;
+  transition: var(--transition);
+  animation: slideIn 0.3s ease;
+}
+
+.AdminTaskManagement-notification-item:hover {
+  transform: translateX(4px) translateY(-2px);
+  border-color: var(--primary);
+  box-shadow: var(--shadow-md);
+}
+
+.AdminTaskManagement-notification-unread {
+  background: linear-gradient(135deg, var(--primary-light), var(--white));
+  border-left: 4px solid var(--primary);
+}
+
+.AdminTaskManagement-notification-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.AdminTaskManagement-notification-title {
+  font-weight: 700;
+  color: var(--gray-800);
+  font-size: 14px;
+}
+
+.AdminTaskManagement-notification-message {
+  color: var(--gray-600);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.AdminTaskManagement-notification-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.AdminTaskManagement-notification-date {
+  font-size: 10px;
+  color: var(--gray-500);
+  font-weight: 500;
+}
+
+/* ===== USER STATUSES ===== */
+.AdminTaskManagement-user-statuses {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.AdminTaskManagement-user-status-item {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: 16px;
+  padding: 16px;
+  transition: var(--transition);
+  animation: fadeIn 0.3s ease;
+}
+
+.AdminTaskManagement-user-status-item:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary);
+  box-shadow: var(--shadow-md);
+}
+
+.AdminTaskManagement-user-status-header {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+@media (min-width: 640px) {
+  .AdminTaskManagement-user-status-header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+
+.AdminTaskManagement-user-status-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.AdminTaskManagement-user-status-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.AdminTaskManagement-user-status-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.AdminTaskManagement-user-status-name {
+  font-weight: 700;
+  color: var(--gray-800);
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.AdminTaskManagement-user-status-details {
+  font-size: 11px;
+  color: var(--gray-600);
+  line-height: 1.4;
+}
+
+.AdminTaskManagement-user-status-updated {
+  font-size: 10px;
+  color: var(--gray-500);
+  margin-top: 6px;
+}
+
+/* ===== ACTIVITY LOGS ===== */
 .AdminTaskManagement-activity-logs {
   display: flex;
   flex-direction: column;
@@ -1590,10 +2160,18 @@
 }
 
 .AdminTaskManagement-activity-log {
-  background: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 12px;
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: 16px;
   padding: 16px;
+  transition: var(--transition);
+  animation: slideIn 0.3s ease;
+}
+
+.AdminTaskManagement-activity-log:hover {
+  transform: translateX(4px) translateY(-2px);
+  border-color: var(--primary);
+  box-shadow: var(--shadow-md);
 }
 
 .AdminTaskManagement-activity-header {
@@ -1618,16 +2196,16 @@
 }
 
 .AdminTaskManagement-activity-avatar {
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
-  background: #1976d2;
-  color: white;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: var(--white);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   flex-shrink: 0;
 }
 
@@ -1638,23 +2216,23 @@
 }
 
 .AdminTaskManagement-activity-user-name {
-  font-weight: 600;
-  color: #333;
-  font-size: 14px;
+  font-weight: 700;
+  color: var(--gray-800);
+  font-size: 13px;
 }
 
 .AdminTaskManagement-activity-user-role {
-  font-size: 11px;
-  color: #666;
+  font-size: 10px;
+  color: var(--gray-600);
 }
 
 .AdminTaskManagement-activity-date {
-  font-size: 11px;
-  color: #666;
+  font-size: 10px;
+  color: var(--gray-500);
 }
 
 .AdminTaskManagement-activity-description {
-  color: #333;
+  color: var(--gray-700);
   font-size: 13px;
   line-height: 1.5;
   margin-bottom: 10px;
@@ -1667,34 +2245,43 @@
 }
 
 .AdminTaskManagement-activity-tag {
-  background: #e3f2fd;
-  color: #1976d2;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 10px;
-  font-weight: 500;
-  border: 1px solid #bbdefb;
+  background: linear-gradient(135deg, var(--primary-light), #bbdefb);
+  color: var(--primary-dark);
+  padding: 4px 10px;
+  border-radius: 30px;
+  font-size: 9px;
+  font-weight: 700;
+  border: 1px solid var(--primary);
 }
 
-/* Snackbar - Enhanced for Mobile */
+.AdminTaskManagement-activity-ip {
+  font-size: 9px;
+  color: var(--gray-500);
+  background: var(--gray-100);
+  padding: 4px 10px;
+  border-radius: 30px;
+  border: 1px solid var(--gray-200);
+}
+
+/* ===== SNACKBAR ===== */
 .AdminTaskManagement-snackbar {
   position: fixed;
-  bottom: 16px;
+  bottom: 20px;
   left: 16px;
   right: 16px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-  padding: 14px 16px;
+  background: var(--white);
+  border-radius: 30px;
+  box-shadow: var(--shadow-xl);
+  padding: 16px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  transform: translateY(100%);
+  transform: translateY(150%);
   opacity: 0;
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   z-index: 1100;
-  border-left: 4px solid #1976d2;
+  border-left: 6px solid var(--primary);
   max-width: 100%;
 }
 
@@ -1703,7 +2290,7 @@
     left: auto;
     right: 24px;
     bottom: 24px;
-    min-width: 300px;
+    min-width: 320px;
     max-width: 400px;
   }
 }
@@ -1714,35 +2301,36 @@
 }
 
 .AdminTaskManagement-snackbar-success {
-  border-left-color: #4caf50;
+  border-left-color: var(--success);
 }
 
 .AdminTaskManagement-snackbar-error {
-  border-left-color: #f44336;
+  border-left-color: var(--danger);
 }
 
 .AdminTaskManagement-snackbar-warning {
-  border-left-color: #ff9800;
+  border-left-color: var(--warning);
 }
 
 .AdminTaskManagement-snackbar-content {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   flex: 1;
 }
 
 .AdminTaskManagement-snackbar-message {
   font-size: 13px;
-  color: #333;
+  color: var(--gray-800);
   flex: 1;
-  line-height: 1.4;
+  line-height: 1.5;
+  font-weight: 600;
 }
 
 .AdminTaskManagement-snackbar-close {
-  background: none;
+  background: var(--gray-100);
   border: none;
-  color: #666;
+  color: var(--gray-600);
   cursor: pointer;
   padding: 8px;
   min-width: 40px;
@@ -1750,14 +2338,58 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
+  border-radius: 50%;
+  transition: var(--transition);
+  border: 1px solid var(--gray-200);
 }
 
-.AdminTaskManagement-snackbar-close:active {
-  background: #f5f5f5;
+.AdminTaskManagement-snackbar-close:hover {
+  background: var(--danger);
+  color: var(--white);
+  transform: rotate(90deg);
 }
 
-/* Touch-friendly improvements */
+/* ===== AUTH ERROR ===== */
+.AdminTaskManagement-auth-error {
+  background: var(--white);
+  border-radius: 24px;
+  padding: 32px 24px;
+  text-align: center;
+  max-width: 90%;
+  margin: 60px auto;
+  box-shadow: var(--shadow-xl);
+  border: 1px solid var(--danger-light);
+  animation: scaleIn 0.5s ease;
+}
+
+.AdminTaskManagement-auth-error-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.AdminTaskManagement-auth-error-content svg {
+  color: var(--danger);
+  font-size: 48px;
+  animation: pulse 2s infinite;
+}
+
+.AdminTaskManagement-auth-error-text h4 {
+  margin: 0 0 8px 0;
+  color: var(--danger);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.AdminTaskManagement-auth-error-text p {
+  margin: 0;
+  color: var(--gray-600);
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+/* ===== MOBILE OPTIMIZATIONS ===== */
 @media (max-width: 640px) {
   /* Increase touch targets */
   .AdminTaskManagement-checkbox-option input[type="checkbox"],
@@ -1790,9 +2422,82 @@
   .AdminTaskManagement-filter-select {
     font-size: 16px; /* Prevents zoom on focus in iOS */
   }
+  
+  /* Adjust spacing */
+  .AdminTaskManagement-header {
+    padding: 16px;
+  }
+  
+  .AdminTaskManagement-filter-section {
+    padding: 16px;
+  }
+  
+  .AdminTaskManagement-card-header {
+    padding: 16px;
+  }
+  
+  .AdminTaskManagement-modal-header {
+    padding: 16px;
+  }
+  
+  .AdminTaskManagement-modal-body {
+    padding: 16px;
+  }
+  
+  .AdminTaskManagement-modal-footer {
+    padding: 16px;
+  }
+  
+  /* Better button layout */
+  .AdminTaskManagement-header-actions {
+    gap: 8px;
+  }
+  
+  .AdminTaskManagement-btn {
+    padding: 10px 16px;
+  }
+  
+  /* Stats cards */
+  .AdminTaskManagement-stat-card {
+    padding: 14px 10px;
+  }
+  
+  .AdminTaskManagement-stat-icon {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .AdminTaskManagement-stat-value {
+    font-size: 20px;
+  }
 }
 
-/* Landscape mode optimizations */
+/* ===== SMALL MOBILE DEVICES ===== */
+@media (max-width: 360px) {
+  .AdminTaskManagement-stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .AdminTaskManagement-header-title h2 {
+    font-size: 20px;
+  }
+  
+  .AdminTaskManagement-btn {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+  
+  .AdminTaskManagement-icon-btn {
+    width: 44px;
+    height: 44px;
+  }
+  
+  .AdminTaskManagement-modal-title-icon h3 {
+    font-size: 16px;
+  }
+}
+
+/* ===== LANDSCAPE MODE ===== */
 @media (max-width: 896px) and (orientation: landscape) {
   .AdminTaskManagement-modal-content {
     max-height: 85vh;
@@ -1807,29 +2512,46 @@
   }
   
   .AdminTaskManagement-form-textarea {
-    min-height: 60px;
+    min-height: 80px;
+  }
+  
+  .AdminTaskManagement-stats-grid {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
-/* Print Styles - Keep as is */
+/* ===== PRINT STYLES ===== */
 @media print {
   .AdminTaskManagement-header-actions,
   .AdminTaskManagement-filter-section,
   .AdminTaskManagement-action-buttons,
   .AdminTaskManagement-modal,
-  .AdminTaskManagement-snackbar {
+  .AdminTaskManagement-snackbar,
+  .AdminTaskManagement-btn,
+  .AdminTaskManagement-icon-btn {
     display: none !important;
   }
   
   .AdminTaskManagement-table {
     border-collapse: collapse;
+    width: 100%;
   }
   
   .AdminTaskManagement-table th,
   .AdminTaskManagement-table td {
-    border: 1px solid #ddd;
+    border: 1px solid #000;
     padding: 8px;
     background: white !important;
     color: black !important;
+  }
+  
+  .AdminTaskManagement-container {
+    background: white;
+    padding: 20px;
+  }
+  
+  .AdminTaskManagement-header {
+    box-shadow: none;
+    border: 1px solid #000;
   }
 }
