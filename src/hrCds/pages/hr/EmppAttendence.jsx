@@ -4,6 +4,7 @@ import './employee-attendance.css';
 import * as XLSX from 'xlsx';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import CIISLoader from '../../../Loader/CIISLoader'; // ✅ Import CIISLoader
 
 import {
   FiCalendar,
@@ -994,6 +995,7 @@ const calculateHoursWorked = (inTime, outTime) => {
 
 // Main Component
 const EmployeeAttendance = () => {
+  const [pageLoading, setPageLoading] = useState(true); // ✅ Page loading state
   const [records, setRecords] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -1076,6 +1078,7 @@ const EmployeeAttendance = () => {
   // ============================================
   useEffect(() => {
     const initializeData = async () => {
+      setPageLoading(true);
       setLoading(true);
       try {
         await fetchCurrentUserAndCompany();
@@ -1085,6 +1088,7 @@ const EmployeeAttendance = () => {
         setTimeout(() => {
           setLoading(false);
           setInitialLoadComplete(true);
+          setPageLoading(false); // ✅ Stop page loading
         }, 500);
       }
     };
@@ -2287,6 +2291,12 @@ const fetchAttendanceDataRange = async (startDate, endDate) => {
     );
   };
 
+  // ✅ Show CIISLoader while page is loading
+  if (pageLoading) {
+    return <CIISLoader />;
+  }
+
+  // Loading State - FIXED to show properly and then hide
   if (loading && !initialLoadComplete) {
     return (
       <div className="loading-container">
