@@ -1656,7 +1656,7 @@ const AdminTaskManagement = () => {
               <option value="">All Users</option>
               {filteredUsers.map(user => (
                 <option key={user.id || user._id} value={user.id || user._id}>
-                  {user.name} - {getUserDepartmentDisplay(user)}
+                  {user.name} 
                 </option>
               ))}
             </select>
@@ -1680,16 +1680,47 @@ const AdminTaskManagement = () => {
   );
 
   // Stats Cards with Filtered Data
-  const renderFilteredStatsCards = () => (
+  // Stats Cards with Filtered Data - SHOW ONLY CARDS WITH VALUE > 0 (TOTAL TASKS ALSO FILTERED)
+const renderFilteredStatsCards = () => {
+  // Create stats array with all cards
+  const statsCards = [
+    { label: "Total Tasks", value: filteredStats.total, color: "primary", icon: FiCalendar },
+    { label: "Pending", value: filteredStats.pending, color: "warning", icon: FiClock },
+    { label: "In Progress", value: filteredStats.inProgress, color: "info", icon: FiAlertCircle },
+    { label: "Completed", value: filteredStats.completed, color: "success", icon: FiCheckCircle },
+    { label: "Rejected", value: filteredStats.rejected, color: "error", icon: FiXCircle },
+    { label: "Overdue", value: filteredStats.overdue, color: "error", icon: FiAlertTriangle }
+  ];
+
+  // Filter out cards with value 0
+  const visibleCards = statsCards.filter(stat => stat.value > 0);
+
+  // If no cards to show, show empty message
+  if (visibleCards.length === 0) {
+    return (
+      <div className="AdminTaskManagement-stats-grid">
+        <div className="AdminTaskManagement-no-stats-message">
+          <FiAlertCircle size={24} />
+          <p>No task statistics available</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
     <div className="AdminTaskManagement-stats-grid">
-      <AdminTaskManagementStatCard label="Total Tasks" value={filteredStats.total} color="primary" icon={FiCalendar} />
-      <AdminTaskManagementStatCard label="Pending" value={filteredStats.pending} color="warning" icon={FiClock} />
-      <AdminTaskManagementStatCard label="In Progress" value={filteredStats.inProgress} color="info" icon={FiAlertCircle} />
-      <AdminTaskManagementStatCard label="Completed" value={filteredStats.completed} color="success" icon={FiCheckCircle} />
-      <AdminTaskManagementStatCard label="Rejected" value={filteredStats.rejected} color="error" icon={FiXCircle} />
-      <AdminTaskManagementStatCard label="Overdue" value={filteredStats.overdue} color="error" icon={FiAlertTriangle} />
+      {visibleCards.map((stat, index) => (
+        <AdminTaskManagementStatCard
+          key={index}
+          label={stat.label}
+          value={stat.value}
+          color={stat.color}
+          icon={stat.icon}
+        />
+      ))}
     </div>
   );
+};
 
   // Enhanced Remarks Dialog with Image Upload
   const renderRemarksDialog = () => (

@@ -123,6 +123,8 @@
 
 .MyLeaves-user-tag svg {
   color: #667eea;
+      height: 10px;
+    width: 10px;
 }
 
 .MyLeaves-loading-dot {
@@ -764,6 +766,7 @@
 }
 
 .MyLeaves-user-role-badge {
+  display: none;
   background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
   color: #667eea;
   padding: 4px 12px;
@@ -1580,7 +1583,7 @@
   }
   
   .MyLeaves-stats-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
   
   .MyLeaves-info-row {
@@ -1635,8 +1638,9 @@
   }
   
   .MyLeaves-status-filters {
-    flex-wrap: wrap;
-  }
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+    }
   
   .MyLeaves-notification {
     left: 12px;

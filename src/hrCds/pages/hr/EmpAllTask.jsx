@@ -39,6 +39,9 @@ const TaskDetails = () => {
   const [usersLoading, setUsersLoading] = useState(false);
   const [error, setError] = useState("");
   
+  // Department mapping state
+  const [departmentMap, setDepartmentMap] = useState({});
+  
   // Activity Log states
   const [activityLogs, setActivityLogs] = useState([]);
   const [loadingActivity, setLoadingActivity] = useState(false);
@@ -76,13 +79,55 @@ const TaskDetails = () => {
     return company;
   };
 
-  // Helper function to get department name
+  // FIXED: Helper function to get department name from ID or object
   const getDepartmentName = (department) => {
     if (!department) return 'N/A';
+    
+    // If department is an object with name property
     if (typeof department === 'object') {
-      return department.name || department._id || 'N/A';
+      return department.name || department.departmentName || department._id || 'N/A';
     }
-    return department;
+    
+    // If department is a string (ID), try to get from departmentMap
+    if (typeof department === 'string') {
+      // Check if we have this department in our map
+      if (departmentMap[department]) {
+        return departmentMap[department];
+      }
+      
+      // Return a formatted version of the ID as fallback
+      return `Dept-${department.substring(0, 6)}`;
+    }
+    
+    return String(department);
+  };
+
+  // FIXED: Fetch departments to create mapping
+  const fetchDepartments = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const config = {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      };
+
+      const response = await axios.get('/departments', config);
+      
+      if (response.data && response.data.departments) {
+        const map = {};
+        response.data.departments.forEach(dept => {
+          map[dept._id] = dept.name;
+        });
+        setDepartmentMap(map);
+        console.log("✅ Department map created:", map);
+      }
+    } catch (err) {
+      console.error("❌ Error fetching departments:", err);
+    }
   };
 
   const isSameDay = (d1, d2) => {
@@ -140,7 +185,7 @@ const TaskDetails = () => {
     activeEmployees: 0
   });
 
-  // ✅ FIXED: User authentication function with proper error handling
+  // ✅ User authentication function with proper error handling
   useEffect(() => {
     const fetchUserData = () => {
       try {
@@ -211,6 +256,7 @@ const TaskDetails = () => {
     };
 
     fetchUserData();
+    fetchDepartments(); // Fetch departments on component mount
   }, []);
 
   // Calculate overall stats from all users
@@ -338,7 +384,12 @@ const TaskDetails = () => {
           response = await axios.get(apiUrl, config);
         } catch (apiError) {
           console.log("Primary endpoint failed, trying fallback...");
-          throw apiError;
+          // Try alternative endpoint
+          try {
+            response = await axios.get('/task/users-with-counts', config);
+          } catch (fallbackError) {
+            throw apiError;
+          }
         }
       } else {
         // If no current user, try general endpoint
@@ -1184,7 +1235,7 @@ const TaskDetails = () => {
     );
   };
 
-  // Render enhanced user card
+  // FIXED: Render enhanced user card with proper stats display
   const renderEnhancedUserCard = (user) => {
     const isSelected = selectedUserId === (user._id || user.id);
     const userStats = getUserTaskStats(user);
@@ -1225,29 +1276,30 @@ const TaskDetails = () => {
               <div className="TaskDetails-user-email">
                 {user.email || "No Email"}
               </div>
-              {!isOwner() && user.department && (
-                <div className="TaskDetails-user-department" style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.2rem' }}>
-                  Dept: {getDepartmentName(user.department)}
+              {user.department && (
+                <div className="TaskDetails-user-department" style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.2rem',display:'flex' , gap:'4px' }}>
+                  <FiUsers size={10} /> Dept: {getDepartmentName(user.department)}
                 </div>
               )}
             </div>
           </div>
 
+          {/* FIXED: Stats Box - This was not showing */}
           <div className="TaskDetails-stats-box">
             <div className="TaskDetails-stats-row">
-              <div>
+              <div className="TaskDetails-stat-item">
                 <div className="TaskDetails-stat-number TaskDetails-total-stat">
                   {userStats.total || 0}
                 </div>
                 <div className="TaskDetails-stat-label">TOTAL</div>
               </div>
-              <div>
+              <div className="TaskDetails-stat-item">
                 <div className="TaskDetails-stat-number TaskDetails-completed-stat">
                   {userStats.completed || 0}
                 </div>
                 <div className="TaskDetails-stat-label">DONE</div>
               </div>
-              <div>
+              <div className="TaskDetails-stat-item">
                 <div
                   className="TaskDetails-stat-number TaskDetails-rate-stat"
                   style={{
@@ -1878,7 +1930,7 @@ const TaskDetails = () => {
                   </span>
                 </p>
                 {!isOwner() && currentUser?.department && (
-                  <p style={{ fontSize: '0.9rem', color: '#6b7280' }}>
+                  <p style={{ fontSize: '0.9rem', color: '#6b7280',display:'flex',gap:'3px' }}>
                     <FiUsers size={14} /> Department: {getDepartmentName(currentUser.department)}
                   </p>
                 )}

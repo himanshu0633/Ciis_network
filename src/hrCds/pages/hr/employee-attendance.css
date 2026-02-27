@@ -1065,7 +1065,7 @@
 
 .status-present {
   background: var(--success);
-  color: white;
+  color: black;
   font-weight: 700;
 }
 
@@ -1083,7 +1083,7 @@
 
 .status-absent {
   background: var(--danger);
-  color: white;
+  color: #000;
   font-weight: 700;
 }
 
@@ -1973,10 +1973,12 @@ textarea.form-input {
   /* Status colors - darker for better visibility */
   .status-present {
     background: var(--success);
+    color: #000;
   }
   
   .status-late {
     background: var(--warning);
+    color: #000;
   }
   
   .status-halfday {
@@ -1985,6 +1987,7 @@ textarea.form-input {
   
   .status-absent {
     background: var(--danger);
+    color: #000;
   }
 
   /* Hide all other elements */
@@ -2035,7 +2038,7 @@ textarea.form-input {
 
   .date-header td.col-employee,
   .date-header td.col-status {
-    display: table-cell !important;
+    display: flex !important;
   }
 
   .date-title {

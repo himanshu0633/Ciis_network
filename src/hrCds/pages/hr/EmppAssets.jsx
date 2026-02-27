@@ -750,30 +750,33 @@ const EmpAssets = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="EmpAssets-stats-grid">
-        {[
-          { label: 'Total Requests', count: stats.total, color: 'primary', type: 'All', icon: <FiPackage /> },
-          { label: 'Pending', count: stats.pending, color: 'warning', type: 'Pending', icon: <FiClock /> },
-          { label: 'Approved', count: stats.approved, color: 'success', type: 'Approved', icon: <FiCheckCircle /> },
-          { label: 'Rejected', count: stats.rejected, color: 'error', type: 'Rejected', icon: <FiXCircle /> },
-        ].map((item) => (
-          <div 
-            key={item.type}
-            className={`EmpAssets-stat-card ${getActiveClass(item.type, selectedStat)}`}
-            onClick={() => handleStatFilter(item.type)}
-          >
-            <div className="EmpAssets-stat-content">
-              <div className={`EmpAssets-stat-avatar ${getAvatarClass(item.type)}`}>
-                {item.icon}
-              </div>
-              <div className="EmpAssets-stat-info">
-                <h3>{item.label}</h3>
-                <h2>{item.count}</h2>
-              </div>
-            </div>
+      {/* Stats Cards - Only show cards with count > 0 */}
+<div className="EmpAssets-stats-grid">
+  {[
+    { label: 'Total Requests', count: stats.total, color: 'primary', type: 'All', icon: <FiPackage />, alwaysShow: true },
+    { label: 'Pending', count: stats.pending, color: 'warning', type: 'Pending', icon: <FiClock /> },
+    { label: 'Approved', count: stats.approved, color: 'success', type: 'Approved', icon: <FiCheckCircle /> },
+    { label: 'Rejected', count: stats.rejected, color: 'error', type: 'Rejected', icon: <FiXCircle /> },
+  ]
+    .filter(item => item.alwaysShow || item.count > 0) // ✅ FILTER: Show if alwaysShow OR count > 0
+    .map((item) => (
+      <div 
+        key={item.type}
+        className={`EmpAssets-stat-card ${getActiveClass(item.type, selectedStat)}`}
+        onClick={() => handleStatFilter(item.type)}
+      >
+        <div className="EmpAssets-stat-content">
+          <div className={`EmpAssets-stat-avatar ${getAvatarClass(item.type)}`}>
+            {item.icon}
           </div>
-        ))}
+          <div className="EmpAssets-stat-info">
+            <h3>{item.label}</h3>
+            <h2>{item.count}</h2>
+          </div>
+        </div>
       </div>
+    ))}
+</div>
 
       {/* Filters Section */}
       <div className={`EmpAssets-filters-container ${showFilters ? 'expanded' : ''}`}>

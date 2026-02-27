@@ -1201,13 +1201,13 @@ const EmployeeLeaves = () => {
                   <div className="details-card approval-card">
                     <div className="card-header">
                       <FiCheckSquare size={18} color="#1976d2" />
-                      <h4>Approval Information</h4>
+                      <h4>Decision Information</h4>
                     </div>
                     <div className="card-content">
                       <div className="info-rows">
                         <div className="info-row">
                           <FiUser size={14} className="info-icon" />
-                          <span className="info-label">Approved By:</span>
+                          <span className="info-label">Decision By:</span>
                           <span className="info-value">
                             {leave.approvedBy?.name || leave.approvedBy || "System"}
                           </span>
@@ -1221,7 +1221,7 @@ const EmployeeLeaves = () => {
                         )}
                         <div className="info-row">
                           <FiClockIcon size={14} className="info-icon" />
-                          <span className="info-label">Approved At:</span>
+                          <span className="info-label">Decision At:</span>
                           <span className="info-value">{formatDateTime(leave.updatedAt)}</span>
                         </div>
                       </div>
@@ -1331,7 +1331,7 @@ const EmployeeLeaves = () => {
               <th>Leave Details</th>
               <th>Duration</th>
               {showStatusColumn && <th>Status</th>}
-              <th>Approved By</th>
+              <th>Actioned By</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -1796,54 +1796,57 @@ const EmployeeLeaves = () => {
       </div>
 
       {/* Stat Cards */}
-      <div className="stats-container">
-        {[
-          { 
-            label: "Total Leaves", 
-            count: stats.total, 
-            type: "All", 
-            icon: <FiUsersIcon />,
-            color: "primary"
-          },
-          { 
-            label: "Pending", 
-            count: stats.pending, 
-            type: "Pending", 
-            icon: <FiClock />,
-            color: "warning"
-          },
-          { 
-            label: "Approved", 
-            count: stats.approved, 
-            type: "Approved", 
-            icon: <FiCheckCircle />,
-            color: "success"
-          },
-          { 
-            label: "Rejected", 
-            count: stats.rejected, 
-            type: "Rejected", 
-            icon: <FiXCircle />,
-            color: "error"
-          },
-        ].map((stat) => (
-          <div 
-            key={stat.type}
-            className={`stat-card stat-${stat.color} ${selectedStat === stat.type ? 'active' : ''}`}
-            onClick={() => handleStatFilter(stat.type)}
-          >
-            <div className="stat-content">
-              <div className={`stat-icon stat-icon-${stat.color}`}>
-                {stat.icon}
-              </div>
-              <div className="stat-info">
-                <div className="stat-value">{stat.count}</div>
-                <div className="stat-label">{stat.label}</div>
-              </div>
-            </div>
+     {/* Stat Cards - Only show cards with count > 0 */}
+<div className="stats-container">
+  {[
+    { 
+      label: "Total Leaves", 
+      count: stats.total, 
+      type: "All", 
+      icon: <FiUsersIcon />,
+      color: "primary"
+    },
+    { 
+      label: "Pending", 
+      count: stats.pending, 
+      type: "Pending", 
+      icon: <FiClock />,
+      color: "warning"
+    },
+    { 
+      label: "Approved", 
+      count: stats.approved, 
+      type: "Approved", 
+      icon: <FiCheckCircle />,
+      color: "success"
+    },
+    { 
+      label: "Rejected", 
+      count: stats.rejected, 
+      type: "Rejected", 
+      icon: <FiXCircle />,
+      color: "error"
+    },
+  ]
+    .filter(stat => stat.count > 0) // ✅ FILTER: Only show cards with count > 0
+    .map((stat) => (
+      <div 
+        key={stat.type}
+        className={`stat-card stat-${stat.color} ${selectedStat === stat.type ? 'active' : ''}`}
+        onClick={() => handleStatFilter(stat.type)}
+      >
+        <div className="stat-content">
+          <div className={`stat-icon stat-icon-${stat.color}`}>
+            {stat.icon}
           </div>
-        ))}
+          <div className="stat-info">
+            <div className="stat-value">{stat.count}</div>
+            <div className="stat-label">{stat.label}</div>
+          </div>
+        </div>
       </div>
+    ))}
+</div>
 
       {/* Two Sections: Pending Leaves and Other Leaves */}
       <div className="leaves-sections-container">

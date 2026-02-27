@@ -108,7 +108,6 @@ const DateRangeFilter = ({ startDate, endDate, onStartDateChange, onEndDateChang
         <button 
           className="btn btn-contained btn-sm"
           onClick={onApply}
-          title="Apply Date Range"
         >
           <FiRangeCalendar size={16} />
           <span>Apply</span>
@@ -116,14 +115,12 @@ const DateRangeFilter = ({ startDate, endDate, onStartDateChange, onEndDateChang
         <button 
           className="btn btn-outlined btn-sm"
           onClick={onClear}
-          title="Reset to Today"
         >
           <FiRefreshCw size={16} />
         </button>
         <button 
           className="btn btn-outlined btn-sm"
           onClick={() => setIsOpen(!isOpen)}
-          title="Quick Presets"
         >
           Quick Select ▼
         </button>
@@ -171,11 +168,12 @@ const EmployeeTypeFilter = ({ selected, onChange }) => {
   );
 };
 
-// Department Filter Component
+// Department Filter Component - FIXED
 const DepartmentFilter = ({ selected, onChange, departments }) => {
+  // Create options from departments array
   const options = [
     { value: 'all', label: 'All Departments' },
-    ...departments.map(dept => ({
+    ...(departments || []).map(dept => ({
       value: dept.name || dept,
       label: dept.name || dept
     }))
@@ -490,6 +488,24 @@ const AddAttendanceModal = ({ onClose, onSave, users, selectedDate, currentUserD
       </div>
     </div>
   );
+};
+
+// Helper function to get department name - ADD THIS
+const getDepartmentName = (deptId, departmentsMap, departmentsList) => {
+  if (!deptId) return 'Unassigned';
+  
+  // Try to get from map first
+  if (departmentsMap && departmentsMap[deptId]) {
+    return departmentsMap[deptId];
+  }
+  
+  // Fallback: search in departments list
+  if (departmentsList && Array.isArray(departmentsList)) {
+    const dept = departmentsList.find(d => d._id === deptId || d.id === deptId);
+    if (dept) return dept.name;
+  }
+  
+  return deptId; // Return ID as last resort
 };
 
 // Edit Attendance Modal
@@ -995,10 +1011,11 @@ const calculateHoursWorked = (inTime, outTime) => {
 
 // Main Component
 const EmployeeAttendance = () => {
-  const [pageLoading, setPageLoading] = useState(true); // ✅ Page loading state
+  const [pageLoading, setPageLoading] = useState(true);
   const [records, setRecords] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
   const [departments, setDepartments] = useState([]);
+  const [departmentsMap, setDepartmentsMap] = useState({}); // ADD THIS
   
   // Date states
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -1088,7 +1105,7 @@ const EmployeeAttendance = () => {
         setTimeout(() => {
           setLoading(false);
           setInitialLoadComplete(true);
-          setPageLoading(false); // ✅ Stop page loading
+          setPageLoading(false);
         }, 500);
       }
     };
@@ -1220,36 +1237,47 @@ const EmployeeAttendance = () => {
     }
   };
 
+  // FIXED fetchAllUsers function with proper department mapping
   const fetchAllUsers = async () => {
     try {
       console.log("🔄 Fetching all company users...");
       
-      let departmentsMap = {};
+      // Create a map for department IDs to names
+      let deptMap = {};
+      let departmentsList = [];
+      
       try {
         const deptRes = await axios.get('/departments');
         
-        let departmentsData = [];
         if (deptRes.data && deptRes.data.success) {
           if (deptRes.data.data && Array.isArray(deptRes.data.data)) {
-            departmentsData = deptRes.data.data;
+            departmentsList = deptRes.data.data;
           } else if (deptRes.data.departments && Array.isArray(deptRes.data.departments)) {
-            departmentsData = deptRes.data.departments;
+            departmentsList = deptRes.data.departments;
           } else if (Array.isArray(deptRes.data)) {
-            departmentsData = deptRes.data;
+            departmentsList = deptRes.data;
           }
         }
         
-        departmentsMap = departmentsData.reduce((acc, dept) => {
-          acc[dept._id] = dept.name;
+        // Create ID to name mapping
+        deptMap = departmentsList.reduce((acc, dept) => {
+          if (dept._id) {
+            acc[dept._id] = dept.name;
+          }
+          if (dept.id) {
+            acc[dept.id] = dept.name;
+          }
           return acc;
         }, {});
         
-        setDepartments(departmentsData);
-        console.log("✅ Departments loaded:", departmentsMap);
+        setDepartments(departmentsList);
+        setDepartmentsMap(deptMap); // Store in state
+        console.log("✅ Departments loaded:", deptMap);
       } catch (deptErr) {
         console.error("❌ Failed to load departments", deptErr);
       }
       
+      // Determine endpoint based on user role
       let endpoint = '';
       if (isOwner || isAdmin || isHR) {
         endpoint = '/users/company-users';
@@ -1281,21 +1309,26 @@ const EmployeeAttendance = () => {
         }
       }
       
+      // Process users and map department IDs to names
       const usersWithDepartment = usersData.map(user => {
         let deptId = null;
         let deptName = "Unassigned";
         
+        // Handle different department field formats
         if (user.department) {
           if (typeof user.department === "object") {
-            deptId = user.department._id;
+            deptId = user.department._id || user.department.id;
             deptName = user.department.name || "Unassigned";
           } else {
             deptId = user.department;
-            deptName = departmentsMap[user.department] || user.departmentName || "Unassigned";
+            // Try to get name from map
+            deptName = deptMap[user.department] || user.departmentName || "Unassigned";
           }
         } else if (user.departmentId) {
           deptId = user.departmentId;
-          deptName = departmentsMap[user.departmentId] || "Unassigned";
+          deptName = deptMap[user.departmentId] || "Unassigned";
+        } else if (user.department_name) {
+          deptName = user.department_name;
         }
         
         return {
@@ -1303,14 +1336,15 @@ const EmployeeAttendance = () => {
           _id: user.id || user._id,
           name: user.name,
           email: user.email,
-          employeeType: user.employeeType || 'full-time',
+          employeeType: user.employeeType || user.employmentType || 'full-time',
           departmentId: deptId,
-          department: deptName,
-          jobRole: user.jobRole
+          department: deptName, // This should now be the name
+          jobRole: user.jobRole || user.position || user.designation
         };
       });
       
       setAllUsers(usersWithDepartment);
+      console.log("✅ Users loaded with departments:", usersWithDepartment[0]);
       
     } catch (err) {
       console.error("❌ Failed to load users", err);
@@ -1399,7 +1433,8 @@ const EmployeeAttendance = () => {
               name: user.name,
               email: user.email,
               employeeType: user.employeeType || 'full-time',
-              department: user.department,
+              department: user.department, // This is the name from usersWithDepartment
+              departmentId: user.departmentId,
               jobRole: user.jobRole
             },
             status: finalStatus,
@@ -1417,7 +1452,8 @@ const EmployeeAttendance = () => {
               name: user.name,
               email: user.email,
               employeeType: user.employeeType || 'full-time',
-              department: user.department,
+              department: user.department, // This is the name from usersWithDepartment
+              departmentId: user.departmentId,
               jobRole: user.jobRole
             },
             date: new Date(date),
@@ -1452,204 +1488,198 @@ const EmployeeAttendance = () => {
   // ============================================
   // FETCH ATTENDANCE DATA (DATE RANGE)
   // ============================================
-  // ============================================
-// FETCH ATTENDANCE DATA (DATE RANGE) - FIXED VERSION
-// ============================================
-const fetchAttendanceDataRange = async (startDate, endDate) => {
-  setLoading(true);
-  try {
-    console.log("📅 Fetching attendance from", startDate, "to", endDate);
-    
-    // Create date range
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const dateRange = [];
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      dateRange.push(new Date(d).toISOString().split('T')[0]);
-    }
-    
-    // Fetch data for each date sequentially (or in parallel for better performance)
-    const allRecords = [];
-    const dailyStats = {};
-    
-    // Use Promise.all to fetch all dates in parallel (faster)
-    const fetchPromises = dateRange.map(async (date) => {
-      try {
-        let endpoint = `/attendance/all?date=${date}`;
-        
-        if (!isOwner && !isAdmin && !isHR && currentUserDepartment) {
-          endpoint += `&department=${currentUserDepartment}`;
-        }
-        
-        const res = await axios.get(endpoint);
-        return { date, data: res.data };
-      } catch (error) {
-        console.error(`Error fetching attendance for ${date}:`, error);
-        return { date, data: null };
-      }
-    });
-    
-    const results = await Promise.all(fetchPromises);
-    
-    // Process each date's data
-    results.forEach(({ date, data }) => {
-      const attendanceMap = {};
+  const fetchAttendanceDataRange = async (startDate, endDate) => {
+    setLoading(true);
+    try {
+      console.log("📅 Fetching attendance from", startDate, "to", endDate);
       
-      if (data && data.data && Array.isArray(data.data)) {
-        data.data.forEach(record => {
-          if (record.user && (record.user._id || record.user.id)) {
-            const userId = record.user._id || record.user.id;
-            attendanceMap[userId] = {
-              ...record,
-              status: record.status ? record.status.toLowerCase() : 'absent'
-            };
-          }
-        });
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const dateRange = [];
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        dateRange.push(new Date(d).toISOString().split('T')[0]);
       }
-
-      let usersToProcess = allUsers;
-      if (!isOwner && !isAdmin && !isHR && currentUserDepartment) {
-        usersToProcess = allUsers.filter(user => 
-          user.department === currentUserDepartment ||
-          user.departmentId === currentUserDepartment
-        );
-      }
-
-      const dateCombinedRecords = usersToProcess.map(user => {
-        const userId = user.id || user._id;
-        const attendanceRecord = attendanceMap[userId];
-        
-        if (attendanceRecord) {
-          const calculatedStatus = calculateStatusFromTime(attendanceRecord.inTime);
-          const hoursWorked = calculateHoursWorked(attendanceRecord.inTime, attendanceRecord.outTime);
+      
+      const allRecords = [];
+      const dailyStats = {};
+      
+      const fetchPromises = dateRange.map(async (date) => {
+        try {
+          let endpoint = `/attendance/all?date=${date}`;
           
-          let finalStatus = attendanceRecord.status 
-            ? attendanceRecord.status.toLowerCase() 
-            : calculatedStatus;
-
-          if (
-            finalStatus === 'present' &&
-            hoursWorked.hours > 0 &&
-            hoursWorked.hours < 9
-          ) {
-            finalStatus = hoursWorked.hours >= 5 ? 'halfday' : 'absent';
+          if (!isOwner && !isAdmin && !isHR && currentUserDepartment) {
+            endpoint += `&department=${currentUserDepartment}`;
           }
           
-          return {
-            ...attendanceRecord,
-            user: {
-              id: user.id || user._id,
-              _id: user.id || user._id,
-              name: user.name,
-              email: user.email,
-              employeeType: user.employeeType || 'full-time',
-              department: user.department,
-              jobRole: user.jobRole
-            },
-            status: finalStatus,
-            calculatedStatus: calculatedStatus,
-            hoursWorked: hoursWorked.formatted,
-            totalHours: hoursWorked.hours,
-            displayDate: date
-          };
-        } else {
-          return {
-            _id: `absent_${userId}_${date}`,
-            user: {
-              id: user.id || user._id,
-              _id: user.id || user._id,
-              name: user.name,
-              email: user.email,
-              employeeType: user.employeeType || 'full-time',
-              department: user.department,
-              jobRole: user.jobRole
-            },
-            date: new Date(date),
-            inTime: null,
-            outTime: null,
-            hoursWorked: "00:00:00",
-            totalHours: 0,
-            lateBy: "00:00:00",
-            earlyLeave: "00:00:00",
-            overTime: "00:00:00",
-            status: "absent",
-            calculatedStatus: "absent",
-            isClockedIn: false,
-            displayDate: date
-          };
+          const res = await axios.get(endpoint);
+          return { date, data: res.data };
+        } catch (error) {
+          console.error(`Error fetching attendance for ${date}:`, error);
+          return { date, data: null };
         }
       });
       
-      allRecords.push(...dateCombinedRecords);
+      const results = await Promise.all(fetchPromises);
       
-      const present = dateCombinedRecords.filter(r => r.status === "present").length;
-      const absent = dateCombinedRecords.filter(r => r.status === "absent").length;
-      const halfDay = dateCombinedRecords.filter(r => r.status === "halfday").length;
-      const late = dateCombinedRecords.filter(r => r.status === "late").length;
+      results.forEach(({ date, data }) => {
+        const attendanceMap = {};
+        
+        if (data && data.data && Array.isArray(data.data)) {
+          data.data.forEach(record => {
+            if (record.user && (record.user._id || record.user.id)) {
+              const userId = record.user._id || record.user.id;
+              attendanceMap[userId] = {
+                ...record,
+                status: record.status ? record.status.toLowerCase() : 'absent'
+              };
+            }
+          });
+        }
+
+        let usersToProcess = allUsers;
+        if (!isOwner && !isAdmin && !isHR && currentUserDepartment) {
+          usersToProcess = allUsers.filter(user => 
+            user.department === currentUserDepartment ||
+            user.departmentId === currentUserDepartment
+          );
+        }
+
+        const dateCombinedRecords = usersToProcess.map(user => {
+          const userId = user.id || user._id;
+          const attendanceRecord = attendanceMap[userId];
+          
+          if (attendanceRecord) {
+            const calculatedStatus = calculateStatusFromTime(attendanceRecord.inTime);
+            const hoursWorked = calculateHoursWorked(attendanceRecord.inTime, attendanceRecord.outTime);
+            
+            let finalStatus = attendanceRecord.status 
+              ? attendanceRecord.status.toLowerCase() 
+              : calculatedStatus;
+
+            if (
+              finalStatus === 'present' &&
+              hoursWorked.hours > 0 &&
+              hoursWorked.hours < 9
+            ) {
+              finalStatus = hoursWorked.hours >= 5 ? 'halfday' : 'absent';
+            }
+            
+            return {
+              ...attendanceRecord,
+              user: {
+                id: user.id || user._id,
+                _id: user.id || user._id,
+                name: user.name,
+                email: user.email,
+                employeeType: user.employeeType || 'full-time',
+                department: user.department,
+                departmentId: user.departmentId,
+                jobRole: user.jobRole
+              },
+              status: finalStatus,
+              calculatedStatus: calculatedStatus,
+              hoursWorked: hoursWorked.formatted,
+              totalHours: hoursWorked.hours,
+              displayDate: date
+            };
+          } else {
+            return {
+              _id: `absent_${userId}_${date}`,
+              user: {
+                id: user.id || user._id,
+                _id: user.id || user._id,
+                name: user.name,
+                email: user.email,
+                employeeType: user.employeeType || 'full-time',
+                department: user.department,
+                departmentId: user.departmentId,
+                jobRole: user.jobRole
+              },
+              date: new Date(date),
+              inTime: null,
+              outTime: null,
+              hoursWorked: "00:00:00",
+              totalHours: 0,
+              lateBy: "00:00:00",
+              earlyLeave: "00:00:00",
+              overTime: "00:00:00",
+              status: "absent",
+              calculatedStatus: "absent",
+              isClockedIn: false,
+              displayDate: date
+            };
+          }
+        });
+        
+        allRecords.push(...dateCombinedRecords);
+        
+        const present = dateCombinedRecords.filter(r => r.status === "present").length;
+        const absent = dateCombinedRecords.filter(r => r.status === "absent").length;
+        const halfDay = dateCombinedRecords.filter(r => r.status === "halfday").length;
+        const late = dateCombinedRecords.filter(r => r.status === "late").length;
+        
+        dailyStats[date] = {
+          total: dateCombinedRecords.length,
+          present,
+          absent,
+          halfDay,
+          late,
+          attendanceRate: ((present + late + halfDay) / dateCombinedRecords.length * 100).toFixed(1)
+        };
+      });
       
-      dailyStats[date] = {
-        total: dateCombinedRecords.length,
-        present,
-        absent,
-        halfDay,
-        late,
-        attendanceRate: ((present + late + halfDay) / dateCombinedRecords.length * 100).toFixed(1)
-      };
-    });
-    
-    setRecords(allRecords);
-    
-    const totalDays = dateRange.length;
-    const totalPresent = allRecords.filter(r => r.status === "present").length;
-    const totalLate = allRecords.filter(r => r.status === "late").length;
-    const totalHalfDay = allRecords.filter(r => r.status === "halfday").length;
-    const totalAbsent = allRecords.filter(r => r.status === "absent").length;
-    
-    // Calculate average per day (based on total employees)
-    const avgEmployeesPerDay = allUsers.length || 1;
-    
-    let bestDay = null;
-    let worstDay = null;
-    let bestRate = 0;
-    let worstRate = 100;
-    
-    Object.entries(dailyStats).forEach(([date, stats]) => {
-      const rate = parseFloat(stats.attendanceRate);
-      if (rate > bestRate) {
-        bestRate = rate;
-        bestDay = date;
-      }
-      if (rate < worstRate) {
-        worstRate = rate;
-        worstDay = date;
-      }
-    });
-    
-    setDateRangeStats({
-      totalDays,
-      averagePresent: totalDays > 0 ? (totalPresent / totalDays / avgEmployeesPerDay * 100).toFixed(1) : 0,
-      averageLate: totalDays > 0 ? (totalLate / totalDays / avgEmployeesPerDay * 100).toFixed(1) : 0,
-      averageHalfDay: totalDays > 0 ? (totalHalfDay / totalDays / avgEmployeesPerDay * 100).toFixed(1) : 0,
-      averageAbsent: totalDays > 0 ? (totalAbsent / totalDays / avgEmployeesPerDay * 100).toFixed(1) : 0,
-      totalPresent,
-      totalLate,
-      totalHalfDay,
-      totalAbsent,
-      bestDay,
-      worstDay
-    });
-    
-    calculateStats(allRecords);
-    
-  } catch (err) {
-    console.error("❌ Failed to load attendance range", err);
-    showSnackbar("Error loading attendance data", "error");
-    setRecords([]);
-    calculateStats([]);
-  } finally {
-    setLoading(false);
-  }
-};
+      setRecords(allRecords);
+      
+      const totalDays = dateRange.length;
+      const totalPresent = allRecords.filter(r => r.status === "present").length;
+      const totalLate = allRecords.filter(r => r.status === "late").length;
+      const totalHalfDay = allRecords.filter(r => r.status === "halfday").length;
+      const totalAbsent = allRecords.filter(r => r.status === "absent").length;
+      
+      const avgEmployeesPerDay = allUsers.length || 1;
+      
+      let bestDay = null;
+      let worstDay = null;
+      let bestRate = 0;
+      let worstRate = 100;
+      
+      Object.entries(dailyStats).forEach(([date, stats]) => {
+        const rate = parseFloat(stats.attendanceRate);
+        if (rate > bestRate) {
+          bestRate = rate;
+          bestDay = date;
+        }
+        if (rate < worstRate) {
+          worstRate = rate;
+          worstDay = date;
+        }
+      });
+      
+      setDateRangeStats({
+        totalDays,
+        averagePresent: totalDays > 0 ? (totalPresent / totalDays / avgEmployeesPerDay * 100).toFixed(1) : 0,
+        averageLate: totalDays > 0 ? (totalLate / totalDays / avgEmployeesPerDay * 100).toFixed(1) : 0,
+        averageHalfDay: totalDays > 0 ? (totalHalfDay / totalDays / avgEmployeesPerDay * 100).toFixed(1) : 0,
+        averageAbsent: totalDays > 0 ? (totalAbsent / totalDays / avgEmployeesPerDay * 100).toFixed(1) : 0,
+        totalPresent,
+        totalLate,
+        totalHalfDay,
+        totalAbsent,
+        bestDay,
+        worstDay
+      });
+      
+      calculateStats(allRecords);
+      
+    } catch (err) {
+      console.error("❌ Failed to load attendance range", err);
+      showSnackbar("Error loading attendance data", "error");
+      setRecords([]);
+      calculateStats([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const calculateStats = (attendanceData) => {
     const present = attendanceData.filter((r) => r.status === "present").length;
@@ -2291,12 +2321,12 @@ const fetchAttendanceDataRange = async (startDate, endDate) => {
     );
   };
 
-  // ✅ Show CIISLoader while page is loading
+  // Show CIISLoader while page is loading
   if (pageLoading) {
     return <CIISLoader />;
   }
 
-  // Loading State - FIXED to show properly and then hide
+  // Loading State
   if (loading && !initialLoadComplete) {
     return (
       <div className="loading-container">
@@ -2341,18 +2371,18 @@ const fetchAttendanceDataRange = async (startDate, endDate) => {
             </div>
           )}
 
-          {!isOwner && !isAdmin && !isHR && currentUserDepartment && (
+          {/* {!isOwner && !isAdmin && !isHR && currentUserDepartment && (
             <div className="department-info-banner">
               <FiHome size={16} />
               <span>Your Department: <strong>{typeof currentUserDepartment === 'string' ? currentUserDepartment : 'Your Department'}</strong></span>
             </div>
           )}
-          
+           */}
           {dateRangeMode && (
             <div className="date-range-indicator">
               <FiRangeCalendar size={16} />
               <span>Viewing from <strong>{new Date(selectedStartDate).toLocaleDateString()}</strong> to <strong>{new Date(selectedEndDate).toLocaleDateString()}</strong></span>
-              <button className="btn-icon-small" onClick={handleDateRangeClear} title="Switch to single day view">
+              <button className="btn-icon-small" onClick={handleDateRangeClear} >
                 <FiX size={14} />
               </button>
             </div>
@@ -2500,13 +2530,13 @@ const fetchAttendanceDataRange = async (startDate, endDate) => {
             />
           </div>
           
-          <div className="filter-group">
+          {/* <div className="filter-group">
             <label className="filter-label">Employee Type</label>
             <EmployeeTypeFilter
               selected={selectedEmployeeType}
               onChange={setSelectedEmployeeType}
             />
-          </div>
+          </div> */}
 
           {(isOwner || isAdmin || isHR) && (
             <div className="filter-group">
@@ -2574,80 +2604,83 @@ const fetchAttendanceDataRange = async (startDate, endDate) => {
       </div>
 
       {/* Stat Cards */}
-      <div className="stats-container">
-        {[
-          { 
-            label: "Total Employees", 
-            count: stats.total, 
-            icon: <FiUsers />,
-            description: dateRangeMode ? `Across ${dateRangeStats.totalDays} days` : "Total tracked employees",
-            statClass: "stat-card-primary",
-            iconClass: "stat-icon-primary"
-          },
-          { 
-            label: "Present", 
-            count: stats.present, 
-            icon: <FiCheckCircle />,
-            description: dateRangeMode ? `Avg: ${dateRangeStats.averagePresent}%` : "Before 9:10 AM",
-            statClass: "stat-card-success",
-            iconClass: "stat-icon-success"
-          },
-          { 
-            label: "Late", 
-            count: stats.late, 
-            icon: <FiClock />,
-            description: dateRangeMode ? `Avg: ${dateRangeStats.averageLate}%` : "9:10 AM - 9:30 AM",
-            statClass: "stat-card-warning",
-            iconClass: "stat-icon-warning"
-          },
-          { 
-            label: "Half Day", 
-            count: stats.halfDay, 
-            icon: <FiAlertCircle />,
-            description: dateRangeMode ? `Avg: ${dateRangeStats.averageHalfDay}%` : "After 9:30 AM",
-            statClass: "stat-card-info",
-            iconClass: "stat-icon-info"
-          },
-          { 
-            label: "Absent", 
-            count: stats.absent, 
-            icon: <FiUserX />,
-            description: dateRangeMode ? `Avg: ${dateRangeStats.averageAbsent}%` : "No login recorded",
-            statClass: "stat-card-error",
-            iconClass: "stat-icon-error"
-          },
-          { 
-            label: "On Time", 
-            count: stats.onTime, 
-            icon: <FiUserCheck />,
-            description: "Arrived before 9:10 AM",
-            statClass: "stat-card-secondary",
-            iconClass: "stat-icon-secondary"
-          },
-        ].map((stat) => (
-          <div 
-            key={stat.label}
-            className={`stat-card ${stat.statClass} ${statusFilter === stat.label.toLowerCase() ? 'stat-card-active' : ''}`}
-            onClick={() =>
-              setStatusFilter((prev) =>
-                prev === stat.label.toLowerCase() ? "all" : stat.label.toLowerCase()
-              )
-            }
-            style={{ cursor: 'pointer' }}
-          >
-            <div className="stat-content">
-              <div className={`stat-icon ${stat.iconClass}`}>
-                {stat.icon}
-              </div>
-              <div className="stat-info">
-                <div className="stat-value">{stat.count}</div>
-                <div className="stat-label">{stat.label}</div>
-                <div className="stat-description">{stat.description}</div>
-              </div>
-            </div>
+      {/* Stat Cards - Only show cards with count > 0 */}
+<div className="stats-container">
+  {[
+    { 
+      label: "Total Employees", 
+      count: stats.total, 
+      icon: <FiUsers />,
+      description: dateRangeMode ? `Across ${dateRangeStats.totalDays} days` : "Total tracked employees",
+      statClass: "stat-card-primary",
+      iconClass: "stat-icon-primary"
+    },
+    { 
+      label: "Present", 
+      count: stats.present, 
+      icon: <FiCheckCircle />,
+      description: dateRangeMode ? `Avg: ${dateRangeStats.averagePresent}%` : "Before 9:10 AM",
+      statClass: "stat-card-success",
+      iconClass: "stat-icon-success"
+    },
+    { 
+      label: "Late", 
+      count: stats.late, 
+      icon: <FiClock />,
+      description: dateRangeMode ? `Avg: ${dateRangeStats.averageLate}%` : "9:10 AM - 9:30 AM",
+      statClass: "stat-card-warning",
+      iconClass: "stat-icon-warning"
+    },
+    { 
+      label: "Half Day", 
+      count: stats.halfDay, 
+      icon: <FiAlertCircle />,
+      description: dateRangeMode ? `Avg: ${dateRangeStats.averageHalfDay}%` : "After 9:30 AM",
+      statClass: "stat-card-info",
+      iconClass: "stat-icon-info"
+    },
+    { 
+      label: "Absent", 
+      count: stats.absent, 
+      icon: <FiUserX />,
+      description: dateRangeMode ? `Avg: ${dateRangeStats.averageAbsent}%` : "No login recorded",
+      statClass: "stat-card-error",
+      iconClass: "stat-icon-error"
+    },
+    { 
+      label: "On Time", 
+      count: stats.onTime, 
+      icon: <FiUserCheck />,
+      description: "Arrived before 9:10 AM",
+      statClass: "stat-card-secondary",
+      iconClass: "stat-icon-secondary"
+    },
+  ]
+    .filter(stat => stat.count > 0) // ✅ FILTER: Only show cards with count > 0
+    .map((stat) => (
+      <div 
+        key={stat.label}
+        className={`stat-card ${stat.statClass} ${statusFilter === stat.label.toLowerCase() ? 'stat-card-active' : ''}`}
+        onClick={() =>
+          setStatusFilter((prev) =>
+            prev === stat.label.toLowerCase() ? "all" : stat.label.toLowerCase()
+          )
+        }
+        style={{ cursor: 'pointer' }}
+      >
+        <div className="stat-content">
+          <div className={`stat-icon ${stat.iconClass}`}>
+            {stat.icon}
           </div>
-        ))}
+          <div className="stat-info">
+            <div className="stat-value">{stat.count}</div>
+            <div className="stat-label">{stat.label}</div>
+            <div className="stat-description">{stat.description}</div>
+          </div>
+        </div>
       </div>
+    ))}
+</div>
 
       {/* Date Range Summary */}
       {dateRangeMode && (
@@ -2813,7 +2846,9 @@ const fetchAttendanceDataRange = async (startDate, endDate) => {
 
                           <td className="col-department">
                             <span className="department-chip">
-                              {rec.user?.department || 'Unassigned'}
+                              {rec.user?.department || 
+                               (rec.user?.departmentId && departmentsMap[rec.user.departmentId]) || 
+                               'Unassigned'}
                             </span>
                           </td>
 
@@ -2951,7 +2986,9 @@ const fetchAttendanceDataRange = async (startDate, endDate) => {
 
                           <td className="col-department">
                             <span className="department-chip">
-                              {rec.user?.department || 'Unassigned'}
+                              {rec.user?.department || 
+                               (rec.user?.departmentId && departmentsMap[rec.user.departmentId]) || 
+                               'Unassigned'}
                             </span>
                           </td>
 

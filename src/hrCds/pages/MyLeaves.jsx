@@ -609,53 +609,66 @@ const MyLeaves = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="MyLeaves-stats-container">
-        <div className="MyLeaves-stats-grid">
-          <div className="MyLeaves-stat-card MyLeaves-stat-total">
-            <div className="MyLeaves-stat-header">
-              <FiCalendar className="MyLeaves-stat-icon" />
-              <h3>Total Leaves</h3>
-            </div>
-            <div className="MyLeaves-stat-value">{stats.total}</div>
-            <div className="MyLeaves-stat-footer">
-              <span>All time records</span>
-            </div>
-          </div>
-          
-          <div className="MyLeaves-stat-card MyLeaves-stat-approved">
-            <div className="MyLeaves-stat-header">
-              <FiCheckCircle className="MyLeaves-stat-icon" />
-              <h3>Approved</h3>
-            </div>
-            <div className="MyLeaves-stat-value">{stats.approved}</div>
-            <div className="MyLeaves-stat-footer">
-              <span>Approved requests</span>
-            </div>
-          </div>
-          
-          <div className="MyLeaves-stat-card MyLeaves-stat-pending">
-            <div className="MyLeaves-stat-header">
-              <FiClock className="MyLeaves-stat-icon" />
-              <h3>Pending</h3>
-            </div>
-            <div className="MyLeaves-stat-value">{stats.pending}</div>
-            <div className="MyLeaves-stat-footer">
-              <span>Awaiting approval</span>
-            </div>
-          </div>
-          
-          <div className="MyLeaves-stat-card MyLeaves-stat-rejected">
-            <div className="MyLeaves-stat-header">
-              <FiXCircle className="MyLeaves-stat-icon" />
-              <h3>Rejected</h3>
-            </div>
-            <div className="MyLeaves-stat-value">{stats.rejected}</div>
-            <div className="MyLeaves-stat-footer">
-              <span>Declined requests</span>
-            </div>
-          </div>
+     {/* Stats Cards - Only show cards with value > 0 */}
+<div className="MyLeaves-stats-container">
+  <div className="MyLeaves-stats-grid">
+    {/* Total Leaves Card - Always show if total > 0 */}
+    {stats.total > 0 && (
+      <div className="MyLeaves-stat-card MyLeaves-stat-total">
+        <div className="MyLeaves-stat-header">
+          <FiCalendar className="MyLeaves-stat-icon" />
+          <h3>Total Leaves</h3>
+        </div>
+        <div className="MyLeaves-stat-value">{stats.total}</div>
+        <div className="MyLeaves-stat-footer">
+          <span>All time records</span>
         </div>
       </div>
+    )}
+    
+    {/* Approved Card - Show only if approved > 0 */}
+    {stats.approved > 0 && (
+      <div className="MyLeaves-stat-card MyLeaves-stat-approved">
+        <div className="MyLeaves-stat-header">
+          <FiCheckCircle className="MyLeaves-stat-icon" />
+          <h3>Approved</h3>
+        </div>
+        <div className="MyLeaves-stat-value">{stats.approved}</div>
+        <div className="MyLeaves-stat-footer">
+          <span>Approved requests</span>
+        </div>
+      </div>
+    )}
+    
+    {/* Pending Card - Show only if pending > 0 */}
+    {stats.pending > 0 && (
+      <div className="MyLeaves-stat-card MyLeaves-stat-pending">
+        <div className="MyLeaves-stat-header">
+          <FiClock className="MyLeaves-stat-icon" />
+          <h3>Pending</h3>
+        </div>
+        <div className="MyLeaves-stat-value">{stats.pending}</div>
+        <div className="MyLeaves-stat-footer">
+          <span>Awaiting approval</span>
+        </div>
+      </div>
+    )}
+    
+    {/* Rejected Card - Show only if rejected > 0 */}
+    {stats.rejected > 0 && (
+      <div className="MyLeaves-stat-card MyLeaves-stat-rejected">
+        <div className="MyLeaves-stat-header">
+          <FiXCircle className="MyLeaves-stat-icon" />
+          <h3>Rejected</h3>
+        </div>
+        <div className="MyLeaves-stat-value">{stats.rejected}</div>
+        <div className="MyLeaves-stat-footer">
+          <span>Declined requests</span>
+        </div>
+      </div>
+    )}
+  </div>
+</div>
 
       {/* Tabs Section */}
       <div className="MyLeaves-tabs-container">

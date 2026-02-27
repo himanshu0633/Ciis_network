@@ -46,7 +46,8 @@ const Icons = {
   CloudUpload: () => <span>📤</span>,
 };
 
-const getUserId = (user) => user._id || user.id;
+const getUserId = (user) => user?._id || user?.id;
+const getProjectId = (p) => p?._id || p?.id;
 
 export const AdminProject = () => {
   // FORM STATES
@@ -82,6 +83,9 @@ export const AdminProject = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [memberSearchTerm, setMemberSearchTerm] = useState("");
 
+  // Add timeout state
+  const [requestTimeout, setRequestTimeout] = useState(null);
+
   useEffect(() => {
     fetchUsers();
     fetchProjects();
@@ -107,6 +111,15 @@ export const AdminProject = () => {
     return () => document.removeEventListener('click', handleClickOutside);
   }, [isDropdownOpen]);
 
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (requestTimeout) {
+        clearTimeout(requestTimeout);
+      }
+    };
+  }, [requestTimeout]);
+
   const filteredUsers = users.filter(u => 
     (u.name?.toLowerCase() || "").includes(memberSearchTerm.toLowerCase()) ||
     (u.email?.toLowerCase() || "").includes(memberSearchTerm.toLowerCase())
@@ -128,7 +141,11 @@ export const AdminProject = () => {
 
   const fetchUsers = async () => {
     try {
-      const res = await axios.get("/users/company-users");
+      // Add timeout to axios request
+      const res = await axios.get("/users/company-users", {
+        timeout: 10000 // 10 seconds timeout
+      });
+      
       if (res.data?.success && res.data.message?.users) setUsers(res.data.message.users);
       else if (Array.isArray(res.data)) setUsers(res.data);
       else if (res.data?.data) setUsers(res.data.data);
@@ -136,14 +153,26 @@ export const AdminProject = () => {
       else setUsers([]);
     } catch (error) {
       console.error("Error fetching users:", error);
-      showSnackbar("❌ Error loading users", "error");
+      
+      if (error.code === 'ECONNABORTED') {
+        showSnackbar("❌ Request timeout - please try again", "error");
+      } else if (error.response?.status === 504) {
+        showSnackbar("❌ Server timeout - please try again later", "error");
+      } else {
+        showSnackbar("❌ Error loading users", "error");
+      }
+      
       setUsers([]);
     }
   };
 
   const fetchProjects = async () => {
     try {
-      const res = await axios.get("/projects");
+      // Add timeout to axios request
+      const res = await axios.get("/projects", {
+        timeout: 10000 // 10 seconds timeout
+      });
+      
       if (Array.isArray(res.data)) setProjects(res.data);
       else if (res.data?.data) setProjects(res.data.data);
       else if (res.data?.projects) setProjects(res.data.projects);
@@ -151,7 +180,15 @@ export const AdminProject = () => {
       else setProjects([]);
     } catch (error) {
       console.error("Error fetching projects:", error);
-      showSnackbar("❌ Error loading projects", "error");
+      
+      if (error.code === 'ECONNABORTED') {
+        showSnackbar("❌ Request timeout - please try again", "error");
+      } else if (error.response?.status === 504) {
+        showSnackbar("❌ Server timeout - please try again later", "error");
+      } else {
+        showSnackbar("❌ Error loading projects", "error");
+      }
+      
       setProjects([]);
     }
   };
@@ -186,13 +223,29 @@ export const AdminProject = () => {
     if (!endDate) newErrors.endDate = "End date required";
     else if (startDate && new Date(endDate) < new Date(startDate)) newErrors.endDate = "End date must be after start date";
     if (members.length === 0) newErrors.members = "Select at least one member";
+    
+    // File validation
+    if (file && file.size > 10 * 1024 * 1024) { // 10MB limit
+      newErrors.file = "File size must be less than 10MB";
+    }
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async () => {
     if (!validateForm()) return;
+    
     setLoading(true);
+    
+    // Set a timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      setLoading(false);
+      showSnackbar("❌ Request timeout - please try again", "error");
+    }, 30000); // 30 seconds timeout
+    
+    setRequestTimeout(timeoutId);
+
     const formData = new FormData();
     formData.append("projectName", projectName);
     formData.append("description", description);
@@ -201,29 +254,63 @@ export const AdminProject = () => {
     formData.append("priority", priority);
     formData.append("status", status);
     formData.append("users", JSON.stringify(members));
-    if (file) formData.append("pdfFile", file);
+    
+    if (file) {
+      formData.append("pdfFile", file);
+    }
+
     try {
       let response;
+      
+      // Configure axios with longer timeout for file uploads
+      const config = {
+        headers: { 
+          "Content-Type": "multipart/form-data"
+        },
+        timeout: 60000, // 60 seconds timeout for file uploads
+        onUploadProgress: (progressEvent) => {
+          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          console.log(`Upload progress: ${percentCompleted}%`);
+        }
+      };
+
       if (projectId) {
-        response = await axios.put(`/projects/${projectId}`, formData, {
-          headers: { "Content-Type": "multipart/form-data" }
-        });
+        response = await axios.put(`/projects/${projectId}`, formData, config);
       } else {
-        response = await axios.post("/projects", formData, {
-          headers: { "Content-Type": "multipart/form-data" }
-        });
+        response = await axios.post("/projects", formData, config);
       }
-      const success = response.data?.success || (response.status >= 200 && response.status < 300);
-      if (success) {
+
+      // Clear the timeout since request completed
+      clearTimeout(timeoutId);
+      setRequestTimeout(null);
+
+      // Check for successful response
+      if (response.status === 200 || response.status === 201) {
         showSnackbar(projectId ? "Project updated successfully!" : "Project created successfully!", "success");
         resetForm();
-        fetchProjects();
+        await fetchProjects(); // Refresh the project list
       } else {
         showSnackbar(response.data?.message || "Operation failed", "error");
       }
     } catch (err) {
+      // Clear the timeout
+      clearTimeout(timeoutId);
+      setRequestTimeout(null);
+      
       console.error("Error saving project:", err);
-      showSnackbar(err.response?.data?.message || "Something went wrong", "error");
+      
+      // Handle different error types
+      if (err.code === 'ECONNABORTED') {
+        showSnackbar("❌ Request timeout - server is taking too long to respond", "error");
+      } else if (err.response?.status === 504) {
+        showSnackbar("❌ Gateway timeout - server is not responding", "error");
+      } else if (err.response?.status === 413) {
+        showSnackbar("❌ File too large - maximum size is 10MB", "error");
+      } else if (err.response?.status === 500) {
+        showSnackbar("❌ Server error - please try again later", "error");
+      } else {
+        showSnackbar(err.response?.data?.message || "Something went wrong", "error");
+      }
     } finally {
       setLoading(false);
     }
@@ -231,23 +318,31 @@ export const AdminProject = () => {
 
   const deleteProject = async (id, projectName) => {
     if (!window.confirm(`Are you sure you want to delete "${projectName}"?`)) return;
+    
     try {
-      const response = await axios.delete(`/projects/${id}`);
-      const success = response.data?.success || (response.status >= 200 && response.status < 300);
-      if (success) {
+      const response = await axios.delete(`/projects/${id}`, {
+        timeout: 10000
+      });
+      
+      if (response.status === 200 || response.status === 204) {
         showSnackbar("Project deleted successfully!", "success");
-        fetchProjects();
+        await fetchProjects();
       } else {
         showSnackbar(response.data?.message || "Failed to delete project", "error");
       }
     } catch (error) {
       console.error("Error deleting project:", error);
-      showSnackbar("Error deleting project", "error");
+      
+      if (error.code === 'ECONNABORTED') {
+        showSnackbar("❌ Request timeout - please try again", "error");
+      } else {
+        showSnackbar("Error deleting project", "error");
+      }
     }
   };
 
   const editProject = (p) => {
-    const projectId = getUserId(p);
+    const projectId = getProjectId(p);
     setProjectId(projectId);
     setProjectName(p.projectName || "");
     setDescription(p.description || "");
@@ -259,7 +354,9 @@ export const AdminProject = () => {
     setMembers(userIDs);
     setFile(null);
     setFileName("");
-    document.getElementById('ap-project-form').scrollIntoView({ behavior: 'smooth' });
+    
+    // Scroll to form
+    document.getElementById('ap-project-form')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const viewProjectDetails = (project) => {
@@ -273,9 +370,17 @@ export const AdminProject = () => {
       showSnackbar("No PDF file available", "warning");
       return;
     }
-    const pathParts = pdfPath.split('/');
-    const pdfFilename = pathParts[pathParts.length - 1];
-    const pdfUrl = `${axios.defaults.baseURL}/uploads/projects/${pdfFilename}`;
+    
+    // Handle different PDF path formats
+    let pdfUrl;
+    if (pdfPath.startsWith('http')) {
+      pdfUrl = pdfPath;
+    } else {
+      const pathParts = pdfPath.split('/');
+      const pdfFilename = pathParts[pathParts.length - 1];
+      pdfUrl = `${axios.defaults.baseURL}/uploads/projects/${pdfFilename}`;
+    }
+    
     setSelectedPdfUrl(pdfUrl);
     setOpenPdfDialog(true);
   };
@@ -285,12 +390,22 @@ export const AdminProject = () => {
       showSnackbar("No PDF file available", "warning");
       return;
     }
-    const pathParts = pdfPath.split('/');
-    const pdfFilename = pathParts[pathParts.length - 1];
-    const pdfUrl = `${axios.defaults.baseURL}/uploads/projects/${pdfFilename}`;
+
+    // Handle different PDF path formats
+    let pdfUrl;
+    if (pdfPath.startsWith('http')) {
+      pdfUrl = pdfPath;
+    } else {
+      const pathParts = pdfPath.split('/');
+      const pdfFilename = pathParts[pathParts.length - 1];
+      pdfUrl = `${axios.defaults.baseURL}/uploads/projects/${pdfFilename}`;
+    }
+
+    // Create a temporary anchor element
     const link = document.createElement('a');
     link.href = pdfUrl;
     link.download = filename || 'document.pdf';
+    link.target = '_blank';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -315,22 +430,36 @@ export const AdminProject = () => {
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
     if (selectedFile) {
+      // Check file type
       if (selectedFile.type !== "application/pdf") {
         showSnackbar("Only PDF files are allowed", "error");
+        e.target.value = ''; // Clear the input
         return;
       }
+      
+      // Check file size (max 10MB)
+      if (selectedFile.size > 10 * 1024 * 1024) {
+        showSnackbar("File size must be less than 10MB", "error");
+        e.target.value = ''; // Clear the input
+        return;
+      }
+      
       setFile(selectedFile);
       setFileName(selectedFile.name);
     }
   };
 
-  const showSnackbar = (message, severity) => {
+  const showSnackbar = (message, severity = "success") => {
     setSnackbar({ open: true, message, severity });
-    setTimeout(() => setSnackbar({ ...snackbar, open: false }), 4000);
+    
+    // Auto hide after 4 seconds
+    setTimeout(() => {
+      setSnackbar(prev => ({ ...prev, open: false }));
+    }, 4000);
   };
 
   const handleCloseSnackbar = () => {
-    setSnackbar({ ...snackbar, open: false });
+    setSnackbar(prev => ({ ...prev, open: false }));
   };
 
   const getStatusColor = (status) => {
@@ -400,6 +529,14 @@ export const AdminProject = () => {
         </div>
       )}
 
+      {/* Loading Overlay */}
+      {loading && (
+        <div className="ap-loading-overlay">
+          <div className="ap-loading-spinner"></div>
+          <div className="ap-loading-text">Saving project...</div>
+        </div>
+      )}
+
       {/* PDF Dialog */}
       {openPdfDialog && (
         <div className="ap-dialog-backdrop">
@@ -445,7 +582,7 @@ export const AdminProject = () => {
       {/* Details Dialog */}
       {openDetailsDialog && selectedProject && (
         <div className="ap-dialog-backdrop">
-          <div className="ap-dialog">
+          <div className="ap-dialog ap-dialog-lg">
             <div className="ap-dialog-header">
               <div className="ap-dialog-title">Project Details</div>
               <button className="ap-dialog-close" onClick={() => setOpenDetailsDialog(false)}>
@@ -675,7 +812,7 @@ export const AdminProject = () => {
           {/* Stats Cards */}
           <div className="ap-stats-grid">
             <StatCard icon={<Icons.Folder />} value={stats.total} label="Total Projects" color="#667eea" subtext="All projects" />
-            <StatCard icon={<Icons.PlayArrow />} value={stats.active} label="Active" color="#10b981" trend="+12" />
+            <StatCard icon={<Icons.PlayArrow />} value={stats.active} label="Active" color="#10b981" />
             <StatCard icon={<Icons.CheckCircle />} value={stats.completed} label="Completed" color="#3b82f6" />
             <StatCard icon={<Icons.Flag />} value={stats.highPriority} label="High Priority" color="#ef4444" subtext="Urgent" />
           </div>
@@ -690,7 +827,7 @@ export const AdminProject = () => {
                 <p className="ap-form-subtitle">{projectId ? "Update project details below" : "Fill in the details to create a new project"}</p>
               </div>
               {projectId && (
-                <button className="ap-btn ap-btn-outline ap-btn-light" onClick={resetForm}>
+                <button className="ap-btn ap-btn-outline ap-btn-light" onClick={resetForm} disabled={loading}>
                   Cancel Edit
                 </button>
               )}
@@ -708,6 +845,7 @@ export const AdminProject = () => {
                   value={projectName}
                   onChange={(e) => setProjectName(e.target.value)}
                   placeholder="Enter project name"
+                  disabled={loading}
                 />
                 {errors.projectName && <div className="ap-error-text">{errors.projectName}</div>}
               </div>
@@ -721,6 +859,7 @@ export const AdminProject = () => {
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Enter project description"
                   rows={3}
+                  disabled={loading}
                 />
                 {errors.description && <div className="ap-error-text">{errors.description}</div>}
               </div>
@@ -734,6 +873,7 @@ export const AdminProject = () => {
                     className={`ap-input ${errors.startDate ? "ap-input-error" : ""}`}
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
+                    disabled={loading}
                   />
                   {errors.startDate && <div className="ap-error-text">{errors.startDate}</div>}
                 </div>
@@ -744,6 +884,7 @@ export const AdminProject = () => {
                     className={`ap-input ${errors.endDate ? "ap-input-error" : ""}`}
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
+                    disabled={loading}
                   />
                   {errors.endDate && <div className="ap-error-text">{errors.endDate}</div>}
                 </div>
@@ -753,7 +894,12 @@ export const AdminProject = () => {
               <div className="ap-form-row">
                 <div className="ap-form-group">
                   <label className="ap-form-label">Priority</label>
-                  <select className="ap-select" value={priority} onChange={(e) => setPriority(e.target.value)}>
+                  <select 
+                    className="ap-select" 
+                    value={priority} 
+                    onChange={(e) => setPriority(e.target.value)}
+                    disabled={loading}
+                  >
                     <option value="Low">Low Priority</option>
                     <option value="Medium">Medium Priority</option>
                     <option value="High">High Priority</option>
@@ -761,7 +907,12 @@ export const AdminProject = () => {
                 </div>
                 <div className="ap-form-group">
                   <label className="ap-form-label">Status</label>
-                  <select className="ap-select" value={status} onChange={(e) => setStatus(e.target.value)}>
+                  <select 
+                    className="ap-select" 
+                    value={status} 
+                    onChange={(e) => setStatus(e.target.value)}
+                    disabled={loading}
+                  >
                     <option value="Active">Active</option>
                     <option value="On Hold">On Hold</option>
                     <option value="Completed">Completed</option>
@@ -775,14 +926,17 @@ export const AdminProject = () => {
               <div className="ap-form-group">
                 <label className="ap-form-label ap-required">Team Members</label>
                 <div className="ap-dropdown-container">
-                  <div className="ap-dropdown-trigger" onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
+                  <div 
+                    className={`ap-dropdown-trigger ${loading ? 'ap-disabled' : ''}`} 
+                    onClick={() => !loading && setIsDropdownOpen(!isDropdownOpen)}
+                  >
                     <span className="ap-dropdown-placeholder">
                       {members.length > 0 ? `${members.length} member${members.length > 1 ? 's' : ''} selected` : 'Select team members'}
                     </span>
                     <span className={`ap-dropdown-arrow ${isDropdownOpen ? 'open' : ''}`}>▼</span>
                   </div>
                   
-                  {isDropdownOpen && (
+                  {isDropdownOpen && !loading && (
                     <div className="ap-dropdown-menu">
                       <div className="ap-dropdown-search">
                         <input
@@ -791,6 +945,7 @@ export const AdminProject = () => {
                           value={memberSearchTerm}
                           onChange={(e) => setMemberSearchTerm(e.target.value)}
                           className="ap-dropdown-search-input"
+                          autoFocus
                         />
                       </div>
                       
@@ -829,7 +984,7 @@ export const AdminProject = () => {
                       
                       <div className="ap-dropdown-footer">
                         <button className="ap-dropdown-done-btn" onClick={() => setIsDropdownOpen(false)}>
-                          Done
+                          Done ({members.length} selected)
                         </button>
                       </div>
                     </div>
@@ -848,8 +1003,9 @@ export const AdminProject = () => {
                           </div>
                           <button 
                             className="ap-avatar-remove"
-                            onClick={() => handleMemberRemove(userId)}
+                            onClick={() => !loading && handleMemberRemove(userId)}
                             title="Remove"
+                            disabled={loading}
                           >
                             ×
                           </button>
@@ -862,34 +1018,61 @@ export const AdminProject = () => {
                 {errors.members && <div className="ap-error-text">{errors.members}</div>}
               </div>
 
-              {/* FILE UPLOAD - FIXED: No "Choose File No file changed" text */}
+              {/* FILE UPLOAD */}
               <div className="ap-form-group">
-                <label className="ap-form-label">Project Document (PDF)</label>
+                <label className="ap-form-label">Project Document (PDF) - Max 10MB</label>
                 <div className="ap-file-upload-wrapper">
-                  <label className="ap-file-upload-btn">
-                    <Icons.CloudUpload /> Upload Project Document (PDF)
+                  <label className={`ap-file-upload-btn ${loading ? 'ap-disabled' : ''}`}>
+                    <Icons.CloudUpload /> {file ? 'Change PDF' : 'Upload Project Document (PDF)'}
                     <input
                       type="file"
                       className="ap-file-input"
-                      accept=".pdf"
+                      accept=".pdf,application/pdf"
                       onChange={handleFileChange}
+                      disabled={loading}
                     />
                   </label>
                   {fileName && (
                     <div className="ap-file-info">
                       <Icons.Pdf /> {fileName}
+                      <button 
+                        className="ap-file-remove"
+                        onClick={() => {
+                          setFile(null);
+                          setFileName("");
+                        }}
+                        disabled={loading}
+                      >
+                        <Icons.Close />
+                      </button>
                     </div>
                   )}
                 </div>
+                {errors.file && <div className="ap-error-text">{errors.file}</div>}
               </div>
 
               {/* ACTION BUTTONS */}
               <div className="ap-form-actions">
-                <button className="ap-btn ap-btn-primary" onClick={handleSubmit} disabled={loading}>
-                  {loading ? "Saving..." : projectId ? "Update Project" : "Create Project"}
+                <button 
+                  className="ap-btn ap-btn-primary" 
+                  onClick={handleSubmit} 
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <span className="ap-spinner"></span>
+                      Saving...
+                    </>
+                  ) : (
+                    projectId ? "Update Project" : "Create Project"
+                  )}
                 </button>
                 {!projectId && (
-                  <button className="ap-btn ap-btn-outline" onClick={resetForm} disabled={loading}>
+                  <button 
+                    className="ap-btn ap-btn-outline" 
+                    onClick={resetForm} 
+                    disabled={loading}
+                  >
                     Clear Form
                   </button>
                 )}
@@ -907,7 +1090,6 @@ export const AdminProject = () => {
             </div>
             
             <div className="ap-list-controls">
-              {/* ONLY ONE SEARCH - FIXED: Removed duplicate search icon */}
               <div className="ap-search-wrapper">
                 <input
                   type="text"
@@ -917,7 +1099,11 @@ export const AdminProject = () => {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              <select className="ap-sort-select" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+              <select 
+                className="ap-sort-select" 
+                value={sortBy} 
+                onChange={(e) => setSortBy(e.target.value)}
+              >
                 <option value="newest">Newest First</option>
                 <option value="oldest">Oldest First</option>
                 <option value="priority">Priority</option>
@@ -937,7 +1123,7 @@ export const AdminProject = () => {
                 className="ap-btn ap-btn-primary"
                 onClick={() => {
                   resetForm();
-                  document.getElementById('ap-project-form').scrollIntoView({ behavior: 'smooth' });
+                  document.getElementById('ap-project-form')?.scrollIntoView({ behavior: 'smooth' });
                 }}
               >
                 <Icons.Add /> Create First Project
@@ -946,7 +1132,7 @@ export const AdminProject = () => {
           ) : (
             <div className="ap-project-grid">
               {filteredProjects.map((p) => {
-                const projectId = getUserId(p);
+                const projectId = getProjectId(p);
                 return (
                   <div key={projectId} className="ap-project-card">
                     <div className="ap-project-top-bar" style={{
@@ -959,9 +1145,6 @@ export const AdminProject = () => {
                           <Icons.Folder className="ap-project-icon" />
                           <h4 className="ap-project-title">{p.projectName || "Unnamed Project"}</h4>
                         </div>
-                        <button className="ap-more-btn">
-                          <Icons.MoreVert />
-                        </button>
                       </div>
                       
                       <div className="ap-project-badges">
