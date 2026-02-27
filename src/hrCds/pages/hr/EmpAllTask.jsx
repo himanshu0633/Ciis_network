@@ -41,9 +41,17 @@ const TaskDetails = () => {
   
   // Activity Log states
   const [activityLogs, setActivityLogs] = useState([]);
+  const [allTaskLogs, setAllTaskLogs] = useState({});
   const [loadingActivity, setLoadingActivity] = useState(false);
   const [showActivityLog, setShowActivityLog] = useState(false);
   const [selectedTaskForActivity, setSelectedTaskForActivity] = useState(null);
+
+  // Time Tracking states
+  const [taskTimeTracking, setTaskTimeTracking] = useState({});
+  const [todayTotalTime, setTodayTotalTime] = useState({ 
+    totalSeconds: 0, 
+    displayText: '0s' 
+  });
 
   // User states
   const [currentUser, setCurrentUser] = useState(null);
@@ -62,12 +70,12 @@ const TaskDetails = () => {
 
   const today = new Date();
 
-  // Helper function to check if user is Owner
+  // ==================== HELPER FUNCTIONS ====================
+
   const isOwner = () => {
     return currentUserCompanyRole === 'Owner' || currentUserRole === 'Owner' || currentUserRole === 'CAREER INFOWIS Admin';
   };
 
-  // Helper function to get company name
   const getCompanyName = (company) => {
     if (!company) return 'N/A';
     if (typeof company === 'object') {
@@ -76,7 +84,6 @@ const TaskDetails = () => {
     return company;
   };
 
-  // Helper function to get department name
   const getDepartmentName = (department) => {
     if (!department) return 'N/A';
     if (typeof department === 'object') {
@@ -103,6 +110,167 @@ const TaskDetails = () => {
     end.setDate(start.getDate() + 6);
     return new Date(date) >= start && new Date(date) <= end;
   };
+
+  // ==================== TIME TRACKING FUNCTIONS ====================
+
+  /**
+   * Format seconds to readable time
+   */
+  const formatTimeFromSeconds = (totalSeconds) => {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    if (hours > 0) {
+      return `${hours}h ${minutes}m ${seconds}s`;
+    } else if (minutes > 0) {
+      return `${minutes}m ${seconds}s`;
+    } else {
+      return `${seconds}s`;
+    }
+  };
+
+  /**
+   * Calculate active time for a task considering pause/resume
+   * @param {Array} logs - Activity logs for the task
+   * @returns {Object} - { totalSeconds, displayText, currentStatus, statusHistory }
+   */
+  const calculateTaskActiveTime = (logs) => {
+    if (!logs || logs.length === 0) return { 
+      totalSeconds: 0, 
+      displayText: '0s',
+      currentStatus: 'pending',
+      statusHistory: [] 
+    };
+
+    // Sort logs by date (oldest first)
+    const sortedLogs = [...logs].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    
+    let totalActiveSeconds = 0;
+    let lastStartTime = null;
+    let currentStatus = 'pending';
+    const statusHistory = [];
+
+    sortedLogs.forEach((log) => {
+      const logTime = new Date(log.createdAt);
+      
+      // Track status changes
+      if (log.action === 'status_updated') {
+        let newStatus = null;
+        
+        // Extract new status from different possible locations
+        if (log.newValues?.status) {
+          newStatus = log.newValues.status;
+        } else if (log.description) {
+          if (log.description.includes('in-progress')) newStatus = 'in-progress';
+          else if (log.description.includes('onhold')) newStatus = 'onhold';
+          else if (log.description.includes('completed')) newStatus = 'completed';
+          else if (log.description.includes('pending')) newStatus = 'pending';
+        }
+
+        if (newStatus && newStatus !== currentStatus) {
+          // Log the status change
+          statusHistory.push({
+            from: currentStatus,
+            to: newStatus,
+            time: logTime,
+            description: log.description
+          });
+
+          // Handle time calculation
+          if (newStatus === 'in-progress' && currentStatus !== 'in-progress') {
+            // Starting work (from pending/hold to in-progress)
+            lastStartTime = logTime;
+          } 
+          else if (currentStatus === 'in-progress' && (newStatus === 'onhold' || newStatus === 'completed' || newStatus === 'pending')) {
+            // Pausing or completing work
+            if (lastStartTime) {
+              const activeSeconds = Math.floor((logTime - lastStartTime) / 1000);
+              totalActiveSeconds += activeSeconds;
+              lastStartTime = null;
+            }
+          }
+          
+          currentStatus = newStatus;
+        }
+      }
+    });
+
+    // If currently in progress, add time until now
+    if (currentStatus === 'in-progress' && lastStartTime) {
+      const now = new Date();
+      const activeSeconds = Math.floor((now - lastStartTime) / 1000);
+      totalActiveSeconds += activeSeconds;
+    }
+
+    return {
+      totalSeconds: totalActiveSeconds,
+      displayText: formatTimeFromSeconds(totalActiveSeconds),
+      currentStatus,
+      statusHistory
+    };
+  };
+
+  /**
+   * Calculate total time for all today's tasks
+   */
+  const calculateTodayTotalTime = (tasksList, logsMap) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    let totalTodaySeconds = 0;
+    let todayTasksCount = 0;
+    
+    tasksList.forEach(task => {
+      const taskDate = new Date(task.createdAt);
+      taskDate.setHours(0, 0, 0, 0);
+      
+      // Check if task was created today
+      if (taskDate.getTime() === today.getTime()) {
+        todayTasksCount++;
+        const taskLogs = logsMap[task._id] || [];
+        const timeData = calculateTaskActiveTime(taskLogs);
+        totalTodaySeconds += timeData.totalSeconds;
+      }
+    });
+
+    return {
+      totalSeconds: totalTodaySeconds,
+      displayText: formatTimeFromSeconds(totalTodaySeconds),
+      taskCount: todayTasksCount
+    };
+  };
+
+  /**
+   * Fetch activity logs for all tasks
+   */
+  const fetchAllTaskLogs = async (tasksList) => {
+    const logsMap = { ...allTaskLogs };
+    
+    for (const task of tasksList) {
+      if (!logsMap[task._id]) {
+        try {
+          const response = await axios.get(`/task/${task._id}/activity-logs`);
+          if (response.data.success) {
+            logsMap[task._id] = response.data.logs || [];
+          }
+        } catch (error) {
+          console.error(`❌ Failed to fetch logs for task ${task._id}:`, error);
+          logsMap[task._id] = [];
+        }
+      }
+    }
+    
+    setAllTaskLogs(logsMap);
+    
+    // Update today's total time
+    const todayTotal = calculateTodayTotalTime(tasksList, logsMap);
+    setTodayTotalTime(todayTotal);
+    
+    return logsMap;
+  };
+
+  // ==================== STATE INITIALIZATION ====================
 
   // Overall Statistics
   const [overallStats, setOverallStats] = useState({
@@ -140,7 +308,8 @@ const TaskDetails = () => {
     activeEmployees: 0
   });
 
-  // ✅ FIXED: User authentication function with proper error handling
+  // ==================== USER AUTHENTICATION ====================
+
   useEffect(() => {
     const fetchUserData = () => {
       try {
@@ -153,7 +322,6 @@ const TaskDetails = () => {
         const user = JSON.parse(userStr);
         console.log("👤 Current user data:", user);
         
-        // Extract user details
         let foundUser = null;
         let userRole = 'user';
         let companyRole = 'employee';
@@ -161,7 +329,6 @@ const TaskDetails = () => {
         let userCompany = null;
         let userDepartment = null;
         
-        // Handle different user object structures
         if (user.id && typeof user.id === 'string') {
           foundUser = user;
           userRole = user.role || 'user';
@@ -187,7 +354,6 @@ const TaskDetails = () => {
           userDepartment = user.department || null;
         }
         
-        // If no name, try to extract from email
         if (!userName && user.email) {
           userName = user.email.split('@')[0];
         }
@@ -213,76 +379,81 @@ const TaskDetails = () => {
     fetchUserData();
   }, []);
 
-  // Calculate overall stats from all users
+  // ==================== STATISTICS CALCULATION ====================
+
   const calculateOverallStats = (usersData) => {
     if (!usersData || usersData.length === 0) {
-      const emptyStats = {};
-      STATUS_OPTIONS.forEach(opt => {
-        if (opt.value !== 'all') {
-          emptyStats[opt.value] = 0;
-        }
+      setOverallStats({
+        total: 0,
+        pending: 0,
+        'in-progress': 0,
+        completed: 0,
+        approved: 0,
+        rejected: 0,
+        overdue: 0,
+        onhold: 0,
+        reopen: 0,
+        cancelled: 0
       });
-      setOverallStats({ total: 0, ...emptyStats });
+
+      setSystemStats({
+        totalEmployees: 0,
+        totalTasks: 0,
+        avgCompletion: 0,
+        pendingTasks: 0,
+        activeEmployees: 0
+      });
+
       return;
     }
 
-    const stats = {
-      total: 0,
-      pending: 0,
+    let totalTasks = 0;
+    let totalCompleted = 0;
+    let totalPending = 0;
+
+    usersData.forEach(user => {
+      const stats = user.taskStats || {};
+
+      totalTasks += stats.total || 0;
+      totalCompleted += stats.completed || 0;
+      totalPending += stats.pending || 0;
+    });
+
+    const overallRate =
+      totalTasks > 0
+        ? Math.round((totalCompleted / totalTasks) * 100)
+        : 0;
+
+    setOverallStats({
+      total: totalTasks,
+      completed: totalCompleted,
+      pending: totalPending,
       'in-progress': 0,
-      completed: 0,
       approved: 0,
       rejected: 0,
       overdue: 0,
       onhold: 0,
       reopen: 0,
       cancelled: 0
-    };
-
-    // Calculate totals from all users
-    usersData.forEach(user => {
-      const userStats = user.taskStats || {};
-
-      stats.total += userStats.total || 0;
-      stats.pending += userStats.pending || 0;
-      stats['in-progress'] += userStats.inProgress || 0;
-      stats.completed += userStats.completed || 0;
-      stats.approved += userStats.approved || 0;
-      stats.rejected += userStats.rejected || 0;
-      stats.overdue += userStats.overdue || 0;
-      stats.onhold += userStats.onhold || 0;
-      stats.reopen += userStats.reopen || 0;
-      stats.cancelled += userStats.cancelled || 0;
     });
 
-    setOverallStats(stats);
-
-    // Calculate system stats
-    const totalTasks = stats.total;
-    const totalUsers = usersData.length;
-    const activeUsers = usersData.filter(user => (user.taskStats?.total || 0) > 0).length;
-    const pendingTasks = stats.pending + stats['in-progress'];
-    const avgCompletion = totalUsers > 0
-      ? Math.round(usersData.reduce((sum, user) => sum + (user.taskStats?.completionRate || 0), 0) / totalUsers)
-      : 0;
-
     setSystemStats({
-      totalEmployees: totalUsers,
+      totalEmployees: usersData.length,
       totalTasks,
-      avgCompletion,
-      pendingTasks,
-      activeEmployees: activeUsers
+      avgCompletion: overallRate,
+      pendingTasks: totalPending,
+      activeEmployees: usersData.filter(u => (u.taskStats?.total || 0) > 0).length
     });
   };
 
-  // ✅ FIXED: Fetch Users Function with role-based filtering
+  // ==================== FETCH USERS WITH TASKS ====================
+
   const fetchUsersWithTasks = async () => {
     setUsersLoading(true);
     setError("");
     try {
       console.log("📤 Fetching users with role-based access...");
 
-      // Get token from localStorage
       const token = localStorage.getItem('token');
       if (!token) {
         setError("Please log in to access this page");
@@ -290,7 +461,6 @@ const TaskDetails = () => {
         return;
       }
 
-      // Add authorization header
       const config = {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -298,16 +468,13 @@ const TaskDetails = () => {
         }
       };
 
-      // Try different endpoints based on role
       let response = null;
       let usersData = [];
 
       if (currentUser) {
-        // Determine which API to call based on user role
         let apiUrl = '';
         
         if (isOwner()) {
-          // Owner: Get all company users
           const companyId = currentUser?.company?._id || currentUser?.company;
           if (companyId) {
             apiUrl = `/users/company-users?companyId=${companyId}`;
@@ -317,13 +484,11 @@ const TaskDetails = () => {
             console.log("⚠️ No company ID found, using default endpoint");
           }
         } else {
-          // Employee: Get department users
           const deptId = currentUser?.department?._id || currentUser?.department;
           if (deptId) {
             apiUrl = `/users/department-users?department=${deptId}`;
             console.log("👤 Employee: Fetching department users from:", apiUrl);
           } else {
-            // Fallback to company users if no department
             const companyId = currentUser?.company?._id || currentUser?.company;
             if (companyId) {
               apiUrl = `/users/company-users?companyId=${companyId}`;
@@ -341,7 +506,6 @@ const TaskDetails = () => {
           throw apiError;
         }
       } else {
-        // If no current user, try general endpoint
         try {
           response = await axios.get('/task/users-with-counts', config);
         } catch (generalError) {
@@ -353,7 +517,6 @@ const TaskDetails = () => {
         }
       }
 
-      // Handle different response formats
       if (response?.data?.users && Array.isArray(response.data.users)) {
         usersData = response.data.users;
       } else if (response?.data?.data && Array.isArray(response.data.data)) {
@@ -366,31 +529,59 @@ const TaskDetails = () => {
 
       console.log("✅ Users data received:", usersData.length);
 
-      // Ensure each user has taskStats and proper fields
-      const usersWithStats = usersData.map(user => ({
-        ...user,
-        _id: user._id || user.id, // Ensure _id exists
-        name: user.name || user.fullName || user.email?.split('@')[0] || 'Unknown User',
-        role: user.role || user.designation || 'Employee',
-        email: user.email || '',
-        company: user.company || null,
-        department: user.department || null,
-        taskStats: user.taskStats || {
-          total: 0,
-          pending: 0,
-          completed: 0,
-          completionRate: 0,
-          inProgress: 0,
-          approved: 0,
-          rejected: 0,
-          overdue: 0,
-          onhold: 0,
-          reopen: 0,
-          cancelled: 0
-        }
-      }));
+      const usersWithStats = await Promise.all(
+        usersData.map(async (user) => {
+          const userId = user._id || user.id;
 
-      // Filter to ensure only same company users
+          let taskStats = {
+            total: 0,
+            completed: 0,
+            completionRate: 0,
+            pending: 0,
+            inProgress: 0,
+            approved: 0,
+            rejected: 0,
+            overdue: 0,
+            onhold: 0,
+            reopen: 0,
+            cancelled: 0
+          };
+
+          try {
+            const statsRes = await axios.get(`/task/user/${userId}/stats`);
+
+            if (statsRes.data.success && statsRes.data.statusCounts) {
+              const stats = statsRes.data.statusCounts;
+              const total = stats.total || 0;
+              const completed = stats.completed?.count || 0;
+
+              taskStats = {
+                total,
+                completed,
+                completionRate:
+                  total > 0 ? Math.round((completed / total) * 100) : 0,
+                pending: stats.pending?.count || 0,
+                inProgress: stats.inProgress?.count || 0,
+                approved: stats.approved?.count || 0,
+                rejected: stats.rejected?.count || 0,
+                overdue: stats.overdue?.count || 0,
+                onhold: stats.onHold?.count || 0,
+                reopen: stats.reopen?.count || 0,
+                cancelled: stats.cancelled?.count || 0
+              };
+            }
+          } catch (err) {
+            console.log("Stats fetch failed for user:", userId);
+          }
+
+          return {
+            ...user,
+            _id: userId,
+            taskStats
+          };
+        })
+      );
+
       let filteredUsers = usersWithStats;
       if (currentUser?.company) {
         const currentCompanyId = currentUser.company._id || currentUser.company;
@@ -401,7 +592,6 @@ const TaskDetails = () => {
         console.log("👥 Filtered to same company:", filteredUsers.length);
       }
 
-      // For employees, filter to same department
       if (!isOwner() && currentUser?.department) {
         const currentDeptId = currentUser.department._id || currentUser.department;
         filteredUsers = filteredUsers.filter(user => {
@@ -432,7 +622,6 @@ const TaskDetails = () => {
         );
       }
 
-      // Set empty users array
       setUsers([]);
       calculateOverallStats([]);
     } finally {
@@ -440,11 +629,11 @@ const TaskDetails = () => {
     }
   };
 
-  // Filtered users based on search query and role
+  // ==================== FILTERS ====================
+
   const filteredUsers = useMemo(() => {
     let filtered = users;
 
-    // Filter by search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(user =>
@@ -457,7 +646,6 @@ const TaskDetails = () => {
     return filtered;
   }, [users, searchQuery]);
 
-  // Get non-zero statuses for overall stats
   const getNonZeroStatuses = useMemo(() => {
     return STATUS_OPTIONS.filter(status => {
       if (status.value === 'all') return true;
@@ -465,14 +653,12 @@ const TaskDetails = () => {
     });
   }, [overallStats]);
 
-  // Filter tasks based on active status filters
   const filteredTasks = useMemo(() => {
     if (!Array.isArray(tasks)) return [];
 
     let filtered = [...tasks];
     const now = new Date();
 
-    /* 🔍 SEARCH FILTER */
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(task =>
@@ -482,7 +668,6 @@ const TaskDetails = () => {
       );
     }
 
-    /* 📌 STATUS FILTER */
     if (!activeStatusFilters.includes("all")) {
       filtered = filtered.filter(task => {
         const status = task.userStatus || task.status || task.overallStatus;
@@ -490,14 +675,12 @@ const TaskDetails = () => {
       });
     }
 
-    /* 📅 DATE FILTER */
     filtered = filtered.filter(task => {
       const rawDate = task.dueDateTime || task.createdAt;
       if (!rawDate) return false;
 
       const taskTime = new Date(rawDate).setHours(0, 0, 0, 0);
 
-      // 🔹 DATE RANGE FILTER (From – To)
       if (fromDate || toDate) {
         const fromTime = fromDate
           ? new Date(fromDate).setHours(0, 0, 0, 0)
@@ -513,7 +696,6 @@ const TaskDetails = () => {
         return true;
       }
 
-      // 🔹 QUICK DATE FILTERS
       if (dateFilter === "today") {
         return isSameDay(rawDate, now);
       }
@@ -535,12 +717,10 @@ const TaskDetails = () => {
       return true;
     });
 
-    /* 🚦 PRIORITY FILTER */
     if (priorityFilter !== "all") {
       filtered = filtered.filter(task => task.priority === priorityFilter);
     }
 
-    /* ⭐ TODAY TASKS ALWAYS ON TOP */
     filtered.sort((a, b) => {
       const aDate = a.dueDateTime || a.createdAt;
       const bDate = b.dueDateTime || b.createdAt;
@@ -569,14 +749,14 @@ const TaskDetails = () => {
     if (fromDate || toDate) setDateFilter("all");
   }, [fromDate, toDate]);
 
-  // Fetch all users with task counts from backend when currentUser is loaded
+  // ==================== FETCH DATA ====================
+
   useEffect(() => {
     if (currentUser) {
       fetchUsersWithTasks();
     }
   }, [currentUser]);
 
-  // Fetch task status counts for specific user
   const fetchTaskStatusCounts = async (userId) => {
     try {
       if (!userId) {
@@ -608,7 +788,6 @@ const TaskDetails = () => {
     }
   };
 
-  // Calculate stats from tasks data (fallback)
   const calculateStatsFromTasks = () => {
     if (!tasks || tasks.length === 0) {
       setUserTaskStats({
@@ -687,7 +866,6 @@ const TaskDetails = () => {
     });
   };
 
-  // Handle status filter toggle
   const handleStatusFilterToggle = (status) => {
     setActiveStatusFilters(prev => {
       if (status === 'all') {
@@ -705,7 +883,6 @@ const TaskDetails = () => {
     });
   };
 
-  // ✅ FIXED: Fetch user tasks with proper error handling
   const fetchUserTasks = async (userId) => {
     if (!userId) {
       setError("Invalid user ID");
@@ -726,7 +903,6 @@ const TaskDetails = () => {
       setSelectedUser(user);
       setSelectedUserId(userId);
 
-      // Build query params
       const params = new URLSearchParams();
       if (searchQuery) {
         params.append('search', searchQuery);
@@ -742,8 +918,10 @@ const TaskDetails = () => {
       if (res.data.success) {
         const tasksData = res.data.tasks || [];
         setTasks(tasksData);
+        
+        // Fetch logs for all tasks
+        await fetchAllTaskLogs(tasksData);
 
-        // Fetch stats from backend
         await fetchTaskStatusCounts(userId);
         setOpenDialog(true);
       } else {
@@ -763,7 +941,6 @@ const TaskDetails = () => {
     }
   };
 
-  // Fetch activity logs for a specific task
   const fetchActivityLogs = async (taskId) => {
     if (!taskId) return;
     
@@ -774,6 +951,12 @@ const TaskDetails = () => {
       
       if (response.data.success) {
         setActivityLogs(response.data.logs || []);
+        
+        // Update allTaskLogs
+        setAllTaskLogs(prev => ({
+          ...prev,
+          [taskId]: response.data.logs || []
+        }));
       } else {
         setActivityLogs([]);
       }
@@ -785,22 +968,19 @@ const TaskDetails = () => {
     }
   };
 
-  // Handle view activity logs
   const handleViewActivityLogs = (task, e) => {
-    e.stopPropagation(); // Prevent card click
+    e.stopPropagation();
     setSelectedTaskForActivity(task);
     fetchActivityLogs(task._id);
     setShowActivityLog(true);
   };
 
-  // Close activity log modal
   const handleCloseActivityLog = () => {
     setShowActivityLog(false);
     setSelectedTaskForActivity(null);
     setActivityLogs([]);
   };
 
-  // Reset filters
   const resetFilters = () => {
     setSearchQuery('');
     setActiveStatusFilters(['all']);
@@ -810,7 +990,8 @@ const TaskDetails = () => {
     setToDate('');
   };
 
-  // Format date
+  // ==================== FORMATTING FUNCTIONS ====================
+
   const formatDate = (dateStr) => {
     if (!dateStr) return "Not set";
     try {
@@ -821,7 +1002,6 @@ const TaskDetails = () => {
     }
   };
 
-  // Format time
   const formatTime = (dateStr) => {
     if (!dateStr) return "";
     try {
@@ -832,7 +1012,6 @@ const TaskDetails = () => {
     }
   };
 
-  // Format date and time together
   const formatDateTime = (dateStr) => {
     if (!dateStr) return "N/A";
     try {
@@ -850,7 +1029,6 @@ const TaskDetails = () => {
     }
   };
 
-  // Get status count for specific user
   const getStatusCount = (status) => {
     switch (status) {
       case 'total': return userTaskStats.total || 0;
@@ -867,7 +1045,6 @@ const TaskDetails = () => {
     }
   };
 
-  // Get user initials
   const getInitials = (name) => {
     if (!name) return "U";
     return name
@@ -878,7 +1055,6 @@ const TaskDetails = () => {
       .slice(0, 2);
   };
 
-  // Get user task stats
   const getUserTaskStats = (user) => {
     return user.taskStats || {
       total: 0,
@@ -895,7 +1071,6 @@ const TaskDetails = () => {
     };
   };
 
-  // Get activity log icon based on action type
   const getActivityIcon = (action) => {
     const actionLower = action?.toLowerCase() || '';
     if (actionLower.includes('create')) return <FiPlus size={14} />;
@@ -913,7 +1088,6 @@ const TaskDetails = () => {
     return <FiActivity size={14} />;
   };
 
-  // Get activity log color based on action type
   const getActivityColor = (action) => {
     const actionLower = action?.toLowerCase() || '';
     if (actionLower.includes('create')) return '#10b981';
@@ -927,7 +1101,8 @@ const TaskDetails = () => {
     return '#6b7280';
   };
 
-  // Render overall statistics
+  // ==================== RENDER FUNCTIONS ====================
+
   const renderOverallStats = () => {
     const statusGradients = {
       'pending': 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
@@ -957,7 +1132,6 @@ const TaskDetails = () => {
         </div>
 
         <div className="TaskDetails-overall-stats-grid">
-          {/* Total Tasks Card */}
           <div className="TaskDetails-overall-stat-card">
             <div className="TaskDetails-overall-stat-content">
               <div
@@ -977,7 +1151,6 @@ const TaskDetails = () => {
             </div>
           </div>
 
-          {/* Status Breakdown Cards */}
           {getNonZeroStatuses
             .filter((status) => status.value !== "all" && overallStats[status.value] > 0)
             .map((status) => {
@@ -1027,7 +1200,6 @@ const TaskDetails = () => {
     );
   };
 
-  // Render status cards
   const renderStatusCards = () => {
     const statusGradients = {
       'pending': 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
@@ -1184,7 +1356,6 @@ const TaskDetails = () => {
     );
   };
 
-  // Render enhanced user card
   const renderEnhancedUserCard = (user) => {
     const isSelected = selectedUserId === (user._id || user.id);
     const userStats = getUserTaskStats(user);
@@ -1293,9 +1464,74 @@ const TaskDetails = () => {
     );
   };
 
-  // Render activity log modal
+  // ==================== RENDER TODAY'S TOTAL TIME ====================
+
+  const renderTodayTotalTime = () => {
+    if (todayTotalTime.taskCount === 0) return null;
+
+    return (
+      <div style={{
+        marginTop: '1rem',
+        marginBottom: '1rem',
+        padding: '1rem 1.5rem',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        borderRadius: '0.75rem',
+        color: 'white',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '1rem',
+        boxShadow: '0 4px 6px rgba(102, 126, 234, 0.25)'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '50%',
+            background: 'rgba(255,255,255,0.2)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <FiClock size={24} color="white" />
+          </div>
+          <div>
+            <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>Today's Total Active Time</div>
+            <div style={{ fontSize: '1.8rem', fontWeight: 700, lineHeight: 1.2 }}>
+              {todayTotalTime.displayText}
+            </div>
+          </div>
+        </div>
+        <div style={{
+          background: 'rgba(255,255,255,0.15)',
+          padding: '0.5rem 1rem',
+          borderRadius: '2rem',
+          fontSize: '0.9rem'
+        }}>
+          {todayTotalTime.taskCount} {todayTotalTime.taskCount === 1 ? 'task' : 'tasks'} today
+        </div>
+      </div>
+    );
+  };
+
+  // ==================== UPDATED ACTIVITY LOG MODAL WITH TIME TRACKING ====================
+
   const renderActivityLogModal = () => {
     if (!showActivityLog || !selectedTaskForActivity) return null;
+
+    // Calculate active time with pause/resume
+    const timeData = calculateTaskActiveTime(activityLogs);
+    
+    // Get status icon based on current status
+    const getStatusIcon = () => {
+      switch (timeData.currentStatus) {
+        case 'in-progress': return <FiPlay size={16} color="#10b981" />;
+        case 'onhold': return <FiPause size={16} color="#f59e0b" />;
+        case 'completed': return <FiCheckCircle size={16} color="#10b981" />;
+        default: return <FiClock size={16} color="#6b7280" />;
+      }
+    };
 
     return (
       <div className="TaskDetails-activity-modal-overlay" onClick={handleCloseActivityLog}>
@@ -1340,60 +1576,163 @@ const TaskDetails = () => {
                 <p>No activity recorded for this task yet</p>
               </div>
             ) : (
-              <div className="TaskDetails-activity-timeline">
-                {activityLogs.map((log, index) => (
-                  <div key={log._id || index} className="TaskDetails-activity-item">
-                    <div className="TaskDetails-activity-timeline-line">
-                      <div 
-                        className="TaskDetails-activity-dot"
-                        style={{ backgroundColor: getActivityColor(log.action) }}
-                      >
-                        {getActivityIcon(log.action)}
-                      </div>
-                      {index < activityLogs.length - 1 && (
-                        <div className="TaskDetails-activity-line" />
-                      )}
+              <>
+                {/* TIME TRACKING SUMMARY CARD */}
+                <div className="TaskDetails-time-summary-card" style={{
+                  margin: '0 0 1rem 0',
+                  padding: '1rem',
+                  backgroundColor: 'white',
+                  borderRadius: '0.75rem',
+                  border: '1px solid #e2e8f0',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}>
+                  <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '4px',
+                    height: '100%',
+                    background: timeData.currentStatus === 'completed' ? '#10b981' :
+                                timeData.currentStatus === 'in-progress' ? '#3b82f6' :
+                                timeData.currentStatus === 'onhold' ? '#f59e0b' : '#6b7280'
+                  }} />
+                  
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                    <div style={{
+                      width: '48px',
+                      height: '48px',
+                      borderRadius: '50%',
+                      background: timeData.currentStatus === 'completed' ? '#10b98115' :
+                                  timeData.currentStatus === 'in-progress' ? '#3b82f615' :
+                                  timeData.currentStatus === 'onhold' ? '#f59e0b15' : '#6b728015',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      {getStatusIcon()}
                     </div>
-                    <div className="TaskDetails-activity-content">
-                      <div className="TaskDetails-activity-header">
-                        <span 
-                          className="TaskDetails-activity-action"
-                          style={{ color: getActivityColor(log.action) }}
-                        >
-                          {log.action || 'Action'}
+                    
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                          Total Active Time
                         </span>
-                        <span className="TaskDetails-activity-time">
-                          <FiTime size={12} />
-                          {formatDateTime(log.createdAt)}
+                        <span style={{
+                          padding: '0.2rem 0.6rem',
+                          background: timeData.currentStatus === 'completed' ? '#10b98115' :
+                                      timeData.currentStatus === 'in-progress' ? '#3b82f615' :
+                                      timeData.currentStatus === 'onhold' ? '#f59e0b15' : '#6b728015',
+                          color: timeData.currentStatus === 'completed' ? '#10b981' :
+                                 timeData.currentStatus === 'in-progress' ? '#3b82f6' :
+                                 timeData.currentStatus === 'onhold' ? '#f59e0b' : '#6b7280',
+                          borderRadius: '1rem',
+                          fontSize: '0.7rem',
+                          fontWeight: 600
+                        }}>
+                          {timeData.currentStatus === 'completed' ? '✅ Completed' :
+                           timeData.currentStatus === 'in-progress' ? '▶️ In Progress' :
+                           timeData.currentStatus === 'onhold' ? '⏸️ On Hold' : '⏳ Pending'}
                         </span>
                       </div>
-                      {log.description && (
-                        <p className="TaskDetails-activity-description">
-                          {log.description}
-                        </p>
-                      )}
-                      {log.user && (
-                        <div className="TaskDetails-activity-user">
-                          <FiUser size={10} />
-                          <span>by {log.user.name || log.user.email || 'Unknown User'}</span>
-                        </div>
-                      )}
-                      {log.changes && Object.keys(log.changes).length > 0 && (
-                        <div className="TaskDetails-activity-changes">
-                          {Object.entries(log.changes).map(([key, value]) => (
-                            <div key={key} className="TaskDetails-activity-change">
-                              <span className="TaskDetails-activity-change-field">{key}:</span>
-                              <span className="TaskDetails-activity-change-value">
-                                {typeof value === 'object' ? JSON.stringify(value) : String(value)}
-                              </span>
-                            </div>
-                          ))}
+
+                      <div>
+                        <span style={{ fontSize: '2rem', fontWeight: 700, color: '#0f172a' }}>
+                          {timeData.displayText}
+                        </span>
+                      </div>
+
+                      {/* Status Timeline */}
+                      {timeData.statusHistory.length > 0 && (
+                        <div style={{ marginTop: '1rem' }}>
+                          <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b', marginBottom: '0.5rem' }}>
+                            Status Timeline:
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                            {timeData.statusHistory.map((status, idx) => (
+                              <div key={idx} style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                fontSize: '0.75rem',
+                                padding: '0.25rem 0.5rem',
+                                background: '#f8fafc',
+                                borderRadius: '0.4rem',
+                                flexWrap: 'wrap'
+                              }}>
+                                <span style={{ 
+                                  width: '70px',
+                                  color: status.from === 'in-progress' ? '#3b82f6' :
+                                         status.from === 'onhold' ? '#f59e0b' : '#6b7280'
+                                }}>
+                                  {status.from}
+                                </span>
+                                <FiArrowRight size={12} color="#94a3b8" />
+                                <span style={{ 
+                                  width: '70px',
+                                  color: status.to === 'in-progress' ? '#3b82f6' :
+                                         status.to === 'onhold' ? '#f59e0b' :
+                                         status.to === 'completed' ? '#10b981' : '#6b7280'
+                                }}>
+                                  {status.to}
+                                </span>
+                                <span style={{ color: '#64748b' }}>
+                                  {status.time.toLocaleTimeString()}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
                     </div>
                   </div>
-                ))}
-              </div>
+                </div>
+
+                {/* Activity Timeline */}
+                <div className="TaskDetails-activity-timeline">
+                  {activityLogs.map((log, index) => (
+                    <div key={log._id || index} className="TaskDetails-activity-item">
+                      <div className="TaskDetails-activity-timeline-line">
+                        <div 
+                          className="TaskDetails-activity-dot"
+                          style={{ backgroundColor: getActivityColor(log.action) }}
+                        >
+                          {getActivityIcon(log.action)}
+                        </div>
+                        {index < activityLogs.length - 1 && (
+                          <div className="TaskDetails-activity-line" />
+                        )}
+                      </div>
+                      <div className="TaskDetails-activity-content">
+                        <div className="TaskDetails-activity-header">
+                          <span 
+                            className="TaskDetails-activity-action"
+                            style={{ color: getActivityColor(log.action) }}
+                          >
+                            {log.action || 'Action'}
+                          </span>
+                          <span className="TaskDetails-activity-time">
+                            <FiTime size={12} />
+                            {formatDateTime(log.createdAt)}
+                          </span>
+                        </div>
+                        {log.description && (
+                          <p className="TaskDetails-activity-description">
+                            {log.description}
+                          </p>
+                        )}
+                        {log.user && (
+                          <div className="TaskDetails-activity-user">
+                            <FiUser size={10} />
+                            <span>by {log.user.name || log.user.email || 'Unknown User'}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </div>
 
@@ -1411,14 +1750,14 @@ const TaskDetails = () => {
     );
   };
 
-  // Render enhanced dialog
+  // ==================== RENDER ENHANCED DIALOG ====================
+
   const renderEnhancedDialog = () => {
     if (!openDialog) return null;
 
     return (
       <div className="TaskDetails-modal-overlay" onClick={() => setOpenDialog(false)}>
         <div className="TaskDetails-modal" onClick={(e) => e.stopPropagation()}>
-          {/* Modal Header */}
           <div className="TaskDetails-modal-header">
             <div className="TaskDetails-modal-header-content">
               <div className="TaskDetails-modal-user-badge">
@@ -1461,7 +1800,6 @@ const TaskDetails = () => {
               </button>
             </div>
             
-            {/* Quick Stats Pills */}
             <div className="TaskDetails-modal-quick-stats">
               <div className="TaskDetails-modal-stat-pill">
                 <FiList size={14} />
@@ -1478,9 +1816,10 @@ const TaskDetails = () => {
             </div>
           </div>
 
-          {/* Modal Content */}
           <div className="TaskDetails-modal-body">
-            {/* Status Filters Section */}
+            {/* Today's Total Time Summary */}
+            {renderTodayTotalTime()}
+
             <div className="TaskDetails-modal-section">
               <div className="TaskDetails-modal-section-header">
                 <div className="TaskDetails-modal-section-title">
@@ -1548,7 +1887,6 @@ const TaskDetails = () => {
               )}
             </div>
 
-            {/* Search and Filters Section */}
             <div className="TaskDetails-modal-section">
               <div className="TaskDetails-modal-search-filters">
                 <div className="TaskDetails-modal-search-wrapper">
@@ -1595,7 +1933,6 @@ const TaskDetails = () => {
                   </select>
                 </div>
 
-                {/* Date Range Picker */}
                 <div className="TaskDetails-modal-date-range">
                   <div className="TaskDetails-modal-date-input">
                     <FiCalendar size={14} />
@@ -1629,7 +1966,6 @@ const TaskDetails = () => {
                   )}
                 </div>
 
-                {/* Active Filters Display */}
                 {(activeStatusFilters.length > 0 && !activeStatusFilters.includes('all')) && (
                   <div className="TaskDetails-modal-active-filters">
                     <span className="TaskDetails-modal-active-filters-label">
@@ -1662,7 +1998,6 @@ const TaskDetails = () => {
               </div>
             </div>
 
-            {/* Tasks List Section */}
             <div className="TaskDetails-modal-section TaskDetails-modal-tasks-section">
               <div className="TaskDetails-modal-tasks-header">
                 <div className="TaskDetails-modal-tasks-title">
@@ -1678,7 +2013,6 @@ const TaskDetails = () => {
                 </div>
               </div>
 
-              {/* Loading State */}
               {loading ? (
                 <div className="TaskDetails-modal-loading">
                   <div className="TaskDetails-modal-loading-spinner" />
@@ -1706,6 +2040,10 @@ const TaskDetails = () => {
                     const statusOption = STATUS_OPTIONS.find(s => s.value === status) || STATUS_OPTIONS[0];
                     const isToday = isSameDay(task.dueDateTime || task.createdAt, today);
                     const isOverdue = task.dueDateTime && new Date(task.dueDateTime) < today;
+                    
+                    // Get task time data
+                    const taskLogs = allTaskLogs[task._id] || [];
+                    const timeData = calculateTaskActiveTime(taskLogs);
 
                     return (
                       <div
@@ -1741,7 +2079,7 @@ const TaskDetails = () => {
                           </p>
                         )}
 
-                        {/* Time Information Section */}
+                        {/* Time Information Section with Active Time */}
                         <div className="TaskDetails-modal-task-time-info">
                           <div className="TaskDetails-modal-task-time-item">
                             <FiClock size={12} />
@@ -1750,6 +2088,26 @@ const TaskDetails = () => {
                               {formatDateTime(task.createdAt)}
                             </span>
                           </div>
+                          
+                          {/* Active Time Display */}
+                          <div className="TaskDetails-modal-task-time-item">
+                            {timeData.currentStatus === 'in-progress' ? (
+                              <FiPlay size={12} color="#10b981" />
+                            ) : timeData.currentStatus === 'onhold' ? (
+                              <FiPause size={12} color="#f59e0b" />
+                            ) : (
+                              <FiCheckCircle size={12} color="#6b7280" />
+                            )}
+                            <span className="TaskDetails-modal-task-time-label">Active:</span>
+                            <span className="TaskDetails-modal-task-time-value" style={{
+                              color: timeData.currentStatus === 'in-progress' ? '#10b981' :
+                                     timeData.currentStatus === 'onhold' ? '#f59e0b' : '#6b7280',
+                              fontWeight: 600
+                            }}>
+                              {timeData.displayText}
+                            </span>
+                          </div>
+
                           {task.updatedAt && task.updatedAt !== task.createdAt && (
                             <div className="TaskDetails-modal-task-time-item">
                               <FiRefreshCw size={12} />
@@ -1772,7 +2130,6 @@ const TaskDetails = () => {
                           )}
                         </div>
 
-                        {/* Activity Log Button */}
                         <div className="TaskDetails-modal-task-actions">
                           <button
                             className="TaskDetails-modal-task-activity-btn"
@@ -1790,7 +2147,6 @@ const TaskDetails = () => {
             </div>
           </div>
 
-          {/* Modal Footer */}
           <div className="TaskDetails-modal-footer">
             <div className="TaskDetails-modal-footer-stats">
               <span>Total: {filteredTasks.length} tasks</span>
@@ -1798,6 +2154,10 @@ const TaskDetails = () => {
               <span>Completed: {filteredTasks.filter(t => 
                 (t.userStatus || t.status) === 'completed'
               ).length}</span>
+              <span>•</span>
+              <span style={{ color: '#10b981', fontWeight: 600 }}>
+                Today: {todayTotalTime.displayText}
+              </span>
             </div>
             <button
               className="TaskDetails-modal-close-footer-btn"
@@ -1811,7 +2171,6 @@ const TaskDetails = () => {
     );
   };
 
-  // ✅ Add error display component
   const renderError = () => {
     if (!error) return null;
 
@@ -1849,11 +2208,12 @@ const TaskDetails = () => {
     );
   };
 
+  // ==================== MAIN RENDER ====================
+
   return (
     <div className="TaskDetails-section">
       {renderError()}
 
-      {/* Header */}
       <div className="TaskDetails-header">
         <div className="TaskDetails-header-content">
           <div className="TaskDetails-header-top">
@@ -1901,10 +2261,8 @@ const TaskDetails = () => {
         </div>
       </div>
 
-      {/* Main Card */}
       <div className="TaskDetails-card">
         <div className="TaskDetails-card-content">
-          {/* Card Header */}
           <div className="TaskDetails-card-header">
             <div className="TaskDetails-card-title-section">
               <div className="TaskDetails-card-icon">
@@ -1923,7 +2281,6 @@ const TaskDetails = () => {
               </div>
             </div>
 
-            {/* Filters */}
             <div className="TaskDetails-filter-section">
               <input
                 type="text"
@@ -1943,7 +2300,6 @@ const TaskDetails = () => {
             </div>
           </div>
 
-          {/* Stats Grid */}
           <div className="TaskDetails-stats-grid">
             <div className="TaskDetails-stat-item">
               <div className="TaskDetails-stat-content">
@@ -1991,7 +2347,6 @@ const TaskDetails = () => {
             </div>
           </div>
 
-          {/* Loading State */}
           {usersLoading ? (
             <div className="TaskDetails-loading-container">
               <div className="TaskDetails-loading-spinner"></div>
@@ -2027,10 +2382,7 @@ const TaskDetails = () => {
         </div>
       </div>
 
-      {/* Modal/Dialog */}
       {renderEnhancedDialog()}
-      
-      {/* Activity Log Modal */}
       {renderActivityLogModal()}
     </div>
   );
