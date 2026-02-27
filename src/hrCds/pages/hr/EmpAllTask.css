@@ -1982,3 +1982,78 @@
 .TaskDetails-modal-stat-pill-old {
   display: none;
 }
+
+/* Time Summary Card Styles */
+.TaskDetails-time-summary-card {
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.TaskDetails-time-summary-card details summary {
+  list-style: none;
+  user-select: none;
+}
+
+.TaskDetails-time-summary-card details summary::-webkit-details-marker {
+  display: none;
+}
+
+.TaskDetails-time-summary-card details summary:hover {
+  color: #4f46e5;
+}
+
+/* Time Tracking Styles */
+.TaskDetails-modal-task-time-item .active-time {
+  font-weight: 600;
+  padding: 0.1rem 0.3rem;
+  border-radius: 0.25rem;
+}
+
+.TaskDetails-modal-task-time-item .active-time.in-progress {
+  background: #10b98115;
+  color: #10b981;
+}
+
+.TaskDetails-modal-task-time-item .active-time.onhold {
+  background: #f59e0b15;
+  color: #f59e0b;
+}
+
+.TaskDetails-time-summary-card {
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.TaskDetails-time-summary-card details summary {
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+}
+
+.TaskDetails-time-summary-card details summary::-webkit-details-marker {
+  display: none;
+}
+
+.TaskDetails-time-summary-card details summary:hover {
+  color: #4f46e5;
+}
