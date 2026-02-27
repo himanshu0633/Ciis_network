@@ -1982,7 +1982,6 @@ const TaskDetails = () => {
                   >
                     <option value="all">All Dates</option>
                     <option value="today">Today</option>
-                    <option value="tomorrow">Tomorrow</option>
                     <option value="week">This Week</option>
                     <option value="overdue">Overdue</option>
                   </select>
