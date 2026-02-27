@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import axios from "../../../utils/axiosConfig";
 import "./EmpAllTask.css";
 import {
@@ -31,6 +31,13 @@ const STATUS_OPTIONS = [
 ];
 
 const TaskDetails = () => {
+  // Refs to prevent multiple API calls
+  const isMounted = useRef(true);
+  const hasFetchedUsers = useRef(false);
+  const fetchUsersTimeoutRef = useRef(null);
+  const fetchingTasksForUser = useRef(null);
+
+  // State declarations
   const [users, setUsers] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -62,7 +69,7 @@ const TaskDetails = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeStatusFilters, setActiveStatusFilters] = useState(['all']);
   const [showStatusFilters, setShowStatusFilters] = useState(true);
-  const [dateFilter, setDateFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState("today");
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
@@ -70,11 +77,24 @@ const TaskDetails = () => {
 
   const today = new Date();
 
+  // ==================== CLEANUP ON UNMOUNT ====================
+  useEffect(() => {
+    isMounted.current = true;
+    
+    // Cleanup function
+    return () => {
+      isMounted.current = false;
+      if (fetchUsersTimeoutRef.current) {
+        clearTimeout(fetchUsersTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // ==================== HELPER FUNCTIONS ====================
 
-  const isOwner = () => {
+  const isOwner = useCallback(() => {
     return currentUserCompanyRole === 'Owner' || currentUserRole === 'Owner' || currentUserRole === 'CAREER INFOWIS Admin';
-  };
+  }, [currentUserCompanyRole, currentUserRole]);
 
   const getCompanyName = (company) => {
     if (!company) return 'N/A';
@@ -113,9 +133,6 @@ const TaskDetails = () => {
 
   // ==================== TIME TRACKING FUNCTIONS ====================
 
-  /**
-   * Format seconds to readable time
-   */
   const formatTimeFromSeconds = (totalSeconds) => {
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -130,12 +147,7 @@ const TaskDetails = () => {
     }
   };
 
-  /**
-   * Calculate active time for a task considering pause/resume
-   * @param {Array} logs - Activity logs for the task
-   * @returns {Object} - { totalSeconds, displayText, currentStatus, statusHistory }
-   */
-  const calculateTaskActiveTime = (logs) => {
+  const calculateTaskActiveTime = useCallback((logs) => {
     if (!logs || logs.length === 0) return { 
       totalSeconds: 0, 
       displayText: '0s',
@@ -143,7 +155,6 @@ const TaskDetails = () => {
       statusHistory: [] 
     };
 
-    // Sort logs by date (oldest first)
     const sortedLogs = [...logs].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
     
     let totalActiveSeconds = 0;
@@ -154,11 +165,9 @@ const TaskDetails = () => {
     sortedLogs.forEach((log) => {
       const logTime = new Date(log.createdAt);
       
-      // Track status changes
       if (log.action === 'status_updated') {
         let newStatus = null;
         
-        // Extract new status from different possible locations
         if (log.newValues?.status) {
           newStatus = log.newValues.status;
         } else if (log.description) {
@@ -169,7 +178,6 @@ const TaskDetails = () => {
         }
 
         if (newStatus && newStatus !== currentStatus) {
-          // Log the status change
           statusHistory.push({
             from: currentStatus,
             to: newStatus,
@@ -177,13 +185,10 @@ const TaskDetails = () => {
             description: log.description
           });
 
-          // Handle time calculation
           if (newStatus === 'in-progress' && currentStatus !== 'in-progress') {
-            // Starting work (from pending/hold to in-progress)
             lastStartTime = logTime;
           } 
           else if (currentStatus === 'in-progress' && (newStatus === 'onhold' || newStatus === 'completed' || newStatus === 'pending')) {
-            // Pausing or completing work
             if (lastStartTime) {
               const activeSeconds = Math.floor((logTime - lastStartTime) / 1000);
               totalActiveSeconds += activeSeconds;
@@ -196,7 +201,6 @@ const TaskDetails = () => {
       }
     });
 
-    // If currently in progress, add time until now
     if (currentStatus === 'in-progress' && lastStartTime) {
       const now = new Date();
       const activeSeconds = Math.floor((now - lastStartTime) / 1000);
@@ -209,12 +213,9 @@ const TaskDetails = () => {
       currentStatus,
       statusHistory
     };
-  };
+  }, []);
 
-  /**
-   * Calculate total time for all today's tasks
-   */
-  const calculateTodayTotalTime = (tasksList, logsMap) => {
+  const calculateTodayTotalTime = useCallback((tasksList, logsMap) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
@@ -225,7 +226,6 @@ const TaskDetails = () => {
       const taskDate = new Date(task.createdAt);
       taskDate.setHours(0, 0, 0, 0);
       
-      // Check if task was created today
       if (taskDate.getTime() === today.getTime()) {
         todayTasksCount++;
         const taskLogs = logsMap[task._id] || [];
@@ -239,40 +239,45 @@ const TaskDetails = () => {
       displayText: formatTimeFromSeconds(totalTodaySeconds),
       taskCount: todayTasksCount
     };
-  };
+  }, [calculateTaskActiveTime]);
 
-  /**
-   * Fetch activity logs for all tasks
-   */
-  const fetchAllTaskLogs = async (tasksList) => {
-    const logsMap = { ...allTaskLogs };
+  const fetchAllTaskLogs = useCallback(async (tasksList) => {
+    if (!tasksList || tasksList.length === 0) return;
     
-    for (const task of tasksList) {
-      if (!logsMap[task._id]) {
-        try {
-          const response = await axios.get(`/task/${task._id}/activity-logs`);
-          if (response.data.success) {
-            logsMap[task._id] = response.data.logs || [];
-          }
-        } catch (error) {
-          console.error(`❌ Failed to fetch logs for task ${task._id}:`, error);
+    const logsMap = { ...allTaskLogs };
+    const tasksNeedingLogs = tasksList.filter(task => !logsMap[task._id]);
+    
+    if (tasksNeedingLogs.length === 0) return;
+
+    for (const task of tasksNeedingLogs) {
+      try {
+        const response = await axios.get(`/task/${task._id}/activity-logs`);
+        if (response.data.success && isMounted.current) {
+          logsMap[task._id] = response.data.logs || [];
+        }
+      } catch (error) {
+        console.error(`❌ Failed to fetch logs for task ${task._id}:`, error);
+        if (isMounted.current) {
           logsMap[task._id] = [];
         }
       }
     }
     
-    setAllTaskLogs(logsMap);
-    
-    // Update today's total time
-    const todayTotal = calculateTodayTotalTime(tasksList, logsMap);
-    setTodayTotalTime(todayTotal);
-    
-    return logsMap;
-  };
+    if (isMounted.current) {
+      setAllTaskLogs(prevLogs => {
+        const newLogs = { ...prevLogs, ...logsMap };
+        
+        // Update today's total time
+        const todayTotal = calculateTodayTotalTime(tasksList, newLogs);
+        setTodayTotalTime(todayTotal);
+        
+        return newLogs;
+      });
+    }
+  }, [allTaskLogs, calculateTodayTotalTime]);
 
-  // ==================== STATE INITIALIZATION ====================
+  // ==================== STATISTICS CALCULATION ====================
 
-  // Overall Statistics
   const [overallStats, setOverallStats] = useState({
     total: 0,
     pending: 0,
@@ -286,7 +291,6 @@ const TaskDetails = () => {
     cancelled: 0
   });
 
-  // Individual user statistics
   const [userTaskStats, setUserTaskStats] = useState({
     total: 0,
     pending: { count: 0, percentage: 0 },
@@ -307,6 +311,67 @@ const TaskDetails = () => {
     pendingTasks: 0,
     activeEmployees: 0
   });
+
+  const calculateOverallStats = useCallback((usersData) => {
+    if (!usersData || usersData.length === 0) {
+      setOverallStats({
+        total: 0,
+        pending: 0,
+        'in-progress': 0,
+        completed: 0,
+        approved: 0,
+        rejected: 0,
+        overdue: 0,
+        onhold: 0,
+        reopen: 0,
+        cancelled: 0
+      });
+
+      setSystemStats({
+        totalEmployees: 0,
+        totalTasks: 0,
+        avgCompletion: 0,
+        pendingTasks: 0,
+        activeEmployees: 0
+      });
+
+      return;
+    }
+
+    let totalTasks = 0;
+    let totalCompleted = 0;
+    let totalPending = 0;
+
+    usersData.forEach(user => {
+      const stats = user.taskStats || {};
+      totalTasks += stats.total || 0;
+      totalCompleted += stats.completed || 0;
+      totalPending += stats.pending || 0;
+    });
+
+    const overallRate = totalTasks > 0 ? Math.round((totalCompleted / totalTasks) * 100) : 0;
+
+    setOverallStats({
+      total: totalTasks,
+      completed: totalCompleted,
+      pending: totalPending,
+      'in-progress': 0,
+      approved: 0,
+      rejected: 0,
+      overdue: 0,
+      onhold: 0,
+      reopen: 0,
+      cancelled: 0
+    });
+
+    setSystemStats({
+      totalEmployees: usersData.length,
+      totalTasks,
+      avgCompletion: overallRate,
+      pendingTasks: totalPending,
+      activeEmployees: usersData.filter(u => (u.taskStats?.total || 0) > 0).length
+    });
+  }, []);
 
   // ==================== USER AUTHENTICATION ====================
 
@@ -358,9 +423,11 @@ const TaskDetails = () => {
           userName = user.email.split('@')[0];
         }
 
-        setCurrentUser(foundUser || user);
-        setCurrentUserRole(userRole);
-        setCurrentUserCompanyRole(companyRole);
+        if (isMounted.current) {
+          setCurrentUser(foundUser || user);
+          setCurrentUserRole(userRole);
+          setCurrentUserCompanyRole(companyRole);
+        }
 
         console.log("✅ User authenticated:", {
           name: userName,
@@ -379,255 +446,212 @@ const TaskDetails = () => {
     fetchUserData();
   }, []);
 
-  // ==================== STATISTICS CALCULATION ====================
-
-  const calculateOverallStats = (usersData) => {
-    if (!usersData || usersData.length === 0) {
-      setOverallStats({
-        total: 0,
-        pending: 0,
-        'in-progress': 0,
-        completed: 0,
-        approved: 0,
-        rejected: 0,
-        overdue: 0,
-        onhold: 0,
-        reopen: 0,
-        cancelled: 0
-      });
-
-      setSystemStats({
-        totalEmployees: 0,
-        totalTasks: 0,
-        avgCompletion: 0,
-        pendingTasks: 0,
-        activeEmployees: 0
-      });
-
-      return;
-    }
-
-    let totalTasks = 0;
-    let totalCompleted = 0;
-    let totalPending = 0;
-
-    usersData.forEach(user => {
-      const stats = user.taskStats || {};
-
-      totalTasks += stats.total || 0;
-      totalCompleted += stats.completed || 0;
-      totalPending += stats.pending || 0;
-    });
-
-    const overallRate =
-      totalTasks > 0
-        ? Math.round((totalCompleted / totalTasks) * 100)
-        : 0;
-
-    setOverallStats({
-      total: totalTasks,
-      completed: totalCompleted,
-      pending: totalPending,
-      'in-progress': 0,
-      approved: 0,
-      rejected: 0,
-      overdue: 0,
-      onhold: 0,
-      reopen: 0,
-      cancelled: 0
-    });
-
-    setSystemStats({
-      totalEmployees: usersData.length,
-      totalTasks,
-      avgCompletion: overallRate,
-      pendingTasks: totalPending,
-      activeEmployees: usersData.filter(u => (u.taskStats?.total || 0) > 0).length
-    });
-  };
-
   // ==================== FETCH USERS WITH TASKS ====================
 
-  const fetchUsersWithTasks = async () => {
-    setUsersLoading(true);
-    setError("");
-    try {
-      console.log("📤 Fetching users with role-based access...");
+  const fetchUsersWithTasks = useCallback(async () => {
+    // Prevent multiple calls
+    if (fetchUsersTimeoutRef.current) {
+      clearTimeout(fetchUsersTimeoutRef.current);
+    }
 
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setError("Please log in to access this page");
-        setUsersLoading(false);
-        return;
-      }
+    fetchUsersTimeoutRef.current = setTimeout(async () => {
+      if (!isMounted.current) return;
 
-      const config = {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      setUsersLoading(true);
+      setError("");
+      
+      try {
+        console.log("📤 Fetching users with role-based access...");
+
+        const token = localStorage.getItem('token');
+        if (!token) {
+          setError("Please log in to access this page");
+          setUsersLoading(false);
+          return;
         }
-      };
 
-      let response = null;
-      let usersData = [];
-
-      if (currentUser) {
-        let apiUrl = '';
-        
-        if (isOwner()) {
-          const companyId = currentUser?.company?._id || currentUser?.company;
-          if (companyId) {
-            apiUrl = `/users/company-users?companyId=${companyId}`;
-            console.log("👑 Owner: Fetching all company users from:", apiUrl);
-          } else {
-            apiUrl = '/users/company-users';
-            console.log("⚠️ No company ID found, using default endpoint");
+        const config = {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
           }
-        } else {
-          const deptId = currentUser?.department?._id || currentUser?.department;
-          if (deptId) {
-            apiUrl = `/users/department-users?department=${deptId}`;
-            console.log("👤 Employee: Fetching department users from:", apiUrl);
-          } else {
+        };
+
+        let response = null;
+        let usersData = [];
+
+        if (currentUser) {
+          let apiUrl = '';
+          
+          if (isOwner()) {
             const companyId = currentUser?.company?._id || currentUser?.company;
             if (companyId) {
               apiUrl = `/users/company-users?companyId=${companyId}`;
-              console.log("⚠️ No department ID, falling back to company users");
             } else {
               apiUrl = '/users/company-users';
             }
+          } else {
+            const deptId = currentUser?.department?._id || currentUser?.department;
+            if (deptId) {
+              apiUrl = `/users/department-users?department=${deptId}`;
+            } else {
+              const companyId = currentUser?.company?._id || currentUser?.company;
+              if (companyId) {
+                apiUrl = `/users/company-users?companyId=${companyId}`;
+              } else {
+                apiUrl = '/users/company-users';
+              }
+            }
           }
-        }
-
-        try {
-          response = await axios.get(apiUrl, config);
-        } catch (apiError) {
-          console.log("Primary endpoint failed, trying fallback...");
-          throw apiError;
-        }
-      } else {
-        try {
-          response = await axios.get('/task/users-with-counts', config);
-        } catch (generalError) {
-          console.log("General endpoint failed, trying users list...");
-          const usersResponse = await axios.get('/auth/users', config);
-          if (usersResponse.data?.users) {
-            usersData = usersResponse.data.users;
-          }
-        }
-      }
-
-      if (response?.data?.users && Array.isArray(response.data.users)) {
-        usersData = response.data.users;
-      } else if (response?.data?.data && Array.isArray(response.data.data)) {
-        usersData = response.data.data;
-      } else if (response?.data && Array.isArray(response.data)) {
-        usersData = response.data;
-      } else if (response?.data?.message?.users && Array.isArray(response.data.message.users)) {
-        usersData = response.data.message.users;
-      }
-
-      console.log("✅ Users data received:", usersData.length);
-
-      const usersWithStats = await Promise.all(
-        usersData.map(async (user) => {
-          const userId = user._id || user.id;
-
-          let taskStats = {
-            total: 0,
-            completed: 0,
-            completionRate: 0,
-            pending: 0,
-            inProgress: 0,
-            approved: 0,
-            rejected: 0,
-            overdue: 0,
-            onhold: 0,
-            reopen: 0,
-            cancelled: 0
-          };
 
           try {
-            const statsRes = await axios.get(`/task/user/${userId}/stats`);
-
-            if (statsRes.data.success && statsRes.data.statusCounts) {
-              const stats = statsRes.data.statusCounts;
-              const total = stats.total || 0;
-              const completed = stats.completed?.count || 0;
-
-              taskStats = {
-                total,
-                completed,
-                completionRate:
-                  total > 0 ? Math.round((completed / total) * 100) : 0,
-                pending: stats.pending?.count || 0,
-                inProgress: stats.inProgress?.count || 0,
-                approved: stats.approved?.count || 0,
-                rejected: stats.rejected?.count || 0,
-                overdue: stats.overdue?.count || 0,
-                onhold: stats.onHold?.count || 0,
-                reopen: stats.reopen?.count || 0,
-                cancelled: stats.cancelled?.count || 0
-              };
-            }
-          } catch (err) {
-            console.log("Stats fetch failed for user:", userId);
+            response = await axios.get(apiUrl, config);
+          } catch (apiError) {
+            console.log("Primary endpoint failed, trying fallback...");
+            throw apiError;
           }
+        } else {
+          try {
+            response = await axios.get('/task/users-with-counts', config);
+          } catch (generalError) {
+            console.log("General endpoint failed, trying users list...");
+            const usersResponse = await axios.get('/auth/users', config);
+            if (usersResponse.data?.users) {
+              usersData = usersResponse.data.users;
+            }
+          }
+        }
 
-          return {
-            ...user,
-            _id: userId,
-            taskStats
-          };
-        })
-      );
+        if (response?.data?.users && Array.isArray(response.data.users)) {
+          usersData = response.data.users;
+        } else if (response?.data?.data && Array.isArray(response.data.data)) {
+          usersData = response.data.data;
+        } else if (response?.data && Array.isArray(response.data)) {
+          usersData = response.data;
+        } else if (response?.data?.message?.users && Array.isArray(response.data.message.users)) {
+          usersData = response.data.message.users;
+        }
 
-      let filteredUsers = usersWithStats;
-      if (currentUser?.company) {
-        const currentCompanyId = currentUser.company._id || currentUser.company;
-        filteredUsers = usersWithStats.filter(user => {
-          const userCompanyId = user.company?._id || user.company;
-          return userCompanyId?.toString() === currentCompanyId?.toString();
-        });
-        console.log("👥 Filtered to same company:", filteredUsers.length);
-      }
+        console.log("✅ Users data received:", usersData.length);
 
-      if (!isOwner() && currentUser?.department) {
-        const currentDeptId = currentUser.department._id || currentUser.department;
-        filteredUsers = filteredUsers.filter(user => {
-          const userDeptId = user.department?._id || user.department;
-          return userDeptId?.toString() === currentDeptId?.toString();
-        });
-        console.log("👥 Filtered to same department:", filteredUsers.length);
-      }
+        const usersWithStats = await Promise.all(
+          usersData.map(async (user) => {
+            const userId = user._id || user.id;
 
-      setUsers(filteredUsers);
-      calculateOverallStats(filteredUsers);
+            let taskStats = {
+              total: 0,
+              completed: 0,
+              completionRate: 0,
+              pending: 0,
+              inProgress: 0,
+              approved: 0,
+              rejected: 0,
+              overdue: 0,
+              onhold: 0,
+              reopen: 0,
+              cancelled: 0
+            };
 
-    } catch (err) {
-      console.error("❌ Error fetching users with tasks:", err);
+            try {
+              const statsRes = await axios.get(`/task/user/${userId}/stats`);
 
-      if (err.response?.status === 401) {
-        setError("Your session has expired. Please log in again.");
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
-        window.location.href = '/login';
-      } else if (err.response?.status === 403) {
-        setError("You don't have permission to access this page.");
-      } else {
-        setError(
-          err?.response?.data?.error ||
-          err?.response?.data?.message ||
-          "Unable to load employee data. Please try again."
+              if (statsRes.data.success && statsRes.data.statusCounts) {
+                const stats = statsRes.data.statusCounts;
+                const total = stats.total || 0;
+                const completed = stats.completed?.count || 0;
+
+                taskStats = {
+                  total,
+                  completed,
+                  completionRate: total > 0 ? Math.round((completed / total) * 100) : 0,
+                  pending: stats.pending?.count || 0,
+                  inProgress: stats.inProgress?.count || 0,
+                  approved: stats.approved?.count || 0,
+                  rejected: stats.rejected?.count || 0,
+                  overdue: stats.overdue?.count || 0,
+                  onhold: stats.onHold?.count || 0,
+                  reopen: stats.reopen?.count || 0,
+                  cancelled: stats.cancelled?.count || 0
+                };
+              }
+            } catch (err) {
+              console.log("Stats fetch failed for user:", userId);
+            }
+
+            return {
+              ...user,
+              _id: userId,
+              taskStats
+            };
+          })
         );
-      }
 
-      setUsers([]);
-      calculateOverallStats([]);
-    } finally {
-      setUsersLoading(false);
+        let filteredUsers = usersWithStats;
+        if (currentUser?.company) {
+          const currentCompanyId = currentUser.company._id || currentUser.company;
+          filteredUsers = usersWithStats.filter(user => {
+            const userCompanyId = user.company?._id || user.company;
+            return userCompanyId?.toString() === currentCompanyId?.toString();
+          });
+        }
+
+        if (!isOwner() && currentUser?.department) {
+          const currentDeptId = currentUser.department._id || currentUser.department;
+          filteredUsers = filteredUsers.filter(user => {
+            const userDeptId = user.department?._id || user.department;
+            return userDeptId?.toString() === currentDeptId?.toString();
+          });
+        }
+
+        if (isMounted.current) {
+          setUsers(filteredUsers);
+          calculateOverallStats(filteredUsers);
+        }
+
+      } catch (err) {
+        console.error("❌ Error fetching users with tasks:", err);
+
+        if (err.response?.status === 401) {
+          setError("Your session has expired. Please log in again.");
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+          window.location.href = '/login';
+        } else if (err.response?.status === 403) {
+          setError("You don't have permission to access this page.");
+        } else {
+          setError(
+            err?.response?.data?.error ||
+            err?.response?.data?.message ||
+            "Unable to load employee data. Please try again."
+          );
+        }
+
+        if (isMounted.current) {
+          setUsers([]);
+          calculateOverallStats([]);
+        }
+      } finally {
+        if (isMounted.current) {
+          setUsersLoading(false);
+        }
+      }
+    }, 300); // Debounce by 300ms
+
+  }, [currentUser, isOwner, calculateOverallStats]);
+
+  // Single useEffect for fetching users
+  useEffect(() => {
+    if (currentUser && !hasFetchedUsers.current && isMounted.current) {
+      hasFetchedUsers.current = true;
+      fetchUsersWithTasks();
     }
-  };
+
+    return () => {
+      if (fetchUsersTimeoutRef.current) {
+        clearTimeout(fetchUsersTimeoutRef.current);
+      }
+    };
+  }, [currentUser, fetchUsersWithTasks]);
 
   // ==================== FILTERS ====================
 
@@ -749,15 +773,9 @@ const TaskDetails = () => {
     if (fromDate || toDate) setDateFilter("all");
   }, [fromDate, toDate]);
 
-  // ==================== FETCH DATA ====================
+  // ==================== FETCH TASK FUNCTIONS ====================
 
-  useEffect(() => {
-    if (currentUser) {
-      fetchUsersWithTasks();
-    }
-  }, [currentUser]);
-
-  const fetchTaskStatusCounts = async (userId) => {
+  const fetchTaskStatusCounts = useCallback(async (userId) => {
     try {
       if (!userId) {
         console.error("❌ No userId provided to fetchTaskStatusCounts");
@@ -766,7 +784,7 @@ const TaskDetails = () => {
       
       const response = await axios.get(`/task/user/${userId}/stats`);
 
-      if (response.data.success && response.data.statusCounts) {
+      if (response.data.success && response.data.statusCounts && isMounted.current) {
         const statusCounts = response.data.statusCounts;
 
         setUserTaskStats({
@@ -784,11 +802,13 @@ const TaskDetails = () => {
       }
     } catch (err) {
       console.error('❌ Error fetching task status counts:', err);
-      calculateStatsFromTasks();
+      if (isMounted.current) {
+        calculateStatsFromTasks();
+      }
     }
-  };
+  }, []);
 
-  const calculateStatsFromTasks = () => {
+  const calculateStatsFromTasks = useCallback(() => {
     if (!tasks || tasks.length === 0) {
       setUserTaskStats({
         total: 0,
@@ -864,7 +884,7 @@ const TaskDetails = () => {
         percentage: total > 0 ? Math.round((statusCounts.cancelled / total) * 100) : 0
       }
     });
-  };
+  }, [tasks]);
 
   const handleStatusFilterToggle = (status) => {
     setActiveStatusFilters(prev => {
@@ -883,12 +903,18 @@ const TaskDetails = () => {
     });
   };
 
-  const fetchUserTasks = async (userId) => {
+  const fetchUserTasks = useCallback(async (userId) => {
+    // Prevent fetching if already loading or same user
+    if (loading || fetchingTasksForUser.current === userId) {
+      return;
+    }
+
     if (!userId) {
       setError("Invalid user ID");
       return;
     }
 
+    fetchingTasksForUser.current = userId;
     setLoading(true);
     setError("");
     
@@ -897,11 +923,14 @@ const TaskDetails = () => {
       if (!user) {
         setError("User not found");
         setLoading(false);
+        fetchingTasksForUser.current = null;
         return;
       }
 
-      setSelectedUser(user);
-      setSelectedUserId(userId);
+      if (isMounted.current) {
+        setSelectedUser(user);
+        setSelectedUserId(userId);
+      }
 
       const params = new URLSearchParams();
       if (searchQuery) {
@@ -911,17 +940,16 @@ const TaskDetails = () => {
       const queryString = params.toString();
       const url = `/task/user/${userId}/tasks${queryString ? `?${queryString}` : ''}`;
       
-      console.log("📤 Fetching tasks for user:", userId, "URL:", url);
+      console.log("📤 Fetching tasks for user:", userId);
       
       const res = await axios.get(url);
 
-      if (res.data.success) {
+      if (res.data.success && isMounted.current) {
         const tasksData = res.data.tasks || [];
         setTasks(tasksData);
         
         // Fetch logs for all tasks
         await fetchAllTaskLogs(tasksData);
-
         await fetchTaskStatusCounts(userId);
         setOpenDialog(true);
       } else {
@@ -930,16 +958,21 @@ const TaskDetails = () => {
 
     } catch (err) {
       console.error("❌ Error fetching user tasks:", err);
-      setError(
-        err?.response?.data?.error ||
-        err?.response?.data?.message ||
-        err?.message ||
-        "Error fetching tasks. Please try again."
-      );
+      if (isMounted.current) {
+        setError(
+          err?.response?.data?.error ||
+          err?.response?.data?.message ||
+          err?.message ||
+          "Error fetching tasks. Please try again."
+        );
+      }
     } finally {
-      setLoading(false);
+      if (isMounted.current) {
+        setLoading(false);
+      }
+      fetchingTasksForUser.current = null;
     }
-  };
+  }, [users, searchQuery, fetchAllTaskLogs, fetchTaskStatusCounts, loading]);
 
   const fetchActivityLogs = async (taskId) => {
     if (!taskId) return;
@@ -949,10 +982,9 @@ const TaskDetails = () => {
       console.log("📤 Fetching activity logs for task:", taskId);
       const response = await axios.get(`/task/${taskId}/activity-logs`);
       
-      if (response.data.success) {
+      if (response.data.success && isMounted.current) {
         setActivityLogs(response.data.logs || []);
         
-        // Update allTaskLogs
         setAllTaskLogs(prev => ({
           ...prev,
           [taskId]: response.data.logs || []
@@ -964,7 +996,9 @@ const TaskDetails = () => {
       console.error("❌ Error fetching activity logs:", err);
       setActivityLogs([]);
     } finally {
-      setLoadingActivity(false);
+      if (isMounted.current) {
+        setLoadingActivity(false);
+      }
     }
   };
 
@@ -1464,8 +1498,6 @@ const TaskDetails = () => {
     );
   };
 
-  // ==================== RENDER TODAY'S TOTAL TIME ====================
-
   const renderTodayTotalTime = () => {
     if (todayTotalTime.taskCount === 0) return null;
 
@@ -1515,15 +1547,11 @@ const TaskDetails = () => {
     );
   };
 
-  // ==================== UPDATED ACTIVITY LOG MODAL WITH TIME TRACKING ====================
-
   const renderActivityLogModal = () => {
     if (!showActivityLog || !selectedTaskForActivity) return null;
 
-    // Calculate active time with pause/resume
     const timeData = calculateTaskActiveTime(activityLogs);
     
-    // Get status icon based on current status
     const getStatusIcon = () => {
       switch (timeData.currentStatus) {
         case 'in-progress': return <FiPlay size={16} color="#10b981" />;
@@ -1536,7 +1564,6 @@ const TaskDetails = () => {
     return (
       <div className="TaskDetails-activity-modal-overlay" onClick={handleCloseActivityLog}>
         <div className="TaskDetails-activity-modal" onClick={(e) => e.stopPropagation()}>
-          {/* Activity Modal Header */}
           <div className="TaskDetails-activity-modal-header">
             <div className="TaskDetails-activity-modal-header-content">
               <div className="TaskDetails-activity-modal-title">
@@ -1560,7 +1587,6 @@ const TaskDetails = () => {
             </div>
           </div>
 
-          {/* Activity Modal Body */}
           <div className="TaskDetails-activity-modal-body">
             {loadingActivity ? (
               <div className="TaskDetails-activity-loading">
@@ -1577,7 +1603,6 @@ const TaskDetails = () => {
               </div>
             ) : (
               <>
-                {/* TIME TRACKING SUMMARY CARD */}
                 <div className="TaskDetails-time-summary-card" style={{
                   margin: '0 0 1rem 0',
                   padding: '1rem',
@@ -1643,7 +1668,6 @@ const TaskDetails = () => {
                         </span>
                       </div>
 
-                      {/* Status Timeline */}
                       {timeData.statusHistory.length > 0 && (
                         <div style={{ marginTop: '1rem' }}>
                           <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b', marginBottom: '0.5rem' }}>
@@ -1689,7 +1713,6 @@ const TaskDetails = () => {
                   </div>
                 </div>
 
-                {/* Activity Timeline */}
                 <div className="TaskDetails-activity-timeline">
                   {activityLogs.map((log, index) => (
                     <div key={log._id || index} className="TaskDetails-activity-item">
@@ -1736,7 +1759,6 @@ const TaskDetails = () => {
             )}
           </div>
 
-          {/* Activity Modal Footer */}
           <div className="TaskDetails-activity-modal-footer">
             <button
               className="TaskDetails-activity-modal-close-btn"
@@ -1749,8 +1771,6 @@ const TaskDetails = () => {
       </div>
     );
   };
-
-  // ==================== RENDER ENHANCED DIALOG ====================
 
   const renderEnhancedDialog = () => {
     if (!openDialog) return null;
@@ -1817,7 +1837,6 @@ const TaskDetails = () => {
           </div>
 
           <div className="TaskDetails-modal-body">
-            {/* Today's Total Time Summary */}
             {renderTodayTotalTime()}
 
             <div className="TaskDetails-modal-section">
@@ -2041,7 +2060,6 @@ const TaskDetails = () => {
                     const isToday = isSameDay(task.dueDateTime || task.createdAt, today);
                     const isOverdue = task.dueDateTime && new Date(task.dueDateTime) < today;
                     
-                    // Get task time data
                     const taskLogs = allTaskLogs[task._id] || [];
                     const timeData = calculateTaskActiveTime(taskLogs);
 
@@ -2079,7 +2097,6 @@ const TaskDetails = () => {
                           </p>
                         )}
 
-                        {/* Time Information Section with Active Time */}
                         <div className="TaskDetails-modal-task-time-info">
                           <div className="TaskDetails-modal-task-time-item">
                             <FiClock size={12} />
@@ -2089,7 +2106,6 @@ const TaskDetails = () => {
                             </span>
                           </div>
                           
-                          {/* Active Time Display */}
                           <div className="TaskDetails-modal-task-time-item">
                             {timeData.currentStatus === 'in-progress' ? (
                               <FiPlay size={12} color="#10b981" />
