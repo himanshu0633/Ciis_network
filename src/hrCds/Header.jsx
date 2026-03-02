@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   AppBar,
   Toolbar,
@@ -10,13 +10,23 @@ import {
   Menu,
   MenuItem,
   useTheme,
-  CircularProgress
+  CircularProgress,
+  Snackbar,
+  Alert,
+  Button
 } from "@mui/material";
 import LogoutIcon from "@mui/icons-material/Logout";
 import MenuIcon from "@mui/icons-material/Menu";
 import NotificationsIcon from "@mui/icons-material/Notifications";
+import CloseIcon from "@mui/icons-material/Close";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import ErrorIcon from "@mui/icons-material/Error";
+import InfoIcon from "@mui/icons-material/Info";
+import WarningIcon from "@mui/icons-material/Warning";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../src/context/useAuth";
+import { useSocket } from "../../src/context/SocketContext";
+import { useNotification } from "../../src/context/NotificationContext";
 import logo from "/logoo.png";
 import axios from "axios";
 import API_URL from "../../src/config";
@@ -24,26 +34,81 @@ import Swal from "sweetalert2";
 
 const Header = ({ toggleSidebar, isMobile }) => {
   const { user } = useAuth();
+  const { 
+    onNewNotification, 
+    unreadCount, 
+    markAsRead,
+    isConnected 
+  } = useSocket();
+  const { showToast } = useNotification();
+  
   const theme = useTheme();
   const navigate = useNavigate();
 
   const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [anchorEl, setAnchorEl] = useState(null);
   const [loading, setLoading] = useState(false);
   const [hasFetched, setHasFetched] = useState(false);
+  const [toast, setToast] = useState({
+    open: false,
+    message: "",
+    type: "info"
+  });
 
-  // Logo click handler
-  const handleLogoClick = () => {
-    navigate("/ciisUser/user-dashboard");
-  };
+  // ========== SOCKET NOTIFICATION LISTENER ==========
+  useEffect(() => {
+    console.log('🔔 Header: Setting up notification listener');
+    
+    // Listen for new notifications via socket
+    const unsubscribe = onNewNotification((notification) => {
+      console.log('📢 Header: New notification received:', notification);
+      
+      // Add to notifications list
+      setNotifications(prev => {
+        // Check if already exists
+        const exists = prev.some(n => n._id === notification._id);
+        if (!exists) {
+          // Show toast for new notification
+          showToast(notification.message || 'New notification', 
+            notification.type === 'error' ? 'error' : 
+            notification.type === 'success' ? 'success' : 'info', 
+            5000
+          );
+          
+          return [notification, ...prev];
+        }
+        return prev;
+      });
+      
+      // Update unread count is handled by socket context
+    });
 
-  // Fetch notifications only on button click
-  const fetchNotifications = async () => {
+    return () => {
+      unsubscribe?.();
+    };
+  }, [onNewNotification, showToast]);
+
+  // ========== FETCH INITIAL NOTIFICATIONS ==========
+  useEffect(() => {
+    if (!hasFetched) {
+      fetchNotifications();
+    }
+    
+    // Set up interval to refresh notifications every 2 minutes
+    const interval = setInterval(() => {
+      fetchNotifications(true); // silent refresh
+    }, 120000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  // ========== FETCH NOTIFICATIONS FROM API ==========
+  const fetchNotifications = async (silent = false) => {
     const token = localStorage.getItem("token");
     if (!token) return;
 
-    setLoading(true);
+    if (!silent) setLoading(true);
+    
     const headers = { Authorization: `Bearer ${token}` };
 
     try {
@@ -81,11 +146,15 @@ const Header = ({ toggleSidebar, isMobile }) => {
       attendanceData.forEach((item) => {
         if (item.inTime) all.push({ 
           msg: `🕒 Clocked In at ${formatTime(item.inTime)}`, 
-          time: item.inTime 
+          time: item.inTime,
+          type: 'attendance',
+          read: false
         });
         if (item.outTime) all.push({ 
           msg: `🏠 Clocked Out at ${formatTime(item.outTime)}`, 
-          time: item.outTime 
+          time: item.outTime,
+          type: 'attendance',
+          read: false
         });
       });
 
@@ -101,6 +170,9 @@ const Header = ({ toggleSidebar, isMobile }) => {
         all.push({
           msg: `${emoji} Leave ${l.status}: ${l.type}`,
           time: l.updatedAt || l.startDate,
+          type: 'leave',
+          read: false,
+          data: l
         });
       });
 
@@ -110,6 +182,8 @@ const Header = ({ toggleSidebar, isMobile }) => {
         all.push({
           msg: `💻 Asset Request: ${a.assetName} — ${a.status.toUpperCase()}`,
           time: a.updatedAt,
+          type: 'asset',
+          read: false
         });
       });
 
@@ -127,6 +201,8 @@ const Header = ({ toggleSidebar, isMobile }) => {
           all.push({
             msg: `🧾 Task Update: ${t.title} (${status})`,
             time: t.createdAt,
+            type: 'task',
+            read: false
           });
         });
       });
@@ -136,10 +212,12 @@ const Header = ({ toggleSidebar, isMobile }) => {
       assignedTaskData.forEach((t) => {
         if (t.status?.toLowerCase() === "completed") return;
 
-          all.push({
-            msg: `📋 New Task Assigned: ${t.title} (${t.status})`,
-            time: t.createdAt,
-          });
+        all.push({
+          msg: `📋 New Task Assigned: ${t.title} (${t.status})`,
+          time: t.createdAt,
+          type: 'task',
+          read: false
+        });
       });
 
       // Groups
@@ -147,7 +225,9 @@ const Header = ({ toggleSidebar, isMobile }) => {
       groupData.forEach((g) => {
         all.push({ 
           msg: `👥 New Group Created: ${g.groupName}`, 
-          time: g.createdAt 
+          time: g.createdAt,
+          type: 'group',
+          read: false
         });
       });
 
@@ -156,7 +236,9 @@ const Header = ({ toggleSidebar, isMobile }) => {
       alertData.forEach((a) => {
         all.push({ 
           msg: `🚨 ${a.message}`, 
-          time: a.createdAt 
+          time: a.createdAt,
+          type: 'alert',
+          read: false
         });
       });
 
@@ -167,35 +249,82 @@ const Header = ({ toggleSidebar, isMobile }) => {
       );
 
       setNotifications(todayNotifications);
-      setUnreadCount(todayNotifications.length);
       setHasFetched(true);
+      
+      if (!silent && todayNotifications.length > 0) {
+        showToast(`${todayNotifications.length} new notification(s)`, 'info', 3000);
+      }
       
     } catch (err) {
       console.error("Error fetching notifications:", err);
-      setNotifications([]);
-      setUnreadCount(0);
+      if (!silent) {
+        showToast("Failed to fetch notifications", 'error', 3000);
+      }
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
+  // ========== HANDLE NOTIFICATION CLICK ==========
   const handleNotificationClick = async (e) => {
     setAnchorEl(e.currentTarget);
     
-    // Fetch notifications only when button is clicked for the first time
-    if (!hasFetched) {
-      await fetchNotifications();
-    }
+    // Refresh notifications when opened
+    await fetchNotifications(true);
   };
 
   const handleNotificationClose = () => {
     setAnchorEl(null);
   };
 
-  const handleRefreshNotifications = async () => {
-    await fetchNotifications();
+  // ========== MARK SINGLE NOTIFICATION AS READ ==========
+  const handleMarkAsRead = async (notification, index) => {
+    try {
+      // Remove from notifications list
+      setNotifications(prev => prev.filter((_, i) => i !== index));
+      
+      // If it has an ID, mark as read via socket
+      if (notification._id) {
+        await markAsRead(notification._id);
+      }
+      
+      showToast('Notification marked as read', 'success', 2000);
+    } catch (error) {
+      console.error('Error marking as read:', error);
+    }
   };
 
+  // ========== MARK ALL AS READ ==========
+  const handleMarkAllAsRead = async () => {
+    try {
+      // Mark all current notifications as read
+      const promises = notifications.map((n, index) => {
+        if (n._id) {
+          return markAsRead(n._id);
+        }
+        return Promise.resolve();
+      });
+      
+      await Promise.all(promises);
+      
+      setNotifications([]);
+      showToast('All notifications marked as read', 'success', 3000);
+    } catch (error) {
+      console.error('Error marking all as read:', error);
+    }
+  };
+
+  // ========== CLEAR TOAST ==========
+  const handleCloseToast = () => {
+    setToast(prev => ({ ...prev, open: false }));
+  };
+
+  // ========== LOGO CLICK HANDLER ==========
+  const handleLogoClick = () => {
+    navigate("/ciisUser/user-dashboard");
+  };
+
+  // ========== LOGOUT HANDLER ==========
   const handleLogout = async () => {
     const result = await Swal.fire({
       title: "Are you sure?",
@@ -223,425 +352,515 @@ const Header = ({ toggleSidebar, isMobile }) => {
     }
   };
 
+  // ========== GET NOTIFICATION ICON ==========
+  const getNotificationIcon = (type) => {
+    switch(type) {
+      case 'success': return <CheckCircleIcon sx={{ color: '#4caf50', fontSize: 20 }} />;
+      case 'error': return <ErrorIcon sx={{ color: '#f44336', fontSize: 20 }} />;
+      case 'warning': return <WarningIcon sx={{ color: '#ff9800', fontSize: 20 }} />;
+      default: return <InfoIcon sx={{ color: '#2196f3', fontSize: 20 }} />;
+    }
+  };
+
   return (
-    <AppBar
-      position="fixed"
-      color="default"
-      elevation={1}
-      sx={{
-        zIndex: theme.zIndex.drawer + 1,
-        backgroundColor: theme.palette.background.paper,
-        borderBottom: `1px solid ${theme.palette.divider}`,
-        height: isMobile ? 56 : 64,
-        justifyContent: "center",
-      }}
-    >
-      <Toolbar
-        disableGutters
+    <>
+      <AppBar
+        position="fixed"
+        color="default"
+        elevation={1}
         sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          px: isMobile ? 1.5 : 3,
-          minHeight: "100% !important",
-          width: "100%",
+          zIndex: theme.zIndex.drawer + 1,
+          backgroundColor: theme.palette.background.paper,
+          borderBottom: `1px solid ${theme.palette.divider}`,
+          height: isMobile ? 56 : 64,
+          justifyContent: "center",
         }}
       >
-        {/* LEFT */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: isMobile ? 1 : 2 }}>
-          {/* Show menu button only on mobile */}
-          {isMobile && (
-            <IconButton 
-              onClick={toggleSidebar} 
-              edge="start" 
-              size={isMobile ? "small" : "medium"}
-            >
-              <MenuIcon fontSize={isMobile ? "small" : "medium"} />
-            </IconButton>
-          )}
+        <Toolbar
+          disableGutters
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            px: isMobile ? 1.5 : 3,
+            minHeight: "100% !important",
+            width: "100%",
+          }}
+        >
+          {/* LEFT */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: isMobile ? 1 : 2 }}>
+            {/* Show menu button only on mobile */}
+            {isMobile && (
+              <IconButton 
+                onClick={toggleSidebar} 
+                edge="start" 
+                size={isMobile ? "small" : "medium"}
+              >
+                <MenuIcon fontSize={isMobile ? "small" : "medium"} />
+              </IconButton>
+            )}
 
-          <Typography
-            variant="h6"
-            noWrap
-            component="img"
-            src={logo}
-            alt="Logo"
-            onClick={handleLogoClick}
-            sx={{
-              height: isMobile ? 35 : 50,
-              width: "auto",
-              objectFit: "contain",
-              cursor: "pointer",
-              "&:hover": { 
-                transform: "scale(1.05)",
-                opacity: 0.9,
-                transition: "all 0.2s ease"
-              },
-            }}
-          />
-        </Box>
-
-        {/* CENTER */}
-        <Box sx={{ flex: 1, textAlign: "center" }}>
-          {!isMobile ? (
-            <Typography 
-              variant="subtitle1" 
-              sx={{ 
-                fontWeight: 500, 
-                color: theme.palette.text.secondary 
-              }}
-            >
-              Welcome, {user?.name || "User"}
-            </Typography>
-          ) : (
-            <Typography 
-              variant="body2" 
-              sx={{ 
-                fontWeight: 500, 
-                color: theme.palette.text.secondary 
-              }}
-            >
-              {user?.name || "User"}
-            </Typography>
-          )}
-        </Box>
-
-        {/* RIGHT */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: isMobile ? 1 : 2 }}>
-          {/* Notifications */}
-          <Tooltip title="Notifications">
-            <IconButton 
-              onClick={handleNotificationClick}
+            <Typography
+              variant="h6"
+              noWrap
+              component="img"
+              src={logo}
+              alt="Logo"
+              onClick={handleLogoClick}
               sx={{
-                position: 'relative',
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                color: 'white',
-                '&:hover': {
-                  background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
-                  transform: 'translateY(-1px)',
-                  boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+                height: isMobile ? 35 : 50,
+                width: "auto",
+                objectFit: "contain",
+                cursor: "pointer",
+                "&:hover": { 
+                  transform: "scale(1.05)",
+                  opacity: 0.9,
+                  transition: "all 0.2s ease"
                 },
-                transition: 'all 0.3s ease',
-                width: isMobile ? 36 : 44,
-                height: isMobile ? 36 : 44,
               }}
-            >
-              <Badge 
-                badgeContent={unreadCount} 
-                color="error" 
-                overlap="circular"
-                sx={{
-                  '& .MuiBadge-badge': {
-                    fontSize: isMobile ? '0.6rem' : '0.7rem',
-                    fontWeight: 'bold',
-                    minWidth: isMobile ? 18 : 20,
-                    height: isMobile ? 18 : 20,
-                    borderRadius: '50%',
-                    boxShadow: '0 2px 8px rgba(244, 67, 54, 0.4)',
-                  }
+            />
+          </Box>
+
+          {/* CENTER */}
+          <Box sx={{ flex: 1, textAlign: "center" }}>
+            {!isMobile ? (
+              <Typography 
+                variant="subtitle1" 
+                sx={{ 
+                  fontWeight: 500, 
+                  color: theme.palette.text.secondary 
                 }}
               >
-                <NotificationsIcon 
-                  sx={{ 
-                    fontSize: isMobile ? 20 : 24,
-                    animation: unreadCount > 0 ? 'pulse 2s infinite' : 'none',
-                    '@keyframes pulse': {
-                      '0%': { transform: 'scale(1)' },
-                      '50%': { transform: 'scale(1.1)' },
-                      '100%': { transform: 'scale(1)' },
-                    }
-                  }} 
-                />
-              </Badge>
-            </IconButton>
-          </Tooltip>
+                Welcome, {user?.name || "User"}
+                {isConnected && (
+                  <Box
+                    component="span"
+                    sx={{
+                      display: 'inline-block',
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      backgroundColor: '#4caf50',
+                      ml: 1,
+                      animation: 'pulse 2s infinite',
+                      '@keyframes pulse': {
+                        '0%': { opacity: 1 },
+                        '50%': { opacity: 0.5 },
+                        '100%': { opacity: 1 },
+                      }
+                    }}
+                  />
+                )}
+              </Typography>
+            ) : (
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  fontWeight: 500, 
+                  color: theme.palette.text.secondary 
+                }}
+              >
+                {user?.name || "User"}
+              </Typography>
+            )}
+          </Box>
 
-          <Menu
-            anchorEl={anchorEl}
-            open={Boolean(anchorEl)}
-            onClose={handleNotificationClose}
-            PaperProps={{
-              sx: {
-                mt: 1.5,
-                width: 380,
-                maxHeight: 500,
-                overflow: 'hidden',
-                borderRadius: 3,
-                boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
-                border: '1px solid rgba(0,0,0,0.05)',
-                background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%)',
-                "&::-webkit-scrollbar": {
-                  width: "8px",
-                },
-                "&::-webkit-scrollbar-thumb": {
-                  backgroundColor: "#c1c1c1",
-                  borderRadius: "4px",
+          {/* RIGHT */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: isMobile ? 1 : 2 }}>
+            {/* Notifications */}
+            <Tooltip title="Notifications">
+              <IconButton 
+                onClick={handleNotificationClick}
+                sx={{
+                  position: 'relative',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  color: 'white',
                   '&:hover': {
-                    backgroundColor: "#a8a8a8",
-                  }
-                },
-              },
-            }}
-            transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-          >
-            {/* Header with Gradient Background */}
-            <Box sx={{ 
-              p: 2, 
-              borderBottom: 1, 
-              borderColor: 'divider',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              color: 'white',
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'center' 
-            }}>
-              <Box>
-                <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.1rem' }}>
-                  Notifications
-                </Typography>
-                <Typography variant="caption" sx={{ opacity: 0.9, fontSize: '0.75rem' }}>
-                  {unreadCount > 0 ? `${unreadCount} unread` : 'All caught up!'}
-                </Typography>
-              </Box>
-              <Tooltip title="Refresh notifications">
-                <IconButton 
-                  size="small" 
-                  onClick={handleRefreshNotifications}
-                  disabled={loading}
+                    background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
+                    transform: 'translateY(-1px)',
+                    boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+                  },
+                  transition: 'all 0.3s ease',
+                  width: isMobile ? 36 : 44,
+                  height: isMobile ? 36 : 44,
+                }}
+              >
+                <Badge 
+                  badgeContent={unreadCount} 
+                  color="error" 
+                  overlap="circular"
                   sx={{
-                    color: 'white',
-                    background: 'rgba(255,255,255,0.2)',
-                    '&:hover': {
-                      background: 'rgba(255,255,255,0.3)',
-                      transform: 'rotate(45deg)',
-                    },
-                    transition: 'all 0.3s ease',
-                    width: 32,
-                    height: 32,
+                    '& .MuiBadge-badge': {
+                      fontSize: isMobile ? '0.6rem' : '0.7rem',
+                      fontWeight: 'bold',
+                      minWidth: isMobile ? 18 : 20,
+                      height: isMobile ? 18 : 20,
+                      borderRadius: '50%',
+                      boxShadow: '0 2px 8px rgba(244, 67, 54, 0.4)',
+                    }
                   }}
                 >
-                  {loading ? (
-                    <CircularProgress size={16} sx={{ color: 'white' }} />
-                  ) : (
-                    <Box
-                      component="span"
+                  <NotificationsIcon 
+                    sx={{ 
+                      fontSize: isMobile ? 20 : 24,
+                      animation: unreadCount > 0 ? 'pulse 2s infinite' : 'none',
+                      '@keyframes pulse': {
+                        '0%': { transform: 'scale(1)' },
+                        '50%': { transform: 'scale(1.1)' },
+                        '100%': { transform: 'scale(1)' },
+                      }
+                    }} 
+                  />
+                </Badge>
+              </IconButton>
+            </Tooltip>
+
+            <Menu
+              anchorEl={anchorEl}
+              open={Boolean(anchorEl)}
+              onClose={handleNotificationClose}
+              PaperProps={{
+                sx: {
+                  mt: 1.5,
+                  width: 380,
+                  maxHeight: 500,
+                  overflow: 'hidden',
+                  borderRadius: 3,
+                  boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
+                  border: '1px solid rgba(0,0,0,0.05)',
+                  background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%)',
+                  "&::-webkit-scrollbar": {
+                    width: "8px",
+                  },
+                  "&::-webkit-scrollbar-thumb": {
+                    backgroundColor: "#c1c1c1",
+                    borderRadius: "4px",
+                    '&:hover': {
+                      backgroundColor: "#a8a8a8",
+                    }
+                  },
+                },
+              }}
+              transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+              anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+            >
+              {/* Header with Gradient Background */}
+              <Box sx={{ 
+                p: 2, 
+                borderBottom: 1, 
+                borderColor: 'divider',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: 'white',
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center' 
+              }}>
+                <Box>
+                  <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.1rem' }}>
+                    Notifications
+                  </Typography>
+                  <Typography variant="caption" sx={{ opacity: 0.9, fontSize: '0.75rem' }}>
+                    {unreadCount > 0 ? `${unreadCount} unread` : 'All caught up!'}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  {notifications.length > 0 && (
+                    <Tooltip title="Mark all as read">
+                      <IconButton 
+                        size="small" 
+                        onClick={handleMarkAllAsRead}
+                        sx={{
+                          color: 'white',
+                          background: 'rgba(255,255,255,0.2)',
+                          '&:hover': {
+                            background: 'rgba(255,255,255,0.3)',
+                          },
+                          transition: 'all 0.3s ease',
+                          width: 32,
+                          height: 32,
+                        }}
+                      >
+                        <CheckCircleIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+                  <Tooltip title="Refresh notifications">
+                    <IconButton 
+                      size="small" 
+                      onClick={() => fetchNotifications(false)}
+                      disabled={loading}
                       sx={{
-                        fontSize: '1rem',
-                        transition: 'transform 0.3s ease',
+                        color: 'white',
+                        background: 'rgba(255,255,255,0.2)',
                         '&:hover': {
-                          transform: 'rotate(180deg)',
+                          background: 'rgba(255,255,255,0.3)',
+                          transform: 'rotate(45deg)',
+                        },
+                        transition: 'all 0.3s ease',
+                        width: 32,
+                        height: 32,
+                      }}
+                    >
+                      {loading ? (
+                        <CircularProgress size={16} sx={{ color: 'white' }} />
+                      ) : (
+                        <Box
+                          component="span"
+                          sx={{
+                            fontSize: '1rem',
+                            transition: 'transform 0.3s ease',
+                            '&:hover': {
+                              transform: 'rotate(180deg)',
+                            }
+                          }}
+                        >
+                          🔄
+                        </Box>
+                      )}
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+              </Box>
+
+              {/* Notifications List */}
+              <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
+                {loading ? (
+                  <Box sx={{ 
+                    display: 'flex', 
+                    justifyContent: 'center', 
+                    alignItems: 'center', 
+                    py: 4 
+                  }}>
+                    <CircularProgress size={28} sx={{ color: '#667eea' }} />
+                  </Box>
+                ) : notifications.length > 0 ? (
+                  notifications.map((n, i) => (
+                    <MenuItem
+                      key={i}
+                      sx={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        whiteSpace: "normal",
+                        gap: 1,
+                        p: 2,
+                        borderBottom: i < notifications.length - 1 ? '1px solid rgba(0,0,0,0.04)' : 'none',
+                        backgroundColor: "transparent",
+                        position: 'relative',
+                        "&:hover": {
+                          backgroundColor: "rgba(102, 126, 234, 0.05)",
+                          transform: 'translateX(4px)',
+                        },
+                        transition: 'all 0.2s ease',
+                        minHeight: '72px',
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          left: 0,
+                          top: 0,
+                          bottom: 0,
+                          width: '3px',
+                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                          opacity: 0,
+                          transition: 'opacity 0.3s ease',
+                        },
+                        '&:hover::before': {
+                          opacity: 1,
                         }
                       }}
                     >
-                      🔄
-                    </Box>
-                  )}
-                </IconButton>
-              </Tooltip>
-            </Box>
+                      <Box sx={{ 
+                        display: 'flex', 
+                        alignItems: 'flex-start', 
+                        width: '100%',
+                        gap: 1.5 
+                      }}>
+                        {/* Notification Icon */}
+                        <Box sx={{ mt: 0.5 }}>
+                          {getNotificationIcon(n.type)}
+                        </Box>
+                        
+                        {/* Notification Content */}
+                        <Box sx={{ flex: 1 }}>
+                          <Typography 
+                            variant="body2" 
+                            sx={{ 
+                              fontWeight: 500, 
+                              lineHeight: 1.4,
+                              color: 'text.primary',
+                              fontSize: '0.875rem',
+                              mb: 0.5
+                            }}
+                          >
+                            {n.msg}
+                          </Typography>
+                          <Box sx={{ 
+                            display: 'flex', 
+                            justifyContent: 'space-between', 
+                            alignItems: 'center' 
+                          }}>
+                            <Typography 
+                              variant="caption" 
+                              sx={{ 
+                                color: "text.secondary",
+                                fontSize: '0.7rem',
+                                fontWeight: 500,
+                              }}
+                            >
+                              {new Date(n.time).toLocaleTimeString("en-IN", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </Typography>
+                            <Typography 
+                              variant="caption" 
+                              sx={{ 
+                                color: "text.secondary",
+                                fontSize: '0.7rem',
+                              }}
+                            >
+                              {new Date(n.time).toLocaleDateString("en-IN", {
+                                day: "numeric",
+                                month: "short",
+                              })}
+                            </Typography>
+                          </Box>
+                        </Box>
 
-            {/* Notifications List */}
-            <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
-              {loading ? (
-                <Box sx={{ 
-                  display: 'flex', 
-                  justifyContent: 'center', 
-                  alignItems: 'center', 
-                  py: 4 
-                }}>
-                  <CircularProgress size={28} sx={{ color: '#667eea' }} />
-                </Box>
-              ) : notifications.length > 0 ? (
-                notifications.map((n, i) => (
-                  <MenuItem
-                    key={i}
-                    sx={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "flex-start",
-                      whiteSpace: "normal",
-                      gap: 1,
-                      p: 2,
-                      borderBottom: i < notifications.length - 1 ? '1px solid rgba(0,0,0,0.04)' : 'none',
-                      backgroundColor: "transparent",
-                      position: 'relative',
-                      "&:hover": {
-                        backgroundColor: "rgba(102, 126, 234, 0.05)",
-                        transform: 'translateX(4px)',
-                      },
-                      transition: 'all 0.2s ease',
-                      minHeight: '72px',
-                      '&::before': {
-                        content: '""',
-                        position: 'absolute',
-                        left: 0,
-                        top: 0,
-                        bottom: 0,
-                        width: '3px',
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        opacity: 0,
-                        transition: 'opacity 0.3s ease',
-                      },
-                      '&:hover::before': {
-                        opacity: 1,
-                      }
-                    }}
-                  >
-                    <Box sx={{ 
-                      display: 'flex', 
-                      alignItems: 'flex-start', 
-                      width: '100%',
-                      gap: 1 
-                    }}>
-                      <Box
-                        sx={{
-                          width: 8,
-                          height: 8,
-                          borderRadius: '50%',
-                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                          flexShrink: 0,
-                          mt: 0.5,
-                        }}
-                      />
-                      <Box sx={{ flex: 1 }}>
-                        <Typography 
-                          variant="body2" 
-                          sx={{ 
-                            fontWeight: 500, 
-                            lineHeight: 1.4,
-                            color: 'text.primary',
-                            fontSize: '0.875rem',
+                        {/* Mark as Read Button */}
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleMarkAsRead(n, i);
+                          }}
+                          sx={{
+                            p: 0.5,
+                            opacity: 0.6,
+                            '&:hover': {
+                              opacity: 1,
+                              backgroundColor: 'rgba(0,0,0,0.04)'
+                            }
                           }}
                         >
-                          {n.msg}
-                        </Typography>
-                        <Box sx={{ 
-                          display: 'flex', 
-                          justifyContent: 'space-between', 
-                          alignItems: 'center',
-                          mt: 0.5 
-                        }}>
-                          <Typography 
-                            variant="caption" 
-                            sx={{ 
-                              color: "text.secondary",
-                              fontSize: '0.7rem',
-                              fontWeight: 500,
-                            }}
-                          >
-                            {new Date(n.time).toLocaleTimeString("en-IN", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </Typography>
-                          <Typography 
-                            variant="caption" 
-                            sx={{ 
-                              color: "text.secondary",
-                              fontSize: '0.7rem',
-                            }}
-                          >
-                            {new Date(n.time).toLocaleDateString("en-IN", {
-                              day: "numeric",
-                              month: "short",
-                            })}
-                          </Typography>
-                        </Box>
+                          <CloseIcon fontSize="small" />
+                        </IconButton>
                       </Box>
-                    </Box>
-                  </MenuItem>
-                ))
-              ) : (
-                <Box 
-                  sx={{ 
-                    textAlign: 'center', 
-                    py: 4,
-                    px: 2 
-                  }}
-                >
-                  <Box
-                    sx={{
-                      fontSize: '3rem',
-                      mb: 1,
-                      opacity: 0.5,
-                    }}
-                  >
-                    🔔
-                  </Box>
-                  <Typography 
-                    variant="body2" 
-                    color="text.secondary"
+                    </MenuItem>
+                  ))
+                ) : (
+                  <Box 
                     sx={{ 
-                      fontWeight: 500,
-                      mb: 1 
+                      textAlign: 'center', 
+                      py: 4,
+                      px: 2 
                     }}
                   >
-                    {hasFetched ? "No notifications for today" : "No notifications yet"}
-                  </Typography>
+                    <Box
+                      sx={{
+                        fontSize: '3rem',
+                        mb: 1,
+                        opacity: 0.5,
+                      }}
+                    >
+                      🔔
+                    </Box>
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary"
+                      sx={{ 
+                        fontWeight: 500,
+                        mb: 1 
+                      }}
+                    >
+                      {hasFetched ? "No notifications for today" : "No notifications yet"}
+                    </Typography>
+                    <Typography 
+                      variant="caption" 
+                      color="text.secondary"
+                      sx={{ opacity: 0.7 }}
+                    >
+                      {hasFetched ? "You're all caught up!" : "Notifications will appear here"}
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+
+              {/* Footer */}
+              {notifications.length > 0 && (
+                <Box sx={{ 
+                  p: 1.5, 
+                  borderTop: 1, 
+                  borderColor: 'divider',
+                  textAlign: 'center',
+                  background: 'rgba(0,0,0,0.02)'
+                }}>
                   <Typography 
                     variant="caption" 
                     color="text.secondary"
-                    sx={{ opacity: 0.7 }}
+                    sx={{ fontWeight: 500 }}
                   >
-                    {hasFetched ? "You're all caught up!" : "Notifications will appear here"}
+                    {notifications.length} notification{notifications.length !== 1 ? 's' : ''}
                   </Typography>
                 </Box>
               )}
-            </Box>
+            </Menu>
 
-            {/* Footer */}
-            {notifications.length > 0 && (
-              <Box sx={{ 
-                p: 1.5, 
-                borderTop: 1, 
-                borderColor: 'divider',
-                textAlign: 'center',
-                background: 'rgba(0,0,0,0.02)'
-              }}>
-                <Typography 
-                  variant="caption" 
-                  color="text.secondary"
-                  sx={{ fontWeight: 500 }}
-                >
-                  {notifications.length} notification{notifications.length !== 1 ? 's' : ''}
-                </Typography>
-              </Box>
-            )}
-          </Menu>
-
-          {/* Logout */}
-          <Tooltip title="Logout">
-            <IconButton 
-              onClick={handleLogout} 
-              sx={{
-                background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%)',
-                color: 'white',
-                '&:hover': {
-                  background: 'linear-gradient(135deg, #ff5252 0%, #e53935 100%)',
-                  transform: 'translateY(-1px)',
-                  boxShadow: '0 4px 12px rgba(244, 67, 54, 0.3)',
-                },
-                transition: 'all 0.3s ease',
-                width: isMobile ? 36 : 44,
-                height: isMobile ? 36 : 44,
-              }}
-              size={isMobile ? "small" : "medium"}
-            >
-              <LogoutIcon 
-                fontSize={isMobile ? "small" : "medium"} 
+            {/* Logout */}
+            <Tooltip title="Logout">
+              <IconButton 
+                onClick={handleLogout} 
                 sx={{
-                  transition: 'transform 0.3s ease',
+                  background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%)',
+                  color: 'white',
                   '&:hover': {
-                    transform: 'translateX(2px)',
-                  }
+                    background: 'linear-gradient(135deg, #ff5252 0%, #e53935 100%)',
+                    transform: 'translateY(-1px)',
+                    boxShadow: '0 4px 12px rgba(244, 67, 54, 0.3)',
+                  },
+                  transition: 'all 0.3s ease',
+                  width: isMobile ? 36 : 44,
+                  height: isMobile ? 36 : 44,
                 }}
-              />
-            </IconButton>
-          </Tooltip>
-        </Box>
-      </Toolbar>
-    </AppBar>
+                size={isMobile ? "small" : "medium"}
+              >
+                <LogoutIcon 
+                  fontSize={isMobile ? "small" : "medium"} 
+                  sx={{
+                    transition: 'transform 0.3s ease',
+                    '&:hover': {
+                      transform: 'translateX(2px)',
+                    }
+                  }}
+                />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        </Toolbar>
+      </AppBar>
+
+      {/* Toast Notifications */}
+      <Snackbar
+        open={toast.open}
+        autoHideDuration={5000}
+        onClose={handleCloseToast}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={handleCloseToast}
+          severity={toast.type}
+          sx={{
+            width: '100%',
+            borderRadius: 2,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            '& .MuiAlert-icon': {
+              fontSize: 24
+            }
+          }}
+        >
+          {toast.message}
+        </Alert>
+      </Snackbar>
+    </>
   );
 };
 
