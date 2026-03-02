@@ -415,6 +415,14 @@ const Alerts = () => {
       minute: "2-digit",
     });
 
+  const formatDateMobile = (d) =>
+    new Date(d).toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
   const getUserNameById = (userId) => {
     if (typeof userId === 'object' && userId._id) {
       return userId.name || userId.email || "Unknown User";
@@ -459,6 +467,15 @@ const Alerts = () => {
     }
   };
 
+  const getTypeIcon = (type) => {
+    switch(type) {
+      case "info": return <FiInfo />;
+      case "warning": return <FiAlertTriangle />;
+      case "error": return <FiAlertCircle />;
+      default: return <FiBell />;
+    }
+  };
+
   // ✅ Show CIISLoader while page is loading
   if (pageLoading) {
     return <CIISLoader />;
@@ -489,7 +506,7 @@ const Alerts = () => {
                 onClick={() => handleOpen()}
               >
                 <FiPlus />
-                New Alert
+                <span className="Alerts-desktop-only">New Alert</span>
               </button>
             )}
           </div>
@@ -520,21 +537,21 @@ const Alerts = () => {
         {/* View Mode Toggle */}
         <div className="Alerts-view-mode-container">
           <div className="Alerts-view-mode-card">
-            <span className="Alerts-view-mode-label">View:</span>
+            <span className="Alerts-view-mode-label Alerts-desktop-only">View:</span>
             <div className="Alerts-toggle-button-group">
               <button 
                 className={`Alerts-toggle-button ${viewMode === 'all' ? 'Alerts-toggle-button-active' : ''}`}
                 onClick={() => setViewMode('all')}
               >
                 <FiEye />
-                <span>All</span>
+                <span className="Alerts-desktop-only">All</span>
               </button>
               <button 
                 className={`Alerts-toggle-button ${viewMode === 'assigned' ? 'Alerts-toggle-button-active' : ''}`}
                 onClick={() => setViewMode('assigned')}
               >
                 <FiUserCheck />
-                <span>Assigned</span>
+                <span className="Alerts-desktop-only">Assigned</span>
               </button>
               <button 
                 className={`Alerts-toggle-button ${viewMode === 'unread' ? 'Alerts-toggle-button-active' : ''}`}
@@ -543,14 +560,14 @@ const Alerts = () => {
                 <Badge badgeContent={stats.unread}>
                   <FiBell />
                 </Badge>
-                <span>Unread</span>
+                <span className="Alerts-desktop-only">Unread</span>
               </button>
             </div>
           </div>
         </div>
 
-        {/* Stat Cards */}
-        <div className="Alerts-stats-grid">
+        {/* Stat Cards - Desktop Only */}
+        <div className="Alerts-stats-grid Alerts-desktop-only">
           {[
             { 
               key: "total", 
@@ -607,6 +624,32 @@ const Alerts = () => {
             </div>
           ))}
         </div>
+
+        {/* Mobile Stats Summary */}
+        <div className="Alerts-mobile-stats Alerts-mobile-only">
+          <div className="Alerts-mobile-stats-grid">
+            <div className="Alerts-mobile-stat-item">
+              <span className="Alerts-mobile-stat-label">Total</span>
+              <span className="Alerts-mobile-stat-value">{stats.total}</span>
+            </div>
+            <div className="Alerts-mobile-stat-item">
+              <span className="Alerts-mobile-stat-label">Info</span>
+              <span className="Alerts-mobile-stat-value" style={{ color: "#29B6F6" }}>{stats.info}</span>
+            </div>
+            <div className="Alerts-mobile-stat-item">
+              <span className="Alerts-mobile-stat-label">Warning</span>
+              <span className="Alerts-mobile-stat-value" style={{ color: "#FFA726" }}>{stats.warning}</span>
+            </div>
+            <div className="Alerts-mobile-stat-item">
+              <span className="Alerts-mobile-stat-label">Error</span>
+              <span className="Alerts-mobile-stat-value" style={{ color: "#EF5350" }}>{stats.error}</span>
+            </div>
+            <div className="Alerts-mobile-stat-item">
+              <span className="Alerts-mobile-stat-label">Unread</span>
+              <span className="Alerts-mobile-stat-value" style={{ color: "#667eea" }}>{stats.unread}</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Alerts List */}
@@ -614,7 +657,7 @@ const Alerts = () => {
         <div className="Alerts-list-header">
           <div>
             <h2 className="Alerts-list-title">Alerts ({filteredAlerts.length})</h2>
-            <p className="Alerts-list-subtitle">
+            <p className="Alerts-list-subtitle Alerts-desktop-only">
               {viewMode === 'unread' ? 'Showing unread alerts' : 
                viewMode === 'assigned' ? 'Showing assigned alerts' : 
                'Showing all alerts'}
@@ -652,18 +695,27 @@ const Alerts = () => {
                   key={alert._id} 
                   className={`Alerts-alert-card ${unread ? 'Alerts-alert-unread' : ''}`}
                   style={{ borderLeftColor: typeColor }}
+                  onClick={() => toggleAlertExpansion(alert._id)}
                 >
                   <div className="Alerts-alert-content">
                     <div className="Alerts-alert-header">
                       <div className="Alerts-alert-meta">
+                        {/* Desktop Type Chip */}
                         <Chip
                           label={alert.type}
                           size="small"
+                          className="Alerts-desktop-only"
                           style={{ 
                             backgroundColor: typeColor,
                             color: 'white'
                           }}
                         />
+                        
+                        {/* Mobile Type Icon */}
+                        <span className="Alerts-mobile-only Alerts-mobile-type-icon" style={{ color: typeColor }}>
+                          {getTypeIcon(alert.type)}
+                        </span>
+                        
                         {unread && (
                           <Chip
                             size="small"
@@ -671,9 +723,13 @@ const Alerts = () => {
                             color="#EF5350"
                           />
                         )}
-                        <span className="Alerts-alert-date">
+                        <span className="Alerts-alert-date Alerts-desktop-only">
                           <FiClock />
                           {formatDate(alert.createdAt)}
+                        </span>
+                        <span className="Alerts-alert-date Alerts-mobile-only">
+                          <FiClock />
+                          {formatDateMobile(alert.createdAt)}
                         </span>
                       </div>
                       
@@ -731,11 +787,13 @@ const Alerts = () => {
                       </div>
                     </div>
 
+                    {/* Mobile: Show only message by default, expand to show details */}
                     <p className={`Alerts-alert-message ${unread ? 'Alerts-alert-message-unread' : ''}`}>
                       {alert.message}
                     </p>
 
-                    {(expanded || assignedUsers.length > 0 || assignedGroups.length > 0) && (
+                    {/* Mobile: Show only when expanded */}
+                    {(expanded || window.innerWidth > 768) && (assignedUsers.length > 0 || assignedGroups.length > 0) && (
                       <div className="Alerts-alert-details">
                         <div className="Alerts-divider" />
                         <div className="Alerts-assignments">

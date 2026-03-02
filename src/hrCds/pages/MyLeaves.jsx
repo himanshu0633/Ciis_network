@@ -541,7 +541,7 @@ const MyLeaves = () => {
             {/* User Info Display */}
             <div className="MyLeaves-user-info">
               <div className="MyLeaves-user-info-tags">
-                <span className="MyLeaves-user-tag">
+                {/* <span className="MyLeaves-user-tag">
                   <FiUser size={12} />
                   {user?.name || 'User'}
                 </span>
@@ -554,7 +554,7 @@ const MyLeaves = () => {
                   <FiUsers size={12} />
                   {userDepartmentName}
                   {departmentsLoading && <span className="MyLeaves-loading-dot">...</span>}
-                </span>
+                </span> */}
                 <span className="MyLeaves-user-tag">
                   <FiBriefcase size={12} />
                   {companyDetails?.companyName || 'Company'}
@@ -618,11 +618,12 @@ const MyLeaves = () => {
         <div className="MyLeaves-stat-header">
           <FiCalendar className="MyLeaves-stat-icon" />
           <h3>Total Leaves</h3>
+          <div className="MyLeaves-stat-value">{stats.total}</div>
         </div>
-        <div className="MyLeaves-stat-value">{stats.total}</div>
-        <div className="MyLeaves-stat-footer">
+        
+        {/* <div className="MyLeaves-stat-footer">
           <span>All time records</span>
-        </div>
+        </div> */}
       </div>
     )}
     
@@ -632,11 +633,12 @@ const MyLeaves = () => {
         <div className="MyLeaves-stat-header">
           <FiCheckCircle className="MyLeaves-stat-icon" />
           <h3>Approved</h3>
+           <div className="MyLeaves-stat-value">{stats.approved}</div>
         </div>
-        <div className="MyLeaves-stat-value">{stats.approved}</div>
-        <div className="MyLeaves-stat-footer">
+       
+        {/* <div className="MyLeaves-stat-footer">
           <span>Approved requests</span>
-        </div>
+        </div> */}
       </div>
     )}
     

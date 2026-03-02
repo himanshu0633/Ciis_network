@@ -1001,84 +1001,527 @@
   opacity: 1;
 }
 
-/* ===== RESPONSIVE DESIGN ===== */
-@media (max-width: 1024px) {
+/* ===== DESKTOP/MOBILE UTILITY CLASSES ===== */
+.Alerts-desktop-only {
+  display: inline-block;
+}
+
+.Alerts-mobile-only {
+  display: none;
+}
+
+/* ===== MOBILE STYLES (max-width: 768px) ===== */
+@media screen and (max-width: 768px) {
+  /* Hide desktop elements */
+  .Alerts-desktop-only {
+    display: none !important;
+  }
+
+  /* Show mobile elements */
+  .Alerts-mobile-only {
+    display: block;
+  }
+
+  /* Container adjustments */
+  .Alerts-container {
+    padding: 0;
+    background-color: var(--gray-50);
+  }
+
+  /* Header adjustments */
+  .Alerts-gradient-header {
+    padding: 20px 16px;
+    border-radius: 0;
+    margin-bottom: 0;
+  }
+
+  .Alerts-title {
+    font-size: 24px;
+    margin-bottom: 4px;
+  }
+
+  .Alerts-subtitle {
+    font-size: 14px;
+  }
+
+  .Alerts-header-actions {
+    gap: 8px;
+  }
+
+  .Alerts-button-primary {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .Alerts-icon-button {
+    width: 36px;
+    height: 36px;
+  }
+
+  /* Stats & Filters Section */
+  .Alerts-stats-filters {
+    padding: 16px;
+    margin: 0;
+    border-radius: 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+
+  /* Search Bar */
+  .Alerts-search-field {
+    max-width: 100%;
+  }
+
+  .Alerts-search-input {
+    padding: 12px 16px 12px 44px;
+    font-size: 14px;
+    border-radius: var(--border-radius-md);
+  }
+
+  /* View Mode Toggle - Mobile Optimized */
+  .Alerts-view-mode-card {
+    padding: 12px;
+  }
+
+  .Alerts-toggle-button-group {
+    display: flex;
+    gap: 4px;
+    justify-content: space-between;
+  }
+
+  .Alerts-toggle-button {
+    flex: 1;
+    padding: 8px 4px;
+    font-size: 12px;
+    gap: 4px;
+    justify-content: center;
+    border-radius: var(--border-radius-sm);
+  }
+
+  .Alerts-toggle-button .Alerts-icon {
+    font-size: 14px;
+  }
+
+  /* Mobile Stats Grid */
+  .Alerts-mobile-stats {
+    margin-top: 16px;
+  }
+
+  .Alerts-mobile-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    background: var(--gray-50);
+    border-radius: var(--border-radius-lg);
+    padding: 12px;
+    border: 1px solid var(--gray-200);
+  }
+
+  .Alerts-mobile-stats-grid .Alerts-mobile-stat-item:last-child {
+    grid-column: span 3;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 8px;
+    margin-top: 8px;
+    border-top: 1px solid var(--gray-200);
+  }
+
+  .Alerts-mobile-stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .Alerts-mobile-stat-label {
+    font-size: 11px;
+    color: var(--gray-500);
+    margin-bottom: 2px;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .Alerts-mobile-stat-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--gray-800);
+  }
+
+  /* Alerts List Container */
+  .Alerts-list-container {
+    padding: 16px;
+    margin-top: 0;
+  }
+
+  .Alerts-list-header {
+    margin-bottom: 16px;
+    gap: 12px;
+  }
+
+  .Alerts-list-title {
+    font-size: 20px;
+  }
+
+  /* Alert Cards - Mobile Optimized */
+  .Alerts-alert-card {
+    margin-bottom: 8px;
+    border-left-width: 4px;
+  }
+
+  .Alerts-alert-card:hover {
+    box-shadow: none;
+  }
+
+  .Alerts-alert-content {
+    padding: 16px;
+  }
+
+  .Alerts-alert-header {
+    margin-bottom: 8px;
+    gap: 8px;
+  }
+
+  .Alerts-alert-meta {
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  /* Mobile Type Icon */
+  .Alerts-mobile-type-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 4px;
+  }
+
+  .Alerts-mobile-type-icon .Alerts-icon {
+    font-size: 18px;
+  }
+
+  /* Chip adjustments for mobile */
+  .Alerts-chip {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+
+  .Alerts-chip-small {
+    padding: 3px 6px;
+    font-size: 10px;
+  }
+
+  /* Alert Date on Mobile */
+  .Alerts-alert-date {
+    font-size: 11px;
+    color: var(--gray-500);
+  }
+
+  .Alerts-alert-date .Alerts-icon {
+    font-size: 10px;
+    margin-right: 2px;
+  }
+
+  /* Alert Message */
+  .Alerts-alert-message {
+    font-size: 14px;
+    line-height: 1.5;
+    margin: 0 0 8px 0;
+    word-break: break-word;
+  }
+
+  /* Action Buttons on Mobile */
+  .Alerts-alert-actions {
+    gap: 4px;
+  }
+
+  .Alerts-icon-button {
+    width: 32px;
+    height: 32px;
+  }
+
+  .Alerts-icon-button .Alerts-icon {
+    font-size: 14px;
+  }
+
+  /* Hide tooltips on mobile (they don't work well with touch) */
+  .Alerts-tooltip .Alerts-tooltip-text {
+    display: none;
+  }
+
+  /* Expanded Content on Mobile */
+  .Alerts-alert-details {
+    margin-top: 12px;
+  }
+
+  .Alerts-divider {
+    margin: 12px 0;
+  }
+
+  .Alerts-assignments-label {
+    font-size: 11px;
+    margin-bottom: 6px;
+  }
+
+  .Alerts-assignments-list {
+    gap: 6px;
+  }
+
+  /* Empty State */
+  .Alerts-empty-state {
+    padding: 40px 20px;
+  }
+
+  .Alerts-empty-state .Alerts-icon {
+    font-size: 36px;
+  }
+
+  .Alerts-empty-state h3 {
+    font-size: 18px;
+  }
+
+  .Alerts-empty-state p {
+    font-size: 14px;
+  }
+
+  /* Modal adjustments for mobile */
+  .Alerts-modal {
+    padding: 0;
+  }
+
+  .Alerts-modal-content {
+    width: 100%;
+    height: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+    margin: 0;
+  }
+
+  .Alerts-modal-header {
+    padding: 16px 20px;
+  }
+
+  .Alerts-modal-header h2 {
+    font-size: 20px;
+  }
+
+  .Alerts-modal-body {
+    padding: 20px;
+  }
+
+  .Alerts-modal-footer {
+    padding: 16px 20px;
+    gap: 8px;
+  }
+
+  .Alerts-modal-footer .Alerts-button {
+    flex: 1;
+    padding: 12px;
+  }
+
+  /* Form elements on mobile */
+  .Alerts-form-group label {
+    font-size: 13px;
+  }
+
+  .Alerts-select,
+  .Alerts-textarea {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+
+  /* Assign sections on mobile */
+  .Alerts-assign-section {
+    padding: 16px;
+  }
+
+  .Alerts-assign-title {
+    font-size: 16px;
+  }
+
+  .Alerts-assign-subtitle {
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+
+  .Alerts-user-item,
+  .Alerts-group-item {
+    padding: 10px 12px;
+  }
+
+  .Alerts-user-name,
+  .Alerts-group-name {
+    font-size: 13px;
+  }
+
+  .Alerts-user-details,
+  .Alerts-group-description {
+    font-size: 12px;
+  }
+
+  /* Notification on mobile */
+  .Alerts-notification {
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+  }
+
+  .Alerts-notification-card {
+    min-width: auto;
+    width: 100%;
+  }
+
+  .Alerts-notification-content {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .Alerts-notification-content .Alerts-icon {
+    font-size: 20px;
+  }
+
+  .Alerts-notification-title {
+    font-size: 15px;
+  }
+
+  .Alerts-notification-message {
+    font-size: 13px;
+  }
+}
+
+/* Small Phones (max-width: 375px) */
+@media screen and (max-width: 375px) {
+  .Alerts-title {
+    font-size: 22px;
+  }
+
+  .Alerts-header-actions {
+    gap: 6px;
+  }
+
+  .Alerts-button-primary {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .Alerts-icon-button {
+    width: 32px;
+    height: 32px;
+  }
+
+  .Alerts-toggle-button {
+    padding: 6px 2px;
+    font-size: 11px;
+  }
+
+  .Alerts-mobile-stats-grid {
+    gap: 6px;
+    padding: 10px;
+  }
+
+  .Alerts-mobile-stat-label {
+    font-size: 10px;
+  }
+
+  .Alerts-mobile-stat-value {
+    font-size: 16px;
+  }
+
+  .Alerts-alert-message {
+    font-size: 13px;
+  }
+
+  .Alerts-icon-button {
+    width: 28px;
+    height: 28px;
+  }
+
+  .Alerts-icon-button .Alerts-icon {
+    font-size: 12px;
+  }
+}
+
+/* Tablet Styles (769px - 1024px) */
+@media screen and (min-width: 769px) and (max-width: 1024px) {
+  .Alerts-gradient-header {
+    padding: 24px 32px;
+  }
+
+  .Alerts-stats-filters {
+    padding: 24px 32px;
+    margin: 16px 32px 0;
+  }
+
+  .Alerts-list-container {
+    padding: 32px;
+  }
+
   .Alerts-stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
-@media (max-width: 768px) {
-  .Alerts-gradient-header,
-  .Alerts-stats-filters,
-  .Alerts-list-container {
-    padding: 24px;
-    margin: 0;
+/* Touch Device Optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .Alerts-button:active,
+  .Alerts-toggle-button:active,
+  .Alerts-alert-card:active,
+  .Alerts-icon-button:active {
+    opacity: 0.7;
+    transform: scale(0.98);
   }
-  
-  .Alerts-stats-filters {
-    border-radius: 0;
+
+  .Alerts-button-primary:active {
+    background: var(--primary-dark-blue);
+  }
+
+  .Alerts-alert-card:active {
+    background: var(--gray-50);
+  }
+
+  /* Remove hover effects on mobile */
+  .Alerts-stat-card:hover,
+  .Alerts-alert-card:hover,
+  .Alerts-button:hover {
+    transform: none;
     box-shadow: none;
   }
-  
-  .Alerts-header-content {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 20px;
+
+  .Alerts-toggle-button:hover {
+    border-color: var(--gray-300);
+    color: var(--gray-600);
   }
-  
-  .Alerts-header-actions {
-    justify-content: flex-end;
-  }
-  
-  .Alerts-stats-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .Alerts-list-header {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .Alerts-modal-content {
-    width: 95%;
-    max-height: 95vh;
-  }
-  
-  .Alerts-modal-body {
-    padding: 24px;
+
+  .Alerts-toggle-button-active:hover {
+    background: var(--primary-blue);
+    color: white;
   }
 }
 
-@media (max-width: 480px) {
-  .Alerts-title {
-    font-size: 28px;
+/* Ensure proper touch targets */
+@media (max-width: 768px) {
+  .Alerts-button,
+  .Alerts-icon-button,
+  .Alerts-toggle-button,
+  .Alerts-user-item,
+  .Alerts-group-item,
+  .Alerts-chip[onClick] {
+    min-height: 44px;
   }
-  
-  .Alerts-stat-card {
-    padding: 20px;
+
+  .Alerts-icon-button {
+    min-height: 44px;
+    min-width: 44px;
   }
-  
-  .Alerts-stat-value {
-    font-size: 28px;
+
+  .Alerts-chip[onClick] {
+    padding: 8px 12px;
   }
-  
-  .Alerts-toggle-button-group {
-    flex-direction: column;
-  }
-  
-  .Alerts-alert-header {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-  }
-  
-  .Alerts-alert-actions {
-    justify-content: flex-end;
+
+  .Alerts-search-clear {
+    padding: 12px;
   }
 }
 
-/* ===== PRINT STYLES ===== */
+/* Print Styles */
 @media print {
   .Alerts-container {
     background: white;
@@ -1094,8 +1537,14 @@
   
   .Alerts-button,
   .Alerts-icon-button,
-  .Alerts-modal {
-    display: none;
+  .Alerts-modal,
+  .Alerts-notification,
+  .Alerts-mobile-only {
+    display: none !important;
+  }
+  
+  .Alerts-desktop-only {
+    display: inline-block !important;
   }
   
   .Alerts-alert-card {

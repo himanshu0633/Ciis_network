@@ -236,6 +236,10 @@
   .MyAssets-action-grid {
     grid-template-columns: 1fr;
   }
+
+  .MyAssets-icon-button {
+    display: none;
+  }
 }
 
 .MyAssets-request-card,

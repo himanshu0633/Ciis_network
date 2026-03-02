@@ -21,15 +21,15 @@ import {
   FiCalendar,
 } from "react-icons/fi";
 import "../Css/MyAssets.css";
-import CIISLoader from '../../Loader/CIISLoader'; // ✅ Import CIISLoader
+import CIISLoader from '../../Loader/CIISLoader';
 
 const MyAssets = () => {
   const [newAsset, setNewAsset] = useState("");
   const [notification, setNotification] = useState(null);
-  const [pageLoading, setPageLoading] = useState(true); // ✅ Page loading state
+  const [pageLoading, setPageLoading] = useState(true);
   const [loading, setLoading] = useState(false);
   const [requests, setRequests] = useState([]);
-  const [properties, setProperties] = useState([]);
+  const [assignedAssets, setAssignedAssets] = useState([]); // ✅ Changed from properties to assignedAssets
   const [filterStatus, setFilterStatus] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [refreshing, setRefreshing] = useState(false);
@@ -70,7 +70,13 @@ const MyAssets = () => {
       });
       const data = res.data.requests || [];
       setRequests(data);
+      
+      // ✅ Extract approved assets from requests
+      const approved = data.filter(req => req.status === "approved");
+      setAssignedAssets(approved);
+      
       calculateStats(data);
+      
       if (showRefresh) {
         setNotification({
           message: "Asset data refreshed!",
@@ -106,17 +112,10 @@ const MyAssets = () => {
     const loadData = async () => {
       setPageLoading(true);
       try {
-        const userData = localStorage.getItem("user");
-        if (userData) {
-          try {
-            setProperties(JSON.parse(userData).properties || []);
-          } catch {}
-        }
         await fetchRequests();
       } catch (error) {
         console.error('Error loading asset data:', error);
       } finally {
-        // Minimum 500ms loader show karega
         setTimeout(() => {
           setPageLoading(false);
         }, 500);
@@ -144,7 +143,7 @@ const MyAssets = () => {
         severity: "success" 
       });
       setNewAsset("");
-      fetchRequests();
+      await fetchRequests(); // ✅ Refresh to get updated assigned assets
     } catch {
       setNotification({ 
         message: "❌ Request failed. Please try again.", 
@@ -320,40 +319,55 @@ const MyAssets = () => {
           </div>
         </div>
 
-        {/* Assigned Properties Card */}
+        {/* ✅ Assigned Assets Card - Now shows approved assets */}
         <div className="MyAssets-properties-card">
           <div className="MyAssets-card-content">
             <div className="MyAssets-card-header">
               <h2 className="MyAssets-card-title">💼 My Assigned Assets</h2>
               <p className="MyAssets-card-subtitle">
-                Assets currently assigned to you
+                Assets currently assigned to you (Approved requests)
               </p>
             </div>
 
             <div className="MyAssets-properties-list">
-              {properties.length > 0 ? (
-                properties.map((item, idx) => (
-                  <div key={idx} className="MyAssets-property-item">
-                    <div className="MyAssets-property-content">
-                      <div className="MyAssets-property-icon">
-                        <FiPackage />
+              {assignedAssets.length > 0 ? (
+                assignedAssets.map((asset, idx) => {
+                  const AssetIcon = getAssetIcon(asset.assetName);
+                  const assetColor = getAssetColor(asset.assetName);
+                  return (
+                    <div key={asset._id || idx} className="MyAssets-property-item">
+                      <div className="MyAssets-property-content">
+                        <div className={`MyAssets-property-icon MyAssets-${assetColor}`}>
+                          <AssetIcon />
+                        </div>
+                        <div className="MyAssets-property-details">
+                          <h4>{asset.assetName}</h4>
+                          <p>
+                            Approved by: {asset.approvedBy?.name || 'System'} • 
+                            {formatDate(asset.updatedAt)}
+                          </p>
+                        </div>
+                        <span className="MyAssets-property-status MyAssets-status-approved">
+                          Active
+                        </span>
                       </div>
-                      <div className="MyAssets-property-details">
-                        <h4>{item}</h4>
-                        <p>Company-assigned asset • Active</p>
-                      </div>
-                      <span className="MyAssets-property-status MyAssets-status-approved">Active</span>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <div className="MyAssets-no-properties">
                   <FiPackage className="MyAssets-no-properties-icon" />
                   <h3>No Assets Assigned</h3>
-                  <p>Your assigned assets will appear here</p>
+                  <p>Your approved assets will appear here</p>
                 </div>
               )}
             </div>
+
+            {assignedAssets.length > 0 && (
+              <div className="MyAssets-properties-footer">
+                <p>Total Assigned: {assignedAssets.length} asset(s)</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

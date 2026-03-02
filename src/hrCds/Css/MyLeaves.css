@@ -115,7 +115,7 @@
   background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
   padding: 8px 16px;
   border-radius: 50px;
-  font-size: 14px;
+  font-size: 10px;
   font-weight: 500;
   color: #4a5568;
   border: 1px solid rgba(102, 126, 234, 0.2);
@@ -183,7 +183,7 @@
   background: white;
   border: 2px solid #e2e8f0;
   border-radius: 12px;
-  font-size: 14px;
+  font-size: 10px;
   color: #2d3748;
   transition: all 0.3s ease;
 }
@@ -421,13 +421,13 @@
 }
 
 .MyLeaves-stat-card {
-  background: white;
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
+    background: white;
+    border-radius: 16px;
+    padding: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
 }
 
 .MyLeaves-stat-card:hover {
@@ -468,8 +468,8 @@
 }
 
 .MyLeaves-stat-icon {
-  width: 40px;
-  height: 40px;
+  width: 30px;
+  height: 30px;
   padding: 8px;
   border-radius: 10px;
   color: white;
@@ -492,7 +492,7 @@
 }
 
 .MyLeaves-stat-header h3 {
-  font-size: 14px;
+  font-size: 10px;
   font-weight: 600;
   color: #718096;
   text-transform: uppercase;
@@ -501,10 +501,11 @@
 }
 
 .MyLeaves-stat-value {
-  font-size: 32px;
+  font-size: 15px;
   font-weight: 700;
   color: #1a202c;
   margin-bottom: 8px;
+  margin-left: 8px;
 }
 
 .MyLeaves-stat-footer {
@@ -735,10 +736,10 @@
 .MyLeaves-status-filter {
   background: #f7fafc;
   border: 2px solid #e2e8f0;
-  padding: 10px 24px;
+  padding: 5px 10px;
   border-radius: 50px;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 10px;
+  font-weight: 600;
   color: #4a5568;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -793,6 +794,7 @@
   height: 64px;
   color: #a0aec0;
   margin-bottom: 16px;
+  display: ruby;
 }
 
 .MyLeaves-empty-state h3 {
@@ -923,8 +925,8 @@
   gap: 6px;
   padding: 8px 16px;
   border-radius: 50px;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 8px;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -1013,11 +1015,12 @@
 }
 
 .MyLeaves-mobile-card-dates {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: #718096;
+ display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 7px;
+    color: #718096;
+    margin-left: 26px;
 }
 
 .MyLeaves-mobile-card-content {
@@ -1063,7 +1066,7 @@
 }
 
 .MyLeaves-form-title {
-  font-size: 28px;
+  font-size: 23px;
   font-weight: 700;
   color: #2d3748;
   margin-bottom: 8px;
@@ -1639,7 +1642,7 @@
   
   .MyLeaves-status-filters {
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(4, 1fr);
     }
   
   .MyLeaves-notification {

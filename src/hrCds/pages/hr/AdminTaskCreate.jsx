@@ -1568,8 +1568,7 @@ const AdminTaskManagement = () => {
   const renderEnhancedFilters = () => (
     <div className="AdminTaskManagement-filter-section">
       <div className="AdminTaskManagement-filter-stack">
-        <div className="AdminTaskManagement-filter-search-row">
-          <div className="AdminTaskManagement-search-input-container">
+        <div className="AdminTaskManagement-search-input-container">
             <FiSearch className="AdminTaskManagement-search-icon" />
             <input
               type="text"
@@ -1579,6 +1578,10 @@ const AdminTaskManagement = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
+        <div className="AdminTaskManagement-filter-search-row">
+          
+          
+          
           <button className="AdminTaskManagement-btn AdminTaskManagement-btn-primary" onClick={applyFilters}>
             <FiFilter /> Apply
           </button>
