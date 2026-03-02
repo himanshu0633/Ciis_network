@@ -3039,4 +3039,72 @@
   .leaves-table td:nth-child(7) {
     display: table-cell !important;
   }
+}/* Add at the end of your CSS file */
+
+/* Socket Status Badge */
+.socket-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: linear-gradient(135deg, #4a90e2, #357abd);
+  color: white;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-left: 12px;
+}
+
+.socket-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 16px;
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+.socket-status.connected {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.socket-status.disconnected {
+  background: #ffebee;
+  color: #c62828;
+}
+
+/* Table Header with Socket Badge */
+.table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* Animation for new leaves */
+@keyframes highlight {
+  0% {
+    background-color: rgba(74, 144, 226, 0.1);
+  }
+  50% {
+    background-color: rgba(74, 144, 226, 0.2);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+tr.new-leave {
+  animation: highlight 2s ease;
+}
+
+/* Loading socket status */
+.loading-container .socket-status {
+  margin-top: 10px;
+  display: inline-flex;
+  justify-content: center;
+  width: auto;
 }
