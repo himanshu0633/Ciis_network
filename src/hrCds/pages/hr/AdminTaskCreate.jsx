@@ -67,7 +67,7 @@ const AdminTaskManagement = () => {
   const [openRemarksDialog, setOpenRemarksDialog] = useState(false);
   const [openActivityDialog, setOpenActivityDialog] = useState(false);
   const [openStatusDialog, setOpenStatusDialog] = useState(false);
-  const [openNotifications, setOpenNotifications] = useState(false);
+
   const [openUserStatusDialog, setOpenUserStatusDialog] = useState(false);
   
   // Enhanced Remarks States
@@ -1935,83 +1935,68 @@ const renderFilteredStatsCards = () => {
   );
 
   // Enhanced Notifications Panel
-  const renderNotificationsPanel = () => (
-    <div className={`AdminTaskManagement-modal ${openNotifications ? 'AdminTaskManagement-modal-open' : ''}`}>
-      <div className="AdminTaskManagement-modal-content AdminTaskManagement-modal-notifications">
-        <div className="AdminTaskManagement-modal-header AdminTaskManagement-modal-primary">
-          <div className="AdminTaskManagement-modal-title-row">
-            <div className="AdminTaskManagement-modal-title-icon">
-              <FiBell />
-              <h3>Notifications</h3>
-            </div>
-            <button 
-              className="AdminTaskManagement-icon-btn"
-              onClick={() => setOpenNotifications(false)}
-            >
-              <FiX size={20} />
-            </button>
-          </div>
-          <div className="AdminTaskManagement-modal-subtitle">
-            {unreadNotificationCount > 0 ? `${unreadNotificationCount} unread` : 'All caught up'}
-          </div>
-        </div>
-        <div className="AdminTaskManagement-modal-body AdminTaskManagement-modal-scroll">
-          {notifications.length > 0 ? (
-            <div className="AdminTaskManagement-notifications-list">
-              <div className="AdminTaskManagement-modal-title-row" style={{ marginBottom: '16px' }}>
-                <span>{notifications.length} notification(s)</span>
-                <button 
-                  className="AdminTaskManagement-btn AdminTaskManagement-btn-sm"
-                  onClick={markAllNotificationsAsRead} 
-                  disabled={unreadNotificationCount === 0}
-                >
-                  Mark all as read
-                </button>
-              </div>
-              {notifications.map((notification) => (
-                <div 
-                  key={notification._id} 
-                  className={`AdminTaskManagement-notification-item ${notification.isRead ? '' : 'AdminTaskManagement-notification-unread'}`}
-                >
-                  <div className="AdminTaskManagement-notification-content">
-                    <div className="AdminTaskManagement-notification-title">{notification.title}</div>
-                    <div className="AdminTaskManagement-notification-message">{notification.message}</div>
-                    <div className="AdminTaskManagement-notification-footer">
-                      <div className="AdminTaskManagement-notification-date">
-                        {new Date(notification.createdAt).toLocaleDateString()}
-                      </div>
-                      {!notification.isRead && (
-                        <button 
-                          className="AdminTaskManagement-btn AdminTaskManagement-btn-sm"
-                          onClick={() => markNotificationAsRead(notification._id)}
-                        >
-                          Mark read
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="AdminTaskManagement-text-center">
-              <FiBell size={32} className="AdminTaskManagement-empty-icon" />
-              <h5>No notifications</h5>
-              <p>You're all caught up!</p>
-            </div>
-          )}
-        </div>
-        <div className="AdminTaskManagement-modal-footer">
-          <button 
-            className="AdminTaskManagement-btn" 
-            onClick={() => setOpenNotifications(false)}
-          >
-            Close
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+  // const renderNotificationsPanel = () => (
+  //   <div className={`AdminTaskManagement-modal ${openNotifications ? 'AdminTaskManagement-modal-open' : ''}`}>
+  //     <div className="AdminTaskManagement-modal-content AdminTaskManagement-modal-notifications">
+  //       <div className="AdminTaskManagement-modal-header AdminTaskManagement-modal-primary">
+  //         <div className="AdminTaskManagement-modal-title-row">
+     
+      
+  //         </div>
+  //         <div className="AdminTaskManagement-modal-subtitle">
+  //           {unreadNotificationCount > 0 ? `${unreadNotificationCount} unread` : 'All caught up'}
+  //         </div>
+  //       </div>
+  //       <div className="AdminTaskManagement-modal-body AdminTaskManagement-modal-scroll">
+  //         {notifications.length > 0 ? (
+  //           <div className="AdminTaskManagement-notifications-list">
+  //             <div className="AdminTaskManagement-modal-title-row" style={{ marginBottom: '16px' }}>
+  //               <span>{notifications.length} notification(s)</span>
+  //               <button 
+  //                 className="AdminTaskManagement-btn AdminTaskManagement-btn-sm"
+  //                 onClick={markAllNotificationsAsRead} 
+  //                 disabled={unreadNotificationCount === 0}
+  //               >
+  //                 Mark all as read
+  //               </button>
+  //             </div>
+  //             {notifications.map((notification) => (
+  //               <div 
+  //                 key={notification._id} 
+  //                 className={`AdminTaskManagement-notification-item ${notification.isRead ? '' : 'AdminTaskManagement-notification-unread'}`}
+  //               >
+  //                 <div className="AdminTaskManagement-notification-content">
+  //                   <div className="AdminTaskManagement-notification-title">{notification.title}</div>
+  //                   <div className="AdminTaskManagement-notification-message">{notification.message}</div>
+  //                   <div className="AdminTaskManagement-notification-footer">
+  //                     <div className="AdminTaskManagement-notification-date">
+  //                       {new Date(notification.createdAt).toLocaleDateString()}
+  //                     </div>
+  //                     {!notification.isRead && (
+  //                       <button 
+  //                         className="AdminTaskManagement-btn AdminTaskManagement-btn-sm"
+  //                         onClick={() => markNotificationAsRead(notification._id)}
+  //                       >
+  //                         Mark read
+  //                       </button>
+  //                     )}
+  //                   </div>
+  //                 </div>
+  //               </div>
+  //             ))}
+  //           </div>
+  //         ) : (
+  //           <div className="AdminTaskManagement-text-center">
+  //             <FiBell size={32} className="AdminTaskManagement-empty-icon" />
+  //             <h5>No notifications</h5>
+  //             <p>You're all caught up!</p>
+  //           </div>
+  //         )}
+  //       </div>
+ 
+  //     </div>
+  //   </div>
+  // );
 
   // Enhanced Activity Logs Dialog
   const renderActivityLogsDialog = () => (
@@ -3035,17 +3020,7 @@ const renderFilteredStatsCards = () => {
                 )} */}
               </div>
             )}
-            <button 
-              className="AdminTaskManagement-icon-btn AdminTaskManagement-btn-notifications"
-              onClick={() => setOpenNotifications(true)}
-            >
-              <FiBell />
-              {unreadNotificationCount > 0 && (
-                <span className="AdminTaskManagement-notification-badge">
-                  {unreadNotificationCount}
-                </span>
-              )}
-            </button>
+   
             <button 
               className="AdminTaskManagement-btn AdminTaskManagement-btn-primary"
               onClick={() => setOpenCreateDialog(true)}
@@ -3114,7 +3089,6 @@ const renderFilteredStatsCards = () => {
       {renderRemarksDialog()}
       {renderActivityLogsDialog()}
       {renderUserStatusDialog()}
-      {renderNotificationsPanel()}
       {renderImageZoomModal()}
       {renderSnackbar()}
     </div>

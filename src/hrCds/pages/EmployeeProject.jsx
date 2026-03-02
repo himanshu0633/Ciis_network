@@ -63,7 +63,7 @@ const EmployeeProject = () => {
     CheckCircle: () => <span className="EmployeeProject-icon">✅</span>,
     Schedule: () => <span className="EmployeeProject-icon">⏰</span>,
     Cancel: () => <span className="EmployeeProject-icon">❌</span>,
-    Notifications: () => <span className="EmployeeProject-icon">🔔</span>,
+    
     History: () => <span className="EmployeeProject-icon">📜</span>,
     Update: () => <span className="EmployeeProject-icon">🔄</span>,
     ClearAll: () => <span className="EmployeeProject-icon">🗑️</span>,
@@ -97,7 +97,7 @@ const EmployeeProject = () => {
       setPageLoading(true);
       try {
         await loadProjects();
-        await loadNotifications();
+    
       } catch (error) {
         console.error("Error loading data:", error);
         showSnackbar("Error loading data", "error");
@@ -139,14 +139,7 @@ const EmployeeProject = () => {
     }
   };
 
-  const loadNotifications = async () => {
-    try {
-      const res = await axios.get("/projects/notifications");
-      setNotifications(res.data.notifications || []);
-    } catch (error) {
-      console.error("Error loading notifications:", error);
-    }
-  };
+
 
   // Load selected project details + tasks
   const handleSelectProject = async (id) => {
@@ -578,16 +571,7 @@ const EmployeeProject = () => {
             <h1 className="EmployeeProject-title">Project Dashboard</h1>
             <p className="EmployeeProject-subtitle">Manage your projects and tasks efficiently</p>
           </div>
-          <Tooltip title="Notifications">
-            <button 
-              className="EmployeeProject-icon-button EmployeeProject-notification-button"
-              onClick={() => setOpenNotificationsModal(true)}
-            >
-              <Badge badgeContent={unreadNotificationsCount}>
-                <Icons.Notifications />
-              </Badge>
-            </button>
-          </Tooltip>
+     
         </div>
 
         {/* Stats Cards */}
