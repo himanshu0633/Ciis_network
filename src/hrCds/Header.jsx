@@ -35,12 +35,12 @@ import Swal from "sweetalert2";
 const Header = ({ toggleSidebar, isMobile }) => {
   const { user } = useAuth();
   const { 
-    onNewNotification, 
-    unreadCount, 
-    markAsRead,
-    isConnected 
+    onNewNotification = () => () => {}, 
+    unreadCount = 0, 
+    markAsRead = async () => {},
+    isConnected = false 
   } = useSocket();
-  const { showToast } = useNotification();
+  const { showToast = () => {} } = useNotification();
   
   const theme = useTheme();
   const navigate = useNavigate();
@@ -145,16 +145,20 @@ const Header = ({ toggleSidebar, isMobile }) => {
       const attendanceData = attendanceRes.value?.data?.data || [];
       attendanceData.forEach((item) => {
         if (item.inTime) all.push({ 
+          id: `attendance-in-${item._id || Date.now()}`,
           msg: `🕒 Clocked In at ${formatTime(item.inTime)}`, 
           time: item.inTime,
-          type: 'attendance',
-          read: false
+          type: 'info',
+          read: false,
+          category: 'attendance'
         });
         if (item.outTime) all.push({ 
+          id: `attendance-out-${item._id || Date.now()}`,
           msg: `🏠 Clocked Out at ${formatTime(item.outTime)}`, 
           time: item.outTime,
-          type: 'attendance',
-          read: false
+          type: 'info',
+          read: false,
+          category: 'attendance'
         });
       });
 
@@ -167,11 +171,15 @@ const Header = ({ toggleSidebar, isMobile }) => {
             : l.status?.toLowerCase() === "pending"
             ? "⏳"
             : "❌";
+        const type = l.status?.toLowerCase() === "approved" ? 'success' : 
+                    l.status?.toLowerCase() === "pending" ? 'warning' : 'error';
         all.push({
+          id: `leave-${l._id || Date.now()}`,
           msg: `${emoji} Leave ${l.status}: ${l.type}`,
           time: l.updatedAt || l.startDate,
-          type: 'leave',
+          type: type,
           read: false,
+          category: 'leave',
           data: l
         });
       });
@@ -179,11 +187,15 @@ const Header = ({ toggleSidebar, isMobile }) => {
       // Assets
       const assetsData = assetsRes.value?.data?.requests || [];
       assetsData.forEach((a) => {
+        const type = a.status?.toLowerCase() === 'approved' ? 'success' :
+                    a.status?.toLowerCase() === 'pending' ? 'warning' : 'info';
         all.push({
+          id: `asset-${a._id || Date.now()}`,
           msg: `💻 Asset Request: ${a.assetName} — ${a.status.toUpperCase()}`,
           time: a.updatedAt,
-          type: 'asset',
-          read: false
+          type: type,
+          read: false,
+          category: 'asset'
         });
       });
 
@@ -199,10 +211,12 @@ const Header = ({ toggleSidebar, isMobile }) => {
           if (status.toLowerCase() === "completed") return;
 
           all.push({
+            id: `task-${t._id || Date.now()}`,
             msg: `🧾 Task Update: ${t.title} (${status})`,
             time: t.createdAt,
-            type: 'task',
-            read: false
+            type: 'info',
+            read: false,
+            category: 'task'
           });
         });
       });
@@ -213,10 +227,12 @@ const Header = ({ toggleSidebar, isMobile }) => {
         if (t.status?.toLowerCase() === "completed") return;
 
         all.push({
+          id: `assigned-${t._id || Date.now()}`,
           msg: `📋 New Task Assigned: ${t.title} (${t.status})`,
           time: t.createdAt,
-          type: 'task',
-          read: false
+          type: 'info',
+          read: false,
+          category: 'task'
         });
       });
 
@@ -224,10 +240,12 @@ const Header = ({ toggleSidebar, isMobile }) => {
       const groupData = groupsRes.value?.data?.data || [];
       groupData.forEach((g) => {
         all.push({ 
+          id: `group-${g._id || Date.now()}`,
           msg: `👥 New Group Created: ${g.groupName}`, 
           time: g.createdAt,
-          type: 'group',
-          read: false
+          type: 'info',
+          read: false,
+          category: 'group'
         });
       });
 
@@ -235,10 +253,12 @@ const Header = ({ toggleSidebar, isMobile }) => {
       const alertData = alertsRes.value?.data?.data || [];
       alertData.forEach((a) => {
         all.push({ 
+          id: `alert-${a._id || Date.now()}`,
           msg: `🚨 ${a.message}`, 
           time: a.createdAt,
-          type: 'alert',
-          read: false
+          type: 'warning',
+          read: false,
+          category: 'alert'
         });
       });
 
@@ -317,6 +337,14 @@ const Header = ({ toggleSidebar, isMobile }) => {
   // ========== CLEAR TOAST ==========
   const handleCloseToast = () => {
     setToast(prev => ({ ...prev, open: false }));
+  };
+
+  // ========== SHOW TOAST ==========
+  const showCustomToast = (message, type = 'info', duration = 3000) => {
+    setToast({ open: true, message, type });
+    setTimeout(() => {
+      setToast(prev => ({ ...prev, open: false }));
+    }, duration);
   };
 
   // ========== LOGO CLICK HANDLER ==========
@@ -428,7 +456,11 @@ const Header = ({ toggleSidebar, isMobile }) => {
                 variant="subtitle1" 
                 sx={{ 
                   fontWeight: 500, 
-                  color: theme.palette.text.secondary 
+                  color: theme.palette.text.secondary,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 1
                 }}
               >
                 Welcome, {user?.name || "User"}
@@ -436,20 +468,29 @@ const Header = ({ toggleSidebar, isMobile }) => {
                   <Box
                     component="span"
                     sx={{
-                      display: 'inline-block',
-                      width: 8,
-                      height: 8,
-                      borderRadius: '50%',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 0.5,
                       backgroundColor: '#4caf50',
-                      ml: 1,
-                      animation: 'pulse 2s infinite',
-                      '@keyframes pulse': {
-                        '0%': { opacity: 1 },
-                        '50%': { opacity: 0.5 },
-                        '100%': { opacity: 1 },
-                      }
+                      color: 'white',
+                      fontSize: '0.7rem',
+                      padding: '2px 8px',
+                      borderRadius: '12px',
+                      ml: 1
                     }}
-                  />
+                  >
+                    <Box
+                      component="span"
+                      sx={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        backgroundColor: 'white',
+                        animation: 'pulse 2s infinite',
+                      }}
+                    />
+                    LIVE
+                  </Box>
                 )}
               </Typography>
             ) : (
@@ -636,7 +677,7 @@ const Header = ({ toggleSidebar, isMobile }) => {
                 ) : notifications.length > 0 ? (
                   notifications.map((n, i) => (
                     <MenuItem
-                      key={i}
+                      key={n.id || i}
                       sx={{
                         display: "flex",
                         alignItems: "flex-start",
