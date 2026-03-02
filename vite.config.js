@@ -10,8 +10,7 @@ export default defineConfig({
   ],
 
   // Fix for Material-UI v4 + Vite compatibility
-
-   build: {
+  build: {
     commonjsOptions: {
       include: [/node_modules/]
     },
@@ -23,12 +22,49 @@ export default defineConfig({
   },
 
   server: {
+    port: 5173,
+    strictPort: true,
+    host: true, // Expose to network
+    hmr: {
+      protocol: 'ws',
+      host: 'localhost',
+      port: 5173, // ✅ Same as server port
+      clientPort: 5173,
+      timeout: 5000
+    },
+    watch: {
+      usePolling: true,
+      interval: 1000
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:3000',
         changeOrigin: true,
+      
+       
+      },
+      '/socket.io': { // ✅ Add socket.io proxy
+        target: 'http://localhost:3000',
+        changeOrigin: true,
         secure: false,
+        ws: true, // Enable WebSocket proxying
       }
-    }
+    },
+    cors: true,
+    force: true
+  },
+
+  preview: {
+    port: 5173,
+    strictPort: true
+  },
+
+  optimizeDeps: {
+    force: true,
+    include: ['react', 'react-dom', 'socket.io-client'] 
+  },
+
+  define: {
+    'process.env': {} // For compatibility
   }
 })

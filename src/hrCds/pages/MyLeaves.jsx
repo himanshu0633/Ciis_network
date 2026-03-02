@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import axios from "../../utils/axiosConfig";
+import { useSocket } from '../../context/SocketContext';
+import { useNotification } from '../../context/NotificationContext';
 import {
   FiCalendar,
   FiPlus,
@@ -17,22 +19,47 @@ import {
   FiX,
   FiBriefcase,
   FiUsers,
-  FiAlertTriangle
+  FiAlertTriangle,
+  FiBell,
+  FiWifi,
+  FiWifiOff
 } from "react-icons/fi";
 import '../Css/MyLeaves.css';
-import CIISLoader from '../../Loader/CIISLoader'; // ✅ Import CIISLoader
+import CIISLoader from '../../Loader/CIISLoader';
 
 const MyLeaves = () => {
   const [tab, setTab] = useState(0);
   const [leaves, setLeaves] = useState([]);
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [notification, setNotification] = useState(null);
-  const [pageLoading, setPageLoading] = useState(true); // ✅ Page loading state
+  const [pageLoading, setPageLoading] = useState(true);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [recentlyUpdatedId, setRecentlyUpdatedId] = useState(null);
   
-  // Job Roles और Departments State
+  // Socket and Notification Hooks with safe defaults
+  let socketContext = {};
+  let notificationContext = {};
+  
+  try {
+    socketContext = useSocket() || {};
+    notificationContext = useNotification() || {};
+  } catch (error) {
+    console.warn('Socket/Notification context not available:', error);
+  }
+  
+  const { 
+    onLeaveStatusChanged = () => () => {},
+    isConnected = false,
+    joinLeaveRoom = () => {},
+    leaveLeaveRoom = () => {},
+    unreadCount = 0 
+  } = socketContext;
+  
+  const { showToast = (msg) => console.log('Toast:', msg) } = notificationContext;
+  
+  // Job Roles aur Departments State
   const [jobRoles, setJobRoles] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [userJobRoleName, setUserJobRoleName] = useState("Employee");
@@ -58,11 +85,111 @@ const MyLeaves = () => {
     items: [],
   });
   const [isMobile, setIsMobile] = useState(false);
+  const [socketError, setSocketError] = useState(false);
 
-  // Get user and company details
-  const user = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null;
-  const token = localStorage.getItem('token');
-  const companyDetails = localStorage.getItem('companyDetails') ? JSON.parse(localStorage.getItem('companyDetails')) : null;
+  // Get user and company details with error handling
+  let user = null;
+  let token = null;
+  let companyDetails = null;
+  
+  try {
+    user = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null;
+    token = localStorage.getItem('token');
+    companyDetails = localStorage.getItem('companyDetails') ? JSON.parse(localStorage.getItem('companyDetails')) : null;
+  } catch (error) {
+    console.error('Error parsing localStorage data:', error);
+  }
+
+  // ============================================
+  // SOCKET EVENT LISTENERS - REAL-TIME UPDATES
+  // ============================================
+  useEffect(() => {
+    if (!user?._id) return;
+
+    console.log('🔌 Setting up socket listeners for user leaves...');
+
+    let unsubscribeStatusChange;
+
+    try {
+      unsubscribeStatusChange = onLeaveStatusChanged?.((data) => {
+        console.log('📢 Leave status changed via socket:', data);
+        
+        const { leaveId, newStatus, oldStatus, remarks } = data.data || data;
+        
+        // Check if this leave belongs to current user
+        setLeaves(prev => {
+          const updatedLeaves = prev.map(leave => {
+            if (leave._id === leaveId) {
+              return { ...leave, status: newStatus, remarks };
+            }
+            return leave;
+          });
+          
+          // Update stats
+          calculateStats(updatedLeaves);
+          
+          // Find the affected leave
+          const affectedLeave = prev.find(l => l._id === leaveId);
+          
+          if (affectedLeave) {
+            // Set highlight
+            setRecentlyUpdatedId(leaveId);
+            setTimeout(() => setRecentlyUpdatedId(null), 3000);
+            
+            // Show toast notification
+            const message = `Your ${affectedLeave.type} leave has been ${newStatus.toLowerCase()}`;
+            
+            try {
+              if (newStatus === 'Approved') {
+                showToast(message, 'success', 5000);
+              } else if (newStatus === 'Rejected') {
+                showToast(message, 'error', 5000);
+              } else {
+                showToast(message, 'info', 4000);
+              }
+            } catch (toastError) {
+              console.warn('Toast error:', toastError);
+            }
+            
+            // Show in-app notification
+            setNotification({
+              message: `Leave ${newStatus.toLowerCase()}: ${affectedLeave.type} leave from ${formatDate(affectedLeave.startDate)} to ${formatDate(affectedLeave.endDate)}`,
+              severity: newStatus === 'Approved' ? 'success' : newStatus === 'Rejected' ? 'error' : 'info',
+              autoHide: true
+            });
+          }
+          
+          return updatedLeaves;
+        });
+      });
+    } catch (error) {
+      console.warn('Error setting up socket listener:', error);
+      setSocketError(true);
+    }
+
+    // Join rooms for existing leaves
+    try {
+      leaves.forEach(leave => {
+        joinLeaveRoom?.(leave._id);
+      });
+    } catch (error) {
+      console.warn('Error joining leave rooms:', error);
+    }
+
+    return () => {
+      try {
+        if (unsubscribeStatusChange && typeof unsubscribeStatusChange === 'function') {
+          unsubscribeStatusChange();
+        }
+        
+        leaves.forEach(leave => {
+          leaveLeaveRoom?.(leave._id);
+        });
+      } catch (error) {
+        console.warn('Error cleaning up socket:', error);
+      }
+    };
+  }, [user?._id, onLeaveStatusChanged, showToast, leaves.length]);
 
   // Check mobile viewport
   useEffect(() => {
@@ -80,7 +207,6 @@ const MyLeaves = () => {
       return null;
     }
     
-    // Check all possible sources for company ID
     const sources = [
       { source: 'companyDetails._id', value: companyDetails?._id },
       { source: 'companyDetails.id', value: companyDetails?.id },
@@ -102,35 +228,17 @@ const MyLeaves = () => {
   // ✅ Resolve User Job Role Function
   const resolveUserJobRole = (roles) => {
     if (!roles || roles.length === 0) {
-      if (!user) {
-        return "Employee";
-      }
-      
-      if (user?.roleName) {
-        return user.roleName;
-      }
-      if (user?.jobRoleName) {
-        return user.jobRoleName;
-      }
-      if (user?.role) {
-        return user.role;
-      }
-      
+      if (!user) return "Employee";
+      if (user?.roleName) return user.roleName;
+      if (user?.jobRoleName) return user.jobRoleName;
+      if (user?.role) return user.role;
       return "Employee";
     }
     
-    if (!user) {
-      return "Employee";
-    }
-    
+    if (!user) return "Employee";
     if (!user?.jobRole && !user?.role && !user?.roleId) {
-      if (user?.roleName) {
-        return user.roleName;
-      }
-      if (user?.jobRoleName) {
-        return user.jobRoleName;
-      }
-      
+      if (user?.roleName) return user.roleName;
+      if (user?.jobRoleName) return user.jobRoleName;
       return "Employee";
     }
     
@@ -147,43 +255,23 @@ const MyLeaves = () => {
       }
     );
 
-    if (role) {
-      return role.roleName || "Employee";
-    }
-    
-    if (user?.roleName) {
-      return user.roleName;
-    }
-    
+    if (role) return role.roleName || "Employee";
+    if (user?.roleName) return user.roleName;
     return "Employee";
   };
 
   // ✅ Resolve User Department Function
   const resolveUserDepartment = (depts) => {
     if (!depts || depts.length === 0) {
-      if (!user) {
-        return "General";
-      }
-      
-      if (user?.departmentName) {
-        return user.departmentName;
-      }
-      if (user?.dept) {
-        return user.dept;
-      }
-      
+      if (!user) return "General";
+      if (user?.departmentName) return user.departmentName;
+      if (user?.dept) return user.dept;
       return "General";
     }
     
-    if (!user) {
-      return "General";
-    }
-    
+    if (!user) return "General";
     if (!user?.department && !user?.dept && !user?.departmentId) {
-      if (user?.departmentName) {
-        return user.departmentName;
-      }
-      
+      if (user?.departmentName) return user.departmentName;
       return "General";
     }
     
@@ -200,14 +288,8 @@ const MyLeaves = () => {
       }
     );
 
-    if (dept) {
-      return dept.departmentName || "General";
-    }
-    
-    if (user?.departmentName) {
-      return user.departmentName;
-    }
-    
+    if (dept) return dept.departmentName || "General";
+    if (user?.departmentName) return user.departmentName;
     return "General";
   };
 
@@ -230,7 +312,6 @@ const MyLeaves = () => {
         }
       });
       
-      // Handle different response structures
       let roles = [];
       if (Array.isArray(res.data)) {
         roles = res.data;
@@ -242,18 +323,16 @@ const MyLeaves = () => {
         roles = res.data.roles;
       }
       
-      if (!Array.isArray(roles)) {
-        roles = [];
-      }
+      if (!Array.isArray(roles)) roles = [];
       
       setJobRoles(roles);
-      
       const roleName = resolveUserJobRole(roles);
       setUserJobRoleName(roleName);
       
       return roles;
       
     } catch (err) {
+      console.error('Error fetching job roles:', err);
       const roleName = resolveUserJobRole([]);
       setUserJobRoleName(roleName);
       
@@ -287,7 +366,6 @@ const MyLeaves = () => {
         }
       });
       
-      // Handle different response structures
       let depts = [];
       if (Array.isArray(res.data)) {
         depts = res.data;
@@ -299,18 +377,16 @@ const MyLeaves = () => {
         depts = res.data.departmentList;
       }
       
-      if (!Array.isArray(depts)) {
-        depts = [];
-      }
+      if (!Array.isArray(depts)) depts = [];
       
       setDepartments(depts);
-      
       const deptName = resolveUserDepartment(depts);
       setUserDepartmentName(deptName);
       
       return depts;
       
     } catch (err) {
+      console.error('Error fetching departments:', err);
       const deptName = resolveUserDepartment([]);
       setUserDepartmentName(deptName);
       
@@ -333,6 +409,7 @@ const MyLeaves = () => {
         fetchDepartments()
       ]);
     } catch (error) {
+      console.error('Error loading user info:', error);
       setNotification({
         message: "Failed to load user information",
         severity: "error",
@@ -342,37 +419,45 @@ const MyLeaves = () => {
 
   const formatDate = (dateStr) => {
     if (!dateStr) return "--";
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("en-US", {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+    } catch (error) {
+      return dateStr;
+    }
   };
 
   const getHistoryLabel = (h) => {
     if (!h) return "";
 
-    const dateText = h.at
-      ? ` on ${new Date(h.at).toLocaleString()}`
-      : "";
+    try {
+      const dateText = h.at
+        ? ` on ${new Date(h.at).toLocaleString()}`
+        : "";
 
-    const remarksText = h.remarks ? ` — "${h.remarks}"` : "";
+      const remarksText = h.remarks ? ` — "${h.remarks}"` : "";
 
-    const approvedBy =
-      typeof h.by === "object" ? h.by.name : "Unknown";
+      const approvedBy =
+        typeof h.by === "object" ? h.by.name : h.by || "Unknown";
 
-    if (h.action === "approved")
-      return `✅ Approved by ${approvedBy}${dateText}${remarksText}`;
+      if (h.action === "approved")
+        return `✅ Approved by ${approvedBy}${dateText}${remarksText}`;
 
-    if (h.action === "rejected")
-      return `❌ Rejected by ${approvedBy}${dateText}${remarksText}`;
+      if (h.action === "rejected")
+        return `❌ Rejected by ${approvedBy}${dateText}${remarksText}`;
 
-    if (h.action === "applied")
-      return `📝 Applied${dateText}`;
+      if (h.action === "applied")
+        return `📝 Applied${dateText}`;
 
-    return `⏳ Pending`;
+      return `⏳ Pending`;
+    } catch (error) {
+      return "History entry";
+    }
   };
 
   const fetchLeaves = useCallback(async (showRefresh = false) => {
@@ -385,22 +470,33 @@ const MyLeaves = () => {
       setLeaves(list);
       calculateStats(list);
       
+      // Join rooms for each leave
+      try {
+        list.forEach(leave => {
+          joinLeaveRoom?.(leave._id);
+        });
+      } catch (roomError) {
+        console.warn('Error joining rooms:', roomError);
+      }
+      
       if (showRefresh) {
         setNotification({
           message: "Leaves data refreshed!",
           severity: "success",
+          autoHide: true
         });
       }
     } catch (error) {
+      console.error('Error fetching leaves:', error);
       setNotification({
-        message: "Failed to fetch leaves",
+        message: error?.response?.data?.message || "Failed to fetch leaves",
         severity: "error",
       });
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [joinLeaveRoom]);
 
   const calculateStats = (data) => {
     const approved = data.filter((l) => l.status === "Approved").length;
@@ -419,7 +515,6 @@ const MyLeaves = () => {
       } catch (error) {
         console.error('Error loading data:', error);
       } finally {
-        // Add minimum delay to show loader
         setTimeout(() => {
           setPageLoading(false);
         }, 500);
@@ -433,9 +528,9 @@ const MyLeaves = () => {
     const matchesStatus =
       statusFilter === "ALL" ? true : l.status === statusFilter;
     const matchesSearch =
-      l.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      l.reason.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      l.status.toLowerCase().includes(searchTerm.toLowerCase());
+      l.type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      l.reason?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      l.status?.toLowerCase().includes(searchTerm.toLowerCase());
 
     return matchesStatus && matchesSearch;
   });
@@ -447,13 +542,17 @@ const MyLeaves = () => {
 
   const calculateDays = (startDate, endDate) => {
     if (!startDate || !endDate) return 0;
-    const s = new Date(startDate);
-    const e = new Date(endDate);
-    s.setHours(0, 0, 0, 0);
-    e.setHours(0, 0, 0, 0);
-    const diff = e - s;
-    if (diff < 0) return 0;
-    return Math.floor(diff / (1000 * 60 * 60 * 24)) + 1;
+    try {
+      const s = new Date(startDate);
+      const e = new Date(endDate);
+      s.setHours(0, 0, 0, 0);
+      e.setHours(0, 0, 0, 0);
+      const diff = e - s;
+      if (diff < 0) return 0;
+      return Math.floor(diff / (1000 * 60 * 60 * 24)) + 1;
+    } catch (error) {
+      return 0;
+    }
   };
 
   const applyLeave = async () => {
@@ -482,18 +581,35 @@ const MyLeaves = () => {
 
     try {
       setLoading(true);
-      await axios.post("/leaves/apply", payload);
+      const response = await axios.post("/leaves/apply", payload);
+      
+      try {
+        showToast("Leave applied successfully!", "success");
+      } catch (toastError) {
+        console.warn('Toast error:', toastError);
+      }
+      
       setNotification({
         message: "Leave applied successfully",
         severity: "success",
+        autoHide: true
       });
+      
       await fetchLeaves();
       setForm({ type: "Casual", startDate: "", endDate: "", reason: "" });
       setTab(0);
     } catch (err) {
+      console.error('Error applying leave:', err);
+      const errorMsg = err?.response?.data?.message || "Failed to apply leave";
+      
+      try {
+        showToast(errorMsg, "error");
+      } catch (toastError) {
+        console.warn('Toast error:', toastError);
+      }
+      
       setNotification({
-        message:
-          err?.response?.data?.message || "Failed to apply leave",
+        message: errorMsg,
         severity: "error",
       });
     } finally {
@@ -522,6 +638,16 @@ const MyLeaves = () => {
     setRefreshing(false);
   };
 
+  // Auto-hide notification after 4 seconds
+  useEffect(() => {
+    if (notification?.autoHide) {
+      const timer = setTimeout(() => {
+        setNotification(null);
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
+
   // ✅ Show CIISLoader while page is loading
   if (pageLoading) {
     return <CIISLoader />;
@@ -538,6 +664,29 @@ const MyLeaves = () => {
               Manage and track all your leave requests
             </p>
             
+            {/* Socket Connection Status */}
+            <div className="MyLeaves-socket-status">
+              {socketError ? (
+                <span className="socket-badge error" title="Real-time updates unavailable">
+                  <FiWifiOff size={12} />
+                  Offline Mode
+                </span>
+              ) : isConnected ? (
+                <span className="socket-badge connected">
+                  <FiWifi size={12} />
+                  Live Updates
+                  {unreadCount > 0 && (
+                    <span className="unread-badge">{unreadCount}</span>
+                  )}
+                </span>
+              ) : (
+                <span className="socket-badge disconnected">
+                  <FiWifiOff size={12} />
+                  Connecting...
+                </span>
+              )}
+            </div>
+
             {/* User Info Display */}
             <div className="MyLeaves-user-info">
               <div className="MyLeaves-user-info-tags">
@@ -725,12 +874,18 @@ const MyLeaves = () => {
               </button>
             </div>
 
-            {/* Results Count */}
+            {/* Results Count with Socket Status */}
             <h3 className="MyLeaves-results-count">
               Showing {filteredLeaves.length} of {leaves.length} records
               <span className="MyLeaves-user-role-badge">
                 • Role: {userJobRoleName} • Dept: {userDepartmentName}
               </span>
+              {isConnected && !socketError && (
+                <span className="live-badge">
+                  <FiBell size={12} />
+                  LIVE
+                </span>
+              )}
             </h3>
 
             {/* Main Content */}
@@ -763,50 +918,59 @@ const MyLeaves = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {filteredLeaves.map((leave) => (
-                            <tr key={leave._id || leave.id}>
-                              <td>
-                                <span className={`MyLeaves-leave-type MyLeaves-type-${leave.type?.toLowerCase()}`}>
-                                  {leave.type}
-                                </span>
-                              </td>
-                              <td>
-                                <div className="MyLeaves-date-range">
-                                  <FiCalendar size={12} />
-                                  {formatDate(leave.startDate)} - {formatDate(leave.endDate)}
-                                </div>
-                              </td>
-                              <td>
-                                <span className="MyLeaves-days-badge">
-                                  {leave.days || calculateDays(leave.startDate, leave.endDate)} day(s)
-                                </span>
-                              </td>
-                              <td className="MyLeaves-reason-cell">
-                                {leave.reason}
-                              </td>
-                              <td>
-                                <span className={`MyLeaves-status-badge MyLeaves-status-${leave.status?.toLowerCase()}`}>
-                                  {leave.status === "Approved" && <FiCheckCircle size={12} />}
-                                  {leave.status === "Pending" && <FiClock size={12} />}
-                                  {leave.status === "Rejected" && <FiXCircle size={12} />}
-                                  {leave.status}
-                                </span>
-                              </td>
-                              <td>
-                                {formatDate(leave.createdAt || leave.appliedOn)}
-                              </td>
-                              <td>
-                                <button
-                                  className="MyLeaves-history-button"
-                                  onClick={() => openHistoryModal(leave)}
-                                  disabled={!leave.history || leave.history.length === 0}
-                                >
-                                  <FiList size={14} />
-                                  View History
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
+                          {filteredLeaves.map((leave) => {
+                            const isNewlyUpdated = leave._id === recentlyUpdatedId;
+                            
+                            return (
+                              <tr 
+                                key={leave._id || leave.id}
+                                className={isNewlyUpdated ? 'highlight-row' : ''}
+                              >
+                                <td>
+                                  <span className={`MyLeaves-leave-type MyLeaves-type-${leave.type?.toLowerCase()}`}>
+                                    {leave.type}
+                                  </span>
+                                </td>
+                                <td>
+                                  <div className="MyLeaves-date-range">
+                                    <FiCalendar size={12} />
+                                    {formatDate(leave.startDate)} - {formatDate(leave.endDate)}
+                                  </div>
+                                </td>
+                                <td>
+                                  <span className="MyLeaves-days-badge">
+                                    {leave.days || calculateDays(leave.startDate, leave.endDate)} day(s)
+                                  </span>
+                                </td>
+                                <td className="MyLeaves-reason-cell" title={leave.reason}>
+                                  {leave.reason?.length > 50 
+                                    ? `${leave.reason.substring(0, 50)}...` 
+                                    : leave.reason}
+                                </td>
+                                <td>
+                                  <span className={`MyLeaves-status-badge MyLeaves-status-${leave.status?.toLowerCase()}`}>
+                                    {leave.status === "Approved" && <FiCheckCircle size={12} />}
+                                    {leave.status === "Pending" && <FiClock size={12} />}
+                                    {leave.status === "Rejected" && <FiXCircle size={12} />}
+                                    {leave.status}
+                                  </span>
+                                </td>
+                                <td>
+                                  {formatDate(leave.createdAt || leave.appliedOn)}
+                                </td>
+                                <td>
+                                  <button
+                                    className="MyLeaves-history-button"
+                                    onClick={() => openHistoryModal(leave)}
+                                    disabled={!leave.history || leave.history.length === 0}
+                                  >
+                                    <FiList size={14} />
+                                    View History
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
@@ -815,54 +979,61 @@ const MyLeaves = () => {
                   {/* Mobile Card View */}
                   {isMobile && (
                     <div className="MyLeaves-mobile-cards">
-                      {filteredLeaves.map((leave) => (
-                        <div key={leave._id || leave.id} className="MyLeaves-mobile-card">
-                          <div className="MyLeaves-mobile-card-header">
-                            <div className="MyLeaves-mobile-card-title">
-                              <span className={`MyLeaves-leave-type MyLeaves-type-${leave.type?.toLowerCase()}`}>
-                                {leave.type}
-                              </span>
-                              <span className={`MyLeaves-status-badge MyLeaves-status-${leave.status?.toLowerCase()}`}>
-                                {leave.status}
-                              </span>
+                      {filteredLeaves.map((leave) => {
+                        const isNewlyUpdated = leave._id === recentlyUpdatedId;
+                        
+                        return (
+                          <div 
+                            key={leave._id || leave.id} 
+                            className={`MyLeaves-mobile-card ${isNewlyUpdated ? 'highlight-card' : ''}`}
+                          >
+                            <div className="MyLeaves-mobile-card-header">
+                              <div className="MyLeaves-mobile-card-title">
+                                <span className={`MyLeaves-leave-type MyLeaves-type-${leave.type?.toLowerCase()}`}>
+                                  {leave.type}
+                                </span>
+                                <span className={`MyLeaves-status-badge MyLeaves-status-${leave.status?.toLowerCase()}`}>
+                                  {leave.status}
+                                </span>
+                              </div>
+                              <div className="MyLeaves-mobile-card-dates">
+                                <FiCalendar size={12} />
+                                {formatDate(leave.startDate)} - {formatDate(leave.endDate)}
+                              </div>
                             </div>
-                            <div className="MyLeaves-mobile-card-dates">
-                              <FiCalendar size={12} />
-                              {formatDate(leave.startDate)} - {formatDate(leave.endDate)}
+                            
+                            <div className="MyLeaves-mobile-card-content">
+                              <div className="MyLeaves-mobile-card-row">
+                                <span className="MyLeaves-mobile-label">Reason:</span>
+                                <span className="MyLeaves-mobile-value">{leave.reason}</span>
+                              </div>
+                              <div className="MyLeaves-mobile-card-row">
+                                <span className="MyLeaves-mobile-label">Days:</span>
+                                <span className="MyLeaves-mobile-value">
+                                  {leave.days || calculateDays(leave.startDate, leave.endDate)} day(s)
+                                </span>
+                              </div>
+                              <div className="MyLeaves-mobile-card-row">
+                                <span className="MyLeaves-mobile-label">Applied:</span>
+                                <span className="MyLeaves-mobile-value">
+                                  {formatDate(leave.createdAt || leave.appliedOn)}
+                                </span>
+                              </div>
+                            </div>
+                            
+                            <div className="MyLeaves-mobile-card-actions">
+                              <button
+                                className="MyLeaves-history-button"
+                                onClick={() => openHistoryModal(leave)}
+                                disabled={!leave.history || leave.history.length === 0}
+                              >
+                                <FiList size={14} />
+                                History
+                              </button>
                             </div>
                           </div>
-                          
-                          <div className="MyLeaves-mobile-card-content">
-                            <div className="MyLeaves-mobile-card-row">
-                              <span className="MyLeaves-mobile-label">Reason:</span>
-                              <span className="MyLeaves-mobile-value">{leave.reason}</span>
-                            </div>
-                            <div className="MyLeaves-mobile-card-row">
-                              <span className="MyLeaves-mobile-label">Days:</span>
-                              <span className="MyLeaves-mobile-value">
-                                {leave.days || calculateDays(leave.startDate, leave.endDate)} day(s)
-                              </span>
-                            </div>
-                            <div className="MyLeaves-mobile-card-row">
-                              <span className="MyLeaves-mobile-label">Applied:</span>
-                              <span className="MyLeaves-mobile-value">
-                                {formatDate(leave.createdAt || leave.appliedOn)}
-                              </span>
-                            </div>
-                          </div>
-                          
-                          <div className="MyLeaves-mobile-card-actions">
-                            <button
-                              className="MyLeaves-history-button"
-                              onClick={() => openHistoryModal(leave)}
-                              disabled={!leave.history || leave.history.length === 0}
-                            >
-                              <FiList size={14} />
-                              History
-                            </button>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </>
@@ -894,9 +1065,9 @@ const MyLeaves = () => {
                     onChange={handleChange}
                     className="MyLeaves-form-select"
                   >
-                    <option value="Casual">Casual </option>
-                    <option value="Sick">Sick </option>
-                    <option value="Paid">Paid </option>
+                    <option value="Casual">Casual</option>
+                    <option value="Sick">Sick</option>
+                    <option value="Paid">Paid</option>
                     <option value="Unpaid">Unpaid</option>
                     <option value="Other">Other</option>
                   </select>

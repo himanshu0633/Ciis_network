@@ -2,6 +2,10 @@ import React, { useEffect, useState, useMemo } from "react";
 import axios from "../../../utils/axiosConfig";
 import './employee-leaves.css';
 
+// Socket import
+import { useSocket } from '../../../context/SocketContext';
+import { useNotification } from '../../../context/NotificationContext';
+
 // Icons
 import {
   FiCalendar,
@@ -38,7 +42,8 @@ import {
   FiArrowRight,
   FiHome,
   FiUsers as FiUsersIcon,
-  FiBriefcase as FiBriefcaseIcon
+  FiBriefcase as FiBriefcaseIcon,
+  FiBell // Add bell icon for notifications
 } from "react-icons/fi";
 
 // Status Filter Component
@@ -177,6 +182,22 @@ const EmployeeLeaves = () => {
   });
 
   // ============================================
+  // SOCKET & NOTIFICATION HOOKS
+  // ============================================
+  const { 
+    onNewLeave, 
+    onLeaveStatusChanged, 
+    onLeaveDeleted,
+    joinLeaveRoom,
+    leaveLeaveRoom,
+    isConnected,
+    unreadCount,
+    markAsRead 
+  } = useSocket();
+  
+  const { showToast } = useNotification();
+
+  // ============================================
   // INITIALIZATION
   // ============================================
   useEffect(() => {
@@ -187,8 +208,8 @@ const EmployeeLeaves = () => {
     if (currentUserCompanyId) {
       fetchCompanyUsers();
       fetchLeaves();
-      fetchDepartments(); // ✅ Department API call
-      fetchCompanyDetails(); // ✅ Company details for name
+      fetchDepartments();
+      fetchCompanyDetails();
     }
   }, [
     filterDate, 
@@ -200,25 +221,181 @@ const EmployeeLeaves = () => {
   ]);
 
   // ============================================
-  // ✅ FETCH COMPANY DETAILS (for name)
+  // SOCKET EVENT LISTENERS
   // ============================================
-  const fetchCompanyDetails = async () => {
-    if (!currentUserCompanyId) return;
-    
-    try {
-      const response = await axios.get(`/companies/${currentUserCompanyId}`);
-      if (response.data && response.data.success && response.data.data) {
-        setCompanyName(response.data.data.name || response.data.data.companyName || 'Company');
-      } else if (response.data && response.data.name) {
-        setCompanyName(response.data.name);
+  useEffect(() => {
+    if (!currentUserId) return;
+
+    console.log('🔌 Setting up socket listeners for leaves...');
+
+    // Listen for new leave applications
+    const unsubscribeNewLeave = onNewLeave((data) => {
+      console.log('📢 New leave received via socket:', data);
+      
+      const newLeave = data.data;
+      
+      // Check if this leave should be visible to current user
+      const shouldShow = isOwner || 
+        (newLeave.user?.department === currentUserDepartment);
+      
+      if (shouldShow) {
+        setLeaves(prev => {
+          // Avoid duplicates
+          const exists = prev.some(l => l._id === newLeave._id);
+          if (!exists) {
+            // Add to beginning of list
+            const updated = [newLeave, ...prev];
+            
+            // Update stats
+            updateStats(updated);
+            
+            // Show toast notification
+            showToast(
+              `New leave request from ${newLeave.user?.name || 'Unknown'}`,
+              'info',
+              5000
+            );
+            
+            return updated;
+          }
+          return prev;
+        });
+        
+        // Join room for this leave
+        joinLeaveRoom(newLeave._id);
       }
-    } catch (error) {
-      console.error("❌ Failed to fetch company details:", error);
-    }
+    });
+
+    // Listen for leave status changes
+    const unsubscribeStatusChange = onLeaveStatusChanged((data) => {
+      console.log('📢 Leave status changed via socket:', data);
+      
+      const { leaveId, oldStatus, newStatus, updatedBy } = data.data;
+      
+      setLeaves(prev => {
+        const updated = prev.map(leave => {
+          if (leave._id === leaveId) {
+            return { ...leave, status: newStatus };
+          }
+          return leave;
+        });
+        
+        // Update stats
+        updateStats(updated);
+        
+        // Show toast notification
+        const leave = prev.find(l => l._id === leaveId);
+        if (leave) {
+          const message = `Leave request from ${leave.user?.name} changed from ${oldStatus} to ${newStatus}`;
+          showToast(message, newStatus === 'Approved' ? 'success' : 'warning', 4000);
+        }
+        
+        return updated;
+      });
+    });
+
+    // Listen for leave deletions
+    const unsubscribeDelete = onLeaveDeleted((data) => {
+      console.log('📢 Leave deleted via socket:', data);
+      
+      const { leaveId } = data.data;
+      
+      setLeaves(prev => {
+        const filtered = prev.filter(leave => leave._id !== leaveId);
+        updateStats(filtered);
+        
+        showToast('A leave request has been deleted', 'warning', 3000);
+        
+        return filtered;
+      });
+      
+      // Leave the room
+      leaveLeaveRoom(leaveId);
+    });
+
+    // Join rooms for existing leaves
+    leaves.forEach(leave => {
+      joinLeaveRoom(leave._id);
+    });
+
+    return () => {
+      console.log('🔌 Cleaning up socket listeners...');
+      // Cleanup listeners
+      unsubscribeNewLeave?.();
+      unsubscribeStatusChange?.();
+      unsubscribeDelete?.();
+      
+      // Leave all rooms
+      leaves.forEach(leave => {
+        leaveLeaveRoom(leave._id);
+      });
+    };
+  }, [currentUserId, isOwner, currentUserDepartment]);
+
+  // ============================================
+  // HELPER FUNCTION TO UPDATE STATS
+  // ============================================
+  const updateStats = (leavesData) => {
+    const pending = leavesData.filter(l => l.status === 'Pending').length;
+    const approved = leavesData.filter(l => l.status === 'Approved').length;
+    const rejected = leavesData.filter(l => l.status === 'Rejected').length;
+    
+    setStats({
+      total: leavesData.length,
+      pending,
+      approved,
+      rejected,
+    });
   };
 
   // ============================================
-  // ✅ FETCH DEPARTMENTS FROM API
+  // FETCH COMPANY DETAILS
+  // ============================================
+ // EmppLeaves.jsx - fetchCompanyDetails function
+const fetchCompanyDetails = async () => {
+  if (!currentUserCompanyId) return;
+  
+  try {
+    // Try multiple endpoints
+    let response;
+    
+    try {
+      response = await axios.get(`/companies/${currentUserCompanyId}`);
+    } catch (err1) {
+      try {
+        // Try alternative endpoint
+        response = await axios.get(`/company/${currentUserCompanyId}`);
+      } catch (err2) {
+        // If both fail, use from localStorage
+        console.log("Using company from localStorage");
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        if (user.companyName) {
+          setCompanyName(user.companyName);
+        } else {
+          setCompanyName('Company');
+        }
+        return;
+      }
+    }
+    
+    if (response.data) {
+      if (response.data.success && response.data.data) {
+        setCompanyName(response.data.data.name || response.data.data.companyName);
+      } else if (response.data.name) {
+        setCompanyName(response.data.name);
+      } else if (response.data.companyName) {
+        setCompanyName(response.data.companyName);
+      }
+    }
+  } catch (error) {
+    console.error("❌ Failed to fetch company details:", error);
+    // Fallback
+    setCompanyName('Company');
+  }
+};
+
+  // ============================================
+  // FETCH DEPARTMENTS
   // ============================================
   const fetchDepartments = async () => {
     if (!currentUserCompanyId) return;
@@ -232,7 +409,6 @@ const EmployeeLeaves = () => {
       let departmentsData = [];
       let departmentMapping = {};
       
-      // Parse response data based on structure
       if (response.data && response.data.success && response.data.data) {
         departmentsData = response.data.data;
       } else if (response.data && Array.isArray(response.data)) {
@@ -241,7 +417,6 @@ const EmployeeLeaves = () => {
         departmentsData = response.data.departments;
       }
       
-      // Create department map { id: name }
       departmentsData.forEach(dept => {
         const deptId = dept._id || dept.id;
         const deptName = dept.name || dept.departmentName || dept.title || 'Unknown';
@@ -263,12 +438,11 @@ const EmployeeLeaves = () => {
   };
 
   // ============================================
-  // ✅ ENHANCED GET DEPARTMENT NAME FUNCTION
+  // GET DEPARTMENT NAME
   // ============================================
   const getDepartmentName = (dept) => {
-    if (!dept) return null; // Return null instead of 'N/A' to hide
+    if (!dept) return null;
     
-    // CASE 1: If it's an object with name property
     if (typeof dept === 'object') {
       if (dept.name) {
         return dept.name;
@@ -278,25 +452,20 @@ const EmployeeLeaves = () => {
       }
     }
     
-    // CASE 2: If it's a string ID
     if (typeof dept === 'string') {
-      // First check in department map (from API)
       if (departmentMap[dept]) {
         return departmentMap[dept];
       }
       
-      // Second check: Look for department in departments array directly
       const foundDept = departments.find(d => (d._id || d.id) === dept);
       if (foundDept) {
         const name = foundDept.name || foundDept.departmentName || foundDept.title;
         if (name) {
-          // Update map for future use
           setDepartmentMap(prev => ({ ...prev, [dept]: name }));
           return name;
         }
       }
       
-      // Third check: Try to find in users data as fallback
       const userWithDept = allUsers.find(u => {
         if (u.department && typeof u.department === 'object') {
           return u.department._id === dept || u.department === dept;
@@ -311,11 +480,9 @@ const EmployeeLeaves = () => {
       });
       
       if (userWithDept) {
-        // Extract department name from found user
         if (userWithDept.department && typeof userWithDept.department === 'object') {
           const deptName = userWithDept.department.name || userWithDept.department.departmentName;
           if (deptName) {
-            // Update map for future use
             setDepartmentMap(prev => ({ ...prev, [dept]: deptName }));
             return deptName;
           }
@@ -326,16 +493,13 @@ const EmployeeLeaves = () => {
         }
       }
       
-      // If it's a MongoDB ID but not found, return null to hide
       if (dept.match(/^[0-9a-f]{24}$/i)) {
-        return null; // Hide unfound IDs
+        return null;
       }
       
-      // If it doesn't look like a MongoDB ID, return as is (might be a name)
       return dept;
     }
     
-    // Fallback - return null to hide
     return null;
   };
 
@@ -437,12 +601,9 @@ const EmployeeLeaves = () => {
     try {
       let endpoint = '';
       
-      // FIXED: Use the correct endpoint based on user role
       if (isOwner) {
-        // Owner can see all company users
         endpoint = `/users/company-users?companyId=${currentUserCompanyId}`;
       } else {
-        // Employees see only their department users
         endpoint = `/users/department-users?department=${currentUserDepartment}`;
       }
       
@@ -466,7 +627,6 @@ const EmployeeLeaves = () => {
       
       setAllUsers(usersData);
       
-      // Extract department info from users to help with mapping
       const deptFromUsers = {};
       
       usersData.forEach(user => {
@@ -479,7 +639,6 @@ const EmployeeLeaves = () => {
         }
       });
       
-      // Merge with existing maps
       setDepartmentMap(prev => ({ ...prev, ...deptFromUsers }));
       
     } catch (err) {
@@ -489,7 +648,7 @@ const EmployeeLeaves = () => {
   };
 
   // ============================================
-  // LEAVE MANAGEMENT FUNCTIONS - FIXED ROLE-BASED DATA CONTROL
+  // LEAVE MANAGEMENT FUNCTIONS
   // ============================================
   const fetchLeaves = async () => {
     if (!currentUserCompanyId) {
@@ -498,26 +657,20 @@ const EmployeeLeaves = () => {
     
     setLoading(true);
     try {
-      // FIXED: Use the correct endpoint based on user role
       let endpoint = '';
       
       if (isOwner) {
-        // Owner can see all leaves in the company
         endpoint = '/leaves/all';
         console.log("👑 Owner - fetching all company leaves");
       } else {
-        // Employees see leaves from their department only
-        // Using department filter endpoint or adding department param
-        endpoint = '/leaves/all'; // Keep same endpoint but add department filter
+        endpoint = '/leaves/all';
         console.log("👤 Employee - fetching department leaves only");
       }
       
       const params = new URLSearchParams();
       
-      // Always add company ID to all requests
       params.append('company', currentUserCompanyId);
       
-      // FIXED: For non-owners, force filter by their department
       if (!isOwner) {
         if (currentUserDepartment) {
           console.log("📊 Filtering leaves by department:", currentUserDepartment);
@@ -529,13 +682,11 @@ const EmployeeLeaves = () => {
           return;
         }
       } else {
-        // For owners, apply department filter only if selected
         if (departmentFilter && departmentFilter !== 'all') {
           params.append('department', departmentFilter);
         }
       }
       
-      // Add other filters
       if (filterDate) params.append('date', filterDate);
       if (statusFilter !== 'All') params.append('status', statusFilter);
       if (leaveTypeFilter !== 'all') params.append('type', leaveTypeFilter);
@@ -558,7 +709,6 @@ const EmployeeLeaves = () => {
       
       console.log(`✅ Fetched ${data.length} leaves`);
       
-      // FIXED: For non-owners, double-check filtering by department (safety net)
       if (!isOwner && currentUserDepartment) {
         const beforeFilter = data.length;
         data = data.filter(leave => {
@@ -603,7 +753,7 @@ const EmployeeLeaves = () => {
   };
 
   // ============================================
-  // PERMISSION CHECK FUNCTIONS - UPDATED
+  // PERMISSION CHECK FUNCTIONS
   // ============================================
   const canModifyLeave = (leaveUserId, leaveStatus) => {
     // Owner can modify any leave
@@ -662,7 +812,6 @@ const EmployeeLeaves = () => {
       const params = new URLSearchParams();
       params.append('company', currentUserCompanyId);
       
-      // FIXED: For non-owners, force department filter
       if (!isOwner && currentUserDepartment) {
         params.append('department', currentUserDepartment);
       } else if (departmentFilter !== 'all') {
@@ -1316,10 +1465,13 @@ const EmployeeLeaves = () => {
             <span className="action-required-badge">Action Required</span>
           )}
         </h3>
-        {/* <div className="company-badge">
-          <FiBriefcase size={14} />
-          {companyName || currentUserCompanyId?.substring(0, 8) + '...' || 'Company'}
-        </div> */}
+        {/* Socket Connection Status Badge */}
+        {isConnected && (
+          <span className="socket-badge" title="Real-time updates active">
+            <FiBell size={14} />
+            Live
+          </span>
+        )}
       </div>
       
       <div className="table-responsive">
@@ -1343,10 +1495,6 @@ const EmployeeLeaves = () => {
                 const isOwnLeave = userId === currentUserId;
                 const departmentName = getDepartmentName(leave.user?.department);
                 
-                // Check if user has permission to modify this leave
-                const hasModifyPermission = isOwner || isAdmin || isHR || isManager;
-                
-                // Truncate reason for preview
                 const reasonPreview = leave.reason 
                   ? leave.reason.length > 40 
                     ? `${leave.reason.substring(0, 40)}...` 
@@ -1391,7 +1539,6 @@ const EmployeeLeaves = () => {
                       </div>
                     </td>
                     <td data-show-on-mobile="false">
-                      {/* Department column - hidden on mobile */}
                       {departmentName ? (
                         <div className="department-info">
                           <FiHome size={14} />
@@ -1409,12 +1556,16 @@ const EmployeeLeaves = () => {
                           </span>
                         </div>
                         
-                        {/* HIDE REASON PREVIEW ON MOBILE - ADD HIDDEN CLASS */}
                         <div className="leave-reason-preview hide-mobile" title={leave.reason || ""}>
                           {reasonPreview}
                         </div>
                         
-                        {/* VIEW DETAILS BUTTON - ALWAYS VISIBLE */}
+                        {leave.status === 'Pending' && (
+                          <span className={`status-chip ${getStatusClass(leave.status)}`} style={{ marginTop: '8px', display: 'inline-block' }}>
+                            {leave.status}
+                          </span>
+                        )}
+                        
                         <button 
                           className="view-details-button"
                           onClick={() => openDetailsModal(leave)}
@@ -1423,8 +1574,7 @@ const EmployeeLeaves = () => {
                           View Full Details
                         </button>
 
-                        {/* QUICK ACTION BUTTONS FOR PENDING LEAVES - FOR USERS WITH PERMISSION */}
-                        {leave.status === 'Pending' && hasModifyPermission && (
+                        {leave.status === 'Pending' && isOwner && (
                           <div className="actions-container" style={{ marginTop: '12px' }}>
                             <button
                               className="action-icon-button approve"
@@ -1463,7 +1613,6 @@ const EmployeeLeaves = () => {
                       </div>
                     </td>
                     <td data-show-on-mobile="false">
-                      {/* Duration column - hidden on mobile */}
                       <div className="duration-info">
                         <div className="date-range">
                           {formatDate(leave.startDate)}
@@ -1505,12 +1654,11 @@ const EmployeeLeaves = () => {
                           <FiList size={16} />
                         </button>
                         
-                        {/* UPDATED: Show approve/reject buttons for users with permission */}
-                        {leave.status === 'Pending' && hasModifyPermission && (
+                        {leave.status === 'Pending' && canApproveLeave(userId) ? (
                           <>
                             <button
-                              className="action-icon-button approve"
-                              onClick={() => openStatusDialog(
+                              className={`action-icon-button approve ${!isOwner ? 'disabled' : ''}`}
+                              onClick={() => isOwner ? openStatusDialog(
                                 leave._id, 
                                 'Approved', 
                                 leave.user?.email,
@@ -1518,14 +1666,15 @@ const EmployeeLeaves = () => {
                                 leave.user?.phone,
                                 userId,
                                 leave.status
-                              )}
-                              title="Approve Leave"
+                              ) : null}
+                              title={isOwner ? "Approve Leave" : "Only Owner can approve"}
+                              disabled={!isOwner}
                             >
                               <FiCheckCircle size={16} />
                             </button>
                             <button
-                              className="action-icon-button reject"
-                              onClick={() => openStatusDialog(
+                              className={`action-icon-button reject ${!isOwner ? 'disabled' : ''}`}
+                              onClick={() => isOwner ? openStatusDialog(
                                 leave._id, 
                                 'Rejected', 
                                 leave.user?.email,
@@ -1533,30 +1682,28 @@ const EmployeeLeaves = () => {
                                 leave.user?.phone,
                                 userId,
                                 leave.status
-                              )}
-                              title="Reject Leave"
+                              ) : null}
+                              title={isOwner ? "Reject Leave" : "Only Owner can reject"}
+                              disabled={!isOwner}
                             >
                               <FiXCircle size={16} />
                             </button>
                           </>
-                        )}
+                        ) : leave.status === 'Pending' ? (
+                          <span className="no-permission" title="Only Owner can approve/reject">
+                            <FiLock size={14} />
+                          </span>
+                        ) : null}
                         
-                        {/* UPDATED: Show delete button for users with permission (same as approve/reject) */}
-                        {hasModifyPermission && (
+                        {canDeleteLeave(userId, leave.status) && (
                           <button 
-                            className="action-icon-button delete"
-                            onClick={() => setDeleteDialog(leave._id)}
-                            title="Delete Leave"
+                            className={`action-icon-button delete ${!isOwner ? 'disabled' : ''}`}
+                            onClick={() => isOwner ? setDeleteDialog(leave._id) : null}
+                            title={isOwner ? "Delete Leave" : "Only Owner can delete"}
+                            disabled={!isOwner}
                           >
                             <FiTrash2 size={16} />
                           </button>
-                        )}
-                        
-                        {/* Show lock icon for users without permission */}
-                        {!hasModifyPermission && leave.status === 'Pending' && (
-                          <span className="no-permission" title="You don't have permission to modify leaves">
-                            <FiLock size={14} />
-                          </span>
                         )}
                       </div>
                     </td>
@@ -1604,6 +1751,12 @@ const EmployeeLeaves = () => {
         {currentUserRole && (
           <span className="loading-role">Role: {normalizeRole(currentUserRole)}</span>
         )}
+        {isConnected && (
+          <span className="socket-status connected">
+            <FiBell size={14} />
+            Real-time connected
+          </span>
+        )}
       </div>
     );
   }
@@ -1632,6 +1785,19 @@ const EmployeeLeaves = () => {
               <span className="view-only-badge">
                 <FiEyeOff size={14} />
                 View Only
+              </span>
+            )}
+
+            {/* Socket Connection Status */}
+            {isConnected ? (
+              <span className="socket-status connected">
+                <FiBell size={14} />
+                Live
+              </span>
+            ) : (
+              <span className="socket-status disconnected">
+                <FiBell size={14} />
+                Connecting...
               </span>
             )}
           </p>
@@ -1670,21 +1836,8 @@ const EmployeeLeaves = () => {
         </div>
       </div>
 
-      {/* Permission Banner - Show for users with modify permissions */}
-      {(isAdmin || isHR || isManager) && !isOwner && (
-        <div className="permission-info-banner">
-          <div className="info-content">
-            <FiShield size={20} color="#1976d2" />
-            <div className="info-text">
-              <strong>✅ You have management permissions</strong>
-              <p>You can approve, reject, and delete leave requests in your department.</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Owner Warning Banner - Show for view-only users */}
-      {!isOwner && !isAdmin && !isHR && !isManager && (
+      {/* Owner Warning Banner */}
+      {!isOwner && (
         <div className="owner-warning-banner">
           <div className="warning-content">
             <FiLock size={20} />
@@ -1696,11 +1849,10 @@ const EmployeeLeaves = () => {
         </div>
       )}
 
-      {/* Department Info Banner - Show for non-owners */}
+      {/* Department Info Banner */}
       {!isOwner && currentUserDepartment && (
         <div className="department-info-banner">
           <div className="info-content">
-            {/* <FiHome size={20} /> */}
             <div className="info-text">
               <strong>🏢 Your Department: {getDepartmentName(currentUserDepartment)}</strong>
               <p>Showing leave requests only from your department</p>
@@ -1750,7 +1902,6 @@ const EmployeeLeaves = () => {
             />
           </div>
           
-          {/* FIXED: Only show department filter for owners */}
           {isOwner && (
             <div className="filter-group">
               <label className="filter-label">Department</label>
