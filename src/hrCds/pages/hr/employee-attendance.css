@@ -120,7 +120,7 @@
   flex-wrap: wrap;
   gap: 20px;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .attendance-header::before {
@@ -1299,7 +1299,7 @@
   box-shadow: var(--shadow-xl);
   width: 100%;
   max-width: 700px;
-  max-height: 90vh;
+  max-height: 80vh !important;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1823,12 +1823,20 @@ textarea.form-input {
   }
 
   .filter-actions {
-    flex-direction: column;
-  }
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 
-  .filter-actions .btn {
-    width: 100%;
-  }
+/* Full width remove karo */
+.filter-actions .btn {
+  width: auto;
+}
+
+/* Refresh ko right push karo */
+.filter-actions .btn:last-child {
+  margin-left: auto;
+}
 
   /* Hide Desktop Stats on Mobile */
   .stats-container {
@@ -2077,13 +2085,14 @@ textarea.form-input {
 
   /* Modal Mobile Styles */
   .modal-overlay {
+    top: 36px !important;
     padding: 0;
-    align-items: flex-end;
+    align-items: center;
   }
 
   .modal-content {
     max-width: 100%;
-    max-height: 90vh;
+    max-height: 100vh;
     border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
     animation: slideUpMobile 0.3s ease-out;
   }
@@ -2099,6 +2108,7 @@ textarea.form-input {
 
   .modal-header {
     padding: 20px;
+    top: 50px;
   }
 
   .modal-header h3 {
@@ -2107,6 +2117,7 @@ textarea.form-input {
 
   .modal-body {
     padding: 20px;
+    height: 58vh;
   }
 
   .modal-footer {
@@ -2114,6 +2125,14 @@ textarea.form-input {
     flex-direction: column;
     gap: 12px;
   }
+
+   /* .modal-footer {
+    flex-direction: row;   
+  }
+
+  .btn-contained {
+    margin-left: auto;
+  } */
 
   .footer-left,
   .footer-right {
