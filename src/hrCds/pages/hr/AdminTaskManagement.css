@@ -1,4 +1,4 @@
-/* AdminTaskManagement.css - ULTIMATE ENHANCED VERSION */
+/* AdminTaskManagement.css - COMPLETE ENHANCED VERSION WITH ALL STYLES */
 
 /* ===== CSS VARIABLES ===== */
 :root {
@@ -51,38 +51,47 @@
   color: var(--gray-800);
   width: 100%;
   overflow-x: hidden;
-  animation: fadeIn 0.5s ease;
+  animation: AdminTaskManagement-fadeIn 0.5s ease;
 }
 
 /* ===== ANIMATIONS ===== */
-@keyframes fadeIn {
+@keyframes AdminTaskManagement-fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes slideIn {
+@keyframes AdminTaskManagement-slideIn {
   from { transform: translateX(-20px); opacity: 0; }
   to { transform: translateX(0); opacity: 1; }
 }
 
-@keyframes scaleIn {
+@keyframes AdminTaskManagement-scaleIn {
   from { transform: scale(0.95); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
 }
 
-@keyframes spin {
+@keyframes AdminTaskManagement-spin {
   to { transform: rotate(360deg); }
 }
 
-@keyframes pulse {
+@keyframes AdminTaskManagement-pulse {
   0% { transform: scale(1); }
   50% { transform: scale(1.05); }
   100% { transform: scale(1); }
 }
 
-@keyframes shimmer {
+@keyframes AdminTaskManagement-shimmer {
   0% { background-position: -1000px 0; }
   100% { background-position: 1000px 0; }
+}
+
+@keyframes AdminTaskManagement-slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
 }
 
 /* ===== HEADER SECTION ===== */
@@ -93,7 +102,7 @@
   box-shadow: var(--shadow-lg);
   margin-bottom: 20px;
   border: 1px solid var(--gray-200);
-  animation: slideIn 0.5s ease;
+  animation: AdminTaskManagement-slideIn 0.5s ease;
   transition: var(--transition);
 }
 
@@ -143,7 +152,7 @@
   flex-direction: column;
   gap: 8px;
   margin-top: 12px;
-  animation: fadeIn 0.5s ease 0.2s both;
+  animation: AdminTaskManagement-fadeIn 0.5s ease 0.2s both;
 }
 
 @media (min-width: 480px) {
@@ -192,7 +201,7 @@
   border-radius: 30px;
   font-weight: 600;
   letter-spacing: 0.3px;
-  animation: scaleIn 0.3s ease;
+  animation: AdminTaskManagement-scaleIn 0.3s ease;
   transition: var(--transition);
   box-shadow: var(--shadow-sm);
 }
@@ -220,7 +229,7 @@
   display: flex;
   gap: 10px;
   width: 100%;
-  animation: fadeIn 0.5s ease 0.3s both;
+  animation: AdminTaskManagement-fadeIn 0.5s ease 0.3s both;
 }
 
 @media (min-width: 480px) {
@@ -379,7 +388,7 @@
   justify-content: center;
   border: 2px solid var(--white);
   font-weight: 700;
-  animation: pulse 2s infinite;
+  animation: AdminTaskManagement-pulse 2s infinite;
 }
 
 /* ===== STATS GRID ===== */
@@ -388,7 +397,7 @@
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
   margin-bottom: 20px;
-  animation: fadeIn 0.5s ease 0.1s both;
+  animation: AdminTaskManagement-fadeIn 0.5s ease 0.1s both;
 }
 
 @media (min-width: 640px) {
@@ -413,7 +422,7 @@
   transition: var(--transition);
   position: relative;
   overflow: hidden;
-  animation: scaleIn 0.3s ease;
+  animation: AdminTaskManagement-scaleIn 0.3s ease;
 }
 
 .AdminTaskManagement-stat-card::after {
@@ -485,6 +494,32 @@
   line-height: 1;
 }
 
+/* ===== NO STATS MESSAGE ===== */
+.AdminTaskManagement-no-stats-message {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 32px;
+  background: var(--white);
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--gray-200);
+  color: var(--gray-600);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  animation: AdminTaskManagement-fadeIn 0.3s ease;
+}
+
+.AdminTaskManagement-no-stats-message svg {
+  color: var(--gray-400);
+  font-size: 32px;
+}
+
+.AdminTaskManagement-no-stats-message p {
+  font-size: 14px;
+  font-weight: 500;
+}
+
 /* ===== FILTER SECTION ===== */
 .AdminTaskManagement-filter-section {
   background: var(--white);
@@ -493,7 +528,7 @@
   box-shadow: var(--shadow-md);
   margin-bottom: 20px;
   border: 1px solid var(--gray-200);
-  animation: slideIn 0.5s ease 0.2s both;
+  animation: AdminTaskManagement-slideIn 0.5s ease 0.2s both;
   transition: var(--transition);
 }
 
@@ -646,7 +681,7 @@
 }
 
 .AdminTaskManagement-filter-select-container label {
-display: none;
+  display: none;
 }
 
 .AdminTaskManagement-filter-select {
@@ -657,7 +692,6 @@ display: none;
   background: var(--white);
   min-height: 48px;
   width: 100%;
-  
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23495e6b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 16px center;
@@ -666,8 +700,6 @@ display: none;
   appearance: none;
   transition: var(--transition);
 }
-
-
 
 .AdminTaskManagement-filter-select:focus {
   outline: none;
@@ -685,7 +717,7 @@ display: none;
   border: 1px solid var(--gray-200);
   overflow: hidden;
   width: 100%;
-  animation: slideIn 0.5s ease 0.3s both;
+  animation: AdminTaskManagement-slideIn 0.5s ease 0.3s both;
   transition: var(--transition);
 }
 
@@ -713,7 +745,21 @@ display: none;
 
 .AdminTaskManagement-card-title svg {
   color: var(--primary);
-  animation: pulse 2s infinite;
+  animation: AdminTaskManagement-pulse 2s infinite;
+}
+
+.AdminTaskManagement-card-content {
+  padding: 20px;
+}
+
+.AdminTaskManagement-card-outline {
+  border: 1px solid var(--gray-200);
+  box-shadow: none;
+}
+
+.AdminTaskManagement-card-outline:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow-md);
 }
 
 /* ===== TABLE STYLES ===== */
@@ -775,7 +821,7 @@ display: none;
 
 .AdminTaskManagement-table tbody tr {
   transition: var(--transition);
-  animation: fadeIn 0.3s ease;
+  animation: AdminTaskManagement-fadeIn 0.3s ease;
 }
 
 .AdminTaskManagement-table tbody tr:hover {
@@ -824,7 +870,7 @@ display: none;
   white-space: nowrap;
   border: 1px solid transparent;
   transition: var(--transition);
-  animation: scaleIn 0.3s ease;
+  animation: AdminTaskManagement-scaleIn 0.3s ease;
 }
 
 .AdminTaskManagement-status-chip:hover {
@@ -854,6 +900,12 @@ display: none;
   background: linear-gradient(135deg, var(--danger-light), #ffcdd2);
   color: var(--danger);
   border-color: var(--danger);
+}
+
+.AdminTaskManagement-status-default {
+  background: linear-gradient(135deg, var(--gray-100), var(--white));
+  color: var(--gray-700);
+  border-color: var(--gray-300);
 }
 
 .AdminTaskManagement-priority-chip {
@@ -894,6 +946,12 @@ display: none;
   border-color: var(--success);
 }
 
+.AdminTaskManagement-priority-default {
+  color: var(--gray-700);
+  background: var(--gray-100);
+  border-color: var(--gray-300);
+}
+
 /* ===== DUE DATE CELL ===== */
 .AdminTaskManagement-due-date-cell {
   display: flex;
@@ -925,7 +983,7 @@ display: none;
   white-space: nowrap;
   font-weight: 700;
   border: 1px solid var(--danger);
-  animation: pulse 2s infinite;
+  animation: AdminTaskManagement-pulse 2s infinite;
 }
 
 /* ===== ASSIGNED USERS ===== */
@@ -945,7 +1003,7 @@ display: none;
   border-radius: 30px;
   border: 1px solid var(--gray-200);
   transition: var(--transition);
-  animation: fadeIn 0.3s ease;
+  animation: AdminTaskManagement-fadeIn 0.3s ease;
 }
 
 .AdminTaskManagement-user-badge:hover {
@@ -994,7 +1052,7 @@ display: none;
   width: fit-content;
   font-weight: 700;
   text-transform: uppercase;
-  animation: scaleIn 0.3s ease;
+  animation: AdminTaskManagement-scaleIn 0.3s ease;
 }
 
 .AdminTaskManagement-user-status-pending {
@@ -1017,6 +1075,13 @@ display: none;
   color: var(--danger);
 }
 
+.AdminTaskManagement-assigned-count {
+  font-size: 10px;
+  color: var(--gray-500);
+  font-weight: 600;
+  padding: 4px 0;
+}
+
 /* ===== ACTION BUTTONS ===== */
 .AdminTaskManagement-action-buttons {
   display: flex;
@@ -1034,6 +1099,10 @@ display: none;
   background: var(--gray-100);
   border: 1px solid var(--gray-200);
   color: var(--gray-600);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: var(--transition);
   position: relative;
   overflow: hidden;
@@ -1063,7 +1132,13 @@ display: none;
 }
 
 .AdminTaskManagement-icon-btn-sm:hover svg {
-  animation: pulse 1s infinite;
+  animation: AdminTaskManagement-pulse 1s infinite;
+}
+
+.AdminTaskManagement-btn-danger-sm {
+  background: var(--danger-light);
+  color: var(--danger);
+  border-color: var(--danger);
 }
 
 .AdminTaskManagement-btn-danger-sm:hover {
@@ -1080,7 +1155,7 @@ display: none;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  animation: fadeIn 0.5s ease;
+  animation: AdminTaskManagement-fadeIn 0.5s ease;
 }
 
 @media (min-width: 640px) {
@@ -1113,7 +1188,7 @@ display: none;
   font-weight: 600;
 }
 
-.AdminTaskManagement-pagination-select {
+.AdminTaskManagement-select {
   padding: 10px 14px;
   border: 2px solid var(--gray-200);
   border-radius: 30px;
@@ -1123,9 +1198,15 @@ display: none;
   cursor: pointer;
   min-height: 42px;
   transition: var(--transition);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23495e6b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 14px;
+  padding-right: 40px;
+  appearance: none;
 }
 
-.AdminTaskManagement-pagination-select:focus {
+.AdminTaskManagement-select:focus {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 4px rgba(25, 118, 210, 0.1);
@@ -1136,17 +1217,17 @@ display: none;
   text-align: center;
   padding: 48px 20px;
   width: 100%;
-  animation: scaleIn 0.5s ease;
+  animation: AdminTaskManagement-scaleIn 0.5s ease;
 }
 
 .AdminTaskManagement-empty-icon {
-      color: var(--gray-400);
-    margin-bottom: 20px;
-    font-size: 56px;
-    animation: pulse 2s infinite;
-    align-items: center;
-    justify-content: center;
-    display: inline-block;
+  color: var(--gray-400);
+  margin-bottom: 20px;
+  font-size: 56px;
+  animation: AdminTaskManagement-pulse 2s infinite;
+  align-items: center;
+  justify-content: center;
+  display: inline-block;
 }
 
 .AdminTaskManagement-empty-state h4 {
@@ -1154,6 +1235,13 @@ display: none;
   color: var(--gray-700);
   font-weight: 700;
   font-size: 20px;
+}
+
+.AdminTaskManagement-empty-state h5 {
+  margin: 0 0 8px 0;
+  color: var(--gray-600);
+  font-weight: 600;
+  font-size: 16px;
 }
 
 .AdminTaskManagement-empty-state p {
@@ -1176,8 +1264,12 @@ display: none;
   border-top: 4px solid var(--primary);
   border-right: 4px solid var(--primary);
   border-radius: 50%;
-  animation: spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+  animation: AdminTaskManagement-spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
   margin: 0 auto 20px;
+}
+
+.AdminTaskManagement-spin {
+  animation: AdminTaskManagement-spin 1s linear infinite;
 }
 
 /* ===== MODAL STYLES ===== */
@@ -1251,6 +1343,20 @@ display: none;
   position: relative;
 }
 
+.AdminTaskManagement-modal-header.AdminTaskManagement-modal-info {
+  background: linear-gradient(135deg, var(--primary-light), var(--white));
+}
+
+.AdminTaskManagement-modal-header.AdminTaskManagement-modal-primary {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: var(--white);
+}
+
+.AdminTaskManagement-modal-header.AdminTaskManagement-modal-primary h3,
+.AdminTaskManagement-modal-header.AdminTaskManagement-modal-primary .AdminTaskManagement-modal-subtitle {
+  color: var(--white);
+}
+
 .AdminTaskManagement-modal-title-row {
   display: flex;
   justify-content: space-between;
@@ -1278,7 +1384,7 @@ display: none;
 
 .AdminTaskManagement-modal-title-icon svg {
   color: var(--primary);
-  animation: pulse 2s infinite;
+  animation: AdminTaskManagement-pulse 2s infinite;
 }
 
 .AdminTaskManagement-modal-subtitle {
@@ -1294,6 +1400,10 @@ display: none;
   flex: 1;
   max-height: 60vh;
   -webkit-overflow-scrolling: touch;
+}
+
+.AdminTaskManagement-modal-body.AdminTaskManagement-modal-scroll {
+  max-height: 70vh;
 }
 
 .AdminTaskManagement-modal-footer {
@@ -1397,7 +1507,7 @@ display: none;
   font-size: 12px;
   font-weight: 600;
   box-shadow: var(--shadow-sm);
-  animation: scaleIn 0.3s ease;
+  animation: AdminTaskManagement-scaleIn 0.3s ease;
 }
 
 .AdminTaskManagement-role-hint-admin {
@@ -1418,6 +1528,43 @@ display: none;
   background: rgba(0,0,0,0.05);
   border-radius: 20px;
   margin-left: 6px;
+  font-weight: 500;
+}
+
+/* ===== CHECKBOX OPTION ===== */
+.AdminTaskManagement-checkbox-option {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--gray-200);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: var(--transition);
+  cursor: pointer;
+  animation: AdminTaskManagement-fadeIn 0.3s ease;
+}
+
+.AdminTaskManagement-checkbox-option:hover {
+  background: linear-gradient(135deg, var(--primary-light), var(--white));
+  transform: translateX(4px);
+}
+
+.AdminTaskManagement-checkbox-option input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  cursor: pointer;
+  accent-color: var(--primary);
+  transition: var(--transition);
+}
+
+.AdminTaskManagement-checkbox-option input[type="checkbox"]:hover {
+  transform: scale(1.1);
+}
+
+.AdminTaskManagement-checkbox-option label {
+  flex: 1;
+  cursor: pointer;
+  font-size: 14px;
   font-weight: 500;
 }
 
@@ -1508,7 +1655,7 @@ display: none;
   gap: 14px;
   transition: var(--transition);
   cursor: pointer;
-  animation: fadeIn 0.3s ease;
+  animation: AdminTaskManagement-fadeIn 0.3s ease;
 }
 
 .AdminTaskManagement-multi-select-option:hover {
@@ -1536,6 +1683,31 @@ display: none;
   font-weight: 500;
 }
 
+.AdminTaskManagement-multi-select-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.AdminTaskManagement-multi-select-primary {
+  font-weight: 600;
+  color: var(--gray-800);
+}
+
+.AdminTaskManagement-multi-select-secondary {
+  font-size: 11px;
+  color: var(--gray-600);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.AdminTaskManagement-separator {
+  color: var(--gray-400);
+  font-size: 10px;
+}
+
 .AdminTaskManagement-multi-select-empty {
   padding: 32px;
   text-align: center;
@@ -1554,7 +1726,7 @@ display: none;
   border: 1px solid var(--gray-200);
   width: 100%;
   transition: var(--transition);
-  animation: fadeIn 0.3s ease;
+  animation: AdminTaskManagement-fadeIn 0.3s ease;
 }
 
 .AdminTaskManagement-user-info-chip:hover {
@@ -1600,6 +1772,12 @@ display: none;
   color: var(--gray-600);
 }
 
+.AdminTaskManagement-user-info-meta span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* ===== SELECTED CHIPS ===== */
 .AdminTaskManagement-selected-chips {
   display: flex;
@@ -1619,7 +1797,7 @@ display: none;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  animation: scaleIn 0.3s ease;
+  animation: AdminTaskManagement-scaleIn 0.3s ease;
   transition: var(--transition);
 }
 
@@ -1714,7 +1892,7 @@ display: none;
 .AdminTaskManagement-upload-icon {
   color: var(--primary);
   font-size: 28px;
-  animation: pulse 2s infinite;
+  animation: AdminTaskManagement-pulse 2s infinite;
 }
 
 .AdminTaskManagement-upload-text {
@@ -1726,6 +1904,22 @@ display: none;
 .AdminTaskManagement-upload-subtext {
   font-size: 11px;
   color: var(--gray-500);
+}
+
+.AdminTaskManagement-upload-btn {
+  margin-top: 8px;
+}
+
+.AdminTaskManagement-image-preview-container {
+  margin-top: 12px;
+}
+
+.AdminTaskManagement-image-preview-container label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-700);
+  margin-bottom: 8px;
+  display: block;
 }
 
 .AdminTaskManagement-image-preview-grid {
@@ -1835,7 +2029,7 @@ display: none;
   border-radius: 16px;
   padding: 16px;
   transition: var(--transition);
-  animation: fadeIn 0.3s ease;
+  animation: AdminTaskManagement-fadeIn 0.3s ease;
 }
 
 .AdminTaskManagement-remark-item:hover {
@@ -1969,6 +2163,15 @@ display: none;
   align-items: center;
 }
 
+.AdminTaskManagement-modal-zoom-content {
+  position: relative;
+  max-width: 95vw;
+  max-height: 95vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .AdminTaskManagement-zoom-close-btn {
   position: absolute;
   top: 20px;
@@ -2000,7 +2203,7 @@ display: none;
   max-height: 90vh;
   object-fit: contain;
   border-radius: 16px;
-  animation: scaleIn 0.3s ease;
+  animation: AdminTaskManagement-scaleIn 0.3s ease;
   box-shadow: var(--shadow-xl);
 }
 
@@ -2017,7 +2220,7 @@ display: none;
   border-radius: 16px;
   padding: 16px;
   transition: var(--transition);
-  animation: slideIn 0.3s ease;
+  animation: AdminTaskManagement-slideIn 0.3s ease;
 }
 
 .AdminTaskManagement-notification-item:hover {
@@ -2077,7 +2280,7 @@ display: none;
   border-radius: 16px;
   padding: 16px;
   transition: var(--transition);
-  animation: fadeIn 0.3s ease;
+  animation: AdminTaskManagement-fadeIn 0.3s ease;
 }
 
 .AdminTaskManagement-user-status-item:hover {
@@ -2160,7 +2363,7 @@ display: none;
   border-radius: 16px;
   padding: 16px;
   transition: var(--transition);
-  animation: slideIn 0.3s ease;
+  animation: AdminTaskManagement-slideIn 0.3s ease;
 }
 
 .AdminTaskManagement-activity-log:hover {
@@ -2354,7 +2557,7 @@ display: none;
   margin: 60px auto;
   box-shadow: var(--shadow-xl);
   border: 1px solid var(--danger-light);
-  animation: scaleIn 0.5s ease;
+  animation: AdminTaskManagement-scaleIn 0.5s ease;
 }
 
 .AdminTaskManagement-auth-error-content {
@@ -2367,7 +2570,7 @@ display: none;
 .AdminTaskManagement-auth-error-content svg {
   color: var(--danger);
   font-size: 48px;
-  animation: pulse 2s infinite;
+  animation: AdminTaskManagement-pulse 2s infinite;
 }
 
 .AdminTaskManagement-auth-error-text h4 {
@@ -2382,6 +2585,11 @@ display: none;
   color: var(--gray-600);
   line-height: 1.6;
   font-size: 14px;
+}
+
+/* ===== TEXT CENTER ===== */
+.AdminTaskManagement-text-center {
+  text-align: center;
 }
 
 /* ===== MOBILE OPTIMIZATIONS ===== */
@@ -2466,6 +2674,12 @@ display: none;
   .AdminTaskManagement-stat-value {
     font-size: 20px;
   }
+  
+  /* Date range filters on mobile */
+  .AdminTaskManagement-date-range-filters {
+    width: 100%;
+    flex-direction: column;
+  }
 }
 
 /* ===== SMALL MOBILE DEVICES ===== */
@@ -2491,6 +2705,17 @@ display: none;
   .AdminTaskManagement-modal-title-icon h3 {
     font-size: 16px;
   }
+  
+  .AdminTaskManagement-action-buttons {
+    min-width: 150px;
+  }
+  
+  .AdminTaskManagement-icon-btn-sm {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+  }
 }
 
 /* ===== LANDSCAPE MODE ===== */
@@ -2514,6 +2739,10 @@ display: none;
   .AdminTaskManagement-stats-grid {
     grid-template-columns: repeat(3, 1fr);
   }
+  
+  .AdminTaskManagement-date-range-filters {
+    width: 100%;
+  }
 }
 
 /* ===== PRINT STYLES ===== */
@@ -2524,7 +2753,8 @@ display: none;
   .AdminTaskManagement-modal,
   .AdminTaskManagement-snackbar,
   .AdminTaskManagement-btn,
-  .AdminTaskManagement-icon-btn {
+  .AdminTaskManagement-icon-btn,
+  .AdminTaskManagement-icon-btn-sm {
     display: none !important;
   }
   
@@ -2549,5 +2779,26 @@ display: none;
   .AdminTaskManagement-header {
     box-shadow: none;
     border: 1px solid #000;
+    background: white;
+  }
+  
+  .AdminTaskManagement-card {
+    box-shadow: none;
+    border: 1px solid #000;
+    break-inside: avoid;
+  }
+  
+  .AdminTaskManagement-stat-card {
+    border: 1px solid #000;
+    break-inside: avoid;
+  }
+  
+  .AdminTaskManagement-status-chip,
+  .AdminTaskManagement-priority-chip {
+    border: 1px solid #000;
+    background: white !important;
+    color: black !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 }

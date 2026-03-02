@@ -43,7 +43,7 @@ import {
   FiHome,
   FiUsers as FiUsersIcon,
   FiBriefcase as FiBriefcaseIcon,
-  FiBell // Add bell icon for notifications
+  FiBell
 } from "react-icons/fi";
 
 // Status Filter Component
@@ -57,7 +57,7 @@ const StatusFilter = ({ selected, onChange }) => {
 
   return (
     <select
-      className="filter-select"
+      className="EmppLeaves-filter-select"
       value={selected}
       onChange={(e) => onChange(e.target.value)}
     >
@@ -82,7 +82,7 @@ const LeaveTypeFilter = ({ selected, onChange }) => {
 
   return (
     <select
-      className="filter-select"
+      className="EmppLeaves-filter-select"
       value={selected}
       onChange={(e) => onChange(e.target.value)}
     >
@@ -95,11 +95,11 @@ const LeaveTypeFilter = ({ selected, onChange }) => {
   );
 };
 
-// ✅ Department Filter Component
+// Department Filter Component
 const DepartmentFilter = ({ selected, onChange, departments = [] }) => {
   return (
     <select
-      className="filter-select"
+      className="EmppLeaves-filter-select"
       value={selected}
       onChange={(e) => onChange(e.target.value)}
     >
@@ -160,12 +160,12 @@ const EmployeeLeaves = () => {
   const [currentUserName, setCurrentUserName] = useState("");
   const [allUsers, setAllUsers] = useState([]);
   
-  // ✅ Department Related States
+  // Department Related States
   const [departments, setDepartments] = useState([]);
   const [departmentMap, setDepartmentMap] = useState({});
   const [loadingDepartments, setLoadingDepartments] = useState(false);
   
-  // ✅ Company Name State (for header)
+  // Company Name State (for header)
   const [companyName, setCompanyName] = useState("");
   
   // Permission States
@@ -351,48 +351,47 @@ const EmployeeLeaves = () => {
   // ============================================
   // FETCH COMPANY DETAILS
   // ============================================
- // EmppLeaves.jsx - fetchCompanyDetails function
-const fetchCompanyDetails = async () => {
-  if (!currentUserCompanyId) return;
-  
-  try {
-    // Try multiple endpoints
-    let response;
+  const fetchCompanyDetails = async () => {
+    if (!currentUserCompanyId) return;
     
     try {
-      response = await axios.get(`/companies/${currentUserCompanyId}`);
-    } catch (err1) {
+      // Try multiple endpoints
+      let response;
+      
       try {
-        // Try alternative endpoint
-        response = await axios.get(`/company/${currentUserCompanyId}`);
-      } catch (err2) {
-        // If both fail, use from localStorage
-        console.log("Using company from localStorage");
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
-        if (user.companyName) {
-          setCompanyName(user.companyName);
-        } else {
-          setCompanyName('Company');
+        response = await axios.get(`/companies/${currentUserCompanyId}`);
+      } catch (err1) {
+        try {
+          // Try alternative endpoint
+          response = await axios.get(`/company/${currentUserCompanyId}`);
+        } catch (err2) {
+          // If both fail, use from localStorage
+          console.log("Using company from localStorage");
+          const user = JSON.parse(localStorage.getItem('user') || '{}');
+          if (user.companyName) {
+            setCompanyName(user.companyName);
+          } else {
+            setCompanyName('Company');
+          }
+          return;
         }
-        return;
       }
-    }
-    
-    if (response.data) {
-      if (response.data.success && response.data.data) {
-        setCompanyName(response.data.data.name || response.data.data.companyName);
-      } else if (response.data.name) {
-        setCompanyName(response.data.name);
-      } else if (response.data.companyName) {
-        setCompanyName(response.data.companyName);
+      
+      if (response.data) {
+        if (response.data.success && response.data.data) {
+          setCompanyName(response.data.data.name || response.data.data.companyName);
+        } else if (response.data.name) {
+          setCompanyName(response.data.name);
+        } else if (response.data.companyName) {
+          setCompanyName(response.data.companyName);
+        }
       }
+    } catch (error) {
+      console.error("❌ Failed to fetch company details:", error);
+      // Fallback
+      setCompanyName('Company');
     }
-  } catch (error) {
-    console.error("❌ Failed to fetch company details:", error);
-    // Fallback
-    setCompanyName('Company');
-  }
-};
+  };
 
   // ============================================
   // FETCH DEPARTMENTS
@@ -545,11 +544,11 @@ const fetchCompanyDetails = async () => {
       setIsHR(isHRRole);
       setIsManager(isManagerRole);
       
-      // UPDATED: Set permissions - delete permission now matches approve permission
+      // Set permissions
       setPermissions({
         canViewAllLeaves: isOwnerRole || isAdminRole || isHRRole,
         canApproveLeaves: isOwnerRole || isAdminRole || isHRRole || isManagerRole,
-        canDeleteLeaves: isOwnerRole || isAdminRole || isHRRole || isManagerRole, // UPDATED: Added manager
+        canDeleteLeaves: isOwnerRole || isAdminRole || isHRRole || isManagerRole,
         canExportData: isOwnerRole || isAdminRole || isHRRole,
         canViewHistory: true
       });
@@ -583,11 +582,10 @@ const fetchCompanyDetails = async () => {
         setIsHR(isHRRole);
         setIsManager(isManagerRole);
         
-        // UPDATED: Set permissions - delete permission now matches approve permission
         setPermissions({
           canViewAllLeaves: isOwnerRole || isAdminRole || isHRRole,
           canApproveLeaves: isOwnerRole || isAdminRole || isHRRole || isManagerRole,
-          canDeleteLeaves: isOwnerRole || isAdminRole || isHRRole || isManagerRole, // UPDATED: Added manager
+          canDeleteLeaves: isOwnerRole || isAdminRole || isHRRole || isManagerRole,
           canExportData: isOwnerRole || isAdminRole || isHRRole,
           canViewHistory: true
         });
@@ -765,7 +763,6 @@ const fetchCompanyDetails = async () => {
     return false;
   };
 
-  // UPDATED: Delete permission now matches approve permission
   const canDeleteLeave = (leaveUserId, leaveStatus) => {
     // Owner can delete any leave
     if (isOwner) return true;
@@ -901,6 +898,14 @@ const fetchCompanyDetails = async () => {
     });
   };
 
+  const formatDateMobile = (dateStr) => {
+    if (!dateStr) return "N/A";
+    return new Date(dateStr).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
+  };
+
   const formatDateTime = (dateStr) => {
     if (!dateStr) return "N/A";
     return new Date(dateStr).toLocaleDateString("en-US", {
@@ -915,28 +920,28 @@ const fetchCompanyDetails = async () => {
   const getLeaveTypeClass = (type) => {
     if (!type) return "";
     const typeLower = type.toLowerCase();
-    if (typeLower === 'casual') return 'leave-type-casual';
-    if (typeLower === 'sick') return 'leave-type-sick';
-    if (typeLower === 'paid') return 'leave-type-paid';
-    if (typeLower === 'unpaid') return 'leave-type-unpaid';
+    if (typeLower === 'casual') return 'EmppLeaves-leave-type-casual';
+    if (typeLower === 'sick') return 'EmppLeaves-leave-type-sick';
+    if (typeLower === 'paid') return 'EmppLeaves-leave-type-paid';
+    if (typeLower === 'unpaid') return 'EmppLeaves-leave-type-unpaid';
     return "";
   };
 
   const getStatusClass = (status) => {
     if (!status) return "";
     const statusLower = status.toLowerCase();
-    if (statusLower === 'pending') return 'status-pending';
-    if (statusLower === 'approved') return 'status-approved';
-    if (statusLower === 'rejected') return 'status-rejected';
+    if (statusLower === 'pending') return 'EmppLeaves-status-pending';
+    if (statusLower === 'approved') return 'EmppLeaves-status-approved';
+    if (statusLower === 'rejected') return 'EmppLeaves-status-rejected';
     return "";
   };
 
   const getRowClass = (status) => {
     if (!status) return "";
     const statusLower = status.toLowerCase();
-    if (statusLower === 'pending') return 'row-pending';
-    if (statusLower === 'approved') return 'row-approved';
-    if (statusLower === 'rejected') return 'row-rejected';
+    if (statusLower === 'pending') return 'EmppLeaves-row-pending';
+    if (statusLower === 'approved') return 'EmppLeaves-row-approved';
+    if (statusLower === 'rejected') return 'EmppLeaves-row-rejected';
     return "";
   };
 
@@ -961,7 +966,7 @@ const fetchCompanyDetails = async () => {
   // DIALOG FUNCTIONS
   // ============================================
   const openStatusDialog = (leaveId, newStatus, userEmail, userName, userPhone, userId, currentStatus) => {
-    // UPDATED: Check if user has permission to approve/reject
+    // Check if user has permission to approve/reject
     if (!isOwner && !isAdmin && !isHR && !isManager) {
       showSnackbar(
         "⛔ Access Denied: You don't have permission to update leave status", 
@@ -1043,7 +1048,7 @@ const fetchCompanyDetails = async () => {
       const leave = leaves.find(l => l._id === leaveId);
       if (!leave) return;
       
-      // UPDATED: Check if user has permission to delete
+      // Check if user has permission to delete
       if (!isOwner && !isAdmin && !isHR && !isManager) {
         showSnackbar(
           "⛔ Access Denied: You don't have permission to delete leave requests", 
@@ -1140,19 +1145,19 @@ const fetchCompanyDetails = async () => {
   const RoleBadge = () => {
     if (!currentUserRole) return null;
     
-    let badgeClass = 'role-badge';
+    let badgeClass = 'EmppLeaves-role-badge';
     let icon = <FiUser size={12} />;
     
     if (isOwner) {
-      badgeClass += ' role-badge-owner';
+      badgeClass += ' EmppLeaves-role-badge-owner';
       icon = <FiShield size={12} />;
     } else if (isAdmin) {
-      badgeClass += ' role-badge-admin';
+      badgeClass += ' EmppLeaves-role-badge-admin';
       icon = <FiShield size={12} />;
     } else if (isHR) {
-      badgeClass += ' role-badge-hr';
+      badgeClass += ' EmppLeaves-role-badge-hr';
     } else if (isManager) {
-      badgeClass += ' role-badge-manager';
+      badgeClass += ' EmppLeaves-role-badge-manager';
     }
     
     return (
@@ -1194,57 +1199,57 @@ const fetchCompanyDetails = async () => {
     const departmentName = getDepartmentName(leave.user?.department);
 
     return (
-      <div className="dialog-overlay" onClick={onClose}>
-        <div className="dialog-content details-dialog" onClick={(e) => e.stopPropagation()}>
-          <div className="dialog-header">
-            <div className="dialog-header-left">
+      <div className="EmppLeaves-dialog-overlay" onClick={onClose}>
+        <div className="EmppLeaves-dialog-content EmppLeaves-details-dialog" onClick={(e) => e.stopPropagation()}>
+          <div className="EmppLeaves-dialog-header">
+            <div className="EmppLeaves-dialog-header-left">
               <FiFileText size={24} color="#1976d2" />
               <h3>Leave Request Details</h3>
             </div>
-            <button className="dialog-close" onClick={onClose}>
+            <button className="EmppLeaves-dialog-close" onClick={onClose}>
               <FiX size={20} />
             </button>
           </div>
           
-          <div className="dialog-body">
+          <div className="EmppLeaves-dialog-body">
             {/* Status Banner */}
-            <div className={`details-status-banner status-${leave.status?.toLowerCase() || 'pending'}`}>
+            <div className={`EmppLeaves-details-status-banner EmppLeaves-status-${leave.status?.toLowerCase() || 'pending'}`}>
               <FiInfo size={20} />
               <span>This leave request is <strong>{leave.status || 'Pending'}</strong></span>
             </div>
 
             {/* Two Column Layout */}
-            <div className="details-grid-container">
+            <div className="EmppLeaves-details-grid-container">
               {/* Left Column */}
-              <div className="details-column">
+              <div className="EmppLeaves-details-column">
                 {/* Employee Information Card */}
-                <div className="details-card employee-card">
-                  <div className="card-header">
+                <div className="EmppLeaves-details-card EmppLeaves-employee-card">
+                  <div className="EmppLeaves-card-header">
                     <FiUserCheck size={18} color="#1976d2" />
                     <h4>Employee Information</h4>
                   </div>
-                  <div className="card-content">
-                    <div className="employee-profile">
-                      <div className="profile-avatar">
+                  <div className="EmppLeaves-card-content">
+                    <div className="EmppLeaves-employee-profile">
+                      <div className="EmppLeaves-profile-avatar">
                         {getInitials(leave.user?.name)}
                       </div>
-                      <div className="profile-info">
-                        <div className="profile-name">{leave.user?.name || "N/A"}</div>
-                        <div className="profile-email">{leave.user?.email || "N/A"}</div>
+                      <div className="EmppLeaves-profile-info">
+                        <div className="EmppLeaves-profile-name">{leave.user?.name || "N/A"}</div>
+                        <div className="EmppLeaves-profile-email">{leave.user?.email || "N/A"}</div>
                       </div>
                     </div>
                     
-                    <div className="info-rows">
-                      <div className="info-row">
-                        <FiMail size={14} className="info-icon" />
-                        <span className="info-label">Email:</span>
-                        <span className="info-value">{leave.user?.email || "N/A"}</span>
+                    <div className="EmppLeaves-info-rows">
+                      <div className="EmppLeaves-info-row">
+                        <FiMail size={14} className="EmppLeaves-info-icon" />
+                        <span className="EmppLeaves-info-label">Email:</span>
+                        <span className="EmppLeaves-info-value">{leave.user?.email || "N/A"}</span>
                       </div>
                       {leave.user?.phone && (
-                        <div className="info-row">
-                          <FiPhone size={14} className="info-icon" />
-                          <span className="info-label">Phone:</span>
-                          <span className="info-value">
+                        <div className="EmppLeaves-info-row">
+                          <FiPhone size={14} className="EmppLeaves-info-icon" />
+                          <span className="EmppLeaves-info-label">Phone:</span>
+                          <span className="EmppLeaves-info-value">
                             <a 
                               href={getWhatsAppLink(
                                 leave.user.phone, 
@@ -1261,11 +1266,11 @@ const fetchCompanyDetails = async () => {
                         </div>
                       )}
                       {departmentName && (
-                        <div className="info-row">
-                          <FiHome size={14} className="info-icon" />
-                          <span className="info-label">Department:</span>
-                          <span className="info-value">
-                            <span className="department-tag">
+                        <div className="EmppLeaves-info-row">
+                          <FiHome size={14} className="EmppLeaves-info-icon" />
+                          <span className="EmppLeaves-info-label">Department:</span>
+                          <span className="EmppLeaves-info-value">
+                            <span className="EmppLeaves-department-tag">
                               {departmentName}
                             </span>
                           </span>
@@ -1276,36 +1281,36 @@ const fetchCompanyDetails = async () => {
                 </div>
 
                 {/* Leave Information Card */}
-                <div className="details-card leave-card">
-                  <div className="card-header">
+                <div className="EmppLeaves-details-card EmppLeaves-leave-card">
+                  <div className="EmppLeaves-card-header">
                     <FiCalendarIcon size={18} color="#1976d2" />
                     <h4>Leave Information</h4>
                   </div>
-                  <div className="card-content">
-                    <div className="info-grid">
-                      <div className="grid-item">
-                        <span className="grid-label">Leave Type</span>
-                        <span className={`leave-type-badge ${getLeaveTypeClass(leave.type)}`}>
+                  <div className="EmppLeaves-card-content">
+                    <div className="EmppLeaves-info-grid">
+                      <div className="EmppLeaves-grid-item">
+                        <span className="EmppLeaves-grid-label">Leave Type</span>
+                        <span className={`EmppLeaves-leave-type-badge ${getLeaveTypeClass(leave.type)}`}>
                           {leave.type || "N/A"}
                         </span>
                       </div>
-                      <div className="grid-item">
-                        <span className="grid-label">Status</span>
-                        <span className={`status-badge ${getStatusClass(leave.status)}`}>
+                      <div className="EmppLeaves-grid-item">
+                        <span className="EmppLeaves-grid-label">Status</span>
+                        <span className={`EmppLeaves-status-badge ${getStatusClass(leave.status)}`}>
                           {leave.status || "Pending"}
                         </span>
                       </div>
-                      <div className="grid-item">
-                        <span className="grid-label">Start Date</span>
-                        <span className="grid-value">{formatDate(leave.startDate)}</span>
+                      <div className="EmppLeaves-grid-item">
+                        <span className="EmppLeaves-grid-label">Start Date</span>
+                        <span className="EmppLeaves-grid-value">{formatDate(leave.startDate)}</span>
                       </div>
-                      <div className="grid-item">
-                        <span className="grid-label">End Date</span>
-                        <span className="grid-value">{formatDate(leave.endDate)}</span>
+                      <div className="EmppLeaves-grid-item">
+                        <span className="EmppLeaves-grid-label">End Date</span>
+                        <span className="EmppLeaves-grid-value">{formatDate(leave.endDate)}</span>
                       </div>
-                      <div className="grid-item full-width">
-                        <span className="grid-label">Duration</span>
-                        <span className="duration-badge">
+                      <div className="EmppLeaves-grid-item EmppLeaves-full-width">
+                        <span className="EmppLeaves-grid-label">Duration</span>
+                        <span className="EmppLeaves-duration-badge">
                           <FiClock size={14} />
                           {days} {days > 1 ? 'Calendar Days' : 'Calendar Day'}
                         </span>
@@ -1316,15 +1321,15 @@ const fetchCompanyDetails = async () => {
               </div>
 
               {/* Right Column */}
-              <div className="details-column">
+              <div className="EmppLeaves-details-column">
                 {/* Reason Card */}
-                <div className="details-card reason-card">
-                  <div className="card-header">
+                <div className="EmppLeaves-details-card EmppLeaves-reason-card">
+                  <div className="EmppLeaves-card-header">
                     <FiMessageSquare size={18} color="#1976d2" />
                     <h4>Reason for Leave</h4>
                   </div>
-                  <div className="card-content">
-                    <div className="reason-box">
+                  <div className="EmppLeaves-card-content">
+                    <div className="EmppLeaves-reason-box">
                       {leave.reason || "No reason provided"}
                     </div>
                   </div>
@@ -1332,13 +1337,13 @@ const fetchCompanyDetails = async () => {
 
                 {/* Admin Remarks Card (if any) */}
                 {leave.remarks && (
-                  <div className="details-card remarks-card">
-                    <div className="card-header">
+                  <div className="EmppLeaves-details-card EmppLeaves-remarks-card">
+                    <div className="EmppLeaves-card-header">
                       <FiAlertCircle size={18} color="#1976d2" />
                       <h4>Admin Remarks</h4>
                     </div>
-                    <div className="card-content">
-                      <div className="remarks-box">
+                    <div className="EmppLeaves-card-content">
+                      <div className="EmppLeaves-remarks-box">
                         {leave.remarks}
                       </div>
                     </div>
@@ -1347,31 +1352,31 @@ const fetchCompanyDetails = async () => {
 
                 {/* Approval Information Card (if not pending) */}
                 {leave.status !== 'Pending' && (
-                  <div className="details-card approval-card">
-                    <div className="card-header">
+                  <div className="EmppLeaves-details-card EmppLeaves-approval-card">
+                    <div className="EmppLeaves-card-header">
                       <FiCheckSquare size={18} color="#1976d2" />
                       <h4>Decision Information</h4>
                     </div>
-                    <div className="card-content">
-                      <div className="info-rows">
-                        <div className="info-row">
-                          <FiUser size={14} className="info-icon" />
-                          <span className="info-label">Decision By:</span>
-                          <span className="info-value">
+                    <div className="EmppLeaves-card-content">
+                      <div className="EmppLeaves-info-rows">
+                        <div className="EmppLeaves-info-row">
+                          <FiUser size={14} className="EmppLeaves-info-icon" />
+                          <span className="EmppLeaves-info-label">Decision By:</span>
+                          <span className="EmppLeaves-info-value">
                             {leave.approvedBy?.name || leave.approvedBy || "System"}
                           </span>
                         </div>
                         {leave.approvedBy?.role && (
-                          <div className="info-row">
-                            <FiShield size={14} className="info-icon" />
-                            <span className="info-label">Role:</span>
-                            <span className="info-value">{normalizeRole(leave.approvedBy.role)}</span>
+                          <div className="EmppLeaves-info-row">
+                            <FiShield size={14} className="EmppLeaves-info-icon" />
+                            <span className="EmppLeaves-info-label">Role:</span>
+                            <span className="EmppLeaves-info-value">{normalizeRole(leave.approvedBy.role)}</span>
                           </div>
                         )}
-                        <div className="info-row">
-                          <FiClockIcon size={14} className="info-icon" />
-                          <span className="info-label">Decision At:</span>
-                          <span className="info-value">{formatDateTime(leave.updatedAt)}</span>
+                        <div className="EmppLeaves-info-row">
+                          <FiClockIcon size={14} className="EmppLeaves-info-icon" />
+                          <span className="EmppLeaves-info-label">Decision At:</span>
+                          <span className="EmppLeaves-info-value">{formatDateTime(leave.updatedAt)}</span>
                         </div>
                       </div>
                     </div>
@@ -1379,22 +1384,22 @@ const fetchCompanyDetails = async () => {
                 )}
 
                 {/* Timestamps Card */}
-                <div className="details-card timestamps-card">
-                  <div className="card-header">
+                <div className="EmppLeaves-details-card EmppLeaves-timestamps-card">
+                  <div className="EmppLeaves-card-header">
                     <FiClock size={18} color="#1976d2" />
                     <h4>Timestamps</h4>
                   </div>
-                  <div className="card-content">
-                    <div className="info-rows">
-                      <div className="info-row">
-                        <FiCalendar size={14} className="info-icon" />
-                        <span className="info-label">Created:</span>
-                        <span className="info-value">{createdDate}</span>
+                  <div className="EmppLeaves-card-content">
+                    <div className="EmppLeaves-info-rows">
+                      <div className="EmppLeaves-info-row">
+                        <FiCalendar size={14} className="EmppLeaves-info-icon" />
+                        <span className="EmppLeaves-info-label">Created:</span>
+                        <span className="EmppLeaves-info-value">{createdDate}</span>
                       </div>
-                      <div className="info-row">
-                        <FiRefreshCw size={14} className="info-icon" />
-                        <span className="info-label">Last Updated:</span>
-                        <span className="info-value">{updatedDate}</span>
+                      <div className="EmppLeaves-info-row">
+                        <FiRefreshCw size={14} className="EmppLeaves-info-icon" />
+                        <span className="EmppLeaves-info-label">Last Updated:</span>
+                        <span className="EmppLeaves-info-value">{updatedDate}</span>
                       </div>
                     </div>
                   </div>
@@ -1403,14 +1408,14 @@ const fetchCompanyDetails = async () => {
             </div>
           </div>
           
-          <div className="dialog-footer">
-            <button className="btn btn-outlined" onClick={onClose}>
+          <div className="EmppLeaves-dialog-footer">
+            <button className="EmppLeaves-btn EmppLeaves-btn-outlined" onClick={onClose}>
               Close
             </button>
             {leave.status === 'Pending' && (isOwner || isAdmin || isHR || isManager) && (
-              <div className="footer-actions">
+              <div className="EmppLeaves-footer-actions">
                 <button 
-                  className="btn btn-success"
+                  className="EmppLeaves-btn EmppLeaves-btn-success"
                   onClick={() => {
                     onClose();
                     openStatusDialog(
@@ -1428,7 +1433,7 @@ const fetchCompanyDetails = async () => {
                   Approve
                 </button>
                 <button 
-                  className="btn btn-error"
+                  className="EmppLeaves-btn EmppLeaves-btn-error"
                   onClick={() => {
                     onClose();
                     openStatusDialog(
@@ -1457,25 +1462,25 @@ const fetchCompanyDetails = async () => {
   // RENDER TABLE
   // ============================================
   const renderLeaveTable = (title, leavesData, showStatusColumn = true) => (
-    <div className="leaves-table-container">
-      <div className="table-header">
-        <h3 className="table-title">
+    <div className="EmppLeaves-leaves-table-container">
+      <div className="EmppLeaves-table-header">
+        <h3 className="EmppLeaves-table-title">
           {title} ({leavesData.length})
           {title === 'Pending Leaves' && permissions.canApproveLeaves && (
-            <span className="action-required-badge">Action Required</span>
+            <span className="EmppLeaves-action-required-badge">Action Required</span>
           )}
         </h3>
         {/* Socket Connection Status Badge */}
         {isConnected && (
-          <span className="socket-badge" title="Real-time updates active">
+          <span className="EmppLeaves-socket-badge" title="Real-time updates active">
             <FiBell size={14} />
             Live
           </span>
         )}
       </div>
       
-      <div className="table-responsive">
-        <table className="leaves-table">
+      <div className="EmppLeaves-table-responsive">
+        <table className="EmppLeaves-leaves-table">
           <thead>
             <tr>
               <th>Employee</th>
@@ -1502,23 +1507,23 @@ const fetchCompanyDetails = async () => {
                   : "No reason provided";
                 
                 return (
-                  <tr key={leave._id} className={`${getRowClass(leave.status)} ${isOwnLeave ? 'own-leave-row' : ''}`}>
+                  <tr key={leave._id} className={`${getRowClass(leave.status)} ${isOwnLeave ? 'EmppLeaves-own-leave-row' : ''}`}>
                     <td data-show-on-mobile="true">
-                      <div className="employee-info">
-                        <div className="employee-avatar">
+                      <div className="EmppLeaves-employee-info">
+                        <div className="EmppLeaves-employee-avatar">
                           {getInitials(leave.user?.name)}
-                          {isOwnLeave && <span className="self-badge">You</span>}
+                          {isOwnLeave && <span className="EmppLeaves-self-badge">You</span>}
                         </div>
-                        <div className="employee-details">
-                          <div className="employee-name">
+                        <div className="EmppLeaves-employee-details">
+                          <div className="EmppLeaves-employee-name">
                             {leave.user?.name || "N/A"}
                           </div>
-                          <div className="employee-email">
+                          <div className="EmppLeaves-employee-email">
                             <FiMail size={12} />
                             {leave.user?.email || "N/A"}
                           </div>
                           {leave.user?.phone && (
-                            <div className="employee-phone">
+                            <div className="EmppLeaves-employee-phone">
                               <FiPhone size={12} />
                               <a 
                                 href={getWhatsAppLink(
@@ -1540,34 +1545,34 @@ const fetchCompanyDetails = async () => {
                     </td>
                     <td data-show-on-mobile="false">
                       {departmentName ? (
-                        <div className="department-info">
+                        <div className="EmppLeaves-department-info">
                           <FiHome size={14} />
                           {departmentName}
                         </div>
                       ) : (
-                        <span className="text-muted">—</span>
+                        <span className="EmppLeaves-text-muted">—</span>
                       )}
                     </td>
                     <td data-show-on-mobile="true">
-                      <div className="leave-details">
-                        <div className="leave-type-wrapper">
-                          <span className={`leave-type-chip ${getLeaveTypeClass(leave.type)}`}>
+                      <div className="EmppLeaves-leave-details">
+                        <div className="EmppLeaves-leave-type-wrapper">
+                          <span className={`EmppLeaves-leave-type-chip ${getLeaveTypeClass(leave.type)}`}>
                             {leave.type || "N/A"}
                           </span>
                         </div>
                         
-                        <div className="leave-reason-preview hide-mobile" title={leave.reason || ""}>
+                        <div className="EmppLeaves-leave-reason-preview EmppLeaves-hide-mobile" title={leave.reason || ""}>
                           {reasonPreview}
                         </div>
                         
                         {leave.status === 'Pending' && (
-                          <span className={`status-chip ${getStatusClass(leave.status)}`} style={{ marginTop: '8px', display: 'inline-block' }}>
+                          <span className={`EmppLeaves-status-chip ${getStatusClass(leave.status)}`} style={{ marginTop: '8px', display: 'inline-block' }}>
                             {leave.status}
                           </span>
                         )}
                         
                         <button 
-                          className="view-details-button"
+                          className="EmppLeaves-view-details-button"
                           onClick={() => openDetailsModal(leave)}
                         >
                           <FiEye size={16} />
@@ -1575,9 +1580,9 @@ const fetchCompanyDetails = async () => {
                         </button>
 
                         {leave.status === 'Pending' && isOwner && (
-                          <div className="actions-container" style={{ marginTop: '12px' }}>
+                          <div className="EmppLeaves-actions-container" style={{ marginTop: '12px' }}>
                             <button
-                              className="action-icon-button approve"
+                              className="EmppLeaves-action-icon-button EmppLeaves-approve"
                               onClick={() => openStatusDialog(
                                 leave._id, 
                                 'Approved', 
@@ -1593,7 +1598,7 @@ const fetchCompanyDetails = async () => {
                               Approve
                             </button>
                             <button
-                              className="action-icon-button reject"
+                              className="EmppLeaves-action-icon-button EmppLeaves-reject"
                               onClick={() => openStatusDialog(
                                 leave._id, 
                                 'Rejected', 
@@ -1613,15 +1618,15 @@ const fetchCompanyDetails = async () => {
                       </div>
                     </td>
                     <td data-show-on-mobile="false">
-                      <div className="duration-info">
-                        <div className="date-range">
+                      <div className="EmppLeaves-duration-info">
+                        <div className="EmppLeaves-date-range">
                           {formatDate(leave.startDate)}
                         </div>
-                        <div className="date-separator">→</div>
-                        <div className="date-range">
+                        <div className="EmppLeaves-date-separator">→</div>
+                        <div className="EmppLeaves-date-range">
                           {formatDate(leave.endDate)}
                         </div>
-                        <div className="days-badge">
+                        <div className="EmppLeaves-days-badge">
                           <FiClock size={12} />
                           {days} {days > 1 ? 'days' : 'day'}
                         </div>
@@ -1629,25 +1634,25 @@ const fetchCompanyDetails = async () => {
                     </td>
                     {showStatusColumn && (
                       <td data-show-on-mobile="false">
-                        <span className={`status-chip ${getStatusClass(leave.status)}`}>
+                        <span className={`EmppLeaves-status-chip ${getStatusClass(leave.status)}`}>
                           {leave.status || "Pending"}
                         </span>
                       </td>
                     )}
                     <td data-show-on-mobile="false">
-                      <div className="approved-by">
+                      <div className="EmppLeaves-approved-by">
                         {leave.approvedBy?.name || leave.approvedBy || "-"}
                         {leave.approvedBy?.role && (
-                          <span className="approver-role">
+                          <span className="EmppLeaves-approver-role">
                             ({normalizeRole(leave.approvedBy.role)})
                           </span>
                         )}
                       </div>
                     </td>
                     <td data-show-on-mobile="false">
-                      <div className="actions-container">
+                      <div className="EmppLeaves-actions-container">
                         <button 
-                          className="action-icon-button view-history"
+                          className="EmppLeaves-action-icon-button EmppLeaves-view-history"
                           onClick={() => openHistoryDialog(leave)}
                           title="View History"
                         >
@@ -1657,7 +1662,7 @@ const fetchCompanyDetails = async () => {
                         {leave.status === 'Pending' && canApproveLeave(userId) ? (
                           <>
                             <button
-                              className={`action-icon-button approve ${!isOwner ? 'disabled' : ''}`}
+                              className={`EmppLeaves-action-icon-button EmppLeaves-approve ${!isOwner ? 'EmppLeaves-disabled' : ''}`}
                               onClick={() => isOwner ? openStatusDialog(
                                 leave._id, 
                                 'Approved', 
@@ -1673,7 +1678,7 @@ const fetchCompanyDetails = async () => {
                               <FiCheckCircle size={16} />
                             </button>
                             <button
-                              className={`action-icon-button reject ${!isOwner ? 'disabled' : ''}`}
+                              className={`EmppLeaves-action-icon-button EmppLeaves-reject ${!isOwner ? 'EmppLeaves-disabled' : ''}`}
                               onClick={() => isOwner ? openStatusDialog(
                                 leave._id, 
                                 'Rejected', 
@@ -1690,14 +1695,14 @@ const fetchCompanyDetails = async () => {
                             </button>
                           </>
                         ) : leave.status === 'Pending' ? (
-                          <span className="no-permission" title="Only Owner can approve/reject">
+                          <span className="EmppLeaves-no-permission" title="Only Owner can approve/reject">
                             <FiLock size={14} />
                           </span>
                         ) : null}
                         
                         {canDeleteLeave(userId, leave.status) && (
                           <button 
-                            className={`action-icon-button delete ${!isOwner ? 'disabled' : ''}`}
+                            className={`EmppLeaves-action-icon-button EmppLeaves-delete ${!isOwner ? 'EmppLeaves-disabled' : ''}`}
                             onClick={() => isOwner ? setDeleteDialog(leave._id) : null}
                             title={isOwner ? "Delete Leave" : "Only Owner can delete"}
                             disabled={!isOwner}
@@ -1713,19 +1718,19 @@ const fetchCompanyDetails = async () => {
             ) : (
               <tr>
                 <td colSpan={showStatusColumn ? 7 : 6}>
-                  <div className="empty-state">
-                    <div className="empty-state-icon">
+                  <div className="EmppLeaves-empty-state">
+                    <div className="EmppLeaves-empty-state-icon">
                       <FiCalendar size={48} />
                     </div>
-                    <h4 className="empty-state-title">No Leave Requests Found</h4>
-                    <p className="empty-state-text">
+                    <h4 className="EmppLeaves-empty-state-title">No Leave Requests Found</h4>
+                    <p className="EmppLeaves-empty-state-text">
                       {title === 'Pending Leaves' 
                         ? 'No pending leave requests requiring action'
                         : 'Try adjusting your filters or search criteria'
                       }
                     </p>
                     <button 
-                      className="btn btn-contained"
+                      className="EmppLeaves-btn EmppLeaves-btn-contained"
                       onClick={fetchLeaves}
                     >
                       Refresh Data
@@ -1745,14 +1750,14 @@ const fetchCompanyDetails = async () => {
   // ============================================
   if (loading && leaves.length === 0) {
     return (
-      <div className="loading-container">
-        <div className="loading-spinner"></div>
+      <div className="EmppLeaves-loading-container">
+        <div className="EmppLeaves-loading-spinner"></div>
         <p>Loading leave data...</p>
         {currentUserRole && (
-          <span className="loading-role">Role: {normalizeRole(currentUserRole)}</span>
+          <span className="EmppLeaves-loading-role">Role: {normalizeRole(currentUserRole)}</span>
         )}
         {isConnected && (
-          <span className="socket-status connected">
+          <span className="EmppLeaves-socket-status EmppLeaves-connected">
             <FiBell size={14} />
             Real-time connected
           </span>
@@ -1765,14 +1770,14 @@ const fetchCompanyDetails = async () => {
   // MAIN RENDER
   // ============================================
   return (
-    <div className="employee-leaves">
+    <div className="EmppLeaves-employee-leaves">
       {/* Header */}
-      <div className="leaves-header">
+      <div className="EmppLeaves-leaves-header">
         <div>
-          <h1 className="leaves-title">
+          <h1 className="EmppLeaves-leaves-title">
             Leave Management
           </h1>
-          <p className="leaves-subtitle">
+          <p className="EmppLeaves-leaves-subtitle">
             {isOwner 
               ? "Review and manage employee leave requests with full access"
               : isAdmin || isHR || isManager
@@ -1782,7 +1787,7 @@ const fetchCompanyDetails = async () => {
             <RoleBadge />
             
             {!isOwner && !isAdmin && !isHR && !isManager && (
-              <span className="view-only-badge">
+              <span className="EmppLeaves-view-only-badge">
                 <FiEyeOff size={14} />
                 View Only
               </span>
@@ -1790,12 +1795,12 @@ const fetchCompanyDetails = async () => {
 
             {/* Socket Connection Status */}
             {isConnected ? (
-              <span className="socket-status connected">
+              <span className="EmppLeaves-socket-status EmppLeaves-connected">
                 <FiBell size={14} />
                 Live
               </span>
             ) : (
-              <span className="socket-status disconnected">
+              <span className="EmppLeaves-socket-status EmppLeaves-disconnected">
                 <FiBell size={14} />
                 Connecting...
               </span>
@@ -1804,32 +1809,32 @@ const fetchCompanyDetails = async () => {
         </div>
 
         {/* Action Bar */}
-        <div className="header-actions">
+        <div className="EmppLeaves-header-actions">
           <button 
-            className="action-button"
+            className="EmppLeaves-action-button"
             onClick={fetchLeaves}
             title="Refresh Data"
             disabled={loading}
           >
-            <FiRefreshCw size={20} className={loading ? 'spinning' : ''} />
+            <FiRefreshCw size={20} className={loading ? 'EmppLeaves-spinning' : ''} />
           </button>
           
           <button 
-            className="action-button"
+            className="EmppLeaves-action-button"
             onClick={exportData}
             title="Export Report"
           >
             <FiDownload size={20} />
           </button>
           
-          <div className="stats-summary">
-            <span className="stat-item pending">
+          <div className="EmppLeaves-stats-summary">
+            <span className="EmppLeaves-stat-item EmppLeaves-pending">
               <FiClock /> {stats.pending}
             </span>
-            <span className="stat-item approved">
+            <span className="EmppLeaves-stat-item EmppLeaves-approved">
               <FiCheckCircle /> {stats.approved}
             </span>
-            <span className="stat-item rejected">
+            <span className="EmppLeaves-stat-item EmppLeaves-rejected">
               <FiXCircle /> {stats.rejected}
             </span>
           </div>
@@ -1838,10 +1843,10 @@ const fetchCompanyDetails = async () => {
 
       {/* Owner Warning Banner */}
       {!isOwner && (
-        <div className="owner-warning-banner">
-          <div className="warning-content">
+        <div className="EmppLeaves-owner-warning-banner">
+          <div className="EmppLeaves-warning-content">
             <FiLock size={20} />
-            <div className="warning-text">
+            <div className="EmppLeaves-warning-text">
               <strong>🔒 View Only Mode</strong>
               <p>You are viewing leaves from your department only. Only managers can approve/reject requests.</p>
             </div>
@@ -1851,9 +1856,9 @@ const fetchCompanyDetails = async () => {
 
       {/* Department Info Banner */}
       {!isOwner && currentUserDepartment && (
-        <div className="department-info-banner">
-          <div className="info-content">
-            <div className="info-text">
+        <div className="EmppLeaves-department-info-banner">
+          <div className="EmppLeaves-info-content">
+            <div className="EmppLeaves-info-text">
               <strong>🏢 Your Department: {getDepartmentName(currentUserDepartment)}</strong>
               <p>Showing leave requests only from your department</p>
             </div>
@@ -1862,40 +1867,40 @@ const fetchCompanyDetails = async () => {
       )}
 
       {/* Filter Section */}
-      <div className="filter-section">
-        <div className="filter-header">
+      <div className="EmppLeaves-filter-section">
+        <div className="EmppLeaves-filter-header">
           <FiFilter size={20} color="#1976d2" />
           <h3>Filters & Search</h3>
           {isOwner && departmentFilter !== 'all' && (
-            <span className="owner-filter-badge">
+            <span className="EmppLeaves-owner-filter-badge">
               <FiEye size={14} />
               Filtering: {departments.find(d => (d._id || d.id) === departmentFilter)?.name || departmentFilter}
             </span>
           )}
-          {loadingDepartments && <span className="loading-badge">Loading departments...</span>}
+          {loadingDepartments && <span className="EmppLeaves-loading-badge">Loading departments...</span>}
         </div>
         
-        <div className="filter-grid">
-          <div className="filter-group">
-            <label className="filter-label">Date</label>
+        <div className="EmppLeaves-filter-grid">
+          <div className="EmppLeaves-filter-group">
+            <label className="EmppLeaves-filter-label">Date</label>
             <input
               type="date"
-              className="filter-input"
+              className="EmppLeaves-filter-input"
               value={filterDate}
               onChange={(e) => setFilterDate(e.target.value)}
             />
           </div>
           
-          <div className="filter-group">
-            <label className="filter-label">Status</label>
+          <div className="EmppLeaves-filter-group">
+            <label className="EmppLeaves-filter-label">Status</label>
             <StatusFilter
               selected={statusFilter}
               onChange={setStatusFilter}
             />
           </div>
           
-          <div className="filter-group">
-            <label className="filter-label">Leave Type</label>
+          <div className="EmppLeaves-filter-group">
+            <label className="EmppLeaves-filter-label">Leave Type</label>
             <LeaveTypeFilter
               selected={leaveTypeFilter}
               onChange={setLeaveTypeFilter}
@@ -1903,8 +1908,8 @@ const fetchCompanyDetails = async () => {
           </div>
           
           {isOwner && (
-            <div className="filter-group">
-              <label className="filter-label">Department</label>
+            <div className="EmppLeaves-filter-group">
+              <label className="EmppLeaves-filter-label">Department</label>
               <DepartmentFilter
                 selected={departmentFilter}
                 onChange={setDepartmentFilter}
@@ -1913,13 +1918,13 @@ const fetchCompanyDetails = async () => {
             </div>
           )}
           
-          <div className="filter-group search-group">
-            <label className="filter-label">Search</label>
-            <div className="search-input-wrapper">
-              <FiSearch size={18} className="search-icon" />
+          <div className="EmppLeaves-filter-group EmppLeaves-search-group">
+            <label className="EmppLeaves-filter-label">Search</label>
+            <div className="EmppLeaves-search-input-wrapper">
+              <FiSearch size={18} className="EmppLeaves-search-icon" />
               <input
                 type="text"
-                className="filter-input search-input"
+                className="EmppLeaves-filter-input EmppLeaves-search-input"
                 placeholder="Search by name, email, department..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -1927,16 +1932,16 @@ const fetchCompanyDetails = async () => {
             </div>
           </div>
           
-          <div className="filter-actions">
+          <div className="EmppLeaves-filter-actions">
             <button 
-              className="btn btn-outlined"
+              className="EmppLeaves-btn EmppLeaves-btn-outlined"
               onClick={clearFilters}
               disabled={loading}
             >
               Clear All
             </button>
             <button 
-              className="btn btn-contained"
+              className="EmppLeaves-btn EmppLeaves-btn-contained"
               onClick={fetchLeaves}
               disabled={loading}
             >
@@ -1946,86 +1951,85 @@ const fetchCompanyDetails = async () => {
         </div>
       </div>
 
-      {/* Stat Cards */}
-     {/* Stat Cards - Only show cards with count > 0 */}
-<div className="stats-container">
-  {[
-    { 
-      label: "Total Leaves", 
-      count: stats.total, 
-      type: "All", 
-      icon: <FiUsersIcon />,
-      color: "primary"
-    },
-    { 
-      label: "Pending", 
-      count: stats.pending, 
-      type: "Pending", 
-      icon: <FiClock />,
-      color: "warning"
-    },
-    { 
-      label: "Approved", 
-      count: stats.approved, 
-      type: "Approved", 
-      icon: <FiCheckCircle />,
-      color: "success"
-    },
-    { 
-      label: "Rejected", 
-      count: stats.rejected, 
-      type: "Rejected", 
-      icon: <FiXCircle />,
-      color: "error"
-    },
-  ]
-    .filter(stat => stat.count > 0) // ✅ FILTER: Only show cards with count > 0
-    .map((stat) => (
-      <div 
-        key={stat.type}
-        className={`stat-card stat-${stat.color} ${selectedStat === stat.type ? 'active' : ''}`}
-        onClick={() => handleStatFilter(stat.type)}
-      >
-        <div className="stat-content">
-          <div className={`stat-icon stat-icon-${stat.color}`}>
-            {stat.icon}
-          </div>
-          <div className="stat-info">
-            <div className="stat-value">{stat.count}</div>
-            <div className="stat-label">{stat.label}</div>
-          </div>
-        </div>
+      {/* Stat Cards - Only show cards with count > 0 */}
+      <div className="EmppLeaves-stats-container">
+        {[
+          { 
+            label: "Total Leaves", 
+            count: stats.total, 
+            type: "All", 
+            icon: <FiUsersIcon />,
+            color: "primary"
+          },
+          { 
+            label: "Pending", 
+            count: stats.pending, 
+            type: "Pending", 
+            icon: <FiClock />,
+            color: "warning"
+          },
+          { 
+            label: "Approved", 
+            count: stats.approved, 
+            type: "Approved", 
+            icon: <FiCheckCircle />,
+            color: "success"
+          },
+          { 
+            label: "Rejected", 
+            count: stats.rejected, 
+            type: "Rejected", 
+            icon: <FiXCircle />,
+            color: "error"
+          },
+        ]
+          .filter(stat => stat.count > 0)
+          .map((stat) => (
+            <div 
+              key={stat.type}
+              className={`EmppLeaves-stat-card EmppLeaves-stat-${stat.color} ${selectedStat === stat.type ? 'EmppLeaves-active' : ''}`}
+              onClick={() => handleStatFilter(stat.type)}
+            >
+              <div className="EmppLeaves-stat-content">
+                <div className={`EmppLeaves-stat-icon EmppLeaves-stat-icon-${stat.color}`}>
+                  {stat.icon}
+                </div>
+                <div className="EmppLeaves-stat-info">
+                  <div className="EmppLeaves-stat-value">{stat.count}</div>
+                  <div className="EmppLeaves-stat-label">{stat.label}</div>
+                </div>
+              </div>
+            </div>
+          ))}
       </div>
-    ))}
-</div>
 
       {/* Two Sections: Pending Leaves and Other Leaves */}
-      <div className="leaves-sections-container">
+      <div className="EmppLeaves-leaves-sections-container">
         {/* Pending Leaves Section */}
         {pendingLeaves.length > 0 && (
-          <div className="leaves-section pending-section">
-            <div className="section-header">
-              <h2 className="section-title">
+          <div className="EmppLeaves-leaves-section EmppLeaves-pending-section">
+            <div className="EmppLeaves-section-header">
+              <h2 className="EmppLeaves-section-title">
                 <FiAlertCircle size={20} color="#f57c00" />
                 Pending Leaves Requiring Action
                 {permissions.canApproveLeaves && (
-                  <span className="action-badge">Needs Approval</span>
+                  <span className="EmppLeaves-action-badge">Needs Approval</span>
                 )}
               </h2>
-              <span className="section-badge">{pendingLeaves.length} pending</span>
+              <span className="EmppLeaves-section-badge">{pendingLeaves.length} pending</span>
             </div>
             {renderLeaveTable("Pending Leaves", pendingLeaves, true)}
           </div>
         )}
 
         {/* Other Leaves Section */}
-        <div className="leaves-section">
-          <div className="section-header">
-            <h2 className="section-title">
+        <div className="EmppLeaves-leaves-section">
+          <div className="EmppLeaves-section-header">
+            <h2 className="EmppLeaves-section-title">
               <FiList size={20} color="#1976d2" />
               All Other Leaves
             </h2>
-            <span className="section-badge">{otherLeaves.length} total</span>
+            <span className="EmppLeaves-section-badge">{otherLeaves.length} total</span>
           </div>
           {renderLeaveTable("All Leaves", otherLeaves, false)}
         </div>
@@ -2045,9 +2049,9 @@ const fetchCompanyDetails = async () => {
       {/* STATUS UPDATE DIALOG */}
       {/* ======================================== */}
       {statusDialog.open && (
-        <div className="dialog-overlay" onClick={closeStatusDialog}>
-          <div className="dialog-content status-dialog" onClick={(e) => e.stopPropagation()}>
-            <div className="dialog-header">
+        <div className="EmppLeaves-dialog-overlay" onClick={closeStatusDialog}>
+          <div className="EmppLeaves-dialog-content EmppLeaves-status-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="EmppLeaves-dialog-header">
               <h3>
                 {statusDialog.newStatus === 'Approved' ? (
                   <>✅ Approve Leave</>
@@ -2055,39 +2059,39 @@ const fetchCompanyDetails = async () => {
                   <>❌ Reject Leave</>
                 )}
               </h3>
-              <button className="dialog-close" onClick={closeStatusDialog}>
+              <button className="EmppLeaves-dialog-close" onClick={closeStatusDialog}>
                 <FiX size={20} />
               </button>
             </div>
             
-            <div className="dialog-body">
-              <div className="user-info-compact">
-                <div className="user-avatar medium">
+            <div className="EmppLeaves-dialog-body">
+              <div className="EmppLeaves-user-info-compact">
+                <div className="EmppLeaves-user-avatar EmppLeaves-medium">
                   {getInitials(statusDialog.userName)}
                 </div>
-                <div className="user-details">
+                <div className="EmppLeaves-user-details">
                   <h4>{statusDialog.userName}</h4>
                   <p>{statusDialog.userEmail}</p>
                   {statusDialog.userPhone && (
-                    <p className="user-phone">{statusDialog.userPhone}</p>
+                    <p className="EmppLeaves-user-phone">{statusDialog.userPhone}</p>
                   )}
                 </div>
               </div>
               
-              <div className="status-change-info">
-                <div className="status-badge current">
+              <div className="EmppLeaves-status-change-info">
+                <div className="EmppLeaves-status-badge EmppLeaves-current">
                   Current: {statusDialog.currentStatus || 'Pending'}
                 </div>
                 <FiArrowRight size={16} />
-                <div className={`status-badge new status-${statusDialog.newStatus?.toLowerCase()}`}>
+                <div className={`EmppLeaves-status-badge EmppLeaves-new EmppLeaves-status-${statusDialog.newStatus?.toLowerCase()}`}>
                   New: {statusDialog.newStatus}
                 </div>
               </div>
               
-              <div className="remarks-section">
-                <label>Remarks <span className="optional">(Optional)</span></label>
+              <div className="EmppLeaves-remarks-section">
+                <label>Remarks <span className="EmppLeaves-optional">(Optional)</span></label>
                 <textarea
-                  className="remarks-input"
+                  className="EmppLeaves-remarks-input"
                   value={statusDialog.remarks}
                   onChange={(e) => setStatusDialog(prev => ({ ...prev, remarks: e.target.value }))}
                   placeholder={`Add remarks for ${statusDialog.newStatus?.toLowerCase()}...`}
@@ -2096,7 +2100,7 @@ const fetchCompanyDetails = async () => {
                 />
               </div>
               
-              <div className="notification-info">
+              <div className="EmppLeaves-notification-info">
                 <FiPhone size={16} />
                 <span>
                   {statusDialog.userPhone 
@@ -2107,12 +2111,12 @@ const fetchCompanyDetails = async () => {
               </div>
             </div>
             
-            <div className="dialog-footer">
-              <button className="btn btn-outlined" onClick={closeStatusDialog}>
+            <div className="EmppLeaves-dialog-footer">
+              <button className="EmppLeaves-btn EmppLeaves-btn-outlined" onClick={closeStatusDialog}>
                 Cancel
               </button>
               <button 
-                className={`btn btn-${statusDialog.newStatus === 'Approved' ? 'success' : 'error'}`}
+                className={`EmppLeaves-btn EmppLeaves-btn-${statusDialog.newStatus === 'Approved' ? 'success' : 'error'}`}
                 onClick={confirmStatusChange}
               >
                 <FiSave size={16} />
@@ -2127,17 +2131,17 @@ const fetchCompanyDetails = async () => {
       {/* DELETE CONFIRMATION DIALOG */}
       {/* ======================================== */}
       {deleteDialog && (
-        <div className="dialog-overlay" onClick={() => setDeleteDialog(null)}>
-          <div className="dialog-content delete-dialog" onClick={(e) => e.stopPropagation()}>
-            <div className="dialog-header">
+        <div className="EmppLeaves-dialog-overlay" onClick={() => setDeleteDialog(null)}>
+          <div className="EmppLeaves-dialog-content EmppLeaves-delete-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="EmppLeaves-dialog-header">
               <h3>Delete Leave Request</h3>
-              <button className="dialog-close" onClick={() => setDeleteDialog(null)}>
+              <button className="EmppLeaves-dialog-close" onClick={() => setDeleteDialog(null)}>
                 <FiX size={20} />
               </button>
             </div>
             
-            <div className="dialog-body">
-              <div className="warning-icon">
+            <div className="EmppLeaves-dialog-body">
+              <div className="EmppLeaves-warning-icon">
                 <FiAlertCircle size={48} color="#f57c00" />
               </div>
               <h4>Are you sure?</h4>
@@ -2147,12 +2151,12 @@ const fetchCompanyDetails = async () => {
               </p>
             </div>
             
-            <div className="dialog-footer">
-              <button className="btn btn-outlined" onClick={() => setDeleteDialog(null)}>
+            <div className="EmppLeaves-dialog-footer">
+              <button className="EmppLeaves-btn EmppLeaves-btn-outlined" onClick={() => setDeleteDialog(null)}>
                 Cancel
               </button>
               <button 
-                className="btn btn-error" 
+                className="EmppLeaves-btn EmppLeaves-btn-error" 
                 onClick={() => handleDeleteLeave(deleteDialog)}
               >
                 <FiTrash2 size={16} />
@@ -2167,48 +2171,48 @@ const fetchCompanyDetails = async () => {
       {/* HISTORY DIALOG */}
       {/* ======================================== */}
       {historyDialog.open && (
-        <div className="dialog-overlay" onClick={closeHistoryDialog}>
-          <div className="dialog-content history-dialog" onClick={(e) => e.stopPropagation()}>
-            <div className="dialog-header">
+        <div className="EmppLeaves-dialog-overlay" onClick={closeHistoryDialog}>
+          <div className="EmppLeaves-dialog-content EmppLeaves-history-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="EmppLeaves-dialog-header">
               <h3>Leave History</h3>
-              <button className="dialog-close" onClick={closeHistoryDialog}>
+              <button className="EmppLeaves-dialog-close" onClick={closeHistoryDialog}>
                 <FiX size={20} />
               </button>
             </div>
             
-            <div className="dialog-body">
-              <div className="history-title">
+            <div className="EmppLeaves-dialog-body">
+              <div className="EmppLeaves-history-title">
                 <h4>{historyDialog.title}</h4>
               </div>
               
-              <div className="history-timeline">
+              <div className="EmppLeaves-history-timeline">
                 {historyDialog.items.length > 0 ? (
                   historyDialog.items.map((item, index) => (
-                    <div key={index} className="history-item">
-                      <div className="history-item-header">
-                        <span className={`history-action status-${item.action?.toLowerCase() || 'pending'}`}>
+                    <div key={index} className="EmppLeaves-history-item">
+                      <div className="EmppLeaves-history-item-header">
+                        <span className={`EmppLeaves-history-action EmppLeaves-status-${item.action?.toLowerCase() || 'pending'}`}>
                           {item.action || 'Updated'}
                         </span>
-                        <span className="history-date">
+                        <span className="EmppLeaves-history-date">
                           {formatHistoryDate(item.at)}
                         </span>
                       </div>
-                      <div className="history-item-body">
+                      <div className="EmppLeaves-history-item-body">
                         {item.from && item.to && item.from !== item.to && (
-                          <div className="history-status-change">
-                            <span className="status-badge from">{item.from}</span>
+                          <div className="EmppLeaves-history-status-change">
+                            <span className="EmppLeaves-status-badge EmppLeaves-from">{item.from}</span>
                             <FiArrowRight size={12} />
-                            <span className="status-badge to">{item.to}</span>
+                            <span className="EmppLeaves-status-badge EmppLeaves-to">{item.to}</span>
                           </div>
                         )}
-                        <div className="history-by">
+                        <div className="EmppLeaves-history-by">
                           <strong>By:</strong> {item.byName || getUserNameById(item.by)}
                           {item.byRole && (
-                            <span className="history-role">({normalizeRole(item.byRole)})</span>
+                            <span className="EmppLeaves-history-role">({normalizeRole(item.byRole)})</span>
                           )}
                         </div>
                         {item.remarks && (
-                          <div className="history-remarks">
+                          <div className="EmppLeaves-history-remarks">
                             <strong>Remarks:</strong> {item.remarks}
                           </div>
                         )}
@@ -2216,7 +2220,7 @@ const fetchCompanyDetails = async () => {
                     </div>
                   ))
                 ) : (
-                  <div className="no-history">
+                  <div className="EmppLeaves-no-history">
                     <FiList size={32} />
                     <p>No history available for this leave request.</p>
                   </div>
@@ -2224,8 +2228,8 @@ const fetchCompanyDetails = async () => {
               </div>
             </div>
             
-            <div className="dialog-footer">
-              <button className="btn btn-contained" onClick={closeHistoryDialog}>
+            <div className="EmppLeaves-dialog-footer">
+              <button className="EmppLeaves-btn EmppLeaves-btn-contained" onClick={closeHistoryDialog}>
                 Close
               </button>
             </div>
@@ -2237,8 +2241,8 @@ const fetchCompanyDetails = async () => {
       {/* SNACKBAR */}
       {/* ======================================== */}
       {snackbar.open && (
-        <div className="snackbar">
-          <div className={`snackbar-content snackbar-${snackbar.type}`}>
+        <div className="EmppLeaves-snackbar">
+          <div className={`EmppLeaves-snackbar-content EmppLeaves-snackbar-${snackbar.type}`}>
             {snackbar.type === "success" && <FiCheckCircle size={20} />}
             {snackbar.type === "error" && <FiXCircle size={20} />}
             {snackbar.type === "info" && <FiAlertCircle size={20} />}
