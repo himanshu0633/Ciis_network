@@ -108,7 +108,7 @@ const UserCreateTask = () => {
   const [isUploadingRemark, setIsUploadingRemark] = useState(false);
   const [activityLogs, setActivityLogs] = useState([]);
   const [activityDialog, setActivityDialog] = useState({ open: false, taskId: null });
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  
   const [zoomImage, setZoomImage] = useState(null);
 
   const [calendarFilterOpen, setCalendarFilterOpen] = useState(false);
@@ -526,40 +526,7 @@ const manualCheckOverdue = async () => {
     }
   };
 
-  // Fetch notifications
-  const fetchNotifications = useCallback(async () => {
-    if (authError || !userId) return;
-    
-    try {
-      const res = await axios.get('/task/notifications/all');
-      setNotifications(res.data.notifications || []);
-      setUnreadNotificationCount(res.data.unreadCount || 0);
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-    }
-  }, [authError, userId]);
 
-  // Mark notification as read
-  const markNotificationAsRead = async (notificationId) => {
-    try {
-      await axios.patch(`/task/notifications/${notificationId}/read`);
-      fetchNotifications();
-      showSnackbar('Notification marked as read', 'success');
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
-    }
-  };
-
-  // Mark all notifications as read
-  const markAllNotificationsAsRead = async () => {
-    try {
-      await axios.patch('/task/notifications/read-all');
-      fetchNotifications();
-      showSnackbar('All notifications marked as read', 'success');
-    } catch (error) {
-      console.error('Error marking all notifications as read:', error);
-    }
-  };
 
   // Fetch activity logs
   const fetchActivityLogs = async (taskId) => {
@@ -659,7 +626,7 @@ const manualCheckOverdue = async () => {
 
       fetchMyTasks();
       fetchOverdueTasks();
-      fetchNotifications();
+    
       
       showSnackbar('Status updated successfully', 'success');
 
@@ -688,7 +655,7 @@ const manualCheckOverdue = async () => {
 
       fetchMyTasks();
       fetchOverdueTasks();
-      fetchNotifications();
+     
       
       showSnackbar('Task marked as overdue', 'warning');
 
@@ -845,7 +812,7 @@ const handleCreateTask = async () => {
 
     // Refresh tasks
     fetchMyTasks();
-    fetchNotifications();
+
 
   } catch (err) {
     console.error('❌ Full error creating task:', err);
@@ -907,7 +874,7 @@ const formatDateForBackend = (dateTimeString) => {
         if (!authError && userId) {
           await fetchMyTasks();
           await fetchOverdueTasks();
-          await fetchNotifications();
+          
         }
       } catch (error) {
         console.error('Error loading task data:', error);
@@ -937,9 +904,9 @@ const formatDateForBackend = (dateTimeString) => {
     if (!authError && userId) {
       fetchMyTasks();
       fetchOverdueTasks();
-      fetchNotifications();
+     
     }
-  }, [authError, userId, fetchMyTasks, fetchNotifications, fetchOverdueTasks]);
+  }, [authError, userId, fetchMyTasks, fetchOverdueTasks]);
 
   const renderStatisticsCards = () => {
     const statsData = [
@@ -1895,93 +1862,93 @@ const formatDateForBackend = (dateTimeString) => {
   };
 
   // Render notifications panel
-  const renderNotificationsPanel = () => (
-    <div className="user-create-task-dialog-overlay" style={{ display: notificationsOpen ? 'flex' : 'none' }}>
-      <div className={`user-create-task-dialog ${isMobile ? 'mobile-dialog' : ''}`} style={{ 
-        width: isMobile ? '90%' : isTablet ? '400px' : '400px',
-        maxHeight: isMobile ? '80vh' : '70vh'
-      }}>
-        <div style={{ 
-          padding: isMobile ? '12px 16px' : '16px 20px', 
-          borderBottom: '1px solid #e0e0e0' 
-        }}>
-          <div className="user-create-task-flex user-create-task-justify-between user-create-task-align-center">
-            <div style={{ fontWeight: 600, fontSize: isMobile ? '16px' : '18px' }}>Notifications</div>
-            <button 
-              className="user-create-task-button user-create-task-button-text"
-              onClick={markAllNotificationsAsRead} 
-              disabled={unreadNotificationCount === 0}
-              style={{ padding: isMobile ? '6px 8px' : '8px 12px' }}
-            >
-              {isMobile ? 'Mark All' : 'Mark all as read'}
-            </button>
-          </div>
-        </div>
-        <div style={{ 
-          maxHeight: isMobile ? 'calc(80vh - 120px)' : 'calc(70vh - 120px)', 
-          overflow: 'auto', 
-          padding: isMobile ? '8px' : '12px' 
-        }}>
-          {notifications.length > 0 ? (
-            <div className="user-create-task-flex user-create-task-flex-column user-create-task-gap-1">
-              {notifications.map((notification) => (
-                <div 
-                  key={notification._id} 
-                  className="user-create-task-paper"
-                  style={{ 
-                    backgroundColor: notification.isRead ? '#fafafa' : '#f5f5f5',
-                    padding: isMobile ? '12px' : '16px'
-                  }}
-                >
-                  <div className="user-create-task-paper-content">
-                    <div className="user-create-task-flex user-create-task-flex-column user-create-task-gap-1">
-                      <div style={{ fontWeight: 600, fontSize: isMobile ? '14px' : '16px' }}>
-                        {notification.title}
-                      </div>
-                      <div style={{ fontSize: isMobile ? '13px' : '14px' }}>
-                        {notification.message}
-                      </div>
-                      <div className="user-create-task-flex user-create-task-justify-between user-create-task-align-center">
-                        <div style={{ fontSize: isMobile ? '11px' : '12px', color: '#666' }}>
-                          {new Date(notification.createdAt).toLocaleDateString()}
-                        </div>
-                        {!notification.isRead && (
-                          <button 
-                            className="user-create-task-button user-create-task-button-text"
-                            onClick={() => markNotificationAsRead(notification._id)}
-                            style={{ padding: isMobile ? '4px 6px' : '6px 8px' }}
-                          >
-                            {isMobile ? 'Read' : 'Mark read'}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ textAlign: 'center', padding: isMobile ? '24px' : '32px' }}>
-              <FiBell size={isMobile ? 24 : 32} color="#666" />
-              <div style={{ marginTop: isMobile ? '8px' : '12px', color: '#666', fontSize: isMobile ? '14px' : '16px' }}>
-                No notifications
-              </div>
-            </div>
-          )}
-        </div>
+  // const renderNotificationsPanel = () => (
+  //   <div className="user-create-task-dialog-overlay" style={{ display: notificationsOpen ? 'flex' : 'none' }}>
+  //     <div className={`user-create-task-dialog ${isMobile ? 'mobile-dialog' : ''}`} style={{ 
+  //       width: isMobile ? '90%' : isTablet ? '400px' : '400px',
+  //       maxHeight: isMobile ? '80vh' : '70vh'
+  //     }}>
+  //       {/* <div style={{ 
+  //         padding: isMobile ? '12px 16px' : '16px 20px', 
+  //         borderBottom: '1px solid #e0e0e0' 
+  //       }}>
+  //         <div className="user-create-task-flex user-create-task-justify-between user-create-task-align-center">
+  //           <div style={{ fontWeight: 600, fontSize: isMobile ? '16px' : '18px' }}>Notifications</div>
+  //           <button 
+  //             className="user-create-task-button user-create-task-button-text"
+  //             onClick={markAllNotificationsAsRead} 
+  //             disabled={unreadNotificationCount === 0}
+  //             style={{ padding: isMobile ? '6px 8px' : '8px 12px' }}
+  //           >
+  //             {isMobile ? 'Mark All' : 'Mark all as read'}
+  //           </button>
+  //         </div>
+  //       </div> */}
+  //       <div style={{ 
+  //         maxHeight: isMobile ? 'calc(80vh - 120px)' : 'calc(70vh - 120px)', 
+  //         overflow: 'auto', 
+  //         padding: isMobile ? '8px' : '12px' 
+  //       }}>
+  //         {notifications.length > 0 ? (
+  //           <div className="user-create-task-flex user-create-task-flex-column user-create-task-gap-1">
+  //             {notifications.map((notification) => (
+  //               <div 
+  //                 key={notification._id} 
+  //                 className="user-create-task-paper"
+  //                 style={{ 
+  //                   backgroundColor: notification.isRead ? '#fafafa' : '#f5f5f5',
+  //                   padding: isMobile ? '12px' : '16px'
+  //                 }}
+  //               >
+  //                 <div className="user-create-task-paper-content">
+  //                   <div className="user-create-task-flex user-create-task-flex-column user-create-task-gap-1">
+  //                     <div style={{ fontWeight: 600, fontSize: isMobile ? '14px' : '16px' }}>
+  //                       {notification.title}
+  //                     </div>
+  //                     <div style={{ fontSize: isMobile ? '13px' : '14px' }}>
+  //                       {notification.message}
+  //                     </div>
+  //                     <div className="user-create-task-flex user-create-task-justify-between user-create-task-align-center">
+  //                       <div style={{ fontSize: isMobile ? '11px' : '12px', color: '#666' }}>
+  //                         {new Date(notification.createdAt).toLocaleDateString()}
+  //                       </div>
+  //                       {/* {!notification.isRead && (
+  //                         <button 
+  //                           className="user-create-task-button user-create-task-button-text"
+  //                           onClick={() => markNotificationAsRead(notification._id)}
+  //                           style={{ padding: isMobile ? '4px 6px' : '6px 8px' }}
+  //                         >
+  //                           {isMobile ? 'Read' : 'Mark read'}
+  //                         </button>
+  //                       )} */}
+  //                     </div>
+  //                   </div>
+  //                 </div>
+  //               </div>
+  //             ))}
+  //           </div>
+  //         ) : (
+  //           <div style={{ textAlign: 'center', padding: isMobile ? '24px' : '32px' }}>
+  //             <FiBell size={isMobile ? 24 : 32} color="#666" />
+  //             <div style={{ marginTop: isMobile ? '8px' : '12px', color: '#666', fontSize: isMobile ? '14px' : '16px' }}>
+  //               No notifications
+  //             </div>
+  //           </div>
+  //         )}
+  //       </div>
         
-        <div className="user-create-task-dialog-actions">
-          <button
-            className="user-create-task-button user-create-task-button-outlined"
-            onClick={() => setNotificationsOpen(false)}
-            style={{ padding: isMobile ? '8px 12px' : '10px 16px' }}
-          >
-            Close
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+  //       <div className="user-create-task-dialog-actions">
+  //         <button
+  //           className="user-create-task-button user-create-task-button-outlined"
+  //           onClick={() => setNotificationsOpen(false)}
+  //           style={{ padding: isMobile ? '8px 12px' : '10px 16px' }}
+  //         >
+  //           Close
+  //         </button>
+  //       </div>
+  //     </div>
+  //   </div>
+  // );
 
   // Render activity logs dialog
   const renderActivityLogsDialog = () => (
@@ -2377,9 +2344,9 @@ const formatDateForBackend = (dateTimeString) => {
     if (!authError && userId) {
       fetchMyTasks();
       fetchOverdueTasks();
-      fetchNotifications();
+      
     }
-  }, [authError, userId, fetchMyTasks, fetchNotifications, fetchOverdueTasks]);
+  }, [authError, userId, fetchMyTasks, fetchOverdueTasks]);
 
   // Auth error screen
   if (authError) {
@@ -2471,7 +2438,7 @@ const formatDateForBackend = (dateTimeString) => {
 
           {/* RIGHT: Notification + Create Task */}
           <div className={`user-create-task-header-actions ${isMobile ? 'user-create-task-flex-row user-create-task-justify-between' : ''}`}>
-            <button
+            {/* <button
               className="user-create-task-action-button"
               onClick={() => setNotificationsOpen(true)}
               style={{ position: 'relative' }}
@@ -2482,7 +2449,7 @@ const formatDateForBackend = (dateTimeString) => {
                   {unreadNotificationCount}
                 </span>
               )}
-            </button>
+            </button> */}
 
             <button
               className="user-create-task-button user-create-task-button-contained"
@@ -2658,7 +2625,7 @@ const formatDateForBackend = (dateTimeString) => {
       {/* DIALOGS */}
       {renderCreateTaskDialog()}
       {renderCalendarFilterDialog()}
-      {renderNotificationsPanel()}
+     
       {renderRemarksDialog()}
       {renderActivityLogsDialog()}
       {renderImageZoomModal()}

@@ -7,4 +7,5 @@ export const SOCKET_URL = 'https://backendcds.ciisnetwork.in'
 // export const API_URL = 'https://j449fxt7-3000.inc1.devtunnels.ms/api'
 // export const API_URL_IMG = 'https://j449fxt7-3000.inc1.devtunnels.ms/'
 
+
 export default API_URL;
