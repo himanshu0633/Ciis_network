@@ -1,4 +1,4 @@
-/* employee-attendance.css - FINAL FIXED VERSION */
+/* employee-attendance.css - WITH EmppAttendence PREFIX */
 
 /* ===== VARIABLES & RESET ===== */
 :root {
@@ -51,7 +51,7 @@
 }
 
 /* ===== BASE STYLES ===== */
-.employee-attendance {
+.EmppAttendence-employee-attendance {
   min-height: 100vh;
   background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
   padding: 24px;
@@ -60,7 +60,7 @@
 }
 
 /* ===== LOADING STATE ===== */
-.loading-container {
+.EmppAttendence-loading-container {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -74,7 +74,7 @@
   box-shadow: var(--shadow-lg);
 }
 
-.loading-progress {
+.EmppAttendence-loading-progress {
   width: 300px;
   height: 4px;
   background: var(--gray-200);
@@ -83,22 +83,22 @@
   position: relative;
 }
 
-.loading-progress-bar {
+.EmppAttendence-loading-progress-bar {
   position: absolute;
   height: 100%;
   width: 60%;
   background: linear-gradient(90deg, var(--primary), var(--secondary));
   border-radius: var(--radius-full);
-  animation: loading 1.5s infinite ease-in-out;
+  animation: EmppAttendence-loading 1.5s infinite ease-in-out;
 }
 
-@keyframes loading {
+@keyframes EmppAttendence-loading {
   0% { transform: translateX(-100%); }
   50% { transform: translateX(100%); }
   100% { transform: translateX(200%); }
 }
 
-.loading-role {
+.EmppAttendence-loading-role {
   font-size: 14px;
   color: var(--gray-500);
   background: var(--gray-100);
@@ -107,7 +107,7 @@
 }
 
 /* ===== HEADER SECTION ===== */
-.attendance-header {
+.EmppAttendence-attendance-header {
   background: white;
   border-radius: var(--radius-2xl);
   padding: 28px 32px;
@@ -123,7 +123,7 @@
   overflow: visible;
 }
 
-.attendance-header::before {
+.EmppAttendence-attendance-header::before {
   content: '';
   position: absolute;
   top: 0;
@@ -133,7 +133,7 @@
   background: linear-gradient(90deg, var(--primary), var(--secondary));
 }
 
-.attendance-title {
+.EmppAttendence-attendance-title {
   font-size: 32px;
   font-weight: 700;
   color: var(--gray-900);
@@ -141,7 +141,7 @@
   letter-spacing: -0.5px;
 }
 
-.attendance-subtitle {
+.EmppAttendence-attendance-subtitle {
   font-size: 16px;
   color: var(--gray-600);
   margin: 0 0 12px 0;
@@ -152,7 +152,7 @@
 }
 
 /* ===== ROLE BADGES ===== */
-.attendance-role-badge {
+.EmppAttendence-role-badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -165,31 +165,31 @@
   border: 1px solid var(--gray-300);
 }
 
-.attendance-role-badge-owner {
+.EmppAttendence-role-badge-owner {
   background: #ffd700;
   color: #000;
   border-color: #daa520;
 }
 
-.attendance-role-badge-admin {
+.EmppAttendence-role-badge-admin {
   background: var(--danger);
   color: white;
   border-color: var(--danger-dark);
 }
 
-.attendance-role-badge-hr {
+.EmppAttendence-role-badge-hr {
   background: var(--success);
   color: white;
   border-color: var(--success-dark);
 }
 
-.attendance-role-badge-manager {
+.EmppAttendence-role-badge-manager {
   background: var(--info);
   color: white;
   border-color: #0a5e7a;
 }
 
-.view-only-badge {
+.EmppAttendence-view-only-badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -202,7 +202,7 @@
 }
 
 /* ===== TIMING RULES ===== */
-.timing-rules {
+.EmppAttendence-timing-rules {
   display: flex;
   flex-wrap: wrap;
   gap: 15px;
@@ -213,7 +213,7 @@
   margin-bottom: 16px;
 }
 
-.rule-item {
+.EmppAttendence-rule-item {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -225,12 +225,12 @@
   box-shadow: var(--shadow-sm);
 }
 
-.rule-item svg {
+.EmppAttendence-rule-item svg {
   color: var(--primary);
 }
 
 /* ===== WARNING BANNERS ===== */
-.permission-warning-banner {
+.EmppAttendence-permission-warning-banner {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -243,7 +243,7 @@
   margin-bottom: 16px;
 }
 
-.department-info-banner {
+.EmppAttendence-department-info-banner {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -257,7 +257,7 @@
 }
 
 /* ===== BULK ACTIONS ===== */
-.bulk-actions-bar {
+.EmppAttendence-bulk-actions-bar {
   background: linear-gradient(135deg, var(--primary), var(--secondary));
   border-radius: var(--radius-lg);
   padding: 16px 20px;
@@ -269,10 +269,10 @@
   margin: 16px 0;
   color: white;
   box-shadow: var(--shadow-lg);
-  animation: slideDown 0.3s ease;
+  animation: EmppAttendence-slideDown 0.3s ease;
 }
 
-@keyframes slideDown {
+@keyframes EmppAttendence-slideDown {
   from {
     opacity: 0;
     transform: translateY(-10px);
@@ -283,7 +283,7 @@
   }
 }
 
-.bulk-selection-count {
+.EmppAttendence-bulk-selection-count {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -294,32 +294,32 @@
   border-radius: var(--radius-full);
 }
 
-.bulk-action-buttons {
+.EmppAttendence-bulk-action-buttons {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-.bulk-action-buttons .btn {
+.EmppAttendence-bulk-action-buttons .EmppAttendence-btn {
   background: white;
   color: var(--primary);
   border: none;
 }
 
-.bulk-action-buttons .btn:hover {
+.EmppAttendence-bulk-action-buttons .EmppAttendence-btn:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
 }
 
 /* ===== HEADER ACTIONS ===== */
-.header-actions {
+.EmppAttendence-header-actions {
   display: flex;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
 }
 
-.date-chip {
+.EmppAttendence-date-chip {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -335,37 +335,37 @@
   box-shadow: var(--shadow-md);
 }
 
-.date-chip:hover:not(:disabled) {
+.EmppAttendence-date-chip:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
 }
 
-.date-chip:disabled {
+.EmppAttendence-date-chip:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
 }
 
 /* ===== EXPORT DROPDOWN ===== */
-.export-container {
+.EmppAttendence-export-container {
   position: relative;
 }
 
-.export-dropdown {
+.EmppAttendence-export-dropdown {
   position: absolute;
   top: calc(100% + 5px);
-  right: 0;
+  right: -160px;
   background: white;
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-xl);
   min-width: 220px;
   overflow: hidden;
   z-index: 100;
-  animation: slideDown 0.2s ease-out;
+  animation: EmppAttendence-slideDown 0.2s ease-out;
   border: 1px solid var(--gray-200);
 }
 
-.export-option {
+.EmppAttendence-export-option {
   width: 100%;
   padding: 14px 18px;
   border: none;
@@ -381,18 +381,18 @@
   border-bottom: 1px solid var(--gray-200);
 }
 
-.export-option:last-child {
+.EmppAttendence-export-option:last-child {
   border-bottom: none;
 }
 
-.export-option:hover {
+.EmppAttendence-export-option:hover {
   background: var(--gray-50);
   color: var(--primary);
   padding-left: 24px;
 }
 
 /* ===== FILTER SECTION ===== */
-.filter-section {
+.EmppAttendence-filter-section {
   background: white;
   border-radius: var(--radius-2xl);
   padding: 24px;
@@ -401,38 +401,38 @@
   border: 1px solid var(--gray-200);
 }
 
-.filter-header {
+.EmppAttendence-filter-header {
   display: flex;
   align-items: center;
   gap: 12px;
   margin-bottom: 20px;
 }
 
-.filter-header h3 {
+.EmppAttendence-filter-header h3 {
   font-size: 18px;
   font-weight: 600;
   color: var(--gray-800);
   margin: 0;
 }
 
-.filter-grid {
+.EmppAttendence-filter-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 20px;
   align-items: end;
 }
 
-.filter-group {
+.EmppAttendence-filter-group {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.filter-group.full-width {
+.EmppAttendence-filter-group.EmppAttendence-full-width {
   grid-column: 1 / -1;
 }
 
-.filter-label {
+.EmppAttendence-filter-label {
   font-size: 13px;
   font-weight: 600;
   color: var(--gray-600);
@@ -440,7 +440,7 @@
   letter-spacing: 0.3px;
 }
 
-.filter-input {
+.EmppAttendence-filter-input {
   width: 100%;
   padding: 12px 16px;
   border: 2px solid var(--gray-200);
@@ -451,37 +451,37 @@
   color: var(--gray-700);
 }
 
-.filter-input:focus {
+.EmppAttendence-filter-input:focus {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 4px rgba(67, 97, 238, 0.1);
 }
 
-.filter-actions {
+.EmppAttendence-filter-actions {
   display: flex;
   gap: 10px;
   align-items: center;
 }
 
 /* ===== DATE RANGE FILTER ===== */
-.date-range-filter {
+.EmppAttendence-date-range-filter {
   position: relative;
   width: 100%;
 }
 
-.date-range-inputs {
+.EmppAttendence-date-range-inputs {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
   align-items: center;
 }
 
-.date-input-group {
+.EmppAttendence-date-input-group {
   flex: 1;
   min-width: 150px;
 }
 
-.presets-dropdown {
+.EmppAttendence-presets-dropdown {
   position: absolute;
   top: calc(100% + 5px);
   right: 0;
@@ -493,10 +493,10 @@
   overflow-y: auto;
   z-index: 100;
   border: 1px solid var(--gray-200);
-  animation: slideDown 0.2s ease-out;
+  animation: EmppAttendence-slideDown 0.2s ease-out;
 }
 
-.preset-option {
+.EmppAttendence-preset-option {
   width: 100%;
   padding: 12px 16px;
   border: none;
@@ -509,24 +509,24 @@
   border-bottom: 1px solid var(--gray-200);
 }
 
-.preset-option:last-child {
+.EmppAttendence-preset-option:last-child {
   border-bottom: none;
 }
 
-.preset-option:hover {
+.EmppAttendence-preset-option:hover {
   background: var(--gray-50);
   color: var(--primary);
   padding-left: 24px;
 }
 
-.btn-sm {
+.EmppAttendence-btn-sm {
   padding: 10px 16px;
   font-size: 13px;
   white-space: nowrap;
 }
 
 /* ===== DATE RANGE INDICATOR ===== */
-.date-range-indicator {
+.EmppAttendence-date-range-indicator {
   background: linear-gradient(135deg, var(--primary), var(--secondary));
   border-radius: var(--radius-full);
   padding: 8px 18px;
@@ -540,7 +540,7 @@
   margin-top: 12px;
 }
 
-.btn-icon-small {
+.EmppAttendence-btn-icon-small {
   background: rgba(255, 255, 255, 0.2);
   border: none;
   border-radius: 50%;
@@ -554,20 +554,20 @@
   transition: var(--transition);
 }
 
-.btn-icon-small:hover {
+.EmppAttendence-btn-icon-small:hover {
   background: rgba(255, 255, 255, 0.3);
   transform: rotate(90deg);
 }
 
 /* ===== STATS CARDS ===== */
-.stats-container {
+.EmppAttendence-stats-container {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 20px;
   margin-bottom: 24px;
 }
 
-.stat-card {
+.EmppAttendence-stat-card {
   background: white;
   border-radius: var(--radius-xl);
   padding: 20px;
@@ -579,12 +579,12 @@
   cursor: pointer;
 }
 
-.stat-card:hover {
+.EmppAttendence-stat-card:hover {
   transform: translateY(-4px);
   box-shadow: var(--shadow-xl);
 }
 
-.stat-card::before {
+.EmppAttendence-stat-card::before {
   content: '';
   position: absolute;
   top: 0;
@@ -593,42 +593,42 @@
   height: 4px;
 }
 
-.stat-card-primary::before {
+.EmppAttendence-stat-card-primary::before {
   background: linear-gradient(90deg, var(--primary), var(--secondary));
 }
 
-.stat-card-success::before {
+.EmppAttendence-stat-card-success::before {
   background: linear-gradient(90deg, var(--success), #0fba8a);
 }
 
-.stat-card-warning::before {
+.EmppAttendence-stat-card-warning::before {
   background: linear-gradient(90deg, var(--warning), #ff9f1c);
 }
 
-.stat-card-info::before {
+.EmppAttendence-stat-card-info::before {
   background: linear-gradient(90deg, var(--info), #149eca);
 }
 
-.stat-card-error::before {
+.EmppAttendence-stat-card-error::before {
   background: linear-gradient(90deg, var(--danger), #ff5a7c);
 }
 
-.stat-card-secondary::before {
+.EmppAttendence-stat-card-secondary::before {
   background: linear-gradient(90deg, var(--gray-600), var(--gray-500));
 }
 
-.stat-card-active {
+.EmppAttendence-stat-card-active {
   border: 2px solid var(--primary);
   transform: scale(1.02);
 }
 
-.stat-content {
+.EmppAttendence-stat-content {
   display: flex;
   align-items: center;
   gap: 15px;
 }
 
-.stat-icon {
+.EmppAttendence-stat-icon {
   width: 56px;
   height: 56px;
   border-radius: var(--radius-lg);
@@ -639,41 +639,41 @@
   transition: var(--transition);
 }
 
-.stat-icon-primary {
+.EmppAttendence-stat-icon-primary {
   background: rgba(67, 97, 238, 0.1);
   color: var(--primary);
 }
 
-.stat-icon-success {
+.EmppAttendence-stat-icon-success {
   background: rgba(6, 214, 160, 0.1);
   color: var(--success);
 }
 
-.stat-icon-warning {
+.EmppAttendence-stat-icon-warning {
   background: rgba(255, 183, 3, 0.1);
   color: var(--warning);
 }
 
-.stat-icon-info {
+.EmppAttendence-stat-icon-info {
   background: rgba(17, 138, 178, 0.1);
   color: var(--info);
 }
 
-.stat-icon-error {
+.EmppAttendence-stat-icon-error {
   background: rgba(239, 71, 111, 0.1);
   color: var(--danger);
 }
 
-.stat-icon-secondary {
+.EmppAttendence-stat-icon-secondary {
   background: rgba(108, 117, 125, 0.1);
   color: var(--gray-600);
 }
 
-.stat-info {
+.EmppAttendence-stat-info {
   flex: 1;
 }
 
-.stat-value {
+.EmppAttendence-stat-value {
   font-size: 32px;
   font-weight: 700;
   color: var(--gray-900);
@@ -681,7 +681,7 @@
   margin-bottom: 4px;
 }
 
-.stat-label {
+.EmppAttendence-stat-label {
   font-size: 14px;
   font-weight: 600;
   color: var(--gray-600);
@@ -690,23 +690,23 @@
   margin-bottom: 2px;
 }
 
-.stat-description {
+.EmppAttendence-stat-description {
   font-size: 11px;
   color: var(--gray-500);
 }
 
 /* ===== DATE RANGE SUMMARY ===== */
-.date-range-summary {
+.EmppAttendence-date-range-summary {
   margin-bottom: 24px;
 }
 
-.summary-cards {
+.EmppAttendence-summary-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 20px;
 }
 
-.summary-card {
+.EmppAttendence-summary-card {
   background: white;
   border-radius: var(--radius-xl);
   padding: 20px;
@@ -718,13 +718,13 @@
   transition: var(--transition);
 }
 
-.summary-card:hover {
+.EmppAttendence-summary-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-xl);
   border-color: var(--primary);
 }
 
-.summary-card-icon {
+.EmppAttendence-summary-card-icon {
   font-size: 32px;
   width: 56px;
   height: 56px;
@@ -737,11 +737,11 @@
   box-shadow: var(--shadow-md);
 }
 
-.summary-card-content {
+.EmppAttendence-summary-card-content {
   flex: 1;
 }
 
-.summary-card-label {
+.EmppAttendence-summary-card-label {
   font-size: 13px;
   font-weight: 600;
   color: var(--gray-500);
@@ -751,14 +751,14 @@
   display: block;
 }
 
-.summary-card-value {
+.EmppAttendence-summary-card-value {
   font-size: 22px;
   font-weight: 700;
   color: var(--gray-800);
 }
 
 /* ===== TABLE SECTION ===== */
-.attendance-table-container {
+.EmppAttendence-attendance-table-container {
   background: white;
   border-radius: var(--radius-2xl);
   padding: 24px;
@@ -769,7 +769,7 @@
   width: 100%;
 }
 
-.table-header {
+.EmppAttendence-table-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -778,14 +778,14 @@
   gap: 15px;
 }
 
-.table-title {
+.EmppAttendence-table-title {
   font-size: 20px;
   font-weight: 700;
   color: var(--gray-800);
   margin: 0 0 8px 0;
 }
 
-.table-count {
+.EmppAttendence-table-count {
   font-size: 14px;
   color: var(--gray-600);
   display: flex;
@@ -794,7 +794,7 @@
   gap: 10px;
 }
 
-.bulk-select-all {
+.EmppAttendence-bulk-select-all {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -804,20 +804,20 @@
   border: 1px solid var(--gray-200);
 }
 
-.bulk-select-all input[type="checkbox"] {
+.EmppAttendence-bulk-select-all input[type="checkbox"] {
   width: 18px;
   height: 18px;
   cursor: pointer;
 }
 
 /* ===== TABLE STYLES ===== */
-.attendance-table {
+.EmppAttendence-attendance-table {
   width: 100%;
   border-collapse: collapse;
   min-width: 1200px;
 }
 
-.attendance-table thead th {
+.EmppAttendence-attendance-table thead th {
   background: linear-gradient(135deg, var(--primary), var(--secondary));
   color: white;
   padding: 16px 12px;
@@ -829,25 +829,25 @@
   text-align: left;
 }
 
-.attendance-table thead th:first-child {
+.EmppAttendence-attendance-table thead th:first-child {
   border-top-left-radius: var(--radius-lg);
 }
 
-.attendance-table thead th:last-child {
+.EmppAttendence-attendance-table thead th:last-child {
   border-top-right-radius: var(--radius-lg);
 }
 
-.attendance-table tbody tr {
+.EmppAttendence-attendance-table tbody tr {
   transition: var(--transition);
   cursor: pointer;
   border-bottom: 1px solid var(--gray-200);
 }
 
-.attendance-table tbody tr:hover {
+.EmppAttendence-attendance-table tbody tr:hover {
   background: var(--gray-50);
 }
 
-.attendance-table td {
+.EmppAttendence-attendance-table td {
   padding: 16px 12px;
   font-size: 14px;
   color: var(--gray-700);
@@ -856,30 +856,30 @@
 }
 
 /* ===== ROW STATUS CLASSES - Darker colors for better visibility ===== */
-.row-present {
+.EmppAttendence-row-present {
   background-color: rgba(6, 214, 160, 0.15);
 }
 
-.row-late {
+.EmppAttendence-row-late {
   background-color: rgba(255, 183, 3, 0.15);
 }
 
-.row-halfday {
+.EmppAttendence-row-halfday {
   background-color: rgba(17, 138, 178, 0.15);
 }
 
-.row-absent {
+.EmppAttendence-row-absent {
   background-color: rgba(239, 71, 111, 0.15);
 }
 
 /* ===== DEPARTMENT HEADER ===== */
-.department-header td {
+.EmppAttendence-department-header td {
   background: linear-gradient(135deg, #f8f9fa, #e9ecef);
   padding: 12px 16px;
   border-bottom: 2px solid var(--gray-300);
 }
 
-.department-title {
+.EmppAttendence-department-title {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -887,20 +887,20 @@
   font-weight: 600;
 }
 
-.department-count {
+.EmppAttendence-department-count {
   color: var(--gray-500);
   font-size: 13px;
   font-weight: normal;
 }
 
 /* ===== DATE HEADER ===== */
-.date-header td {
+.EmppAttendence-date-header td {
   background: linear-gradient(135deg, #fff3e0, #ffe0b2);
   padding: 12px 16px;
   border-bottom: 2px solid #ffb74d;
 }
 
-.date-title {
+.EmppAttendence-date-title {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -908,13 +908,13 @@
   font-weight: 600;
 }
 
-.date-count {
+.EmppAttendence-date-count {
   color: #f57c00;
   font-size: 13px;
   font-weight: normal;
 }
 
-.date-badge {
+.EmppAttendence-date-badge {
   background: linear-gradient(135deg, var(--primary), var(--secondary));
   color: white;
   padding: 4px 8px;
@@ -926,14 +926,14 @@
 }
 
 /* ===== EMPLOYEE INFO ===== */
-.employee-info {
+.EmppAttendence-employee-info {
   display: flex;
   align-items: center;
   gap: 12px;
   min-width: 200px;
 }
 
-.employee-avatar {
+.EmppAttendence-employee-avatar {
   width: 40px;
   height: 40px;
   border-radius: var(--radius-full);
@@ -948,24 +948,24 @@
   flex-shrink: 0;
 }
 
-.employee-avatar.large {
+.EmppAttendence-employee-avatar.large {
   width: 60px;
   height: 60px;
   font-size: 20px;
 }
 
-.employee-avatar.small {
+.EmppAttendence-employee-avatar.small {
   width: 30px;
   height: 30px;
   font-size: 12px;
 }
 
-.employee-details {
+.EmppAttendence-employee-details {
   flex: 1;
   min-width: 0;
 }
 
-.employee-name {
+.EmppAttendence-employee-name {
   font-weight: 600;
   color: var(--gray-800);
   margin-bottom: 2px;
@@ -974,7 +974,7 @@
   text-overflow: ellipsis;
 }
 
-.employee-email {
+.EmppAttendence-employee-email {
   font-size: 12px;
   color: var(--gray-500);
   white-space: nowrap;
@@ -983,7 +983,7 @@
 }
 
 /* ===== CHIPS ===== */
-.department-chip {
+.EmppAttendence-department-chip {
   display: inline-block;
   padding: 4px 10px;
   background: var(--gray-100);
@@ -995,7 +995,7 @@
   white-space: nowrap;
 }
 
-.type-chip {
+.EmppAttendence-type-chip {
   display: inline-block;
   padding: 4px 10px;
   border-radius: var(--radius-full);
@@ -1006,27 +1006,27 @@
   white-space: nowrap;
 }
 
-.type-full-time {
+.EmppAttendence-type-full-time {
   background: linear-gradient(135deg, var(--primary), var(--secondary));
   color: white;
 }
 
-.type-part-time {
+.EmppAttendence-type-part-time {
   background: linear-gradient(135deg, var(--warning), #ff9f1c);
   color: white;
 }
 
-.type-contract {
+.EmppAttendence-type-contract {
   background: linear-gradient(135deg, var(--info), #149eca);
   color: white;
 }
 
-.type-intern {
+.EmppAttendence-type-intern {
   background: linear-gradient(135deg, var(--success), #0fba8a);
   color: white;
 }
 
-.time-chip {
+.EmppAttendence-time-chip {
   display: inline-block;
   padding: 4px 10px;
   border-radius: var(--radius-full);
@@ -1035,23 +1035,23 @@
   white-space: nowrap;
 }
 
-.time-full {
+.EmppAttendence-time-full {
   background: var(--success);
   color: white;
 }
 
-.time-half {
+.EmppAttendence-time-half {
   background: var(--warning);
   color: white;
 }
 
-.time-low {
+.EmppAttendence-time-low {
   background: var(--danger);
   color: white;
 }
 
 /* Status Chips - Darker colors for better visibility */
-.status-chip {
+.EmppAttendence-status-chip {
   display: inline-block;
   padding: 6px 12px;
   border-radius: var(--radius-full);
@@ -1063,37 +1063,37 @@
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-.status-present {
+.EmppAttendence-status-present {
   background: var(--success);
   color: black;
   font-weight: 700;
 }
 
-.status-late {
+.EmppAttendence-status-late {
   background: var(--warning);
   color: white;
   font-weight: 700;
 }
 
-.status-halfday {
+.EmppAttendence-status-halfday {
   background: var(--info);
   color: white;
   font-weight: 700;
 }
 
-.status-absent {
+.EmppAttendence-status-absent {
   background: var(--danger);
   color: #000;
   font-weight: 700;
 }
 
-.status-explanation {
+.EmppAttendence-status-explanation {
   font-size: 11px;
   color: var(--gray-500);
   margin-top: 2px;
 }
 
-.login-time-info {
+.EmppAttendence-login-time-info {
   font-size: 12px;
   color: var(--gray-600);
   background: var(--gray-100);
@@ -1103,7 +1103,7 @@
   white-space: nowrap;
 }
 
-.late-chip {
+.EmppAttendence-late-chip {
   display: inline-block;
   padding: 4px 8px;
   background: var(--gray-100);
@@ -1115,13 +1115,13 @@
 }
 
 /* ===== ACTION BUTTONS ===== */
-.action-buttons {
+.EmppAttendence-action-buttons {
   display: flex;
   gap: 8px;
   white-space: nowrap;
 }
 
-.btn-icon {
+.EmppAttendence-btn-icon {
   width: 36px;
   height: 36px;
   border-radius: var(--radius-full);
@@ -1136,19 +1136,19 @@
   border: 1px solid var(--gray-300);
 }
 
-.btn-icon:hover {
+.EmppAttendence-btn-icon:hover {
   background: var(--primary);
   color: white;
   border-color: var(--primary);
   transform: scale(1.1);
 }
 
-.edit-btn {
+.EmppAttendence-edit-btn {
   color: var(--primary);
 }
 
 /* ===== SUMMARY SECTION ===== */
-.summary-section {
+.EmppAttendence-summary-section {
   background: white;
   border-radius: var(--radius-2xl);
   padding: 24px;
@@ -1156,20 +1156,20 @@
   border: 1px solid var(--gray-200);
 }
 
-.summary-section h4 {
+.EmppAttendence-summary-section h4 {
   font-size: 18px;
   font-weight: 600;
   color: var(--gray-800);
   margin: 0 0 20px 0;
 }
 
-.summary-grid {
+.EmppAttendence-summary-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 20px;
 }
 
-.summary-item {
+.EmppAttendence-summary-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1179,19 +1179,19 @@
   border: 1px solid var(--gray-200);
 }
 
-.summary-label {
+.EmppAttendence-summary-label {
   font-size: 14px;
   font-weight: 600;
   color: var(--gray-600);
 }
 
-.summary-value {
+.EmppAttendence-summary-value {
   font-size: 20px;
   font-weight: 700;
   color: var(--primary);
 }
 
-.range-summary-details {
+.EmppAttendence-range-summary-details {
   display: flex;
   flex-wrap: wrap;
   gap: 24px;
@@ -1202,7 +1202,7 @@
   color: white;
 }
 
-.range-summary-details p {
+.EmppAttendence-range-summary-details p {
   margin: 0;
   font-size: 14px;
   display: flex;
@@ -1210,13 +1210,13 @@
   gap: 8px;
 }
 
-.range-summary-details strong {
+.EmppAttendence-range-summary-details strong {
   font-weight: 700;
   color: rgba(255, 255, 255, 0.9);
 }
 
 /* ===== BUTTONS ===== */
-.btn {
+.EmppAttendence-btn {
   padding: 12px 24px;
   border-radius: var(--radius-md);
   font-size: 14px;
@@ -1231,48 +1231,48 @@
   letter-spacing: 0.3px;
 }
 
-.btn-contained {
+.EmppAttendence-btn-contained {
   background: linear-gradient(135deg, var(--primary), var(--secondary));
   color: white;
   box-shadow: var(--shadow-md);
 }
 
-.btn-contained:hover:not(:disabled) {
+.EmppAttendence-btn-contained:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
 }
 
-.btn-outlined {
+.EmppAttendence-btn-outlined {
   background: white;
   color: var(--primary);
   border: 2px solid var(--primary);
 }
 
-.btn-outlined:hover:not(:disabled) {
+.EmppAttendence-btn-outlined:hover:not(:disabled) {
   background: var(--primary);
   color: white;
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
 }
 
-.btn-danger {
+.EmppAttendence-btn-danger {
   background: var(--danger);
   color: white;
 }
 
-.btn-danger:hover:not(:disabled) {
+.EmppAttendence-btn-danger:hover:not(:disabled) {
   background: var(--danger-dark);
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
 }
 
-.btn:disabled {
+.EmppAttendence-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
 /* ===== MODAL STYLES ===== */
-.modal-overlay {
+.EmppAttendence-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -1285,15 +1285,15 @@
   justify-content: center;
   z-index: 1000;
   padding: 20px;
-  animation: fadeIn 0.3s ease-out;
+  animation: EmppAttendence-fadeIn 0.3s ease-out;
 }
 
-@keyframes fadeIn {
+@keyframes EmppAttendence-fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
-.modal-content {
+.EmppAttendence-modal-content {
   background: white;
   border-radius: var(--radius-2xl);
   box-shadow: var(--shadow-xl);
@@ -1303,10 +1303,10 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: slideUp 0.3s ease-out;
+  animation: EmppAttendence-slideUp 0.3s ease-out;
 }
 
-@keyframes slideUp {
+@keyframes EmppAttendence-slideUp {
   from {
     opacity: 0;
     transform: translateY(20px);
@@ -1317,11 +1317,11 @@
   }
 }
 
-.quick-edit-modal {
+.EmppAttendence-quick-edit-modal {
   max-width: 450px;
 }
 
-.modal-header {
+.EmppAttendence-modal-header {
   padding: 24px 28px;
   border-bottom: 1px solid var(--gray-200);
   display: flex;
@@ -1330,14 +1330,14 @@
   background: linear-gradient(135deg, #f8f9fa, #f1f3f5);
 }
 
-.modal-header h3 {
+.EmppAttendence-modal-header h3 {
   font-size: 24px;
   font-weight: 700;
   color: var(--gray-800);
   margin: 0;
 }
 
-.modal-close {
+.EmppAttendence-modal-close {
   background: none;
   border: none;
   color: var(--gray-500);
@@ -1350,19 +1350,19 @@
   border-radius: 50%;
 }
 
-.modal-close:hover {
+.EmppAttendence-modal-close:hover {
   background: rgba(0, 0, 0, 0.05);
   color: var(--gray-900);
   transform: rotate(90deg);
 }
 
-.modal-body {
+.EmppAttendence-modal-body {
   padding: 28px;
   overflow-y: auto;
   flex: 1;
 }
 
-.modal-footer {
+.EmppAttendence-modal-footer {
   padding: 24px 28px;
   border-top: 1px solid var(--gray-200);
   display: flex;
@@ -1371,31 +1371,31 @@
   background: var(--gray-50);
 }
 
-.footer-left {
+.EmppAttendence-footer-left {
   flex: 1;
 }
 
-.footer-right {
+.EmppAttendence-footer-right {
   display: flex;
   gap: 12px;
 }
 
 /* ===== FORM STYLES ===== */
-.form-group {
+.EmppAttendence-form-group {
   margin-bottom: 20px;
 }
 
-.form-group.full-width {
+.EmppAttendence-form-group.EmppAttendence-full-width {
   grid-column: 1 / -1;
 }
 
-.form-grid {
+.EmppAttendence-form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 20px;
 }
 
-.form-group label {
+.EmppAttendence-form-group label {
   display: block;
   margin-bottom: 8px;
   font-size: 14px;
@@ -1403,7 +1403,7 @@
   color: var(--gray-700);
 }
 
-.form-input {
+.EmppAttendence-form-input {
   width: 100%;
   padding: 12px 16px;
   border: 2px solid var(--gray-200);
@@ -1413,24 +1413,24 @@
   background: white;
 }
 
-.form-input:focus {
+.EmppAttendence-form-input:focus {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 4px rgba(67, 97, 238, 0.1);
 }
 
-.form-input:disabled {
+.EmppAttendence-form-input:disabled {
   background: var(--gray-100);
   color: var(--gray-600);
   cursor: not-allowed;
 }
 
-textarea.form-input {
+textarea.EmppAttendence-form-input {
   resize: vertical;
   min-height: 80px;
 }
 
-.calculated-info {
+.EmppAttendence-calculated-info {
   display: flex;
   gap: 20px;
   padding: 16px;
@@ -1440,7 +1440,7 @@ textarea.form-input {
   margin-top: 20px;
 }
 
-.info-item {
+.EmppAttendence-info-item {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1449,7 +1449,7 @@ textarea.form-input {
 }
 
 /* ===== EMPLOYEE INFO SUMMARY ===== */
-.employee-info-summary {
+.EmppAttendence-employee-info-summary {
   display: flex;
   align-items: center;
   gap: 16px;
@@ -1460,14 +1460,14 @@ textarea.form-input {
   border: 1px solid var(--gray-200);
 }
 
-.text-muted {
+.EmppAttendence-text-muted {
   color: var(--gray-500);
   font-size: 13px;
   margin: 4px 0;
 }
 
 /* ===== SELECTED USER INFO ===== */
-.selected-user-info {
+.EmppAttendence-selected-user-info {
   margin-top: 12px;
   padding: 12px;
   background: var(--gray-50);
@@ -1475,13 +1475,13 @@ textarea.form-input {
   border: 1px solid var(--gray-200);
 }
 
-.user-display {
+.EmppAttendence-user-display {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.user-avatar-small {
+.EmppAttendence-user-avatar-small {
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -1494,23 +1494,23 @@ textarea.form-input {
   font-size: 14px;
 }
 
-.user-details {
+.EmppAttendence-user-details {
   display: flex;
   flex-direction: column;
 }
 
-.user-details strong {
+.EmppAttendence-user-details strong {
   font-size: 14px;
   color: var(--gray-800);
 }
 
-.user-details small {
+.EmppAttendence-user-details small {
   font-size: 12px;
   color: var(--gray-500);
 }
 
 /* ===== PERMISSION WARNING ===== */
-.permission-warning {
+.EmppAttendence-permission-warning {
   background: #fff3cd;
   border-left: 4px solid var(--warning);
   padding: 12px 16px;
@@ -1523,7 +1523,7 @@ textarea.form-input {
 }
 
 /* ===== CONFIRM DELETE ===== */
-.confirm-delete {
+.EmppAttendence-confirm-delete {
   text-align: center;
   padding: 24px;
   background: #fff5f5;
@@ -1532,24 +1532,24 @@ textarea.form-input {
   border: 1px solid #fecaca;
 }
 
-.confirm-delete h4 {
+.EmppAttendence-confirm-delete h4 {
   margin: 12px 0 8px;
   color: var(--danger);
 }
 
-.confirm-delete p {
+.EmppAttendence-confirm-delete p {
   color: var(--gray-600);
   margin-bottom: 20px;
 }
 
-.confirm-buttons {
+.EmppAttendence-confirm-buttons {
   display: flex;
   gap: 12px;
   justify-content: center;
 }
 
 /* ===== SELECTED COUNT ===== */
-.selected-count {
+.EmppAttendence-selected-count {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -1562,23 +1562,23 @@ textarea.form-input {
 }
 
 /* ===== STATUS SELECTOR ===== */
-.status-selector {
+.EmppAttendence-status-selector {
   margin-bottom: 20px;
 }
 
-.status-selector h4 {
+.EmppAttendence-status-selector h4 {
   margin: 0 0 12px 0;
   color: var(--gray-700);
   font-size: 14px;
 }
 
-.status-options {
+.EmppAttendence-status-options {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 10px;
 }
 
-.status-option {
+.EmppAttendence-status-option {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1592,38 +1592,38 @@ textarea.form-input {
   font-weight: 500;
 }
 
-.status-option:hover:not(:disabled) {
+.EmppAttendence-status-option:hover:not(:disabled) {
   background: var(--gray-50);
   border-color: var(--gray-400);
 }
 
-.status-option.selected {
+.EmppAttendence-status-option.EmppAttendence-selected {
   background: var(--primary);
   color: white;
   border-color: var(--primary);
 }
 
-.status-option.selected svg {
+.EmppAttendence-status-option.EmppAttendence-selected svg {
   color: white;
 }
 
-.status-option:disabled {
+.EmppAttendence-status-option:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
 /* ===== SELECTED EMPLOYEES LIST ===== */
-.selected-employees {
+.EmppAttendence-selected-employees {
   margin-top: 20px;
 }
 
-.selected-employees h4 {
+.EmppAttendence-selected-employees h4 {
   margin: 0 0 12px 0;
   color: var(--gray-700);
   font-size: 14px;
 }
 
-.employee-list {
+.EmppAttendence-employee-list {
   background: var(--gray-50);
   border-radius: var(--radius-lg);
   padding: 12px;
@@ -1631,7 +1631,7 @@ textarea.form-input {
   overflow-y: auto;
 }
 
-.employee-item {
+.EmppAttendence-employee-item {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -1639,11 +1639,11 @@ textarea.form-input {
   border-bottom: 1px solid var(--gray-200);
 }
 
-.employee-item:last-child {
+.EmppAttendence-employee-item:last-child {
   border-bottom: none;
 }
 
-.more-count {
+.EmppAttendence-more-count {
   padding: 8px;
   text-align: center;
   color: var(--gray-500);
@@ -1652,7 +1652,7 @@ textarea.form-input {
 }
 
 /* ===== EMPTY STATE ===== */
-.empty-state {
+.EmppAttendence-empty-state {
   text-align: center;
   padding: 60px 40px;
   background: var(--gray-50);
@@ -1660,7 +1660,7 @@ textarea.form-input {
   border: 2px dashed var(--gray-300);
 }
 
-.empty-state-icon {
+.EmppAttendence-empty-state-icon {
   font-size: 64px;
   color: var(--gray-400);
   margin-bottom: 24px;
@@ -1668,29 +1668,29 @@ textarea.form-input {
   justify-content: center;
 }
 
-.empty-state-title {
+.EmppAttendence-empty-state-title {
   font-size: 22px;
   font-weight: 700;
   color: var(--gray-700);
   margin: 0 0 12px 0;
 }
 
-.empty-state-text {
+.EmppAttendence-empty-state-text {
   font-size: 15px;
   color: var(--gray-500);
   margin: 0 0 24px 0;
 }
 
 /* ===== SNACKBAR ===== */
-.snackbar {
+.EmppAttendence-snackbar {
   position: fixed;
   bottom: 24px;
   right: 24px;
   z-index: 1200;
-  animation: slideInRight 0.3s ease-out;
+  animation: EmppAttendence-slideInRight 0.3s ease-out;
 }
 
-@keyframes slideInRight {
+@keyframes EmppAttendence-slideInRight {
   from {
     transform: translateX(100%);
     opacity: 0;
@@ -1701,7 +1701,7 @@ textarea.form-input {
   }
 }
 
-.snackbar-content {
+.EmppAttendence-snackbar-content {
   display: flex;
   align-items: center;
   gap: 16px;
@@ -1713,246 +1713,230 @@ textarea.form-input {
   border-left: 4px solid;
 }
 
-.snackbar-success {
+.EmppAttendence-snackbar-success {
   border-left-color: var(--success);
   background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
   color: var(--success-dark);
 }
 
-.snackbar-error {
+.EmppAttendence-snackbar-error {
   border-left-color: var(--danger);
   background: linear-gradient(135deg, #ffebee, #ffcdd2);
   color: var(--danger-dark);
 }
 
-.snackbar-info {
+.EmppAttendence-snackbar-info {
   border-left-color: var(--info);
   background: linear-gradient(135deg, #e1f5fe, #b3e5fc);
   color: var(--info);
 }
 
 /* ===== ANIMATIONS ===== */
-.spin {
-  animation: spin 1s linear infinite;
+.EmppAttendence-spin {
+  animation: EmppAttendence-spin 1s linear infinite;
 }
 
-@keyframes spin {
+@keyframes EmppAttendence-spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
 
 /* ===== SCROLLBAR STYLING ===== */
-.attendance-table-container::-webkit-scrollbar {
+.EmppAttendence-attendance-table-container::-webkit-scrollbar {
   height: 8px;
 }
 
-.attendance-table-container::-webkit-scrollbar-track {
+.EmppAttendence-attendance-table-container::-webkit-scrollbar-track {
   background: var(--gray-100);
   border-radius: var(--radius-full);
 }
 
-.attendance-table-container::-webkit-scrollbar-thumb {
+.EmppAttendence-attendance-table-container::-webkit-scrollbar-thumb {
   background: var(--gray-300);
   border-radius: var(--radius-full);
 }
 
-.attendance-table-container::-webkit-scrollbar-thumb:hover {
+.EmppAttendence-attendance-table-container::-webkit-scrollbar-thumb:hover {
   background: var(--gray-400);
 }
 
 /* ===== MOBILE OPTIMIZATION - FIXED ===== */
 @media screen and (max-width: 768px) {
   /* General Mobile Styles */
-  .employee-attendance {
+  .EmppAttendence-employee-attendance {
     padding: 12px;
   }
 
-  .attendance-header {
+  .EmppAttendence-attendance-header {
     padding: 20px;
     flex-direction: column;
     align-items: stretch;
   }
 
-  .attendance-title {
+  .EmppAttendence-attendance-title {
     font-size: 24px;
   }
 
-  .attendance-subtitle {
+  .EmppAttendence-attendance-subtitle {
     font-size: 14px;
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .timing-rules {
+  .EmppAttendence-timing-rules {
     flex-direction: column;
     gap: 8px;
     padding: 12px;
   }
 
-  .rule-item {
+  .EmppAttendence-rule-item {
     width: 100%;
     font-size: 12px;
   }
 
-  .header-actions {
+  .EmppAttendence-header-actions {
     width: 100%;
     justify-content: space-between;
   }
 
-  .date-chip {
+  .EmppAttendence-date-chip {
     padding: 8px 12px;
     font-size: 12px;
   }
 
-  .filter-section {
+  .EmppAttendence-filter-section {
     padding: 16px;
   }
 
-  .filter-grid {
+  .EmppAttendence-filter-grid {
     grid-template-columns: 1fr;
     gap: 12px;
   }
 
-  .date-range-inputs {
+  .EmppAttendence-date-range-inputs {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .date-input-group {
+  .EmppAttendence-date-input-group {
     width: 100%;
   }
 
-  .filter-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
+  .EmppAttendence-filter-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
 
-/* Full width remove karo */
-.filter-actions .btn {
-  width: auto;
-}
-
-/* Refresh ko right push karo */
-.filter-actions .btn:last-child {
-  margin-left: auto;
-}
+  .EmppAttendence-filter-actions .EmppAttendence-btn:last-child {
+    margin-left: auto;
+  }
 
   /* Hide Desktop Stats on Mobile */
-  .stats-container {
+  .EmppAttendence-stats-container {
     display: none;
   }
 
-  /* Mobile Stats Alternative */
-  .mobile-stats {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-    margin-bottom: 20px;
-  }
-
-  .summary-cards {
+  .EmppAttendence-summary-cards {
     grid-template-columns: 1fr;
   }
 
-  .summary-card {
+  .EmppAttendence-summary-card {
     padding: 16px;
   }
 
-  .attendance-table-container {
+  .EmppAttendence-attendance-table-container {
     padding: 12px;
     overflow-x: hidden;
   }
 
-  .table-header {
+  .EmppAttendence-table-header {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .table-title {
+  .EmppAttendence-table-title {
     font-size: 18px;
   }
 
-  .table-count {
+  .EmppAttendence-table-count {
     font-size: 12px;
     flex-direction: column;
     align-items: flex-start;
   }
 
   /* ===== FIXED MOBILE TABLE STYLES ===== */
-  /* Keep showing only Employee and Status as requested */
-  
-  .attendance-table {
+  .EmppAttendence-attendance-table {
     min-width: 100% !important;
     width: 100% !important;
     table-layout: fixed;
   }
 
   /* Hide all table headers by default */
-  .attendance-table thead th {
+  .EmppAttendence-attendance-table thead th {
     display: none;
   }
 
   /* Show only Employee and Status headers */
-  .attendance-table thead th.col-employee,
-  .attendance-table thead th.col-status {
+  .EmppAttendence-attendance-table thead th.EmppAttendence-col-employee,
+  .EmppAttendence-attendance-table thead th.EmppAttendence-col-status {
     display: table-cell !important;
   }
 
   /* Set header widths */
-  .attendance-table thead th.col-employee {
+  .EmppAttendence-attendance-table thead th.EmppAttendence-col-employee {
     width: 65%;
   }
   
-  .attendance-table thead th.col-status {
+  .EmppAttendence-attendance-table thead th.EmppAttendence-col-status {
     width: 35%;
     text-align: right;
   }
 
   /* Hide all table cells by default */
-  .attendance-table tbody td {
+  .EmppAttendence-attendance-table tbody td {
     display: none !important;
   }
 
   /* Show ONLY Employee column and Status column */
-  .attendance-table tbody td.col-employee,
-  .attendance-table tbody td.col-status {
+  .EmppAttendence-attendance-table tbody td.EmppAttendence-col-employee,
+  .EmppAttendence-attendance-table tbody td.EmppAttendence-col-status {
     display: table-cell !important;
     padding: 12px 8px;
     vertical-align: middle;
   }
 
-  /* Employee column styling - FIXED for proper display */
-  .attendance-table tbody td.col-employee {
+  /* Employee column styling */
+  .EmppAttendence-attendance-table tbody td.EmppAttendence-col-employee {
     width: 65%;
   }
 
   /* Status column styling */
-  .attendance-table tbody td.col-status {
+  .EmppAttendence-attendance-table tbody td.EmppAttendence-col-status {
     width: 35%;
     text-align: right;
   }
 
-  /* Employee info - FIXED to show properly */
-  .employee-info {
+  /* Employee info */
+  .EmppAttendence-employee-info {
     gap: 10px;
     min-width: 0;
     width: 100%;
   }
 
-  .employee-avatar {
+  .EmppAttendence-employee-avatar {
     width: 36px;
     height: 36px;
     font-size: 13px;
     flex-shrink: 0;
   }
 
-  .employee-details {
+  .EmppAttendence-employee-details {
     min-width: 0;
     width: auto;
   }
 
-  .employee-name {
+  .EmppAttendence-employee-name {
     font-size: 14px;
     font-weight: 600;
     white-space: normal;
@@ -1961,13 +1945,13 @@ textarea.form-input {
     margin-bottom: 2px;
   }
 
-  /* Hide email on mobile - keeps it clean */
-  .employee-email {
+  /* Hide email on mobile */
+  .EmppAttendence-employee-email {
     display: none !important;
   }
 
-  /* Status chip - FIXED to show properly */
-  .status-chip {
+  /* Status chip */
+  .EmppAttendence-status-chip {
     display: inline-block !important;
     font-size: 12px;
     font-weight: 700;
@@ -1978,126 +1962,126 @@ textarea.form-input {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   }
 
-  /* Status colors - darker for better visibility */
-  .status-present {
+  /* Status colors */
+  .EmppAttendence-status-present {
     background: var(--success);
     color: #000;
   }
   
-  .status-late {
+  .EmppAttendence-status-late {
     background: var(--warning);
     color: #000;
   }
   
-  .status-halfday {
+  .EmppAttendence-status-halfday {
     background: var(--info);
   }
   
-  .status-absent {
+  .EmppAttendence-status-absent {
     background: var(--danger);
     color: #000;
   }
 
   /* Hide all other elements */
-  .department-chip, 
-  .type-chip, 
-  .time-chip, 
-  .login-time-info,
-  .late-chip,
-  .action-buttons,
-  .btn-icon,
-  .col-department,
-  .col-type,
-  .col-date,
-  .col-checkin,
-  .col-checkout,
-  .col-hours,
-  .col-login,
-  .col-late,
-  .col-actions,
-  .date-badge,
-  .status-explanation {
+  .EmppAttendence-department-chip, 
+  .EmppAttendence-type-chip, 
+  .EmppAttendence-time-chip, 
+  .EmppAttendence-login-time-info,
+  .EmppAttendence-late-chip,
+  .EmppAttendence-action-buttons,
+  .EmppAttendence-btn-icon,
+  .EmppAttendence-col-department,
+  .EmppAttendence-col-type,
+  .EmppAttendence-col-date,
+  .EmppAttendence-col-checkin,
+  .EmppAttendence-col-checkout,
+  .EmppAttendence-col-hours,
+  .EmppAttendence-col-login,
+  .EmppAttendence-col-late,
+  .EmppAttendence-col-actions,
+  .EmppAttendence-date-badge,
+  .EmppAttendence-status-explanation {
     display: none !important;
   }
 
   /* Department header on mobile */
-  .department-header td {
+  .EmppAttendence-department-header td {
     padding: 10px 8px;
   }
 
-  .department-header td.col-employee,
-  .department-header td.col-status {
+  .EmppAttendence-department-header td.EmppAttendence-col-employee,
+  .EmppAttendence-department-header td.EmppAttendence-col-status {
     display: table-cell !important;
   }
 
-  .department-title {
+  .EmppAttendence-department-title {
     font-size: 14px;
   }
 
-  .department-count {
+  .EmppAttendence-department-count {
     font-size: 12px;
     margin-left: 5px;
   }
 
   /* Date header on mobile */
-  .date-header td {
+  .EmppAttendence-date-header td {
     padding: 10px 8px;
   }
 
-  .date-header td.col-employee,
-  .date-header td.col-status {
+  .EmppAttendence-date-header td.EmppAttendence-col-employee,
+  .EmppAttendence-date-header td.EmppAttendence-col-status {
     display: flex !important;
   }
 
-  .date-title {
+  .EmppAttendence-date-title {
     font-size: 14px;
   }
 
-  .date-count {
+  .EmppAttendence-date-count {
     font-size: 12px;
     margin-left: 5px;
   }
 
   /* Bulk edit mode on mobile */
-  .bulk-actions-bar {
+  .EmppAttendence-bulk-actions-bar {
     flex-direction: column;
     align-items: stretch;
     padding: 12px;
   }
 
-  .bulk-selection-count {
+  .EmppAttendence-bulk-selection-count {
     justify-content: center;
   }
 
-  .bulk-action-buttons {
+  .EmppAttendence-bulk-action-buttons {
     justify-content: center;
   }
 
-  .bulk-action-buttons .btn-sm {
+  .EmppAttendence-bulk-action-buttons .EmppAttendence-btn-sm {
     padding: 8px 12px;
     font-size: 11px;
   }
 
-  .bulk-select-all {
+  .EmppAttendence-bulk-select-all {
     width: 100%;
     justify-content: center;
   }
 
   /* Modal Mobile Styles */
-  .modal-overlay {
+  .EmppAttendence-modal-overlay {
     top: 36px !important;
     padding: 0;
     align-items: center;
   }
 
-  .modal-content {
+  .EmppAttendence-modal-content {
     max-width: 100%;
     max-height: 100vh;
     border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
-    animation: slideUpMobile 0.3s ease-out;
+    animation: EmppAttendence-slideUpMobile 0.3s ease-out;
   }
 
-  @keyframes slideUpMobile {
+  @keyframes EmppAttendence-slideUpMobile {
     from {
       transform: translateY(100%);
     }
@@ -2106,63 +2090,55 @@ textarea.form-input {
     }
   }
 
-  .modal-header {
+  .EmppAttendence-modal-header {
     padding: 20px;
     top: 50px;
   }
 
-  .modal-header h3 {
+  .EmppAttendence-modal-header h3 {
     font-size: 20px;
   }
 
-  .modal-body {
+  .EmppAttendence-modal-body {
     padding: 20px;
     height: 58vh;
   }
 
-  .modal-footer {
+  .EmppAttendence-modal-footer {
     padding: 20px;
     flex-direction: column;
     gap: 12px;
   }
 
-   /* .modal-footer {
-    flex-direction: row;   
-  }
-
-  .btn-contained {
-    margin-left: auto;
-  } */
-
-  .footer-left,
-  .footer-right {
+  .EmppAttendence-footer-left,
+  .EmppAttendence-footer-right {
     width: 100%;
   }
 
-  .footer-right {
+  .EmppAttendence-footer-right {
     flex-direction: column;
   }
 
-  .footer-right .btn {
+  .EmppAttendence-footer-right .EmppAttendence-btn {
     width: 100%;
   }
 
-  .form-grid {
+  .EmppAttendence-form-grid {
     grid-template-columns: 1fr;
     gap: 16px;
   }
 
-  .status-options {
+  .EmppAttendence-status-options {
     grid-template-columns: 1fr;
   }
 
-  .snackbar {
+  .EmppAttendence-snackbar {
     left: 16px;
     right: 16px;
     bottom: 16px;
   }
 
-  .snackbar-content {
+  .EmppAttendence-snackbar-content {
     min-width: auto;
     width: 100%;
     padding: 14px 16px;
@@ -2172,59 +2148,58 @@ textarea.form-input {
 
 /* Small Phones */
 @media screen and (max-width: 375px) {
-  .attendance-title {
+  .EmppAttendence-attendance-title {
     font-size: 20px;
   }
 
-  .header-actions {
+  .EmppAttendence-header-actions {
     flex-wrap: wrap;
   }
 
-  .date-chip {
+  .EmppAttendence-date-chip {
     flex: 1;
     justify-content: center;
   }
 
-  .export-dropdown {
+  .EmppAttendence-export-dropdown {
     right: auto;
     left: 0;
   }
 
-  .bulk-action-buttons {
+  .EmppAttendence-bulk-action-buttons {
     flex-wrap: wrap;
   }
 
-  .bulk-action-buttons .btn-sm {
+  .EmppAttendence-bulk-action-buttons .EmppAttendence-btn-sm {
     flex: 1;
     min-width: calc(50% - 4px);
   }
 
-  .modal-header h3 {
+  .EmppAttendence-modal-header h3 {
     font-size: 18px;
   }
   
-  /* Even smaller screens */
-  .attendance-table thead th.col-employee {
+  .EmppAttendence-attendance-table thead th.EmppAttendence-col-employee {
     width: 60%;
   }
   
-  .attendance-table thead th.col-status {
+  .EmppAttendence-attendance-table thead th.EmppAttendence-col-status {
     width: 40%;
   }
   
-  .attendance-table tbody td.col-employee {
+  .EmppAttendence-attendance-table tbody td.EmppAttendence-col-employee {
     width: 60%;
   }
   
-  .attendance-table tbody td.col-status {
+  .EmppAttendence-attendance-table tbody td.EmppAttendence-col-status {
     width: 40%;
   }
   
-  .employee-name {
+  .EmppAttendence-employee-name {
     font-size: 13px;
   }
   
-  .status-chip {
+  .EmppAttendence-status-chip {
     font-size: 11px;
     padding: 5px 8px;
     min-width: 60px;
@@ -2233,89 +2208,89 @@ textarea.form-input {
 
 /* Tablet Styles */
 @media screen and (min-width: 769px) and (max-width: 1024px) {
-  .stats-container {
+  .EmppAttendence-stats-container {
     grid-template-columns: repeat(3, 1fr);
   }
 
-  .summary-cards {
+  .EmppAttendence-summary-cards {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .filter-grid {
+  .EmppAttendence-filter-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .attendance-table {
+  .EmppAttendence-attendance-table {
     min-width: 1000px;
   }
 }
 
 /* Touch Device Optimizations */
 @media (hover: none) and (pointer: coarse) {
-  .btn:active,
-  .stat-card:active,
-  .summary-card:active,
-  .btn-icon:active {
+  .EmppAttendence-btn:active,
+  .EmppAttendence-stat-card:active,
+  .EmppAttendence-summary-card:active,
+  .EmppAttendence-btn-icon:active {
     transform: scale(0.98);
     opacity: 0.8;
   }
 
-  .filter-input,
-  .form-input {
-    font-size: 16px; /* Prevent zoom on iOS */
+  .EmppAttendence-filter-input,
+  .EmppAttendence-form-input {
+    font-size: 16px;
   }
 
-  .export-option,
-  .preset-option {
+  .EmppAttendence-export-option,
+  .EmppAttendence-preset-option {
     padding: 16px 20px;
   }
 }
 
 /* Print Styles */
 @media print {
-  .employee-attendance {
+  .EmppAttendence-employee-attendance {
     background: white;
     padding: 0;
   }
 
-  .attendance-header,
-  .filter-section,
-  .stats-container,
-  .date-range-summary,
-  .summary-section,
-  .header-actions,
-  .bulk-actions-bar,
-  .permission-warning-banner,
-  .department-info-banner,
-  .date-range-indicator,
-  .timing-rules,
-  .btn,
-  .btn-icon,
-  .modal-overlay,
-  .snackbar {
+  .EmppAttendence-attendance-header,
+  .EmppAttendence-filter-section,
+  .EmppAttendence-stats-container,
+  .EmppAttendence-date-range-summary,
+  .EmppAttendence-summary-section,
+  .EmppAttendence-header-actions,
+  .EmppAttendence-bulk-actions-bar,
+  .EmppAttendence-permission-warning-banner,
+  .EmppAttendence-department-info-banner,
+  .EmppAttendence-date-range-indicator,
+  .EmppAttendence-timing-rules,
+  .EmppAttendence-btn,
+  .EmppAttendence-btn-icon,
+  .EmppAttendence-modal-overlay,
+  .EmppAttendence-snackbar {
     display: none !important;
   }
 
-  .attendance-table-container {
+  .EmppAttendence-attendance-table-container {
     box-shadow: none;
     border: 1px solid #ddd;
     padding: 0;
   }
 
-  .attendance-table {
+  .EmppAttendence-attendance-table {
     min-width: auto;
   }
 
-  .attendance-table thead th {
+  .EmppAttendence-attendance-table thead th {
     background: #f5f5f5 !important;
     color: #000 !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
 
-  .status-chip,
-  .type-chip,
-  .time-chip {
+  .EmppAttendence-status-chip,
+  .EmppAttendence-type-chip,
+  .EmppAttendence-time-chip {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }

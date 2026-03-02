@@ -4,7 +4,7 @@ import './employee-attendance.css';
 import * as XLSX from 'xlsx';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import CIISLoader from '../../../Loader/CIISLoader'; // ✅ Import CIISLoader
+import CIISLoader from '../../../Loader/CIISLoader'; 
 
 import {
   FiCalendar,
@@ -85,41 +85,41 @@ const DateRangeFilter = ({ startDate, endDate, onStartDateChange, onEndDateChang
   };
 
   return (
-    <div className="date-range-filter" ref={dropdownRef}>
-      <div className="date-range-inputs">
-        <div className="date-input-group">
-          <label className="filter-label">From Date</label>
+    <div className="EmppAttendence-date-range-filter" ref={dropdownRef}>
+      <div className="EmppAttendence-date-range-inputs">
+        <div className="EmppAttendence-date-input-group">
+          <label className="EmppAttendence-filter-label">From Date</label>
           <input
             type="date"
-            className="filter-input"
+            className="EmppAttendence-filter-input"
             value={startDate}
             onChange={(e) => onStartDateChange(e.target.value)}
           />
         </div>
-        <div className="date-input-group">
-          <label className="filter-label">To Date</label>
+        <div className="EmppAttendence-date-input-group">
+          <label className="EmppAttendence-filter-label">To Date</label>
           <input
             type="date"
-            className="filter-input"
+            className="EmppAttendence-filter-input"
             value={endDate}
             onChange={(e) => onEndDateChange(e.target.value)}
           />
         </div>
         <button 
-          className="btn btn-contained btn-sm"
+          className="EmppAttendence-btn EmppAttendence-btn-contained EmppAttendence-btn-sm"
           onClick={onApply}
         >
           <FiRangeCalendar size={16} />
           <span>Apply</span>
         </button>
         <button 
-          className="btn btn-outlined btn-sm"
+          className="EmppAttendence-btn EmppAttendence-btn-outlined EmppAttendence-btn-sm"
           onClick={onClear}
         >
           <FiRefreshCw size={16} />
         </button>
         <button 
-          className="btn btn-outlined btn-sm"
+          className="EmppAttendence-btn EmppAttendence-btn-outlined EmppAttendence-btn-sm"
           onClick={() => setIsOpen(!isOpen)}
         >
           Quick Select ▼
@@ -127,11 +127,11 @@ const DateRangeFilter = ({ startDate, endDate, onStartDateChange, onEndDateChang
       </div>
       
       {isOpen && (
-        <div className="presets-dropdown">
+        <div className="EmppAttendence-presets-dropdown">
           {presets.map((preset, index) => (
             <button
               key={index}
-              className="preset-option"
+              className="EmppAttendence-preset-option"
               onClick={() => applyPreset(preset)}
             >
               {preset.label}
@@ -155,7 +155,7 @@ const EmployeeTypeFilter = ({ selected, onChange }) => {
 
   return (
     <select
-      className="filter-input"
+      className="EmppAttendence-filter-input"
       value={selected}
       onChange={(e) => onChange(e.target.value)}
     >
@@ -181,7 +181,7 @@ const DepartmentFilter = ({ selected, onChange, departments }) => {
 
   return (
     <select
-      className="filter-input"
+      className="EmppAttendence-filter-input"
       value={selected}
       onChange={(e) => onChange(e.target.value)}
     >
@@ -206,7 +206,7 @@ const StatusFilter = ({ selected, onChange }) => {
 
   return (
     <select
-      className="filter-input"
+      className="EmppAttendence-filter-input"
       value={selected}
       onChange={(e) => onChange(e.target.value)}
     >
@@ -303,21 +303,21 @@ const AddAttendanceModal = ({ onClose, onSave, users, selectedDate, currentUserD
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
+    <div className="EmppAttendence-modal-overlay" onClick={onClose}>
+      <div className="EmppAttendence-modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="EmppAttendence-modal-header">
           <h3>Add New Attendance</h3>
-          <button className="modal-close" onClick={onClose}>
+          <button className="EmppAttendence-modal-close" onClick={onClose}>
             <FiX size={20} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="modal-body">
-            <div className="form-group full-width">
+          <div className="EmppAttendence-modal-body">
+            <div className="EmppAttendence-form-group EmppAttendence-full-width">
               <label>Select Employee *</label>
               <select
-                className="form-input"
+                className="EmppAttendence-form-input"
                 value={formData.user}
                 onChange={(e) => setFormData({ ...formData, user: e.target.value })}
                 required
@@ -331,16 +331,16 @@ const AddAttendanceModal = ({ onClose, onSave, users, selectedDate, currentUserD
               </select>
               
               {formData.user && (
-                <div className="selected-user-info">
+                <div className="EmppAttendence-selected-user-info">
                   {(() => {
                     const selectedUser = users.find(u => (u.id || u._id) === formData.user);
                     if (!selectedUser) return null;
                     return (
-                      <div className="user-display">
-                        <div className="user-avatar-small">
+                      <div className="EmppAttendence-user-display">
+                        <div className="EmppAttendence-user-avatar-small">
                           {selectedUser.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U'}
                         </div>
-                        <div className="user-details">
+                        <div className="EmppAttendence-user-details">
                           <strong>{selectedUser.name || 'Unknown'}</strong>
                           <small>{selectedUser.email || 'N/A'} • {selectedUser.department || 'N/A'} • {selectedUser.employeeType || 'N/A'}</small>
                         </div>
@@ -351,43 +351,43 @@ const AddAttendanceModal = ({ onClose, onSave, users, selectedDate, currentUserD
               )}
             </div>
 
-            <div className="form-grid">
-              <div className="form-group">
+            <div className="EmppAttendence-form-grid">
+              <div className="EmppAttendence-form-group">
                 <label>Date *</label>
                 <input
                   type="date"
-                  className="form-input"
+                  className="EmppAttendence-form-input"
                   value={selectedDate}
                   readOnly
                 />
               </div>
 
-              <div className="form-group">
+              <div className="EmppAttendence-form-group">
                 <label>Check In Time *</label>
                 <input
                   type="time"
-                  className="form-input"
+                  className="EmppAttendence-form-input"
                   value={formData.inTime}
                   onChange={(e) => handleTimeChange('inTime', e.target.value)}
                   required
                 />
               </div>
 
-              <div className="form-group">
+              <div className="EmppAttendence-form-group">
                 <label>Check Out Time *</label>
                 <input
                   type="time"
-                  className="form-input"
+                  className="EmppAttendence-form-input"
                   value={formData.outTime}
                   onChange={(e) => setFormData({ ...formData, outTime: e.target.value })}
                   required
                 />
               </div>
 
-              <div className="form-group">
+              <div className="EmppAttendence-form-group">
                 <label>Status *</label>
                 <select
-                  className="form-input"
+                  className="EmppAttendence-form-input"
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                   required
@@ -399,43 +399,43 @@ const AddAttendanceModal = ({ onClose, onSave, users, selectedDate, currentUserD
                 </select>
               </div>
 
-              <div className="form-group">
+              <div className="EmppAttendence-form-group">
                 <label>Late By</label>
                 <input
                   type="text"
-                  className="form-input"
+                  className="EmppAttendence-form-input"
                   value={formData.lateBy}
                   onChange={(e) => setFormData({ ...formData, lateBy: e.target.value })}
                   placeholder="00:00:00"
                 />
               </div>
 
-              <div className="form-group">
+              <div className="EmppAttendence-form-group">
                 <label>Early Leave</label>
                 <input
                   type="text"
-                  className="form-input"
+                  className="EmppAttendence-form-input"
                   value={formData.earlyLeave}
                   onChange={(e) => setFormData({ ...formData, earlyLeave: e.target.value })}
                   placeholder="00:00:00"
                 />
               </div>
 
-              <div className="form-group">
+              <div className="EmppAttendence-form-group">
                 <label>Overtime</label>
                 <input
                   type="text"
-                  className="form-input"
+                  className="EmppAttendence-form-input"
                   value={formData.overTime}
                   onChange={(e) => setFormData({ ...formData, overTime: e.target.value })}
                   placeholder="00:00:00"
                 />
               </div>
 
-              <div className="form-group full-width">
+              <div className="EmppAttendence-form-group EmppAttendence-full-width">
                 <label>Notes</label>
                 <textarea
-                  className="form-input"
+                  className="EmppAttendence-form-input"
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   placeholder="Add any additional notes..."
@@ -444,14 +444,14 @@ const AddAttendanceModal = ({ onClose, onSave, users, selectedDate, currentUserD
               </div>
             </div>
 
-            <div className="calculated-info">
-              <div className="info-item">
+            <div className="EmppAttendence-calculated-info">
+              <div className="EmppAttendence-info-item">
                 <span>Calculated Status:</span>
-                <span className={`status-chip ${calculateStatus()}`}>
+                <span className={`EmppAttendence-status-chip ${calculateStatus()}`}>
                   {calculateStatus().toUpperCase()}
                 </span>
               </div>
-              <div className="info-item">
+              <div className="EmppAttendence-info-item">
                 <span>Hours Worked:</span>
                 <span>
                   {(() => {
@@ -468,16 +468,16 @@ const AddAttendanceModal = ({ onClose, onSave, users, selectedDate, currentUserD
             </div>
           </div>
 
-          <div className="modal-footer">
+          <div className="EmppAttendence-modal-footer">
             <button 
-              className="btn btn-outlined" 
+              className="EmppAttendence-btn EmppAttendence-btn-outlined" 
               type="button" 
               onClick={onClose}
             >
               Cancel
             </button>
             <button 
-              className="btn btn-contained" 
+              className="EmppAttendence-btn EmppAttendence-btn-contained" 
               type="submit"
               disabled={loading || !formData.user}
             >
@@ -610,18 +610,18 @@ const EditAttendanceModal = ({ record, onClose, onSave, onDelete, users, current
   if (!record) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
+    <div className="EmppAttendence-modal-overlay" onClick={onClose}>
+      <div className="EmppAttendence-modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="EmppAttendence-modal-header">
           <h3>Edit Attendance</h3>
-          <button className="modal-close" onClick={onClose}>
+          <button className="EmppAttendence-modal-close" onClick={onClose}>
             <FiX size={20} />
           </button>
         </div>
 
-        <div className="modal-body">
-          <div className="employee-info-summary">
-            <div className="employee-avatar large">
+        <div className="EmppAttendence-modal-body">
+          <div className="EmppAttendence-employee-info-summary">
+            <div className="EmppAttendence-employee-avatar large">
               {(() => {
                 const name = getEmployeeName();
                 return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -629,8 +629,8 @@ const EditAttendanceModal = ({ record, onClose, onSave, onDelete, users, current
             </div>
             <div>
               <h4>{getEmployeeName()}</h4>
-              <p className="text-muted">{record.user?.email || "N/A"}</p>
-              <p className="text-muted">
+              <p className="EmppAttendence-text-muted">{record.user?.email || "N/A"}</p>
+              <p className="EmppAttendence-text-muted">
                 {record.user?.department || "N/A"} • {record.user?.employeeType?.toUpperCase() || "N/A"} • 
                 {record.date ? new Date(record.date).toLocaleDateString() : "N/A"}
               </p>
@@ -638,50 +638,50 @@ const EditAttendanceModal = ({ record, onClose, onSave, onDelete, users, current
           </div>
 
           {!canEdit && (
-            <div className="permission-warning">
+            <div className="EmppAttendence-permission-warning">
               <FiLock size={20} />
               <span>You have read-only access. Only Owners, Admins, and HR can edit attendance records.</span>
             </div>
           )}
 
-          <div className="form-grid">
-            <div className="form-group">
+          <div className="EmppAttendence-form-grid">
+            <div className="EmppAttendence-form-group">
               <label>Date</label>
               <input
                 type="date"
-                className="form-input"
+                className="EmppAttendence-form-input"
                 value={editedRecord.date}
                 onChange={(e) => setEditedRecord(prev => ({ ...prev, date: e.target.value }))}
                 disabled={!canEdit}
               />
             </div>
 
-            <div className="form-group">
+            <div className="EmppAttendence-form-group">
               <label>Check In Time</label>
               <input
                 type="time"
-                className="form-input"
+                className="EmppAttendence-form-input"
                 value={editedRecord.inTime}
                 onChange={(e) => handleTimeChange('inTime', e.target.value)}
                 disabled={!canEdit}
               />
             </div>
 
-            <div className="form-group">
+            <div className="EmppAttendence-form-group">
               <label>Check Out Time</label>
               <input
                 type="time"
-                className="form-input"
+                className="EmppAttendence-form-input"
                 value={editedRecord.outTime}
                 onChange={(e) => setEditedRecord(prev => ({ ...prev, outTime: e.target.value }))}
                 disabled={!canEdit}
               />
             </div>
 
-            <div className="form-group">
+            <div className="EmppAttendence-form-group">
               <label>Status</label>
               <select
-                className="form-input"
+                className="EmppAttendence-form-input"
                 value={editedRecord.status}
                 onChange={(e) => setEditedRecord(prev => ({ ...prev, status: e.target.value }))}
                 disabled={!canEdit}
@@ -693,11 +693,11 @@ const EditAttendanceModal = ({ record, onClose, onSave, onDelete, users, current
               </select>
             </div>
 
-            <div className="form-group">
+            <div className="EmppAttendence-form-group">
               <label>Late By</label>
               <input
                 type="text"
-                className="form-input"
+                className="EmppAttendence-form-input"
                 value={editedRecord.lateBy}
                 onChange={(e) => setEditedRecord(prev => ({ ...prev, lateBy: e.target.value }))}
                 placeholder="00:00:00"
@@ -705,11 +705,11 @@ const EditAttendanceModal = ({ record, onClose, onSave, onDelete, users, current
               />
             </div>
 
-            <div className="form-group">
+            <div className="EmppAttendence-form-group">
               <label>Early Leave</label>
               <input
                 type="text"
-                className="form-input"
+                className="EmppAttendence-form-input"
                 value={editedRecord.earlyLeave}
                 onChange={(e) => setEditedRecord(prev => ({ ...prev, earlyLeave: e.target.value }))}
                 placeholder="00:00:00"
@@ -717,11 +717,11 @@ const EditAttendanceModal = ({ record, onClose, onSave, onDelete, users, current
               />
             </div>
 
-            <div className="form-group">
+            <div className="EmppAttendence-form-group">
               <label>Overtime</label>
               <input
                 type="text"
-                className="form-input"
+                className="EmppAttendence-form-input"
                 value={editedRecord.overTime}
                 onChange={(e) => setEditedRecord(prev => ({ ...prev, overTime: e.target.value }))}
                 placeholder="00:00:00"
@@ -729,10 +729,10 @@ const EditAttendanceModal = ({ record, onClose, onSave, onDelete, users, current
               />
             </div>
 
-            <div className="form-group full-width">
+            <div className="EmppAttendence-form-group EmppAttendence-full-width">
               <label>Notes</label>
               <textarea
-                className="form-input"
+                className="EmppAttendence-form-input"
                 value={editedRecord.notes}
                 onChange={(e) => setEditedRecord(prev => ({ ...prev, notes: e.target.value }))}
                 placeholder="Add any additional notes..."
@@ -742,15 +742,15 @@ const EditAttendanceModal = ({ record, onClose, onSave, onDelete, users, current
             </div>
           </div>
 
-          <div className="calculated-info">
-            <div className="info-item">
+          <div className="EmppAttendence-calculated-info">
+            <div className="EmppAttendence-info-item">
               <span>Calculated Status:</span>
-              <span className={`status-chip ${calculateStatus()}`}>
+              <span className={`EmppAttendence-status-chip ${calculateStatus()}`}>
                 {calculateStatus().toUpperCase()}
               </span>
             </div>
             {editedRecord.inTime && editedRecord.outTime && (
-              <div className="info-item">
+              <div className="EmppAttendence-info-item">
                 <span>Hours Worked:</span>
                 <span>
                   {(() => {
@@ -767,19 +767,19 @@ const EditAttendanceModal = ({ record, onClose, onSave, onDelete, users, current
           </div>
 
           {showConfirmDelete && (
-            <div className="confirm-delete">
+            <div className="EmppAttendence-confirm-delete">
               <FiAlertTriangle size={24} color="#ff6b6b" />
               <h4>Delete Attendance Record?</h4>
               <p>Are you sure you want to delete this attendance record? This action cannot be undone.</p>
-              <div className="confirm-buttons">
+              <div className="EmppAttendence-confirm-buttons">
                 <button 
-                  className="btn btn-outlined" 
+                  className="EmppAttendence-btn EmppAttendence-btn-outlined" 
                   onClick={() => setShowConfirmDelete(false)}
                 >
                   Cancel
                 </button>
                 <button 
-                  className="btn btn-danger" 
+                  className="EmppAttendence-btn EmppAttendence-btn-danger" 
                   onClick={handleDelete}
                   disabled={loading}
                 >
@@ -790,11 +790,11 @@ const EditAttendanceModal = ({ record, onClose, onSave, onDelete, users, current
           )}
         </div>
 
-        <div className="modal-footer">
-          <div className="footer-left">
+        <div className="EmppAttendence-modal-footer">
+          <div className="EmppAttendence-footer-left">
             {canDelete && (
               <button 
-                className="btn btn-danger" 
+                className="EmppAttendence-btn EmppAttendence-btn-danger" 
                 onClick={() => setShowConfirmDelete(true)}
                 disabled={showConfirmDelete}
               >
@@ -802,13 +802,13 @@ const EditAttendanceModal = ({ record, onClose, onSave, onDelete, users, current
               </button>
             )}
           </div>
-          <div className="footer-right">
-            <button className="btn btn-outlined" onClick={onClose}>
+          <div className="EmppAttendence-footer-right">
+            <button className="EmppAttendence-btn EmppAttendence-btn-outlined" onClick={onClose}>
               Cancel
             </button>
             {canEdit && (
               <button 
-                className="btn btn-contained" 
+                className="EmppAttendence-btn EmppAttendence-btn-contained" 
                 onClick={handleSave}
                 disabled={loading || showConfirmDelete}
               >
@@ -852,54 +852,54 @@ const QuickEditModal = ({ records, onClose, onSave, isOwner, isAdmin, isHR }) =>
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content quick-edit-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
+    <div className="EmppAttendence-modal-overlay" onClick={onClose}>
+      <div className="EmppAttendence-modal-content EmppAttendence-quick-edit-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="EmppAttendence-modal-header">
           <h3>Quick Edit {records.length} Records</h3>
-          <button className="modal-close" onClick={onClose}>
+          <button className="EmppAttendence-modal-close" onClick={onClose}>
             <FiX size={20} />
           </button>
         </div>
 
-        <div className="modal-body">
+        <div className="EmppAttendence-modal-body">
           {!canEdit && (
-            <div className="permission-warning">
+            <div className="EmppAttendence-permission-warning">
               <FiLock size={20} />
               <span>You don't have permission to edit attendance records.</span>
             </div>
           )}
 
-          <div className="selected-count">
+          <div className="EmppAttendence-selected-count">
             <FiUsers size={20} />
             <span>{records.length} employee(s) selected</span>
           </div>
 
-          <div className="status-selector">
+          <div className="EmppAttendence-status-selector">
             <h4>Set Status To:</h4>
-            <div className="status-options">
+            <div className="EmppAttendence-status-options">
               <button 
-                className={`status-option ${status === 'present' ? 'selected' : ''}`}
+                className={`EmppAttendence-status-option ${status === 'present' ? 'EmppAttendence-selected' : ''}`}
                 onClick={() => canEdit && setStatus('present')}
                 disabled={!canEdit}
               >
                 <FiCheckCircle /> Present
               </button>
               <button 
-                className={`status-option ${status === 'late' ? 'selected' : ''}`}
+                className={`EmppAttendence-status-option ${status === 'late' ? 'EmppAttendence-selected' : ''}`}
                 onClick={() => canEdit && setStatus('late')}
                 disabled={!canEdit}
               >
                 <FiClock /> Late
               </button>
               <button 
-                className={`status-option ${status === 'halfday' ? 'selected' : ''}`}
+                className={`EmppAttendence-status-option ${status === 'halfday' ? 'EmppAttendence-selected' : ''}`}
                 onClick={() => canEdit && setStatus('halfday')}
                 disabled={!canEdit}
               >
                 <FiAlertCircle /> Half Day
               </button>
               <button 
-                className={`status-option ${status === 'absent' ? 'selected' : ''}`}
+                className={`EmppAttendence-status-option ${status === 'absent' ? 'EmppAttendence-selected' : ''}`}
                 onClick={() => canEdit && setStatus('absent')}
                 disabled={!canEdit}
               >
@@ -908,19 +908,19 @@ const QuickEditModal = ({ records, onClose, onSave, isOwner, isAdmin, isHR }) =>
             </div>
           </div>
 
-          <div className="selected-employees">
+          <div className="EmppAttendence-selected-employees">
             <h4>Affected Employees:</h4>
-            <div className="employee-list">
+            <div className="EmppAttendence-employee-list">
               {records.slice(0, 5).map(record => (
-                <div key={record._id} className="employee-item">
-                  <div className="employee-avatar small">
+                <div key={record._id} className="EmppAttendence-employee-item">
+                  <div className="EmppAttendence-employee-avatar small">
                     {getInitials(record.user?.name)}
                   </div>
                   <span>{record.user?.name || 'Unknown'} - {record.user?.department || 'N/A'}</span>
                 </div>
               ))}
               {records.length > 5 && (
-                <div className="more-count">
+                <div className="EmppAttendence-more-count">
                   +{records.length - 5} more employees
                 </div>
               )}
@@ -928,13 +928,13 @@ const QuickEditModal = ({ records, onClose, onSave, isOwner, isAdmin, isHR }) =>
           </div>
         </div>
 
-        <div className="modal-footer">
-          <button className="btn btn-outlined" onClick={onClose}>
+        <div className="EmppAttendence-modal-footer">
+          <button className="EmppAttendence-btn EmppAttendence-btn-outlined" onClick={onClose}>
             Cancel
           </button>
           {canEdit && (
             <button 
-              className="btn btn-contained" 
+              className="EmppAttendence-btn EmppAttendence-btn-contained" 
               onClick={handleSave}
               disabled={loading}
             >
@@ -967,28 +967,28 @@ const formatDate = (dateStr) => {
 };
 
 const getStatusClass = (status) => {
-  if (status === "present") return "status-present";
-  if (status === "absent") return "status-absent";
-  if (status === "halfday") return "status-halfday";
-  if (status === "late") return "status-late";
+  if (status === "present") return "EmppAttendence-status-present";
+  if (status === "absent") return "EmppAttendence-status-absent";
+  if (status === "halfday") return "EmppAttendence-status-halfday";
+  if (status === "late") return "EmppAttendence-status-late";
   return "";
 };
 
 const getEmployeeTypeClass = (type) => {
   if (!type) return "";
   const typeLower = type.toLowerCase();
-  if (typeLower.includes("full")) return "type-full-time";
-  if (typeLower.includes("part")) return "type-part-time";
-  if (typeLower.includes("contract")) return "type-contract";
-  if (typeLower.includes("intern")) return "type-intern";
+  if (typeLower.includes("full")) return "EmppAttendence-type-full-time";
+  if (typeLower.includes("part")) return "EmppAttendence-type-part-time";
+  if (typeLower.includes("contract")) return "EmppAttendence-type-contract";
+  if (typeLower.includes("intern")) return "EmppAttendence-type-intern";
   return "";
 };
 
 const getRowClass = (status) => {
-  if (status === "present") return "row-present";
-  if (status === "absent") return "row-absent";
-  if (status === "halfday") return "row-halfday";
-  if (status === "late") return "row-late";
+  if (status === "present") return "EmppAttendence-row-present";
+  if (status === "absent") return "EmppAttendence-row-absent";
+  if (status === "halfday") return "EmppAttendence-row-halfday";
+  if (status === "late") return "EmppAttendence-row-late";
   return "";
 };
 
@@ -2028,7 +2028,7 @@ const EmployeeAttendance = () => {
 
     try {
       const input = tableRef.current;
-      input.classList.add("pdf-export");
+      input.classList.add("EmppAttendence-pdf-export");
 
       const canvas = await html2canvas(input, {
         scale: 2,
@@ -2038,7 +2038,7 @@ const EmployeeAttendance = () => {
         height: input.scrollHeight,
       });
 
-      input.classList.remove("pdf-export");
+      input.classList.remove("EmppAttendence-pdf-export");
 
       const imgData = canvas.toDataURL("image/png");
 
@@ -2133,7 +2133,7 @@ const EmployeeAttendance = () => {
     
     try {
       const input = tableRef.current;
-      input.classList.add('image-export');
+      input.classList.add('EmppAttendence-image-export');
       
       const canvas = await html2canvas(input, {
         scale: 2,
@@ -2144,7 +2144,7 @@ const EmployeeAttendance = () => {
         height: input.scrollHeight,
       });
       
-      input.classList.remove('image-export');
+      input.classList.remove('EmppAttendence-image-export');
       
       const image = canvas.toDataURL('image/jpeg', 1.0);
       const link = document.createElement('a');
@@ -2298,19 +2298,19 @@ const EmployeeAttendance = () => {
   const RoleBadge = () => {
     if (!currentUserRole) return null;
     
-    let badgeClass = 'attendance-role-badge';
+    let badgeClass = 'EmppAttendence-role-badge';
     let icon = <FiUsers size={12} />;
     
     if (isOwner) {
-      badgeClass += ' attendance-role-badge-owner';
+      badgeClass += ' EmppAttendence-role-badge-owner';
       icon = <FiShield size={12} />;
     } else if (isAdmin) {
-      badgeClass += ' attendance-role-badge-admin';
+      badgeClass += ' EmppAttendence-role-badge-admin';
       icon = <FiShield size={12} />;
     } else if (isHR) {
-      badgeClass += ' attendance-role-badge-hr';
+      badgeClass += ' EmppAttendence-role-badge-hr';
     } else if (isManager) {
-      badgeClass += ' attendance-role-badge-manager';
+      badgeClass += ' EmppAttendence-role-badge-manager';
     }
     
     return (
@@ -2329,109 +2329,109 @@ const EmployeeAttendance = () => {
   // Loading State
   if (loading && !initialLoadComplete) {
     return (
-      <div className="loading-container">
-        <div className="loading-progress">
-          <div className="loading-progress-bar"></div>
+      <div className="EmppAttendence-loading-container">
+        <div className="EmppAttendence-loading-progress">
+          <div className="EmppAttendence-loading-progress-bar"></div>
         </div>
         <p>Loading attendance data...</p>
         {currentUserRole && (
-          <span className="loading-role">Role: {normalizeRole(currentUserRole)}</span>
+          <span className="EmppAttendence-loading-role">Role: {normalizeRole(currentUserRole)}</span>
         )}
       </div>
     );
   }
 
   return (
-    <div className="employee-attendance">
+    <div className="EmppAttendence-employee-attendance">
       {/* Header */}
-      <div className="attendance-header">
+      <div className="EmppAttendence-attendance-header">
         <div>
-          <h1 className="attendance-title">Attendance Management</h1>
-          <p className="attendance-subtitle">
+          <h1 className="EmppAttendence-attendance-title">Attendance Management</h1>
+          <p className="EmppAttendence-attendance-subtitle">
             Monitor and manage employee attendance by department
             <RoleBadge />
             {!isOwner && !isAdmin && !isHR && (
-              <span className="view-only-badge">
+              <span className="EmppAttendence-view-only-badge">
                 <FiEyeOff size={14} />
                 View Only (Your Department)
               </span>
             )}
           </p>
-          <div className="timing-rules">
-            <span className="rule-item"><FiCheckCircle /> Before 9:10 AM → PRESENT</span>
-            <span className="rule-item"><FiAlertTriangle /> 9:10 AM - 9:30 AM → LATE</span>
-            <span className="rule-item"><FiAlertCircle /> 9:30 AM - 10:00 AM → HALF DAY</span>
-            <span className="rule-item"><FiUserX /> After 10:00 AM → HALF DAY / No Login → ABSENT</span>
+          <div className="EmppAttendence-timing-rules">
+            <span className="EmppAttendence-rule-item"><FiCheckCircle /> Before 9:10 AM → PRESENT</span>
+            <span className="EmppAttendence-rule-item"><FiAlertTriangle /> 9:10 AM - 9:30 AM → LATE</span>
+            <span className="EmppAttendence-rule-item"><FiAlertCircle /> 9:30 AM - 10:00 AM → HALF DAY</span>
+            <span className="EmppAttendence-rule-item"><FiUserX /> After 10:00 AM → HALF DAY / No Login → ABSENT</span>
           </div>
           
           {!isOwner && !isAdmin && !isHR && (
-            <div className="permission-warning-banner">
+            <div className="EmppAttendence-permission-warning-banner">
               <FiLock size={16} />
               <span>You are viewing attendance records from your department only. Only Owners, Admins, and HR can view all departments.</span>
             </div>
           )}
 
           {/* {!isOwner && !isAdmin && !isHR && currentUserDepartment && (
-            <div className="department-info-banner">
+            <div className="EmppAttendence-department-info-banner">
               <FiHome size={16} />
               <span>Your Department: <strong>{typeof currentUserDepartment === 'string' ? currentUserDepartment : 'Your Department'}</strong></span>
             </div>
           )}
            */}
           {dateRangeMode && (
-            <div className="date-range-indicator">
+            <div className="EmppAttendence-date-range-indicator">
               <FiRangeCalendar size={16} />
               <span>Viewing from <strong>{new Date(selectedStartDate).toLocaleDateString()}</strong> to <strong>{new Date(selectedEndDate).toLocaleDateString()}</strong></span>
-              <button className="btn-icon-small" onClick={handleDateRangeClear} >
+              <button className="EmppAttendence-btn-icon-small" onClick={handleDateRangeClear} >
                 <FiX size={14} />
               </button>
             </div>
           )}
           
           {bulkEditMode && selectedRecords.length > 0 && (
-            <div className="bulk-actions-bar">
-              <span className="bulk-selection-count">
+            <div className="EmppAttendence-bulk-actions-bar">
+              <span className="EmppAttendence-bulk-selection-count">
                 <FiUsers size={16} />
                 {selectedRecords.length} record(s) selected
               </span>
-              <div className="bulk-action-buttons">
+              <div className="EmppAttendence-bulk-action-buttons">
                 <button 
-                  className="btn btn-outlined btn-sm"
+                  className="EmppAttendence-btn EmppAttendence-btn-outlined EmppAttendence-btn-sm"
                   onClick={() => handleBulkStatusChange('present')}
                   disabled={!(isOwner || isAdmin || isHR)}
                 >
                   Mark as Present
                 </button>
                 <button 
-                  className="btn btn-outlined btn-sm"
+                  className="EmppAttendence-btn EmppAttendence-btn-outlined EmppAttendence-btn-sm"
                   onClick={() => handleBulkStatusChange('late')}
                   disabled={!(isOwner || isAdmin || isHR)}
                 >
                   Mark as Late
                 </button>
                 <button 
-                  className="btn btn-outlined btn-sm"
+                  className="EmppAttendence-btn EmppAttendence-btn-outlined EmppAttendence-btn-sm"
                   onClick={() => handleBulkStatusChange('halfday')}
                   disabled={!(isOwner || isAdmin || isHR)}
                 >
                   Mark as Half Day
                 </button>
                 <button 
-                  className="btn btn-outlined btn-sm"
+                  className="EmppAttendence-btn EmppAttendence-btn-outlined EmppAttendence-btn-sm"
                   onClick={() => handleBulkStatusChange('absent')}
                   disabled={!(isOwner || isAdmin || isHR)}
                 >
                   Mark as Absent
                 </button>
                 <button 
-                  className="btn btn-contained btn-sm"
+                  className="EmppAttendence-btn EmppAttendence-btn-contained EmppAttendence-btn-sm"
                   onClick={handleQuickEdit}
                   disabled={!(isOwner || isAdmin || isHR)}
                 >
                   <FiEdit /> Quick Edit
                 </button>
                 <button 
-                  className="btn btn-outlined btn-sm"
+                  className="EmppAttendence-btn EmppAttendence-btn-outlined EmppAttendence-btn-sm"
                   onClick={() => {
                     setSelectedRecords([]);
                     setBulkEditMode(false);
@@ -2445,10 +2445,10 @@ const EmployeeAttendance = () => {
         </div>
 
         {/* Action Bar */}
-        <div className="header-actions">
+        <div className="EmppAttendence-header-actions">
           {(isOwner || isAdmin || isHR) && (
             <button
-              className="date-chip"
+              className="EmppAttendence-date-chip"
               onClick={handleAddRecord}
               title="Add Attendance Record"
               style={{ marginRight: '8px' }}
@@ -2459,9 +2459,9 @@ const EmployeeAttendance = () => {
           )}
 
           {/* Export Button */}
-          <div className="export-container" ref={exportMenuRef}>
+          <div className="EmppAttendence-export-container" ref={exportMenuRef}>
             <button
-              className="date-chip"
+              className="EmppAttendence-date-chip"
               onClick={() => setExportMenuOpen(!exportMenuOpen)}
               title="Export Report"
               disabled={loading}
@@ -2471,23 +2471,23 @@ const EmployeeAttendance = () => {
             </button>
 
             {exportMenuOpen && (
-              <div className="export-dropdown">
-                <button className="export-option" onClick={exportToExcel}>
+              <div className="EmppAttendence-export-dropdown">
+                <button className="EmppAttendence-export-option" onClick={exportToExcel}>
                   <FiFileText size={16} />
                   <span>Export as Excel (XLSX)</span>
                 </button>
 
-                <button className="export-option" onClick={exportToCSV}>
+                <button className="EmppAttendence-export-option" onClick={exportToCSV}>
                   <FiFileText size={16} />
                   <span>Export as CSV</span>
                 </button>
 
-                <button className="export-option" onClick={exportToPDF}>
+                <button className="EmppAttendence-export-option" onClick={exportToPDF}>
                   <FiFileText size={16} />
                   <span>Export as PDF</span>
                 </button>
 
-                <button className="export-option" onClick={exportToImage}>
+                <button className="EmppAttendence-export-option" onClick={exportToImage}>
                   <FiImage size={16} />
                   <span>Export as Image</span>
                 </button>
@@ -2495,7 +2495,7 @@ const EmployeeAttendance = () => {
             )}
           </div>
 
-          <div className="date-chip">
+          <div className="EmppAttendence-date-chip">
             <FiCalendar size={16} />
             {dateRangeMode 
               ? `${new Date(selectedStartDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })} - ${new Date(selectedEndDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`
@@ -2510,16 +2510,16 @@ const EmployeeAttendance = () => {
       </div>
 
       {/* Filter Section */}
-      <div className="filter-section">
-        <div className="filter-header">
+      <div className="EmppAttendence-filter-section">
+        <div className="EmppAttendence-filter-header">
           <FiFilter size={20} color="#1976d2" />
           <h3>Filters & Search</h3>
         </div>
         
-        <div className="filter-grid">
+        <div className="EmppAttendence-filter-grid">
           {/* Date Range Filter */}
-          <div className="filter-group full-width">
-            <label className="filter-label">Date Range</label>
+          <div className="EmppAttendence-filter-group EmppAttendence-full-width">
+            <label className="EmppAttendence-filter-label">Date Range</label>
             <DateRangeFilter
               startDate={selectedStartDate}
               endDate={selectedEndDate}
@@ -2530,8 +2530,8 @@ const EmployeeAttendance = () => {
             />
           </div>
           
-          {/* <div className="filter-group">
-            <label className="filter-label">Employee Type</label>
+          {/* <div className="EmppAttendence-filter-group">
+            <label className="EmppAttendence-filter-label">Employee Type</label>
             <EmployeeTypeFilter
               selected={selectedEmployeeType}
               onChange={setSelectedEmployeeType}
@@ -2539,8 +2539,8 @@ const EmployeeAttendance = () => {
           </div> */}
 
           {(isOwner || isAdmin || isHR) && (
-            <div className="filter-group">
-              <label className="filter-label">Department</label>
+            <div className="EmppAttendence-filter-group">
+              <label className="EmppAttendence-filter-label">Department</label>
               <DepartmentFilter
                 selected={selectedDepartment}
                 onChange={setSelectedDepartment}
@@ -2549,16 +2549,16 @@ const EmployeeAttendance = () => {
             </div>
           )}
 
-          <div className="filter-group">
-            <label className="filter-label">Status</label>
+          <div className="EmppAttendence-filter-group">
+            <label className="EmppAttendence-filter-label">Status</label>
             <StatusFilter
               selected={statusFilter}
               onChange={setStatusFilter}
             />
           </div>
           
-          <div className="filter-group">
-            <label className="filter-label">Search</label>
+          <div className="EmppAttendence-filter-group">
+            <label className="EmppAttendence-filter-label">Search</label>
             <div style={{ position: 'relative' }}>
               <FiSearch 
                 size={18} 
@@ -2572,7 +2572,7 @@ const EmployeeAttendance = () => {
               />
               <input
                 type="text"
-                className="filter-input"
+                className="EmppAttendence-filter-input"
                 placeholder="Search by name, email, department or status..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -2581,141 +2581,140 @@ const EmployeeAttendance = () => {
             </div>
           </div>
           
-          <div className="filter-actions">
+          <div className="EmppAttendence-filter-actions">
             <button 
-              className="btn btn-outlined"
+              className="EmppAttendence-btn EmppAttendence-btn-outlined"
               onClick={clearFilters}
               disabled={loading}
             >
               Clear Filters
             </button>
             <button 
-              className="btn btn-contained"
+              className="EmppAttendence-btn EmppAttendence-btn-contained"
               onClick={() => dateRangeMode 
                 ? fetchAttendanceDataRange(selectedStartDate, selectedEndDate)
                 : fetchAttendanceData(selectedDate)
               }
               disabled={loading}
             >
-              {loading ? <FiRefreshCw className="spin" /> : 'Refresh'}
+              {loading ? <FiRefreshCw className="EmppAttendence-spin" /> : 'Refresh'}
             </button>
           </div>
         </div>
       </div>
 
       {/* Stat Cards */}
-      {/* Stat Cards - Only show cards with count > 0 */}
-<div className="stats-container">
-  {[
-    { 
-      label: "Total Employees", 
-      count: stats.total, 
-      icon: <FiUsers />,
-      description: dateRangeMode ? `Across ${dateRangeStats.totalDays} days` : "Total tracked employees",
-      statClass: "stat-card-primary",
-      iconClass: "stat-icon-primary"
-    },
-    { 
-      label: "Present", 
-      count: stats.present, 
-      icon: <FiCheckCircle />,
-      description: dateRangeMode ? `Avg: ${dateRangeStats.averagePresent}%` : "Before 9:10 AM",
-      statClass: "stat-card-success",
-      iconClass: "stat-icon-success"
-    },
-    { 
-      label: "Late", 
-      count: stats.late, 
-      icon: <FiClock />,
-      description: dateRangeMode ? `Avg: ${dateRangeStats.averageLate}%` : "9:10 AM - 9:30 AM",
-      statClass: "stat-card-warning",
-      iconClass: "stat-icon-warning"
-    },
-    { 
-      label: "Half Day", 
-      count: stats.halfDay, 
-      icon: <FiAlertCircle />,
-      description: dateRangeMode ? `Avg: ${dateRangeStats.averageHalfDay}%` : "After 9:30 AM",
-      statClass: "stat-card-info",
-      iconClass: "stat-icon-info"
-    },
-    { 
-      label: "Absent", 
-      count: stats.absent, 
-      icon: <FiUserX />,
-      description: dateRangeMode ? `Avg: ${dateRangeStats.averageAbsent}%` : "No login recorded",
-      statClass: "stat-card-error",
-      iconClass: "stat-icon-error"
-    },
-    { 
-      label: "On Time", 
-      count: stats.onTime, 
-      icon: <FiUserCheck />,
-      description: "Arrived before 9:10 AM",
-      statClass: "stat-card-secondary",
-      iconClass: "stat-icon-secondary"
-    },
-  ]
-    .filter(stat => stat.count > 0) // ✅ FILTER: Only show cards with count > 0
-    .map((stat) => (
-      <div 
-        key={stat.label}
-        className={`stat-card ${stat.statClass} ${statusFilter === stat.label.toLowerCase() ? 'stat-card-active' : ''}`}
-        onClick={() =>
-          setStatusFilter((prev) =>
-            prev === stat.label.toLowerCase() ? "all" : stat.label.toLowerCase()
-          )
-        }
-        style={{ cursor: 'pointer' }}
-      >
-        <div className="stat-content">
-          <div className={`stat-icon ${stat.iconClass}`}>
-            {stat.icon}
-          </div>
-          <div className="stat-info">
-            <div className="stat-value">{stat.count}</div>
-            <div className="stat-label">{stat.label}</div>
-            <div className="stat-description">{stat.description}</div>
-          </div>
-        </div>
+      <div className="EmppAttendence-stats-container">
+        {[
+          { 
+            label: "Total Employees", 
+            count: stats.total, 
+            icon: <FiUsers />,
+            description: dateRangeMode ? `Across ${dateRangeStats.totalDays} days` : "Total tracked employees",
+            statClass: "EmppAttendence-stat-card-primary",
+            iconClass: "EmppAttendence-stat-icon-primary"
+          },
+          { 
+            label: "Present", 
+            count: stats.present, 
+            icon: <FiCheckCircle />,
+            description: dateRangeMode ? `Avg: ${dateRangeStats.averagePresent}%` : "Before 9:10 AM",
+            statClass: "EmppAttendence-stat-card-success",
+            iconClass: "EmppAttendence-stat-icon-success"
+          },
+          { 
+            label: "Late", 
+            count: stats.late, 
+            icon: <FiClock />,
+            description: dateRangeMode ? `Avg: ${dateRangeStats.averageLate}%` : "9:10 AM - 9:30 AM",
+            statClass: "EmppAttendence-stat-card-warning",
+            iconClass: "EmppAttendence-stat-icon-warning"
+          },
+          { 
+            label: "Half Day", 
+            count: stats.halfDay, 
+            icon: <FiAlertCircle />,
+            description: dateRangeMode ? `Avg: ${dateRangeStats.averageHalfDay}%` : "After 9:30 AM",
+            statClass: "EmppAttendence-stat-card-info",
+            iconClass: "EmppAttendence-stat-icon-info"
+          },
+          { 
+            label: "Absent", 
+            count: stats.absent, 
+            icon: <FiUserX />,
+            description: dateRangeMode ? `Avg: ${dateRangeStats.averageAbsent}%` : "No login recorded",
+            statClass: "EmppAttendence-stat-card-error",
+            iconClass: "EmppAttendence-stat-icon-error"
+          },
+          { 
+            label: "On Time", 
+            count: stats.onTime, 
+            icon: <FiUserCheck />,
+            description: "Arrived before 9:10 AM",
+            statClass: "EmppAttendence-stat-card-secondary",
+            iconClass: "EmppAttendence-stat-icon-secondary"
+          },
+        ]
+          .filter(stat => stat.count > 0)
+          .map((stat) => (
+            <div 
+              key={stat.label}
+              className={`EmppAttendence-stat-card ${stat.statClass} ${statusFilter === stat.label.toLowerCase() ? 'EmppAttendence-stat-card-active' : ''}`}
+              onClick={() =>
+                setStatusFilter((prev) =>
+                  prev === stat.label.toLowerCase() ? "all" : stat.label.toLowerCase()
+                )
+              }
+              style={{ cursor: 'pointer' }}
+            >
+              <div className="EmppAttendence-stat-content">
+                <div className={`EmppAttendence-stat-icon ${stat.iconClass}`}>
+                  {stat.icon}
+                </div>
+                <div className="EmppAttendence-stat-info">
+                  <div className="EmppAttendence-stat-value">{stat.count}</div>
+                  <div className="EmppAttendence-stat-label">{stat.label}</div>
+                  <div className="EmppAttendence-stat-description">{stat.description}</div>
+                </div>
+              </div>
+            </div>
+          ))}
       </div>
-    ))}
-</div>
 
       {/* Date Range Summary */}
       {dateRangeMode && (
-        <div className="date-range-summary">
-          <div className="summary-cards">
-            <div className="summary-card">
-              <div className="summary-card-icon">📊</div>
-              <div className="summary-card-content">
-                <span className="summary-card-label">Total Days</span>
-                <span className="summary-card-value">{dateRangeStats.totalDays}</span>
+        <div className="EmppAttendence-date-range-summary">
+          <div className="EmppAttendence-summary-cards">
+            <div className="EmppAttendence-summary-card">
+              <div className="EmppAttendence-summary-card-icon">📊</div>
+              <div className="EmppAttendence-summary-card-content">
+                <span className="EmppAttendence-summary-card-label">Total Days</span>
+                <span className="EmppAttendence-summary-card-value">{dateRangeStats.totalDays}</span>
               </div>
             </div>
-            <div className="summary-card">
-              <div className="summary-card-icon">📈</div>
-              <div className="summary-card-content">
-                <span className="summary-card-label">Best Day</span>
-                <span className="summary-card-value">
+            <div className="EmppAttendence-summary-card">
+              <div className="EmppAttendence-summary-card-icon">📈</div>
+              <div className="EmppAttendence-summary-card-content">
+                <span className="EmppAttendence-summary-card-label">Best Day</span>
+                <span className="EmppAttendence-summary-card-value">
                   {dateRangeStats.bestDay ? new Date(dateRangeStats.bestDay).toLocaleDateString() : 'N/A'}
                 </span>
               </div>
             </div>
-            <div className="summary-card">
-              <div className="summary-card-icon">📉</div>
-              <div className="summary-card-content">
-                <span className="summary-card-label">Worst Day</span>
-                <span className="summary-card-value">
+            <div className="EmppAttendence-summary-card">
+              <div className="EmppAttendence-summary-card-icon">📉</div>
+              <div className="EmppAttendence-summary-card-content">
+                <span className="EmppAttendence-summary-card-label">Worst Day</span>
+                <span className="EmppAttendence-summary-card-value">
                   {dateRangeStats.worstDay ? new Date(dateRangeStats.worstDay).toLocaleDateString() : 'N/A'}
                 </span>
               </div>
             </div>
-            <div className="summary-card">
-              <div className="summary-card-icon">✅</div>
-              <div className="summary-card-content">
-                <span className="summary-card-label">Total Present</span>
-                <span className="summary-card-value">{dateRangeStats.totalPresent}</span>
+            <div className="EmppAttendence-summary-card">
+              <div className="EmppAttendence-summary-card-icon">✅</div>
+              <div className="EmppAttendence-summary-card-content">
+                <span className="EmppAttendence-summary-card-label">Total Present</span>
+                <span className="EmppAttendence-summary-card-value">{dateRangeStats.totalPresent}</span>
               </div>
             </div>
           </div>
@@ -2723,13 +2722,13 @@ const EmployeeAttendance = () => {
       )}
 
       {/* Attendance Table */}
-      <div className="attendance-table-container" ref={tableRef}>
-        <div className="table-header">
+      <div className="EmppAttendence-attendance-table-container" ref={tableRef}>
+        <div className="EmppAttendence-table-header">
           <div>
-            <h3 className="table-title">
+            <h3 className="EmppAttendence-table-title">
               {dateRangeMode ? 'Attendance Records by Date' : 'Attendance Records by Department'}
             </h3>
-            <div className="table-count">
+            <div className="EmppAttendence-table-count">
               {filteredRecords.length} records found • 
               <span style={{ marginLeft: '8px', fontWeight: 'bold' }}>
                 {dateRangeMode 
@@ -2749,7 +2748,7 @@ const EmployeeAttendance = () => {
           </div>
           
           {bulkEditMode && (isOwner || isAdmin || isHR) && (
-            <div className="bulk-select-all">
+            <div className="EmppAttendence-bulk-select-all">
               <input
                 type="checkbox"
                 checked={selectedRecords.length === filteredRecords.length && filteredRecords.length > 0}
@@ -2761,22 +2760,22 @@ const EmployeeAttendance = () => {
         </div>
         
         <div style={{ overflowX: 'auto' }}>
-          <table className="attendance-table">
+          <table className="EmppAttendence-attendance-table">
             <thead>
               <tr>
                 {bulkEditMode && <th style={{ width: '50px' }}></th>}
-                {dateRangeMode && <th className="col-date-header">Date</th>}
-                <th className="col-employee">Employee</th>
-                <th className="col-department">Department</th>
-                <th className="col-type">Type</th>
-                {!dateRangeMode && <th className="col-date">Date</th>}
-                <th className="col-checkin">Check In</th>
-                <th className="col-checkout">Check Out</th>
-                <th className="col-hours">Hours</th>
-                <th className="col-login">Login Time</th>
-                <th className="col-status">Status</th>
-                <th className="col-late">Late By</th>
-                {!bulkEditMode && <th className="col-actions">Actions</th>}
+                {dateRangeMode && <th className="EmppAttendence-col-date-header">Date</th>}
+                <th className="EmppAttendence-col-employee">Employee</th>
+                <th className="EmppAttendence-col-department">Department</th>
+                <th className="EmppAttendence-col-type">Type</th>
+                {!dateRangeMode && <th className="EmppAttendence-col-date">Date</th>}
+                <th className="EmppAttendence-col-checkin">Check In</th>
+                <th className="EmppAttendence-col-checkout">Check Out</th>
+                <th className="EmppAttendence-col-hours">Hours</th>
+                <th className="EmppAttendence-col-login">Login Time</th>
+                <th className="EmppAttendence-col-status">Status</th>
+                <th className="EmppAttendence-col-late">Late By</th>
+                {!bulkEditMode && <th className="EmppAttendence-col-actions">Actions</th>}
               </tr>
             </thead>
 
@@ -2787,9 +2786,9 @@ const EmployeeAttendance = () => {
                   Object.entries(groupedByDate || {}).sort(([dateA], [dateB]) => dateA.localeCompare(dateB)).map(([date, dateRecords]) => (
                     <React.Fragment key={date}>
                       {/* Date Header */}
-                      <tr className="date-header">
+                      <tr className="EmppAttendence-date-header">
                         <td colSpan={bulkEditMode ? 12 : 11}>
-                          <div className="date-title">
+                          <div className="EmppAttendence-date-title">
                             <FiCalendar size={18} />
                             <strong>{new Date(date).toLocaleDateString("en-US", {
                               weekday: "long",
@@ -2797,7 +2796,7 @@ const EmployeeAttendance = () => {
                               month: "long",
                               day: "numeric"
                             })}</strong>
-                            <span className="date-count">
+                            <span className="EmppAttendence-date-count">
                               ({dateRecords.length} employees)
                             </span>
                           </div>
@@ -2818,8 +2817,8 @@ const EmployeeAttendance = () => {
                           )}
                           
                           {dateRangeMode && (
-                            <td className="col-date">
-                              <div className="date-badge">
+                            <td className="EmppAttendence-col-date">
+                              <div className="EmppAttendence-date-badge">
                                 {new Date(date).toLocaleDateString("en-US", {
                                   month: "short",
                                   day: "numeric"
@@ -2828,79 +2827,79 @@ const EmployeeAttendance = () => {
                             </td>
                           )}
 
-                          <td className="col-employee">
-                            <div className="employee-info">
-                              <div className="employee-avatar">
+                          <td className="EmppAttendence-col-employee">
+                            <div className="EmppAttendence-employee-info">
+                              <div className="EmppAttendence-employee-avatar">
                                 {getInitials(rec.user?.name)}
                               </div>
-                              <div className="employee-details">
-                                <div className="employee-name">
+                              <div className="EmppAttendence-employee-details">
+                                <div className="EmppAttendence-employee-name">
                                   {rec.user?.name || "N/A"}
                                 </div>
-                                <div className="employee-email">
+                                <div className="EmppAttendence-employee-email">
                                   {rec.user?.email || "N/A"}
                                 </div>
                               </div>
                             </div>
                           </td>
 
-                          <td className="col-department">
-                            <span className="department-chip">
+                          <td className="EmppAttendence-col-department">
+                            <span className="EmppAttendence-department-chip">
                               {rec.user?.department || 
                                (rec.user?.departmentId && departmentsMap[rec.user.departmentId]) || 
                                'Unassigned'}
                             </span>
                           </td>
 
-                          <td className="col-type">
-                            <span className={`type-chip ${getEmployeeTypeClass(rec.user?.employeeType)}`}>
+                          <td className="EmppAttendence-col-type">
+                            <span className={`EmppAttendence-type-chip ${getEmployeeTypeClass(rec.user?.employeeType)}`}>
                               {rec.user?.employeeType?.toUpperCase() || "N/A"}
                             </span>
                           </td>
 
                           {!dateRangeMode && (
-                            <td className="col-date">
+                            <td className="EmppAttendence-col-date">
                               <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>
                                 {formatDate(rec.date)}
                               </div>
                             </td>
                           )}
 
-                          <td className="col-checkin">
+                          <td className="EmppAttendence-col-checkin">
                             <div style={{ fontWeight: 500 }}>
                               {formatTime(rec.inTime)}
                             </div>
                           </td>
 
-                          <td className="col-checkout">
+                          <td className="EmppAttendence-col-checkout">
                             <div style={{ fontWeight: 500 }}>
                               {formatTime(rec.outTime)}
                             </div>
                           </td>
 
-                          <td className="col-hours">
-                            <span className={`time-chip ${
+                          <td className="EmppAttendence-col-hours">
+                            <span className={`EmppAttendence-time-chip ${
                               rec.totalHours >= 9
-                                ? 'time-full'
+                                ? 'EmppAttendence-time-full'
                                 : rec.totalHours >= 5
-                                ? 'time-half'
-                                : 'time-low'
+                                ? 'EmppAttendence-time-half'
+                                : 'EmppAttendence-time-low'
                             }`}>
                               {rec.hoursWorked || "00:00:00"}
                             </span>
                           </td>
 
-                          <td className="col-login">
-                            <div className="login-time-info">
+                          <td className="EmppAttendence-col-login">
+                            <div className="EmppAttendence-login-time-info">
                               {getLoginTimeCategory(rec.inTime)}
                             </div>
                           </td>
 
-                          <td className="col-status">
-                            <span className={`status-chip ${getStatusClass(rec.status)}`}>
+                          <td className="EmppAttendence-col-status">
+                            <span className={`EmppAttendence-status-chip ${getStatusClass(rec.status)}`}>
                               {rec.status.toUpperCase()}
                             </span>
-                            <div className="status-explanation">
+                            <div className="EmppAttendence-status-explanation">
                               {rec.status === 'present' && 'Arrived before 9:10 AM'}
                               {rec.status === 'late' && 'Arrived between 9:10-9:30 AM'}
                               {rec.status === 'halfday' && 'Arrived after 9:30 AM'}
@@ -2908,17 +2907,17 @@ const EmployeeAttendance = () => {
                             </div>
                           </td>
 
-                          <td className="col-late">
-                            <span className="late-chip">
+                          <td className="EmppAttendence-col-late">
+                            <span className="EmppAttendence-late-chip">
                               {rec.lateBy || "00:00:00"}
                             </span>
                           </td>
 
                           {!bulkEditMode && (
-                            <td className="col-actions">
-                              <div className="action-buttons">
+                            <td className="EmppAttendence-col-actions">
+                              <div className="EmppAttendence-action-buttons">
                                 <button
-                                  className="btn-icon edit-btn"
+                                  className="EmppAttendence-btn-icon EmppAttendence-edit-btn"
                                   onClick={() => handleEditRecord(rec)}
                                   title="Edit Attendance"
                                 >
@@ -2943,12 +2942,12 @@ const EmployeeAttendance = () => {
                   ).map(([department, deptRecords]) => (
                     <React.Fragment key={department}>
                       {/* Department Header */}
-                      <tr className="department-header">
+                      <tr className="EmppAttendence-department-header">
                         <td colSpan={bulkEditMode ? 12 : 11}>
-                          <div className="department-title">
+                          <div className="EmppAttendence-department-title">
                             <FiUsers size={18} />
                             <strong>{department} Department</strong>
-                            <span className="department-count">
+                            <span className="EmppAttendence-department-count">
                               ({deptRecords.length} employees)
                             </span>
                           </div>
@@ -2968,77 +2967,77 @@ const EmployeeAttendance = () => {
                             </td>
                           )}
 
-                          <td className="col-employee">
-                            <div className="employee-info">
-                              <div className="employee-avatar">
+                          <td className="EmppAttendence-col-employee">
+                            <div className="EmppAttendence-employee-info">
+                              <div className="EmppAttendence-employee-avatar">
                                 {getInitials(rec.user?.name)}
                               </div>
-                              <div className="employee-details">
-                                <div className="employee-name">
+                              <div className="EmppAttendence-employee-details">
+                                <div className="EmppAttendence-employee-name">
                                   {rec.user?.name || "N/A"}
                                 </div>
-                                <div className="employee-email">
+                                <div className="EmppAttendence-employee-email">
                                   {rec.user?.email || "N/A"}
                                 </div>
                               </div>
                             </div>
                           </td>
 
-                          <td className="col-department">
-                            <span className="department-chip">
+                          <td className="EmppAttendence-col-department">
+                            <span className="EmppAttendence-department-chip">
                               {rec.user?.department || 
                                (rec.user?.departmentId && departmentsMap[rec.user.departmentId]) || 
                                'Unassigned'}
                             </span>
                           </td>
 
-                          <td className="col-type">
-                            <span className={`type-chip ${getEmployeeTypeClass(rec.user?.employeeType)}`}>
+                          <td className="EmppAttendence-col-type">
+                            <span className={`EmppAttendence-type-chip ${getEmployeeTypeClass(rec.user?.employeeType)}`}>
                               {rec.user?.employeeType?.toUpperCase() || "N/A"}
                             </span>
                           </td>
 
-                          <td className="col-date">
+                          <td className="EmppAttendence-col-date">
                             <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>
                               {formatDate(rec.date)}
                             </div>
                           </td>
 
-                          <td className="col-checkin">
+                          <td className="EmppAttendence-col-checkin">
                             <div style={{ fontWeight: 500 }}>
                               {formatTime(rec.inTime)}
                             </div>
                           </td>
 
-                          <td className="col-checkout">
+                          <td className="EmppAttendence-col-checkout">
                             <div style={{ fontWeight: 500 }}>
                               {formatTime(rec.outTime)}
                             </div>
                           </td>
 
-                          <td className="col-hours">
-                            <span className={`time-chip ${
+                          <td className="EmppAttendence-col-hours">
+                            <span className={`EmppAttendence-time-chip ${
                               rec.totalHours >= 9
-                                ? 'time-full'
+                                ? 'EmppAttendence-time-full'
                                 : rec.totalHours >= 5
-                                ? 'time-half'
-                                : 'time-low'
+                                ? 'EmppAttendence-time-half'
+                                : 'EmppAttendence-time-low'
                             }`}>
                               {rec.hoursWorked || "00:00:00"}
                             </span>
                           </td>
 
-                          <td className="col-login">
-                            <div className="login-time-info">
+                          <td className="EmppAttendence-col-login">
+                            <div className="EmppAttendence-login-time-info">
                               {getLoginTimeCategory(rec.inTime)}
                             </div>
                           </td>
 
-                          <td className="col-status">
-                            <span className={`status-chip ${getStatusClass(rec.status)}`}>
+                          <td className="EmppAttendence-col-status">
+                            <span className={`EmppAttendence-status-chip ${getStatusClass(rec.status)}`}>
                               {rec.status.toUpperCase()}
                             </span>
-                            <div className="status-explanation">
+                            <div className="EmppAttendence-status-explanation">
                               {rec.status === 'present' && 'Arrived before 9:10 AM'}
                               {rec.status === 'late' && 'Arrived between 9:10-9:30 AM'}
                               {rec.status === 'halfday' && 'Arrived after 9:30 AM'}
@@ -3046,17 +3045,17 @@ const EmployeeAttendance = () => {
                             </div>
                           </td>
 
-                          <td className="col-late">
-                            <span className="late-chip">
+                          <td className="EmppAttendence-col-late">
+                            <span className="EmppAttendence-late-chip">
                               {rec.lateBy || "00:00:00"}
                             </span>
                           </td>
 
                           {!bulkEditMode && (
-                            <td className="col-actions">
-                              <div className="action-buttons">
+                            <td className="EmppAttendence-col-actions">
+                              <div className="EmppAttendence-action-buttons">
                                 <button
-                                  className="btn-icon edit-btn"
+                                  className="EmppAttendence-btn-icon EmppAttendence-edit-btn"
                                   onClick={() => handleEditRecord(rec)}
                                   title="Edit Attendance"
                                 >
@@ -3073,16 +3072,16 @@ const EmployeeAttendance = () => {
               ) : (
                 <tr>
                   <td colSpan={bulkEditMode ? (dateRangeMode ? 12 : 11) : (dateRangeMode ? 11 : 10)}>
-                    <div className="empty-state">
-                      <div className="empty-state-icon">
+                    <div className="EmppAttendence-empty-state">
+                      <div className="EmppAttendence-empty-state-icon">
                         <FiCalendar size={48} />
                       </div>
-                      <h4 className="empty-state-title">No Records Found</h4>
-                      <p className="empty-state-text">
+                      <h4 className="EmppAttendence-empty-state-title">No Records Found</h4>
+                      <p className="EmppAttendence-empty-state-text">
                         Try adjusting your filters or add a new attendance record
                       </p>
                       <button
-                        className="btn btn-contained"
+                        className="EmppAttendence-btn EmppAttendence-btn-contained"
                         onClick={handleAddRecord}
                       >
                         Add Attendance
@@ -3097,42 +3096,43 @@ const EmployeeAttendance = () => {
       </div>
 
       {/* Summary Section */}
-      <div className="summary-section">
-        <h4>Attendance Summary {dateRangeMode && `(Period Summary)`}</h4>
-        <div className="summary-grid">
-          <div className="summary-item">
-            <span className="summary-label">Total Employees:</span>
-            <span className="summary-value">{stats.total}</span>
-          </div>
-          <div className="summary-item">
-            <span className="summary-label">Attendance Rate:</span>
-            <span className="summary-value">
-              {stats.total > 0 ? ((stats.present + stats.late + stats.halfDay) / stats.total * 100).toFixed(1) : 0}%
-            </span>
-          </div>
-          <div className="summary-item">
-            <span className="summary-label">On Time Rate:</span>
-            <span className="summary-value">
-              {stats.total > 0 ? (stats.onTime / stats.total * 100).toFixed(1) : 0}%
-            </span>
-          </div>
-          <div className="summary-item">
-            <span className="summary-label">Late Rate:</span>
-            <span className="summary-value">
-              {stats.total > 0 ? (stats.late / stats.total * 100).toFixed(1) : 0}%
-            </span>
-          </div>
-        </div>
-        {dateRangeMode && (
-          <div className="range-summary-details">
-            <p><strong>Period:</strong> {dateRangeStats.totalDays} days</p>
-            <p><strong>Total Present:</strong> {dateRangeStats.totalPresent}</p>
-            <p><strong>Total Late:</strong> {dateRangeStats.totalLate}</p>
-            <p><strong>Total Half Day:</strong> {dateRangeStats.totalHalfDay}</p>
-            <p><strong>Total Absent:</strong> {dateRangeStats.totalAbsent}</p>
-          </div>
-        )}
-      </div>
+      <div className="EmppAttendence-summary-grid">
+
+  {stats.total > 0 && (
+    <div className="EmppAttendence-summary-item">
+      <span className="EmppAttendence-summary-label">Total Employees:</span>
+      <span className="EmppAttendence-summary-value">{stats.total}</span>
+    </div>
+  )}
+
+  {(stats.present + stats.late + stats.halfDay) > 0 && (
+    <div className="EmppAttendence-summary-item">
+      <span className="EmppAttendence-summary-label">Attendance Rate:</span>
+      <span className="EmppAttendence-summary-value">
+        {((stats.present + stats.late + stats.halfDay) / stats.total * 100).toFixed(1)}%
+      </span>
+    </div>
+  )}
+
+  {stats.onTime > 0 && (
+    <div className="EmppAttendence-summary-item">
+      <span className="EmppAttendence-summary-label">On Time Rate:</span>
+      <span className="EmppAttendence-summary-value">
+        {(stats.onTime / stats.total * 100).toFixed(1)}%
+      </span>
+    </div>
+  )}
+
+  {stats.late > 0 && (
+    <div className="EmppAttendence-summary-item">
+      <span className="EmppAttendence-summary-label">Late Rate:</span>
+      <span className="EmppAttendence-summary-value">
+        {(stats.late / stats.total * 100).toFixed(1)}%
+      </span>
+    </div>
+  )}
+
+</div>
 
       {/* Modals */}
       {editModalOpen && (
@@ -3178,8 +3178,8 @@ const EmployeeAttendance = () => {
 
       {/* Snackbar */}
       {snackbar.open && (
-        <div className="snackbar">
-          <div className={`snackbar-content snackbar-${snackbar.type}`}>
+        <div className="EmppAttendence-snackbar">
+          <div className={`EmppAttendence-snackbar-content EmppAttendence-snackbar-${snackbar.type}`}>
             {snackbar.type === "success" && <FiCheckCircle size={20} />}
             {snackbar.type === "error" && <FiXCircle size={20} />}
             {snackbar.type === "info" && <FiAlertCircle size={20} />}
