@@ -294,7 +294,7 @@
 
 .EmployeeDirectory-search-input-container {
   flex: 1;
-  min-width: 280px;
+  min-width: 157px;
   position: relative;
 }
 
@@ -1232,6 +1232,8 @@
 
   .EmployeeDirectory-search-filter-container {
     padding: 16px;
+    display: flex;
+    gap: 8px;
   }
 
   .EmployeeDirectory-search-row {
@@ -1244,6 +1246,7 @@
 
   .EmployeeDirectory-role-select {
     width: 100%;
+    min-width: 157px;
   }
 
   .EmployeeDirectory-stats-container {
