@@ -108,7 +108,7 @@ const Checkbox = ({ checked, onChange }) => (
 ------------------------------------ */
 const Alerts = () => {
   const [alerts, setAlerts] = useState([]);
-  const [pageLoading, setPageLoading] = useState(true); // ✅ Page loading state
+  const [pageLoading, setPageLoading] = useState(true);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     type: "info",
@@ -136,10 +136,40 @@ const Alerts = () => {
   const [viewMode, setViewMode] = useState("all");
   const [expandedAlert, setExpandedAlert] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [userGroups, setUserGroups] = useState([]);
 
   const token = localStorage.getItem("token");
   const canManage = ["admin", "hr", "manager"].includes(role?.toLowerCase());
   const headers = { headers: { Authorization: `Bearer ${token}` } };
+
+  /* -----------------------------------
+    🔹 Helper Functions
+  ------------------------------------ */
+  const getUserGroups = async (userId) => {
+    try {
+      const response = await axios.get(`/users/${userId}/groups`, headers);
+      if (response.data) {
+        const groups = response.data.groups || response.data.data || response.data || [];
+        setUserGroups(groups);
+        localStorage.setItem("userGroups", JSON.stringify(groups));
+        return groups;
+      }
+    } catch (error) {
+      console.error("Error fetching user groups:", error);
+      // Try to get from localStorage as fallback
+      const storedGroups = localStorage.getItem("userGroups");
+      if (storedGroups) {
+        try {
+          const parsed = JSON.parse(storedGroups);
+          setUserGroups(parsed);
+          return parsed;
+        } catch (e) {
+          console.error("Error parsing stored groups:", e);
+        }
+      }
+    }
+    return [];
+  };
 
   /* -----------------------------------
     🔹 Fetch Data
@@ -171,18 +201,37 @@ const Alerts = () => {
     } finally {
       setLoading(false);
       setRefreshing(false);
-      setPageLoading(false); // ✅ Stop page loading after data fetch
+      setPageLoading(false);
     }
   };
 
   const calculateStats = (data) => {
-    const info = data.filter((a) => a.type === "info").length;
-    const warning = data.filter((a) => a.type === "warning").length;
-    const error = data.filter((a) => a.type === "error").length;
-    const unread = data.filter((a) => !a.readBy?.includes(localStorage.getItem("userId"))).length;
+    const currentUserId = localStorage.getItem("userId");
+    
+    // Only count alerts that are visible to the current user
+    const visibleAlerts = data.filter(alert => {
+      const hasAssignments = alert.assignedUsers?.length > 0 || alert.assignedGroups?.length > 0;
+      if (!hasAssignments) return true;
+      
+      const isDirectlyAssigned = alert.assignedUsers?.some(
+        user => (user._id || user) === currentUserId
+      );
+      
+      const isInAssignedGroup = alert.assignedGroups?.some(group => {
+        const groupId = group._id || group;
+        return userGroups.includes(groupId);
+      });
+      
+      return isDirectlyAssigned || isInAssignedGroup;
+    });
+
+    const info = visibleAlerts.filter((a) => a.type === "info").length;
+    const warning = visibleAlerts.filter((a) => a.type === "warning").length;
+    const error = visibleAlerts.filter((a) => a.type === "error").length;
+    const unread = visibleAlerts.filter((a) => !a.readBy?.includes(currentUserId)).length;
     
     setStats({
-      total: data.length,
+      total: visibleAlerts.length,
       info,
       warning,
       error,
@@ -190,7 +239,7 @@ const Alerts = () => {
     });
   };
 
-  // ✅ Load data with page loader
+  // Load data with page loader
   useEffect(() => {
     const loadData = async () => {
       setPageLoading(true);
@@ -201,7 +250,11 @@ const Alerts = () => {
           const userRole = parsed.role || parsed.user?.role || "";
           setRole(userRole.toLowerCase());
           const userId = parsed._id || parsed.user?._id || "";
-          if (userId) localStorage.setItem("userId", userId);
+          if (userId) {
+            localStorage.setItem("userId", userId);
+            // Fetch user's groups
+            await getUserGroups(userId);
+          }
         } catch (error) {
           console.error("Error parsing user:", error);
         }
@@ -211,6 +264,13 @@ const Alerts = () => {
     
     loadData();
   }, []);
+
+  // Recalculate stats when userGroups change
+  useEffect(() => {
+    if (alerts.length > 0) {
+      calculateStats(alerts);
+    }
+  }, [userGroups, alerts]);
 
   /* -----------------------------------
     🔹 Handlers
@@ -351,10 +411,34 @@ const Alerts = () => {
 
   /* -----------------------------------
     🔹 Filtered Data
-  ------------------------------------ */
+  ------------------------------------- */
   const filteredAlerts = useMemo(() => {
     let filtered = alerts;
+    const currentUserId = localStorage.getItem("userId");
     
+    // First, filter by assigned to current user
+    filtered = filtered.filter(alert => {
+      // Check if alert has any assignments
+      const hasAssignments = alert.assignedUsers?.length > 0 || alert.assignedGroups?.length > 0;
+      
+      // If no assignments, alert is for all users (show it)
+      if (!hasAssignments) return true;
+      
+      // Check if user is directly assigned
+      const isDirectlyAssigned = alert.assignedUsers?.some(
+        user => (user._id || user) === currentUserId
+      );
+      
+      // Check if user belongs to any assigned groups
+      const isInAssignedGroup = alert.assignedGroups?.some(group => {
+        const groupId = group._id || group;
+        return userGroups.includes(groupId);
+      });
+      
+      return isDirectlyAssigned || isInAssignedGroup;
+    });
+    
+    // Apply search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(alert => 
@@ -363,28 +447,20 @@ const Alerts = () => {
       );
     }
     
+    // Apply type filter
     if (filterType !== "all") {
       filtered = filtered.filter((a) => a.type === filterType);
     }
     
+    // Apply view mode filter
     if (viewMode === "unread") {
-      const userId = localStorage.getItem("userId");
       filtered = filtered.filter(alert => 
-        !alert.readBy?.some(user => user._id === userId)
+        !alert.readBy?.some(user => (user._id || user) === currentUserId)
       );
-    } else if (viewMode === "assigned") {
-      const userId = localStorage.getItem("userId");
-      filtered = filtered.filter(alert => {
-        const isAssignedToUser = alert.assignedUsers?.some(
-          user => (user._id || user) === userId
-        );
-        const hasAssignments = alert.assignedUsers?.length > 0 || alert.assignedGroups?.length > 0;
-        return isAssignedToUser || !hasAssignments;
-      });
     }
     
     return filtered;
-  }, [alerts, searchQuery, filterType, viewMode]);
+  }, [alerts, searchQuery, filterType, viewMode, userGroups]);
 
   const filteredUsers = useMemo(() => {
     if (!userSearch) return users;
@@ -404,7 +480,6 @@ const Alerts = () => {
       group.description?.toLowerCase().includes(query)
     );
   }, [groups, groupSearch]);
-
 
   const formatDate = (d) =>
     new Date(d).toLocaleString("en-US", {
@@ -459,7 +534,7 @@ const Alerts = () => {
     }
   };
 
-  // ✅ Show CIISLoader while page is loading
+  // Show CIISLoader while page is loading
   if (pageLoading) {
     return <CIISLoader />;
   }
@@ -475,13 +550,13 @@ const Alerts = () => {
           </div>
           <div className="Alerts-header-actions">
             <Tooltip title="Refresh">
-              {/* <button 
+              <button 
                 className={`Alerts-icon-button Alerts-refresh-button ${refreshing ? 'Alerts-refreshing' : ''}`}
                 onClick={fetchData} 
                 disabled={refreshing}
               >
                 <FiRefreshCw />
-              </button> */}
+              </button>
             </Tooltip>
             {canManage && (
               <button
@@ -518,7 +593,7 @@ const Alerts = () => {
         </div>
 
         {/* View Mode Toggle */}
-        {/* <div className="Alerts-view-mode-container">
+        <div className="Alerts-view-mode-container">
           <div className="Alerts-view-mode-card">
             <span className="Alerts-view-mode-label">View:</span>
             <div className="Alerts-toggle-button-group">
@@ -528,13 +603,6 @@ const Alerts = () => {
               >
                 <FiEye />
                 <span>All</span>
-              </button>
-              <button 
-                className={`Alerts-toggle-button ${viewMode === 'assigned' ? 'Alerts-toggle-button-active' : ''}`}
-                onClick={() => setViewMode('assigned')}
-              >
-                <FiUserCheck />
-                <span>Assigned</span>
               </button>
               <button 
                 className={`Alerts-toggle-button ${viewMode === 'unread' ? 'Alerts-toggle-button-active' : ''}`}
@@ -547,14 +615,14 @@ const Alerts = () => {
               </button>
             </div>
           </div>
-        </div> */}
+        </div>
 
         {/* Stat Cards */}
         <div className="Alerts-stats-grid">
           {[
             { 
               key: "total", 
-              label: "Total Alerts", 
+              label: "My Alerts", 
               color: "#667eea", 
               icon: <FiBell />,
               value: stats.total,
@@ -613,11 +681,9 @@ const Alerts = () => {
       <div className="Alerts-list-container">
         <div className="Alerts-list-header">
           <div>
-            <h2 className="Alerts-list-title">Alerts ({filteredAlerts.length})</h2>
+            <h2 className="Alerts-list-title">My Alerts ({filteredAlerts.length})</h2>
             <p className="Alerts-list-subtitle">
-              {viewMode === 'unread' ? 'Showing unread alerts' : 
-               viewMode === 'assigned' ? 'Showing assigned alerts' : 
-               'Showing all alerts'}
+              {viewMode === 'unread' ? 'Showing unread alerts' : 'Showing all my alerts'}
             </p>
           </div>
           <Chip
@@ -636,7 +702,7 @@ const Alerts = () => {
               <p>
                 {searchQuery ? 'Try a different search term' : 
                  viewMode === 'unread' ? 'You have no unread alerts' : 
-                 'No alerts match your current filters'}
+                 'No alerts are assigned to you'}
               </p>
             </div>
           ) : (
