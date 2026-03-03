@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import axios from "../../../utils/axiosConfig";
 import './employee-directory.css';
+import CIISLoader from '../../../Loader/CIISLoader'; // Import CIISLoader
 
 // Icons imports
 import {
@@ -1242,14 +1243,9 @@ const EmployeeDirectory = () => {
     return filtered;
   }, [employees, selectedFilter, searchTerm, getJobRoleName, getDepartmentName]);
   
-  // Loading state
+  // Loading state - Use CIISLoader
   if (loading) {
-    return (
-      <div className="EmployeeDirectory-loading-container">
-        <div className="EmployeeDirectory-spinner"></div>
-        <p>Loading employee directory...</p>
-      </div>
-    );
+    return <CIISLoader />;
   }
   
   // Error state
