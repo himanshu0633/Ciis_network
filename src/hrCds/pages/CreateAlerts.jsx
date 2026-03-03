@@ -19,6 +19,8 @@ const FiEye = () => <span className="CreateAlert-icon">👁️</span>;
 const FiUserCheck = () => <span className="CreateAlert-icon">✅👤</span>;
 const FiFilter = () => <span className="CreateAlert-icon">🔧</span>;
 const FiPlus = () => <span className="CreateAlert-icon">➕</span>;
+const FiClock = () => <span className="CreateAlert-icon">⏰</span>;
+const FiCalendar = () => <span className="CreateAlert-icon">📅</span>;
 
 // Custom Components
 const Badge = ({ children, badgeContent, color = "error", size = "small" }) => (
@@ -87,21 +89,23 @@ const CreateAlert = () => {
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [users, setUsers] = useState([]);
+  const [usersMap, setUsersMap] = useState(new Map()); // Add a Map for quick user lookup
   const [groups, setGroups] = useState([]);
   const [role, setRole] = useState("");
   const [alerts, setAlerts] = useState([]);
+  
+  // Modal state
+  const [isModalOpen, setIsModalOpen] = useState(false);
   
   // Form state
   const [form, setForm] = useState({
     type: "info",
     message: "",
     assignedUsers: [],
-    assignedGroups: [],
   });
   
   // Search and filter states
   const [userSearch, setUserSearch] = useState("");
-  const [groupSearch, setGroupSearch] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [viewMode, setViewMode] = useState("all");
@@ -118,10 +122,25 @@ const CreateAlert = () => {
   // UI states
   const [notification, setNotification] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedAlert, setSelectedAlert] = useState(null);
 
   const token = localStorage.getItem("token");
   
-  // FIXED: Better headers with token validation
+  // Check if mobile view
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isTablet, setIsTablet] = useState(window.innerWidth > 768 && window.innerWidth <= 1024);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+      setIsTablet(window.innerWidth > 768 && window.innerWidth <= 1024);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  
+  // Headers with token validation
   const getHeaders = () => {
     const token = localStorage.getItem("token");
     console.log("Current token:", token ? "Present" : "Missing");
@@ -132,6 +151,18 @@ const CreateAlert = () => {
         'Content-Type': 'application/json'
       }
     };
+  };
+
+  // Create users map for quick lookup
+  const createUsersMap = (usersArray) => {
+    const map = new Map();
+    usersArray.forEach(user => {
+      const userId = user._id || user.id;
+      if (userId) {
+        map.set(userId, user);
+      }
+    });
+    setUsersMap(map);
   };
 
   // Fetch users from company-users API
@@ -147,7 +178,6 @@ const CreateAlert = () => {
       let fetchedUsers = [];
       
       if (response.data) {
-        // Your API returns users in message object
         if (response.data.message) {
           if (Array.isArray(response.data.message)) {
             fetchedUsers = response.data.message;
@@ -169,6 +199,7 @@ const CreateAlert = () => {
       
       console.log("✅ FINAL FETCHED USERS COUNT:", fetchedUsers.length);
       setUsers(fetchedUsers);
+      createUsersMap(fetchedUsers); // Create the map after fetching users
       
     } catch (error) {
       console.error("❌ ERROR FETCHING USERS:", error);
@@ -179,10 +210,11 @@ const CreateAlert = () => {
         });
       }
       setUsers([]);
+      setUsersMap(new Map());
     }
   };
 
-  // Fetch groups
+  // Fetch groups (still needed for displaying alerts)
   const fetchGroups = async () => {
     try {
       console.log("========== FETCHING GROUPS ==========");
@@ -211,7 +243,7 @@ const CreateAlert = () => {
     }
   };
 
-  // Fetch alerts for stats
+  // Fetch alerts
   const fetchAlerts = async () => {
     try {
       const response = await axios.get("/alerts", getHeaders());
@@ -255,7 +287,6 @@ const CreateAlert = () => {
     const loadData = async () => {
       setPageLoading(true);
       
-      // Check if token exists
       const token = localStorage.getItem("token");
       if (!token) {
         setNotification({
@@ -266,7 +297,6 @@ const CreateAlert = () => {
         return;
       }
       
-      // Get user from localStorage
       const storedUser = localStorage.getItem("user");
       if (storedUser) {
         try {
@@ -295,7 +325,6 @@ const CreateAlert = () => {
         }
       }
       
-      // Fetch all data
       await Promise.all([fetchUsers(), fetchGroups(), fetchAlerts()]);
       setPageLoading(false);
     };
@@ -322,17 +351,6 @@ const CreateAlert = () => {
     });
   };
 
-  const handleGroupSelect = (groupId) => {
-    setForm(prev => {
-      const isSelected = prev.assignedGroups.includes(groupId);
-      if (isSelected) {
-        return { ...prev, assignedGroups: prev.assignedGroups.filter(id => id !== groupId) };
-      } else {
-        return { ...prev, assignedGroups: [...prev.assignedGroups, groupId] };
-      }
-    });
-  };
-
   const handleSelectAllUsers = () => {
     if (!Array.isArray(filteredUsers) || filteredUsers.length === 0) return;
     
@@ -343,17 +361,7 @@ const CreateAlert = () => {
     }
   };
 
-  const handleSelectAllGroups = () => {
-    if (!Array.isArray(filteredGroups) || filteredGroups.length === 0) return;
-    
-    if (form.assignedGroups.length === filteredGroups.length) {
-      setForm(prev => ({ ...prev, assignedGroups: [] }));
-    } else {
-      setForm(prev => ({ ...prev, assignedGroups: filteredGroups.map(g => g._id || g.id) }));
-    }
-  };
-
-  // FIXED: Enhanced handleSubmit with better error handling
+  // Handle form submit
   const handleSubmit = async () => {
     if (!form.message.trim()) {
       return setNotification({ 
@@ -362,7 +370,6 @@ const CreateAlert = () => {
       });
     }
 
-    // Check token
     const token = localStorage.getItem("token");
     if (!token) {
       return setNotification({
@@ -377,20 +384,15 @@ const CreateAlert = () => {
         type: form.type,
         message: form.message.trim(),
         assignedUsers: form.assignedUsers,
-        assignedGroups: form.assignedGroups,
       };
 
       console.log("Submitting alert with payload:", payload);
-      console.log("Using token:", token ? "Present" : "Missing");
       
-      // Try different endpoint variations
       let response;
       try {
-        // First try with /alerts
         response = await axios.post("/alerts", payload, getHeaders());
       } catch (error) {
         if (error.response?.status === 403) {
-          // If 403, try with /api/alerts
           console.log("Trying alternative endpoint: /api/alerts");
           response = await axios.post("/api/alerts", payload, getHeaders());
         } else {
@@ -405,30 +407,24 @@ const CreateAlert = () => {
         type: "success" 
       });
 
-      // Refresh alerts to update stats
       await fetchAlerts();
 
-      // Reset form
+      // Close modal and reset form
+      setIsModalOpen(false);
       setForm({
         type: "info",
         message: "",
         assignedUsers: [],
-        assignedGroups: [],
       });
       setUserSearch("");
-      setGroupSearch("");
       
       setTimeout(() => setNotification(null), 3000);
       
     } catch (error) {
       console.error("Error creating alert:", error);
       
-      // Better error messages based on status code
       let errorMessage = "Failed to create alert";
       if (error.response) {
-        console.log("Error response:", error.response.data);
-        console.log("Error status:", error.response.status);
-        
         switch(error.response.status) {
           case 401:
             errorMessage = "Authentication failed. Please login again.";
@@ -463,10 +459,19 @@ const CreateAlert = () => {
       type: "info",
       message: "",
       assignedUsers: [],
-      assignedGroups: [],
     });
     setUserSearch("");
-    setGroupSearch("");
+  };
+
+  // Open modal
+  const openModal = () => {
+    setIsModalOpen(true);
+  };
+
+  // Close modal
+  const closeModal = () => {
+    setIsModalOpen(false);
+    handleReset();
   };
 
   // Filtered users based on search
@@ -495,29 +500,78 @@ const CreateAlert = () => {
     });
   }, [users, userSearch]);
 
-  // Filtered groups based on search
-  const filteredGroups = useMemo(() => {
-    if (!Array.isArray(groups) || groups.length === 0) return [];
-    if (!groupSearch) return groups;
+  // Filtered alerts based on search and filters
+  const filteredAlerts = useMemo(() => {
+    if (!Array.isArray(alerts) || alerts.length === 0) return [];
     
-    const query = groupSearch.toLowerCase();
-    return groups.filter(group => 
-      (group.name?.toLowerCase() || '').includes(query) ||
-      (group.description?.toLowerCase() || '').includes(query)
-    );
-  }, [groups, groupSearch]);
-
-  // Get user by ID
-  const getUserById = (userId) => {
-    if (!Array.isArray(users) || users.length === 0) {
-      return { name: "Unknown User", email: "" };
+    let filtered = [...alerts];
+    
+    // Apply search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(alert => 
+        alert.message?.toLowerCase().includes(query) ||
+        alert.type?.toLowerCase().includes(query)
+      );
     }
-    const user = users.find(u => u._id === userId || u.id === userId);
-    return user || { name: "Unknown User", email: "" };
+    
+    // Apply type filter
+    if (filterType !== "all") {
+      filtered = filtered.filter(alert => alert.type === filterType);
+    }
+    
+    // Apply view mode filter
+    if (viewMode === "assigned") {
+      const userId = localStorage.getItem("userId");
+      filtered = filtered.filter(alert => 
+        alert.assignedUsers?.includes(userId)
+      );
+    } else if (viewMode === "unread") {
+      const userId = localStorage.getItem("userId");
+      filtered = filtered.filter(alert => !alert.readBy?.includes(userId));
+    }
+    
+    return filtered;
+  }, [alerts, searchQuery, filterType, viewMode]);
+
+  // Get user by ID - FIXED: Using usersMap for better performance and reliability
+  const getUserById = (userId) => {
+    if (!userId) return { name: "Unknown User", email: "", username: "Unknown" };
+    
+    // First try to get from the map
+    if (usersMap && usersMap.size > 0) {
+      const user = usersMap.get(userId);
+      if (user) {
+        return user;
+      }
+    }
+    
+    // Fallback to array search
+    if (Array.isArray(users) && users.length > 0) {
+      const user = users.find(u => u._id === userId || u.id === userId);
+      if (user) {
+        return user;
+      }
+    }
+    
+    // Return default if not found
+    return { 
+      name: "Unknown User", 
+      email: "", 
+      username: "Unknown",
+      _id: userId 
+    };
+  };
+
+  // Get user display name - NEW: Helper function to get consistent user display name
+  const getUserDisplayName = (user) => {
+    if (!user) return "Unknown User";
+    return user.name || user.username || user.fullName || user.email || "Unknown User";
   };
 
   // Get group by ID
   const getGroupById = (groupId) => {
+    if (!groupId) return { name: "Unknown Group" };
     if (!Array.isArray(groups) || groups.length === 0) return { name: "Unknown Group" };
     return groups.find(g => g._id === groupId || g.id === groupId) || { name: "Unknown Group" };
   };
@@ -527,8 +581,15 @@ const CreateAlert = () => {
       case "error": return "#EF5350";
       case "warning": return "#FFA726";
       case "success": return "#66BB6A";
+      case "info": return "#29B6F6";
       default: return "#667eea";
     }
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return date.toLocaleString();
   };
 
   if (pageLoading) {
@@ -541,19 +602,30 @@ const CreateAlert = () => {
       <div className="CreateAlert-gradient-header">
         <div className="CreateAlert-header-content">
           <div className="CreateAlert-header-text">
-            <h1 className="CreateAlert-title">Create Alert</h1>
-            <p className="CreateAlert-subtitle">Create and send notifications to users and groups</p>
+            <h1 className="CreateAlert-title">Alerts Management</h1>
+            <p className="CreateAlert-subtitle">View and manage all alerts</p>
           </div>
           <div className="CreateAlert-header-actions">
-            <Tooltip title="Refresh">
+            <Tooltip title="Create New Alert">
               <button 
-                className={`CreateAlert-icon-button CreateAlert-refresh-button ${refreshing ? 'CreateAlert-refreshing' : ''}`}
-                onClick={handleRefresh} 
-                disabled={refreshing}
+                className="CreateAlert-create-button"
+                onClick={openModal}
               >
-                <FiRefreshCw />
+                <FiPlus />
+                <span>Create Alert</span>
               </button>
             </Tooltip>
+            {!isMobile && (
+              <Tooltip title="Refresh">
+                <button 
+                  className={`CreateAlert-icon-button CreateAlert-refresh-button ${refreshing ? 'CreateAlert-refreshing' : ''}`}
+                  onClick={handleRefresh} 
+                  disabled={refreshing}
+                >
+                  <FiRefreshCw />
+                </button>
+              </Tooltip>
+            )}
           </div>
         </div>
       </div>
@@ -566,7 +638,7 @@ const CreateAlert = () => {
             <FiSearch />
             <input
               type="text"
-              placeholder="Search alerts by message or type..."
+              placeholder={isMobile ? "Search alerts..." : "Search alerts by message or type..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="CreateAlert-search-input"
@@ -589,14 +661,14 @@ const CreateAlert = () => {
                 onClick={() => setViewMode('all')}
               >
                 <FiEye />
-                <span>All</span>
+                <span>{isMobile ? 'All' : 'All Alerts'}</span>
               </button>
               <button 
                 className={`CreateAlert-toggle-button ${viewMode === 'assigned' ? 'CreateAlert-toggle-button-active' : ''}`}
                 onClick={() => setViewMode('assigned')}
               >
                 <FiUserCheck />
-                <span>Assigned</span>
+                <span>{isMobile ? 'Mine' : 'Assigned to Me'}</span>
               </button>
               <button 
                 className={`CreateAlert-toggle-button ${viewMode === 'unread' ? 'CreateAlert-toggle-button-active' : ''}`}
@@ -605,7 +677,7 @@ const CreateAlert = () => {
                 <Badge badgeContent={stats.unread}>
                   <FiBell />
                 </Badge>
-                <span>Unread</span>
+                <span>{isMobile ? 'New' : 'Unread'}</span>
               </button>
             </div>
           </div>
@@ -616,7 +688,7 @@ const CreateAlert = () => {
           {[
             { 
               key: "total", 
-              label: "Total Alerts", 
+              label: isMobile ? "Total" : "Total Alerts", 
               color: "#667eea", 
               icon: <FiBell />,
               value: stats.total,
@@ -624,7 +696,7 @@ const CreateAlert = () => {
             },
             { 
               key: "info", 
-              label: "Information", 
+              label: isMobile ? "Info" : "Information", 
               color: "#29B6F6", 
               icon: <FiInfo />,
               value: stats.info,
@@ -632,7 +704,7 @@ const CreateAlert = () => {
             },
             { 
               key: "warning", 
-              label: "Warnings", 
+              label: isMobile ? "Warn" : "Warnings", 
               color: "#FFA726", 
               icon: <FiAlertTriangle />,
               value: stats.warning,
@@ -640,7 +712,7 @@ const CreateAlert = () => {
             },
             { 
               key: "error", 
-              label: "Errors", 
+              label: isMobile ? "Error" : "Errors", 
               color: "#EF5350", 
               icon: <FiAlertCircle />,
               value: stats.error,
@@ -674,311 +746,404 @@ const CreateAlert = () => {
         <div className="CreateAlert-filter-chip-container">
           <Chip
             icon={<FiFilter />}
-            label={`Filter: ${filterType === 'all' ? 'All Types' : filterType}`}
+            label={`${isMobile ? '' : 'Filter: '}${filterType === 'all' ? 'All' : filterType}`}
             onClick={() => setFilterType('all')}
             variant="outlined"
+            size={isMobile ? "small" : "medium"}
           />
         </div>
       </div>
 
-      {/* Create Alert Form */}
-      <div className="CreateAlert-form-container">
-        {/* Alert Type Selection */}
-        <div className="CreateAlert-form-section">
-          <h3 className="CreateAlert-section-title">Alert Type</h3>
-          <div className="CreateAlert-type-grid">
-            {[
-              { value: "info", label: "Information", color: "#29B6F6", icon: <FiInfo /> },
-              { value: "warning", label: "Warning", color: "#FFA726", icon: <FiAlertTriangle /> },
-              { value: "error", label: "Error / Critical", color: "#EF5350", icon: <FiAlertCircle /> }
-            ].map(type => (
-              <div
-                key={type.value}
-                className={`CreateAlert-type-card ${form.type === type.value ? 'CreateAlert-type-selected' : ''}`}
-                style={{ borderColor: form.type === type.value ? type.color : 'var(--gray-300)' }}
-                onClick={() => setForm(prev => ({ ...prev, type: type.value }))}
-              >
-                <div className="CreateAlert-type-icon" style={{ color: type.color }}>
-                  {type.icon}
-                </div>
-                <div className="CreateAlert-type-info">
-                  <h4 style={{ color: type.color }}>{type.label}</h4>
-                  <p className="CreateAlert-type-desc">
-                    {type.value === "info" && "General updates and announcements"}
-                    {type.value === "warning" && "Important notices requiring attention"}
-                    {type.value === "error" && "Urgent issues requiring immediate action"}
-                  </p>
-                </div>
-                {form.type === type.value && (
-                  <span className="CreateAlert-type-check">✓</span>
-                )}
-              </div>
-            ))}
+      {/* Alerts List */}
+      <div className="CreateAlert-alerts-container">
+        {filteredAlerts.length === 0 ? (
+          <div className="CreateAlert-empty-state">
+            <FiBell />
+            <h3>No Alerts Found</h3>
+            <p>There are no alerts matching your criteria.</p>
+            <button className="CreateAlert-create-button" onClick={openModal}>
+              <FiPlus />
+              Create Your First Alert
+            </button>
           </div>
-        </div>
-
-        {/* Message Input */}
-        <div className="CreateAlert-form-section">
-          <h3 className="CreateAlert-section-title">
-            Alert Message <span className="CreateAlert-required">*</span>
-          </h3>
-          <textarea
-            className="CreateAlert-textarea"
-            rows="5"
-            value={form.message}
-            onChange={(e) => setForm(prev => ({ ...prev, message: e.target.value }))}
-            placeholder="Enter your alert message here..."
-          />
-          <div className="CreateAlert-message-counter">
-            {form.message.length} / 500 characters
-          </div>
-        </div>
-
-        {/* User Assignment */}
-        <div className="CreateAlert-form-section">
-          <div className="CreateAlert-section-header">
-            <h3 className="CreateAlert-section-title">Assign to Users</h3>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span className="CreateAlert-user-count" style={{ color: '#666', fontSize: '14px' }}>
-                Total: {users.length}
-              </span>
-              {Array.isArray(filteredUsers) && filteredUsers.length > 0 && (
-                <button 
-                  className="CreateAlert-select-all"
-                  onClick={handleSelectAllUsers}
+        ) : (
+          <div className="CreateAlert-alerts-grid">
+            {filteredAlerts.map((alert) => {
+              // Get assigned users names for tooltip
+              const assignedUsersList = alert.assignedUsers?.map(userId => {
+                const user = getUserById(userId);
+                return getUserDisplayName(user);
+              }).join(', ') || 'No users assigned';
+              
+              return (
+                <div 
+                  key={alert._id || alert.id} 
+                  className="CreateAlert-alert-card"
+                  style={{ borderLeftColor: getSeverityColor(alert.type) }}
+                  onClick={() => setSelectedAlert(alert)}
                 >
-                  {form.assignedUsers.length === filteredUsers.length ? 'Deselect All' : 'Select All'}
-                </button>
-              )}
-            </div>
-          </div>
-          
-          {/* Selected Users */}
-          {Array.isArray(form.assignedUsers) && form.assignedUsers.length > 0 && (
-            <div className="CreateAlert-selected-items">
-              <span className="CreateAlert-selected-label">Selected ({form.assignedUsers.length}):</span>
-              <div className="CreateAlert-selected-chips">
-                {form.assignedUsers.map(userId => {
-                  const user = getUserById(userId);
-                  return (
-                    <Chip
-                      key={userId}
-                      label={user.name || user.email || user.username || 'Unknown User'}
-                      onDelete={() => handleUserSelect(userId)}
-                      color="#667eea"
-                      size="small"
-                    />
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* User Search */}
-          <div className="CreateAlert-search-field">
-            <FiSearch />
-            <input
-              type="text"
-              placeholder="Search users by name, email, or role..."
-              value={userSearch}
-              onChange={(e) => setUserSearch(e.target.value)}
-              className="CreateAlert-search-input"
-            />
-          </div>
-
-          {/* Users List */}
-          <div className="CreateAlert-users-list">
-            {!Array.isArray(filteredUsers) || filteredUsers.length === 0 ? (
-              <div className="CreateAlert-empty-list">
-                {users.length === 0 ? (
-                  <>
-                    <p>No users found in the company.</p>
-                    <button 
-                      className="CreateAlert-retry-button"
-                      onClick={fetchUsers}
-                      style={{
-                        background: '#667eea',
-                        color: 'white',
-                        border: 'none',
-                        padding: '8px 16px',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        marginTop: '10px'
-                      }}
-                    >
-                      Retry Fetching Users
-                    </button>
-                  </>
-                ) : (
-                  'No users match your search'
-                )}
-              </div>
-            ) : (
-              filteredUsers.map((user) => (
-                <div
-                  key={user._id || user.id || Math.random()}
-                  className={`CreateAlert-user-item ${Array.isArray(form.assignedUsers) && (form.assignedUsers.includes(user._id) || form.assignedUsers.includes(user.id)) ? 'CreateAlert-user-item-selected' : ''}`}
-                  onClick={() => handleUserSelect(user._id || user.id)}
-                >
-                  <Checkbox
-                    checked={Array.isArray(form.assignedUsers) && (form.assignedUsers.includes(user._id) || form.assignedUsers.includes(user.id))}
-                    onChange={() => handleUserSelect(user._id || user.id)}
-                  />
-                  <Avatar size="small" color="#667eea">
-                    {user.name?.charAt(0) || user.username?.charAt(0) || user.email?.charAt(0) || 'U'}
-                  </Avatar>
-                  <div className="CreateAlert-user-info">
-                    <p className="CreateAlert-user-name">
-                      {user.name || user.username || 'No Name'}
-                    </p>
-                    <p className="CreateAlert-user-details">
-                      {user.email || 'No Email'} 
-                      {user.role && ` • ${user.role}`}
-                      {user.department && ` • ${user.department}`}
-                    </p>
+                  <div className="CreateAlert-alert-header">
+                    <div className="CreateAlert-alert-type">
+                      {alert.type === "info" && <FiInfo />}
+                      {alert.type === "warning" && <FiAlertTriangle />}
+                      {alert.type === "error" && <FiAlertCircle />}
+                      <span style={{ 
+                        color: getSeverityColor(alert.type),
+                        textTransform: 'capitalize'
+                      }}>
+                        {alert.type}
+                      </span>
+                    </div>
+                    <span className="CreateAlert-alert-date">
+                      <FiCalendar />
+                      {isMobile ? formatDate(alert.createdAt).split(',')[0] : formatDate(alert.createdAt)}
+                    </span>
+                  </div>
+                  
+                  <p className="CreateAlert-alert-message">{alert.message}</p>
+                  
+                  <div className="CreateAlert-alert-footer">
+                    <div className="CreateAlert-alert-assignments">
+                      {alert.assignedUsers?.length > 0 && (
+                        <Tooltip title={assignedUsersList}>
+                          <span className="CreateAlert-alert-badge">
+                            <FiUser /> {alert.assignedUsers.length}
+                          </span>
+                        </Tooltip>
+                      )}
+                      {alert.assignedGroups?.length > 0 && (
+                        <Tooltip title={`Assigned to ${alert.assignedGroups.length} groups`}>
+                          <span className="CreateAlert-alert-badge">
+                            <FiUsers /> {alert.assignedGroups.length}
+                          </span>
+                        </Tooltip>
+                      )}
+                    </div>
+                    
+                    {!alert.readBy?.includes(localStorage.getItem("userId")) && (
+                      <span className="CreateAlert-unread-badge">New</span>
+                    )}
                   </div>
                 </div>
-              ))
-            )}
+              );
+            })}
           </div>
-        </div>
+        )}
+      </div>
 
-        {/* Group Assignment */}
-        {/* <div className="CreateAlert-form-section">
-          <div className="CreateAlert-section-header">
-            <h3 className="CreateAlert-section-title">Assign to Groups</h3>
-            {Array.isArray(filteredGroups) && filteredGroups.length > 0 && (
-              <button 
-                className="CreateAlert-select-all"
-                onClick={handleSelectAllGroups}
-              >
-                {form.assignedGroups.length === filteredGroups.length ? 'Deselect All' : 'Select All'}
+      {/* Create Alert Modal */}
+      {isModalOpen && (
+        <div className="CreateAlert-modal-overlay" onClick={closeModal}>
+          <div className="CreateAlert-modal" onClick={e => e.stopPropagation()}>
+            <div className="CreateAlert-modal-header">
+              <h2>Create New Alert</h2>
+              <button className="CreateAlert-modal-close" onClick={closeModal}>
+                <FiX />
               </button>
-            )}
-          </div>
-
-          {/* Selected Groups */}
-          {/* {Array.isArray(form.assignedGroups) && form.assignedGroups.length > 0 && (
-            <div className="CreateAlert-selected-items">
-              <span className="CreateAlert-selected-label">Selected ({form.assignedGroups.length}):</span>
-              <div className="CreateAlert-selected-chips">
-                {form.assignedGroups.map(groupId => {
-                  const group = getGroupById(groupId);
-                  return (
-                    <Chip
-                      key={groupId}
-                      label={group.name || group.groupName || 'Unknown Group'}
-                      onDelete={() => handleGroupSelect(groupId)}
-                      color="#764ba2"
-                      size="small"
-                    />
-                  );
-                })}
-              </div>
             </div>
-          )} */}
-
-          {/* Group Search */}
-          {/* <div className="CreateAlert-search-field">
-            <FiSearch />
-            <input
-              type="text"
-              placeholder="Search groups by name..."
-              value={groupSearch}
-              onChange={(e) => setGroupSearch(e.target.value)}
-              className="CreateAlert-search-input"
-            />
-          </div> */}
-
-          {/* Groups List */}
-          {/* <div className="CreateAlert-groups-list">
-            {!Array.isArray(filteredGroups) || filteredGroups.length === 0 ? (
-              <div className="CreateAlert-empty-list">
-                {groups.length === 0 ? (
-                  <>
-                    <p>No groups found.</p>
-                    <button 
-                      className="CreateAlert-retry-button"
-                      onClick={fetchGroups}
-                      style={{
-                        background: '#764ba2',
-                        color: 'white',
-                        border: 'none',
-                        padding: '8px 16px',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        marginTop: '10px'
-                      }}
+            
+            <div className="CreateAlert-modal-content">
+              {/* Alert Type Selection */}
+              <div className="CreateAlert-form-section">
+                <h3 className="CreateAlert-section-title">Alert Type</h3>
+                <div className="CreateAlert-type-grid">
+                  {[
+                    { value: "info", label: isMobile ? "Info" : "Information", color: "#29B6F6", icon: <FiInfo /> },
+                    { value: "warning", label: "Warning", color: "#FFA726", icon: <FiAlertTriangle /> },
+                    { value: "error", label: isMobile ? "Error" : "Error / Critical", color: "#EF5350", icon: <FiAlertCircle /> }
+                  ].map(type => (
+                    <div
+                      key={type.value}
+                      className={`CreateAlert-type-card ${form.type === type.value ? 'CreateAlert-type-selected' : ''}`}
+                      style={{ borderColor: form.type === type.value ? type.color : 'var(--gray-300)' }}
+                      onClick={() => setForm(prev => ({ ...prev, type: type.value }))}
                     >
-                      Retry Fetching Groups
-                    </button>
-                  </>
-                ) : (
-                  'No groups match your search'
-                )}
-              </div> */}
-            {/* ) : (
-              filteredGroups.map((group) => (
-                <div
-                  key={group._id || group.id || Math.random()}
-                  className={`CreateAlert-group-item ${Array.isArray(form.assignedGroups) && (form.assignedGroups.includes(group._id) || form.assignedGroups.includes(group.id)) ? 'CreateAlert-group-item-selected' : ''}`}
-                  onClick={() => handleGroupSelect(group._id || group.id)}
-                >
-                  <Checkbox
-                    checked={Array.isArray(form.assignedGroups) && (form.assignedGroups.includes(group._id) || form.assignedGroups.includes(group.id))}
-                    onChange={() => handleGroupSelect(group._id || group.id)}
-                  />
-                  <Avatar size="small" color="#764ba2">
-                    <FiUsers />
-                  </Avatar>
-                  <div className="CreateAlert-group-info">
-                    <p className="CreateAlert-group-name">{group.name || group.groupName || 'Unnamed Group'}</p>
-                    {group.description && (
-                      <p className="CreateAlert-group-description">{group.description}</p>
+                      <div className="CreateAlert-type-icon" style={{ color: type.color }}>
+                        {type.icon}
+                      </div>
+                      <div className="CreateAlert-type-info">
+                        <h4 style={{ color: type.color }}>{type.label}</h4>
+                        {!isMobile && (
+                          <p className="CreateAlert-type-desc">
+                            {type.value === "info" && "General updates"}
+                            {type.value === "warning" && "Important notices"}
+                            {type.value === "error" && "Urgent issues"}
+                          </p>
+                        )}
+                      </div>
+                      {form.type === type.value && (
+                        <span className="CreateAlert-type-check">✓</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Message Input */}
+              <div className="CreateAlert-form-section">
+                <h3 className="CreateAlert-section-title">
+                  Alert Message <span className="CreateAlert-required">*</span>
+                </h3>
+                <textarea
+                  className="CreateAlert-textarea"
+                  rows={isMobile ? "3" : "4"}
+                  value={form.message}
+                  onChange={(e) => setForm(prev => ({ ...prev, message: e.target.value }))}
+                  placeholder="Enter your alert message here..."
+                  maxLength="500"
+                />
+                <div className="CreateAlert-message-counter">
+                  {form.message.length} / 500
+                </div>
+              </div>
+
+              {/* User Assignment */}
+              <div className="CreateAlert-form-section">
+                <div className="CreateAlert-section-header">
+                  <h3 className="CreateAlert-section-title">Assign to Users</h3>
+                  <div className="CreateAlert-user-actions">
+                    <span className="CreateAlert-user-count">
+                      {users.length}
+                    </span>
+                    {Array.isArray(filteredUsers) && filteredUsers.length > 0 && (
+                      <button 
+                        className="CreateAlert-select-all"
+                        onClick={handleSelectAllUsers}
+                      >
+                        {form.assignedUsers.length === filteredUsers.length ? 'Deselect All' : 'Select All'}
+                      </button>
                     )}
-                  </div> */}
-                  {/* {group.members?.length > 0 && (
-                    <Chip
-                      label={`${group.members.length} members`}
-                      size="small"
-                      variant="outlined"
-                      color="#764ba2"
-                    />
+                  </div>
+                </div>
+                
+                {/* Selected Users */}
+                {Array.isArray(form.assignedUsers) && form.assignedUsers.length > 0 && (
+                  <div className="CreateAlert-selected-items">
+                    <span className="CreateAlert-selected-label">
+                      Selected ({form.assignedUsers.length}):
+                    </span>
+                    <div className="CreateAlert-selected-chips">
+                      {form.assignedUsers.map(userId => {
+                        const user = getUserById(userId);
+                        return (
+                          <Chip
+                            key={userId}
+                            label={getUserDisplayName(user)}
+                            onDelete={() => handleUserSelect(userId)}
+                            color="#667eea"
+                            size="small"
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* User Search */}
+                <div className="CreateAlert-search-field">
+                  <FiSearch />
+                  <input
+                    type="text"
+                    placeholder="Search users by name, email, role..."
+                    value={userSearch}
+                    onChange={(e) => setUserSearch(e.target.value)}
+                    className="CreateAlert-search-input"
+                  />
+                </div>
+
+                {/* Users List */}
+                <div className="CreateAlert-users-list">
+                  {!Array.isArray(filteredUsers) || filteredUsers.length === 0 ? (
+                    <div className="CreateAlert-empty-list">
+                      {users.length === 0 ? (
+                        <>
+                          <p>No users found.</p>
+                          <button 
+                            className="CreateAlert-retry-button"
+                            onClick={fetchUsers}
+                          >
+                            Retry
+                          </button>
+                        </>
+                      ) : (
+                        'No users match your search'
+                      )}
+                    </div>
+                  ) : (
+                    filteredUsers.map((user) => {
+                      const userId = user._id || user.id;
+                      if (!userId) return null;
+                      
+                      return (
+                        <div
+                          key={userId}
+                          className={`CreateAlert-user-item ${Array.isArray(form.assignedUsers) && form.assignedUsers.includes(userId) ? 'CreateAlert-user-item-selected' : ''}`}
+                          onClick={() => handleUserSelect(userId)}
+                        >
+                          <Checkbox
+                            checked={Array.isArray(form.assignedUsers) && form.assignedUsers.includes(userId)}
+                            onChange={() => handleUserSelect(userId)}
+                          />
+                          <Avatar size="small" color="#667eea">
+                            {getUserDisplayName(user).charAt(0).toUpperCase()}
+                          </Avatar>
+                          <div className="CreateAlert-user-info">
+                            <p className="CreateAlert-user-name">
+                              {getUserDisplayName(user)}
+                            </p>
+                            {!isMobile && (
+                              <p className="CreateAlert-user-details">
+                                {user.email || 'No Email'} 
+                                {user.role && ` • ${user.role}`}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
                   )}
                 </div>
-              ))
-            )}
-          </div> */}
-        {/* </div> } */}
+              </div>
 
-        {/* Action Buttons */}
-        <div className="CreateAlert-actions">
-          <button
-            className="CreateAlert-button CreateAlert-button-secondary"
-            onClick={handleReset}
-            disabled={loading}
-          >
-            Reset
-          </button>
-          <button
-            className="CreateAlert-button CreateAlert-button-primary"
-            onClick={handleSubmit}
-            disabled={loading || !form.message.trim()}
-          >
-            {loading ? (
-              <>
-                <span className="CreateAlert-spinner" />
-                Creating...
-              </>
-            ) : (
-              <>
-                <FiSend />
-                Create Alert
-              </>
-            )}
-          </button>
+              {/* Action Buttons */}
+              <div className="CreateAlert-actions">
+                <button
+                  className="CreateAlert-button CreateAlert-button-secondary"
+                  onClick={handleReset}
+                  disabled={loading}
+                >
+                  Reset
+                </button>
+                <button
+                  className="CreateAlert-button CreateAlert-button-primary"
+                  onClick={handleSubmit}
+                  disabled={loading || !form.message.trim()}
+                >
+                  {loading ? (
+                    <>
+                      <span className="CreateAlert-spinner" />
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <FiSend />
+                      {isMobile ? 'Create' : 'Create Alert'}
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Alert Details Modal */}
+      {selectedAlert && (
+        <div className="CreateAlert-modal-overlay" onClick={() => setSelectedAlert(null)}>
+          <div className="CreateAlert-modal CreateAlert-modal-small" onClick={e => e.stopPropagation()}>
+            <div className="CreateAlert-modal-header">
+              <h2>Alert Details</h2>
+              <button className="CreateAlert-modal-close" onClick={() => setSelectedAlert(null)}>
+                <FiX />
+              </button>
+            </div>
+            
+            <div className="CreateAlert-modal-content">
+              <div className="CreateAlert-detail-item">
+                <span className="CreateAlert-detail-label">Type:</span>
+                <Chip
+                  label={selectedAlert.type}
+                  color={getSeverityColor(selectedAlert.type)}
+                  icon={
+                    selectedAlert.type === "info" ? <FiInfo /> :
+                    selectedAlert.type === "warning" ? <FiAlertTriangle /> :
+                    <FiAlertCircle />
+                  }
+                  size={isMobile ? "small" : "medium"}
+                />
+              </div>
+              
+              <div className="CreateAlert-detail-item">
+                <span className="CreateAlert-detail-label">Message:</span>
+                <p className="CreateAlert-detail-message">{selectedAlert.message}</p>
+              </div>
+              
+              <div className="CreateAlert-detail-item">
+                <span className="CreateAlert-detail-label">Created:</span>
+                <span>{formatDate(selectedAlert.createdAt)}</span>
+              </div>
+              
+              {selectedAlert.assignedUsers?.length > 0 && (
+                <div className="CreateAlert-detail-item">
+                  <span className="CreateAlert-detail-label">Assigned Users:</span>
+                  <div className="CreateAlert-detail-chips">
+                    {selectedAlert.assignedUsers.slice(0, isMobile ? 3 : 5).map(userId => {
+                      const user = getUserById(userId);
+                      return (
+                        <Chip
+                          key={userId}
+                          label={getUserDisplayName(user)}
+                          size="small"
+                          color="#667eea"
+                        />
+                      );
+                    })}
+                    {selectedAlert.assignedUsers.length > (isMobile ? 3 : 5) && (
+                      <Chip
+                        label={`+${selectedAlert.assignedUsers.length - (isMobile ? 3 : 5)}`}
+                        size="small"
+                        color="#667eea"
+                        variant="outlined"
+                      />
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              {selectedAlert.assignedGroups?.length > 0 && (
+                <div className="CreateAlert-detail-item">
+                  <span className="CreateAlert-detail-label">Assigned Groups:</span>
+                  <div className="CreateAlert-detail-chips">
+                    {selectedAlert.assignedGroups.slice(0, isMobile ? 3 : 5).map(groupId => {
+                      const group = getGroupById(groupId);
+                      return (
+                        <Chip
+                          key={groupId}
+                          label={group.name || groupId}
+                          size="small"
+                          color="#764ba2"
+                        />
+                      );
+                    })}
+                    {selectedAlert.assignedGroups.length > (isMobile ? 3 : 5) && (
+                      <Chip
+                        label={`+${selectedAlert.assignedGroups.length - (isMobile ? 3 : 5)}`}
+                        size="small"
+                        color="#764ba2"
+                        variant="outlined"
+                      />
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              <div className="CreateAlert-detail-item">
+                <span className="CreateAlert-detail-label">Read by:</span>
+                <span>{selectedAlert.readBy?.length || 0} users</span>
+              </div>
+            </div>
+            
+            <div className="CreateAlert-actions">
+              <button
+                className="CreateAlert-button CreateAlert-button-primary"
+                onClick={() => setSelectedAlert(null)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Notification */}
       {notification && (

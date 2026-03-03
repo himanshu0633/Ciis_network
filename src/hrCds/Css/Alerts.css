@@ -1032,8 +1032,25 @@
   }
   
   .Alerts-stats-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
   }
+
+  .Alerts-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+    margin-right: -10px;
+  }
+
+  .Alerts-icon {
+    font-size: 1rem;
+  }
+
+  .Alerts-stat-label {
+    font-size: 11px;
+  }
+
   
   .Alerts-list-header {
     flex-direction: column;

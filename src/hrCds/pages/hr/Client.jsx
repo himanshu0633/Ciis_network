@@ -1250,6 +1250,25 @@ const ClientManagement = () => {
     timeout: 10000,
   });
 
+  // Debug function to check API configuration
+  useEffect(() => {
+    const debugAPI = () => {
+      console.log('========== API DEBUG INFO ==========');
+      console.log('API_URL from config:', API_URL);
+      console.log('Users API Base URL:', `${API_URL}/users`);
+      console.log('Full endpoint:', `${API_URL}/users/company-users`);
+      console.log('LocalStorage items:');
+      console.log('- token:', localStorage.getItem('token') ? 'Present' : 'Missing');
+      console.log('- authToken:', localStorage.getItem('authToken') ? 'Present' : 'Missing');
+      console.log('- company:', localStorage.getItem('company'));
+      console.log('- companyCode:', localStorage.getItem('companyCode'));
+      console.log('- companyIdentifier:', localStorage.getItem('companyIdentifier'));
+      console.log('=====================================');
+    };
+    
+    debugAPI();
+  }, []);
+
   useEffect(() => {
     const fetchCompanyInfo = () => {
       try {
@@ -1276,71 +1295,275 @@ const ClientManagement = () => {
     fetchCompanyInfo();
   }, []);
 
+  // Improved fetchProjectManagers function with better error handling and response parsing
   const fetchProjectManagers = async () => {
     try {
-      const response = await usersApi.get('/company-users');
+      console.log('========== FETCHING PROJECT MANAGERS ==========');
+      console.log('API Base URL:', usersApi.defaults.baseURL);
+      console.log('Full endpoint:', `${usersApi.defaults.baseURL}/company-users`);
       
-      if (response.data && response.data.success) {
-        const messageData = response.data.message;
-        const users = messageData?.users || [];
-        const currentUser = messageData?.currentUser;
-        
-        let allUsers = [...users];
-        
-        if (currentUser) {
-          const userExists = users.some(u => u.id === currentUser.id || u._id === currentUser.id);
-          
-          if (!userExists) {
-            allUsers.push({
-              id: currentUser.id,
-              _id: currentUser.id,
-              name: currentUser.name,
-              email: currentUser.email || 'No email',
-              jobRole: currentUser.jobRole,
-              role: currentUser.jobRole,
-              phone: currentUser.phone || '',
-              department: currentUser.department || '',
-              isActive: true
-            });
+      // Check token
+      const token = localStorage.getItem('token') || localStorage.getItem('authToken');
+      console.log('Auth token present:', !!token);
+      if (token) {
+        console.log('Token preview:', token.substring(0, 20) + '...');
+      }
+      
+      // Make the request with explicit headers
+      const response = await usersApi.get('/company-users', {
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+      
+      console.log('✅ Response received:');
+      console.log('- Status:', response.status);
+      console.log('- Status Text:', response.statusText);
+      console.log('- Headers:', response.headers);
+      console.log('- Data:', response.data);
+      
+      let usersArray = [];
+      
+      // Comprehensive response parsing
+      if (response.data) {
+        // Case 1: Direct array
+        if (Array.isArray(response.data)) {
+          console.log('Case 1: Response is direct array');
+          usersArray = response.data;
+        }
+        // Case 2: { data: [...] }
+        else if (response.data.data && Array.isArray(response.data.data)) {
+          console.log('Case 2: Response has data array');
+          usersArray = response.data.data;
+        }
+        // Case 3: { users: [...] }
+        else if (response.data.users && Array.isArray(response.data.users)) {
+          console.log('Case 3: Response has users array');
+          usersArray = response.data.users;
+        }
+        // Case 4: { success: true, data: [...] }
+        else if (response.data.success && response.data.data && Array.isArray(response.data.data)) {
+          console.log('Case 4: Response has success and data');
+          usersArray = response.data.data;
+        }
+        // Case 5: { success: true, message: { users: [...] } }
+        else if (response.data.success && response.data.message) {
+          console.log('Case 5: Response has success and message');
+          if (Array.isArray(response.data.message.users)) {
+            usersArray = response.data.message.users;
+          } else if (Array.isArray(response.data.message)) {
+            usersArray = response.data.message;
+          } else if (response.data.message.data && Array.isArray(response.data.message.data)) {
+            usersArray = response.data.message.data;
           }
         }
-        
-        const formattedManagers = allUsers.map(user => ({
-          _id: user.id || user._id || `temp-${Date.now()}`,
-          name: user.name || 'Unknown User',
-          email: user.email || `${user.name?.toLowerCase().replace(/\s+/g, '')}@example.com`,
-          role: user.jobRole || user.role || 'Team Member',
-          phone: user.phone || '',
-          department: user.department || '',
-          isActive: user.isActive || true
-        }));
-        
-        setProjectManagers(formattedManagers);
-      } else {
-        setProjectManagers([{
-          _id: "6980f49fc3721b782411d938",
-          name: "ITmanger",
-          email: "manager@gmail.com",
-          role: "Manager",
-          phone: "8340185241",
-          isActive: true
-        }]);
+        // Case 6: { results: [...] }
+        else if (response.data.results && Array.isArray(response.data.results)) {
+          console.log('Case 6: Response has results array');
+          usersArray = response.data.results;
+        }
+        // Case 7: { items: [...] }
+        else if (response.data.items && Array.isArray(response.data.items)) {
+          console.log('Case 7: Response has items array');
+          usersArray = response.data.items;
+        }
+        // Case 8: Try to find any array property
+        else {
+          console.log('Case 8: Searching for array in response');
+          for (const key in response.data) {
+            if (Array.isArray(response.data[key])) {
+              console.log(`Found array in property: ${key}`);
+              usersArray = response.data[key];
+              break;
+            }
+          }
+        }
       }
+      
+      console.log('Extracted users array length:', usersArray.length);
+      
+      // If still no users, try to create from object
+      if (usersArray.length === 0 && response.data && typeof response.data === 'object') {
+        console.log('Attempting to create array from object values');
+        const possibleUsers = Object.values(response.data).filter(val => 
+          val && typeof val === 'object' && (val.name || val.email || val._id)
+        );
+        if (possibleUsers.length > 0) {
+          usersArray = possibleUsers;
+          console.log('Created users array from object values:', usersArray.length);
+        }
+      }
+      
+      // Add current user if present in the response
+      if (response.data?.message?.currentUser) {
+        const currentUser = response.data.message.currentUser;
+        const userExists = usersArray.some(u => u.id === currentUser.id || u._id === currentUser.id);
+        
+        if (!userExists) {
+          usersArray.push(currentUser);
+          console.log('Added current user to array');
+        }
+      }
+      
+      if (usersArray.length > 0) {
+        const formattedManagers = usersArray.map(user => {
+          // Log each user for debugging
+          console.log('Processing user:', user);
+          
+          return {
+            _id: user._id || user.id || `temp-${Date.now()}-${Math.random()}`,
+            name: user.name || user.username || user.fullName || user.displayName || 'Unknown User',
+            email: user.email || '',
+            role: user.role || user.jobRole || user.designation || user.position || user.title || 'Team Member',
+            phone: user.phone || user.mobile || user.phoneNumber || '',
+            department: user.department || user.departmentName || user.departmentId || '',
+            isActive: user.isActive !== undefined ? user.isActive : true
+          };
+        });
+        
+        console.log('✅ Formatted managers:', formattedManagers);
+        setProjectManagers(formattedManagers);
+        
+        // Show success message
+        setSuccess(`Loaded ${formattedManagers.length} team members`);
+        
+        // Clear success after 3 seconds
+        setTimeout(() => setSuccess(''), 3000);
+      } else {
+        console.warn('⚠️ No users found in response');
+        setProjectManagers([]);
+        
+        // Show appropriate message
+        if (response.data) {
+          setError('No team members found. The API returned an empty response.');
+        } else {
+          setError('Unable to parse team members from API response.');
+        }
+      }
+      
     } catch (error) {
-      console.error('Error fetching project managers:', error);
-      setProjectManagers([{
-        _id: "6980f49fc3721b782411d938",
-        name: "ITmanger",
-        email: "manager@gmail.com",
-        role: "Manager",
-        phone: "8340185241",
-        isActive: true
-      }]);
+      console.error('❌ Error fetching project managers:');
+      
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        console.error('Response Error:', {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data,
+          headers: error.response.headers
+        });
+        
+        // Handle specific status codes
+        switch (error.response.status) {
+          case 401:
+            setError('Authentication failed. Please log in again.');
+            break;
+          case 403:
+            setError('You do not have permission to view team members.');
+            break;
+          case 404:
+            setError('Team members endpoint not found. Please check API configuration.');
+            break;
+          case 500:
+            setError('Server error. Please try again later.');
+            break;
+          default:
+            setError(`Failed to load team members: ${error.response.status} ${error.response.statusText}`);
+        }
+        
+      } else if (error.request) {
+        // The request was made but no response was received
+        console.error('Request Error - No Response:', {
+          request: error.request,
+          message: error.message
+        });
+        setError('Cannot connect to server. Please check your internet connection and API URL.');
+        
+      } else {
+        // Something happened in setting up the request
+        console.error('Setup Error:', error.message);
+        setError('Failed to load team members. Please try again.');
+      }
+      
+      // Set empty array as fallback
+      setProjectManagers([]);
     }
   };
 
+  // Test API endpoint function for debugging
+  const testAPIEndpoint = async () => {
+    try {
+      console.log('Testing API connection...');
+      console.log('Users API Base URL:', usersApi.defaults.baseURL);
+      
+      const token = localStorage.getItem('token') || localStorage.getItem('authToken');
+      console.log('Auth Token Present:', !!token);
+      
+      const response = await usersApi.get('/company-users');
+      console.log('API Test Success - Status:', response.status);
+      console.log('API Test Data:', response.data);
+      
+    } catch (error) {
+      console.error('API Test Failed:');
+      if (error.response) {
+        console.error('Status:', error.response.status);
+        console.error('Data:', error.response.data);
+        console.error('Headers:', error.response.headers);
+      } else if (error.request) {
+        console.error('No response received');
+      } else {
+        console.error('Error:', error.message);
+      }
+    }
+  };
+
+  // Set up interceptors with logging
   useEffect(() => {
-    const requestInterceptor = api.interceptors.request.use(
+    // Request interceptor for usersApi
+    const usersRequestInterceptor = usersApi.interceptors.request.use(
+      (config) => {
+        const token = localStorage.getItem('token') || localStorage.getItem('authToken');
+        
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+        
+        // Log the request (only in development)
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Users API Request:', {
+            url: config.url,
+            method: config.method,
+            baseURL: config.baseURL,
+            headers: config.headers
+          });
+        }
+        
+        return config;
+      },
+      (error) => {
+        console.error('Users API Request Error:', error);
+        return Promise.reject(error);
+      }
+    );
+
+    // Response interceptor for usersApi
+    const usersResponseInterceptor = usersApi.interceptors.response.use(
+      (response) => {
+        return response;
+      },
+      (error) => {
+        if (error.response?.status === 401) {
+          // Handle unauthorized - maybe redirect to login
+          console.error('Unauthorized access to users API');
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    // Similar interceptors for other APIs
+    const apiInterceptor = api.interceptors.request.use(
       (config) => {
         const token = localStorage.getItem('token') || localStorage.getItem('authToken');
         if (token) {
@@ -1348,10 +1571,7 @@ const ClientManagement = () => {
         }
         return config;
       },
-      (error) => {
-        console.error('API Request Error:', error);
-        return Promise.reject(error);
-      }
+      (error) => Promise.reject(error)
     );
 
     const tasksInterceptor = tasksApi.interceptors.request.use(
@@ -1362,29 +1582,15 @@ const ClientManagement = () => {
         }
         return config;
       },
-      (error) => {
-        return Promise.reject(error);
-      }
+      (error) => Promise.reject(error)
     );
 
-    const usersRequestInterceptor = usersApi.interceptors.request.use(
-      (config) => {
-        const token = localStorage.getItem('token') || localStorage.getItem('authToken');
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-      },
-      (error) => {
-        console.error('Users API Request Error:', error);
-        return Promise.reject(error);
-      }
-    );
-
+    // Cleanup interceptors
     return () => {
-      api.interceptors.request.eject(requestInterceptor);
-      tasksApi.interceptors.request.eject(tasksInterceptor);
       usersApi.interceptors.request.eject(usersRequestInterceptor);
+      usersApi.interceptors.response.eject(usersResponseInterceptor);
+      api.interceptors.request.eject(apiInterceptor);
+      tasksApi.interceptors.request.eject(tasksInterceptor);
     };
   }, []);
 
@@ -1418,6 +1624,12 @@ const ClientManagement = () => {
     try {
       setLoading(true);
       
+      // Test API endpoint first (only in development)
+      if (process.env.NODE_ENV === 'development') {
+        await testAPIEndpoint();
+      }
+      
+      // Fetch project managers
       await fetchProjectManagers();
       
       const apiParams = {
@@ -1481,7 +1693,6 @@ const ClientManagement = () => {
       
       setClients([]);
       setServices([]);
-      setProjectManagers([]);
     } finally {
       setLoading(false);
     }
@@ -1785,7 +1996,9 @@ const ClientManagement = () => {
     return (
       <div className="manager-info">
         <div className="manager-header">
-          <div className="avatar avatar--primary"></div>
+          <div className="avatar avatar--primary">
+            {manager.name?.charAt(0)?.toUpperCase() || 'U'}
+          </div>
           <div>
             <p className="font-bold">{manager.name}</p>
             <small className="text-muted">
@@ -2483,7 +2696,9 @@ const ClientManagement = () => {
                           }}
                         />
                         <div className="manager-checkbox-content">
-                          <div className="avatar avatar--primary"></div>
+                          <div className="avatar avatar--primary">
+                            {manager.name?.charAt(0)?.toUpperCase() || 'U'}
+                          </div>
                           <div>
                             <p className="font-bold">{manager.name}</p>
                             <small className="text-muted">

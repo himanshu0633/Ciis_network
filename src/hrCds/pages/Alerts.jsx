@@ -475,13 +475,13 @@ const Alerts = () => {
           </div>
           <div className="Alerts-header-actions">
             <Tooltip title="Refresh">
-              <button 
+              {/* <button 
                 className={`Alerts-icon-button Alerts-refresh-button ${refreshing ? 'Alerts-refreshing' : ''}`}
                 onClick={fetchData} 
                 disabled={refreshing}
               >
                 <FiRefreshCw />
-              </button>
+              </button> */}
             </Tooltip>
             {canManage && (
               <button
