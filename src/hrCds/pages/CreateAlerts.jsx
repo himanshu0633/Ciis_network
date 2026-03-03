@@ -844,7 +844,7 @@ const CreateAlert = () => {
         </div>
 
         {/* Group Assignment */}
-        <div className="CreateAlert-form-section">
+        {/* <div className="CreateAlert-form-section">
           <div className="CreateAlert-section-header">
             <h3 className="CreateAlert-section-title">Assign to Groups</h3>
             {Array.isArray(filteredGroups) && filteredGroups.length > 0 && (
@@ -858,7 +858,7 @@ const CreateAlert = () => {
           </div>
 
           {/* Selected Groups */}
-          {Array.isArray(form.assignedGroups) && form.assignedGroups.length > 0 && (
+          {/* {Array.isArray(form.assignedGroups) && form.assignedGroups.length > 0 && (
             <div className="CreateAlert-selected-items">
               <span className="CreateAlert-selected-label">Selected ({form.assignedGroups.length}):</span>
               <div className="CreateAlert-selected-chips">
@@ -876,10 +876,10 @@ const CreateAlert = () => {
                 })}
               </div>
             </div>
-          )}
+          )} */}
 
           {/* Group Search */}
-          <div className="CreateAlert-search-field">
+          {/* <div className="CreateAlert-search-field">
             <FiSearch />
             <input
               type="text"
@@ -888,10 +888,10 @@ const CreateAlert = () => {
               onChange={(e) => setGroupSearch(e.target.value)}
               className="CreateAlert-search-input"
             />
-          </div>
+          </div> */}
 
           {/* Groups List */}
-          <div className="CreateAlert-groups-list">
+          {/* <div className="CreateAlert-groups-list">
             {!Array.isArray(filteredGroups) || filteredGroups.length === 0 ? (
               <div className="CreateAlert-empty-list">
                 {groups.length === 0 ? (
@@ -916,8 +916,8 @@ const CreateAlert = () => {
                 ) : (
                   'No groups match your search'
                 )}
-              </div>
-            ) : (
+              </div> */}
+            {/* ) : (
               filteredGroups.map((group) => (
                 <div
                   key={group._id || group.id || Math.random()}
@@ -936,8 +936,8 @@ const CreateAlert = () => {
                     {group.description && (
                       <p className="CreateAlert-group-description">{group.description}</p>
                     )}
-                  </div>
-                  {group.members?.length > 0 && (
+                  </div> */}
+                  {/* {group.members?.length > 0 && (
                     <Chip
                       label={`${group.members.length} members`}
                       size="small"
@@ -948,8 +948,8 @@ const CreateAlert = () => {
                 </div>
               ))
             )}
-          </div>
-        </div>
+          </div> */}
+        {/* </div> } */}
 
         {/* Action Buttons */}
         <div className="CreateAlert-actions">
