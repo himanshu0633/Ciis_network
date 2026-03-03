@@ -665,7 +665,7 @@ const MyLeaves = () => {
             </p>
             
             {/* Socket Connection Status */}
-            <div className="MyLeaves-socket-status">
+            {/* <div className="MyLeaves-socket-status">
               {socketError ? (
                 <span className="socket-badge error" title="Real-time updates unavailable">
                   <FiWifiOff size={12} />
@@ -685,7 +685,7 @@ const MyLeaves = () => {
                   Connecting...
                 </span>
               )}
-            </div>
+            </div> */}
 
             {/* User Info Display */}
             <div className="MyLeaves-user-info">
@@ -875,7 +875,7 @@ const MyLeaves = () => {
             </div>
 
             {/* Results Count with Socket Status */}
-            <h3 className="MyLeaves-results-count">
+            {/* <h3 className="MyLeaves-results-count">
               Showing {filteredLeaves.length} of {leaves.length} records
               <span className="MyLeaves-user-role-badge">
                 • Role: {userJobRoleName} • Dept: {userDepartmentName}
@@ -886,7 +886,7 @@ const MyLeaves = () => {
                   LIVE
                 </span>
               )}
-            </h3>
+            </h3> */}
 
             {/* Main Content */}
             <div className="MyLeaves-requests-content">

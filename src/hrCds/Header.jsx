@@ -464,34 +464,7 @@ const Header = ({ toggleSidebar, isMobile }) => {
                 }}
               >
                 Welcome, {user?.name || "User"}
-                {isConnected && (
-                  <Box
-                    component="span"
-                    sx={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 0.5,
-                      backgroundColor: '#4caf50',
-                      color: 'white',
-                      fontSize: '0.7rem',
-                      padding: '2px 8px',
-                      borderRadius: '12px',
-                      ml: 1
-                    }}
-                  >
-                    <Box
-                      component="span"
-                      sx={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: '50%',
-                        backgroundColor: 'white',
-                        animation: 'pulse 2s infinite',
-                      }}
-                    />
-                    LIVE
-                  </Box>
-                )}
+        
               </Typography>
             ) : (
               <Typography 
