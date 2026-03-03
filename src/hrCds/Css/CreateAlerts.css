@@ -1661,7 +1661,8 @@
 /* ===== SMALL MOBILE (up to 480px) ===== */
 @media (max-width: 480px) {
   .CreateAlert-stats-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
   }
 
   .CreateAlert-toggle-button-group {

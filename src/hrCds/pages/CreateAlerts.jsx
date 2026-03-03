@@ -89,6 +89,7 @@ const CreateAlert = () => {
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [users, setUsers] = useState([]);
+  const [usersMap, setUsersMap] = useState(new Map()); // Add a Map for quick user lookup
   const [groups, setGroups] = useState([]);
   const [role, setRole] = useState("");
   const [alerts, setAlerts] = useState([]);
@@ -152,6 +153,18 @@ const CreateAlert = () => {
     };
   };
 
+  // Create users map for quick lookup
+  const createUsersMap = (usersArray) => {
+    const map = new Map();
+    usersArray.forEach(user => {
+      const userId = user._id || user.id;
+      if (userId) {
+        map.set(userId, user);
+      }
+    });
+    setUsersMap(map);
+  };
+
   // Fetch users from company-users API
   const fetchUsers = async () => {
     try {
@@ -186,6 +199,7 @@ const CreateAlert = () => {
       
       console.log("✅ FINAL FETCHED USERS COUNT:", fetchedUsers.length);
       setUsers(fetchedUsers);
+      createUsersMap(fetchedUsers); // Create the map after fetching users
       
     } catch (error) {
       console.error("❌ ERROR FETCHING USERS:", error);
@@ -196,6 +210,7 @@ const CreateAlert = () => {
         });
       }
       setUsers([]);
+      setUsersMap(new Map());
     }
   };
 
@@ -519,17 +534,44 @@ const CreateAlert = () => {
     return filtered;
   }, [alerts, searchQuery, filterType, viewMode]);
 
-  // Get user by ID
+  // Get user by ID - FIXED: Using usersMap for better performance and reliability
   const getUserById = (userId) => {
-    if (!Array.isArray(users) || users.length === 0) {
-      return { name: "Unknown User", email: "" };
+    if (!userId) return { name: "Unknown User", email: "", username: "Unknown" };
+    
+    // First try to get from the map
+    if (usersMap && usersMap.size > 0) {
+      const user = usersMap.get(userId);
+      if (user) {
+        return user;
+      }
     }
-    const user = users.find(u => u._id === userId || u.id === userId);
-    return user || { name: "Unknown User", email: "" };
+    
+    // Fallback to array search
+    if (Array.isArray(users) && users.length > 0) {
+      const user = users.find(u => u._id === userId || u.id === userId);
+      if (user) {
+        return user;
+      }
+    }
+    
+    // Return default if not found
+    return { 
+      name: "Unknown User", 
+      email: "", 
+      username: "Unknown",
+      _id: userId 
+    };
   };
 
-  // Get group by ID (still needed for displaying alerts)
+  // Get user display name - NEW: Helper function to get consistent user display name
+  const getUserDisplayName = (user) => {
+    if (!user) return "Unknown User";
+    return user.name || user.username || user.fullName || user.email || "Unknown User";
+  };
+
+  // Get group by ID
   const getGroupById = (groupId) => {
+    if (!groupId) return { name: "Unknown Group" };
     if (!Array.isArray(groups) || groups.length === 0) return { name: "Unknown Group" };
     return groups.find(g => g._id === groupId || g.id === groupId) || { name: "Unknown Group" };
   };
@@ -726,57 +768,65 @@ const CreateAlert = () => {
           </div>
         ) : (
           <div className="CreateAlert-alerts-grid">
-            {filteredAlerts.map((alert) => (
-              <div 
-                key={alert._id || alert.id} 
-                className="CreateAlert-alert-card"
-                style={{ borderLeftColor: getSeverityColor(alert.type) }}
-                onClick={() => setSelectedAlert(alert)}
-              >
-                <div className="CreateAlert-alert-header">
-                  <div className="CreateAlert-alert-type">
-                    {alert.type === "info" && <FiInfo />}
-                    {alert.type === "warning" && <FiAlertTriangle />}
-                    {alert.type === "error" && <FiAlertCircle />}
-                    <span style={{ 
-                      color: getSeverityColor(alert.type),
-                      textTransform: 'capitalize'
-                    }}>
-                      {alert.type}
+            {filteredAlerts.map((alert) => {
+              // Get assigned users names for tooltip
+              const assignedUsersList = alert.assignedUsers?.map(userId => {
+                const user = getUserById(userId);
+                return getUserDisplayName(user);
+              }).join(', ') || 'No users assigned';
+              
+              return (
+                <div 
+                  key={alert._id || alert.id} 
+                  className="CreateAlert-alert-card"
+                  style={{ borderLeftColor: getSeverityColor(alert.type) }}
+                  onClick={() => setSelectedAlert(alert)}
+                >
+                  <div className="CreateAlert-alert-header">
+                    <div className="CreateAlert-alert-type">
+                      {alert.type === "info" && <FiInfo />}
+                      {alert.type === "warning" && <FiAlertTriangle />}
+                      {alert.type === "error" && <FiAlertCircle />}
+                      <span style={{ 
+                        color: getSeverityColor(alert.type),
+                        textTransform: 'capitalize'
+                      }}>
+                        {alert.type}
+                      </span>
+                    </div>
+                    <span className="CreateAlert-alert-date">
+                      <FiCalendar />
+                      {isMobile ? formatDate(alert.createdAt).split(',')[0] : formatDate(alert.createdAt)}
                     </span>
                   </div>
-                  <span className="CreateAlert-alert-date">
-                    <FiCalendar />
-                    {isMobile ? formatDate(alert.createdAt).split(',')[0] : formatDate(alert.createdAt)}
-                  </span>
-                </div>
-                
-                <p className="CreateAlert-alert-message">{alert.message}</p>
-                
-                <div className="CreateAlert-alert-footer">
-                  <div className="CreateAlert-alert-assignments">
-                    {alert.assignedUsers?.length > 0 && (
-                      <Tooltip title={`Assigned to ${alert.assignedUsers.length} users`}>
-                        <span className="CreateAlert-alert-badge">
-                          <FiUser /> {alert.assignedUsers.length}
-                        </span>
-                      </Tooltip>
-                    )}
-                    {alert.assignedGroups?.length > 0 && (
-                      <Tooltip title={`Assigned to ${alert.assignedGroups.length} groups`}>
-                        <span className="CreateAlert-alert-badge">
-                          <FiUsers /> {alert.assignedGroups.length}
-                        </span>
-                      </Tooltip>
+                  
+                  <p className="CreateAlert-alert-message">{alert.message}</p>
+                  
+                  <div className="CreateAlert-alert-footer">
+                    <div className="CreateAlert-alert-assignments">
+                      {alert.assignedUsers?.length > 0 && (
+                        <Tooltip title={assignedUsersList}>
+                          <span className="CreateAlert-alert-badge">
+                            <FiUser /> {alert.assignedUsers.length}
+                          </span>
+                        </Tooltip>
+                      )}
+                      {alert.assignedGroups?.length > 0 && (
+                        <Tooltip title={`Assigned to ${alert.assignedGroups.length} groups`}>
+                          <span className="CreateAlert-alert-badge">
+                            <FiUsers /> {alert.assignedGroups.length}
+                          </span>
+                        </Tooltip>
+                      )}
+                    </div>
+                    
+                    {!alert.readBy?.includes(localStorage.getItem("userId")) && (
+                      <span className="CreateAlert-unread-badge">New</span>
                     )}
                   </div>
-                  
-                  {!alert.readBy?.includes(localStorage.getItem("userId")) && (
-                    <span className="CreateAlert-unread-badge">New</span>
-                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -840,6 +890,7 @@ const CreateAlert = () => {
                   value={form.message}
                   onChange={(e) => setForm(prev => ({ ...prev, message: e.target.value }))}
                   placeholder="Enter your alert message here..."
+                  maxLength="500"
                 />
                 <div className="CreateAlert-message-counter">
                   {form.message.length} / 500
@@ -859,7 +910,7 @@ const CreateAlert = () => {
                         className="CreateAlert-select-all"
                         onClick={handleSelectAllUsers}
                       >
-                        {form.assignedUsers.length === filteredUsers.length ? 'Deselect' : 'Select All'}
+                        {form.assignedUsers.length === filteredUsers.length ? 'Deselect All' : 'Select All'}
                       </button>
                     )}
                   </div>
@@ -877,7 +928,7 @@ const CreateAlert = () => {
                         return (
                           <Chip
                             key={userId}
-                            label={user.name || user.email || user.username || 'Unknown'}
+                            label={getUserDisplayName(user)}
                             onDelete={() => handleUserSelect(userId)}
                             color="#667eea"
                             size="small"
@@ -893,7 +944,7 @@ const CreateAlert = () => {
                   <FiSearch />
                   <input
                     type="text"
-                    placeholder="Search users..."
+                    placeholder="Search users by name, email, role..."
                     value={userSearch}
                     onChange={(e) => setUserSearch(e.target.value)}
                     className="CreateAlert-search-input"
@@ -919,32 +970,37 @@ const CreateAlert = () => {
                       )}
                     </div>
                   ) : (
-                    filteredUsers.map((user) => (
-                      <div
-                        key={user._id || user.id || Math.random()}
-                        className={`CreateAlert-user-item ${Array.isArray(form.assignedUsers) && (form.assignedUsers.includes(user._id) || form.assignedUsers.includes(user.id)) ? 'CreateAlert-user-item-selected' : ''}`}
-                        onClick={() => handleUserSelect(user._id || user.id)}
-                      >
-                        <Checkbox
-                          checked={Array.isArray(form.assignedUsers) && (form.assignedUsers.includes(user._id) || form.assignedUsers.includes(user.id))}
-                          onChange={() => handleUserSelect(user._id || user.id)}
-                        />
-                        <Avatar size="small" color="#667eea">
-                          {user.name?.charAt(0) || user.username?.charAt(0) || user.email?.charAt(0) || 'U'}
-                        </Avatar>
-                        <div className="CreateAlert-user-info">
-                          <p className="CreateAlert-user-name">
-                            {user.name || user.username || 'No Name'}
-                          </p>
-                          {!isMobile && (
-                            <p className="CreateAlert-user-details">
-                              {user.email || 'No Email'} 
-                              {user.role && ` • ${user.role}`}
+                    filteredUsers.map((user) => {
+                      const userId = user._id || user.id;
+                      if (!userId) return null;
+                      
+                      return (
+                        <div
+                          key={userId}
+                          className={`CreateAlert-user-item ${Array.isArray(form.assignedUsers) && form.assignedUsers.includes(userId) ? 'CreateAlert-user-item-selected' : ''}`}
+                          onClick={() => handleUserSelect(userId)}
+                        >
+                          <Checkbox
+                            checked={Array.isArray(form.assignedUsers) && form.assignedUsers.includes(userId)}
+                            onChange={() => handleUserSelect(userId)}
+                          />
+                          <Avatar size="small" color="#667eea">
+                            {getUserDisplayName(user).charAt(0).toUpperCase()}
+                          </Avatar>
+                          <div className="CreateAlert-user-info">
+                            <p className="CreateAlert-user-name">
+                              {getUserDisplayName(user)}
                             </p>
-                          )}
+                            {!isMobile && (
+                              <p className="CreateAlert-user-details">
+                                {user.email || 'No Email'} 
+                                {user.role && ` • ${user.role}`}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
               </div>
@@ -1021,20 +1077,20 @@ const CreateAlert = () => {
                 <div className="CreateAlert-detail-item">
                   <span className="CreateAlert-detail-label">Assigned Users:</span>
                   <div className="CreateAlert-detail-chips">
-                    {selectedAlert.assignedUsers.slice(0, isMobile ? 3 : undefined).map(userId => {
+                    {selectedAlert.assignedUsers.slice(0, isMobile ? 3 : 5).map(userId => {
                       const user = getUserById(userId);
                       return (
                         <Chip
                           key={userId}
-                          label={user.name || userId}
+                          label={getUserDisplayName(user)}
                           size="small"
                           color="#667eea"
                         />
                       );
                     })}
-                    {isMobile && selectedAlert.assignedUsers.length > 3 && (
+                    {selectedAlert.assignedUsers.length > (isMobile ? 3 : 5) && (
                       <Chip
-                        label={`+${selectedAlert.assignedUsers.length - 3}`}
+                        label={`+${selectedAlert.assignedUsers.length - (isMobile ? 3 : 5)}`}
                         size="small"
                         color="#667eea"
                         variant="outlined"
@@ -1048,7 +1104,7 @@ const CreateAlert = () => {
                 <div className="CreateAlert-detail-item">
                   <span className="CreateAlert-detail-label">Assigned Groups:</span>
                   <div className="CreateAlert-detail-chips">
-                    {selectedAlert.assignedGroups.slice(0, isMobile ? 3 : undefined).map(groupId => {
+                    {selectedAlert.assignedGroups.slice(0, isMobile ? 3 : 5).map(groupId => {
                       const group = getGroupById(groupId);
                       return (
                         <Chip
@@ -1059,9 +1115,9 @@ const CreateAlert = () => {
                         />
                       );
                     })}
-                    {isMobile && selectedAlert.assignedGroups.length > 3 && (
+                    {selectedAlert.assignedGroups.length > (isMobile ? 3 : 5) && (
                       <Chip
-                        label={`+${selectedAlert.assignedGroups.length - 3}`}
+                        label={`+${selectedAlert.assignedGroups.length - (isMobile ? 3 : 5)}`}
                         size="small"
                         color="#764ba2"
                         variant="outlined"
