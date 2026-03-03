@@ -1699,7 +1699,7 @@
   }
   
   .table-container {
-    padding: 0 1rem;
+    padding: 0 -3rem;
   }
   
   .data-table th,

@@ -3,6 +3,7 @@ import axios from '../../../utils/axiosConfig';
 import { API_URL_IMG } from '../../../config';
 import { useNavigate } from 'react-router-dom';
 import './AdminTaskManagement.css';
+import CIISLoader from '../../../Loader/CIISLoader'; // Import CIISLoader
 
 // Icons
 import {
@@ -1682,7 +1683,6 @@ const AdminTaskManagement = () => {
     </div>
   );
 
-  // Stats Cards with Filtered Data
   // Stats Cards with Filtered Data - SHOW ONLY CARDS WITH VALUE > 0 (TOTAL TASKS ALSO FILTERED)
 const renderFilteredStatsCards = () => {
   // Create stats array with all cards
@@ -2793,12 +2793,7 @@ const renderFilteredStatsCards = () => {
   // Render Tasks Table with Enhanced UI
   const renderTasksTable = () => {
     if (loading && tasks.length === 0) {
-      return (
-        <div className="AdminTaskManagement-loading-container">
-          <div className="AdminTaskManagement-loading-spinner"></div>
-          <p>Loading tasks...</p>
-        </div>
-      );
+      return <CIISLoader />;
     }
 
     if (tasks.length === 0) {

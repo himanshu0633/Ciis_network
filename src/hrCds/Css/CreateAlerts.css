@@ -1435,6 +1435,10 @@
     max-width: 100%;
   }
 
+  .CreateAlert-modal-overlay {
+    top: 54px;
+  }
+
   .CreateAlert-search-input {
     padding: 12px 16px 12px 44px;
     font-size: 14px;

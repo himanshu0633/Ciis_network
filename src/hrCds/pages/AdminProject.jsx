@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "../../utils/axiosConfig";
 import "../Css/AdminProject.css";
+import CIISLoader from "../../Loader/CIISLoader"; // Import CIISLoader
 
 // Icons
 const Icons = {
@@ -69,6 +70,7 @@ export const AdminProject = () => {
 
   // UI STATES
   const [loading, setLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true); // Add page loading state
   const [errors, setErrors] = useState({});
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
   const [openPdfDialog, setOpenPdfDialog] = useState(false);
@@ -87,8 +89,18 @@ export const AdminProject = () => {
   const [requestTimeout, setRequestTimeout] = useState(null);
 
   useEffect(() => {
-    fetchUsers();
-    fetchProjects();
+    const initializeData = async () => {
+      setPageLoading(true);
+      try {
+        await Promise.all([fetchUsers(), fetchProjects()]);
+      } catch (error) {
+        console.error("Error initializing data:", error);
+      } finally {
+        setPageLoading(false);
+      }
+    };
+    
+    initializeData();
   }, []);
 
   useEffect(() => {
@@ -514,6 +526,11 @@ export const AdminProject = () => {
       </div>
     </div>
   );
+
+  // Show CIISLoader while page is loading
+  if (pageLoading) {
+    return <CIISLoader />;
+  }
 
   return (
     <div className="ap">

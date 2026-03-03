@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import axios from "../../../utils/axiosConfig";
 import './employee-leaves.css';
+import CIISLoader from '../../../Loader/CIISLoader'; // Import the CIISLoader
 
 // Socket import
 import { useSocket } from '../../../context/SocketContext';
@@ -1746,24 +1747,10 @@ const EmployeeLeaves = () => {
   );
 
   // ============================================
-  // LOADING STATE
+  // LOADING STATE - Only CIISLoader
   // ============================================
-  if (loading && leaves.length === 0) {
-    return (
-      <div className="EmppLeaves-loading-container">
-        <div className="EmppLeaves-loading-spinner"></div>
-        <p>Loading leave data...</p>
-        {currentUserRole && (
-          <span className="EmppLeaves-loading-role">Role: {normalizeRole(currentUserRole)}</span>
-        )}
-        {isConnected && (
-          <span className="EmppLeaves-socket-status EmppLeaves-connected">
-            <FiBell size={14} />
-            Real-time connected
-          </span>
-        )}
-      </div>
-    );
+  if (loading) {
+    return <CIISLoader />;
   }
 
   // ============================================
