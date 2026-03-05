@@ -602,7 +602,7 @@ const Attendance = () => {
             color: "warning",
           },
           {
-            key: "halfDay",
+            key: "hal fDay",
             label: "Half Days",
             value: stats.halfDay,
             icon: FiAlertCircle,

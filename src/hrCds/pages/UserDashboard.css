@@ -1,4 +1,4 @@
-/* UserDashboard.css - Sirf Holiday Color Add Kiya */
+/* UserDashboard.css - Complete Updated Code with Holiday Colors */
 
 /* Base Styles */
 .dashboard-container {
@@ -658,6 +658,19 @@
   box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
 }
 
+.calendar-before-join-message {
+  background: #f1f5f9;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #64748b;
+  font-size: 14px;
+  border: 1px solid #e2e8f0;
+}
+
 /* Calendar Body */
 .calendar-body {
   margin-bottom: 24px;
@@ -716,6 +729,7 @@
 
 .calendar-day:hover {
   transform: scale(1.05);
+  z-index: 5;
 }
 
 .calendar-day.empty {
@@ -763,7 +777,7 @@
   color: white !important;
 }
 
-/* ✅ NAYA - Holiday Color (Purple) */
+/* ✅ HOLIDAY COLOR - PURPLE THEME */
 .calendar-day.holiday {
   background: linear-gradient(135deg, #9c27b0, #ba68c8);
   color: white !important;
@@ -783,7 +797,7 @@
   animation: bounce 1s ease infinite;
 }
 
-/* ✅ Holiday Tooltip */
+/* ✅ HOLIDAY TOOLTIP */
 .calendar-day.holiday:hover::after {
   content: attr(data-holiday-title);
   position: absolute;
@@ -816,20 +830,35 @@
   z-index: 1000;
 }
 
+/* Before Join Date */
+.calendar-day.before-join {
+  background: #e0e0e0;
+  color: #9e9e9e;
+  border: 1px dashed #bdbdbd;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.calendar-day.before-join:hover {
+  transform: none;
+}
+
 .day-today {
-  border-color: #4f46e5;
+  border-color: #4f46e5 !important;
   box-shadow: 0 0 0 2px #4f46e5;
 }
 
 .day-number {
   font-size: 14px;
   font-weight: 600;
+  line-height: 1;
 }
 
 .day-status-icon {
   font-size: 10px;
   margin-top: 2px;
   opacity: 0.9;
+  line-height: 1;
 }
 
 .today-indicator {
@@ -841,6 +870,7 @@
   background: #4f46e5;
   border-radius: 50%;
   animation: pulse 2s infinite;
+  border: 2px solid white;
 }
 
 .calendar-empty-day {
@@ -897,10 +927,15 @@
   background: linear-gradient(135deg, #94a3b8, #64748b);
 }
 
-/* ✅ NAYA - Holiday Legend Color */
+/* ✅ HOLIDAY LEGEND COLOR - PURPLE */
 .color-holiday {
   background: linear-gradient(135deg, #9c27b0, #ba68c8);
   border: 2px solid #7b1fa2;
+}
+
+.color-before-join {
+  background: #e0e0e0;
+  border: 1px dashed #bdbdbd;
 }
 
 /* Activity Card */
@@ -991,6 +1026,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  position: relative;
 }
 
 .activity-item {
@@ -1191,6 +1227,7 @@
   box-shadow: 0 8px 30px rgba(79, 70, 229, 0.3);
   position: relative;
   overflow: hidden;
+  margin-top: 24px;
 }
 
 .dashboard-month-info::before {
@@ -1271,6 +1308,7 @@
 
 .month-info-right {
   text-align: center;
+  min-width: 120px;
 }
 
 .month-current-day {
@@ -1324,7 +1362,39 @@
   max-width: 600px;
 }
 
-/* Loader Styles */
+.access-denied-message .btn-primary {
+  padding: 12px 30px;
+  background: white;
+  color: #667eea;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.access-denied-message .btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(255, 255, 255, 0.3);
+}
+
+/* Company info badge */
+.company-info-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(102, 126, 234, 0.1);
+  border-radius: 20px;
+  font-size: 12px;
+  color: #667eea;
+  margin-top: 10px;
+}
+
+/* ========== LOADER STYLES ========== */
+
+/* Stats Loader */
 .stats-loader-container {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
@@ -1396,6 +1466,7 @@
   border-radius: 4px;
 }
 
+/* Calendar Loader */
 .calendar-loader {
   min-height: 400px;
   display: flex;
@@ -1429,6 +1500,7 @@
   -webkit-text-fill-color: transparent;
 }
 
+/* Activity Main Loader */
 .activity-loader-container {
   min-height: 300px;
   display: flex;
@@ -1478,6 +1550,7 @@
   color: #64748b;
 }
 
+/* Refresh Overlay Loader */
 .activity-refresh-overlay {
   display: flex;
   align-items: center;
@@ -1600,6 +1673,17 @@
   .calendar-controls {
     justify-content: center;
   }
+  
+  .calendar-day {
+    width: 32px;
+    height: 32px;
+    min-height: 32px;
+    font-size: 12px;
+  }
+  
+  .day-status-icon {
+    font-size: 8px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1621,4 +1705,240 @@
     flex-direction: column;
     text-align: center;
   }
+  
+  .calendar-legend {
+    gap: 8px;
+  }
+  
+  .legend-item {
+    font-size: 10px;
+  }
+}
+/* Add these styles at the end of your existing UserDashboard.css */
+
+/* Holiday status color */
+.status-holiday {
+  color: #9c27b0 !important;
+  background-color: rgba(156, 39, 176, 0.1) !important;
+  border-color: #9c27b0 !important;
+}
+
+/* Holiday item in activity list */
+.activity-item.holiday-item {
+  background: linear-gradient(135deg, #f3e5f5, #e1bee7);
+  border-left: 4px solid #9c27b0;
+}
+
+.activity-item.holiday-item:hover {
+  background: linear-gradient(135deg, #e1bee7, #ce93d8);
+  border-color: #9c27b0;
+}
+
+/* Holiday badge */
+.holiday-badge {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  background: linear-gradient(135deg, #9c27b0, #ba68c8);
+  color: white;
+  border-radius: 10px;
+  margin-left: 8px;
+}
+
+/* Activity title for holiday */
+.activity-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #4a148c;
+}
+
+/* Status icon for holiday */
+.activity-status-icon.status-holiday {
+  background: linear-gradient(135deg, #f3e5f5, #e1bee7);
+  border-color: #9c27b0;
+}
+
+.activity-status-icon.status-holiday .status-icon {
+  color: #9c27b0;
+}
+
+/* Activity status label for holiday */
+.activity-status.status-holiday {
+  color: #9c27b0;
+  background: #f3e5f5;
+  border-color: #9c27b0;
+}
+
+/* Upcoming Holidays Section */
+.upcoming-holidays-section {
+  margin-top: 24px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #f8f0ff, #f3e5f5);
+  border-radius: 16px;
+  border-left: 4px solid #9c27b0;
+  box-shadow: 0 2px 8px rgba(156, 39, 176, 0.1);
+}
+
+.upcoming-holidays-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #4a148c;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.upcoming-holidays-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.upcoming-holiday-item {
+  background: white;
+  padding: 8px 16px;
+  border-radius: 30px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #4a148c;
+  box-shadow: 0 2px 6px rgba(156, 39, 176, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  border: 1px solid #ba68c8;
+}
+
+.upcoming-holiday-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(156, 39, 176, 0.3);
+  background: #f3e5f5;
+}
+
+.holiday-name {
+  font-weight: 600;
+}
+
+.holiday-date-badge {
+  background: #9c27b0;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+/* Add these styles at the end of your existing UserDashboard.css */
+
+/* Holiday status color */
+.status-holiday {
+  color: #9c27b0 !important;
+  background-color: rgba(156, 39, 176, 0.1) !important;
+  border-color: #9c27b0 !important;
+}
+
+/* Holiday item in activity list */
+.activity-item.holiday-item {
+  background: linear-gradient(135deg, #f3e5f5, #e1bee7);
+  border-left: 4px solid #9c27b0;
+}
+
+.activity-item.holiday-item:hover {
+  background: linear-gradient(135deg, #e1bee7, #ce93d8);
+  border-color: #9c27b0;
+}
+
+/* Holiday badge */
+.holiday-badge {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  background: linear-gradient(135deg, #9c27b0, #ba68c8);
+  color: white;
+  border-radius: 10px;
+  margin-left: 8px;
+}
+
+/* Activity title for holiday */
+.activity-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #4a148c;
+}
+
+/* Status icon for holiday */
+.activity-status-icon.status-holiday {
+  background: linear-gradient(135deg, #f3e5f5, #e1bee7);
+  border-color: #9c27b0;
+}
+
+.activity-status-icon.status-holiday .status-icon {
+  color: #9c27b0;
+}
+
+/* Activity status label for holiday */
+.activity-status.status-holiday {
+  color: #9c27b0;
+  background: #f3e5f5;
+  border-color: #9c27b0;
+}
+
+/* Upcoming Holidays Section */
+.upcoming-holidays-section {
+  margin-top: 24px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #f8f0ff, #f3e5f5);
+  border-radius: 16px;
+  border-left: 4px solid #9c27b0;
+  box-shadow: 0 2px 8px rgba(156, 39, 176, 0.1);
+}
+
+.upcoming-holidays-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #4a148c;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.upcoming-holidays-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.upcoming-holiday-item {
+  background: white;
+  padding: 8px 16px;
+  border-radius: 30px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #4a148c;
+  box-shadow: 0 2px 6px rgba(156, 39, 176, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  border: 1px solid #ba68c8;
+}
+
+.upcoming-holiday-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(156, 39, 176, 0.3);
+  background: #f3e5f5;
+}
+
+.holiday-name {
+  font-weight: 600;
+}
+
+.holiday-date-badge {
+  background: #9c27b0;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
 }
