@@ -60,6 +60,8 @@ import SidebarManagement from "./admin/components/SidebarManagement.jsx";
 import CompanyDetails from "./admin/components/CompanyDetails.jsx";
 import AllCompany from "./page/AllCompany.jsx";
 import AssetManagement from './page/AssetManagement.jsx'
+import Holiday from "./page/Holidays.jsx";
+
 
 
 function App() {
@@ -109,6 +111,7 @@ function App() {
           <Route path="assets" element={<AssetManagement />} />
           <Route path="CompanyManagement" element={<CompanyManagement />} />
           <Route path="SidebarManagement" element={<SidebarManagement />} />
+          <Route path="holiday" element={<Holiday />} />
         </Route>
 
         {/* CDS User Routes */}

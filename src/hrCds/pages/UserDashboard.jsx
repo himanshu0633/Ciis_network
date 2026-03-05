@@ -1,4 +1,4 @@
-// UserDashboard.jsx - COMPLETE FIXED VERSION WITH ALL LOADERS
+// UserDashboard.jsx - COMPLETE FIXED VERSION WITH ALL LOADERS + HOLIDAYS
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from '../../utils/axiosConfig';
@@ -108,6 +108,11 @@ const UserDashboard = () => {
 
   const [attendanceData, setAttendanceData] = useState([]);
   const [leaveData, setLeaveData] = useState([]);
+  
+  // ✅ NAYA STATE - Holidays ke liye
+  const [holidays, setHolidays] = useState([]);
+  const [holidaysLoading, setHolidaysLoading] = useState(false);
+  
   const [loading, setLoading] = useState({
     attendance: false,
     leaves: false,
@@ -155,13 +160,15 @@ const UserDashboard = () => {
     attendance: false,
     leaves: false,
     status: false,
-    jobRoles: false
+    jobRoles: false,
+    holidays: false // ✅ holidays bhi add kiya
   });
 
   const abortControllerRef = useRef(null);
   const attendanceTimeoutRef = useRef(null);
   const leavesTimeoutRef = useRef(null);
   const statusTimeoutRef = useRef(null);
+  const holidaysTimeoutRef = useRef(null); // ✅ naya ref
   const initialLoadRef = useRef(false);
 
   // Parse user's creation date
@@ -219,7 +226,7 @@ const UserDashboard = () => {
       abortControllerRef.current = null;
     }
     
-    [attendanceTimeoutRef, leavesTimeoutRef, statusTimeoutRef].forEach(ref => {
+    [attendanceTimeoutRef, leavesTimeoutRef, statusTimeoutRef, holidaysTimeoutRef].forEach(ref => {
       if (ref.current) {
         clearTimeout(ref.current);
         ref.current = null;
@@ -269,6 +276,52 @@ const UserDashboard = () => {
       fetchInProgress.current.jobRoles = false;
     }
   }, [getCompanyId, token, isUserInCurrentCompany]);
+
+  // ✅ NAYA FUNCTION - Holidays fetch karne ke liye
+  const fetchHolidays = useCallback(async () => {
+    if (!isUserInCurrentCompany) return;
+    if (fetchInProgress.current.holidays) return;
+    
+    if (holidaysTimeoutRef.current) {
+      clearTimeout(holidaysTimeoutRef.current);
+    }
+
+    holidaysTimeoutRef.current = setTimeout(async () => {
+      if (fetchInProgress.current.holidays) return;
+      
+      fetchInProgress.current.holidays = true;
+      setHolidaysLoading(true);
+
+      try {
+        // ✅ API route jo tune diya - /holidays
+        const response = await axios.get('/holidays', {
+          headers: { Authorization: `Bearer ${token}` },
+          timeout: 10000
+        });
+        
+        // ✅ Tera response structure - { success: true, holidays: [...] }
+        if (response.data.success) {
+          let holidaysData = response.data.holidays || [];
+          
+          // Filter holidays after join date
+          if (userJoinDate) {
+            holidaysData = holidaysData.filter(holiday => 
+              !isBeforeJoinDate(new Date(holiday.date))
+            );
+          }
+          
+          setHolidays(holidaysData);
+        }
+      } catch (error) {
+        console.error('Failed to load holidays:', error);
+      } finally {
+        setHolidaysLoading(false);
+        fetchInProgress.current.holidays = false;
+        holidaysTimeoutRef.current = null;
+      }
+    }, 300);
+
+  }, [token, isUserInCurrentCompany, userJoinDate, isBeforeJoinDate]);
 
   // Fetch attendance data
   const fetchAttendanceData = useCallback(async (force = false) => {
@@ -427,6 +480,7 @@ const UserDashboard = () => {
         await fetchAttendanceData(true);
         await fetchLeaveData();
         await fetchCurrentStatus();
+        await fetchHolidays(); // ✅ NAYA - Holidays bhi fetch karo
       } catch (error) {
         console.error('Error loading dashboard data:', error);
       } finally {
@@ -535,6 +589,25 @@ const UserDashboard = () => {
     return [...new Set(dates)];
   }, [filteredLeaveData, isBeforeJoinDate]);
 
+  // ✅ NAYA - Holiday dates calculate karo
+  const holidayDates = useMemo(() => {
+    return holidays.map(holiday => {
+      const date = new Date(holiday.date);
+      return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+    });
+  }, [holidays]);
+
+  // ✅ NAYA - Holiday titles mapping for tooltip
+  const holidayTitles = useMemo(() => {
+    const map = {};
+    holidays.forEach(holiday => {
+      const date = new Date(holiday.date);
+      const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+      map[key] = holiday.title;
+    });
+    return map;
+  }, [holidays]);
+
   const monthlyStats = useMemo(() => {
     const presentDays = filteredAttendanceData.filter(record => {
       const d = new Date(record.date);
@@ -564,6 +637,7 @@ const UserDashboard = () => {
     return { presentDays, lateDays, halfDays, absentDays, leavesTaken };
   }, [filteredAttendanceData, leaveDates, currentMonth, currentYear]);
 
+  // ✅ UPDATED - getDayStatus me holiday check add kiya (sabse pehle)
   const getDayStatus = useCallback((day) => {
     if (!day) return null;
     
@@ -571,6 +645,9 @@ const UserDashboard = () => {
     const key = `${calendarYear}-${calendarMonth}-${day}`;
     const dayOfWeek = dateObj.getDay();
     const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    
+    // ✅ HOLIDAY CHECK - Pehle holiday check karo
+    if (holidayDates.includes(key)) return "holiday";
     
     if (isBeforeJoinDate(dateObj)) return "before-join";
     if (markedDates.includes(key)) return "present";
@@ -581,7 +658,7 @@ const UserDashboard = () => {
     if (isWeekend) return "weekend";
     
     return null;
-  }, [calendarYear, calendarMonth, isBeforeJoinDate, markedDates, lateDates, halfDayDates, leaveDates, absentDates]);
+  }, [calendarYear, calendarMonth, isBeforeJoinDate, markedDates, lateDates, halfDayDates, leaveDates, absentDates, holidayDates]);
 
   const isToday = useCallback((day) => {
     return day === currentDate.getDate() && 
@@ -589,9 +666,11 @@ const UserDashboard = () => {
            calendarYear === currentDate.getFullYear();
   }, [currentDate, calendarMonth, calendarYear]);
 
+  // ✅ UPDATED - getDayIcon me holiday icon add kiya
   const getDayIcon = useCallback((day) => {
     const status = getDayStatus(day);
     switch(status) {
+      case 'holiday': return '🎉';
       case 'present': return '✓';
       case 'late': return 'L';
       case 'halfday': return '½';
@@ -899,7 +978,7 @@ const UserDashboard = () => {
 
       <div className="dashboard-content-grid">
         {/* Calendar Section with Loader */}
-        {loading.attendance ? (
+        {loading.attendance || holidaysLoading ? (
           <CalendarLoader />
         ) : (
           <div className="dashboard-calendar-card">
@@ -942,12 +1021,21 @@ const UserDashboard = () => {
                           <div className="calendar-day-container">
                             <div
                               className={`calendar-day ${getDayStatus(day) || 'empty'} ${isToday(day) ? 'day-today' : ''}`}
-                              title={isBeforeJoinDate(new Date(calendarYear, calendarMonth, day)) 
-                                ? 'Before joining date' 
-                                : getDayStatus(day)?.charAt(0).toUpperCase() + getDayStatus(day)?.slice(1) || 'No Record'}
+                              title={
+                                getDayStatus(day) === 'holiday' 
+                                  ? `🎉 Holiday: ${holidayTitles[`${calendarYear}-${calendarMonth}-${day}`] || 'Holiday'}`
+                                  : isBeforeJoinDate(new Date(calendarYear, calendarMonth, day)) 
+                                    ? 'Before joining date' 
+                                    : getDayStatus(day)?.charAt(0).toUpperCase() + getDayStatus(day)?.slice(1) || 'No Record'
+                              }
+                              data-holiday-title={getDayStatus(day) === 'holiday' ? holidayTitles[`${calendarYear}-${calendarMonth}-${day}`] : ''}
                             >
                               <span className="day-number">{day}</span>
-                              {getDayIcon(day) && <span className="day-status-icon">{getDayIcon(day)}</span>}
+                              {getDayIcon(day) && (
+                                <span className={`day-status-icon ${getDayStatus(day) === 'holiday' ? 'holiday-icon' : ''}`}>
+                                  {getDayIcon(day)}
+                                </span>
+                              )}
                             </div>
                             {isToday(day) && <div className="today-indicator"></div>}
                           </div>
@@ -959,6 +1047,7 @@ const UserDashboard = () => {
               </div>
             </div>
 
+            {/* ✅ UPDATED - Legend me Holiday add kiya */}
             <div className="calendar-legend">
               <div className="legend-item"><div className="legend-color color-present"></div><span>Present</span></div>
               <div className="legend-item"><div className="legend-color color-late"></div><span>Late</span></div>
@@ -966,6 +1055,7 @@ const UserDashboard = () => {
               <div className="legend-item"><div className="legend-color color-leave"></div><span>Leave</span></div>
               <div className="legend-item"><div className="legend-color color-absent"></div><span>Absent</span></div>
               <div className="legend-item"><div className="legend-color color-weekend"></div><span>Weekend</span></div>
+              <div className="legend-item"><div className="legend-color color-holiday"></div><span>Holiday 🎉</span></div>
               <div className="legend-item"><div className="legend-color color-before-join"></div><span>Before Joining</span></div>
             </div>
           </div>
