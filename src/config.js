@@ -8,4 +8,4 @@ export const SOCKET_URL = 'http://localhost:3000'
 // export const API_URL_IMG = 'https://j449fxt7-3000.inc1.devtunnels.ms/'
 
 
-export default API_URL;
+export default API_URL; 
