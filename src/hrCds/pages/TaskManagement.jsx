@@ -511,7 +511,7 @@ const manualCheckOverdue = async () => {
 
       setNewRemark('');
       setRemarkImages([]);
-      fetchTaskRemarks(taskId);
+      
       
       showSnackbar(
         `Remark added successfully${remarkImages.length > 0 ? ' with image' : ''}`, 
@@ -1320,33 +1320,51 @@ const formatDateForBackend = (dateTimeString) => {
 
                 {/* Submit Button */}
                 <button
-                  className="user-create-task-button user-create-task-button-contained"
-                  onClick={async () => {
-                    await addRemark(remarksDialog.taskId);
-                    
-                    if (pendingStatusChange.status) {
-                      await handleStatusChange(
-                        pendingStatusChange.taskId, 
-                        pendingStatusChange.status, 
-                        newRemark || 'Status changed'
-                      );
-                      setPendingStatusChange({ taskId: null, status: '' });
-                    }
-                  }}
-                  disabled={isUploadingRemark || (!newRemark.trim() && remarkImages.length === 0)}
-                  style={{ width: '100%', padding: isMobile ? '10px' : '12px' }}
-                >
-                  {isUploadingRemark ? (
-                    'Uploading...'
-                  ) : pendingStatusChange.status ? (
-                    isMobile ? 'Save & Update' : 'Save Remark & Update Status'
-                  ) : (
-                    <>
-                      <FiMessageSquare />
-                      {isMobile ? 'Add Remark' : 'Add Remark'}
-                    </>
-                  )}
-                </button>
+                    className="user-create-task-button user-create-task-button-contained"
+                    onClick={async () => {
+                      try {
+
+                        // 🔹 Save remark
+                        await addRemark(remarksDialog.taskId);
+
+                        // 🔹 If status change pending
+                        if (pendingStatusChange.status) {
+                          await handleStatusChange(
+                            pendingStatusChange.taskId,
+                            pendingStatusChange.status,
+                            newRemark || "Status changed"
+                          );
+                          setPendingStatusChange({ taskId: null, status: "" });
+                        }
+
+                        // 🔹 Close dialog
+                        setRemarksDialog({ open: false, taskId: null, remarks: [] });
+
+                        // 🔹 Reset inputs
+                        setNewRemark("");
+                        setRemarkImages([]);
+
+                        // 🔹 Refresh tasks
+                        fetchMyTasks();
+
+                      } catch (error) {
+                        console.error("Error saving remark:", error);
+                      }
+                    }}
+                    disabled={isUploadingRemark || (!newRemark.trim() && remarkImages.length === 0)}
+                    style={{ width: "100%", padding: isMobile ? "10px" : "12px" }}
+                  >
+                    {isUploadingRemark ? (
+                      "Uploading..."
+                    ) : pendingStatusChange.status ? (
+                      isMobile ? "Save & Update" : "Save Remark & Update Status"
+                    ) : (
+                      <>
+                        <FiMessageSquare />
+                        {isMobile ? "Add Remark" : "Add Remark"}
+                      </>
+                    )}
+                  </button>
               </div>
             </div>
 
