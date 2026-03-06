@@ -312,8 +312,8 @@
 /* Calendar Popover */
 .Attendance-calendar-popover {
   position: absolute;
-  top: 100%;
-  right: 200px;
+  top: 45%;
+  right: 290px;
   margin-top: 8px;
   background: white;
   border-radius: var(--border-radius-md);
@@ -340,8 +340,8 @@
 /* Filter Menu */
 .Attendance-filter-menu {
   position: absolute;
-  top: 100%;
-  right: 150px;
+  top: 48%;
+  right: 237px;
   background: white;
   border-radius: var(--border-radius-md);
   box-shadow: var(--shadow-lg);
@@ -1339,6 +1339,7 @@
   .Attendance-calendar-popover {
     right: 20px;
     left: 20px;
+    top: 68%;
   }
   
   .Attendance-filter-menu {
